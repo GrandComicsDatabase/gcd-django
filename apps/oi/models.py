@@ -705,7 +705,15 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['creator']:
             return (self.creatorrevisions.all(),
                     self.datasourcerevisions.all(),
-                    self.creatornamedetailrevisions.all())
+                    self.creatornamedetailrevisions.all(),
+                    self.creatorartinfluencerevisions.all(),
+                    self.creatorawardrevisions.all(),
+                    self.creatordegreerevisions.all(),
+                    self.creatormembershiprevisions.all(),
+                    self.creatornoncomicworkrevisions.all(),
+                    self.creatorrelationrevisions.all(),
+                    self.creatorschoolrevisions.all()
+                    )
 
         if self.change_type == CTYPES['creator_art_influence']:
             return (self.creatorartinfluencerevisions.all(),
@@ -1166,7 +1174,8 @@ class Changeset(models.Model):
 
                 if revision.deleted:
                     if isinstance(revision, StoryRevision) or \
-                       isinstance(revision, ReprintRevision):
+                       isinstance(revision, ReprintRevision) or \
+                       isinstance(revision, CreatorNameDetailRevision):
                         self.imps += IMP_DELETE
                     else:
                         self.imps = IMP_DELETE
@@ -1896,6 +1905,7 @@ class Revision(models.Model):
 
         revision._pre_initial_save(fork=fork, fork_source=data_object,
                                    exclude=exclude)
+
         revision.save()
 
         # Populate all of the many to many relations that don't use
@@ -2476,7 +2486,7 @@ class Revision(models.Model):
         Some Revisions have dependent objects, this locks the objects and
         creates the corresponding revisions.
         """
-        return True
+        pass
 
     def has_keywords(self):
         return self.keywords
@@ -2625,7 +2635,6 @@ class PublisherRevision(PublisherRevisionBase):
                                                             self.changeset)
                 brand_revision.deleted = True
                 brand_revision.save()
-        return True
 
     def get_absolute_url(self):
         if self.publisher is None:
@@ -2891,7 +2900,6 @@ class BrandRevision(PublisherRevisionBase):
                                                       self.changeset)
                 use_revision.deleted = True
                 use_revision.save()
-        return True
 
     def _handle_dependents(self, changes):
         if self.added:
@@ -4433,7 +4441,6 @@ class IssueRevision(Revision):
                                                issue=cover.issue,
                                                cover=cover, deleted=True)
                 cover_revision.save()
-        return True
 
     def _check_first_last(self):
         set_series_first_last(self.series)
@@ -5917,60 +5924,8 @@ def get_creator_field_list():
 
 
 class CreatorRevisionManager(RevisionManager):
-    def _base_field_kwargs(self, instance):
-        return {
-            'gcd_official_name': instance.gcd_official_name,
-            'whos_who': instance.whos_who,
-            'birth_country': instance.birth_country,
-            'birth_country_uncertain': instance.birth_country_uncertain,
-            'birth_province': instance.birth_province,
-            'birth_province_uncertain': instance.birth_province_uncertain,
-            'birth_city': instance.birth_city,
-            'birth_city_uncertain': instance.birth_city_uncertain,
-            'death_country': instance.death_country,
-            'death_country_uncertain': instance.death_country_uncertain,
-            'death_province': instance.death_province,
-            'death_province_uncertain': instance.death_province_uncertain,
-            'death_city': instance.death_city,
-            'death_city_uncertain': instance.death_city_uncertain,
-            'bio': instance.bio,
-            'notes': instance.notes,
-        }
-
     def clone_revision(self, creator, changeset):
-        """
-        Given an existing Creator instance, create a new revision based on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator,
-                                              instance_class=Creator,
-                                              changeset=changeset)
-
-    def _do_create_revision(self, creator, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        kwargs = self._base_field_kwargs(creator)
-        revision = CreatorRevision(
-                # revision-specific fields:
-                creator=creator,
-                changeset=changeset,
-                **kwargs)
-
-        # clone date instances
-        birth_date = creator.birth_date
-        birth_date.pk = None
-        birth_date.save()
-        revision.birth_date = birth_date
-        death_date = creator.death_date
-        death_date.pk = None
-        death_date.save()
-        revision.death_date = death_date
-
-        revision.save()
-        return revision
+        return CreatorRevision.clone(creator, changeset)
 
 
 class CreatorRevision(Revision):
@@ -6010,10 +5965,185 @@ class CreatorRevision(Revision):
     death_city = models.CharField(max_length=200, blank=True)
     death_city_uncertain = models.BooleanField(default=False)
 
-    whos_who = models.URLField(blank=True)
-    bio = models.TextField(blank=True)
+    whos_who = models.URLField(blank=True, default='')
+    bio = models.TextField(blank=True, default='')
 
-    notes = models.TextField(blank=True)
+    notes = models.TextField(blank=True, default='')
+
+    source_name = 'creator'
+    source_class = Creator
+
+    @property
+    def source(self):
+        return self.creator
+
+    @source.setter
+    def source(self, value):
+        self.creator = value
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset()):
+        # clone date instances
+        birth_date = self.creator.birth_date
+        birth_date.pk = None
+        birth_date.save()
+        self.birth_date = birth_date
+
+        death_date = self.creator.death_date
+        death_date.pk = None
+        death_date.save()
+        self.death_date = death_date
+
+    def _create_dependent_revisions(self, delete=False):
+        name_details = self.creator.active_names()
+        for name_detail in name_details:
+            name_lock = _get_revision_lock(name_detail,
+                                           changeset=self.changeset)
+            if name_lock is None:
+                raise IntegrityError("needed Name lock not possible")
+            creator_name = CreatorNameDetailRevision.objects\
+                           .clone_revision(name_detail, self.changeset, self)
+            if delete:
+                creator_name.deleted = True
+                creator_name.save()
+
+        data_sources = self.creator.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
+        if delete:
+            for creator_art_influence in self.creator.active_art_influences():
+                influence_lock = _get_revision_lock(creator_art_influence,
+                                                    changeset=self.changeset)
+                if influence_lock is None:
+                    raise IntegrityError("needed CreatorArtInfluence lock not"
+                                         " possible")
+                creator_art_influence_revision = \
+                  CreatorArtInfluenceRevision.clone(creator_art_influence,
+                                                    self.changeset)
+                creator_art_influence_revision.deleted = True
+                creator_art_influence_revision.save()
+
+            for creator_award in self.creator.active_awards():
+                award_lock = _get_revision_lock(creator_award,
+                                                changeset=self.changeset)
+                if award_lock is None:
+                    raise IntegrityError("needed CreatorAward lock not "
+                                         "possible")
+                creator_award_revision = \
+                  CreatorAwardRevision.clone(creator_award,
+                                             self.changeset)
+                creator_award_revision.deleted = True
+                creator_award_revision.save()
+
+            for creator_degree in self.creator.active_degrees():
+                degree_lock = _get_revision_lock(creator_degree,
+                                                 changeset=self.changeset)
+                if degree_lock is None:
+                    raise IntegrityError("needed CreatorDegree lock not "
+                                         "possible")
+                creator_degree_revision = \
+                  CreatorDegreeRevision.clone(creator_degree,
+                                              self.changeset)
+                creator_degree_revision.deleted = True
+                creator_degree_revision.save()
+
+            for creator_membership in self.creator.active_memberships():
+                membership_lock = _get_revision_lock(creator_membership,
+                                                     changeset=self.changeset)
+                if membership_lock is None:
+                    raise IntegrityError("needed CreatorMembership lock not "
+                                         "possible")
+                creator_membership_revision = \
+                  CreatorMembershipRevision.clone(creator_membership,
+                                                  self.changeset)
+                creator_membership_revision.deleted = True
+                creator_membership_revision.save()
+
+            for creator_non_comic_work in \
+              self.creator.active_non_comic_works():
+                noncomicwork_lock = _get_revision_lock(
+                  creator_non_comic_work, changeset=self.changeset)
+                if noncomicwork_lock is None:
+                    raise IntegrityError("needed CreatorNonComicWork lock not"
+                                         " possible")
+                creator_non_comic_work_revision = \
+                  CreatorNonComicWorkRevision.clone(creator_non_comic_work,
+                                                    self.changeset)
+                creator_non_comic_work_revision.deleted = True
+                creator_non_comic_work_revision.save()
+
+            for creator_relation in self.creator.active_relations():
+                relation_lock = _get_revision_lock(creator_relation,
+                                                   changeset=self.changeset)
+                if relation_lock is None:
+                    raise IntegrityError("needed CreatorRelation lock not "
+                                         "possible")
+                creator_relation_revision = \
+                  CreatorRelationRevision.clone(creator_relation,
+                                                self.changeset)
+                creator_relation_revision.deleted = True
+                creator_relation_revision.save()
+
+            for creator_school in self.creator.active_schools():
+                school_lock = _get_revision_lock(creator_school,
+                                                 changeset=self.changeset)
+                if school_lock is None:
+                    raise IntegrityError("needed CreatorSchool lock not "
+                                         "possible")
+                creator_school_revision = \
+                  CreatorSchoolRevision.clone(creator_school,
+                                              self.changeset)
+                creator_school_revision.deleted = True
+                creator_school_revision.save()
+
+    def _pre_save_object(self, changes):
+        if self.added:
+            # clone date instances
+            birth_date = self.birth_date
+            birth_date.pk = None
+            birth_date.save()
+            self.creator.birth_date = birth_date
+
+            death_date = self.death_date
+            death_date.pk = None
+            death_date.save()
+            self.creator.death_date = death_date
+        else:
+            ctr = self.creator
+            ctr.birth_date.set(year=self.birth_date.year,
+                               month=self.birth_date.month,
+                               day=self.birth_date.day,
+                               year_uncertain=self.birth_date.year_uncertain,
+                               month_uncertain=self.birth_date.month_uncertain,
+                               day_uncertain=self.birth_date.day_uncertain,
+                               empty=True)
+            ctr.birth_date.save()
+            ctr.death_date.set(year=self.death_date.year,
+                               month=self.death_date.month,
+                               day=self.death_date.day,
+                               year_uncertain=self.death_date.year_uncertain,
+                               month_uncertain=self.death_date.month_uncertain,
+                               day_uncertain=self.death_date.day_uncertain,
+                               empty=True)
+            ctr.death_date.save()
+
+    def _handle_dependents(self, changes):
+        # for new creator, we need to save the record_id in the name revisions
+        if self.added:
+            for name in self.changeset.creatornamedetailrevisions.all():
+                name.creator = self.creator
+                name.save()
+
+    def get_absolute_url(self):
+        if self.creator is None:
+            return "/creator/revision/%i/preview" % self.id
+        return self.creator.get_absolute_url()
+
+    def __unicode__(self):
+        return u'%s' % unicode(self.gcd_official_name)
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
 
     def _field_list(self):
         return get_creator_field_list()
@@ -6040,36 +6170,6 @@ class CreatorRevision(Revision):
             'bio': '',
             'notes': '',
         }
-
-    def active_names(self):
-        return self.cr_creator_names.all()
-
-    def display_birthday(self):
-        return _display_day(self.birth_date)
-
-    def display_birthplace(self):
-        return _display_place(self, 'birth')
-
-    def display_deathday(self):
-        return _display_day(self.death_date)
-
-    def display_deathplace(self):
-        return _display_place(self, 'death')
-
-    def has_death_info(self):
-        if unicode(self.death_date) != '':
-            return True
-        else:
-            return False
-
-    def description(self):
-        return '%s' % unicode(self.gcd_official_name)
-
-    def _get_source(self):
-        return self.creator
-
-    def _get_source_name(self):
-        return 'creator'
 
     def _start_imp_sum(self):
         self._seen_birth_country = False
@@ -6114,200 +6214,20 @@ class CreatorRevision(Revision):
             return 1
         return 0
 
-    def _create_dependent_revisions(self, delete=False):
-        name_details = self.creator.active_names()
-        for name_detail in name_details:
-            name_lock = _get_revision_lock(name_detail,
-                                           changeset=self.changeset)
-            if name_lock is None:
-                raise IntegrityError("needed Name lock not possible")
-            creator_name = CreatorNameDetailRevision.objects\
-                           .clone_revision(name_detail, self.changeset, self)
-            if delete:
-                creator_name.deleted = True
-                creator_name.save()
 
-        data_sources = self.creator.data_source.all()
-        reserve_data_sources(data_sources, self.changeset, self, delete)
+class PreviewCreator(Creator):
+    class Meta:
+        proxy = True
 
-        if delete:
-            for creator_art_influence in self.creator.active_art_influences():
-                influence_lock = _get_revision_lock(creator_art_influence,
-                                                    changeset=self.changeset)
-                if influence_lock is None:
-                    raise IntegrityError("needed CreatorArtInfluence lock not"
-                                         " possible")
-                creator_art_influence_revision = \
-                  CreatorArtInfluenceRevision.objects.clone_revision(
-                    creator_art_influence=creator_art_influence,
-                    changeset=self.changeset)
-                creator_art_influence_revision.deleted = True
-                creator_art_influence_revision.save()
+    def active_names(self):
+        return self.revision.changeset.creatornamedetailrevisions\
+                                      .filter(deleted=False)
 
-            for creator_award in self.creator.active_awards():
-                award_lock = _get_revision_lock(creator_award,
-                                                changeset=self.changeset)
-                if award_lock is None:
-                    raise IntegrityError("needed CreatorAward lock not "
-                                         "possible")
-                creator_award_revision = \
-                  CreatorAwardRevision.objects.clone_revision(
-                    creator_award=creator_award, changeset=self.changeset)
-                creator_award_revision.deleted = True
-                creator_award_revision.save()
-
-            for creator_degree in self.creator.active_degrees():
-                degree_lock = _get_revision_lock(creator_degree,
-                                                 changeset=self.changeset)
-                if degree_lock is None:
-                    raise IntegrityError("needed CreatorDegree lock not "
-                                         "possible")
-                creator_degree_revision = \
-                  CreatorDegreeRevision.objects.clone_revision(
-                    creator_degree=creator_degree, changeset=self.changeset)
-                creator_degree_revision.deleted = True
-                creator_degree_revision.save()
-
-            for creator_membership in self.creator.active_memberships():
-                membership_lock = _get_revision_lock(creator_membership,
-                                                     changeset=self.changeset)
-                if membership_lock is None:
-                    raise IntegrityError("needed CreatorMembership lock not "
-                                         "possible")
-                creator_membership_revision = \
-                  CreatorMembershipRevision.objects.clone_revision(
-                    creator_membership=creator_membership,
-                    changeset=self.changeset)
-                creator_membership_revision.deleted = True
-                creator_membership_revision.save()
-
-            for creator_non_comic_work in \
-              self.creator.active_non_comic_works():
-                noncomicwork_lock = _get_revision_lock(
-                  creator_non_comic_work, changeset=self.changeset)
-                if noncomicwork_lock is None:
-                    raise IntegrityError("needed CreatorNonComicWork lock not"
-                                         " possible")
-                creator_non_comic_work_revision = \
-                  CreatorNonComicWorkRevision.objects.clone_revision(
-                    creator_non_comic_work=creator_non_comic_work,
-                    changeset=self.changeset)
-                creator_non_comic_work_revision.deleted = True
-                creator_non_comic_work_revision.save()
-
-            for creator_relation in self.creator.active_relations():
-                relation_lock = _get_revision_lock(creator_relation,
-                                                   changeset=self.changeset)
-                if relation_lock is None:
-                    raise IntegrityError("needed CreatorRelation lock not "
-                                         "possible")
-                creator_relation_revision = \
-                  CreatorRelationRevision.objects.clone_revision(
-                    creator_relation=creator_relation,
-                    changeset=self.changeset)
-                creator_relation_revision.deleted = True
-                creator_relation_revision.save()
-
-            for creator_school in self.creator.active_schools():
-                school_lock = _get_revision_lock(creator_school,
-                                                 changeset=self.changeset)
-                if school_lock is None:
-                    raise IntegrityError("needed CreatorSchool lock not "
-                                         "possible")
-                creator_school_revision = \
-                  CreatorSchoolRevision.objects.clone_revision(
-                    creator_school=creator_school, changeset=self.changeset)
-                creator_school_revision.deleted = True
-                creator_school_revision.save()
-
-        return True
-
-    def commit_to_display(self, clear_reservation=True):
-
-        ctr = self.creator
-        if ctr is None:
-            ctr = Creator()
-            update_count('creators', 1)
-        elif self.deleted:
-            memberships = ctr.membership_set.exclude(deleted=True)
-            for membership in memberships:
-                membership.deleted = True
-                membership.save()
-            awards = ctr.award_set.exclude(deleted=True)
-            for award in awards:
-                award.deleted = True
-                award.save()
-            artinfluences = ctr.art_influence_set.exclude(deleted=True)
-            for artinfluence in artinfluences:
-                artinfluence.deleted = True
-                artinfluence.save()
-            noncomicworks = ctr.non_comic_work_set.exclude(deleted=True)
-            for noncomicwork in noncomicworks:
-                noncomicwork.deleted = True
-                noncomicwork.save()
-
-            ctr.deleted = True
-            ctr.save()
-            update_count('creators', -1)
-            return
-
-        ctr.gcd_official_name = self.gcd_official_name
-        ctr.whos_who = self.whos_who
-        ctr.birth_country = self.birth_country
-        ctr.birth_country_uncertain = self.birth_country_uncertain
-        ctr.birth_province = self.birth_province
-        ctr.birth_province_uncertain = self.birth_province_uncertain
-        ctr.birth_city = self.birth_city
-        ctr.birth_city_uncertain = self.birth_city_uncertain
-        ctr.death_country = self.death_country
-        ctr.death_country_uncertain = self.death_country_uncertain
-        ctr.death_province = self.death_province
-        ctr.death_province_uncertain = self.death_province_uncertain
-        ctr.death_city = self.death_city
-        ctr.death_city_uncertain = self.death_city_uncertain
-        ctr.bio = self.bio
-        ctr.notes = self.notes
-
-        ctr.save()
-
-        if self.creator is None:
-            self.creator = ctr
-            # clone date instances
-            birth_date = self.birth_date
-            birth_date.pk = None
-            birth_date.save()
-            ctr.birth_date = birth_date
-            death_date = self.death_date
-            death_date.pk = None
-            death_date.save()
-            ctr.death_date = death_date
-            ctr.save()
-            self.save()
-        else:
-            ctr.birth_date.set(year=self.birth_date.year,
-                               month=self.birth_date.month,
-                               day=self.birth_date.day,
-                               year_uncertain=self.birth_date.year_uncertain,
-                               month_uncertain=self.birth_date.month_uncertain,
-                               day_uncertain=self.birth_date.day_uncertain,
-                               empty=True)
-            ctr.birth_date.save()
-            ctr.death_date.set(year=self.death_date.year,
-                               month=self.death_date.month,
-                               day=self.death_date.day,
-                               year_uncertain=self.death_date.year_uncertain,
-                               month_uncertain=self.death_date.month_uncertain,
-                               day_uncertain=self.death_date.day_uncertain,
-                               empty=True)
-            ctr.death_date.save()
-
-    def get_absolute_url(self):
-        if self.creator is None:
-            return "/creator/revision/%i/preview" % self.id
-        return self.creator.get_absolute_url()
-
-    def __unicode__(self):
-        return u'%s' % unicode(self.gcd_official_name)
+    @property
+    def data_source(self):
+        return DataSourceRevision.objects.filter(
+          revision_id=self.revision.id,
+          content_type=ContentType.objects.get_for_model(self.revision))
 
 
 class CreatorRelationRevisionManager(RevisionManager):
@@ -6421,35 +6341,7 @@ class CreatorRelationRevision(Revision):
 
 class CreatorNameDetailRevisionManager(RevisionManager):
     def clone_revision(self, creator_name_detail, changeset, creator_revision):
-        """
-        Given an existing NameSource instance, create a new revision based on
-        it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager\
-          .clone_revision(self,
-                          instance=creator_name_detail,
-                          instance_class=CreatorNameDetail,
-                          changeset=changeset,
-                          creator_revision=creator_revision)
-
-    def _do_create_revision(self, creator_name_detail, changeset,
-                            creator_revision, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = CreatorNameDetailRevision(
-                # revision-specific fields:
-                creator_name_detail=creator_name_detail,
-                changeset=changeset,
-                creator=creator_revision,
-                # copied fields:
-                name=creator_name_detail.name,
-                type=creator_name_detail.type,
-        )
-        revision.save()
-        return revision
+        return CreatorNameDetailRevision.clone(creator_name_detail, changeset)
 
 
 class CreatorNameDetailRevision(Revision):
@@ -6466,54 +6358,54 @@ class CreatorNameDetailRevision(Revision):
     creator_name_detail = models.ForeignKey('gcd.CreatorNameDetail',
                                             null=True,
                                             related_name='revisions')
-    # TODO rename related_name
-    creator = models.ForeignKey(CreatorRevision,
-                                related_name='cr_creator_names')
+    # TODO remove creator_revision
+    creator_revision = models.ForeignKey(CreatorRevision,
+                                related_name='cr_creator_names', null=True)
+    creator = models.ForeignKey(Creator, related_name='name_revisions',
+                                null=True)
     name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, default='', blank=True)
     type = models.ForeignKey('gcd.NameType', related_name='cr_nametypes',
                              null=True, blank=True)
 
+    source_name = 'creator_name_detail'
+    source_class = CreatorNameDetail
+
+    @property
+    def source(self):
+        return self.creator_name_detail
+
+    @source.setter
+    def source(self, value):
+        self.creator_name_detail = value
+
+    def __unicode__(self):
+        return u'%s - %s (%s)' % (
+            unicode(self.creator), unicode(self.name), unicode(self.type.type))
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
+
     def _field_list(self):
-        field_list = ['name', 'type']
+        field_list = ['name', 'sort_name', 'type']
         return field_list
 
     def _get_blank_values(self):
         return {
             'name': '',
+            'sort_name': '',
             'type': None,
         }
 
-    def _get_source(self):
-        return self.creator_name_detail
-
-    def _get_source_name(self):
-        return 'creator_name_detail'
-
     def _imps_for(self, field_name):
+        if field_name == 'sort_name':
+            if self.sort_name == self.name:
+                return 0
+            else:
+                return 1
         if field_name in self._field_list():
             return 1
         return 0
-
-    def commit_to_display(self):
-        creator_name_detail = self.creator_name_detail
-        if creator_name_detail is None:
-            creator_name_detail = CreatorNameDetail()
-        elif self.deleted:
-            creator_name_detail.delete()
-            return
-
-        creator_name_detail.name = self.name
-        creator_name_detail.type = self.type
-        creator_name_detail.creator = self.creator.creator
-        creator_name_detail.save()
-
-        if self.creator_name_detail is None:
-            self.creator_name_detail = creator_name_detail
-            self.save()
-
-    def __unicode__(self):
-        return u'%s - %s (%s)' % (
-            unicode(self.creator), unicode(self.name), unicode(self.type.type))
 
 
 class CreatorSchoolRevisionManager(RevisionManager):

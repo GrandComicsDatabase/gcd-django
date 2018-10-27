@@ -54,9 +54,9 @@ from apps.oi.models import (
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
     CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
-    PreviewCreatorAward, PreviewCreatorArtInfluence, PreviewCreatorDegree,
-    PreviewCreatorMembership, PreviewCreatorNonComicWork, PreviewCreatorSchool,
-    _get_creator_sourced_fields, on_sale_date_as_string)
+    PreviewCreator, PreviewCreatorAward, PreviewCreatorArtInfluence,
+    PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
+    PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -417,6 +417,7 @@ def extract_creator_names(request):
             name_data = {}
             name_data['id'] = i
             name_data['name'] = request.POST.get('name_' + str(i))
+            name_data['sort_name'] = request.POST.get('sort_name_' + str(i))
             name_data['type_id'] = int(request.POST.get('name_type_' + str(i)))
             name_data['revision_id'] = request.POST.get('name_revision_id_' + str(i))
             name_data['relation_type_id'] = int(request.POST.get(
@@ -438,21 +439,30 @@ def process_creator_other_names(request, changeset, revision, creator_name):
         type = NameType.objects.get(id=other_name['type_id'])
         if other_name['revision_id']:
             creator_other_name = \
-                CreatorNameDetailRevision.objects.get(changeset=changeset,
-                                          id=int(other_name['revision_id']))
+                changeset.creatornamedetailrevisions.get(
+                  id=int(other_name['revision_id']))
             creator_other_name.name = other_name['name']
+            if other_name['sort_name']:
+                creator_other_name.sort_name = other_name['sort_name']
+            else:
+                creator_other_name.sort_name = creator_other_name.name
             creator_other_name.type = type
             creator_other_name.save()
         else:
+            if other_name['sort_name']:
+                sort_name = other_name['sort_name']
+            else:
+                sort_name = other_name['name']
             creator_other_name = CreatorNameDetailRevision.objects.create(
-                creator=revision,
+                creator=revision.creator,
                 name=other_name['name'],
+                sort_name=sort_name,
                 type=type,
                 changeset=changeset)
         updated_creator_name_list.append(creator_other_name.id)
 
-    removed_creator_names = CreatorNameDetailRevision.objects\
-                            .filter(creator=revision, changeset=changeset)\
+    removed_creator_names = changeset.creatornamedetailrevisions\
+                            .filter(creator=revision.creator)\
                             .exclude(id__in=updated_creator_name_list)
     if removed_creator_names:
         for removed_creator_name in removed_creator_names:
@@ -511,21 +521,20 @@ def _display_edit_form(request, changeset, form, revision=None):
         name_types = NameType.objects.all()
         sources = SourceType.objects.all()
         other_name_details = []
-        for creator_name_revision in revision.cr_creator_names\
+        for creator_name_revision in changeset.creatornamedetailrevisions\
                                              .filter(deleted=False):
             if creator_name_revision.type.type \
               == settings.GCD_OFFICIAL_NAME_FIELDNAME:
                 official_name_details = {
                   'name': creator_name_revision.name,
+                  'sort_name': creator_name_revision.sort_name,
                   'revision_id': creator_name_revision.id}
             else:
                 other_name_details.append({
                   'name': creator_name_revision.name,
+                  'sort_name': creator_name_revision.sort_name,
                   'type_id': creator_name_revision.type_id,
-                  'revision_id': creator_name_revision.id,
-                  #'relation_id':
-                    #creator_name_revision.cr_to_name.get().rel_type_id
-                    })
+                  'revision_id': creator_name_revision.id})
         if request.POST:
             creator_names = extract_creator_names(request)
             for creator_name in creator_names:
@@ -719,14 +728,19 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
 
                     # Update Creator's GCD Official Name
                     gcd_official_name = request.POST.get('gcd_official_name')
+                    gcd_official_sort_name = \
+                      request.POST.get('gcd_official_sort_name')
                     gcd_official_name_type_id = request.POST.get(
-                        'gcd_official_type')
+                      'gcd_official_type')
                     gcd_official_name_type = NameType.objects.get(
-                        id=gcd_official_name_type_id)
+                      id=gcd_official_name_type_id)
 
-                    creator_name = CreatorNameDetailRevision.objects.get(
-                        creator=revision, type=gcd_official_name_type)
-                    creator_name.name = gcd_official_name
+                    creator_name = changeset.creatornamedetailrevisions.get(
+                        type=gcd_official_name_type)
+                    if gcd_official_sort_name:
+                        creator_name.sort_name = gcd_official_sort_name
+                    else:
+                        creator_name.sort_name = gcd_official_name
                     creator_name.save()
 
                     process_creator_other_names(request, changeset, revision,
@@ -4804,10 +4818,10 @@ def preview(request, id, model_name):
     template = 'gcd/details/%s.html' % model_name
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
-                      'brand', 'series', 'issue', 'award', 'creator_award',
-                      'creator_art_influence', 'creator_degree',
-                      'creator_membership', 'creator_non_comic_work',
-                      'creator_school']:
+                      'brand', 'series', 'issue', 'award', 'creator',
+                      'creator_award', 'creator_art_influence',
+                      'creator_degree', 'creator_membership',
+                      'creator_non_comic_work', 'creator_school']:
         # TODO the model specific settings very likely should be methods
         #      on the revision
         if model_name == 'brand':
@@ -4833,6 +4847,9 @@ def preview(request, id, model_name):
             model_object.series = revision.series
             model_object.revision = revision
             model_object.on_sale_date = on_sale_date_as_string(revision)
+        elif model_name == 'creator':
+            model_object = PreviewCreator()
+            model_object.revision = revision
         elif model_name == 'creator_award':
             model_object = PreviewCreatorAward()
             model_object.revision = revision
@@ -4865,13 +4882,12 @@ def preview(request, id, model_name):
         # keywords are a TextField for the revision, but a M2M-relation
         # for the model, overwrite for preview.
         # TODO should all have keywords ?
-        if not model_name in ['award', 'creator_award', 'creator_art_influence',
-                              'creator_degree', 'creator_membership',
-                              'creator_non_comic_work', 'creator_school']:
+        if not model_name in ['award', 'creator', 'creator_award',
+                              'creator_art_influence', 'creator_degree',
+                              'creator_membership', 'creator_non_comic_work',
+                              'creator_school']:
             model_object.keywords = revision.keywords
         return globals()['show_%s' % (model_name)](request, model_object, True)
-    if 'creator' == model_name:
-        return show_creator(request, revision, True)
     return render_error(request,
       u'No preview for "%s" revisions.' % model_name)
 
@@ -5022,6 +5038,10 @@ def add_creator(request):
 
         # Add Gcd Creator's Official Name
         gcd_official_name = request.POST.get('gcd_official_name')
+        if request.POST.get('gcd_official_sort_name'):
+            gcd_official_sort_name = request.POST.get('gcd_official_sort_name')
+        else:
+            gcd_official_sort_name = gcd_official_name
         gcd_official_name_type_id = request.POST.get('gcd_official_type')
         gcd_official_name_sources = request.POST.getlist(
             'gcd_official_sources')
@@ -5029,8 +5049,9 @@ def add_creator(request):
         gcd_official_name_type = NameType.objects.get(
             id=gcd_official_name_type_id)
         creator_name = CreatorNameDetailRevision.objects.create(
-            creator=revision,
+            creator=None,
             name=gcd_official_name,
+            sort_name=gcd_official_sort_name,
             type=gcd_official_name_type,
             changeset=changeset)
         for source in gcd_official_name_sources:
@@ -5049,6 +5070,7 @@ def add_creator(request):
         for creator_name in creator_names:
             other_name_details.append({
                 'name': creator_name['name'],
+                'sort_name': creator_name['sort_name'],
                 'type_id': creator_name['type_id']})
     else:
         official_name_details = None
