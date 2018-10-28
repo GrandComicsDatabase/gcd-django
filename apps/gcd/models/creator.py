@@ -92,7 +92,7 @@ class CreatorNameDetail(GcdData):
     class Meta:
         db_table = 'gcd_creator_name_detail'
         app_label = 'gcd'
-        ordering = ['type__id', 'created', '-id']
+        ordering = ['type__id', 'sort_name', '-id']
         verbose_name_plural = 'CreatorName Details'
 
     name = models.CharField(max_length=255, db_index=True)
@@ -178,6 +178,7 @@ class Creator(GcdData):
     objects = CreatorManager()
 
     gcd_official_name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True, default='')
 
     birth_date = models.ForeignKey(Date, related_name='+', null=True)
     death_date = models.ForeignKey(Date, related_name='+', null=True)

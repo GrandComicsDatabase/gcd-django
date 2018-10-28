@@ -207,11 +207,7 @@ div.stats_header {
 }
 
 .item_id .pagination {
-    /* Margin to push it down to a similar baseline to the larger
-     * text on the left.  Must be a better/more reliable way to do this.
-     */
-    margin-top: 0.25em;
-    font-size: 0.75em;
+    font-weight: normal;
 }
 
 div.item_id {
@@ -228,6 +224,10 @@ div.item_id :link {
 
 div.item_id :visited {
     color: black;
+}
+
+div.prev_next {
+    font-weight: normal;
 }
 
 a:link, h1 a:visited {
@@ -265,14 +265,12 @@ h1.search_id {
     clear: both;
     background-color: #66E;
     color: black;
-    font-weight: bold;
 }
 
 .my_search_bar{
     clear: both;
     background-color: #A9302A;
     color: white;
-    font-weight: bold;
 }
 
 /* for menu */
@@ -296,13 +294,12 @@ h1.search_id {
 .search_bar li, .my_search_bar li {
     line-height: 40px;
     float: left;
-    border-right: 1px solid #bbb;
 }
 
 .search_bar li a, .search_bar li form, .my_search_bar li a, .my_search_bar li form {
     padding: 0.3em 0.6em;
     display: block;
-    color: white;
+    color: black;
     text-decoration: none;
 }
 
@@ -331,11 +328,11 @@ h1.search_id {
 }
 
 .search_bar :link {
-    color: black;
+    color: white;
 }
 
 .search_bar :visited {
-    color: black;
+    color: white;
 }
 
 .my_search_bar :link, .my_search_bar :visited  {

@@ -182,14 +182,14 @@ def __format_credit(story, credit):
         return ''
 
     if (credit == 'job_number'):
-        label = _('Job Number:')
+        label = _('Job Number')
     elif (credit == 'first_line'):
-        label = _('First Line of Dialogue or Text:')
+        label = _('First Line of Dialogue or Text')
     else:
-        label = _(credit.title()) + ':'
+        label = _(credit.title())
 
     if (credit in ['reprint_notes', 'reprint_original_notes']):
-        label = _('Reprinted:')
+        label = _('Reprinted')
         values = split_reprint_string(credit_value)
         credit_value = '<ul>'
         for value in values:
