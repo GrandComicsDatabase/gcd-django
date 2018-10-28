@@ -906,7 +906,8 @@ def do_advanced_search(request):
         filter = Brand.objects.exclude(deleted=True)
         if query:
             filter = filter.filter(query)
-        items = filter.order_by(*terms).select_related('group__parent').distinct()
+        items = filter.order_by(*terms).prefetch_related('group__parent')\
+                                       .distinct()
 
     elif data['target'] == 'indicia_publisher':
         filter = IndiciaPublisher.objects.exclude(deleted=True)
