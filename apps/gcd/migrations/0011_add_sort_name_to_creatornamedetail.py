@@ -17,6 +17,15 @@ class Migration(migrations.Migration):
             name='sort_name',
             field=models.CharField(db_index=True, default=b'', max_length=255),
         ),
+        migrations.AlterModelOptions(
+            name='creatornamedetail',
+            options={'ordering': ['type__id', 'sort_name', '-id'], 'verbose_name_plural': 'CreatorName Details'},
+        ),
+        migrations.AddField(
+            model_name='creator',
+            name='sort_name',
+            field=models.CharField(db_index=True, default=b'', max_length=255),
+        ),
         migrations.AlterField(
             model_name='series',
             name='issue_count',

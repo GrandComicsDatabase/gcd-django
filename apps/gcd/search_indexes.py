@@ -314,8 +314,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()
-    sort_name = indexes.CharField(model_attr="gcd_official_name",
-                                  indexed=False)
+    sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
     country = indexes.CharField(model_attr='birth_country__name',
                                 indexed=False, faceted=True, null=True)
 

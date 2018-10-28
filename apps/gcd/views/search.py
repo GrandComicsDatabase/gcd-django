@@ -129,7 +129,7 @@ def generic_by_name(request, name, q_obj, sort,
         heading = '%s Search Results' % display_name
 
     elif class_ is Creator:
-        sort_name = "gcd_official_name"
+        sort_name = "sort_name"
 
         if sqs is None:
             sort_year = "birth_date__year"
@@ -370,13 +370,10 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
 
 def creator_by_name(request, creator_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
-        creator_name_ids = [creator_names.pk for creator_names in
-                            CreatorNameDetail.objects.filter(
-                                name__icontains=creator_name)]
-        sqs = SearchQuerySet().filter(
-            SQ(name__in=creator_name_ids) | SQ(
-                    gcd_official_name=creator_name)) \
-            .models(Creator)
+        # TODO use name instead ?
+        sqs = SearchQuerySet().filter(gcd_official_name=\
+                                      GcdNameQuery(creator_name)) \
+                              .models(Creator)
         return generic_by_name(request, creator_name, None, sort,
                                Creator,
                                'gcd/search/creator_list.html',
