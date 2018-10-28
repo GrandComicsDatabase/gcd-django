@@ -6099,8 +6099,8 @@ class CreatorRevision(Revision):
     def _pre_save_object(self, changes):
         name = self.changeset.creatornamedetailrevisions.get(type__id=1)
         self.creator.sort_name = name.sort_name
- 
-       if self.added:
+
+        if self.added:
             # clone date instances
             birth_date = self.birth_date
             birth_date.pk = None
