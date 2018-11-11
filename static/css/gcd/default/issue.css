@@ -57,6 +57,10 @@ div#format {
     margin-bottom: 0;
 }
 
+#issue_data_list dt::after, dl.issue_format dt::after{
+    content: ":";
+}
+
 #series_date {
     font-weight: bold;
     margin-bottom: 0;
