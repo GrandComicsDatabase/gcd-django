@@ -50,13 +50,13 @@
           {{ story|show_credit:"colors" }}
           {{ story|show_credit:"letters" }}
           {{ story|show_credit:"editing" }}
-          {{ story|show_credit:"job_number" }}
       </dl>
         {% endif %}
 
         {% if story.has_content %}
         <hr class="content_header"></hr>
         <dl class="contents">
+            {{ story|show_credit:"job_number" }}
             {{ story|show_credit:"first_line" }}
             {{ story|show_credit:"genre" }}
             {{ story|show_credit:"characters"|linebreaksbr }}

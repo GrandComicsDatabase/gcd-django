@@ -740,6 +740,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
 
                     creator_name = changeset.creatornamedetailrevisions.get(
                         type=gcd_official_name_type)
+                    creator_name.name = gcd_official_name
                     if gcd_official_sort_name:
                         creator_name.sort_name = gcd_official_sort_name
                     else:
