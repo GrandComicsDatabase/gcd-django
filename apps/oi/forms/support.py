@@ -196,6 +196,13 @@ SEQUENCE_HELP_LINKS = {
     'comments': 'Comments'
 }
 
+BIBLIOGRAPHIC_ENTRY_HELP_LINKS = {
+    'page_began': 'Biblio_Pages',
+    'page_ended': 'Biblio_Pages',
+    'abstract': 'Abstract',
+    'doi': 'DOI',
+}
+
 SERIES_HELP_LINKS = {
     'name': 'Book_Name',
     'leading_article': 'Book_Name',
@@ -513,6 +520,12 @@ VARIANT_NAME_HELP_TEXT = (
     'Name of this variant. Examples are: "Cover A" (if listed as such in '
     'the issue), "2nd printing", "newsstand", "direct", or the name of '
     'the artist if different from the base issue.')
+
+BIBLIOGRAPHIC_ENTRY_HELP_LINKS = {
+    'page_began': 'Enter the first and if existing last page.',
+    'abstract': 'The printed abstract of the bibliographic entry.',
+    'doi': 'The Digital Object Identifier (DOI) for the entry, if existing.',
+}
 
 
 def _set_help_labels(self, help_links):

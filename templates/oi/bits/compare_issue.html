@@ -42,6 +42,11 @@ After approval the <span class="comparison_highlight">approver needs to check th
   {% endif %}
   {% for story_revision in revision.ordered_story_revisions %}
     {% include 'oi/bits/compare_story.html' %}
+    {% if story_revision.biblioentryrevision %}
+      {% with story_revision.biblioentryrevision as story_revision %}
+        {% include 'oi/bits/compare_story.html' %}
+      {% endwith %}
+    {% endif %}
 <hr>
   {% endfor %}
 

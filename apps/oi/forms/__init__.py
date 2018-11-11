@@ -20,7 +20,8 @@ from .publisher import (get_publisher_revision_form,
 from .series import get_series_revision_form, get_series_bond_revision_form
 from .issue import (    # noqa
     get_issue_revision_form, get_bulk_issue_revision_form)
-from .story import get_story_revision_form, get_reprint_revision_form
+from .story import (get_story_revision_form, get_biblio_revision_form,
+                    get_reprint_revision_form)
 from .image import get_cover_revision_form
 from .image import (    # noqa
     UploadScanForm, UploadVariantScanForm, GatefoldScanForm, UploadImageForm)
@@ -79,6 +80,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'story':
         return get_story_revision_form(revision, **kwargs)
+
+    if model_name == 'biblio_entry':
+        return get_biblio_revision_form(revision, **kwargs)
 
     if model_name == 'reprint':
         return get_reprint_revision_form(revision, **kwargs)

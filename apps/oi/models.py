@@ -37,7 +37,10 @@ from apps.gcd.models import (
     ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
     StoryType, ImageType, Creator, CreatorArtInfluence, CreatorAward,
     CreatorDegree, CreatorMembership, CreatorNameDetail, CreatorNonComicWork,
-    CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear)
+    CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear,
+    BiblioEntry, STORY_TYPES)
+
+from apps.gcd.models.gcddata import GcdData
 
 from apps.gcd.models.issue import INDEXED, issue_descriptor
 from apps.gcd.models.creator import _display_day, _display_place
@@ -1554,6 +1557,8 @@ class Revision(models.Model):
         #       will be a different reliable way to filter them out.
         excluded_names = cls._get_excluded_field_names()
         meta_names = cls._get_meta_field_names()
+        # TODO: use OrderedDict after update to python 3, that should allow
+        # an automatic way to generate an ordered field_list per model
         data_fields = {
             f.get_attname(): f
             for f in cls.source_class._meta.get_fields()
@@ -2363,6 +2368,7 @@ class Revision(models.Model):
             return
 
         prev_rev = self.previous()
+
         if prev_rev is None:
             self.is_changed = True
             prev_values = self._get_blank_values()
@@ -3285,7 +3291,7 @@ def get_series_field_list():
             'is_current', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_isbn', 'has_issue_title',
             'has_volume', 'has_rating', 'is_comics_publication',
-            'tracking_notes', 'notes', 'keywords']
+            'has_about_comics', 'tracking_notes', 'notes', 'keywords']
 
 
 class SeriesRevision(Revision):
@@ -3335,6 +3341,7 @@ class SeriesRevision(Revision):
     has_issue_title = models.BooleanField(default=False)
     has_volume = models.BooleanField(default=False)
     has_rating = models.BooleanField(default=False)
+    has_about_comics = models.BooleanField(default=False)
 
     is_comics_publication = models.BooleanField(default=False)
     is_singleton = models.BooleanField(default=False)
@@ -3496,6 +3503,7 @@ class SeriesRevision(Revision):
             'has_issue_title': False,
             'has_volume': False,
             'has_rating': False,
+            'has_about_comics': False,
             'is_comics_publication': True,
         }
 
@@ -4751,7 +4759,39 @@ class StoryRevision(Revision):
             self.sequence_number = self.story.sequence_number
             self.save()
 
+    def _post_m2m_add(self, fork=False, fork_source=None, exclude=frozenset()):
+        # fields of BiblioEntry need to be handled separately
+        if self.type.id == STORY_TYPES['bibliographic entry']:
+            biblio_revision = BiblioEntryRevision(storyrevision_ptr=self)
+            # need to copy everything
+            biblio_revision.__dict__.update(self.__dict__)
+            #biblio_revision.source = self.source.biblioentry
+            # copy single value fields which are specific to biblio_entry
+            for field in biblio_revision.\
+                           _get_single_value_fields().viewkeys() - \
+                         biblio_revision.storyrevision_ptr.\
+                           _get_single_value_fields().viewkeys():
+                setattr(biblio_revision, field,
+                        getattr(biblio_revision.source.biblioentry, field))
+            biblio_revision.save()
+
     def _handle_dependents(self, changes):
+        # fields of BiblioEntry need to be handled separately
+        if self.type.id == STORY_TYPES['bibliographic entry']:
+            if not hasattr(self.source, 'biblioentry'):
+                biblio_entry = BiblioEntry(story_ptr=self.source)
+                biblio_entry.__dict__.update(self.source.__dict__)
+                biblio_entry.save()
+                #self.biblioentryrevision.source = biblio_entry
+                self.biblioentryrevision.save()
+            self.biblioentryrevision._copy_fields_to(
+              self.biblioentryrevision.source.biblioentry)
+            self.biblioentryrevision.source.biblioentry.save()
+        elif hasattr(self.source, 'biblioentry'):
+            # former BiblioEntry, delete add-on type
+            super(GcdData, self.biblioentryrevision.source.biblioentry)\
+                  .delete(keep_parents=True)
+
         # While committing an issue is a prerequisite for the story,
         # accounting for index status changes is dependent upon the
         # story commit.
@@ -4863,7 +4903,7 @@ class StoryRevision(Revision):
     def _get_blank_values(self):
         return {
             'title': '',
-            'title_inferred': '',
+            'title_inferred': False,
             'first_line': '',
             'feature': '',
             'page_count': None,
@@ -4879,7 +4919,7 @@ class StoryRevision(Revision):
             'no_inks': False,
             'no_colors': False,
             'no_letters': False,
-            'no_editing': False,
+            'no_editing': True,
             'notes': '',
             'keywords': '',
             'synopsis': '',
@@ -4891,6 +4931,12 @@ class StoryRevision(Revision):
             'sequence_number': None,
             'issue': None,
         }
+
+    def calculate_imps(self):
+        imps = super(StoryRevision, self).calculate_imps()
+        if hasattr(self, 'biblioentryrevision'):
+            imps += self.biblioentryrevision.calculate_imps()
+        return imps
 
     def _start_imp_sum(self):
         self._seen_script = False
@@ -4911,7 +4957,8 @@ class StoryRevision(Revision):
             self._seen_title = True
             return 1
 
-        if not self._seen_page_count:
+        if not self._seen_page_count and \
+           field_name in ('page_count', 'page_count_uncertain'):
             self._seen_page_count = True
             if field_name == 'page_count':
                 return 1
@@ -5151,6 +5198,67 @@ class PreviewStory(Story):
 
     def has_keywords(self):
         return self.revision.has_keywords()
+
+    @property
+    def biblioentry(self):
+        if hasattr(self.revision, 'biblioentryrevision'):
+            return self.revision.biblioentryrevision
+        else:
+            return None
+
+
+class BiblioEntryRevision(StoryRevision):
+    class Meta:
+        db_table = 'oi_biblio_entry_revision'
+        ordering = ['-created', '-id']
+
+    objects = RevisionManager()
+
+    page_began = models.IntegerField(null=True, blank=True)
+    page_ended = models.IntegerField(null=True, blank=True)
+    abstract = models.TextField(blank=True)
+    doi = models.TextField(blank=True)
+
+    source_name = 'biblio_entry'
+    source_class = BiblioEntry
+
+    _regular_fields = None
+
+    def previous(self):
+        previous = super(StoryRevision, self).previous()
+        if previous and hasattr(previous, 'biblioentryrevision'):
+            return previous.biblioentryrevision
+        else:
+            return None
+
+    def _field_list(self):
+        fields = ['page_began', 'page_ended', 'abstract', 'doi']
+        # TODO after python 3 and OrderedDict, this might work
+        #fields += list(self._get_single_value_fields()
+                                                #.viewkeys() -
+                        #self.storyrevision_ptr._get_single_value_fields().viewkeys())
+        return fields
+
+    def _imps_for(self, field_name):
+        return 1
+
+    def calculate_imps(self):
+        imps = super(StoryRevision, self).calculate_imps()
+        return imps
+
+    def _get_blank_values(self):
+        return {
+            'page_began': None,
+            'page_ended': None,
+            'abstract': '',
+            'doi': '',
+        }
+
+    def compare_changes(self):
+        if self.type.id != STORY_TYPES['bibliographic entry']:
+            self.deleted = True
+
+        return super(StoryRevision, self).compare_changes()
 
 
 class ReprintRevisionManager(RevisionManager):
