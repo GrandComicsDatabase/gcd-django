@@ -19,10 +19,6 @@
     padding-left: 6px;
 }
 
-.single_story dt::after {
-    content: ":";
-}
-
 dl.credits dt {
     clear: left;
     padding-right: 0.5em;

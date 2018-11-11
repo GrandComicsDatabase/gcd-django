@@ -203,7 +203,7 @@ def __format_credit(story, credit):
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
-    if credit == 'genre' or credit == 'first_line':
+    if credit == 'genre' or credit == 'first_line' or credit == 'job_number':
         dt += ' short'
         dd += ' short'
     dt += '">'
@@ -612,7 +612,7 @@ def show_reprints(story):
             reprint += '<li> ' + esc(string) + ' </li>'
 
     if reprint != '':
-        label = _('Reprints') + ': '
+        label = _('Reprints')
         return mark_safe('<dt class="credit_tag">' +
                          '<span class="credit_label">' + label +
                          '</span></dt>' + '<dd class="credit_def">' +

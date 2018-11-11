@@ -49,7 +49,7 @@
             <dd id="barcode">{{ issue.barcode|show_barcode|default:"?" }}
 {% endif %}
       </dl>
-<dl>
+<dl class="issue_editing">
 {{ issue|show_credit:"editing" }}
 </dl>
 {% with issue.series as s %}

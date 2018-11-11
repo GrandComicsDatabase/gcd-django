@@ -111,14 +111,14 @@ class Story(GcdData):
                self.inks or \
                self.colors or \
                self.letters or \
-               self.editing or \
-               self.job_number
+               self.editing
 
     def has_content(self):
         """
         Simplifies UI checks for conditionals.  Content fields
         """
-        return self.genre or \
+        return self.job_number or \
+               self.genre or \
                self.characters or \
                self.first_line or \
                self.synopsis or \
