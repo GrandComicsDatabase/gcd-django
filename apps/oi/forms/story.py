@@ -7,7 +7,7 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 
 from apps.oi.models import (
     GENRES, get_reprint_field_list, get_story_field_list,
-    ReprintRevision, StoryRevision)
+    BiblioEntryRevision, ReprintRevision, StoryRevision)
 
 from apps.gcd.models import StoryType, STORY_TYPES, OLD_TYPES
 
@@ -19,7 +19,8 @@ from apps.gcd.models.story import NON_OPTIONAL_TYPES
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
-    SEQUENCE_HELP_LINKS, HiddenInputWithHelp, PageCountInput)
+    SEQUENCE_HELP_LINKS, BIBLIOGRAPHIC_ENTRY_HELP_LINKS,
+    HiddenInputWithHelp, PageCountInput)
 
 
 def get_reprint_revision_form(revision=None, user=None):
@@ -39,20 +40,23 @@ class ReprintRevisionForm(forms.ModelForm):
 
 
 def get_story_revision_form(revision=None, user=None,
-                            is_comics_publication=True,
-                            language=None):
+                            series=None):
     extra = {}
     additional_genres = []
     selected_genres = []
+    is_comics_publication = True
+    has_about_comics = False
+    language = None
     if revision is not None:
         # Don't allow blanking out the type field.  However, when its a
         # new store make indexers consciously choose a type by allowing
         # an empty initial value.  So only set None if there is an existing
         # story revision.
         extra['empty_label'] = None
-        if (revision.issue and
-                revision.issue.series.is_comics_publication is False):
-            is_comics_publication = False
+        if revision.issue:
+            is_comics_publication = revision.issue.series.is_comics_publication
+            has_about_comics = revision.issue.series.has_about_comics
+            language = revision.issue.series.language
         if revision.genre:
             genres = revision.genre.split(';')
             for genre in genres:
@@ -61,10 +65,11 @@ def get_story_revision_form(revision=None, user=None,
                     additional_genres.append(genre)
                 selected_genres.append(genre)
             revision.genre = selected_genres
-        if revision.issue:
-            language = revision.issue.series.language
-        else:
-            language = None
+    else:
+        is_comics_publication = series.is_comics_publication
+        has_about_comics = series.has_about_comics
+        language = series.language
+
     # for variants we can only have cover sequences (for now)
     if revision and (revision.issue is None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
@@ -73,14 +78,16 @@ def get_story_revision_form(revision=None, user=None,
         if revision.type not in queryset:
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     elif not is_comics_publication:
-        queryset = StoryType.objects.filter(name__in=['comic story',
-                                                      'photo story',
-                                                      'cartoon'])
+        sequence_filter = ['comic story', 'photo story', 'cartoon']
+        if has_about_comics is True:
+            sequence_filter.append('bibliographic entry')
+        queryset = StoryType.objects.filter(name__in=sequence_filter)
         if revision and revision.type not in queryset:
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
-
     else:
         special_types = ['filler', ]
+        if has_about_comics is False:
+            special_types.append('bibliographic entry')
         special_types.extend([i for i in OLD_TYPES])
         queryset = StoryType.objects.all()
         if revision is None or (revision is not None and
@@ -319,3 +326,31 @@ class StoryRevisionForm(forms.ModelForm):
                  'is not filled in.'])
 
         return cd
+
+
+def get_biblio_revision_form(revision=None, user=None):
+    class RuntimeBiblioRevisionForm(BiblioRevisionForm):
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, BIBLIOGRAPHIC_ENTRY_HELP_LINKS)
+            return super(BiblioRevisionForm, self).as_table()
+
+    return RuntimeBiblioRevisionForm
+
+
+class BiblioRevisionForm(forms.ModelForm):
+    class Meta:
+        model = BiblioEntryRevision
+        fields = ['page_began', 'page_ended', 'abstract', 'doi']
+        help_texts = BIBLIOGRAPHIC_ENTRY_HELP_LINKS
+
+    def clean(self):
+        cd = self.cleaned_data
+
+        if cd['page_ended'] and not cd['page_began']:
+            raise forms.ValidationError(
+              ["Page ended can only be entered with Page began."])
+        elif cd['page_ended'] and cd['page_began']:
+            if cd['page_ended'] < cd['page_began']:
+                raise forms.ValidationError(
+                  ["Page ended must be larger than Page began."])

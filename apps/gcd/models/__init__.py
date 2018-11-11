@@ -9,7 +9,7 @@ the traditional models.py and views.py files.
 from .publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, BrandUse
 from .series import Series, SeriesPublicationType
 from .issue import Issue, INDEXED
-from .story import StoryType, Story, STORY_TYPES, OLD_TYPES
+from .story import StoryType, Story, BiblioEntry, STORY_TYPES, OLD_TYPES
 from .cover import Cover
 from .issuereprint import IssueReprint
 from .reprint import Reprint

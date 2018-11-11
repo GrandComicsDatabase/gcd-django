@@ -161,6 +161,14 @@ def show_credit(story, credit):
                                                   '(fantasy-supernatural)')
             story.genre = display_genre[:-2]
         return __format_credit(story, credit)
+    elif credit == 'pages':
+        if story.page_began:
+            if story.page_ended:
+                story.pages = "%s - %s" % (story.page_began, story.page_ended)
+            else:
+                story.pages = story.page_began
+            return __format_credit(story, credit)
+        return ""
     elif hasattr(story, credit):
         return __format_credit(story, credit)
 
@@ -185,6 +193,8 @@ def __format_credit(story, credit):
         label = _('Job Number')
     elif (credit == 'first_line'):
         label = _('First Line of Dialogue or Text')
+    elif (credit == 'doi'):
+        label = 'DOI'
     else:
         label = _(credit.title())
 

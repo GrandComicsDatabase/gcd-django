@@ -29,7 +29,8 @@ from apps.gcd.models import (
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
     Series, SeriesBond, Story, StoryType, Award, Creator, CreatorMembership,
     CreatorArtInfluence, CreatorAward, CreatorDegree, CreatorNonComicWork,
-    CreatorRelation, CreatorSchool, NameType, SourceType, School)
+    CreatorRelation, CreatorSchool, NameType, SourceType, School, STORY_TYPES,
+    BiblioEntry)
 from apps.gcd.views import paginate_response
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
@@ -49,7 +50,7 @@ from apps.oi.models import (
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, OngoingReservation, RevisionLock, _get_revision_lock,
     _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last,
-    DataSourceRevision, AwardRevision, CreatorRevision,
+    BiblioEntryRevision, DataSourceRevision, AwardRevision, CreatorRevision,
     CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
@@ -97,6 +98,7 @@ REVISION_CLASSES = {
     'series_bond': SeriesBondRevision,
     'issue': IssueRevision,
     'story': StoryRevision,
+    'biblio_entry': BiblioEntryRevision,
     'cover': CoverRevision,
     'reprint': ReprintRevision,
     'image': ImageRevision,
@@ -122,6 +124,7 @@ DISPLAY_CLASSES = {
     'series_bond': SeriesBond,
     'issue': Issue,
     'story': Story,
+    'biblio_entry': BiblioEntry,
     'cover': Cover,
     'reprint': Reprint,
     'reprint_to_issue': ReprintToIssue,
@@ -799,6 +802,20 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
             return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
               kwargs={ 'model_name': model_name, 'id': revision_id }))
         if 'save_return' in request.POST:
+            # BiblioEntry needs second form for specific fields
+            if revision.source_class == Story \
+              and revision.type.id == STORY_TYPES['bibliographic entry']:
+                if hasattr(revision, 'biblioentryrevision'):
+                    biblio_revision = revision.biblioentryrevision
+                else:
+                    biblio_revision = BiblioEntryRevision(storyrevision_ptr=
+                                                          revision)
+                    biblio_revision.__dict__.update(revision.__dict__)
+                    biblio_revision.save()
+                return HttpResponseRedirect(
+                  urlresolvers.reverse('edit_revision',
+                                       kwargs={'model_name': 'biblio_entry',
+                                               'id': biblio_revision.id }))
             return HttpResponseRedirect(urlresolvers.reverse('edit',
               kwargs={ 'id': revision.changeset.id }))
         return render_error(request,
@@ -2633,8 +2650,7 @@ def add_story(request, issue_revision_id, changeset_id):
                 initial = _get_initial_add_story_data(request, issue_revision,
                                                       seq)
                 form = get_story_revision_form(user=request.user,
-                  is_comics_publication=is_comics_publication,
-                  language=issue_revision.series.language)(initial=initial)
+                  series=issue_revision.series)(initial=initial)
             return _display_add_story_form(request, issue_revision, form,
                                            changeset_id)
 
@@ -2643,8 +2659,7 @@ def add_story(request, issue_revision_id, changeset_id):
               kwargs={ 'id': changeset_id }))
 
         form = get_story_revision_form(user=request.user,
-                 is_comics_publication=is_comics_publication,
-                 language=issue_revision.series.language)(request.POST)
+                                       series=issue_revision.series)(request.POST)
         if not form.is_valid():
             return _display_add_story_form(request, issue_revision, form,
                                            changeset_id)
@@ -2662,6 +2677,16 @@ def add_story(request, issue_revision_id, changeset_id):
                                      text=form.cleaned_data['comments'],
                                      old_state=changeset.state,
                                      new_state=changeset.state)
+        if revision.source_class == Story \
+          and revision.type.id == STORY_TYPES['bibliographic entry']:
+            biblio_revision = BiblioEntryRevision(storyrevision_ptr=
+                                                  revision)
+            biblio_revision.__dict__.update(revision.__dict__)
+            biblio_revision.save()
+            return HttpResponseRedirect(
+              urlresolvers.reverse('edit_revision',
+                                    kwargs={'model_name': 'biblio_entry',
+                                            'id': biblio_revision.id }))
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
 

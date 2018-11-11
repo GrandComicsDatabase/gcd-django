@@ -11,6 +11,7 @@ STORY_TYPES = {
     'soo': 22,
     'blank': 24,
     'preview': 26,
+    'bibliographic entry': 27,
 }
 
 OLD_TYPES = {
@@ -145,3 +146,14 @@ class Story(GcdData):
 
     def __unicode__(self):
         return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
+
+
+class BiblioEntry(Story):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_biblio_entry'
+
+    page_began = models.IntegerField(null=True)
+    page_ended = models.IntegerField(null=True)
+    abstract = models.TextField()
+    doi = models.TextField()

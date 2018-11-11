@@ -66,16 +66,20 @@
         </dl>
         {% endif %}
 
+        {% if story.issue.series.has_about_comics and story.biblioentry %}
+        <hr class="content_header"></hr>
+        <dl>
+            {{ story.biblioentry|show_credit:"pages" }}
+            {{ story.biblioentry|show_credit:"doi" }}
+            {% if story.biblioentry.abstract %}
+              <br><p>{{ story.biblioentry|show_credit:"abstract"|linebreaksbr }}</p>
+            {% endif %}
+        </dl>
+        {% endif %}
+
         {% if story.notes %}
         <h3 class="notes_header"> Indexer Notes </h3>
-        {% ifequal issue.notes story.notes %}
-        <p> [Cover story notes are the same as the issue notes
-             (see Issue Notes above).  This may mean that
-             one or both set of notes need editing as a result of our recent
-             migration to having separate issue and cover notes.]
-        {% else %}
         <p>{{ story.notes|urlizetrunc:75|linebreaksbr }}</p>
-        {% endifequal %}
         {% endif %}
       {% endif %} <!-- shown_types -->
 
