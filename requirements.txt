@@ -31,7 +31,7 @@ python-graph-core==1.8.2
 python-memcached==1.59
 python-stdnum<1.10
 python-vote-core==20120423.0
-requests<2.12
+requests==2.20.1
 simplejson==3.4.0
 # still needed ?
 # versiontools==1.9.1
