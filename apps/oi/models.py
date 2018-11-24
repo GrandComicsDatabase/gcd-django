@@ -4761,23 +4761,25 @@ class StoryRevision(Revision):
 
     def _post_m2m_add(self, fork=False, fork_source=None, exclude=frozenset()):
         # fields of BiblioEntry need to be handled separately
-        if self.type.id == STORY_TYPES['bibliographic entry']:
+        if self.type.id == STORY_TYPES['about comics']:
             biblio_revision = BiblioEntryRevision(storyrevision_ptr=self)
             # need to copy everything
             biblio_revision.__dict__.update(self.__dict__)
-            #biblio_revision.source = self.source.biblioentry
+            source_story = biblio_revision.source
+            if fork == True:
+                source_story = fork_source
             # copy single value fields which are specific to biblio_entry
             for field in biblio_revision.\
                            _get_single_value_fields().viewkeys() - \
                          biblio_revision.storyrevision_ptr.\
                            _get_single_value_fields().viewkeys():
                 setattr(biblio_revision, field,
-                        getattr(biblio_revision.source.biblioentry, field))
+                        getattr(source_story.biblioentry, field))
             biblio_revision.save()
 
     def _handle_dependents(self, changes):
         # fields of BiblioEntry need to be handled separately
-        if self.type.id == STORY_TYPES['bibliographic entry']:
+        if self.type.id == STORY_TYPES['about comics']:
             if not hasattr(self.source, 'biblioentry'):
                 biblio_entry = BiblioEntry(story_ptr=self.source)
                 biblio_entry.__dict__.update(self.source.__dict__)
@@ -5255,7 +5257,7 @@ class BiblioEntryRevision(StoryRevision):
         }
 
     def compare_changes(self):
-        if self.type.id != STORY_TYPES['bibliographic entry']:
+        if self.type.id != STORY_TYPES['about comics']:
             self.deleted = True
 
         return super(StoryRevision, self).compare_changes()

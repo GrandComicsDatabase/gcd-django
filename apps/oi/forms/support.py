@@ -371,6 +371,8 @@ SERIES_HELP_TEXTS = {
         "series.",
     'is_comics_publication':
         "Publications in this series are mostly comics publications.",
+    'has_about_comics':
+        "Issues in this series can contain sequences about comics.",
     'is_singleton':
         "Series consists of one and only one issue by design. "
         "Note that for series adds an issue with no issue number will"
@@ -524,7 +526,7 @@ VARIANT_NAME_HELP_TEXT = (
 BIBLIOGRAPHIC_ENTRY_HELP_LINKS = {
     'page_began': 'Enter the first and if existing last page.',
     'abstract': 'The printed abstract of the bibliographic entry.',
-    'doi': 'The Digital Object Identifier (DOI) for the entry, if existing.',
+    'doi': 'The Digital Object Identifier (DOI) for the entry.',
 }
 
 

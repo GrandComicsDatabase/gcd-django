@@ -11,7 +11,7 @@ STORY_TYPES = {
     'soo': 22,
     'blank': 24,
     'preview': 26,
-    'bibliographic entry': 27,
+    'about comics': 27,
 }
 
 OLD_TYPES = {

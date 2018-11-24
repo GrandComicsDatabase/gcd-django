@@ -805,7 +805,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
         if 'save_return' in request.POST:
             # BiblioEntry needs second form for specific fields
             if revision.source_class == Story \
-              and revision.type.id == STORY_TYPES['bibliographic entry']:
+              and revision.type.id == STORY_TYPES['about comics']:
                 if hasattr(revision, 'biblioentryrevision'):
                     biblio_revision = revision.biblioentryrevision
                 else:
@@ -2679,7 +2679,7 @@ def add_story(request, issue_revision_id, changeset_id):
                                      old_state=changeset.state,
                                      new_state=changeset.state)
         if revision.source_class == Story \
-          and revision.type.id == STORY_TYPES['bibliographic entry']:
+          and revision.type.id == STORY_TYPES['about comics']:
             biblio_revision = BiblioEntryRevision(storyrevision_ptr=
                                                   revision)
             biblio_revision.__dict__.update(revision.__dict__)
