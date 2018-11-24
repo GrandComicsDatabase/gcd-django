@@ -364,7 +364,7 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
 
     sort_name = indexes.CharField(model_attr='influence', indexed=False)
     country = indexes.CharField(model_attr='creator__birth_country__name',
-                                indexed=False, null=True)
+                                faceted=True, indexed=False, null=True)
 
     def get_model(self):
         return CreatorArtInfluence
@@ -408,7 +408,7 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex,
     sort_name = indexes.CharField(model_attr='publication_title',
                                   indexed=False)
     country = indexes.CharField(model_attr='creator__birth_country__name',
-                                indexed=False, null=True)
+                                faceted=True, indexed=False, null=True)
 
     def get_model(self):
         return CreatorNonComicWork
