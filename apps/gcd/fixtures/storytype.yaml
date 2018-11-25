@@ -76,6 +76,6 @@
 - model: gcd.storytype
   pk: 26
   fields: {name: preview (from the publisher), sort_code: 11}
-- fields: {name: about comics, sort_code: 60}
-  model: gcd.storytype
+- model: gcd.storytype
   pk: 27
+  fields: {name: about comics, sort_code: 60}

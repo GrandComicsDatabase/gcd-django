@@ -1,10 +1,13 @@
 {% load accounts %}
+{% load staticfiles %}
 
 <ul>
   <li> First Name: {{ profile_user.first_name }}<br/>
   <li> Last Name: {{ profile_user.last_name }}
 {% if user|can_view_profile_details:profile_user %}
   <li> Email: <a href="mailto:{{ profile_user.email }}">{{ profile_user.email }}</a>
+{% endif %}
+{% if user == profile_user %}
   <li> Opt in for emails: {{ profile_user.indexer.opt_in_email|yesno }} {{ profile_user.issue_detail }}
   <li> Issue details: {% if profile_user.indexer.issue_detail == 0 %} core view {% elif profile_user.indexer.issue_detail == 1 %} editorial content {% else %} all content {% endif %}
   <li> Receive approval emails: {{ profile_user.indexer.notify_on_approve|yesno }}
@@ -23,6 +26,7 @@
         </ul>
       {% endif %}
     {% endwith %}
+{% if user|can_view_profile_details:profile_user %}
   <li> Groups:
     <ul>
       {% for group in profile_user.groups.all %}
@@ -30,5 +34,6 @@
       {% endfor %}
     </ul>
   <li>
+{% endif %}
 </ul>
 
