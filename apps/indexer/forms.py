@@ -11,7 +11,10 @@ from django.forms.utils import ErrorList
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm
 from django.conf import settings
+from django.core.mail import EmailMessage
 from django.core.urlresolvers import reverse
+
+from contact_form.forms import ContactForm
 
 from apps.stddata.models import Country, Language
 from apps.legacy.models import Reservation, IndexCredit
@@ -253,3 +256,45 @@ class PasswordResetForm(SetPasswordForm):
                     del cleaned_data['new_password2']
 
         return cleaned_data
+
+
+class UserContactForm(ContactForm):
+    from_email = 'do-not_reply@comics.org'
+    name = forms.CharField(widget=forms.HiddenInput, required=False)
+    email = forms.CharField(widget=forms.HiddenInput, required=False)
+    template_name = 'indexer/user_contact_form.txt'
+
+    def __init__(self, data=None, files=None, request=None,
+                 user_id=None, *args, **kwargs):
+        super(UserContactForm, self).__init__(data=data, files=files,
+                                              request=request,
+                                              *args, **kwargs)
+        if user_id:
+            self.fields['user_id'] = forms.IntegerField(
+              widget=forms.HiddenInput, initial=user_id)
+            self.target_user = User.objects.get(id=int(user_id))
+        else:
+            self.fields['user_id'] = forms.IntegerField(
+              widget=forms.HiddenInput)
+
+    def save(self, fail_silently=False):
+        """
+        Build and send the email message.
+        """
+        target_user = User.objects.get(id=int(self.cleaned_data['user_id']))
+
+        user = self.request.user
+        self.cleaned_data['email'] = user.email
+        self.cleaned_data['name'] = user.get_full_name()
+
+        message_dict = self.get_message_dict()
+        message_dict['to'] = [target_user.email, ]
+        message_dict['reply_to'] = [user.email, ]
+        message_dict['body'] = self.message()
+        message_dict['subject'] = 'Message from %s via the GCD' % \
+                                  (user.get_full_name())
+        message_dict.pop('message')
+        message_dict.pop('recipient_list')
+
+        email = EmailMessage(**message_dict)
+        email.send(fail_silently=fail_silently)

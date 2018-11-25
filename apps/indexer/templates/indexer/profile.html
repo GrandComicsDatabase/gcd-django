@@ -32,6 +32,11 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
 </ul>
 {% endif %}
 
+<h1  style="margin-bottom: 0">{{ profile_user.indexer }}</h1>
+{% if user != profile_user %}
+<h3 style="margin-top: 0"><a href="{% url "user_contact_form" user_id=profile_user.id %}"><img alt="email" src="{% static "img/gcd/social/email_32.png" %}" height="22" width="22"> Send E-Mail</a></h3>
+{% endif %}
+
 {% include 'indexer/bits/profile_limits.html' %}
 
 {% if form %}

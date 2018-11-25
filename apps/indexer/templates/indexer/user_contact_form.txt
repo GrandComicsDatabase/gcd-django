@@ -1,0 +1,5 @@
+Hello from the GCD.
+
+{{ name }} <{{ email }}> sent you the following message:
+
+{{ body }}

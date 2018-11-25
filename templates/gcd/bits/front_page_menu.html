@@ -13,7 +13,7 @@
   </p>
   <p>
   <a href="http://docs.comics.org/wiki/Email_Lists_FAQ">{% trans "Mailing Lists" %}</a> |
-  <a href="mailto:{% trans 'contact@comics.org' %}">{% trans "Contact Us" %}</a>
+  <a href="{% url "contact_form" %}">{% trans "Contact Us" %}</a>
   </p>
   <span class="advanced_link"><a method="post" href="{% url "donate" %}">{% trans "Donate" %}</a></span>
   </div>

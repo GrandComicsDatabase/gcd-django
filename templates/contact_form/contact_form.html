@@ -1,0 +1,22 @@
+{% extends "gcd/base_view.html" %}
+{% load staticfiles %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+<p>
+To send an e-mail to us, please enter your name, email, and message and press submit.
+</p>
+<p>
+<form action="/contact/" method="post">
+{% csrf_token %}
+<table>
+{{ form.as_table }}
+</table>
+<input type="submit" value="Submit">
+</form>
+</p>
+{% endblock %}

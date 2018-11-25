@@ -1,0 +1,3 @@
+{{ name }} <{{ email }}> sent the message
+
+{{ body }}

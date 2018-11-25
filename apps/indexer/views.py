@@ -29,12 +29,16 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 from django.utils.translation import ugettext as _
 
+from contact_form.views import ContactFormView
+
 from apps.indexer.models import Indexer, Error
 from apps.indexer.forms import ProfileForm, RegistrationForm, \
                                LongUsernameAuthenticationForm
 
 from apps.oi import states
 from apps.mycomics.models import Collector
+
+from .forms import UserContactForm
 
 
 class ViewTerminationError(Exception):
@@ -104,7 +108,7 @@ def error_view(request, error_text=''):
             key = request.GET['error_key']
             errors = Error.objects.filter(error_key=key)
             if errors.count() == 1:
-                error_text = unicode(errors[0])
+                error_text = errors[0]
                 if errors[0].is_safe:
                     error_text = mark_safe(error_text)
                 errors[0].delete()
@@ -721,3 +725,20 @@ def ranking(indexer):
         'global_leveldown':
             (indexer.imps - worldwide_down[0].imps) if worldwide_down else None
             }
+
+
+class CustomContactFormView(ContactFormView):
+    form_class = UserContactForm
+
+    def get_form_kwargs(self):
+        kwargs = super(CustomContactFormView, self).get_form_kwargs()
+        if hasattr(self, 'user_id'):
+            kwargs['user_id'] = self.user_id
+        return kwargs
+
+    def get(self, request, user_id):
+        self.user_id = user_id
+        return super(CustomContactFormView, self).get(request=request)
+
+    def get_success_url(self):
+        return urlresolvers.reverse('user_contact_form_sent')

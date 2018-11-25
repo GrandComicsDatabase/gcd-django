@@ -8,8 +8,12 @@ from django.views.generic.base import TemplateView
 from django.views.i18n import javascript_catalog
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
+from contact_form.views import ContactFormView
+
 from apps.indexer.views import error_view
 from apps.gcd.views import read_only
+
+from apps.gcd.forms.contact import CustomContactForm
 
 admin.autodiscover()
 
@@ -38,6 +42,16 @@ basic_patterns = [
         name='donate_thanks'),
     url(r'^jsi18n/$', javascript_catalog, js_info_dict,
         name='javascript-catalog'),
+    url(r'^contact/$',
+        ContactFormView.as_view(
+            form_class=CustomContactForm
+        ),
+        name='contact_form'),
+    url(r'^contact/sent/$',
+        TemplateView.as_view(
+            template_name='contact_form/contact_form_sent.html'
+        ),
+        name='contact_form_sent'),
 ]
 
 read_only_patterns = [
