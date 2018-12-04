@@ -80,14 +80,14 @@ def get_story_revision_form(revision=None, user=None,
     elif not is_comics_publication:
         sequence_filter = ['comic story', 'photo story', 'cartoon']
         if has_about_comics is True:
-            sequence_filter.append('bibliographic entry')
+            sequence_filter.append('about comics')
         queryset = StoryType.objects.filter(name__in=sequence_filter)
         if revision and revision.type not in queryset:
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     else:
         special_types = ['filler', ]
         if has_about_comics is False:
-            special_types.append('bibliographic entry')
+            special_types.append('about comics')
         special_types.extend([i for i in OLD_TYPES])
         queryset = StoryType.objects.all()
         if revision is None or (revision is not None and
