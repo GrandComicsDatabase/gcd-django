@@ -259,7 +259,7 @@ class PasswordResetForm(SetPasswordForm):
 
 
 class UserContactForm(ContactForm):
-    from_email = 'do-not_reply@comics.org'
+    from_email = 'do-not-reply@comics.org'
     name = forms.CharField(widget=forms.HiddenInput, required=False)
     email = forms.CharField(widget=forms.HiddenInput, required=False)
     template_name = 'indexer/user_contact_form.txt'

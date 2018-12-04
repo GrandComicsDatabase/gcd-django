@@ -166,7 +166,7 @@ INSTALLED_APPS = (
     'haystack',
     'elasticstack',
     'bootstrap3',
-    'contact_form'
+    'contact_form',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
