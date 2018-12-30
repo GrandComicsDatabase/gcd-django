@@ -5039,20 +5039,9 @@ def add_creator(request):
         revision.gcd_official_name = request.POST.get('gcd_official_name')
         revision.save()
 
-        process_data_source(creator_form, 'birth_country', changeset,
-                            sourced_revision=revision)
-        process_data_source(creator_form, 'birth_province', changeset,
-                            sourced_revision=revision)
-        process_data_source(creator_form, 'birth_city', changeset,
-                            sourced_revision=revision)
-        process_data_source(creator_form, 'death_country', changeset,
-                            sourced_revision=revision)
-        process_data_source(creator_form, 'death_province', changeset,
-                            sourced_revision=revision)
-        process_data_source(creator_form, 'death_city', changeset,
-                            sourced_revision=revision)
-        process_data_source(creator_form, 'bio', changeset,
-                            sourced_revision=revision)
+        for field in _get_creator_sourced_fields():
+            process_data_source(creator_form, field, revision.changeset,
+                                sourced_revision=revision)
         
         revision.birth_date = birth_date_form.save()
         revision.death_date = death_date_form.save()
