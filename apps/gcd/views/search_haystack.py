@@ -1,4 +1,5 @@
 import shlex
+from datetime import datetime
 from django.utils.http import urlencode
 from django.utils.encoding import smart_unicode as uni
 
@@ -7,6 +8,7 @@ from apps.gcd.views import ResponsePaginator
 from haystack.query import SearchQuerySet
 from haystack.inputs import AutoQuery
 from haystack.backends import SQ
+
 
 def safe_split(value):
     try:
@@ -30,6 +32,7 @@ def safe_split(value):
     lex.commenters = ''
     return list(lex)
 
+
 class GcdNameQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdNameQuery, self).prepare(query_obj)
@@ -38,6 +41,7 @@ class GcdNameQuery(AutoQuery):
             # if we also do * in front, searches with 'the' won't work somehow
             query_return += phrase.decode('utf-8') + u'* '
         return query_return
+
 
 class GcdAutoQuery(AutoQuery):
     def prepare(self, query_obj):
@@ -48,6 +52,7 @@ class GcdAutoQuery(AutoQuery):
             query_string = '"' + query_string + '"'
         return query_string
 
+
 def prepare_sq(phrase, fields, sq):
     new_sq = sq
     query_part = GcdAutoQuery('%s' % uni(phrase))
@@ -57,12 +62,13 @@ def prepare_sq(phrase, fields, sq):
         query_part_2 = None
     for field in fields:
         if not new_sq:
-            new_sq = SQ(**{field:query_part})
+            new_sq = SQ(**{field: query_part})
         else:
-            new_sq |= SQ(**{field:query_part})
+            new_sq |= SQ(**{field: query_part})
         if query_part_2:
-            new_sq |= SQ(**{field:query_part_2})
+            new_sq |= SQ(**{field: query_part_2})
     return new_sq
+
 
 # it may be, that we can do this as our own Query, i.e. similar
 # to the above GcdAutoQuery.
@@ -71,7 +77,6 @@ def parse_query_into_sq(query, fields):
     not_sq = None
     or_flag = False
     for phrase in safe_split(query.encode('utf-8')):
-        query_part_2 = None
         if phrase[0] == '-' and len(phrase) > 1:
             not_sq = prepare_sq(phrase[1:], fields, not_sq)
             or_flag = False
@@ -89,10 +94,11 @@ def parse_query_into_sq(query, fields):
             or_flag = False
     return sq, not_sq
 
+
 class GcdSearchQuerySet(SearchQuerySet):
     # SearchQuerySet class by default adds 'AND (query)' condition to the
-    # request sent to search engine (to be exact it uses default operator that's
-    # set, but we want AND as default operator) which results in not finding
+    # request sent to search engine (to be exact it uses default operator that
+    # is set, but we want AND as default operator) which results in not finding
     # objects where some searched terms are only present in fields that are not
     # added to template of 'text' field for such object. So instead we want to
     # control creating such conditions by adding appropriate filter_or() below
@@ -101,6 +107,7 @@ class GcdSearchQuerySet(SearchQuerySet):
     def auto_query(self, query_string, fieldname='content'):
         return self
 
+
 class PaginatedFacetedSearchView(FacetedSearchView):
     def __call__(self, request, context=None):
         self.request = request
@@ -108,12 +115,12 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.form = self.build_form()
         if 'search_object' in request.GET:
             if request.GET['search_object'] != "all":
-                self.form.selected_facets = [u'facet_model_name_exact:%s' % \
-                                              request.GET['search_object']]
+                self.form.selected_facets = [u'facet_model_name_exact:%s' %
+                                             request.GET['search_object']]
         self.query = self.get_query().strip('\\')
-        #TODO List of fields should be gathered
+        # TODO List of fields should be gathered
         # automatically from our SearchIndex classes
-        fields = ['content', 'name' , 'title']
+        fields = ['content', 'name', 'title']
         sq, not_sq = parse_query_into_sq(self.query, fields)
         if sq:
             self.form.searchqueryset = self.form.searchqueryset.filter(sq)
@@ -121,6 +128,14 @@ class PaginatedFacetedSearchView(FacetedSearchView):
             self.form.searchqueryset = self.form.searchqueryset.exclude(not_sq)
 
         self.results = self.get_results()
+        if 'date_facet' in request.GET:
+            year = datetime.strptime(request.GET['date_facet'],
+                                     '%Y-%m-%d %H:%M:%S')
+            self.results = self.results.filter(date__gte=year)\
+                               .filter(date__lt=year.replace(year=year.year+1))
+            self.date_facet = request.GET['date_facet']
+        else:
+            self.date_facet = None
         if 'sort' in request.GET:
             self.sort = request.GET['sort']
         else:
@@ -133,23 +148,24 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                                  '-_score')
         elif len(self.form.selected_facets) >= 1:
             if self.sort:
-                if (u'facet_model_name_exact:publisher' \
-                  in self.form.selected_facets) or \
+                if (u'facet_model_name_exact:publisher'
+                    in self.form.selected_facets) or \
                   (u'facet_model_name_exact:indicia publisher'
-                  in self.form.selected_facets) or \
+                   in self.form.selected_facets) or \
                   (u'facet_model_name_exact:brand group'
-                  in self.form.selected_facets) or \
+                   in self.form.selected_facets) or \
                   (u'facet_model_name_exact:brand emblem'
-                  in self.form.selected_facets) or \
+                   in self.form.selected_facets) or \
                   (u'facet_model_name_exact:series'
-                  in self.form.selected_facets):
+                   in self.form.selected_facets):
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
                                                              'year')
                     elif request.GET['sort'] == 'chrono':
                         self.results = self.results.order_by('year',
                                                              'sort_name')
-                elif u'facet_model_name_exact:issue' in self.form.selected_facets:
+                elif u'facet_model_name_exact:issue' \
+                     in self.form.selected_facets:
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
                                                              'key_date',
@@ -158,7 +174,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                         self.results = self.results.order_by('key_date',
                                                              'sort_name',
                                                              'sort_code')
-                elif u'facet_model_name_exact:story' in self.form.selected_facets:
+                elif u'facet_model_name_exact:story' \
+                     in self.form.selected_facets:
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
                                                              'key_date',
@@ -171,11 +188,11 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                                              'sequence_number')
 
                 elif self.form.selected_facets[0] in \
-                   [u'facet_model_name_exact:creator',
-                    u'facet_model_name_exact:creator membership',
-                    u'facet_model_name_exact:creator artinfluence',
-                    u'facet_model_name_exact:creator award',
-                    u'facet_model_name_exact:creator noncomicwork']:
+                    [u'facet_model_name_exact:creator',
+                     u'facet_model_name_exact:creator membership',
+                     u'facet_model_name_exact:creator artinfluence',
+                     u'facet_model_name_exact:creator award',
+                     u'facet_model_name_exact:creator noncomicwork']:
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
                                                              'year')
@@ -202,6 +219,11 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         is_language_selected = False
         is_publisher_selected = False
         is_feature_selected = False
+        if self.date_facet:
+            is_date_selected = True
+            facet_page += '&date_facet=%s' % self.date_facet
+        else:
+            is_date_selected = False
         if self.form.selected_facets:
             for facet in self.form.selected_facets:
                 facet_page += '&selected_facets=%s' % facet
@@ -216,12 +238,13 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                 elif u'feature_exact:' in facet:
                     is_feature_selected = True
         extra.update({'suggestion': suggestion,
-                     'facet_page': facet_page,
-                     'is_model_selected': is_model_selected,
-                     'is_country_selected': is_country_selected,
-                     'is_language_selected': is_language_selected,
-                     'is_publisher_selected': is_publisher_selected,
-                     'is_feature_selected': is_feature_selected})
+                      'facet_page': facet_page,
+                      'is_date_selected': is_date_selected,
+                      'is_model_selected': is_model_selected,
+                      'is_country_selected': is_country_selected,
+                      'is_language_selected': is_language_selected,
+                      'is_publisher_selected': is_publisher_selected,
+                      'is_feature_selected': is_feature_selected})
         if self.sort:
             extra.update({'sort': '&sort=%s' % self.sort})
         else:

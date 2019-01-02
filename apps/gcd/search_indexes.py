@@ -1,8 +1,11 @@
+from datetime import date
 from haystack import indexes
 from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
     CreatorArtInfluence, CreatorAward, CreatorNonComicWork
+
+from apps.oi.models import on_sale_date_fields
 
 DEFAULT_BOOST = 15.0
 
@@ -46,6 +49,7 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     key_date = indexes.CharField(model_attr='key_date', indexed=False)
     sort_code = indexes.IntegerField(model_attr='sort_code', indexed=False)
     year = indexes.IntegerField()
+    date = indexes.DateField(faceted=True)
     country = indexes.CharField(model_attr='series__country__name',
                                 faceted=True, indexed=False)
     language = indexes.CharField(model_attr='series__language__code',
@@ -65,6 +69,20 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         else:
             return 9999
 
+    def prepare_date(self, obj):
+        if obj.key_date:
+            year, month, day = on_sale_date_fields(obj.key_date)
+            if month < 1 or month > 12:
+                month = 1
+            if day < 1 or day > 31:
+                day = 1
+            try:
+                return date(year, month, day)
+            except ValueError:
+                return date(year, month, 1)
+        else:
+            return None
+
     def prepare_key_date(self, obj):
         if obj.key_date:
             return obj.key_date
@@ -82,6 +100,7 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     sort_name = indexes.CharField(model_attr='sort_name', indexed=False)
     year = indexes.IntegerField()
+    date = indexes.DateField(faceted=True)
     country = indexes.CharField(model_attr='country__name',  faceted=True,
                                 indexed=False)
     language = indexes.CharField(model_attr='language__code', faceted=True,
@@ -97,6 +116,12 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_facet_model_name(self, obj):
         return "series"
+
+    def prepare_date(self, obj):
+        try:
+            return date(obj.year_began, 1, 1)
+        except ValueError:
+            return None
 
     def prepare_title_search(self, obj):
         name = obj.name
@@ -121,6 +146,7 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                            indexed=False)
     type = indexes.CharField(model_attr='type__name', indexed=False)
     year = indexes.IntegerField()
+    date = indexes.DateField(faceted=True)
     country = indexes.CharField(model_attr='issue__series__country__name',
                                 faceted=True, indexed=False)
     language = indexes.CharField(model_attr='issue__series__language__code',
@@ -148,6 +174,20 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return int(obj.issue.key_date[:4])
         else:
             return 9999
+
+    def prepare_date(self, obj):
+        if obj.issue.key_date:
+            year, month, day = on_sale_date_fields(obj.issue.key_date)
+            if month < 1 or month > 12:
+                month = 1
+            if day < 1 or day > 31:
+                day = 1
+            try:
+                return date(year, month, day)
+            except ValueError:
+                return date(year, month, 1)
+        else:
+            return None
 
     def prepare_key_date(self, obj):
         if obj.issue.key_date:
@@ -314,6 +354,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()
+    date = indexes.DateField(faceted=True)
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
     country = indexes.CharField(model_attr='birth_country__name',
                                 indexed=False, faceted=True, null=True)
@@ -333,6 +374,15 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return int(obj.birth_date.year)
         else:
             return 9999
+
+    def prepare_date(self, obj):
+        if obj.birth_date.year:
+            try:
+                return date(int(obj.birth_date.year), 1, 1)
+            except ValueError:
+                return None
+        else:
+            return None
 
 
 class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,
@@ -382,6 +432,7 @@ class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()
+    date = indexes.DateField(faceted=True)
     sort_name = indexes.CharField(model_attr='award_name', indexed=False)
 
     def prepare_year(self, obj):
@@ -389,6 +440,15 @@ class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return obj.award_year
         else:
             return 9999
+
+    def prepare_date(self, obj):
+        if obj.award_year:
+            try:
+                return date(obj.award_year, 1, 1)
+            except ValueError:
+                return None
+        else:
+            return None
 
     def get_model(self):
         return CreatorAward

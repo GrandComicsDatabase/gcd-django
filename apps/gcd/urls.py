@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from datetime import date
 from django.conf.urls import url
 from django.conf import settings
 from django.views.generic import base as bv
@@ -340,7 +341,7 @@ urlpatterns = [
      bv.TemplateView.as_view(template_name='gcd/status/calendar.html')),
 
     # admin tools
-    url(r'^countries/$',gcd_views.details.countries_in_use),
+    url(r'^countries/$', gcd_views.details.countries_in_use),
 
     # redirects of old lasso pages
     url(r'^publisher_details.lasso/$', gcd_views.redirect.publisher),
@@ -350,13 +351,15 @@ urlpatterns = [
     url(r'^covers.lasso/$', gcd_views.redirect.series_covers),
     url(r'^details.lasso/$', gcd_views.redirect.issue),
     url(r'^coverview.lasso/$', gcd_views.redirect.issue_cover),
-    url(r'^daily_covers.lasso/$',gcd_views.redirect.daily_covers),
-    url(r'^search.lasso/$',gcd_views.redirect.search),
+    url(r'^daily_covers.lasso/$', gcd_views.redirect.daily_covers),
+    url(r'^search.lasso/$', gcd_views.redirect.search),
 ]
 
 # haystack search
 sqs = GcdSearchQuerySet().facet('facet_model_name').facet('country') \
-                         .facet('language').facet('publisher').facet('feature')
+                         .facet('language').facet('publisher').facet('feature')\
+                         .date_facet('date', start_date=date(1000, 1, 1),
+                                     end_date=date(3000, 1, 1), gap_by='year')
 
 urlpatterns += [url(r'^searchNew/',
                 search_view_factory(
