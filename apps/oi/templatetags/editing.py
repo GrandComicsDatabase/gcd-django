@@ -123,9 +123,9 @@ def header_link(changeset):
     elif changeset.change_type == CTYPES['creator_art_influence']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.creator), absolute_url(revision)))
-    elif changeset.change_type == CTYPES['creator_award']:
+    elif changeset.change_type == CTYPES['received_award']:
         return mark_safe(u'%s : %s' %
-                         (absolute_url(revision.creator), absolute_url(revision)))
+                         (absolute_url(revision.recipient), absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_membership']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.creator), absolute_url(revision)))

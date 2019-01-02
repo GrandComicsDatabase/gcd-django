@@ -67,7 +67,7 @@ def field_value(revision, field):
                   (res_holder.first_name, res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
     elif field in ['publisher', 'indicia_publisher', 'series',
-                   'origin_issue', 'target_issue']:
+                   'origin_issue', 'target_issue', 'award']:
         return absolute_url(value)
     elif field in ['origin', 'target']:
         return value.full_name_with_link()

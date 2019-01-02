@@ -34,24 +34,6 @@ def _generic_data_source_clean(form, cd):
               'Source description and source type must both be set.')
 
 
-def get_award_revision_form(revision=None, user=None):
-    class RuntimeAwardRevisionForm(AwardRevisionForm):
-        def as_table(self):
-            if not user or user.indexer.show_wiki_links:
-                _set_help_labels(self, AWARD_HELP_LINKS)
-            return super(AwardRevisionForm, self).as_table()
-
-    return RuntimeAwardRevisionForm
-
-
-class AwardRevisionForm(forms.ModelForm):
-    class Meta:
-        model = AwardRevision
-        fields = model._base_field_list
-
-    comments = _get_comments_form_field()
-
-
 def get_creator_revision_form(revision=None, user=None):
     class RuntimeCreatorRevisionForm(CreatorRevisionForm):
         def __init__(self, *args, **kwargs):
@@ -222,49 +204,6 @@ class CreatorMembershipRevisionForm(forms.ModelForm):
 
     def clean(self):
         cd = self.cleaned_data
-
-        if self._errors:
-            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
-        _generic_data_source_clean(self, cd)
-
-
-def get_creator_award_revision_form(revision=None, user=None):
-    class RuntimeCreatorAwardRevisionForm(CreatorAwardRevisionForm):
-        def __init__(self, *args, **kwargs):
-            super(RuntimeCreatorAwardRevisionForm, self)\
-                         .__init__(*args, **kwargs)
-            if revision:
-                init_data_source_fields('', revision, self.fields)
-
-        def as_table(self):
-            if not user or user.indexer.show_wiki_links:
-                _set_help_labels(self, CREATOR_AWARD_HELP_LINKS)
-            return super(CreatorAwardRevisionForm, self).as_table()
-
-    return RuntimeCreatorAwardRevisionForm
-
-
-class CreatorAwardRevisionForm(forms.ModelForm):
-    class Meta:
-        model = CreatorAwardRevision
-        fields = model._base_field_list
-
-    def __init__(self, *args, **kwargs):
-        super(CreatorAwardRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
-        insert_data_source_fields('', ordering, self.fields,
-                                  'notes')
-        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
-        self.fields = new_fields
-
-    comments = _get_comments_form_field()
-
-    def clean(self):
-        cd = self.cleaned_data
-
-        if (not cd['award_name'] and not cd['no_award_name']):
-            self.add_error('award_name',
-              'Either enter the award name or check no award name.')
 
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)

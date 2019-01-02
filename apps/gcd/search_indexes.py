@@ -3,7 +3,7 @@ from haystack import indexes
 from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
-    CreatorArtInfluence, CreatorAward, CreatorNonComicWork
+    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork
 
 from apps.oi.models import on_sale_date_fields
 
@@ -343,6 +343,41 @@ class AwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "award"
 
 
+# TODO reconsider only award_name for name in index
+class ReceivedAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/received_award_text.txt')
+    name = indexes.CharField(model_attr="award_name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    year = indexes.IntegerField()
+    date = indexes.DateField(faceted=True)
+    sort_name = indexes.CharField(model_attr='award_name', indexed=False)
+
+    def prepare_year(self, obj):
+        if obj.award_year:
+            return obj.award_year
+        else:
+            return 9999
+
+    def prepare_date(self, obj):
+        if obj.award_year:
+            try:
+                return date(obj.award_year, 1, 1)
+            except ValueError:
+                return None
+        else:
+            return None
+
+    def get_model(self):
+        return ReceivedAward
+
+    def prepare_facet_model_name(self, obj):
+        return "received award"
+
+
 class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
@@ -421,40 +456,6 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
 
     def prepare_facet_model_name(self, obj):
         return "creator art influence"
-
-
-class CreatorAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
-    text = indexes.CharField(document=True,
-                             use_template=True,
-                             template_name=
-                             'search/indexes/gcd/creator_award_text.txt')
-    name = indexes.CharField(model_attr="award_name", boost=DEFAULT_BOOST)
-    facet_model_name = indexes.CharField(faceted=True)
-
-    year = indexes.IntegerField()
-    date = indexes.DateField(faceted=True)
-    sort_name = indexes.CharField(model_attr='award_name', indexed=False)
-
-    def prepare_year(self, obj):
-        if obj.award_year:
-            return obj.award_year
-        else:
-            return 9999
-
-    def prepare_date(self, obj):
-        if obj.award_year:
-            try:
-                return date(obj.award_year, 1, 1)
-            except ValueError:
-                return None
-        else:
-            return None
-
-    def get_model(self):
-        return CreatorAward
-
-    def prepare_facet_model_name(self, obj):
-        return "creator award"
 
 
 class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex,

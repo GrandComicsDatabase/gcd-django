@@ -31,7 +31,7 @@ from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
                             IndiciaPublisher, Brand, BrandGroup, Cover, \
                             SeriesBond, Award, Creator, CreatorMembership,\
-                            CreatorAward, CreatorDegree, CreatorArtInfluence,\
+                            ReceivedAward, CreatorDegree, CreatorArtInfluence,\
                             CreatorNonComicWork, CreatorSchool, CreatorRelation
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
@@ -140,17 +140,17 @@ def show_creator_art_influence(request, creator_art_influence, preview=False):
     return render(request, 'gcd/details/creator_art_influence.html', vars)
 
 
-def creator_award(request, creator_award_id):
-    creator_award = get_gcd_object(CreatorAward, creator_award_id,
-                                   model_name='creator_award')
-    return show_creator_award(request, creator_award)
+def received_award(request, received_award_id):
+    received_award = get_gcd_object(ReceivedAward, received_award_id,
+                                   model_name='receieved_award')
+    return show_received_award(request, received_award)
 
 
-def show_creator_award(request, creator_award, preview=False):
-    vars = {'creator_award': creator_award,
-            'error_subject': creator_award,
+def show_received_award(request, received_award, preview=False):
+    vars = {'received_award': received_award,
+            'error_subject': received_award,
             'preview': preview}
-    return render(request, 'gcd/details/creator_award.html', vars)
+    return render(request, 'gcd/details/received_award.html', vars)
 
 
 def creator_degree(request, creator_degree_id):
@@ -714,7 +714,7 @@ def change_history(request, model_name, id):
     if model_name not in ['publisher', 'brand_group', 'brand',
                           'indicia_publisher', 'series', 'issue', 'cover',
                           'image', 'series_bond', 'award', 'creator_degree',
-                          'creator', 'creator_membership', 'creator_award',
+                          'creator', 'creator_membership', 'received_award',
                           'creator_art_influence', 'creator_non_comic_work']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id).deleted):

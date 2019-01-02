@@ -26,6 +26,10 @@ urlpatterns = [
 
     url(r'^award/add/$',
      oi_views.add_award, name='add_award'),
+    url(r'^award/(?P<award_id>\d+)/received_award/add/$',
+     oi_views.select_award_recipient, name='select_award_recipient'),
+    url(r'^award/(?P<award_id>\d+)/received_award/(?P<model_name>\w+)/(?P<id>\d+)/add/$',
+     oi_views.add_received_award, name='add_received_award'),
 
     # Creator URLs
     url(r'^creator/add/$',

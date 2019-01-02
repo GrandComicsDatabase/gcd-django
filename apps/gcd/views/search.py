@@ -30,7 +30,7 @@ from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             BrandGroup, Brand, IndiciaPublisher, STORY_TYPES, \
-                            Award, Creator, CreatorMembership, CreatorAward, \
+                            Award, Creator, CreatorMembership, ReceivedAward, \
                             CreatorArtInfluence, CreatorNonComicWork, \
                             CreatorNameDetail, SeriesPublicationType
 from apps.gcd.models.issue import INDEXED
@@ -160,14 +160,14 @@ def generic_by_name(request, name, q_obj, sort,
         query_val['target'] = base_name
         query_val[base_name] = name
 
-    elif (class_ in (CreatorMembership, CreatorAward, CreatorArtInfluence, 
+    elif (class_ in (CreatorMembership, ReceivedAward, CreatorArtInfluence,
                      CreatorNonComicWork)):
         if sqs is None:
             sort_year = "creator__birth_date__year"
 
             if class_ is CreatorMembership:
                 sort_name = "organization_name"
-            elif class_ is CreatorAward:
+            elif class_ is ReceivedAward:
                 sort_name = "award_name"
             elif class_ is CreatorArtInfluence:
                 sort_name = "influence_name"
@@ -185,7 +185,7 @@ def generic_by_name(request, name, q_obj, sort,
         else:
             sort_name = "name"
             things = sqs
-            if class_ != CreatorAward:
+            if class_ != ReceivedAward:
                 things = things.order_by('sort_name')
             else:
                 sort_year = 'year'
@@ -403,19 +403,19 @@ def creator_membership_by_name(request, creator_membership_name,
                                'gcd/search/creator_membership_list.html')
 
 
-def creator_award_by_name(request, creator_award_name, sort=ORDER_ALPHA):
+def received_award_by_name(request, received_award_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
-        sqs = SearchQuerySet().filter(name=GcdNameQuery(creator_award_name)) \
-            .models(CreatorAward)
-        return generic_by_name(request, creator_award_name, None, sort,
-                               CreatorAward,
-                               'gcd/search/creator_award_list.html',
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(received_award_name)) \
+            .models(ReceivedAward)
+        return generic_by_name(request, received_award_name, None, sort,
+                               ReceivedAward,
+                               'gcd/search/received_award_list.html',
                                sqs=sqs)
     else:
-        q_obj = Q(award_name__icontains=creator_award_name)
-        return generic_by_name(request, creator_award_name, q_obj, sort,
-                               CreatorAward,
-                               'gcd/search/creator_award_list.html')
+        q_obj = Q(award_name__icontains=received_award_name)
+        return generic_by_name(request, received_award_name, q_obj, sort,
+                               ReceivedAward,
+                               'gcd/search/received_award_list.html')
 
 
 def creator_art_influence_by_name(request, creator_art_influence_name,

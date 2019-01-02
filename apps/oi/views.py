@@ -27,14 +27,15 @@ from apps.indexer.views import ViewTerminationError, render_error
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
-    Series, SeriesBond, Story, StoryType, Award, Creator, CreatorMembership,
-    CreatorArtInfluence, CreatorAward, CreatorDegree, CreatorNonComicWork,
-    CreatorRelation, CreatorSchool, NameType, SourceType, School, STORY_TYPES,
+    Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
+    CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
+    CreatorRelation, CreatorSchool, NameType, SourceType, STORY_TYPES,
     BiblioEntry)
 from apps.gcd.views import paginate_response
+# need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
-    show_creator_membership, show_creator_award, show_creator_art_influence, \
+    show_creator_membership, show_received_award, show_creator_art_influence, \
     show_creator_non_comic_work, show_creator_school, show_creator_degree, \
     show_award
 
@@ -51,11 +52,11 @@ from apps.oi.models import (
     StoryRevision, OngoingReservation, RevisionLock, _get_revision_lock,
     _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last,
     BiblioEntryRevision, DataSourceRevision, AwardRevision, CreatorRevision,
-    CreatorNameDetailRevision, CreatorMembershipRevision, CreatorAwardRevision,
+    CreatorNameDetailRevision, CreatorMembershipRevision, ReceivedAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision,
     CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
-    PreviewCreator, PreviewCreatorAward, PreviewCreatorArtInfluence,
+    PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string)
 
@@ -64,6 +65,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_use_revision_form,
                            get_bulk_issue_revision_form,
                            get_award_revision_form,
+                           get_received_award_revision_form,
                            get_creator_revision_form,
                            get_indicia_publisher_revision_form,
                            get_publisher_revision_form,
@@ -74,7 +76,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            OngoingReservationForm,
                            CreatorArtInfluenceRevisionForm,
                            CreatorMembershipRevisionForm,
-                           CreatorAwardRevisionForm,
+                           ReceivedAwardRevisionForm,
                            CreatorNonComicWorkRevisionForm,
                            CreatorRelationRevisionForm,
                            CreatorSchoolRevisionForm,
@@ -103,9 +105,9 @@ REVISION_CLASSES = {
     'reprint': ReprintRevision,
     'image': ImageRevision,
     'award': AwardRevision,
+    'received_award': ReceivedAwardRevision,
     'creator': CreatorRevision,
     'creator_art_influence': CreatorArtInfluenceRevision,
-    'creator_award': CreatorAwardRevision,
     'creator_degree': CreatorDegreeRevision,
     'creator_membership': CreatorMembershipRevision,
     'creator_non_comic_work': CreatorNonComicWorkRevision,
@@ -132,9 +134,9 @@ DISPLAY_CLASSES = {
     'issue_reprint': IssueReprint,
     'image': Image,
     'award': Award,
+    'received_award': ReceivedAward,
     'creator': Creator,
     'creator_art_influence': CreatorArtInfluence,
-    'creator_award': CreatorAward,
     'creator_degree': CreatorDegree,
     'creator_membership': CreatorMembership,
     'creator_non_comic_work': CreatorNonComicWork,
@@ -784,7 +786,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                                         sourced_revision=revision)
 
                 elif revision.changeset.change_type in [
-                                        CTYPES['creator_award'],
+                                        CTYPES['received_award'],
                                         CTYPES['creator_art_influence'],
                                         CTYPES['creator_degree'],
                                         CTYPES['creator_membership'],
@@ -4325,7 +4327,7 @@ def show_queue(request, queue_name, state):
     awards = changes.filter(change_type=CTYPES['award'])
     creators = changes.filter(change_type=CTYPES['creator'])
     creator_art_influences = changes.filter(change_type=CTYPES['creator_art_influence'])
-    creator_awards = changes.filter(change_type=CTYPES['creator_award'])
+    received_awards = changes.filter(change_type=CTYPES['received_award'])
     creator_memberships = changes.filter(change_type=CTYPES['creator_membership'])
     creator_non_comic_works = changes.filter(change_type=CTYPES['creator_non_comic_work'])
     creator_relations = changes.filter(change_type=CTYPES['creator_relation'])
@@ -4381,9 +4383,9 @@ def show_queue(request, queue_name, state):
                       'creatormembershiprevisions__creator__birth_country__id'))
               },
               {
-                  'object_name': 'Creator Awards',
-                  'object_type': 'creator_award',
-                  'changesets': creator_awards.order_by('modified', 'id') \
+                  'object_name': 'Received Awards',
+                  'object_type': 'received_award',
+                  'changesets': received_awards.order_by('modified', 'id') \
                       .annotate(country=Max(
                       'creatorawardrevisions__creator__birth_country__id'))
               },
@@ -4635,7 +4637,7 @@ def compare(request, id):
                                         #.cr_to_name.get())
     elif changeset.change_type == CTYPES['creator_membership']:
         sourced_fields = {'': 'membership_year_ended_uncertain'}
-    elif changeset.change_type == CTYPES['creator_award']:
+    elif changeset.change_type == CTYPES['received_award']:
         sourced_fields = {'': 'award_year_uncertain'}
     elif changeset.change_type in [CTYPES['creator_art_influence'],
                                    CTYPES['creator_degree'],
@@ -4845,7 +4847,7 @@ def preview(request, id, model_name):
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
                       'brand', 'series', 'issue', 'award', 'creator',
-                      'creator_award', 'creator_art_influence',
+                      'received_award', 'creator_art_influence',
                       'creator_degree', 'creator_membership',
                       'creator_non_comic_work', 'creator_school']:
         # TODO the model specific settings very likely should be methods
@@ -4876,8 +4878,8 @@ def preview(request, id, model_name):
         elif model_name == 'creator':
             model_object = PreviewCreator()
             model_object.revision = revision
-        elif model_name == 'creator_award':
-            model_object = PreviewCreatorAward()
+        elif model_name == 'received_award':
+            model_object = PreviewReceivedAward()
             model_object.revision = revision
         elif model_name == 'creator_art_influence':
             model_object = PreviewCreatorArtInfluence()
@@ -4908,7 +4910,7 @@ def preview(request, id, model_name):
         # keywords are a TextField for the revision, but a M2M-relation
         # for the model, overwrite for preview.
         # TODO should all have keywords ?
-        if not model_name in ['award', 'creator', 'creator_award',
+        if not model_name in ['award', 'creator', 'received_award',
                               'creator_art_influence', 'creator_degree',
                               'creator_membership', 'creator_non_comic_work',
                               'creator_school']:
@@ -5013,6 +5015,145 @@ def add_award(request):
             'action_label': 'Submit new',
             'form': form,
           })
+
+
+@permission_required('indexer.can_reserve')
+def add_creator_award(request, creator_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    creator = get_object_or_404(Creator, id=creator_id, deleted=False)
+
+    if creator.pending_deletion():
+        return render_error(request, u'Cannot add Award for '
+                                     u'creator "%s" since the record is '
+                                     u'pending deletion.' % creator)
+
+    if request.method == 'GET':
+        award_form = ReceivedAwardRevisionForm()
+
+    elif request.method == 'POST':
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+                    'show_creator', kwargs={'creator_id': creator_id}))
+
+        award_form = ReceivedAwardRevisionForm(
+                request.POST or None,
+                request.FILES or None,
+        )
+        if award_form.is_valid():
+            changeset = Changeset(indexer=request.user, state=states.OPEN,
+                                    change_type=CTYPES['received_award'])
+            changeset.save()
+            revision = award_form.save(commit=False)
+            revision.save_added_revision(changeset=changeset,
+                                         recipient=creator,
+                                         award=award_form.cleaned_data['award'])
+            revision.save()
+
+            process_data_source(award_form, '', changeset,
+                                sourced_revision=revision)
+
+            return submit(request, changeset.id)
+
+    context = {'form': award_form,
+               'object_name': 'Award of a Creator',
+               'object_url': urlresolvers.reverse('add_creator_award',
+                                                  kwargs={'creator_id':
+                                                          creator_id}),
+               'action_label': 'Submit new',
+               'settings': settings}
+    return oi_render(request, 'oi/edit/add_frame.html', context)
+
+
+@permission_required('indexer.can_reserve')
+def add_received_award(request, award_id, model_name, id):
+    award = get_object_or_404(Award, id=award_id)
+
+    if award.pending_deletion():
+        return render_error(request, u'Cannot add to Award "%s" since the '
+                                     u'record is pending deletion.' % award)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('show_award',
+          kwargs={ 'id': data['award_id'] }))
+
+    form = get_received_award_revision_form(user=request.user)(request.POST 
+                                                               or None)
+
+    if model_name == 'story':
+        selected_object = get_object_or_404(Story, id=id)
+    elif model_name == 'issue':
+        selected_object = get_object_or_404(Issue, id=id)
+    elif model_name == 'series':
+        selected_object = get_object_or_404(Series, id=id)
+    else:
+        raise NotImplementedError
+
+    if form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                                change_type=CTYPES['received_award'])
+        changeset.save()
+        revision = form.save(commit=False)
+        revision.save_added_revision(changeset=changeset,
+                                      recipient=selected_object,
+                                      award=award)
+        revision.save()
+
+        process_data_source(form, '', changeset,
+                            sourced_revision=revision)
+
+        return submit(request, changeset.id)
+
+    extra_adding_info = 'the Award: %s for %s: %s' % (award,
+                                                      model_name.capitalize(),
+                                                      selected_object)
+
+    return oi_render(request, 'oi/edit/add_frame.html',
+        {'action_label': 'Submit new received award',
+         'form': form,
+         'extra_adding_info': extra_adding_info,
+         'object_url': urlresolvers.reverse('add_received_award',
+                                            kwargs={'award_id': award.id,
+                                                    'model_name': model_name,
+                                                    'id': selected_object.id}),
+        })
+
+
+@permission_required('indexer.can_reserve')
+def process_award_recipient(request, data, object_type, selected_id):
+    if request.method != 'POST':
+        return _cant_get(request)
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('show_award',
+          kwargs={ 'id': data['award_id'] }))
+
+    return HttpResponseRedirect(urlresolvers.reverse('add_received_award',
+                                            kwargs={'award_id': data['award_id'],
+                                                    'model_name': object_type,
+                                                    'id': selected_id}))
+
+
+@permission_required('indexer.can_reserve')
+def select_award_recipient(request, award_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    award = get_object_or_404(Award, id=award_id)
+    heading = 'Select recipient for an %s award' % (esc(award))
+
+    data = {'award_id': award_id,
+            'story': True,
+            'issue': True,
+            'series': True,
+            'heading': mark_safe('<h2>%s</h2>' % heading),
+            'target': 'a story, issue, or series',
+            'return': process_award_recipient,
+            'cancel': HttpResponseRedirect(urlresolvers.reverse('show_award',
+                        kwargs={'award_id': award_id}))}
+    select_key = store_select_data(request, None, data)
+    return HttpResponseRedirect(urlresolvers.reverse('select_object',
+          kwargs={'select_key': select_key}))
 
 
 @permission_required('indexer.can_reserve')
@@ -5280,54 +5421,6 @@ def add_creator_membership(request, creator_id):
     context = {'form': membership_form,
                'object_name': 'Membership of a Creator',
                'object_url': urlresolvers.reverse('add_creator_membership',
-                                                  kwargs={'creator_id': creator_id}),
-               'action_label': 'Submit new',
-               'settings': settings}
-    return oi_render(request, 'oi/edit/add_frame.html', context)
-
-
-@permission_required('indexer.can_reserve')
-def add_creator_award(request, creator_id):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-    
-    creator = get_object_or_404(Creator, id=creator_id, deleted=False)
-
-    if creator.pending_deletion():
-        return render_error(request, u'Cannot add Award for '
-                                     u'creator "%s" since the record is '
-                                     u'pending deletion.' % creator)
-
-    if request.method == 'GET':
-        award_form = CreatorAwardRevisionForm()
-
-    elif request.method == 'POST':
-        if 'cancel' in request.POST:
-            return HttpResponseRedirect(urlresolvers.reverse(
-                    'show_creator', kwargs={'creator_id': creator_id}))
-
-        award_form = CreatorAwardRevisionForm(
-                request.POST or None,
-                request.FILES or None,
-        )
-        if award_form.is_valid():
-            changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                    change_type=CTYPES['creator_award'])
-            changeset.save()
-
-            revision = award_form.save(commit=False)
-
-            revision.save_added_revision(changeset=changeset, creator=creator)
-            revision.save()
-
-            process_data_source(award_form, '', changeset,
-                                sourced_revision=revision)
-
-            return submit(request, changeset.id)
-
-    context = {'form': award_form,
-               'object_name': 'Award of a Creator',
-               'object_url': urlresolvers.reverse('add_creator_award',
                                                   kwargs={'creator_id': creator_id}),
                'action_label': 'Submit new',
                'settings': settings}

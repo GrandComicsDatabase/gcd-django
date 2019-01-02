@@ -38,7 +38,7 @@ from apps.gcd.models import (
     StoryType, ImageType, Creator, CreatorArtInfluence, CreatorAward,
     CreatorDegree, CreatorMembership, CreatorNameDetail, CreatorNonComicWork,
     CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear,
-    BiblioEntry, STORY_TYPES)
+    BiblioEntry, ReceivedAward, STORY_TYPES)
 
 from apps.gcd.models.gcddata import GcdData
 
@@ -73,7 +73,7 @@ CTYPES = {
     'series_bond': 15,
     'creator': 16,
     'creator_art_influence': 17,
-    'creator_award': 18,
+    'received_award': 18,
     'creator_degree': 19,
     'creator_membership': 20,
     'creator_non_comic_work': 21,
@@ -95,7 +95,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['award'],
                            CTYPES['creator'],
                            CTYPES['creator_art_influence'],
-                           CTYPES['creator_award'],
+                           CTYPES['received_award'],
                            CTYPES['creator_degree'],
                            CTYPES['creator_membership'],
                            CTYPES['creator_non_comic_work'],
@@ -710,7 +710,7 @@ class Changeset(models.Model):
                     self.datasourcerevisions.all(),
                     self.creatornamedetailrevisions.all(),
                     self.creatorartinfluencerevisions.all(),
-                    self.creatorawardrevisions.all(),
+                    self.receivedawardrevisions.all(),
                     self.creatordegreerevisions.all(),
                     self.creatormembershiprevisions.all(),
                     self.creatornoncomicworkrevisions.all(),
@@ -722,8 +722,8 @@ class Changeset(models.Model):
             return (self.creatorartinfluencerevisions.all(),
                     self.datasourcerevisions.all())
 
-        if self.change_type == CTYPES['creator_award']:
-            return (self.creatorawardrevisions.all(),
+        if self.change_type == CTYPES['received_award']:
+            return (self.receivedawardrevisions.all(),
                     self.datasourcerevisions.all())
 
         if self.change_type == CTYPES['creator_degree']:
@@ -826,7 +826,7 @@ class Changeset(models.Model):
                                  CTYPES['series_bond'],
                                  CTYPES['creator'],
                                  CTYPES['creator_membership'],
-                                 CTYPES['creator_award'],
+                                 CTYPES['received_award'],
                                  CTYPES['creator_art_influence'],
                                  CTYPES['creator_non_comic_work']] or
             (
@@ -5903,6 +5903,123 @@ class AwardRevision(Revision):
         return 0
 
 
+class ReceivedAwardRevisionManager(RevisionManager):
+    def clone_revision(self, received_award, changeset):
+        return ReceivedAwardRevision.clone(received_award, changeset)
+
+
+class ReceivedAwardRevision(Revision):
+    class Meta:
+        db_table = 'oi_received_award_revision'
+        ordering = ['created', '-id']
+        verbose_name_plural = 'Received Award Revisions'
+
+    objects = ReceivedAwardRevisionManager()
+    received_award = models.ForeignKey('gcd.ReceivedAward',
+                                       null=True,
+                                       related_name='revisions')
+    content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
+    recipient = GenericForeignKey('content_type', 'object_id')
+
+    award = models.ForeignKey(Award, null=True, blank=True)
+    award_name = models.CharField(max_length=255, blank=True)
+    no_award_name = models.BooleanField(default=False)
+    award_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    award_year_uncertain = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
+
+    source_name = 'received_award'
+    source_class = ReceivedAward
+
+    @property
+    def source(self):
+        return self.received_award
+
+    @source.setter
+    def source(self, value):
+        self.received_award = value
+
+    def _do_complete_added_revision(self, recipient=None, award=None):
+        self.recipient = recipient
+        self.award = award
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.received_award.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
+    def get_absolute_url(self):
+        if self.received_award is None:
+            return "/received_award/revision/%i/preview" % self.id
+        return self.received_award.get_absolute_url()
+
+    def __unicode__(self):
+        if self.award:
+            name = u'%s - %s' % (self.award.name, self.award_name)
+        else:
+            name = u'%s' % (self.award_name)
+        if self.award_year:
+            return u'%s: %s (%d)' % (self.recipient, name, self.award_year)
+        else:
+            return u'%s: %s' % (self.recipient, name)
+
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
+
+    _base_field_list = ['award',
+                        'award_name',
+                        'no_award_name',
+                        'award_year',
+                        'award_year_uncertain',
+                        'notes',
+                        ]
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            #'recipient': '',
+            'award': '',
+            'award_name': '',
+            'no_award_name': False,
+            'award_year': None,
+            'award_year_uncertain': False,
+            'notes': '',
+        }
+
+    def _start_imp_sum(self):
+        self._seen_year = False
+        self._seen_award_name = False
+
+    def _imps_for(self, field_name):
+        if field_name in ('award_year',
+                          'award_year_uncertain'):
+            if not self._seen_year:
+                self._seen_year = True
+                return 1
+        elif field_name in ('award_name',
+                            'no_award_name'):
+            if not self._seen_award_name:
+                self._seen_award_name = True
+                return 1
+        elif field_name in self._base_field_list:
+            return 1
+        return 0
+
+
+class PreviewReceivedAward(ReceivedAward):
+    class Meta:
+        proxy = True
+
+    @property
+    def data_source(self):
+        return DataSourceRevision.objects.filter(
+          revision_id=self.revision.id,
+          content_type=ContentType.objects.get_for_model(self.revision))
+
+
 class DataSourceRevisionManager(RevisionManager):
     def clone_revision(self, data_source, changeset, sourced_revision):
         """
@@ -6133,17 +6250,17 @@ class CreatorRevision(Revision):
                 creator_art_influence_revision.deleted = True
                 creator_art_influence_revision.save()
 
-            for creator_award in self.creator.active_awards():
-                award_lock = _get_revision_lock(creator_award,
+            for received_award in self.creator.active_awards():
+                award_lock = _get_revision_lock(received_award,
                                                 changeset=self.changeset)
                 if award_lock is None:
-                    raise IntegrityError("needed CreatorAward lock not "
+                    raise IntegrityError("needed ReceivedAward lock not "
                                          "possible")
-                creator_award_revision = \
-                  CreatorAwardRevision.clone(creator_award,
+                received_award_revision = \
+                  ReceivedAwardRevision.clone(received_award,
                                              self.changeset)
-                creator_award_revision.deleted = True
-                creator_award_revision.save()
+                received_award_revision.deleted = True
+                received_award_revision.save()
 
             for creator_degree in self.creator.active_degrees():
                 degree_lock = _get_revision_lock(creator_degree,
@@ -6950,17 +7067,6 @@ class CreatorAwardRevision(Revision):
         elif field_name in self._base_field_list:
             return 1
         return 0
-
-
-class PreviewCreatorAward(CreatorAward):
-    class Meta:
-        proxy = True
-
-    @property
-    def data_source(self):
-        return DataSourceRevision.objects.filter(
-          revision_id=self.revision.id,
-          content_type=ContentType.objects.get_for_model(self.revision))
 
 
 class CreatorArtInfluenceRevisionManager(RevisionManager):
