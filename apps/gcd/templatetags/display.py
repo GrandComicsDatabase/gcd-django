@@ -12,15 +12,15 @@ from django.template.defaultfilters import title
 from apps.oi import states
 from apps.oi.models import StoryRevision, CTYPES, INDEXED
 from apps.gcd.templatetags.credits import show_page_count, show_title
-from apps.gcd.models.creator import Creator, CreatorMembership, CreatorAward, \
+from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
                                     CreatorDegree, Award
-from apps.gcd.models.publisher import IndiciaPublisher, Brand, BrandGroup, \
+from apps.gcd.models import IndiciaPublisher, Brand, BrandGroup, \
                                       Publisher
-from apps.gcd.models.series import Series
-from apps.gcd.models.issue import Issue
-from apps.gcd.models.cover import Cover
-from apps.gcd.models.image import Image
+from apps.gcd.models import Series
+from apps.gcd.models import Issue
+from apps.gcd.models import Cover
+from apps.gcd.models import Image
 from apps.gcd.models.seriesbond import SeriesBond, BOND_TRACKING, \
                                        SUBNUMBER_TRACKING, MERGE_TRACKING
 from apps.gcd.views.covers import get_image_tag
@@ -340,13 +340,13 @@ def changed_fields(changeset, object):
                             .get(indicia_publisher=object.id)
     elif object_class is Award:
         revision = changeset.awardrevisions.get(award=object.id)
+    elif object_class is ReceivedAward:
+        revision = changeset.receivedawardrevisions.get(received_award=object.id)
     elif object_class is Creator:
         revision = changeset.creatorrevisions.get(creator=object.id)
     elif object_class is CreatorMembership:
         revision = changeset.creatormembershiprevisions\
                             .get(creator_membership=object.id)
-    elif object_class is CreatorAward:
-        revision = changeset.creatorawardrevisions.get(creator_award=object.id)
     elif object_class is CreatorArtInfluence:
         revision = changeset.creatorartinfluencerevisions\
                             .get(creator_art_influence=object.id)

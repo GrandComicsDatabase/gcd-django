@@ -22,20 +22,24 @@ from .issue import (    # noqa
     get_issue_revision_form, get_bulk_issue_revision_form)
 from .story import (get_story_revision_form, get_biblio_revision_form,
                     get_reprint_revision_form)
-from .image import get_cover_revision_form
-from .image import (    # noqa
-    UploadScanForm, UploadVariantScanForm, GatefoldScanForm, UploadImageForm)
+from .image import (get_cover_revision_form,
+                    UploadScanForm,
+                    UploadVariantScanForm,
+                    GatefoldScanForm,
+                    UploadImageForm)
+from .award import (get_award_revision_form,
+                    get_received_award_revision_form,
+                    ReceivedAwardRevisionForm)
 from .creator import (    # noqa
-    get_award_revision_form,
     CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
-    CreatorMembershipRevisionForm, CreatorAwardRevisionForm,
+    CreatorMembershipRevisionForm,
     CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm, 
     CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
-    get_creator_art_influence_revision_form, get_creator_award_revision_form,
+    get_creator_art_influence_revision_form,
     get_creator_membership_revision_form, get_creator_revision_form,
     get_creator_non_comic_work_revision_form, get_creator_relation_revision_form,
     get_creator_school_revision_form, get_creator_degree_revision_form)
-from .support import ( add_data_source_fields, init_data_source_fields,
+from .support import (add_data_source_fields, init_data_source_fields,
     _set_help_labels)
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
@@ -93,14 +97,14 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name == 'award':
         return get_award_revision_form(revision, **kwargs)
 
+    if model_name == 'received_award':
+        return get_received_award_revision_form(revision, **kwargs)
+
     if model_name == 'creator':
         return get_creator_revision_form(revision, **kwargs)
 
     if model_name == 'creator_art_influence':
         return get_creator_art_influence_revision_form(revision, **kwargs)
-
-    if model_name == 'creator_award':
-        return get_creator_award_revision_form(revision, **kwargs)
 
     if model_name == 'creator_membership':
         return get_creator_membership_revision_form(revision, **kwargs)

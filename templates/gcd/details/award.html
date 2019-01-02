@@ -51,6 +51,10 @@ GCD :: Award :: {{ award.name }}
          {% include "gcd/bits/status_banner.html" %}
        {% endwith %}
      {% endif %}
+      <form method="GET"
+            action="{% url "select_award_recipient" award_id=award.id %}">
+          <input name="select_award_recipient" type="submit" value="Add Award"/>
+      </form>
     </div>
   {% endif %} <!-- MYCOMICS -->
     <div id="change_history" class="edit_footer">
@@ -68,13 +72,13 @@ GCD :: Award :: {{ award.name }}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Name </th>
-    <th> Creator </th>
+    <th> Recipient </th>
     <th> Year Awarded </th>
   </tr>
   {% for awarded in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ awarded.get_absolute_url }}">{{ awarded.display_name }}</a> </td>
-    <td> <a href="{{ awarded.creator.get_absolute_url }}">{{ awarded.creator }}</a> </td>
+    <td> <a href="{{ awarded.recipient.get_absolute_url }}">{{ awarded.recipient }}</a> </td>
     <td> {{ awarded.display_year }} </td>
   </tr>
   {% endfor %}

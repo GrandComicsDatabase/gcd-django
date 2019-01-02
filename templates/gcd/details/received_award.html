@@ -3,7 +3,7 @@
 {% load i18n %}
 
 {% block title %}
-  GCD :: Creator Award :: {{ creator_award.award_name }}
+  GCD :: Received Award :: {{ received_award.award_name }}
 {% endblock %}
 
 {% block css %}
@@ -12,26 +12,29 @@
 {% endblock %}
 
 {% block view_body %}
- {% include "gcd/bits/creator_header.html" %}
-<div class="control_body">
+
+{% with first_object=received_award.recipient second_object=received_award %}
+ {% include "gcd/bits/generic_header.html" %}
+{% endwith %}
+ <div class="control_body">
   <div id="control_container">
     <div id="control_center">
       <dl class="pub_data">
-{% if creator_award.award %}
+{% if received_award.award %}
         <dt> Award:
-        <dd> <a href="{{ creator_award.award.get_absolute_url }}">{{ creator_award.award }}</a>
+        <dd> <a href="{{ received_award.award.get_absolute_url }}">{{ received_award.award }}</a>
 {% endif %}
         <dt> Award Name:
-        <dd> {{ creator_award.display_name }}
-{% if creator_award.award_year %}
+        <dd> {{ received_award.display_name }}
+{% if received_award.award_year %}
         <dt> Award Year:
-        <dd> {{ creator_award.award_year }}
+        <dd> {{ received_award.award_year }}
 {% endif %}
-        {% if creator_award.notes %}
+        {% if received_award.notes %}
         <dt>Notes:
-        <dd>{{ creator_award.notes }}
+        <dd>{{ received_award.notes }}
         {% endif %}
-        {% with creator_award.data_source.all as data_sources %}
+        {% with received_award.data_source.all as data_sources %}
         {% include "gcd/bits/show_sources.html" %}
         {% endwith %}
       </dl>
@@ -41,9 +44,9 @@
       <div class="edit_box">
         <div class="edit_header">Editing</div>
   {% if not preview %}
-    {% with creator_award as object %}
-    {% with 'creator_award' as object_class %}
-    {% with 'creator_award' as object_name %}
+    {% with received_award as object %}
+    {% with 'received_award' as object_class %}
+    {% with 'received_award' as object_name %}
       {% include "gcd/bits/status_banner.html" %}
     {% endwith %}
     {% endwith %}
@@ -53,9 +56,9 @@
       </div> <!-- edit_box -->
       <div id="change_history" class="edit_footer">
   {% if preview %}
-        <a href="{% url "change_history" model_name='creator_award' id=creator_award.source.id %}">View Change History</a>
+        <a href="{% url "change_history" model_name='creator_award' id=received_award.source.id %}">View Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='creator_award' id=creator_award.id %}">View Change History</a>
+        <a href="{% url "change_history" model_name='received_award' id=received_award.id %}">View Change History</a>
   {% endif %}
       </div>
         </div> <!-- control_rail -->

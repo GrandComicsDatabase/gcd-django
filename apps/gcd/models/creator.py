@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 
 from .gcddata import GcdData
+from .award import Award, ReceivedAward
+from .datasource import DataSource
 from .image import Image
 from apps.stddata.models import Country, Date
 from apps.oi import states
@@ -106,43 +108,6 @@ class CreatorNameDetail(GcdData):
                                 unicode(self.type.type))
 
 
-class SourceType(models.Model):
-    """
-    The data source type for each Name Source should be recorded.
-    """
-
-    class Meta:
-        db_table = 'gcd_source_type'
-        app_label = 'gcd'
-        ordering = ('type',)
-        verbose_name_plural = 'Source Types'
-
-    type = models.CharField(max_length=50)
-
-    def __unicode__(self):
-        return unicode(self.type)
-
-
-class DataSource(GcdData):
-    """
-    Indicates the various sources of creator data
-    """
-
-    class Meta:
-        db_table = 'gcd_data_source'
-        app_label = 'gcd'
-        ordering = ('source_description',)
-        verbose_name_plural = 'Creator Data Source'
-
-    source_type = models.ForeignKey(SourceType)
-    source_description = models.TextField()
-    field = models.CharField(max_length=256)
-
-    def __unicode__(self):
-        return '%s - %s' % (unicode(self.field),
-                            unicode(self.source_type.type))
-
-
 class RelationType(models.Model):
     """
     The type of relation between two creators.
@@ -204,6 +169,7 @@ class Creator(GcdData):
     death_city_uncertain = models.BooleanField(default=False)
 
     portrait = GenericRelation(Image)
+    awards = GenericRelation(ReceivedAward)
 
     bio = models.TextField()
     sample_scan = GenericRelation(Image)
@@ -281,7 +247,7 @@ class Creator(GcdData):
         return self.art_influence_set.exclude(deleted=True)
 
     def active_awards(self):
-        return self.award_set.exclude(deleted=True)
+        return self.awards.exclude(deleted=True)
 
     def active_degrees(self):
         return self.degree_set.exclude(deleted=True)
@@ -536,30 +502,6 @@ class CreatorMembership(GcdData):
 
     def __unicode__(self):
         return '%s' % unicode(self.organization_name)
-
-
-class Award(GcdData):
-    class Meta:
-        app_label = 'gcd'
-        ordering = ('name',)
-        verbose_name_plural = 'Awards'
-
-    name = models.CharField(max_length=200)
-    notes = models.TextField()
-
-    def deletable():
-        return False
-
-    def active_awards(self):
-        return self.creatoraward_set.exclude(deleted=True)
-
-    def get_absolute_url(self):
-        return urlresolvers.reverse(
-                'show_award',
-                kwargs={'award_id': self.id})
-
-    def __unicode__(self):
-        return unicode(self.name)
 
 
 class CreatorAward(GcdData):
