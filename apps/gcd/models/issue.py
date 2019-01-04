@@ -203,7 +203,7 @@ class Issue(GcdData):
                self.other_variants() or \
                self.has_keywords() or \
                self.has_reprints() or \
-               self.awards.all().count()
+               self.active_awards().count()
 
     def has_covers(self):
         return self.can_have_cover() and self.active_covers().exists()

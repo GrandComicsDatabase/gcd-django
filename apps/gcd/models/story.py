@@ -129,7 +129,7 @@ class Story(GcdData):
                self.synopsis or \
                self.has_keywords() or \
                self.has_reprints() or \
-               self.awards.all().count()
+               self.active_awards().count()
                
     def has_reprints(self, notes=True):
         return (notes and self.reprint_notes) or \

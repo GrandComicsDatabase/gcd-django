@@ -180,8 +180,7 @@ def show_credit(story, credit):
     elif credit == 'show_awards':
         if story.active_awards().count():
             display_award = '<ul>%s</ul>' % show_award_list(story
-                                                            .active_awards()
-                                                            .all())
+                                                            .active_awards())
             story.show_awards = mark_safe(display_award)
             return __format_credit(story, credit)
         else:

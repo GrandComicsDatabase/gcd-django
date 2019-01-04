@@ -22,8 +22,8 @@ class Award(GcdData):
     name = models.CharField(max_length=200)
     notes = models.TextField()
 
-    def deletable():
-        return False
+    def has_dependents(self):
+        return self.active_awards().count() > 0
 
     def active_awards(self):
         return self.receivedaward_set.exclude(deleted=True)
@@ -59,8 +59,8 @@ class ReceivedAward(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
-    def deletable(self):
-        return self.creator.pending_deletion() is False
+    def has_dependents(self):
+        return self.recipient.pending_deletion()
 
     def display_name(self):
         if not self.no_award_name:

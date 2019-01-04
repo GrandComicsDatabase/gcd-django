@@ -131,7 +131,7 @@
 {% if series.active_awards.count %}
             <div class="series_detail_header"> Awards: </div>
             <ul class="series_detail_info">
-            {{ series.awards.all|show_award_list }}
+            {{ series.active_awards|show_award_list }}
             </ul>
 {% endif %}
 {% if series.has_tracking %}
