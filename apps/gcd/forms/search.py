@@ -9,7 +9,7 @@ from django.conf import settings
 from apps.stddata.models import Country, Language
 from apps.indexer.models import Indexer
 from apps.gcd.models import StoryType, OLD_TYPES, SeriesPublicationType
-from apps.oi.models import GENRES
+from apps.gcd.models.support import GENRES
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],

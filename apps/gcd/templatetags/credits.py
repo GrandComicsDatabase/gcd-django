@@ -11,7 +11,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.stddata.models import Country, Language
-from apps.oi.models import GENRES
+from apps.gcd.models.support import GENRES
 from apps.gcd.models import STORY_TYPES
 
 register = template.Library()

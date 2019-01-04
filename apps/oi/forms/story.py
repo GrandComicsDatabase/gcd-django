@@ -6,10 +6,12 @@ from django.conf import settings
 from django.contrib.admin.widgets import FilteredSelectMultiple
 
 from apps.oi.models import (
-    GENRES, get_reprint_field_list, get_story_field_list,
+    get_reprint_field_list, get_story_field_list,
     BiblioEntryRevision, ReprintRevision, StoryRevision)
 
+
 from apps.gcd.models import StoryType, STORY_TYPES, OLD_TYPES
+from apps.gcd.models.support import GENRES
 
 # TODO: Should not be reaching inside gcd.models sub-package.
 #       This should either be exported thorugh gcd.models or

@@ -19,9 +19,10 @@ from django.shortcuts import get_object_or_404
 from apps.indexer.views import render_error
 from apps.gcd.views.details import KEY_DATE_REGEXP
 from apps.gcd.models import StoryType, Issue
+from apps.gcd.models.support import GENRES
 from apps.oi.models import (
     Changeset, StoryRevision, IssueRevision, PreviewIssue, get_keywords,
-    GENRES, on_sale_date_as_string)
+    on_sale_date_as_string)
 
 MIN_ISSUE_FIELDS = 10
 # MAX_ISSUE_FIELDS is set to 16 to allow import of export issue lines, but
