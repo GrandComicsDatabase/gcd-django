@@ -5,6 +5,8 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, \
                                                GenericRelation
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from .datasource import SourceType, DataSource
 from .gcddata import GcdData
@@ -71,6 +73,18 @@ class ReceivedAward(GcdData):
             return '?'
         else:
             return '%d%s' % (self.award_year, '?' if self.award_year_uncertain else '')
+
+    def full_name(self):
+        return '%s - %s (%s)' % (self.award, self.display_name(),
+                                 self.display_year())
+
+    def full_name_with_link(self):
+        name_link = '<a href="%s">%s</a> ' % (self.award.get_absolute_url(),
+                                              esc(self.award))
+        name_link += '- <a href="%s">%s (%s)</a>' % (self.get_absolute_url(),
+                                                     esc(self.display_name()),
+                                                     esc(self.display_year()))
+        return mark_safe(name_link)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(

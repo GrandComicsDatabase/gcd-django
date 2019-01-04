@@ -17,6 +17,7 @@ from .gcddata import GcdData
 from .publisher import IndiciaPublisher, Brand
 from .image import Image
 from .story import StoryType, STORY_TYPES
+from .award import ReceivedAward
 
 INDEXED = {
     'skeleton': 0,
@@ -97,6 +98,8 @@ class Issue(GcdData):
     no_brand = models.BooleanField(default=False, db_index=True)
     image_resources = GenericRelation(Image)
 
+    awards = GenericRelation(ReceivedAward)
+
     # In production, this is a tinyint(1) because the set of numbers
     # is very small.  But syncdb produces an int(11).
     is_indexed = models.IntegerField(default=0, db_index=True)
@@ -133,6 +136,9 @@ class Issue(GcdData):
 
     def active_variants(self):
         return self._active_variants()
+
+    def active_awards(self):
+        return self.awards.exclude(deleted=True)
 
     def shown_stories(self):
         """ returns cover sequence and story sequences """
@@ -185,6 +191,19 @@ class Issue(GcdData):
 
     def shown_covers(self):
         return self.active_covers(), self.variant_covers()
+
+
+    def has_content(self):
+        """
+        Simplifies UI checks for conditionals.  Content fields
+        """
+        print self.other_variants
+        return self.notes or \
+               self.variant_of or \
+               self.other_variants() or \
+               self.has_keywords() or \
+               self.has_reprints() or \
+               self.awards.all().count()
 
     def has_covers(self):
         return self.can_have_cover() and self.active_covers().exists()
@@ -240,6 +259,7 @@ class Issue(GcdData):
         return self.active_variants().exists()
 
     def has_dependents(self):
+        # what about award_revisions ?
         has_non_story_deps = (
             self.has_variants() or
             self.has_reprints(ignore=None) or

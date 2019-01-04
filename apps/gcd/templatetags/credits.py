@@ -66,6 +66,14 @@ def find_credit_search(credit, target, collator):
 
 
 @register.filter
+def show_award_list(awards):
+    display_awards = ''
+    for award in awards:
+        display_awards += '<li>' + esc(award.full_name_with_link()) + '</li>'
+    return mark_safe(display_awards)
+
+
+@register.filter
 def show_credit(story, credit):
     """
     For showing the credits on the search results page.
@@ -169,9 +177,17 @@ def show_credit(story, credit):
                 story.pages = story.page_began
             return __format_credit(story, credit)
         return ""
+    elif credit == 'show_awards':
+        if story.active_awards().count():
+            display_award = '<ul>%s</ul>' % show_award_list(story
+                                                            .active_awards()
+                                                            .all())
+            story.show_awards = mark_safe(display_award)
+            return __format_credit(story, credit)
+        else:
+            return ""
     elif hasattr(story, credit):
         return __format_credit(story, credit)
-
     else:
         return ""
 
@@ -195,6 +211,8 @@ def __format_credit(story, credit):
         label = _('First Line of Dialogue or Text')
     elif (credit == 'doi'):
         label = 'DOI'
+    elif (credit == 'show_awards'):
+        label = 'Awards'
     else:
         label = _(credit.title())
 
@@ -366,8 +384,8 @@ def show_page_count(story, show_page=False):
 def format_page_count(page_count):
     if page_count is not None:
         try:
-            return re.sub(r'\.?0+$', '',
-              unicode(Decimal(page_count).quantize(Decimal(10)**-3)))
+            return re.sub(r'\.?0+$', '', unicode(Decimal(page_count)
+                                                 .quantize(Decimal(10)**-3)))
         except InvalidOperation:
             return page_count
     else:
@@ -453,7 +471,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
         if hasattr(from_reprint, 'origin_issue') and from_reprint.origin_issue:
             follow_info = ''
             if last_series == from_reprint.origin_issue.series and \
-              last_follow == follow_info:
+               last_follow == follow_info:
                 reprint += generate_reprint_link(from_reprint.origin_issue,
                                                  "from ",
                                                  notes=from_reprint.notes,
@@ -475,7 +493,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
             follow_info = follow_reprint_link(from_reprint, 'from',
                                               level=level+1)
             if last_series == from_reprint.origin.issue.series and \
-              last_follow == follow_info:
+               last_follow == follow_info:
                 reprint += generate_reprint_link_sequence(
                              from_reprint.origin, "from ",
                              notes=from_reprint.notes, only_number=True)
@@ -506,7 +524,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
         if hasattr(to_reprint, 'target_issue') and to_reprint.target_issue:
             follow_info = ''
             if last_series == to_reprint.target_issue.series and \
-              last_follow == follow_info:
+               last_follow == follow_info:
                 reprint += generate_reprint_link(
                              to_reprint.target_issue, "in ",
                              notes=to_reprint.notes, only_number=True)
@@ -524,13 +542,14 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                              notes=to_reprint.notes)
                 last_follow = follow_info
         else:
-            if no_promo and to_reprint.target.type.id == STORY_TYPES['preview']:
+            if no_promo and (to_reprint.target.type.id ==
+                             STORY_TYPES['preview']):
                 pass
             else:
                 follow_info = follow_reprint_link(to_reprint, 'in',
                                                   level=level+1)
                 if last_series == to_reprint.target.issue.series and \
-                  last_follow == follow_info:
+                   last_follow == follow_info:
                     reprint += generate_reprint_link_sequence(
                                  to_reprint.target, "in ",
                                  notes=to_reprint.notes, only_number=True)

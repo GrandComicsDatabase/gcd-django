@@ -1,9 +1,11 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core import urlresolvers
 
 from taggit.managers import TaggableManager
 
 from .gcddata import GcdData
+from .award import ReceivedAward
 
 STORY_TYPES = {
     'cover': 6,
@@ -90,6 +92,8 @@ class Story(GcdData):
     notes = models.TextField()
     keywords = TaggableManager()
 
+    awards = GenericRelation(ReceivedAward)
+
     # Fields from issue.
     issue = models.ForeignKey('Issue')
 
@@ -124,7 +128,8 @@ class Story(GcdData):
                self.first_line or \
                self.synopsis or \
                self.has_keywords() or \
-               self.has_reprints()
+               self.has_reprints() or \
+               self.awards.all().count()
                
     def has_reprints(self, notes=True):
         return (notes and self.reprint_notes) or \
@@ -138,6 +143,9 @@ class Story(GcdData):
         Simplifies UI checks for conditionals.  All non-heading fields
         """
         return self.has_credits() or self.has_content() or self.notes
+
+    def active_awards(self):
+        return self.awards.exclude(deleted=True)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(

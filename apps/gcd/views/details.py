@@ -142,7 +142,7 @@ def show_creator_art_influence(request, creator_art_influence, preview=False):
 
 def received_award(request, received_award_id):
     received_award = get_gcd_object(ReceivedAward, received_award_id,
-                                   model_name='receieved_award')
+                                    model_name='received_award')
     return show_received_award(request, received_award)
 
 

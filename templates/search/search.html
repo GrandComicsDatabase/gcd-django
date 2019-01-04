@@ -24,7 +24,7 @@
             <option value="creator" {% if 'facet_model_name_exact:creator' in form.selected_facets %}selected{% endif %}> Creator </option>
             <option value="creator membership" {% if 'facet_model_name_exact:creator membership' in form.selected_facets %}selected{% endif %}> Creator Membership</option>
             <option value="creator art influence" {% if 'facet_model_name_exact:creator art influence' in form.selected_facets %}selected{% endif %}> Creator Art Influence</option>
-            <option value="creator award" {% if 'facet_model_name_exact:creator award' in form.selected_facets %}selected{% endif %}> Creator Award</option>
+            <option value="received award" {% if 'facet_model_name_exact:received award' in form.selected_facets %}selected{% endif %}> Received Award</option>
             <option value="creator non comic work" {% if 'facet_model_name_exact:creator non comic work' in form.selected_facets %}selected{% endif %}> Creator Non Comic Work </option>
         </select>
         <input type="submit" value="Search">
@@ -219,9 +219,9 @@
                 <td>[CREATOR ART INFLUENCE]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
-            {% if result.model_name == 'creatoraward' %}
-                <td>[CREATOR AWARD]</td>
-                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.award }} - {{ result.object.display_name }}: {{ result.object.creator }}</a></td>
+            {% if result.model_name == 'receivedaward' %}
+                <td>[RECEIVED AWARD]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.award }} - {{ result.object.display_name }}: {{ result.object.recipient }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatornoncomicwork' %}
                 <td>[CREATOR NONCOMICWORK]</td>

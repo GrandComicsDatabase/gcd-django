@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core import urlresolvers
 from django.db.models import Count, Case, When, F
 from django.template.defaultfilters import pluralize
@@ -19,6 +20,7 @@ from .story import Story
 from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
+from .award import ReceivedAward
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -76,6 +78,8 @@ class Series(GcdData):
 
     # Fields for tracking relationships between series.
     tracking_notes = models.TextField()
+
+    awards = GenericRelation(ReceivedAward)
 
     # Fields for handling the presence of certain issue fields
     has_barcode = models.BooleanField(default=False)
@@ -175,6 +179,9 @@ class Series(GcdData):
         self.save()
 
     _update_stats = True
+
+    def active_awards(self):
+        return self.awards.exclude(deleted=True)
 
     def stat_counts(self):
         """

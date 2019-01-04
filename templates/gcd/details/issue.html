@@ -32,7 +32,7 @@
     <div id="control_center">
 {% include "gcd/bits/issue_data.html" %}
 
-{% if issue.notes or issue.variant_of or issue.other_variants or issue.has_keywords or issue.has_reprints %}
+{% if issue.has_content %}
       <div class="issue_notes">
         <div class="issue_notes_border">
           <h3 class="notes_header"> Issue Notes </h3>
@@ -59,6 +59,9 @@ This issue has variants.
   {% endif %}
             {{ issue.notes|urlizetrunc:75|linebreaksbr }}
             {{ issue|show_credit:'keywords' }}
+            <dl class="contents">
+            {{ issue|show_credit:'show_awards' }}
+            </dl>
   {% if issue.has_reprints %}
             <dl class="contents">
             {{ issue|show_reprints_for_issue }}

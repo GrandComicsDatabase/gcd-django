@@ -128,8 +128,14 @@
 {% endif %}
 
           <div class="series_notes">
+{% if series.active_awards.count %}
+            <div class="series_detail_header"> Awards: </div>
+            <ul class="series_detail_info">
+            {{ series.awards.all|show_award_list }}
+            </ul>
+{% endif %}
 {% if series.has_tracking %}
-            <div class="series_detail_header"> Tracking </div>
+            <div class="series_detail_header"> Tracking: </div>
   {% if series.tracking_notes %}
             <div class="series_notes">{{ series.tracking_notes|linebreaksbr }}</div>
   {% endif %}
