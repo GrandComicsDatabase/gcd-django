@@ -1,4 +1,3 @@
-{% load url from future %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -8,7 +7,7 @@
       <a name="{{ story.id }}"></a>
       <h2 class="sequence header title">
         <span class="title left">{{ story|show_title }}</span>
-        <span class="right single_story_navigation"><a class="toc" href="#toc">(Table of Contents)</a></span>
+        <span class="right single_story_navigation"><a class="toc" href="#toc_{{ story.id }}">(Table of Contents{% if forloop.counter %}: {{ forloop.counter }}{% endif %})</a></span>
         {% if story.type.id in not_shown_types %}
         <span class="right single_story_navigation"><a class="toc" href="?issue_detail=2">(Expand)</a> / </span>
         {% endif %}
@@ -51,39 +50,37 @@
           {{ story|show_credit:"colors" }}
           {{ story|show_credit:"letters" }}
           {{ story|show_credit:"editing" }}
-          {{ story|show_credit:"job_number" }}
       </dl>
         {% endif %}
 
         {% if story.has_content %}
         <hr class="content_header"></hr>
         <dl class="contents">
+            {{ story|show_credit:"job_number" }}
+            {{ story|show_credit:"first_line" }}
             {{ story|show_credit:"genre" }}
             {{ story|show_credit:"characters"|linebreaksbr }}
             {{ story|show_credit:"synopsis"|linebreaksbr }}
-            {% if show_original %}
-              {% if no_navigation %}
-                {{ story|show_reprints:'With_Story'|linebreaksbr }}
-              {% else %}  
-                {{ story|show_reprints:'True'|linebreaksbr }}
-              {% endif %}
-            {% else %}
-              {{ story|show_reprints|linebreaksbr }}
-            {% endif %}
+            {{ story|show_credit:"show_awards" }}
+            {{ story|show_reprints|linebreaksbr }}
             {{ story|show_credit:"keywords" }}
+        </dl>
+        {% endif %}
+
+        {% if story.issue.series.has_about_comics and story.biblioentry %}
+        <hr class="content_header"></hr>
+        <dl>
+            {{ story.biblioentry|show_credit:"pages" }}
+            {{ story.biblioentry|show_credit:"doi" }}
+            {% if story.biblioentry.abstract %}
+              <br><p>{{ story.biblioentry|show_credit:"abstract"|linebreaksbr }}</p>
+            {% endif %}
         </dl>
         {% endif %}
 
         {% if story.notes %}
         <h3 class="notes_header"> Indexer Notes </h3>
-        {% ifequal issue.notes story.notes %}
-        <p> [Cover story notes are the same as the issue notes
-             (see Issue Notes above).  This may mean that
-             one or both set of notes need editing as a result of our recent
-             migration to having separate issue and cover notes.]
-        {% else %}
         <p>{{ story.notes|urlizetrunc:75|linebreaksbr }}</p>
-        {% endifequal %}
         {% endif %}
       {% endif %} <!-- shown_types -->
 

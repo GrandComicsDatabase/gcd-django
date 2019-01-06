@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import re
+import six
+
 from django.conf import settings
 from django import forms
 from django.utils.safestring import mark_safe
-from django.utils.encoding import force_unicode
-from django.utils.html import escape, conditional_escape
 from django.forms.widgets import TextInput
 
-from apps.gcd.models import Brand
+from apps.gcd.models import Brand, SourceType
 from apps.gcd.templatetags.credits import format_page_count
 
 
@@ -40,6 +41,9 @@ PUBLISHER_HELP_LINKS = {
     'comments': 'Comments '
 }
 
+AWARD_HELP_LINKS = {
+}
+
 BRAND_HELP_LINKS = {
     'name': 'Brand',
     'year_began': 'Years_of_Use_%28Brand%29',
@@ -50,6 +54,66 @@ BRAND_HELP_LINKS = {
     'notes': 'Notes_%28Brand%29',
     'keywords': 'Keywords',
     'comments': 'Comments '
+}
+
+CREATOR_HELP_LINKS = {
+    'gcd_official_name': 'Credits',
+    'date': 'Year_/_Month_/_Date_Fields',
+    'birth_country': 'Country_/_Province_/_City_Fields',
+    'death_country': 'Country_/_Province_/_City_Fields',
+    'birth_province': 'Country_/_Province_/_City_Fields',
+    'death_province': 'Country_/_Province_/_City_Fields',
+    'birth_city': 'Country_/_Province_/_City_Fields',
+    'death_city': 'Country_/_Province_/_City_Fields',
+    'bio': 'Biography',
+    'whos_who': 'Biography',
+    'notes': 'Notes_(Creators)'
+}
+
+CREATOR_ARTINFLUENCE_HELP_LINKS = {
+    'influence_name': 'Influence_Name',
+    'influence_link': 'Influence_Name',
+    'notes': 'Notes_(Creator_Influences)',
+}
+
+CREATOR_AWARD_HELP_LINKS = {
+    'award_name': 'Award_name',
+    'award_year': 'Year_fields',
+    'notes': 'Notes_(Creator_Awards)'
+}
+
+CREATOR_DEGREE_HELP_LINKS = {
+    'school': 'School',
+    'degree': 'Degree',
+    'degree_year': 'Year_fields',
+    'notes': 'Notes_(Creator_Degrees)'
+}
+
+CREATOR_MEMBERSHIP_HELP_LINKS = {
+    'organization_name': 'Organization_name',
+    'membership_type': 'Membership_type',
+    'membership_year_began': 'Year_fields',
+    'membership_year_ended': 'Year_fields',
+    'notes': 'Notes_(Creator_Memberships)'
+}
+
+CREATOR_NONCOMICWORK_HELP_LINKS = {
+    'work_type': 'Work_Type',
+    'publication_title': 'Publication_Title',
+    'employer_name': 'Employer_Name',
+    'work_title': 'Work_Title',
+    'work_role': 'Work_Role',
+    'notes': 'Work_Notes_(Non_Comic_Work)',
+}
+
+CREATOR_RELATION_HELP_LINKS = {
+}
+
+CREATOR_SCHOOL_HELP_LINKS = {
+    'school': 'School',
+    'school_year_began': 'Year_fields',
+    'school_year_ended': 'Year_fields',
+    'notes': 'Notes_(Creator_Schools)'
 }
 
 INDICIA_PUBLISHER_HELP_LINKS = {
@@ -106,6 +170,7 @@ SEQUENCE_HELP_LINKS = {
     'type': 'Type',
     'title': 'Title',
     'title_inferred': 'Title',
+    'first_line': 'First_Line',
     'feature': 'Feature',
     'page_count': 'Page_Count',
     'page_count_uncertain': 'Page_Count',
@@ -129,6 +194,13 @@ SEQUENCE_HELP_LINKS = {
     'notes': 'Notes',
     'keywords': 'Keywords',
     'comments': 'Comments'
+}
+
+BIBLIOGRAPHIC_ENTRY_HELP_LINKS = {
+    'page_began': 'Biblio_Pages',
+    'page_ended': 'Biblio_Pages',
+    'abstract': 'Abstract',
+    'doi': 'DOI',
 }
 
 SERIES_HELP_LINKS = {
@@ -162,10 +234,54 @@ SERIES_HELP_LINKS = {
     'comments': 'Comments'
 }
 
-VARIANT_NAME_HELP_TEXT = (
-    'Name of this variant. Examples are: "Cover A" (if listed as such in '
-    'the issue), "2nd printing", "newsstand", "direct", or the name of '
-    'the artist if different from the base issue.')
+CREATOR_HELP_TEXTS = {
+    'bio':
+        "A short biography (1-4 paragraphs) noting highlights of the career "
+        "of the creator, which might include a list of characters created.",
+    'whos_who':
+         "Link to the old Who’s Who, if available.",
+}
+
+CREATOR_MEMBERSHIP_HELP_TEXTS = {
+    'organization_name':
+        "Name of society or other organization, related to an artistic "
+        "profession, that the creator holds or held a membership in.",
+}
+
+CREATOR_ARTINFLUENCE_HELP_TEXTS = {
+    'influence_name':
+        "Name of an artistic influence of the creator. We only document "
+        "influences self-identified by the creator.",
+    'influence_link':
+        "If the influence is a creator in our database, link to the creator "
+        "record instead of entering the name above.",
+}
+
+CREATOR_NONCOMICWORK_HELP_TEXTS = {
+    'publication_title':
+        "Record the publication title if a physical publication, the title of "
+        "a play, movie, television, radio, or live show series, the name or "
+        "client of an advertising campaign, name of a fine art piece or "
+        "internet site, or feature of a web comic.",
+    'employer_name':
+        "The name of the entity that paid for the work.",
+    'work_title':
+        "The title of the individual work, such as the title of an article "
+        "or web comic story, episode of a show, illustration in an "
+        "ad campaign, or blog entry.",
+    'work_years':
+        "The years of the work. Separate years by ';', use year-year for "
+        "ranges and question marks for uncertain years.",
+    'work_urls':
+        "Links to either the work or more information about the work, such as"
+        " the person's entry in the IMDb, a WorldCat search for a creator, or"
+        " a link to a web comic site. One URL per line."
+}
+
+CREATOR_RELATION_HELP_TEXTS = {
+    'relation_type': "The type of relation between the two creators, where "
+        "'Creator A' has the chosen relation with 'Creator B'"
+}
 
 PUBLISHER_HELP_TEXTS = {
     'year_began':
@@ -255,6 +371,8 @@ SERIES_HELP_TEXTS = {
         "series.",
     'is_comics_publication':
         "Publications in this series are mostly comics publications.",
+    'has_about_comics':
+        "Issues in this series can contain sequences about comics.",
     'is_singleton':
         "Series consists of one and only one issue by design. "
         "Note that for series adds an issue with no issue number will"
@@ -309,7 +427,7 @@ ISSUE_HELP_TEXTS = {
         'number of "1", checking this box will display "v2#1" instead '
         'of just "1" in the status grids and issues lists for the series.',
     'publication_date':
-        'The publicaton date as printed on the comic, except with the '
+        'The publication date as printed on or in the comic, except with the '
         'name of the month (if any) spelled out.  Any part of the date '
         'that is not printed on the comic but is known should be put '
         'in square brackets, such as "[January] 2009". ',
@@ -400,6 +518,17 @@ ISSUE_HELP_TEXTS = {
         "Check this box if there are no publisher's age guidelines.",
 }
 
+VARIANT_NAME_HELP_TEXT = (
+    'Name of this variant. Examples are: "Cover A" (if listed as such in '
+    'the issue), "2nd printing", "newsstand", "direct", or the name of '
+    'the artist if different from the base issue.')
+
+BIBLIOGRAPHIC_ENTRY_HELP_LINKS = {
+    'page_began': 'Enter the first and if existing last page.',
+    'abstract': 'The printed abstract of the bibliographic entry.',
+    'doi': 'The Digital Object Identifier (DOI) for the entry.',
+}
+
 
 def _set_help_labels(self, help_links):
     for field in self.fields:
@@ -485,37 +614,104 @@ def _clean_keywords(cleaned_data):
     return keywords
 
 
+def init_data_source_fields(field_name, revision, fields):
+    data_source_revision = revision.changeset.datasourcerevisions\
+                                             .filter(field=field_name)
+    if data_source_revision:
+        # TODO we want to be able to support more than one revision
+        data_source_revision = data_source_revision[0]
+        fields['%s_source_description' % field_name].initial = \
+                                    data_source_revision.source_description
+        fields['%s_source_type' % field_name].initial = \
+                                    data_source_revision.source_type
+
+
+def add_data_source_fields(form, field_name):
+    form.fields['%s_source_description' % field_name] = forms.CharField(
+                                    widget=forms.Textarea, required=False)
+    form.fields['%s_source_type' % field_name] = forms.ModelChoiceField(
+                        queryset=SourceType.objects.all(), required=False)
+
+
+def insert_data_source_fields(field_name, ordering, fields, insert_after):
+    index = ordering.index(insert_after)
+
+    ordering.insert(index+1, '%s_source_description' % field_name)
+    fields.update({'%s_source_description' % field_name: forms.CharField(
+                                    widget=forms.Textarea, required=False)})
+
+    ordering.insert(index+2, '%s_source_type' % field_name)
+    fields.update({'%s_source_type' % field_name: forms.ModelChoiceField(
+                        queryset=SourceType.objects.all(), required=False)})
+
+
 class PageCountInput(TextInput):
     def render(self, name, value, attrs=None):
         value = format_page_count(value)
         return super(PageCountInput, self).render(name, value, attrs)
 
 
+class ForeignKeyField(forms.IntegerField):
+    def __init__(self, queryset, target_name=None, **kwargs):
+        forms.IntegerField.__init__(self, **kwargs)
+        self.queryset = queryset
+        if target_name is not None:
+            self.target_name = target_name
+
+    def clean(self, value):
+        id = forms.IntegerField.clean(self, value)
+        if id is None:
+            return id
+        try:
+            return self.queryset.get(id=id)
+        except ObjectDoesNotExist:
+            raise forms.ValidationError, ("%d is not the ID of a valid %s" %
+                               (id, self.target_name))
+        except MultipleObjectsReturned:
+            raise forms.ValidationError, (
+              "%d matched multiple instances of %s" % (id, self.target_name))
+
+
+class KeywordsWidget(forms.TextInput):
+    def render(self, name, value, attrs=None):
+        if value is not None and not isinstance(value, six.string_types):
+            value = u'; '.join([
+                o.tag.name for o in value.select_related("tag")])
+        return super(KeywordsWidget, self).render(name, value, attrs)
+
+
+class KeywordsField(forms.CharField):
+    _SPLIT_RE = re.compile(ur'\s*;\s*')
+    _NOT_ALLOWED = ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']
+
+    widget = KeywordsWidget
+
+    def clean(self, value):
+        value = super(KeywordsField, self).clean(value)
+        value.strip()
+
+        for c in self._NOT_ALLOWED:
+            if c in value:
+                raise forms.ValidationError(
+                    'The following characters are not allowed in a keyword: ' +
+                    ' '.join(self._NOT_ALLOWED))
+
+        keywords = [k for k in self._SPLIT_RE.split(value) if k]
+        keywords.sort()
+        return keywords
+
+
 class BrandEmblemSelect(forms.Select):
-    def render_option(self, selected_choices, option_value, option_label):
-        url = ''
-        if option_value:
-            brand = Brand.objects.get(id=option_value)
+    option_template_name = 'oi/forms/widgets/select_brand.html'
+
+    def create_option(self, name, value, label, selected, index, subindex=None,
+                      attrs=None):
+        option_dict = super(BrandEmblemSelect, self)\
+                      .create_option(name, value, label, selected, index,
+                                     subindex=subindex, attrs=attrs)
+        if value:
+            brand = Brand.objects.get(id=value)
             if brand.emblem and not settings.FAKE_IMAGES:
-                url = brand.emblem.icon.url
-        option_value = force_unicode(option_value)
-        if option_value in selected_choices:
-            selected_html = u' selected="selected"'
-            if not self.allow_multiple_selected:
-                # Only allow for a single selection.
-                selected_choices.remove(option_value)
-        else:
-            selected_html = ''
-        if url:
-            return (u'<option value="%s"%s data-image="%s" '
-                    'image-width="%d">%s</option>') % (
-                escape(option_value),
-                selected_html,
-                url,
-                brand.emblem.icon.width,
-                conditional_escape(force_unicode(option_label)))
-        else:
-            return u'<option value="%s"%s>%s</option>' % (
-                escape(option_value),
-                selected_html,
-                conditional_escape(force_unicode(option_label)))
+                option_dict['url'] = brand.emblem.icon.url
+                option_dict['image_width'] = brand.emblem.icon.width
+        return option_dict

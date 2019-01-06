@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, absolute_import
 
-from django.conf.urls import patterns, url
-from django.contrib import admin
+from django.conf.urls import url
 from django.contrib.auth import views as auth_views
 from django.views.generic import base as bv
+from django.views.generic.base import TemplateView
 
 from apps.indexer import views as account_views
-from apps.indexer.forms import PasswordResetForm
+from apps.indexer.forms import PasswordResetForm, UserContactForm
 
-
-urlpatterns = patterns(
-    '',
+urlpatterns = [
     # Logout will only look for a 'next_page' parameter in GET, but
     # GET requests should not have side effects so use a wrapper to
     # pull from POST.
@@ -68,8 +66,20 @@ urlpatterns = patterns(
         auth_views.password_reset_confirm,
         {'template_name': 'indexer/password_reset_confirm.html',
          'set_password_form': PasswordResetForm,
-         'post_reset_redirect': '/accounts/reset/done'}),
+         'post_reset_redirect': '/accounts/reset/done'},
+        name='password_reset_confirm'),
     url(r'^accounts/reset/done/$',
         auth_views.password_reset_complete,
         {'template_name': 'indexer/password_reset_complete.html'}),
-)
+    url(r'^accounts/contact/(?P<user_id>\d+)/$',
+        account_views.CustomContactFormView.as_view(
+            form_class=UserContactForm,
+            template_name='indexer/user_contact_form.html',
+        ),
+        name='user_contact_form'),
+    url(r'^accounts/contact/sent/$',
+        TemplateView.as_view(
+            template_name='indexer/user_contact_form_sent.html'
+        ),
+        name='user_contact_form_sent'),
+]

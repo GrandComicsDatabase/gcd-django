@@ -1,6 +1,5 @@
 {% extends "gcd/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load credits %}
@@ -17,9 +16,6 @@
 </link>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/status.css" %}">
-</link>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default/scans.css" %}">
 </link>
 {% endblock %}
 
@@ -38,11 +34,7 @@
       <div class="clear">
 {% if series.is_comics_publication and series.has_gallery %}
         <div id="series_cover">
-  {% if preview %}
           <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
-  {% else %}
-          <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
-  {% endif %}
   {{ image_issue.display_number }}<br>
   {{ image_issue.publication_date }}<br>
           <a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
@@ -98,15 +90,8 @@
   {% if series.has_gallery %}
             <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png">Cover Gallery</a>&nbsp;
   {% endif %}
-  {% if not preview or series.source %}
-    {% if preview %}
-            <a  href="{% url "series_details" series_id=series.source.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
-            <a href="{% url "series_timeline" series_id=series.source.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
-    {% else %}
             <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
             <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
-    {% endif %}
-  {% endif %}
 {% endif %}
           </ul>
 
@@ -115,16 +100,15 @@
           <ul class="series_detail_info">
   {% for brand in brands %}
             <li> {{ brand|absolute_url }}
-                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ brand|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.used_issue_count }} issue{{ brand.used_issue_count|pluralize }}</a>)
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ brand|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.used_issue_count }} issue{{ brand.used_issue_count|pluralize }}</a>)
   {% endfor %}
   {% if brand_counts.no_brand %}
             <li> no publisher's brand 
-                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_none }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }}</a>)                 
-                 
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_none }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }}</a>)
   {% endif %}
   {% if brand_counts.unknown %}
             <li> without publisher's brand information
-                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }}</a>)                 
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }}</a>)
   {% endif %}
           </ul>
 {% endif %}
@@ -134,18 +118,24 @@
           <ul class="series_detail_info">
   {% for ip in series.ordered_indicia_publishers %}
             <li> {{ ip|absolute_url }}
-                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ ip|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ ip.used_issue_count }} issue{{ ip.used_issue_count|pluralize }}</a>)
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ ip|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ ip.used_issue_count }} issue{{ ip.used_issue_count|pluralize }}</a>)
   {% endfor %}
   {% if indicia_publisher_counts.unknown %}
             <li> without indicia publisher information
-                 (<a href="{% url "apps.gcd.views.search.process_advanced" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)                 
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)
   {% endif %}
         </ul>
 {% endif %}
 
           <div class="series_notes">
+{% if series.active_awards.count %}
+            <div class="series_detail_header"> Awards: </div>
+            <ul class="series_detail_info">
+            {{ series.active_awards|show_award_list }}
+            </ul>
+{% endif %}
 {% if series.has_tracking %}
-            <div class="series_detail_header"> Tracking </div>
+            <div class="series_detail_header"> Tracking: </div>
   {% if series.tracking_notes %}
             <div class="series_notes">{{ series.tracking_notes|linebreaksbr }}</div>
   {% endif %}
@@ -161,7 +151,7 @@
         </div> <!-- series_data -->
       </div> <!-- class="clear" -->
     </div> <!-- control_center -->
-{% if not preview or series.source %}
+{% if not preview or series.id %}
     <div id="control_rail">
       <div class="edit_box">
   {% if MYCOMICS %}
@@ -195,7 +185,7 @@
       {% if user.is_authenticated %}
         {% if not series.pending_deletion %}
           {% if series.is_current and not series.ongoing_reservation %}
-        <form method="POST" action="{% url "apps.oi.views.ongoing" %}">
+        <form method="POST" action="{% url "reserve_ongoing" %}">
             {% csrf_token %}
           <input id="series" name="series" type="hidden" value="{{ series.id }}">
           </input>
@@ -224,25 +214,13 @@
           </input>
         </form>
         {% endif %} <!-- pending_deletion -->
-      {% else %}
-        {% if series.reserved %}
-        <form action="{% url "login" %}" method="GET">
-          <input type="submit" name="login" value="Log in to edit" />
-          <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-        </form>
-        {% endif %}
       {% endif %} <!-- logged in -->
     {% endif %} <!-- not preview -->
         <div id="change_history" class="edit_footer">
-  {% if preview %}
-          <a href="{% url "change_history" model_name='series' id=series.source.id %}">View Change History</a>
-  {% else %}
           <a href="{% url "change_history" model_name='series' id=series.id %}">View Change History</a>
-  {% endif %}
         </div>
   {% endif %} <!-- MYCOMICS -->
       </div>
-{% if not preview %}
   {% if MYCOMICS %}
       <div class="www_comics_cross_link">
         <a href="http://www.comics.org{% url "show_series" series_id=series.id %}">Series at www.comics.org</a>
@@ -252,7 +230,6 @@
         <a href="http://my.comics.org{% url "show_series" series_id=series.id %}">Series at my.comics.org</a>
       </div>
   {% endif %}
-{% endif %}
     </div> <!-- control_rail -->
 {% endif %}
   </div> <!-- control_container -->
@@ -269,16 +246,18 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% if MYCOMICS and user.is_authenticated %}
 <h3> Collection Status </h3>
     {% include 'mycomics/bits/series_collection_status.html' %}
+<hr>
   {% endif %}
 
+<a name="index_status"></a>
 <h3> Index Status </h3>
 
   {% include "gcd/bits/status_tables.html" %}
-<hr/>
+<hr>
 
   {% if series.is_comics_publication %}
+<a name="cover_status"></a>
 <h3> Cover Status </h3>
-
     {% include "gcd/bits/scan_tables.html" %}
   {% endif %}
 {% endif %}

@@ -1,6 +1,5 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load credits %}
@@ -42,11 +41,11 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 <div>
   <fieldset class="universal">
     <ol>
-{% if upload_type = 'replacement' %}
+{% if upload_type == 'replacement' %}
       <form action="{% url "replace_cover" cover_id=cover.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
 {% else %}
-  {% if upload_type = 'variant' %}
+  {% if upload_type == 'variant' %}
       <form action="{% url "upload_variant" issue_id=issue.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
   {% else %}
@@ -111,7 +110,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 <h2> current cover{{ current_covers|length|pluralize }} </h2>
 <table id="covers">
   <tr>
-  {% for cover, issue, tag in current_covers %}
+  {% for cover, issue, tag, count in current_covers %}
     <td class="cover_grid">
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <br>

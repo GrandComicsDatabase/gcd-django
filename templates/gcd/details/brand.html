@@ -1,10 +1,10 @@
 {% extends "gcd/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
+{% load editing %}
 
 {% block title %}
 GCD :: Brand Emblem :: {{ brand.name }}
@@ -40,10 +40,6 @@ GCD :: Brand Emblem :: {{ brand.name }}
         <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
-{% ifequal page.object_list.count 0 %}
-        <dt> Issues:
-        <dd> None
-{% endifequal %}
       </dl>
 {% if brand.emblem %}
 <img src="{{ brand.emblem.scaled_image.url }}">
@@ -68,7 +64,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
       {% endwith %}
       {% endwith %}
       {% if brand.emblem %}
-        {% if brand.emblem.reserved %}
+        {% if brand.emblem|is_locked %}
         <div style='padding:.4em' class="index_status_1">
         Brand emblem changes pending
         </div>
@@ -160,7 +156,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
     <td> {{ use.notes }} </td>
   {% if user.is_authenticated and not MYCOMICS %}
     <td>
-    {% if use.reserved %}
+    {% if use|is_locked %}
     is reserved
     {% else %}
       <form method="POST"
@@ -181,14 +177,14 @@ GCD :: Brand Emblem :: {{ brand.name }}
 </table>
 {% endif %}
 
-{% if page.object_list.count %}
+{% if items %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Issue </th>
     <th> Publication Date </th>
     <th> Indicia Publisher </th>
   </tr>
-  {% for issue in page.object_list %}
+  {% for issue in items %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
     <td> {{ issue.publication_date }} </td>

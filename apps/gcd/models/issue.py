@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from decimal import Decimal
 
 from django.db import models
 from django.core import urlresolvers
-from django.db.models import Sum, Count
-from django.contrib.contenttypes import generic
+from django.db.models import Sum
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
-from publisher import IndiciaPublisher, Brand
-from series import Series
-from image import Image
-
-# TODO: should not be importing oi app into gcd app, dependency should be
-# the other way around.  Probably.
-from apps.oi import states
+from .gcddata import GcdData
+from .publisher import IndiciaPublisher, Brand
+from .image import Image
+from .story import StoryType, STORY_TYPES
+from .award import ReceivedAward
 
 INDEXED = {
     'skeleton': 0,
@@ -25,6 +25,7 @@ INDEXED = {
     'partial': 2,
     'ten_percent': 3,
 }
+
 
 def issue_descriptor(issue):
     if issue.number == '[nn]' and issue.series.is_singleton:
@@ -34,10 +35,15 @@ def issue_descriptor(issue):
     else:
         title = u''
     if issue.display_volume_with_number:
-        return u'v%s#%s%s' % (issue.volume, issue.number, title)
+        if issue.volume_not_printed:
+            volume = u'[v%s]' % issue.volume
+        else:
+            volume = u'v%s' % issue.volume
+        return u'%s#%s%s' % (volume, issue.number, title)
     return issue.number + title
 
-class Issue(models.Model):
+
+class Issue(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['series', 'sort_code']
@@ -49,7 +55,9 @@ class Issue(models.Model):
     no_title = models.BooleanField(default=False, db_index=True)
     volume = models.CharField(max_length=50, db_index=True)
     no_volume = models.BooleanField(default=False, db_index=True)
-    display_volume_with_number = models.BooleanField(default=False, db_index=True)
+    volume_not_printed = models.BooleanField(default=False)
+    display_volume_with_number = models.BooleanField(default=False,
+                                                     db_index=True)
     isbn = models.CharField(max_length=32, db_index=True)
     no_isbn = models.BooleanField(default=False, db_index=True)
     valid_isbn = models.CharField(max_length=13, db_index=True)
@@ -72,7 +80,8 @@ class Issue(models.Model):
 
     # Price, page count and format fields
     price = models.CharField(max_length=255)
-    page_count = models.DecimalField(max_digits=10, decimal_places=3, null=True)
+    page_count = models.DecimalField(max_digits=10, decimal_places=3,
+                                     null=True)
     page_count_uncertain = models.BooleanField(default=False)
 
     editing = models.TextField()
@@ -82,49 +91,54 @@ class Issue(models.Model):
     keywords = TaggableManager()
 
     # Series and publisher links
-    series = models.ForeignKey(Series)
+    series = models.ForeignKey('Series')
     indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
-    image_resources = generic.GenericRelation(Image)
-
-    @property
-    def indicia_image(self):
-        img = Image.objects.filter(object_id=self.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(self), type__id=1)
-        if img:
-            return img.get()
-        else:
-            return None
-
     brand = models.ForeignKey(Brand, null=True)
     no_brand = models.BooleanField(default=False, db_index=True)
+    image_resources = GenericRelation(Image)
 
-    @property
-    def soo_image(self):
-        img = Image.objects.filter(object_id=self.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(self), type__id=2)
-        if img:
-            return img.get()
-        else:
-            return None
+    awards = GenericRelation(ReceivedAward)
 
     # In production, this is a tinyint(1) because the set of numbers
     # is very small.  But syncdb produces an int(11).
     is_indexed = models.IntegerField(default=0, db_index=True)
 
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
+    @property
+    def indicia_image(self):
+        img = Image.objects.filter(
+          object_id=self.id,
+          deleted=False,
+          content_type=ContentType.objects.get_for_model(self),
+          type__id=1)
+        if img:
+            return img.get()
+        else:
+            return None
 
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True, db_index=True)
-
-    deleted = models.BooleanField(default=False, db_index=True)
+    @property
+    def soo_image(self):
+        img = Image.objects.filter(
+          object_id=self.id,
+          deleted=False,
+          content_type=ContentType.objects.get_for_model(self),
+          type__id=2)
+        if img:
+            return img.get()
+        else:
+            return None
 
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
-    def active_variants(self):
+    def _active_variants(self):
         return self.variant_set.exclude(deleted=True)
+
+    def active_variants(self):
+        return self._active_variants()
+
+    def active_awards(self):
+        return self.awards.exclude(deleted=True)
 
     def shown_stories(self):
         """ returns cover sequence and story sequences """
@@ -150,19 +164,24 @@ class Issue(models.Model):
             cover_story = None
         return cover_story, stories
 
+    def _active_covers(self):
+        if self.can_have_cover():
+            return self.cover_set.exclude(deleted=True)
+        else:
+            return self.cover_set.none()
+
     def active_covers(self):
-        return self.cover_set.exclude(deleted=True)
+        return self._active_covers()
 
     def variant_covers(self):
         """ returns the images from the variant issues """
-        from cover import Cover
+        from .cover import Cover
         if self.variant_of:
-            variant_issues = list(self.variant_of.variant_set\
-                                      .exclude(id=self.id)\
-                                      .exclude(deleted=True)\
+            variant_issues = list(self.variant_of.active_variants()
+                                      .exclude(id=self.id)
                                       .values_list('id', flat=True))
         else:
-            variant_issues = list(self.variant_set.exclude(deleted=True)\
+            variant_issues = list(self.active_variants()
                                       .values_list('id', flat=True))
         variant_covers = Cover.objects.filter(issue__id__in=variant_issues)\
                                       .exclude(deleted=True)
@@ -173,8 +192,21 @@ class Issue(models.Model):
     def shown_covers(self):
         return self.active_covers(), self.variant_covers()
 
+
+    def has_content(self):
+        """
+        Simplifies UI checks for conditionals.  Content fields
+        """
+        print self.other_variants
+        return self.notes or \
+               self.variant_of or \
+               self.other_variants() or \
+               self.has_keywords() or \
+               self.has_reprints() or \
+               self.active_awards().count()
+
     def has_covers(self):
-        return self.can_have_cover() and self.active_covers().count() > 0
+        return self.can_have_cover() and self.active_covers().exists()
 
     def can_have_cover(self):
         if self.series.is_comics_publication:
@@ -183,62 +215,15 @@ class Issue(models.Model):
             return True
         else:
             return False
-        
-    def has_keywords(self):
-        return self.keywords.exists()
 
     def other_variants(self):
         if self.variant_of:
-            variants = self.variant_of.variant_set.exclude(id=self.id)
+            variants = self.variant_of.active_variants().exclude(id=self.id)
         else:
-            variants = self.variant_set.all()
-        return list(variants.exclude(deleted=True))
+            variants = self.active_variants()
+        return list(variants)
 
-    def issue_descriptor(self):
-        return issue_descriptor(self)
-
-    @property
-    def display_number(self):
-        number = self.issue_descriptor()
-        if number:
-            return u'#' + number
-        else:
-            return u''
-
-    # determine and set whether something has been indexed at all or not
-    def set_indexed_status(self):
-        from story import StoryType
-        if not self.variant_of:
-            is_indexed = INDEXED['skeleton']
-            if self.page_count > 0:
-                total_count = self.active_stories()\
-                              .aggregate(Sum('page_count'))['page_count__sum']
-                if total_count > 0 and \
-                   total_count >= Decimal('0.4') * self.page_count:
-                    is_indexed = INDEXED['full']
-                elif total_count > 0 and \
-                   total_count >= Decimal('0.1') * self.page_count:
-                    is_indexed = INDEXED['ten_percent']
-            if is_indexed not in [INDEXED['full'], INDEXED['ten_percent']] and \
-              self.active_stories()\
-              .filter(type=StoryType.objects.get(name='comic story')).count() > 0:
-                is_indexed = INDEXED['partial']
-
-            if is_indexed == INDEXED['full']:
-                if self.page_count_uncertain or self.active_stories()\
-                  .filter(page_count_uncertain=True).count() > 0:
-                    is_indexed = INDEXED['partial']
-
-            if self.is_indexed != is_indexed:
-                self.is_indexed = is_indexed
-                self.save()
-                if self.active_variants():
-                    for variant in self.active_variants():
-                        variant.is_indexed = is_indexed
-                        variant.save()
-        return self.is_indexed
-
-    def get_prev_next_issue(self):
+    def _get_prev_next_issue(self):
         """
         Find the issues immediately before and after the given issue.
         """
@@ -260,43 +245,165 @@ class Issue(models.Model):
 
         return [prev_issue, next_issue]
 
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
+    def get_prev_next_issue(self):
+        return self._get_prev_next_issue()
 
-    def has_reprints(self):
-        from story import STORY_TYPES
-        """Simplifies UI checks for conditionals.  notes and reprint fields"""
+    def has_reprints(self, ignore=STORY_TYPES['preview']):
+        """Simplifies UI checks for conditionals, notes and reprint fields"""
         return self.from_reprints.count() or \
-               self.to_reprints.exclude(target__type__id=STORY_TYPES['promo']).count() or \
-               self.from_issue_reprints.count() or \
-               self.to_issue_reprints.count()
+            self.to_reprints.exclude(target__type__id=ignore).count() or \
+            self.from_issue_reprints.count() or \
+            self.to_issue_reprints.count()
 
-    def deletable(self):
-        if self.cover_revisions.filter(changeset__state__in=states.ACTIVE)\
-                                   .count() > 0:
-            return False
-        if self.variant_set.filter(deleted=False).count() > 0:
-            return False
-        if self.has_reprints():
-            return False
+    def has_variants(self):
+        return self.active_variants().exists()
+
+    def has_dependents(self):
+        # what about award_revisions ?
+        has_non_story_deps = (
+            self.has_variants() or
+            self.has_reprints(ignore=None) or
+            self.cover_revisions.active_set().exists() or
+            self.variant_revisions.active_set().exists() or
+            self.origin_reprint_revisions.active_set().exists() or
+            self.target_reprint_revisions.active_set().exists())
+        if has_non_story_deps:
+            return True
+
         for story in self.active_stories():
-            if story.has_reprints(notes=False):
-                return False
-        return True
+            has_story_deps = (
+                story.has_reprints(notes=False) or
+                story.origin_reprint_revisions.active_set().exists() or
+                story.target_reprint_revisions.active_set().exists())
+            if has_story_deps:
+                return True
+
+        return False
 
     def can_upload_variants(self):
         if self.has_covers():
-            return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                         deleted=True).count() == 0
+            currently_deleting = self.revisions.active_set() \
+                                               .filter(deleted=True).exists()
+            return not currently_deleting
         else:
             return False
+
+    def set_indexed_status(self):
+        """
+        Sets the index status and returns the resulting stat change value.
+
+        The return value of this method is intended for use in adjusting
+        the "issue indexes" stat count.  GCD model modules cannot import
+        CountStats and set them directly due to circular dependencies.
+        """
+        was_indexed = self.is_indexed
+
+        if not self.variant_of:
+            is_indexed = INDEXED['skeleton']
+            if self.page_count > 0:
+                total_count = self.active_stories()\
+                              .aggregate(Sum('page_count'))['page_count__sum']
+                if (total_count > 0 and
+                        total_count >= Decimal('0.4') * self.page_count):
+                    is_indexed = INDEXED['full']
+                elif (total_count > 0 and
+                        total_count >= Decimal('0.1') * self.page_count):
+                    is_indexed = INDEXED['ten_percent']
+
+            if (is_indexed not in [INDEXED['full'], INDEXED['ten_percent']] and
+                self.active_stories()
+                    .filter(type=StoryType.objects.get(name='comic story'))
+                    .exists()):
+                is_indexed = INDEXED['partial']
+
+            if is_indexed == INDEXED['full']:
+                if self.page_count_uncertain or self.active_stories()\
+                       .filter(page_count_uncertain=True).exists():
+                    is_indexed = INDEXED['partial']
+
+            if self.is_indexed != is_indexed:
+                self.is_indexed = is_indexed
+                self.save()
+                if self.active_variants():
+                    for variant in self.active_variants():
+                        variant.is_indexed = is_indexed
+                        variant.save()
+
+        index_delta = 0
+        if self.series.is_comics_publication:
+            if not was_indexed and self.is_indexed:
+                index_delta = 1
+            elif was_indexed and not self.is_indexed:
+                index_delta = -1
+        return index_delta
+
+    _update_stats = True
+
+    def stat_counts(self):
+        """
+        Returns all count values relevant to this issue.
+
+        Includes counts for the issue itself.
+
+        Non-comics publications return statistics only for stories and covers,
+        as non-comics issues do not count towards stats.
+
+        Note that we have a special value "series issues", because non-variant
+        issues are counted differently with respect to series than in general.
+        A series always counts its own non-variant issues, even when the series
+        is not a comics publication.
+        """
+        if self.deleted:
+            return {}
+
+        counts = {
+            'stories': self.active_stories().count(),
+            'covers': self.active_covers().count(),
+        }
+
+        if not self.variant_of_id:
+            counts['series issues'] = 1
+
+        if self.series.is_comics_publication:
+            if self.variant_of_id:
+                counts['variant issues'] = 1
+            else:
+                counts['issues'] = 1
+                if self.is_indexed != INDEXED['skeleton']:
+                    counts['issue indexes'] = 1
+        return counts
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_issue',
-            kwargs={'issue_id': self.id } )
+            kwargs={'issue_id': self.id})
+
+    @property
+    def full_descriptor(self):
+        if self.variant_name:
+            return "%s [%s]" % (self.issue_descriptor, self.variant_name)
+        else:
+            return self.issue_descriptor
+
+    @property
+    def issue_descriptor(self):
+        return issue_descriptor(self)
+
+    @property
+    def display_full_descriptor(self):
+        number = self.full_descriptor
+        if number:
+            return u'#' + number
+        else:
+            return u''
+
+    @property
+    def display_number(self):
+        number = self.issue_descriptor
+        if number:
+            return u'#' + number
+        else:
+            return u''
 
     def full_name(self, variant_name=True):
         if variant_name and self.variant_name:
@@ -309,7 +416,8 @@ class Issue(models.Model):
     def full_name_with_link(self, publisher=False):
         name_link = self.series.full_name_with_link(publisher)
         return mark_safe('%s <a href="%s">%s</a>' % (name_link,
-          self.get_absolute_url(), esc(self.display_number)))
+                                                     self.get_absolute_url(),
+                                                     esc(self.display_number)))
 
     def short_name(self):
         if self.variant_name:
@@ -325,4 +433,3 @@ class Issue(models.Model):
                                     self.variant_name)
         else:
             return u'%s %s' % (self.series, self.display_number)
-

@@ -1,6 +1,5 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load credits %}
@@ -28,15 +27,15 @@
 Are you sure you want to remove the following story (sequence number: {{ story.sequence_number }}) from the edit of {{ issue }} ?
 </h3>
 <form style="display:inline;" method="POST"
-    action="{% url "remove_story_revision" id=story.id %}">
+    action="{% url "remove_story_revision" id=story.revision.id %}">
 {% csrf_token %}
-<input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
+<input type="submit" id="remove_{{ story.revision.id }}" name="remove_{{ story.revision.id }}"
        value="Yes">
 </input>
 </form>
 <form style="display:inline;" method="GET"
-    action="{% url "edit" id=story.changeset.id %}">
-<input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
+    action="{% url "edit" id=story.revision.changeset.id %}">
+<input type="submit" id="remove_{{ story.revision.id }}" name="remove_{{ story.revision.id }}"
        value="No">
 </input>
 </form>

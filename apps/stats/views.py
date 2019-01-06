@@ -9,8 +9,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.http import FileResponse
-from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
 from apps.indexer.views import render_error
@@ -82,11 +81,7 @@ def download(request):
             else:
                 raise
 
-    return render_to_response(
-        'stats/download.html',
-        {
-            'method': request.method,
-            'timestamps': timestamps,
-            'form': form,
-        },
-        context_instance=RequestContext(request))
+    return render(request, 'stats/download.html',
+                  {'method': request.method,
+                   'timestamps': timestamps,
+                   'form': form, })

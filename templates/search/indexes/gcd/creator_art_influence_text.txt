@@ -1,0 +1,4 @@
+{{ object.influence_name|safe }}
+{{ object.influence_link|safe }}
+{{ object.creator|safe }}
+{{ object.notes|safe }}

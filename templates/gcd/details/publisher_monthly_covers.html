@@ -1,0 +1,56 @@
+{% extends "gcd/base_view.html" %}
+
+{% load staticfiles %}
+{% load i18n %}
+{% load credits %}
+
+{% block title %} GCD :: Monthly Covers {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h1 class="item_id search_id">
+<div class="left">
+  Covers for comics {% if use_on_sale %}on-sale in the month{% else %}with a publication date{% endif %} of {{ date|date:"F Y" }} from {{ publisher }}
+</div>
+{% include "gcd/bits/choose_month.html" %}
+</h1>
+
+<div class="item_id">
+  <div class="left">
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} covers stored for this month.
+  </div>
+  {% if page %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endif %}
+</div>
+{% if use_on_sale %}
+  Show covers by <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id year=date.year month=date.month %}'> publication date</a>.
+{% else %}
+  Show covers by <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id year=date.year month=date.month %}'>on-sale date</a>.
+{% endif %}
+
+{% include "gcd/bits/generic_covers.html" %}
+
+<h1 class="item_id search_id">
+<div class="left">
+  Covers for comics {% if use_on_sale %}on-sale in the month{% else %}with a publication date{% endif %} of {{ date|date:"F Y" }} from {{ publisher }}
+</div>
+{% include "gcd/bits/choose_month.html" %}
+</h1>
+<div id="item_id_footer" class="item_id">
+  <div class="left">
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} covers stored for this month.
+  </div>
+  {% if page %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endif %}
+</div>
+
+{% endblock %}
+
+

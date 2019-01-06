@@ -1,10 +1,9 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load credits %}
 {% load display %}
-
+{% load editing %}
 {% block title %}
 Edit Covers :: {{ issue }}
 {% endblock %}
@@ -62,7 +61,7 @@ Edit Covers :: {{ issue }}
   {% else %}
     {% if cover.deletable %}
 <div>
-      {% if not cover.issue.variant_of and not issue.reserved %}
+      {% if not cover.issue.variant_of and not issue|is_locked %}
   <form action="{% url "add_variant_issue" issue_id=cover.issue.id cover_id=cover.id %}" method="GET">
     <input title="Press to create a new variant issue with this cover." type="submit" value="Create variant for cover">
   </form>

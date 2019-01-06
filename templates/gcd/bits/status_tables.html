@@ -1,7 +1,8 @@
 {% load display %}
 {% load gcdtable %}
 
-<table border="1" class="status" id="key">
+<div class="left" style="width:calc(100% - 200px);">
+<table class="status">
   <tr>
     <td class="status_approved"> Indexed </td>
     <td class="status_partial"> Partially Indexed </td>
@@ -10,22 +11,11 @@
     <td class="status_available"> Skeleton Data Only </td>
   </tr>
 </table>
-<p class="spacer"/>
-<table border="1" class="status">
-  <tr>
-  {% for issue in series.active_base_issues %}
-    <td class="status_{{ issue|index_status_css }}">
-      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor }}</a> </td>
-    {% if forloop.counter|divisibleby:table_width %}
-  </tr>
-      {% if not forloop.last %}
-  <tr>
-      {% endif %}
-    {% else %}
-      {% if forloop.last %}
-        {{ forloop.counter|finishrow:table_width }}
-  </tr>
-      {% endif %}
-    {% endif %}
-  {% endfor %}
-</table>
+  <div class="status_grid">
+{% for issue in series.active_base_issues %}
+    <div class="status_grid_flex status_{{ issue|index_status_css }} {{ issue_status_width }}">
+      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor|default:issue }}</a> </td>
+    </div>
+{% endfor %}
+  </div>
+</div>

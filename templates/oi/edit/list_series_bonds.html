@@ -1,8 +1,8 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load credits %}
 {% load display %}
+{% load editing %}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
@@ -21,7 +21,7 @@
     {% for bond in series.from_series_bond.all %}
   <tr>
     <td> {{ bond }} </td>
-      {% if bond.reserved %}
+      {% if bond|is_locked %}
     <td colspan="2">
         is reserved
     </td>
@@ -50,7 +50,7 @@
     {% for bond in series.to_series_bond.all %}
   <tr>
     <td> {{ bond }} </td>
-      {% if bond.reserved %}
+      {% if bond|is_locked %}
     <td colspan="2">
         is reserved
     </td>

@@ -3,7 +3,9 @@ import sys
 import re
 import tempfile
 import os
-import csv, codecs, cStringIO
+import csv
+import codecs
+import cStringIO
 from codecs import EncodedFile, BOM_UTF16
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
@@ -16,16 +18,18 @@ from django.shortcuts import get_object_or_404
 
 from apps.indexer.views import render_error
 from apps.gcd.views.details import KEY_DATE_REGEXP
-from apps.gcd.models import StoryType, Issue, Brand, IndiciaPublisher
+from apps.gcd.models import StoryType, Issue
+from apps.gcd.models.support import GENRES
 from apps.oi.models import (
-    Changeset, StoryRevision, IssueRevision, get_keywords)
+    Changeset, StoryRevision, IssueRevision, PreviewIssue, get_keywords,
+    on_sale_date_as_string)
 
 MIN_ISSUE_FIELDS = 10
 # MAX_ISSUE_FIELDS is set to 16 to allow import of export issue lines, but
 # the final reprint notes are ignored on import
 MAX_ISSUE_FIELDS = 17
 MIN_SEQUENCE_FIELDS = 10
-MAX_SEQUENCE_FIELDS = 17
+MAX_SEQUENCE_FIELDS = 18
 
 NUMBER = 0
 VOLUME = 1
@@ -66,11 +70,13 @@ REPRINT_NOTES = 13
 SYNOPSIS = 14
 STORY_NOTES = 15
 STORY_KEYWORDS = 16
+FIRST_LINE = 17
 
 SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
                    'pencils', 'inks', 'colors', 'letters', 'editing',
                    'genre', 'characters', 'job_number', 'reprint_notes',
-                   'synopsis', 'notes', 'keywords']
+                   'synopsis', 'notes', 'keywords', 'first_line']
+
 
 # from http://docs.python.org/library/csv.html
 class UTF8Recoder:
@@ -85,6 +91,7 @@ class UTF8Recoder:
 
     def next(self):
         return self.reader.next().encode("utf-8")
+
 
 class UnicodeReader:
     """
@@ -102,6 +109,7 @@ class UnicodeReader:
 
     def __iter__(self):
         return self
+
 
 class UnicodeWriter:
     """
@@ -131,7 +139,8 @@ class UnicodeWriter:
     def writerows(self, rows):
         for row in rows:
             self.writerow(row)
-            
+
+
 # based on http://www.smontanaro.net/python/decodeh.py
 def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
     """
@@ -147,11 +156,13 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
         # if it's ascii, we're done
         return s, False, "ascii"
     except UnicodeError:
-        encodings = ["utf-8","iso-8859-1","cp1252","iso-8859-15"]
+        encodings = ["utf-8", "iso-8859-1", "cp1252", "iso-8859-15"]
         # if the default encoding is not ascii it's a good thing to try
-        if denc != "ascii": encodings.insert(0, denc)
+        if denc != "ascii":
+            encodings.insert(0, denc)
         # always try any caller-provided encoding first
-        if enc: encodings.insert(0, enc)
+        if enc:
+            encodings.insert(0, enc)
         for enc in encodings:
 
             # Most of the characters between 0x80 and 0x9F are displayable
@@ -160,7 +171,7 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
             # might well succeed.
 
             if (enc in ("iso-8859-15", "iso-8859-1") and
-                re.search(r"[\x80-\x9f]", s) is not None):
+                    re.search(r"[\x80-\x9f]", s) is not None):
                 continue
 
             # Characters in the given range are more likely to be
@@ -168,7 +179,8 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
             # may accept such strings with those encodings, skip them.
 
             if (enc in ("iso-8859-1", "cp1252") and
-                re.search(r"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s) is not None):
+                    re.search(r"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s)
+                    is not None):
                 continue
 
             try:
@@ -183,11 +195,12 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
 
 
 def _handle_import_error(request, changeset, error_text):
-    response = render_error(request,
-      '%s Back to the <a href="%s">editing page</a>.' % \
+    response = render_error(
+        request,
+        '%s Back to the <a href="%s">editing page</a>.' %
         (error_text, urlresolvers.reverse('edit',
                                           kwargs={'id': changeset.id})),
-      is_safe=True)
+        is_safe=True)
     # there might be a temporary file attached
     if hasattr(request, "tmpfile"):
         request.tmpfile.close()
@@ -195,7 +208,7 @@ def _handle_import_error(request, changeset, error_text):
     return response, True
 
 
-def _process_file(request, changeset, is_issue, use_csv = False):
+def _process_file(request, changeset, is_issue, use_csv=False):
     '''
     checks the file useable encodings and correct lengths
     returns two values
@@ -257,7 +270,7 @@ def _process_file(request, changeset, is_issue, use_csv = False):
         if is_issue and not lines:
             # check number of fields
             line_length = len(split_line)
-            if line_length not in range(MIN_ISSUE_FIELDS,MAX_ISSUE_FIELDS+1):
+            if line_length not in range(MIN_ISSUE_FIELDS, MAX_ISSUE_FIELDS+1):
                 error_text = 'issue line %s has %d fields, it must have at '\
                              'least %d and not more than %d.' \
                   % (split_line, line_length, MIN_ISSUE_FIELDS,
@@ -351,8 +364,8 @@ def _find_story_type(request, changeset, split_line):
       - True for having failed
     '''
     try:
-        story_type = StoryType.objects.get(name=split_line[TYPE].\
-                                                strip().lower)
+        story_type = StoryType.objects.get(name=split_line[TYPE].
+                                           strip().lower())
         return story_type, False
     except StoryType.DoesNotExist:
         error_text = 'Story type "%s" in line %s does not exist.' \
@@ -374,6 +387,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
             return story_type
 
         title = fields[TITLE].strip()
+        first_line = fields[FIRST_LINE].strip()
         if title.startswith('[') and title.endswith(']'):
             title = title[1:-1]
             title_inferred = True
@@ -391,7 +405,15 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         colors, no_colors = _check_for_none(fields[COLORS])
         letters, no_letters = _check_for_none(fields[LETTERS])
         editing, no_editing = _check_for_none(fields[STORY_EDITING])
-        genre = fields[GENRE].strip()
+        genres = fields[GENRE].strip()
+        if genres:
+            filtered_genres = u''
+            for genre in genres.split(';'):
+                if genre.strip() in GENRES['en']:
+                    filtered_genres += u';' + genre
+            genre = filtered_genres[1:]
+        else:
+            genre = genres
         characters = fields[CHARACTERS].strip()
         job_number = fields[JOB_NUMBER].strip()
         reprint_notes = fields[REPRINT_NOTES].strip()
@@ -399,39 +421,42 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         notes = fields[STORY_NOTES].strip()
         keywords = fields[STORY_KEYWORDS].strip()
 
-        story_revision = StoryRevision(changeset=changeset,
-                                       title=title,
-                                       title_inferred=title_inferred,
-                                       feature=feature,
-                                       type=story_type,
-                                       sequence_number=running_number,
-                                       page_count=page_count,
-                                       page_count_uncertain = page_count_uncertain,
-                                       script = script,
-                                       pencils = pencils,
-                                       inks = inks,
-                                       colors = colors,
-                                       letters = letters,
-                                       editing = editing,
-                                       no_script = no_script,
-                                       no_pencils = no_pencils,
-                                       no_inks = no_inks,
-                                       no_colors = no_colors,
-                                       no_letters = no_letters,
-                                       no_editing = no_editing,
-                                       job_number = job_number,
-                                       genre = genre,
-                                       characters = characters,
-                                       synopsis = synopsis,
-                                       reprint_notes = reprint_notes,
-                                       notes = notes,
-                                       keywords = keywords,
-                                       issue = Issue.objects.get(id=issue_id)
-                                       )
+        story_revision = StoryRevision(
+          changeset=changeset,
+          title=title,
+          title_inferred=title_inferred,
+          first_line=first_line,
+          feature=feature,
+          type=story_type,
+          sequence_number=running_number,
+          page_count=page_count,
+          page_count_uncertain=page_count_uncertain,
+          script=script,
+          pencils=pencils,
+          inks=inks,
+          colors=colors,
+          letters=letters,
+          editing=editing,
+          no_script=no_script,
+          no_pencils=no_pencils,
+          no_inks=no_inks,
+          no_colors=no_colors,
+          no_letters=no_letters,
+          no_editing=no_editing,
+          job_number=job_number,
+          genre=genre,
+          characters=characters,
+          synopsis=synopsis,
+          reprint_notes=reprint_notes,
+          notes=notes,
+          keywords=keywords,
+          issue=Issue.objects.get(id=issue_id)
+          )
         story_revision.save()
         running_number += 1
     return HttpResponseRedirect(urlresolvers.reverse('edit',
-      kwargs={ 'id': changeset.id }))
+                                                     kwargs={'id':
+                                                             changeset.id}))
 
 
 def _find_publisher_object(request, changeset, name, publisher_objects,
@@ -439,8 +464,7 @@ def _find_publisher_object(request, changeset, name, publisher_objects,
     if not name:
         return None, False
 
-    publisher_objects = publisher_objects.filter(name__iexact=name,
-                                                 parent=publisher)
+    publisher_objects = publisher_objects.filter(name__iexact=name)
     if publisher_objects.count() == 1:
         return publisher_objects[0], False
     else:
@@ -450,21 +474,24 @@ def _find_publisher_object(request, changeset, name, publisher_objects,
 
 
 @permission_required('indexer.can_reserve')
-def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
+def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
         return render_error(request,
-          'Only the reservation holder may import issue data.')
+                            'Only the reservation holder may import issue '
+                            'data.')
     try:
         # Process add form if this is a POST.
         if request.method == 'POST' and 'flatfile' in request.FILES:
             issue_revision = changeset.issuerevisions.get(issue=issue_id)
             if StoryRevision.objects.filter(changeset=changeset).count():
-                return render_error(request,
+                return render_error(
+                  request,
                   'There are already sequences present for %s in this'
-                  ' changeset. Back to the <a href="%s">editing page</a>.'\
-                   % (esc(issue_revision), urlresolvers.reverse('edit',
-                      kwargs={'id': changeset.id})), is_safe=True)
+                  ' changeset. Back to the <a href="%s">editing page</a>.'
+                  % (esc(issue_revision), urlresolvers.reverse('edit',
+                     kwargs={'id': changeset.id})),
+                  is_safe=True)
             if 'csv' in request.POST:
                 use_csv = True
             else:
@@ -482,10 +509,11 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
 
             indicia_publisher_name, issue_revision.indicia_pub_not_printed = \
               _check_for_none(issue_fields[INDICIA_PUBLISHER])
-            indicia_publisher, failure = _find_publisher_object(request,
+            indicia_publisher, failure = _find_publisher_object(
+              request,
               changeset, indicia_publisher_name,
-              IndiciaPublisher.objects.all(), "Indicia publisher",
-              issue_revision.issue.series.publisher)
+              issue_revision.issue.series.publisher.active_indicia_publishers(),
+              "Indicia publisher", issue_revision.issue.series.publisher)
             if failure:
                 return indicia_publisher
             else:
@@ -493,28 +521,30 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
 
             brand_name, issue_revision.no_brand = \
               _check_for_none(issue_fields[BRAND])
-            brand, failure = _find_publisher_object(request, changeset,
-              brand_name, Brand.objects.all(), "Brand",
-              issue_revision.issue.series.publisher)
+            brand, failure = _find_publisher_object(
+              request, changeset, brand_name,
+              issue_revision.issue.series.publisher.active_brand_emblems(),
+              "Brand", issue_revision.issue.series.publisher)
             if failure:
                 return brand
             else:
                 issue_revision.brand = brand
 
-            issue_revision.publication_date = issue_fields[PUBLICATION_DATE]\
-              .strip()
+            issue_revision.publication_date = \
+              issue_fields[PUBLICATION_DATE].strip()
             issue_revision.key_date = issue_fields[KEY_DATE].strip()\
                                                             .replace('.', '-')
-            if issue_revision.key_date and \
-              not re.search(KEY_DATE_REGEXP, issue_revision.key_date):
-                return render_error(request,
+            if issue_revision.key_date and not \
+              re.search(KEY_DATE_REGEXP, issue_revision.key_date):
+                return render_error(
+                  request,
                   "key_date '%s' is invalid." % issue_revision.key_date)
 
             issue_revision.indicia_frequency, \
               issue_revision.no_indicia_frequency = \
               _check_for_none(issue_fields[INDICIA_FREQUENCY])
             issue_revision.price = issue_fields[PRICE].strip()
-            issue_revision.page_count, issue_revision.page_count_uncertain =\
+            issue_revision.page_count, issue_revision.page_count_uncertain = \
               _check_page_count(issue_fields[ISSUE_PAGE_COUNT])
             issue_revision.editing, issue_revision.no_editing = \
               _check_for_none(issue_fields[ISSUE_EDITING])
@@ -537,34 +567,36 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv = False):
                     issue_revision.day_on_sale = sale_date.day
                 except ValueError:
                     return render_error(request,
-                      "on-sale_date '%s' is invalid." % \
-                      on_sale_date)
+                                        "on-sale_date '%s' is invalid." %
+                                        on_sale_date)
             issue_revision.notes = issue_fields[ISSUE_NOTES].strip()
             if issue_revision.series.has_issue_title:
                 issue_revision.title, issue_revision.no_title = \
-                _check_for_none(issue_fields[ISSUE_TITLE])
+                  _check_for_none(issue_fields[ISSUE_TITLE])
             issue_revision.keywords = issue_fields[ISSUE_KEYWORDS].strip()
             issue_revision.save()
             running_number = 0
             return _import_sequences(request, issue_id, changeset,
                                      lines, running_number)
         else:
-            return HttpResponseRedirect(urlresolvers.reverse('edit',
-              kwargs={ 'id': changeset.id }))
+            return HttpResponseRedirect(
+              urlresolvers.reverse('edit',
+                                   kwargs={'id': changeset.id}))
 
     except (Issue.DoesNotExist, Issue.MultipleObjectsReturned,
             IssueRevision.DoesNotExist):
-        return render_error(request,
-          'Could not find issue for id %s and changeset %s' \
-            % (issue_id, changeset_id))
+        return render_error(
+          request,
+          'Could not find issue for id %s and changeset %s'
+          % (issue_id, changeset_id))
 
 
 @permission_required('indexer.can_reserve')
-def import_sequences_from_file(request, issue_id, changeset_id, use_csv = False):
+def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
         return render_error(request,
-          'Only the reservation holder may import stories.')
+                            'Only the reservation holder may import stories.')
     try:
         # Process add form if this is a POST.
         if request.method == 'POST' and 'flatfile' in request.FILES:
@@ -582,30 +614,31 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv = False)
                                      lines, running_number)
         else:
             return HttpResponseRedirect(urlresolvers.reverse('edit',
-              kwargs={ 'id': changeset.id }))
+                                        kwargs={'id': changeset.id}))
 
     except (Issue.DoesNotExist, Issue.MultipleObjectsReturned,
             IssueRevision.DoesNotExist):
         return render_error(request,
-          'Could not find issue for id %s and changeset %s' \
-            % (issue_id, changeset_id))
+                            'Could not find issue for id %s and changeset %s'
+                            % (issue_id, changeset_id))
+
 
 def generate_reprint_link(reprints, direction):
     reprint_note = ''
     for reprint in reprints:
         if direction == 'from':
             if hasattr(reprint, 'origin_issue') and \
-                reprint.origin_issue:
+              reprint.origin_issue:
                 issue = reprint.origin_issue
             else:
                 issue = reprint.origin.issue
         else:
             if hasattr(reprint, 'target_issue') and \
-                reprint.target_issue:
+              reprint.target_issue:
                 issue = reprint.target_issue
             else:
                 issue = reprint.target.issue
-        reprint_note += u'%s %s' % (direction, issue.full_name() )
+        reprint_note += u'%s %s' % (direction, issue.full_name())
         if reprint.notes:
             reprint_note = u'%s [%s]' % (reprint_note, reprint.notes)
         if issue.publication_date:
@@ -613,17 +646,24 @@ def generate_reprint_link(reprints, direction):
         reprint_note += '; '
     return reprint_note
 
+
 @permission_required('indexer.can_reserve')
 def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     if revision:
-        issue = get_object_or_404(IssueRevision, id=issue_id)
+        issue_revision = get_object_or_404(IssueRevision, id=issue_id)
+        issue = PreviewIssue(issue_revision)
+        issue.series = issue_revision.series
+        issue.on_sale_date = on_sale_date_as_string(issue_revision)
+        issue.revision = issue_revision
+        issue.keywords = issue_revision.keywords
     else:
         issue = get_object_or_404(Issue, id=issue_id)
     series = issue.series
     filename = unicode(issue).replace(' ', '_').encode('utf-8')
     if use_csv:
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename=%s.csv' % filename
+        response['Content-Disposition'] = 'attachment; filename="%s.csv"' % \
+                                          filename
         writer = UnicodeWriter(response)
     export_data = []
     for field_name in ISSUE_FIELDS:
@@ -646,10 +686,11 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
             export_data.append(unicode(getattr(issue, field_name)))
     reprint = ''
     from_reprints = list(issue.from_reprints.select_related().all())
-    from_reprints.extend(list(issue.from_issue_reprints.select_related().all()))
+    from_reprints.extend(list(issue.from_issue_reprints.select_related()
+                                                       .all()))
     from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
     reprint += generate_reprint_link(from_reprints, 'from')
-    
+
     to_reprints = list(issue.to_reprints.select_related().all())
     to_reprints.extend(list(issue.to_issue_reprints.select_related().all()))
     to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
@@ -684,15 +725,16 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                                                            .all())
                 from_reprints.extend(list(sequence.from_issue_reprints
                                                   .select_related().all()))
-                from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+                from_reprints = sorted(from_reprints, key=lambda a:
+                                       a.origin_sort)
                 reprint += generate_reprint_link(from_reprints, 'from')
-                
+
                 to_reprints = list(sequence.to_reprints.select_related().all())
                 to_reprints.extend(list(sequence.to_issue_reprints
                                                 .select_related().all()))
                 to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
                 reprint += generate_reprint_link(to_reprints, 'in')
-                        
+
                 if reprint != '':
                     if sequence.reprint_notes:
                         reprint += sequence.reprint_notes
@@ -714,6 +756,8 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
         else:
             export += '\t'.join(export_data) + '\r\n'
     if not use_csv:
-        response = HttpResponse(export, content_type='text/tab-separated-values')
-        response['Content-Disposition'] = 'attachment; filename=%s.tsv' % filename
+        response = HttpResponse(export,
+                                content_type='text/tab-separated-values')
+        response['Content-Disposition'] = 'attachment; filename="%s.tsv"' % \
+                                          filename
     return response

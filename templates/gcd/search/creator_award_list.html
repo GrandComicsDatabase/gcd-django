@@ -1,0 +1,24 @@
+{% extends "gcd/search/base_list.html" %}
+
+{% load display %}
+{% load credits %}
+
+{% block list_contents %}
+<table class="listing">
+  <tr>
+    <th>Creator</th>
+    <th>Award Name</th>
+    <th>Award Year</th>
+  </tr>
+  {% for creator_award in items %}
+    {% with creator_award|object_filter as creator_award %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td>{{ creator_award.creator }}</td>
+      <td><a href="{{ creator_award.get_absolute_url }}"> {{ creator_award.award_name }}</a> </td>
+      <td> {{ creator_award.award_year }} </td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>
+{% endblock %}
+

@@ -19,21 +19,60 @@ which variables you can or must override.
 
 # disable on production!
 DEBUG          = True
-TEMPLATE_DEBUG = DEBUG
 
 ALLOWED_HOSTS = [
     '.comics.org',
     '.comics.org.',  # Allow FQDN and subdomains.  Can be dropped in 1.7
 ]
 
-# absolute path to the directory that holds templates.
-TEMPLATE_DIRS = ( abspath(join(dirname(__file__), 'templates')),
-                  abspath(join(dirname(__file__),
-                               'apps', 'indexer', 'templates')),
-                  abspath(join(dirname(__file__),
-                               'apps', 'stats', 'templates')),
-                  abspath(join(dirname(__file__),
-                               'apps', 'voting', 'templates')),)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            # insert your TEMPLATE_DIRS here
+            abspath(join(dirname(__file__), 'templates')),
+            abspath(join(dirname(__file__), 'apps', 'indexer', 'templates')),
+            abspath(join(dirname(__file__), 'apps', 'stats', 'templates')),
+            abspath(join(dirname(__file__), 'apps', 'voting', 'templates')),
+        ],
+        'OPTIONS': {
+            'context_processors': [
+                # Insert your TEMPLATE_CONTEXT_PROCESSORS here
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.request',
+                'django.template.context_processors.static',
+                'django.contrib.messages.context_processors.messages',
+                'django_mobile.context_processors.flavour',
+                'apps.gcd.context_processors.gcd',
+            ],
+            'loaders': [
+                # insert your TEMPLATE_LOADERS here
+                'django_mobile.loader.Loader',
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ],
+            'debug': DEBUG,
+        },
+    },
+]
+
+# We would prefer to remove the last 5 (to only use the django default),
+# but would need to update/migrate the existing stored passwords first.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.BCryptPasswordHasher',
+    'django.contrib.auth.hashers.SHA1PasswordHasher',
+    'django.contrib.auth.hashers.MD5PasswordHasher',
+    'django.contrib.auth.hashers.UnsaltedSHA1PasswordHasher',
+    'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
+    'django.contrib.auth.hashers.CryptPasswordHasher'
+]
 
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
@@ -68,6 +107,7 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': '',
         'PORT': '',
+        'ATOMIC_REQUESTS': True,
     },
 }
 
@@ -79,7 +119,6 @@ MIDDLEWARE_CLASSES = (
    'django.contrib.messages.middleware.MessageMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.common.CommonMiddleware',
-   'django.middleware.transaction.TransactionMiddleware',
    'django_mobile.middleware.MobileDetectionMiddleware',
    'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
@@ -111,6 +150,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_mobile',
+    'django_tables2',
     'apps.indexer',
     'apps.gcd',
     'apps.stats',
@@ -127,30 +167,13 @@ INSTALLED_APPS = (
     'elasticstack',
     'bootstrap3',
     'rest_framework',
+    'contact_form',
+    'captcha',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
 # Overridden in production via settings_local.py.
 SECRET_KEY = 'th0lnu%wjs_8=r4u_km3shvogzd%1n)t-5eosi964g0ek+a4p+'
-
-# Callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django_mobile.loader.Loader',
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-)
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.media',
-    'django.core.context_processors.request',
-    'django.core.context_processors.static',
-    'django_mobile.context_processors.flavour',
-    'apps.gcd.context_processors.gcd',
-)
 
 AUTHENTICATION_BACKENDS = (
     'apps.indexer.backends.EmailBackend',
@@ -176,12 +199,15 @@ CACHES = {
     }
 }
 
-# have two choices for caches, this one has persistent, cached session data
+# We have two choices for caches, this one has persistent, cached session data.
+# Do NOT switch to cookie-based session, unless also switching away from the
+# PickleSerializer, but even the JSONSerializer has (smaller) security issues.
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
-# we would like to move the default JSONSerializer, but currently that
-# causes problems (see issue #102 on GitHub).  This is a workaround
-# to retain the Django 1.5 and earlier behavior.
+# The default is JSONSerializer, but we like to store python objects in the
+# session. Since we are using chached-db sessions, and not cookie-based, the
+# potential secutiry risk for cookie-based session with PickleSerializer does
+# not arise.
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 # Corresponds to the django_site database table. As far
@@ -205,12 +231,12 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 #################################################################################
 
 COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
-                        'compressor.filters.csstidy.CSSTidyFilter']
+                        'compressor.filters.cssmin.rCSSMinFilter']
 
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                        'templates/managed_content/')),]
-TEMPLATESADMIN_GROUP = 'prteam'
+TEMPLATESADMIN_GROUP = 'templateadmin'
 
 #################################################################################
 # Haystack and search
@@ -224,6 +250,7 @@ HAYSTACK_CONNECTIONS = {
     },
 }
 
+# assumingly this needs elasticstack
 ELASTICSEARCH_INDEX_SETTINGS = {
     # index settings
     'settings': {
@@ -303,7 +330,7 @@ EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_PRTEAM = 'pr-team@comics.org'
 EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
-CHAIRMAN = 'Daniel Nauschuetz'
+CHAIRMAN = 'Lionel English'
 EMAIL_CHAIRMAN = '%s <chair@comics.org>' % CHAIRMAN
 
 # Number of days for which a registraton confirmation token is valid.
@@ -402,6 +429,9 @@ except ImportError:
 #################################################################################
 # Code dependent on debug or maintenance flag states.
 #################################################################################
+
+#GCD Official name field name in NameType model
+GCD_OFFICIAL_NAME_FIELDNAME = 'GCD Official'
 
 if READ_ONLY or NO_OI:
     MIDDLEWARE_CLASSES += \

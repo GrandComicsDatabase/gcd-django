@@ -1,0 +1,19 @@
+{% load i18n %}
+
+<!-- Probably needs to be refactored with the series_issue_header.html file
+     somehow, but deal with that later. -->
+
+{% ifnotequal paginate_only 1 %}
+<h1 class="item_id">
+  <div class="left">
+      <a href="{{ first_object.get_absolute_url }}">{{ first_object }}</a>
+      {% if second_object %}
+        {% if linked %}
+        : <a href="{{ second_object.get_absolute_url }}">{{ second_object }}</a>
+        {% else %}
+        : {{ second_object }}
+        {% endif %}
+      {% endif %}
+  </div>
+</h1>
+{% endifnotequal %}

@@ -16,6 +16,11 @@
   {% bootstrap_css %}
   {% bootstrap_javascript jquery=1 %}
   <link rel="shortcut icon" href="{% static "img/favicon.ico" %}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap3-dialog/1.34.9/js/bootstrap-dialog.min.js"></script>
+{% block head_extras %}{% endblock %}
+{% if USE_TEMPLATESADMIN and ADVERTISING %}
+  {% include "managed_content/gcd/ads/common.html" %}
+{% endif %}
 </head>
 <body>
 

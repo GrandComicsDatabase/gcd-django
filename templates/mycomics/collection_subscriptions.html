@@ -1,5 +1,4 @@
 {% extends "mycomics/user_base.html" %}
-{% load url from future %}
 {% load i18n %}
 {% load collecting %}
 {% load bootstrap3 %}
@@ -7,27 +6,44 @@
 {% block modals %}
   {{ block.super }}
   {% if request.user.collector == collection.collector %}
-  <script type="application/javascript">
-      var selected_subscription;
-      var selected_series;
+  <script>
+    function unsubscribe_series(subscription_id, series_name, collection) {
+        BootstrapDialog.confirm({
+            title: '<h4 class="modal-title">{% trans "Unsubscribe series in collection " %}'+collection+'</h4>',
+            message: '{% trans "Do you want to unsubscribe from the series <b>" %}'+series_name+'</b> ?',
+            closable: true,
+            btnCancelLabel: '{% trans "Cancel" %}',
+            btnOKLabel: '{% trans "Confirm" %}',
+            btnOKClass: 'btn-primary',
+            callback: function(result) {
+                if(result) {
+                    window.location.href='{% url "unsubscribe" %}'+subscription_id;
+                };
+            }
+            });
+        }
   </script>
-  <div id="unsubscribe-series" class="modal fade" tabindex="-1" style="display: none;">
-    <div class="modal-dialog">
-      <div class="modal-content">
-          <div class="modal-header">
-            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
-            <h4 class="modal-title">{% trans "Unsubscribe series in collection" %}</h4>
-          </div>
-          <div class="modal-body">
-            <p>{% trans "Do you want to unsubscribe from this series?" %} </p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
-            <button type="button" class="btn btn-primary" onclick="window.location.href='{% url "unsubscribe" %}'+selected_subscription">{% trans "Confirm" %}</button>
-          </div>
-      </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-  </div><!-- /.modal -->
+  <script>
+    function unsubscribe_series2(subscription_id, series_name, collection) {
+        BootstrapDialog.show({
+            title: '<h4 class="modal-title">{% trans "Unsubscribe series in collection " %}'+collection+'</h4>',
+            message: '{% trans "Do you want to unsubscribe from the series <b>" %}'+series_name+'</b> ?',
+            buttons: [{
+                label: '{% trans "Cancel" %}',
+                cssClass: 'btn btn-default',
+                action: function(dialogItself){
+                    dialogItself.close();
+                }
+            }, {
+                label: '{% trans "Confirm" %}',
+                cssClass: 'btn btn-primary',
+                action: function() {
+                    window.location.href='{% url "unsubscribe" %}'+subscription_id;
+                }
+            }]
+        });
+        }
+  </script>
   {% endif %}
 {% endblock %}
 
@@ -70,17 +86,17 @@
       <div class="row">
         {% for subscription in subscriptions %}
           <div class="col-md-2">
+            <div class="btn-group pull-right">
+              <button type="button" class="my-btn btn-primary btn-sm"
+                      style="display: inline-block;" data-toggle="modal"
+                      onclick="unsubscribe_series({{ subscription.id }}, '{{ subscription.series.full_name }}', '{{ collection.name }}');">
+                  <span class="glyphicon glyphicon-remove"></span>
+              </button>
+            </div>
             <div class="thumbnail">
               <a href="{{ subscription.series.get_absolute_url }}">
               {{ subscription.series.first_issue|show_cover_tag }}
               <div class="caption">{{ subscription.series.full_name_with_link }}<br>Issue added {{ subscription.last_pulled|date:"Y-m-d" }}</div>
-              <div class="btn-group pull-right">
-                <button type="button" class="btn btn-primary btn-sm"
-                        style="display: inline-block;" data-toggle="modal"
-                        href="#unsubscribe-series" onclick="selected_subscription={{ subscription.id }}" onclick="selected_series={{ subscription.series.full_name }}">
-                    <span class="glyphicon glyphicon-remove"></span>
-                </button>
-              </div>
               <div class="clearfix"></div>
             </div>
           </div>

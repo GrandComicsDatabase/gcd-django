@@ -1,11 +1,10 @@
-{% extends "gcd/base.html" %}
+{% extends "gcd/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load forms %}
 {% load compress %}
 
-{% block title %} GCD :: Advanced Search {% endblock %}
+{% block title %} GCD :: Advanced Query {% endblock %}
 
 {% block css %}
 <link rel="stylesheet" type="text/css"
@@ -14,11 +13,7 @@
       href="{% static "css/gcd/default/advanced_search.css" %}">
 {% endblock %}
 
-{% block body %}
-
-{% with "Advanced Search" as bar_heading %}
-{% include "gcd/bits/search_bar.html" %}
-{% endwith %}
+{% block view_body %}
 
 {% include "oi/bits/multi_selector.html" %}
 {% comment %}
@@ -27,7 +22,7 @@ override of SelectFilter does not seem to work
 {% endcomment %}
 {% compress js %}
 <script type='text/javascript'
-        src='{% static "admin/js/jquery.min.js" %}'></script>
+        src='{% static "admin/js/vendor/jquery/jquery.min.js" %}'></script>
 {% endcompress %}
 <script type='text/javascript'>
 <!--- overriding SelectFilter function for small windows --->
@@ -36,7 +31,7 @@ if ($(window).width() < 1240) {
 }
 </script>
 
-<b>Advanced Search</b> allows field specific results. It is somewhat experimental and has <a href="#blithering">some known bugs and limitations</a>, see below for more information.
+<b>Advanced Query</b> allows field specific queries. It is a somewhat experimental query builder and has <a href="#blithering">known oddities and limitations</a>, see below for more information.
 
 {% if error_text %}
 <div class="error_message">
@@ -45,38 +40,20 @@ if ($(window).width() < 1240) {
 {% endif %}
 {{ form.non_field_errors }}
 <form id="advanced_search_form"
-      action="{% url "apps.gcd.views.search.process_advanced" %}"
+      action="{% url 'process_advanced_search' %}"
       method="get">
 <fieldset class="submit" style="margin-bottom: 0em">
-  <input type="submit" value="Search">
+  <input type="submit" value="Query">
 </fieldset>
 
 <div class="search_left">
 <fieldset class="control">
-<legend>Search Control</legend>
+<legend>Query Control</legend>
 <ol>
   {{ form.target|show_form }}
   {{ form.method|show_form }}
   {{ form.logic|show_form }}
   {{ form.keywords|show_form }}
-</ol>
-</fieldset>
-
-<fieldset class="ordering">
-<legend>Ordering</legend>
-<ol>
-  {{ form.order1|show_form }}
-  {{ form.order2|show_form }}
-  {{ form.order3|show_form }}
-</ol>
-</fieldset>
-
-<fieldset class="universal">
-<legend>Date Fields</legend>
-<ol>
-  {{ form.start_date|show_form }}
-  {{ form.end_date|show_form }}
-  {{ form.use_on_sale_date|show_form }}
 </ol>
 </fieldset>
 
@@ -107,6 +84,7 @@ if ($(window).width() < 1240) {
     <legend> Contents </legend>
     <ol>
       {{ form.genre|show_form }}
+      {{ form.first_line|show_form }}
       {{ form.characters|show_form }}
       {{ form.synopsis|show_form }}
       {{ form.reprint_notes|show_form }}
@@ -120,9 +98,58 @@ if ($(window).width() < 1240) {
     </ol>
   </fieldset>
 </fieldset>
+<fieldset class="issue" id="issue_fieldset">
+  <legend>
+    Issue Fields
+  </legend>
+  <ol>
+    {{ form.issues|show_form }}
+    {{ form.volume|show_form }}
+    {{ form.issue_title|show_form }}
+    {{ form.variant_name|show_form }}
+    {{ form.is_variant|show_form }}
+    {{ form.issue_date|show_form }}
+    {{ form.indicia_frequency|show_form }}
+    {{ form.price|show_form }}
+    {{ form.issue_pages|show_form }}
+    {{ form.issue_pages_uncertain|show_form }}
+    {{ form.issue_editing|show_form }}
+    {{ form.isbn|show_form }}
+    {{ form.barcode|show_form }}
+    {{ form.rating|show_form }}
+    {{ form.issue_notes|show_form }}
+    {{ form.issue_reprinted|show_form }}
+    {{ form.cover_needed|show_form }}
+    {{ form.is_indexed|show_form }}
+    {{ form.image_resources|show_form }}
+    {% if user.is_authenticated %}
+      {{ form.in_collection|show_form }}
+      {{ form.in_selected_collection|show_form }}
+    {% endif %}
+  </ol>
+</fieldset>
 </div>
 
 <div class="search_right">
+<fieldset class="ordering">
+<legend>Ordering</legend>
+<ol>
+  {{ form.order1|show_form }}
+  {{ form.order2|show_form }}
+  {{ form.order3|show_form }}
+</ol>
+</fieldset>
+
+<fieldset class="universal">
+<legend>Date Fields</legend>
+<ol>
+  {{ form.start_date|show_form }}
+  {{ form.end_date|show_form }}
+  {{ form.use_on_sale_date|show_form }}
+  {{ form.updated_since|show_form }}
+</ol>
+</fieldset>
+
 <fieldset class="publisher" id="publisher_fieldset">
   <legend>
     Publisher Fields
@@ -165,6 +192,7 @@ if ($(window).width() < 1240) {
     {{ form.series|show_form }}
     {{ form.series_year_began|show_form }}
     {{ form.series_notes|show_form }}
+    {{ form.publication_type|show_form }}
     {{ form.tracking_notes|show_form }}
     {{ form.issue_count|show_form }}
     {{ form.not_reserved|show_form }}
@@ -172,54 +200,33 @@ if ($(window).width() < 1240) {
     {{ form.is_comics|show_form }}
     {{ form.language|show_form }}
   </ol>
-</fieldset>
 
-<fieldset class="format" id="format_fieldset">
-  <legend>
+  <fieldset class="format" id="format_fieldset">
+    <legend>
     Format Fields
-  </legend>
-  <ol>
-    {{ form.format|show_form }}
-    {{ form.has_format|show_form }}
+    </legend>
+    <ol>
     {{ form.color|show_form }}
     {{ form.dimensions|show_form }}
     {{ form.paper_stock|show_form }}
     {{ form.binding|show_form }}
     {{ form.publishing_format|show_form }}
-  </ol>
+    </ol>
+  </fieldset>
 </fieldset>
 
-<fieldset class="issue" id="issue_fieldset">
+<fieldset class="indexer" id="indexer_fieldset">
   <legend>
-    Issue Fields
+    Indexer
   </legend>
   <ol>
-    {{ form.issues|show_form }}
-    {{ form.volume|show_form }}
-    {{ form.issue_title|show_form }}
-    {{ form.variant_name|show_form }}
-    {{ form.is_variant|show_form }}
-    {{ form.issue_date|show_form }}
-    {{ form.indicia_frequency|show_form }}
-    {{ form.price|show_form }}
-    {{ form.issue_pages|show_form }}
-    {{ form.issue_pages_uncertain|show_form }}
-    {{ form.issue_editing|show_form }}
-    {{ form.isbn|show_form }}
-    {{ form.barcode|show_form }}
-    {{ form.rating|show_form }}
-    {{ form.issue_notes|show_form }}
-    {{ form.issue_reprinted|show_form }}
-    {{ form.cover_needed|show_form }}
-    {{ form.is_indexed|show_form }}
-    {{ form.image_resources|show_form }}
     {{ form.indexer|show_form }}
   </ol>
 </fieldset>
 </div>
 <div class='search_left'>
 <fieldset class="submit">
-  <input type="submit" value="Search">
+  <input type="submit" value="Query">
 </fieldset>
 <fieldset class="submit">
   <input type="submit" name="random_search" value="Random Search Result">
@@ -230,15 +237,17 @@ if ($(window).width() < 1240) {
 <div class="search_left">
   <div id="blithering">
   <a name="blithering"></a>
-    <b>Advanced Search</b> is somewhat experimental and has some known bugs and limitations
+    <b>Advanced Query</b> is somewhat experimental and has known oddities and limitations
     <ul>
-      <li> The default ordering of the search results sorts according to series
+      <li> All searches match <b>exact substrings</b>.  Punctuation is not
+           ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
+           two different searches. This is fundamentally different to how our
+           <a href="/searchNew/">regular search</a> behaves, which ignores word
+           order, but looks for exact word occurrences (unless a * is given).
+      <li> The default ordering of the query results sorts according to series
            name and issue date.
            This ordering is not very useful if you search for publishers, you might
            want to change it under "Ordering".
-      <li> All "contains" searches match exact substrings.  Punctuation is not
-           ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
-           two different searches.
       <li> There's no way to search for multiple values in a field (for instance,
            while you can search for stories written or penciled by someone,
            you cannot search for stories penciled by either Jack Kirby or
@@ -247,8 +256,8 @@ if ($(window).width() < 1240) {
            "year.month.day", "year-month-day", "month/day/year",
            "month-name day, year", "day month-name, year" and just plain year.
       <li> You cannot use 00 for month or day since that is not a date. Instead
-           use the last day of the preceding year/month, e.g. 1989.12.31
-           to 1990.12.31 will find all comics we have recorded with a publication
+           use the last day of the preceding year/month, e.g. 1989-12-31
+           to 1990-12-31 will find all comics we have recorded with a publication
            date in 1990.
       <li> Date searching for series and stories uses a hidden field that is
            not always filled out.  This is the same field used for sorting by

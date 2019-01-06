@@ -1,5 +1,4 @@
 {% extends "oi/base_view.html" %}
-{% load url from future %}
 {% load staticfiles %}
 
 <!--
@@ -33,6 +32,11 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
 </ul>
 {% endif %}
 
+<h1  style="margin-bottom: 0">{{ profile_user.indexer }}</h1>
+{% if user != profile_user %}
+<h3 style="margin-top: 0"><a href="{% url "user_contact_form" user_id=profile_user.id %}"><img alt="email" src="{% static "img/gcd/social/email_32.png" %}" height="22" width="22"> Send E-Mail</a></h3>
+{% endif %}
+
 {% include 'indexer/bits/profile_limits.html' %}
 
 {% if form %}
@@ -54,9 +58,10 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
       {{ form.country|show_form_as_row }}
       {{ form.languages|show_form_as_row }}
       {{ form.interests|show_form_as_row }}
-      {{ form.from_where|show_form_as_row }}
+      {{ form.seen_privacy_policy|show_form_as_row }}
       {{ form.opt_in_email|show_form_as_row }}
       {{ form.issue_detail|show_form_as_row }}
+      {{ form.from_where|show_form_as_row }}
       {{ form.notify_on_approve|show_form_as_row }}
       {{ form.collapse_compare_view|show_form_as_row }}
       {{ form.show_wiki_links|show_form_as_row }}

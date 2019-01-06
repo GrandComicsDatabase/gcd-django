@@ -7,10 +7,8 @@ from django.conf import settings
 from django.db.models import Q
 from django.core import urlresolvers
 from django.core.mail import send_mail
-from django.core.files import File
 from django.http import HttpResponseRedirect
-from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
 
 from apps.indexer.views import render_error
@@ -44,6 +42,7 @@ secret key:
 vote id:
 '%s'
 """
+
 
 def _classify_topics(topics, user):
     # Permissions are returned as appname.codename by get_all_permissions().
@@ -79,19 +78,19 @@ def _classify_topics(topics, user):
             pending_topics.append(topic)
     return (pending_topics, voted_topics, forbidden_topics)
 
+
 def dashboard(request):
-    topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True)
+    topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True,
+                                  result_calculated=False)
 
     # We ignore the forbidden topics on the dashboard and only show relevant topics.
     pending_topics, voted_topics, forbidden_topics = \
       _classify_topics(topics, request.user)
-    return render_to_response('voting/dashboard.html',
-                              {
-                                'voted_topics': voted_topics,
-                                'pending_topics': pending_topics,
-                                'agendas': Agenda.objects.all(),
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'voting/dashboard.html',
+                  {'voted_topics': voted_topics,
+                   'pending_topics': pending_topics,
+                   'agendas': Agenda.objects.all()})
+
 
 def _calculate_results(unresolved):
     """
@@ -218,6 +217,7 @@ def _calculate_results(unresolved):
 
         _send_result_email(topic, extra)
 
+
 def _send_result_email(topic, extra=''):
     for list_config in topic.agenda.agenda_mailing_lists.all():
         if list_config.on_vote_close:
@@ -247,6 +247,7 @@ def _send_result_email(topic, extra=''):
             list_config.send_mail(subject="GCD Vote Result: %s" % topic,
                                   message=email_body)
 
+
 @login_required
 def topic(request, id):
     topic = get_object_or_404(Topic, id=id)
@@ -259,15 +260,14 @@ def topic(request, id):
     # But this is why "voted" is not just a check for at least one vote here.
     votes = topic.options.filter(votes__voter=request.user)
 
-    return render_to_response('voting/topic.html',
-                              {
-                                'topic': topic,
-                                'voted': topic.has_vote_from(request.user),
-                                'votes': votes,
-                                'closed': topic.deadline < datetime.now(),
-                                'settings': settings,
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'voting/topic.html',
+                  {'topic': topic,
+                   'voted': topic.has_vote_from(request.user),
+                   'votes': votes,
+                   'closed': topic.deadline < datetime.now() \
+                             or topic.result_calculated,
+                   'settings': settings})
+
 
 @permission_required('indexer.can_vote')
 def vote(request):
@@ -305,7 +305,6 @@ def vote(request):
         if first is True:
             first = False
             topic = option.topic
-
             if not request.user.has_perm('%s.%s' %
                 (topic.agenda.permission.content_type.app_label,
                  topic.agenda.permission.codename)):
@@ -388,8 +387,12 @@ def vote(request):
                                            salt, vote_ids),
                   fail_silently=(not settings.BETA))
 
+    if topic.expected_voters().count() > 0 and len(topic.absent_voters()) == 0:
+        _calculate_results([topic,])
+
     return HttpResponseRedirect(urlresolvers.reverse('ballot',
-      kwargs={ 'id': option.topic.id }))
+                                kwargs={ 'id': option.topic.id }))
+
 
 def agenda(request, id):
     agenda = get_object_or_404(Agenda, id=id)
@@ -400,8 +403,10 @@ def agenda(request, id):
     # approved (much less completed) still have open=False.  This translates
     # the conditions into what you would expect for open or closed ballots.
     past_due = Q(deadline__lte=datetime.now())
-    open = agenda.topics.exclude(past_due | Q(open=False))
-    closed = agenda.topics.filter(past_due & Q(open=True))
+    open = agenda.topics.exclude(past_due | Q(open=False))\
+                        .filter(result_calculated=False)
+    closed = agenda.topics.filter((past_due & Q(open=True)) |
+                                  Q(result_calculated=True))
 
     pending_items = agenda.items.filter(state__isnull=True)
     open_items = agenda.items.filter(state=True)
@@ -413,15 +418,11 @@ def agenda(request, id):
 
     # result_counts = map(lambda t: (t.name, t.results().count()), closed)
     # raise Exception, result_counts
-    return render_to_response('voting/agenda.html',
-                              {
-                                'agenda': agenda,
-                                'closed_topics': closed.order_by('-deadline'),
-                                'pending_topics': pending_topics,
-                                'voted_topics': voted_topics,
-                                'forbidden_topics': forbidden_topics,
-                                'open_items': open_items,
-                                'pending_items': pending_items,
-                              },
-                              context_instance=RequestContext(request))
-
+    return render(request, 'voting/agenda.html',
+                  {'agenda': agenda,
+                   'closed_topics': closed.order_by('-deadline'),
+                   'pending_topics': pending_topics,
+                   'voted_topics': voted_topics,
+                   'forbidden_topics': forbidden_topics,
+                   'open_items': open_items,
+                   'pending_items': pending_items})

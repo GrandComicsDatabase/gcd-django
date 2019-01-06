@@ -1,33 +1,39 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core import urlresolvers
 
 from taggit.managers import TaggableManager
 
-from series import Series
-from issue import Issue
+from .gcddata import GcdData
+from .award import ReceivedAward
 
 STORY_TYPES = {
+    'cover': 6,
     'insert': 11,
-    'promo': 16,
     'soo': 22,
     'blank': 24,
+    'preview': 26,
+    'about comics': 27,
 }
 
 OLD_TYPES = {
     '(unknown)',
+    '(backcovers) *do not use* / *please fix*',
     'biography (nonfictional)'
 }
 
 # core sequence types: (photo, text) story, cover (incl. reprint)
 CORE_TYPES = [6, 7, 13, 19, 21]
 # ad sequence types: ad, promo
-AD_TYPES = [2, 16]
+AD_TYPES = [2, 16, 26]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
+
 
 class StoryTypeManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
+
 
 class StoryType(models.Model):
     class Meta:
@@ -46,7 +52,8 @@ class StoryType(models.Model):
     def __unicode__(self):
         return self.name
 
-class Story(models.Model):
+
+class Story(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['sequence_number']
@@ -54,6 +61,7 @@ class Story(models.Model):
     # Core story fields.
     title = models.CharField(max_length=255)
     title_inferred = models.BooleanField(default=False, db_index=True)
+    first_line = models.CharField(max_length=255, default='')
     feature = models.CharField(max_length=255)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
@@ -84,42 +92,44 @@ class Story(models.Model):
     notes = models.TextField()
     keywords = TaggableManager()
 
+    awards = GenericRelation(ReceivedAward)
+
     # Fields from issue.
-    issue = models.ForeignKey(Issue)
+    issue = models.ForeignKey('Issue')
 
-    # Fields related to change management.
-    reserved = models.BooleanField(default=False, db_index=True)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True, db_index=True)
+    _update_stats = True
 
-    deleted = models.BooleanField(default=False, db_index=True)
+    def stat_counts(self):
+        if self.deleted:
+            return {}
 
-    def delete(self):
-        self.deleted = True
-        self.reserved = False
-        self.save()
+        return {
+            'stories': 1,
+        }
 
     def has_credits(self):
-        """Simplifies UI checks for conditionals.  Credit fields.
-        Note that the editor field does not apply to the special cover story."""
+        """
+        Simplifies UI checks for conditionals.  Credit fields.
+        """
         return self.script or \
                self.pencils or \
                self.inks or \
                self.colors or \
                self.letters or \
-               self.editing or \
-               self.job_number
-
-    def has_keywords(self):
-        return self.keywords.exists()
+               self.editing
 
     def has_content(self):
-        """Simplifies UI checks for conditionals.  Content fields"""
-        return self.genre or \
+        """
+        Simplifies UI checks for conditionals.  Content fields
+        """
+        return self.job_number or \
+               self.genre or \
                self.characters or \
+               self.first_line or \
                self.synopsis or \
-               self.keywords.exists() or \
-               self.has_reprints()
+               self.has_keywords() or \
+               self.has_reprints() or \
+               self.active_awards().count()
                
     def has_reprints(self, notes=True):
         return (notes and self.reprint_notes) or \
@@ -128,23 +138,14 @@ class Story(models.Model):
                self.from_issue_reprints.count() or \
                self.to_issue_reprints.count()
 
-    @property
-    def reprint_needs_inspection(self):
-        if hasattr(self, 'migration_status') and self.migration_status:
-            return self.migration_status.reprint_needs_inspection
-        else:
-            return False
-
-    @property
-    def reprint_confirmed(self):
-        if hasattr(self, 'migration_status') and self.migration_status:
-            return self.migration_status.reprint_confirmed
-        else:
-            return True
-
     def has_data(self):
-        """Simplifies UI checks for conditionals.  All non-heading fields"""
+        """
+        Simplifies UI checks for conditionals.  All non-heading fields
+        """
         return self.has_credits() or self.has_content() or self.notes
+
+    def active_awards(self):
+        return self.awards.exclude(deleted=True)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -154,3 +155,13 @@ class Story(models.Model):
     def __unicode__(self):
         return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
 
+
+class BiblioEntry(Story):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_biblio_entry'
+
+    page_began = models.IntegerField(null=True)
+    page_ended = models.IntegerField(null=True)
+    abstract = models.TextField()
+    doi = models.TextField()

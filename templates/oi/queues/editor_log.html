@@ -1,8 +1,8 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load display %}
+{% load humanize %}
 
 {% block title %}
 GCD :: {{ user.indexer }} :: Editor Log
@@ -54,14 +54,16 @@ GCD :: {{ user.indexer }} :: Editor Log
         {% if changeset.change_type == CTYPES.issue_bulk %}
     <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue bulk changes</a></td>
         {% else %}
-    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue variant add (with base)</a></td>
+           <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue variant add (with base)</a></td>
         {% endif %}
       {% endif %}
-    <td>{{ changeset }}</td>
+    <td>
+      {{ changeset }}
+    </td>
     {% endif %}
 {% endif %}
     <td>{{ changeset.indexer.indexer|absolute_url }}</td>
-    <td>{{ changeset.modified }}</td>
+    <td>{{ changeset.modified|naturaltime }}</td>
 </tr>
 {% endfor %}
 </table>

@@ -1,6 +1,5 @@
 {% extends "gcd/search/base_list.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load display %}
@@ -13,9 +12,8 @@
       href="{% static "css/projects/default.css" %}"/>
 {% endblock %}
 
-{% block body %}
+{% block view_body %}
 
-{% include "gcd/bits/search_bar.html" %}
 <div>
 <h1 class="item_id search_id">
 <div class="left">
@@ -41,7 +39,6 @@
 </p>
 
 <form id="imp_in_use_form" action={% url "issues_with_several_covers" %} method="GET">
-  {% csrf_token %}
   <table>
     {{ form.as_table }}
   </table>
@@ -68,8 +65,6 @@
   </tr>
 {% endfor %}
 </table>
-
-{% include "gcd/bits/search_bar.html" %}
 
 {% endblock %}
 

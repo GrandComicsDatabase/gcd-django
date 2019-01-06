@@ -1,0 +1,12 @@
+Hello from the Grand Comics Database.
+
+{{ name }} <{{ email }}> sends you the following message via your profile at the GCD
+
++++++
+
+{{ body }}
+
++++++
+
+This message was sent via your profile page www.comics.org/accounts/profile/. When replying, please make sure that the Reply-To set to {{ email }} was observed and that the email therefore does not have do-not-reply@comics.org as the recipient.
+

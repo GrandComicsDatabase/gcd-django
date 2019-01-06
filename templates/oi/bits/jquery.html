@@ -1,8 +1,20 @@
 {% load staticfiles %}
-<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+{% if not settings.DEBUG %}
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+{% endif %}
 <script type="text/javascript">
 if (typeof jQuery == 'undefined')
 {
 document.write(unescape("%3Cscript src='{% static "jquery/js/jquery.min.js" %}' type='text/javascript'%3E%3C/script%3E"));
 }
+{% if details %}
+function detectIE() {
+    var ua = window.navigator.userAgent;
+    var ie = ua.search('(MSIE|Trident\/|Edge\/)');
+    return ie > -1;
+}
+if (detectIE()){
+document.write(unescape("%3Cscript src='{% static "js/details-element-polyfill.js" %}' type='text/javascript'%3E%3C/script%3E"));
+}
+{% endif %}
 </script>

@@ -1,0 +1,4 @@
+{{ object.publication_title|safe }}
+{{ object.work_type }}
+{{ object.creator|safe }}
+{{ object.notes|safe }}

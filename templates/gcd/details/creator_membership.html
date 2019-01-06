@@ -1,0 +1,69 @@
+{% extends "gcd/base_view.html" %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block title %}
+  GCD :: Creator Membership :: {{ creator_membership.organization_name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+    href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+ {% include "gcd/bits/creator_header.html" %}
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+      <dl class="pub_data">
+        <dt> Organization Name:
+        <dd> {{ creator_membership.organization_name }}
+        <dt> Membership Type:
+        <dd> {{ creator_membership.membership_type }}
+        <dt> Year began:
+        <dd> {{ creator_membership.membership_year_began|default:'' }}
+        {% if not creator_membership.membership_year_began or creator_membership.membership_year_began_uncertain %} ?{% endif %}
+        {% if creator_membership.membership_year_ended or creator_membership.membership_year_ended_uncertain %}
+        <dt>Year ended:
+        <dd>{{ creator_membership.membership_year_ended|default:'' }}
+            {% if creator_membership.membership_year_ended_uncertain %} ?{% endif %}
+        {% endif %}
+        {% if creator_membership.notes %}
+        <dt>Notes:
+        <dd>{{ creator_membership.notes }}
+        {% endif %}
+        {% with creator_membership.data_source.all as data_sources %}
+        {% include "gcd/bits/show_sources.html" %}
+        {% endwith %}
+      </dl>
+    </div> <!-- control_center -->
+  {% if not preview or creator_membership.source %}
+    <div id="control_rail">
+      <div class="edit_box">
+        <div class="edit_header">Editing</div>
+  {% if not preview %}
+    {% with creator_membership as object %}
+    {% with 'creator_membership' as object_class %}
+    {% with 'creator_membership' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+
+  {% endif %} <!-- not preview -->
+      </div> <!-- edit_box -->
+      <div id="change_history" class="edit_footer">
+  {% if preview %}
+        <a href="{% url "change_history" model_name='creator_membership' id=creator_membership.source.id %}">View Change History</a>
+  {% else %}
+        <a href="{% url "change_history" model_name='creator_membership' id=creator_membership.id %}">View Change History</a>
+  {% endif %}
+      </div>
+        </div> <!-- control_rail -->
+{% endif %}
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+
+
+{% endblock %}

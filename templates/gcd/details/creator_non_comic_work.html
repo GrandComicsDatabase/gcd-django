@@ -1,0 +1,84 @@
+{% extends "gcd/base_view.html" %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block title %}
+  GCD :: Creator NonComicWork :: {{ creator_non_comic_work.publication_title }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+    href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+ {% include "gcd/bits/creator_header.html" %}
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+      <dl class="pub_data">
+        <dt> Publication Title:
+        <dd> {{ creator_non_comic_work.publication_title }}
+        {% if creator_non_comic_work.work_type %}
+        <dt> Work Type:
+        <dd> {{ creator_non_comic_work.work_type }}
+        {% endif %}
+        {% if creator_non_comic_work.employer_name %}
+        <dt> Employer Name:
+        <dd> {{ creator_non_comic_work.employer_name }}
+        {% endif %}
+        {% if creator_non_comic_work.work_title %}
+        <dt> Work Title:
+        <dd> {{ creator_non_comic_work.work_title }}
+        {% endif %}
+        {% if creator_non_comic_work.work_role %}
+        <dt> Work Role:
+        <dd> {{ creator_non_comic_work.work_role }}
+        {% endif %}
+        {% if creator_non_comic_work.work_title %}
+        <dt> Work Notes:
+        <dd> {{ creator_non_comic_work.work_notes }}
+        {% endif %}
+        {% if creator_non_comic_work.display_years %}
+        <dt> Work Years:
+        <dd> {{ creator_non_comic_work.display_years }}
+        {% endif %}
+        {% if creator_non_comic_work.work_urls %}
+        <dt> Work URLs:
+        <dd> {{ creator_non_comic_work.work_urls|urlize|linebreaksbr }}
+        {% endif %}
+        {% if creator_non_comic_work.notes %}
+        <dt>Notes
+        <dd>{{ creator_non_comic_work.notes }}
+        {% endif %}
+      </dl>
+    </div> <!-- control_center -->
+  {% if not preview or creator_non_comic_work.source %}
+    <div id="control_rail">
+      <div class="edit_box">
+        <div class="edit_header">Editing</div>
+  {% if not preview %}
+    {% with creator_non_comic_work as object %}
+    {% with 'creator_non_comic_work' as object_class %}
+    {% with 'creator_non_comic_work' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+
+  {% endif %} <!-- not preview -->
+      </div> <!-- edit_box -->
+      <div id="change_history" class="edit_footer">
+  {% if preview %}
+        <a href="{% url "change_history" model_name='creator_non_comic_work' id=creator_non_comic_work.source.id %}">View Change History</a>
+  {% else %}
+        <a href="{% url "change_history" model_name='creator_non_comic_work' id=creator_non_comic_work.id %}">View Change History</a>
+  {% endif %}
+      </div>
+        </div> <!-- control_rail -->
+{% endif %}
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+
+
+{% endblock %}

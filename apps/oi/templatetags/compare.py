@@ -1,5 +1,6 @@
 from django import template
 from diff_match_patch import diff_match_patch
+from django.conf import settings
 from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
                                            pluralize
 from django.utils.safestring import mark_safe
@@ -40,12 +41,14 @@ def valid_barcode(barcode):
     return stdean.is_valid(barcode)
 
 # check to return True for yellow css compare highlighting
+@register.filter
 def check_changed(changed, field):
     if changed:
         return changed[field]
     return False
 
 # display certain similar fields' data in the same way
+@register.filter
 def field_value(revision, field):
     value = getattr(revision, field)
     if field in ['is_surrogate', 'no_volume', 'display_volume_with_number',
@@ -64,14 +67,17 @@ def field_value(revision, field):
                   (res_holder.first_name, res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
     elif field in ['publisher', 'indicia_publisher', 'series',
-                   'origin_issue', 'target_issue']:
+                   'origin_issue', 'target_issue', 'award']:
         return absolute_url(value)
     elif field in ['origin', 'target']:
         return value.full_name_with_link()
     elif field == 'brand':
         if value and value.emblem:
-            return mark_safe('<img src="' + value.emblem.icon.url + '"> ' \
-                             + absolute_url(value))
+            if settings.FAKE_IMAGES:
+                return absolute_url(value)
+            else:
+                return mark_safe('<img src="' + value.emblem.icon.url + '"> ' \
+                                 + absolute_url(value))
         return absolute_url(value)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
                    'characters', 'synopsis']:
@@ -177,6 +183,11 @@ def field_value(revision, field):
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
         return ''
+
+    elif field == 'cr_creator_names':
+        creator_names = ", ".join(revision.cr_creator_names.all().values_list('name', flat=True))
+        return creator_names
+
     return value
 
 @register.assignment_tag
@@ -186,8 +197,9 @@ def diff_list(prev_rev, revision, field):
                  'characters', 'synopsis', 'script', 'pencils', 'inks',
                  'colors', 'letters', 'editing', 'feature', 'title',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
-                 'publishing_format', 'format', 'name', 
-                 'price', 'indicia_frequency', 'variant_name']:
+                 'publishing_format', 'format', 'name',
+                 'price', 'indicia_frequency', 'variant_name',
+                 'source_description', 'gcd_official_name', 'bio']:
         diff = diff_match_patch().diff_main(getattr(prev_rev, field),
                                             getattr(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)
@@ -195,6 +207,8 @@ def diff_list(prev_rev, revision, field):
     else:
         return None
 
+
+@register.filter
 def show_diff(diff_list, change):
     """show changes in diff with markings for add/delete"""
     compare_string = u""
@@ -213,6 +227,8 @@ def show_diff(diff_list, change):
                 compare_string += span_tag % ("added", esc(i[1]))
     return mark_safe(compare_string)
 
+
+@register.filter
 def compare_current_reprints(object_type, changeset):
     """process reprint_links and parse into readable format for compare view"""
     if object_type.changeset_id != changeset.id:
@@ -262,7 +278,7 @@ def compare_current_reprints(object_type, changeset):
           .exclude(changeset=changeset).filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True).exclude(next_revision=None)
 
-    if (active_origin | active_target).count():
+    if active_origin.exists() or active_target.exists():
         if object_type.changeset_id != changeset.id:
             reprint_string = '<ul>The following reprint links are edited in ' \
                              'the compared changeset.'
@@ -308,7 +324,7 @@ def compare_current_reprints(object_type, changeset):
     else:
         reprint_string = ''
 
-    if (kept_origin | kept_target).count():
+    if kept_origin.exists() or kept_target.exists():
         kept_string = ''
         kept_target = list(kept_target.select_related(\
                            'origin_issue__series__publisher',
@@ -347,8 +363,41 @@ def compare_current_reprints(object_type, changeset):
 
     return mark_safe(reprint_string)
 
-register.filter(check_changed)
-register.filter(field_value)
-register.filter(show_diff)
-register.filter(compare_current_reprints)
-register.assignment_tag(diff_list)
+
+@register.filter
+def get_source_revisions(changeset, field):
+    revisions = changeset.datasourcerevisions.filter(field=field)
+    for revision in revisions:
+        revision.compare_changes()
+    return revisions
+
+
+@register.filter
+def lookup(d, key):
+    return d[key]
+
+
+@register.filter
+def is_in(value, sources):
+    for source in sources:
+        if str(source) == str(value):
+            return True
+    return False
+
+
+@register.filter
+def is_equal(value, relation_obj):
+    for relation in relation_obj:
+        if relation.rel_type:
+            if str(relation.rel_type.type) == str(value):
+                return True
+    return False
+
+
+@register.filter
+def relation_source_is_in(value, relation_objs):
+    for relation_obj in relation_objs:
+        for source in relation_obj.rel_source.all():
+            if str(source.type) == str(value):
+                return True
+    return False

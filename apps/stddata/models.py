@@ -1,8 +1,10 @@
 from django.db import models
 
+
 class CountryManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
+
 
 class Country(models.Model):
     class Meta:
@@ -25,9 +27,11 @@ class Country(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class CurrencyManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
+
 
 class Currency(models.Model):
     """Class representing currency for prices."""
@@ -38,9 +42,9 @@ class Currency(models.Model):
     objects = CurrencyManager()
 
     code = models.CharField(blank=False, null=False, max_length=3,
-        unique=True)
+                            unique=True)
     name = models.CharField(blank=False, null=False, max_length=100,
-        db_index=True)
+                            db_index=True)
     is_decimal = models.BooleanField(default=True)
 
     def natural_key(self):
@@ -49,6 +53,7 @@ class Currency(models.Model):
     def __unicode__(self):
         return unicode(self.code) + u" - " + unicode(self.name)
 
+
 class Date(models.Model):
     """Class representing dates for gcd with the ability to store partial
     information. Blank field means that it's not important. Question marks mean
@@ -56,49 +61,57 @@ class Date(models.Model):
     Objects of this class should be deleted together with objects pointing to
     them."""
     class Meta:
-        ordering = ('year','month','day',)
+        ordering = ('year', 'month', 'day',)
         verbose_name_plural = 'Dates'
 
     year = models.CharField(blank=True, null=False,  max_length=4,
-        db_index=True)
+                            db_index=True)
     month = models.CharField(blank=True, null=False, max_length=2,
-        db_index=True)
+                             db_index=True)
     day = models.CharField(blank=True, null=False, max_length=2,
-        db_index=True)
+                           db_index=True)
     year_uncertain = models.BooleanField(default=False)
     month_uncertain = models.BooleanField(default=False)
     day_uncertain = models.BooleanField(default=False)
 
     def set(self, year=None, month=None, day=None, year_uncertain=False,
-                 month_uncertain=False, day_uncertain=False, empty=False):
+            month_uncertain=False, day_uncertain=False, empty=False):
         self.year = year
         self.month = month
         self.day = day
-        self.year_uncertain=year_uncertain or (not year and not empty) \
-                                           or ('?' in year)
-        self.month_uncertain=month_uncertain or (not month and not empty) \
-                                             or ('?' in month)
-        self.day_uncertain=day_uncertain or (not day and not empty) \
-                                         or ('?' in day)
+        self.year_uncertain = year_uncertain or (not year and not empty) \
+                                             or (year is not None
+                                                 and '?' in year)
+        self.month_uncertain = month_uncertain or (not month and not empty) \
+                                               or (month is not None and
+                                                   '?' in month)
+        self.day_uncertain = day_uncertain or (not day and not empty) \
+                                           or (day is not None and '?' in day)
 
     def __unicode__(self):
         year = self.year or ''
-        if self.year_uncertain and not '?' in self.year:
+        if self.year_uncertain and '?' not in year:
             year += '?'
         month = self.month or ''
-        if self.month_uncertain and not '?' in self.month:
+        if self.month_uncertain and '?' not in month:
             month += '?'
         day = self.day or ''
-        if self.day_uncertain and not '?' in self.day:
+        if self.day_uncertain and '?' not in day:
             day += '?'
-        if year or month or day:
+        if day:
             return year+u'-'+month+u'-'+day
+        elif month:
+            return year+u'-'+month
+        elif year:
+            return year
         else:
             return u''
+
 
 class LanguageManager(models.Manager):
     def get_by_natural_key(self, code):
         return self.get(code=code)
+
 
 class Language(models.Model):
     class Meta:
@@ -117,6 +130,12 @@ class Language(models.Model):
         sufficiently limited that this is acceptable.
         """
         return (self.code,)
+
+    def get_native_name(self):
+        if self.native_name:
+            return self.native_name
+        else:
+            return self.name
 
     def __unicode__(self):
         return self.name

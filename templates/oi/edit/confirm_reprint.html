@@ -1,6 +1,5 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load credits %}
 
 {% block css %}
@@ -29,7 +28,7 @@
   {% csrf_token %}
   {% endif %}
   {% if story_revision %}
-  <form id="confirm" action="{% url "save_revision_story_reprint" story_revision_id=story.id changeset_id=changeset.id story_two_id=selected_story.id reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url "save_revision_story_reprint" story_revision_id=story.revision.id changeset_id=changeset.id story_two_id=selected_story.id reprint_revision_id=reprint_revision_id %}" method="POST">
   {% csrf_token %}
   {% endif %}
   {% if issue %}
@@ -42,7 +41,7 @@
   {% csrf_token %}
   {% endif %}
   {% if story_revision %}
-  <form id="confirm" action="{% url "save_revision_issue_reprint" story_revision_id=story.id changeset_id=changeset.id issue_two_id=selected_issue.id reprint_revision_id=reprint_revision_id %}" method="POST">
+  <form id="confirm" action="{% url "save_revision_issue_reprint" story_revision_id=story.revision.id changeset_id=changeset.id issue_two_id=selected_issue.id reprint_revision_id=reprint_revision_id %}" method="POST">
   {% csrf_token %}
   {% endif %}
   {% if issue %}
@@ -53,12 +52,10 @@
 
   <hr class="divider">
 {% if story %}
-  {% with 1 as no_navigation %}
   {% with 1 as preview %}
   <div id="story_data">
     {% include "gcd/details/single_story.html" %}
   </div>
-  {% endwith %}
   {% endwith %}
 {% else %}
   <h2>Part of {{ issue.full_name }} {% if issue.publication_date %}({{ issue.publication_date }}){% endif %}</h2>
@@ -67,8 +64,8 @@
 
 is 
 <select name="direction" id="id_direction">
-<option value="from" {% if which_side = 'origin' %}selected="selected"{% endif %}>reprinted from
-<option value="to" {% if which_side = 'target' %}selected="selected"{% endif %}>reprinted in
+<option value="from" {% if which_side == 'origin' %}selected="selected"{% endif %}>reprinted from
+<option value="to" {% if which_side == 'target' %}selected="selected"{% endif %}>reprinted in
 </select>
 
 <hr class="divider">
@@ -76,12 +73,10 @@ is
 {% if selected_story %}
   <h2>{{ selected_story }} / {{ selected_story.title }}  of {{ selected_story.issue }} {% if selected_story.issue.publication_date %}({{ selected_story.issue.publication_date }}){% endif %}
   </h2>
-  {% with 1 as no_navigation %}
   {% with selected_story as story %}
 <div id="story_data">
     {% include "gcd/details/single_story.html" %}
 </div>
-  {% endwith %}
   {% endwith %}
 {% else %}
 <h2>{{ selected_issue.full_name }} {% if selected_issue.publication_date %}({{ selected_issue.publication_date }}){% endif %}</h2>

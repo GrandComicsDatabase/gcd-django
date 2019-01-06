@@ -5,15 +5,15 @@ from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.core.mail import EmailMessage
-from django.template import Context
 from django.template.loader import get_template
 
 from apps.stddata.models import Country, Language
 
-#TODO: Should not be importing from OI.  Reconsider app split.
+# TODO: Should not be importing from OI.  Reconsider app split.
 from apps.oi import states
 
 IMPS_FOR_APPROVAL = 3
+
 
 class Indexer(models.Model):
     """
@@ -29,7 +29,9 @@ class Indexer(models.Model):
             ('can_cancel', 'Can cancel a pending change they did not open'),
             ('can_mentor', 'Can mentor new indexers'),
             ('can_vote', 'Can vote in GCD elections'),
-            ('can_publish', 'Can publish non-database content on the web site'),
+            ('can_publish',
+             'Can publish non-database content on the web site'),
+            ('can_contact', 'Can see list of users who have opted-in'),
             ('on_board', 'Is on the Board of Directors'),
         )
 
@@ -41,18 +43,21 @@ class Indexer(models.Model):
     interests = models.TextField(null=True, blank=True)
     opt_in_email = models.BooleanField(default=False, db_index=True)
     from_where = models.TextField(blank=True)
+    seen_privacy_policy = models.BooleanField(default=False, db_index=True)
 
     max_reservations = models.IntegerField(default=1)
     max_ongoing = models.IntegerField(default=0)
 
-    mentor = models.ForeignKey(User, related_name='mentees', null=True, blank=True)
+    mentor = models.ForeignKey(User, related_name='mentees', null=True,
+                               blank=True)
     is_new = models.BooleanField(default=False, db_index=True)
     is_banned = models.BooleanField(default=False, db_index=True)
     deceased = models.BooleanField(default=False, db_index=True)
 
     registration_key = models.CharField(max_length=40, null=True,
                                         db_index=True, editable=False)
-    registration_expires = models.DateField(null=True, blank=True, db_index=True)
+    registration_expires = models.DateField(null=True, blank=True,
+                                            db_index=True)
 
     imps = models.IntegerField(default=0)
     # display options
@@ -66,13 +71,13 @@ class Indexer(models.Model):
         from apps.oi.models import CTYPES
 
         if self.is_new:
-            if (self.user.changesets.filter(state__in=states.ACTIVE)\
-                .exclude(change_type=CTYPES['cover']).count() >=
-                self.max_reservations):
-                return False 
+            if (self.user.changesets.filter(state__in=states.ACTIVE)
+               .exclude(change_type=CTYPES['cover']).count() >=
+               self.max_reservations):
+                return False
         elif (self.user.changesets.filter(state=states.OPEN).count() >=
               self.max_reservations):
-            return False 
+            return False
         return True
 
     def can_reserve_another_ongoing(self):
@@ -111,19 +116,19 @@ class Indexer(models.Model):
         self.imps = models.F('imps') + value
         self.save()
         if (old_imps < settings.MEMBERSHIP_IMPS and
-          Indexer.objects.get(pk=self.pk).imps >= settings.MEMBERSHIP_IMPS):
+           Indexer.objects.get(pk=self.pk).imps >= settings.MEMBERSHIP_IMPS):
             self.user.groups.add(Group.objects.get(name='member'))
             self.send_member_email()
 
     def send_member_email(self):
         email = EmailMessage(from_email=settings.EMAIL_CHAIRMAN,
-                  to=[self.user.email],
-                  subject='GCD full member',
-                  body=get_template('indexer/new_member_mail.html').render(
-                    Context({'site_name': settings.SITE_NAME,
-                            'chairman': settings.CHAIRMAN })
-                    ),
-                    cc=[settings.EMAIL_CHAIRMAN])
+                             to=[self.user.email],
+                             subject='GCD full member',
+                             body=get_template('indexer/new_member_mail.html')
+                             .render({'site_name': settings.SITE_NAME,
+                                      'chairman': settings.CHAIRMAN}
+                                     ),
+                             cc=[settings.EMAIL_CHAIRMAN])
         email.send(fail_silently=(not settings.BETA))
 
     def get_absolute_url(self):
@@ -134,7 +139,7 @@ class Indexer(models.Model):
             full_name = u'%s %s' % (self.user.first_name, self.user.last_name)
         elif self.user.first_name:
             full_name = self.user.first_name
-        else:   
+        else:
             full_name = self.user.last_name
         if self.deceased:
             full_name = full_name + u' (R.I.P.)'
@@ -159,7 +164,8 @@ class Error(models.Model):
     class Admin:
         pass
 
-    error_key = models.CharField(primary_key=True, max_length=40, editable=False)
+    error_key = models.CharField(primary_key=True, max_length=40,
+                                 editable=False)
     error_text = models.TextField(null=True, blank=True)
 
     is_safe = models.BooleanField(default=False)

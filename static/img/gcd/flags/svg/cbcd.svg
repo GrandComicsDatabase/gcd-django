@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.0"
+   width="750"
+   height="500">
+  <rect
+     width="750"
+     height="500"
+     fill="#0039a5" />
+  <polygon
+     points="0,-1 .587785,.809017 -.951057,-.309017 .951057,-.309017 -.587785,.809017 0,-1 "
+     transform="matrix(138.1966,0,0,138.1966,375,263.1966)"
+     fill="#f7d618" />
+</svg>

@@ -3,24 +3,24 @@
 View methods related to displaying search and search results pages.
 """
 
-from re import *
-from urllib import urlopen, urlencode
+from re import match, split, sub
+from urllib import urlencode
 from decimal import Decimal
 from string import capitalize
+from haystack.backends import SQ
 from stdnum import isbn as stdisbn
 from random import randint
 
 from django.db.models import Q
 from django.conf import settings
-from django.shortcuts import render_to_response, \
-                             get_object_or_404, \
-                             get_list_or_404
 from django.http import HttpResponseRedirect
 from django.core import urlresolvers
-from django.template import RequestContext
+from django.shortcuts import render
 from django.utils.http import urlquote
 
+from djqscsv import render_to_csv_response
 from haystack.query import SearchQuerySet
+
 from apps.gcd.views.search_haystack import GcdNameQuery
 
 from apps.stddata.models import Country, Language
@@ -29,7 +29,10 @@ from apps.indexer.models import Indexer
 from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
-                            BrandGroup, Brand, IndiciaPublisher, STORY_TYPES
+                            BrandGroup, Brand, IndiciaPublisher, STORY_TYPES, \
+                            Award, Creator, CreatorMembership, ReceivedAward, \
+                            CreatorArtInfluence, CreatorNonComicWork, \
+                            CreatorNameDetail, SeriesPublicationType
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
@@ -41,8 +44,10 @@ from apps.gcd.views.covers import get_image_tags_per_page
 # TODO: states should probably live somewhere else.
 from apps.oi import states
 
+
 class SearchError(Exception):
     pass
+
 
 def generic_by_name(request, name, q_obj, sort,
                     class_=Story,
@@ -57,7 +62,7 @@ def generic_by_name(request, name, q_obj, sort,
     name = name.encode('utf-8')
     base_name = 'unknown'
     plural_suffix = 's'
-    query_val = {'method': 'icontains'}
+    query_val = {'method': 'icontains', 'logic': 'True'}
 
     if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher)):
         if class_ is IndiciaPublisher:
@@ -73,6 +78,7 @@ def generic_by_name(request, name, q_obj, sort,
             display_name = class_.__name__
             base_name = display_name.lower()
         item_name = display_name.lower()
+
         if class_ is Brand:
             selected = 'brand'
         else:
@@ -80,7 +86,7 @@ def generic_by_name(request, name, q_obj, sort,
 
         plural_suffix = '' if class_ is Series else 's'
         sort_name = "sort_name" if class_ is Series else "name"
-        if sqs == None:
+        if sqs is None:
             things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
@@ -105,6 +111,99 @@ def generic_by_name(request, name, q_obj, sort,
         else:
             query_val[base_name] = name
 
+    elif class_ is Award:
+        sort_name = "name"
+
+        if sqs is None:
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            things = things.order_by(sort_name)
+            things = things.distinct()
+        else:
+            things = sqs
+            things = things.order_by(sort_name)
+        display_name = class_.__name__
+        base_name = display_name.lower()
+        item_name = display_name.lower()
+        selected = base_name
+
+        heading = '%s Search Results' % display_name
+
+    elif class_ is Creator:
+        sort_name = "sort_name"
+
+        if sqs is None:
+            sort_year = "birth_date__year"
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if related:
+                things = things.select_related(*related)
+            if (sort == ORDER_ALPHA):
+                things = things.order_by(sort_name, sort_year)
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by(sort_year, sort_name)
+            things = things.distinct()
+        else:
+            sort_year = "year"
+            things = sqs
+            if (sort == ORDER_ALPHA):
+                things = things.order_by(sort_name,
+                                         sort_year)
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by(sort_year,
+                                         sort_name)
+        display_name = class_.__name__
+        base_name = display_name.lower()
+        item_name = display_name.lower()
+        selected = base_name
+
+        heading = '%s Search Results' % display_name
+        # query_string for the link to the advanced search
+        query_val['target'] = base_name
+        query_val[base_name] = name
+
+    elif (class_ in (CreatorMembership, ReceivedAward, CreatorArtInfluence,
+                     CreatorNonComicWork)):
+        if sqs is None:
+            sort_year = "creator__birth_date__year"
+
+            if class_ is CreatorMembership:
+                sort_name = "organization_name"
+            elif class_ is ReceivedAward:
+                sort_name = "award_name"
+            elif class_ is CreatorArtInfluence:
+                sort_name = "influence_name"
+            elif class_ is CreatorNonComicWork:
+                sort_name = "publication_title"
+
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if related:
+                things = things.select_related(*related)
+            if (sort == ORDER_ALPHA):
+                things = things.order_by(sort_name, sort_year)
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by(sort_year, sort_name)
+            things = things.distinct()
+        else:
+            sort_name = "name"
+            things = sqs
+            if class_ != ReceivedAward:
+                things = things.order_by('sort_name')
+            else:
+                sort_year = 'year'
+                if (sort == ORDER_ALPHA):
+                    things = things.order_by(sort_name,
+                                             sort_year)
+                elif (sort == ORDER_CHRONO):
+                    things = things.order_by(sort_year,
+                                             sort_name)
+        display_name = class_.__name__
+        base_name = display_name.lower()
+        item_name = display_name.lower()
+
+        heading = '%s Search Results' % display_name
+        # query_string for the link to the advanced search
+        query_val['target'] = base_name
+        query_val[base_name] = name
+
     elif class_ is Issue:
         item_name = 'issue'
         things = Issue.objects.exclude(deleted=True).filter(q_obj) \
@@ -122,38 +221,14 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['barcode'] = name
 
     elif (class_ is Story):
-        # TODO: move this outside when series deletes are implemented
-        q_obj &= Q(deleted=False)
-
         item_name = 'stor'
         plural_suffix = 'y,ies'
-
-        things = class_.objects.filter(q_obj)
-        things = things.select_related('issue__series__publisher',
-                                       'type')
-
-        # TODO: This order_by stuff only works for Stories, which is
-        # TODO: OK for now, but might not always be.
-        if (sort == ORDER_ALPHA):
-            things = things.order_by("issue__series__sort_name",
-                                     "issue__series__year_began",
-                                     "issue__key_date",
-                                     "sequence_number")
-        elif (sort == ORDER_CHRONO):
-            things = things.order_by("issue__key_date",
-                                     "issue__series__sort_name",
-                                     "issue__series__year_began",
-                                     "sequence_number")
         heading = 'Story Search Results'
-        # build the query_string for the link to the advanced search
         query_val['target'] = 'sequence'
+        # build the query_string for the link to the advanced search
         if credit in ['script', 'pencils', 'inks', 'colors', 'letters',
                       'job_number']:
             query_val[credit] = name
-        # remove the ones which are not matched in display of results
-        elif credit in ['reprint', 'title', 'feature']:
-            query_val[credit] = name
-            credit = None
         elif credit.startswith('editing_search'):
             query_val['story_editing'] = name
             query_val['issue_editing'] = name
@@ -163,12 +238,48 @@ def generic_by_name(request, name, q_obj, sort,
             for credit_type in ['script', 'pencils', 'inks', 'colors',
                                 'letters', 'story_editing', 'issue_editing']:
                 query_val[credit_type] = name
-        elif credit.startswith('characters'):
-            query_val['characters'] = name
-            # OR-logic only applies to credits, so we cannnot use it
-            # to mimic the double search for characters and features here
-            # query_val['feature'] = name
-            # query_val['logic'] = True
+        if sqs is None:
+            # TODO: move this outside when series deletes are implemented
+            q_obj &= Q(deleted=False)
+
+            things = class_.objects.filter(q_obj)
+            things = things.select_related('issue__series__publisher',
+                                           'type')
+
+            # TODO: This order_by stuff only works for Stories, which is
+            # TODO: OK for now, but might not always be.
+            if (sort == ORDER_ALPHA):
+                things = things.order_by("issue__series__sort_name",
+                                         "issue__series__year_began",
+                                         "issue__key_date",
+                                         "sequence_number")
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by("issue__key_date",
+                                         "issue__series__sort_name",
+                                         "issue__series__year_began",
+                                         "sequence_number")
+            # build the query_string for the link to the advanced search
+            # remove the ones which are not matched in display of results
+            if credit in ['reprint', 'title', 'feature']:
+                query_val[credit] = name
+                credit = None
+            elif credit.startswith('characters'):
+                query_val['characters'] = name
+                # OR-logic only applies to credits, so we cannnot use it
+                # to mimic the double search for characters and features here
+                # query_val['feature'] = name
+                # query_val['logic'] = True
+        else:
+            things = sqs
+            if (sort == ORDER_ALPHA):
+                things = things.order_by("sort_name",
+                                         "key_date",
+                                         "sequence_number")
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by("key_date",
+                                         "sort_name",
+                                         "sequence_number")
+
     else:
         raise TypeError, "Unsupported search target!"
 
@@ -192,6 +303,19 @@ def generic_by_name(request, name, q_obj, sort,
              'selected': selected }
     return paginate_response(request, things, template, vars)
 
+
+def award_by_name(request, award_name, sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(award_name)) \
+                              .models(Award)
+        return generic_by_name(request, award_name, None, sort, Award,
+                               'gcd/search/award_list.html', sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=award_name)
+        return generic_by_name(request, award_name, q_obj, sort,
+                               Award, 'gcd/search/award_list.html')
+
+
 def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
         sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
@@ -202,6 +326,7 @@ def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
         q_obj = Q(name__icontains=publisher_name)
         return generic_by_name(request, publisher_name, q_obj, sort,
                                Publisher, 'gcd/search/publisher_list.html')
+
 
 def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
@@ -215,6 +340,7 @@ def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
         return generic_by_name(request, brand_group_name, q_obj, sort,
                                BrandGroup, 'gcd/search/brand_group_list.html')
 
+
 def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
         sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_name)) \
@@ -225,6 +351,7 @@ def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
         q_obj = Q(name__icontains=brand_name)
         return generic_by_name(request, brand_name, q_obj, sort,
                                Brand, 'gcd/search/brand_list.html')
+
 
 def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH:
@@ -239,6 +366,92 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
         return generic_by_name(request, ind_pub_name, q_obj, sort,
                                IndiciaPublisher,
                                'gcd/search/indicia_publisher_list.html')
+
+
+def creator_by_name(request, creator_name, sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        # TODO use name instead ?
+        sqs = SearchQuerySet().filter(gcd_official_name=\
+                                      GcdNameQuery(creator_name)) \
+                              .models(Creator)
+        return generic_by_name(request, creator_name, None, sort,
+                               Creator,
+                               'gcd/search/creator_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(creator_names__name__icontains=creator_name) | Q(
+            gcd_official_name__icontains=creator_name)
+        return generic_by_name(request, creator_name, q_obj, sort,
+                               Creator,
+                               'gcd/search/creator_list.html')
+
+
+def creator_membership_by_name(request, creator_membership_name,
+                               sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(
+            name=GcdNameQuery(creator_membership_name)) \
+            .models(CreatorMembership)
+        return generic_by_name(request, creator_membership_name, None, sort,
+                               CreatorMembership,
+                               'gcd/search/creator_membership_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(organization_name__icontains=creator_membership_name)
+        return generic_by_name(request, creator_membership_name, q_obj, sort,
+                               CreatorMembership,
+                               'gcd/search/creator_membership_list.html')
+
+
+def received_award_by_name(request, received_award_name, sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(received_award_name)) \
+            .models(ReceivedAward)
+        return generic_by_name(request, received_award_name, None, sort,
+                               ReceivedAward,
+                               'gcd/search/received_award_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(award_name__icontains=received_award_name)
+        return generic_by_name(request, received_award_name, q_obj, sort,
+                               ReceivedAward,
+                               'gcd/search/received_award_list.html')
+
+
+def creator_art_influence_by_name(request, creator_art_influence_name,
+                                 sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(
+            name=GcdNameQuery(creator_art_influence_name)) \
+            .models(CreatorArtInfluence)
+        return generic_by_name(request, creator_art_influence_name, None, sort,
+                               CreatorArtInfluence,
+                               'gcd/search/creator_art_influence_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(influence_name__icontains=creator_art_influence_name) | \
+                Q(influence_link__gcd_official_name__icontains=creator_art_influence_name)
+        return generic_by_name(request, creator_art_influence_name, q_obj, sort,
+                               CreatorArtInfluence,
+                               'gcd/search/creator_art_influence_list.html')
+
+
+def creator_non_comic_work_by_name(request, creator_non_comic_work_name,
+                                   sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(
+            name=GcdNameQuery(creator_non_comic_work_name)) \
+            .models(CreatorNonComicWork)
+        return generic_by_name(request, creator_non_comic_work_name, None, sort,
+                               CreatorNonComicWork,
+                               'gcd/search/creator_non_comic_work_list.html',
+                               sqs=sqs)
+    else:
+        q_obj = Q(publication_title__icontains=creator_non_comic_work_name)
+        return generic_by_name(request, creator_non_comic_work_name, q_obj, sort,
+                               CreatorNonComicWork,
+                               'gcd/search/creator_non_comic_work_list.html')
+
 
 def character_by_name(request, character_name, sort=ORDER_ALPHA):
     """Find stories based on characters.  Since characters for whom a feature
@@ -257,53 +470,100 @@ def character_by_name(request, character_name, sort=ORDER_ALPHA):
 
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):
-    q_obj = Q(script__icontains=writer)
-    return generic_by_name(request, writer, q_obj, sort, credit="script",
-                           selected="writer")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(script=GcdNameQuery(writer)) \
+                              .models(Story)
+        return generic_by_name(request, writer, None, sort, credit="script",
+                               selected="writer", sqs=sqs)
+    else:
+        q_obj = Q(script__icontains=writer)
+        return generic_by_name(request, writer, q_obj, sort, credit="script",
+                               selected="writer")
 
 
 def penciller_by_name(request, penciller, sort=ORDER_ALPHA):
-    q_obj = Q(pencils__icontains=penciller)
-    return generic_by_name(request, penciller, q_obj, sort, credit="pencils",
-                           selected="penciller")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(pencils=GcdNameQuery(penciller)) \
+                              .models(Story)
+        return generic_by_name(request, penciller, None, sort, credit="pencils",
+                               selected="penciller", sqs=sqs)
+    else:
+        q_obj = Q(pencils__icontains=penciller)
+        return generic_by_name(request, penciller, q_obj, sort, credit="pencils",
+                               selected="penciller")
 
 
 def inker_by_name(request, inker, sort=ORDER_ALPHA):
-    q_obj = Q(inks__icontains=inker)
-    return generic_by_name(request, inker, q_obj, sort, credit="inks",
-                           selected="inker")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(inks=GcdNameQuery(inker)) \
+                              .models(Story)
+        return generic_by_name(request, inker, None, sort, credit="inks",
+                               selected="inker", sqs=sqs)
+    else:
+        q_obj = Q(inks__icontains=inker)
+        return generic_by_name(request, inker, q_obj, sort, credit="inks",
+                               selected="inker")
 
 
 def colorist_by_name(request, colorist, sort=ORDER_ALPHA):
-    q_obj = Q(colors__icontains=colorist)
-    return generic_by_name(request, colorist, q_obj, sort, credit="colors",
-                           selected="colorist")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(colors=GcdNameQuery(colorist)) \
+                              .models(Story)
+        return generic_by_name(request, colorist, None, sort, credit="colors",
+                               selected="colorist", sqs=sqs)
+    else:
+        q_obj = Q(colors__icontains=colorist)
+        return generic_by_name(request, colorist, q_obj, sort, credit="colors",
+                               selected="colorist")
 
 
 def letterer_by_name(request, letterer, sort=ORDER_ALPHA):
-    q_obj = Q(letters__icontains=letterer)
-    return generic_by_name(request, letterer, q_obj, sort, credit="letters",
-                           selected="letterer")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(letters=GcdNameQuery(letterer)) \
+                              .models(Story)
+        return generic_by_name(request, letterer, None, sort, credit="letters",
+                               selected="letterer", sqs=sqs)
+    else:
+        q_obj = Q(letters__icontains=letterer)
+        return generic_by_name(request, letterer, q_obj, sort, credit="letters",
+                               selected="letterer")
 
 
 def editor_by_name(request, editor, sort=ORDER_ALPHA):
-    q_obj = Q(editing__icontains=editor) | Q(issue__editing__icontains=editor)
-    return generic_by_name(request, editor, q_obj, sort,
-                           credit="editing_search:"+editor,
-                           selected="editor")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(editing=GcdNameQuery(editor)) \
+                              .models(Story)
+        return generic_by_name(request, editor, None, sort,
+                               credit="editing_search:"+editor,
+                               selected="editor", sqs=sqs)
+    else:
+        q_obj = Q(editing__icontains=editor) | Q(issue__editing__icontains=editor)
+        return generic_by_name(request, editor, q_obj, sort,
+                               credit="editing_search:"+editor,
+                               selected="editor")
 
 
 def story_by_credit(request, name, sort=ORDER_ALPHA):
     """Implements the 'Any Credit' story search."""
-    q_obj = Q(script__icontains=name) | \
-            Q(pencils__icontains=name) | \
-            Q(inks__icontains=name) | \
-            Q(colors__icontains=name) | \
-            Q(letters__icontains=name) | \
-            Q(editing__icontains=name) | \
-            Q(issue__editing__icontains=name)
-    return generic_by_name(request, name, q_obj, sort, credit=('any:'+name),
-                           selected="credit")
+    if settings.USE_ELASTICSEARCH:
+        query_part = GcdNameQuery(name)
+        sq = SQ(**{'script':query_part})
+        for field in ['pencils', 'inks', 'colors', 'letters', 'editing']:
+            sq |= SQ(**{field:query_part})
+        sqs = SearchQuerySet().filter(sq).models(Story)
+        return generic_by_name(request, name, None, sort, credit=('any:'+name),
+                               selected="credit", sqs=sqs)
+
+    else:
+        q_obj = Q(script__icontains=name) | \
+                Q(pencils__icontains=name) | \
+                Q(inks__icontains=name) | \
+                Q(colors__icontains=name) | \
+                Q(letters__icontains=name) | \
+                Q(editing__icontains=name) | \
+                Q(issue__editing__icontains=name)
+        return generic_by_name(request, name, q_obj, sort, credit=('any:'+name),
+                               selected="credit")
 
 
 def story_by_job_number(request, number, sort=ORDER_ALPHA):
@@ -338,10 +598,17 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
 
 
 def series_by_name(request, series_name, sort=ORDER_ALPHA):
-    q_obj = Q(name__icontains = series_name) | \
-            Q(issue__title__icontains = series_name)
-    return generic_by_name(request, series_name, q_obj, sort,
-                           Series, 'gcd/search/series_list.html')
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name)) \
+                              .models(Series)
+        return generic_by_name(request, series_name, None, sort, Series,
+                               'gcd/search/series_list.html', sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=series_name) | \
+                Q(issue__title__icontains=series_name)
+        return generic_by_name(request, series_name, q_obj, sort,
+                               Series, 'gcd/search/series_list.html')
+
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series_name """
@@ -363,6 +630,7 @@ def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
         return paginate_response(
           request, things, 'gcd/search/issue_list.html', context)
 
+
 def compute_isbn_qobj(isbn, prefix, op):
     if stdisbn.is_valid(isbn):
         isbn_compact = stdisbn.compact(isbn)
@@ -380,11 +648,13 @@ def compute_isbn_qobj(isbn, prefix, op):
         q_obj = Q(**{ '%sisbn__%s' % (prefix, op): isbn})
     return q_obj
 
+
 def issue_by_isbn(request, isbn, sort=ORDER_ALPHA):
     q_obj = compute_isbn_qobj(isbn, '', 'icontains')
     return generic_by_name(request, isbn, q_obj, sort, class_=Issue,
                            template='gcd/search/issue_list.html',
                            credit="isbn")
+
 
 def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
     """Handle the form-style URL from the basic search form by mapping
@@ -394,11 +664,13 @@ def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
       urlresolvers.reverse(issue_by_isbn,
                            kwargs={ 'isbn': isbn, 'sort': sort }))
 
+
 def issue_by_barcode(request, barcode, sort=ORDER_ALPHA):
     q_obj = Q(barcode__icontains = barcode)
     return generic_by_name(request, barcode, q_obj, sort, class_=Issue,
                            template='gcd/search/issue_list.html',
                            credit="barcode")
+
 
 def issue_by_barcode_name(request, barcode, sort=ORDER_ALPHA):
     """Handle the form-style URL from the basic search form by mapping
@@ -407,6 +679,7 @@ def issue_by_barcode_name(request, barcode, sort=ORDER_ALPHA):
     return HttpResponseRedirect(
       urlresolvers.reverse(issue_by_barcode,
                            kwargs={ 'barcode': barcode, 'sort': sort }))
+
 
 def search(request):
     """
@@ -459,6 +732,7 @@ def search(request):
     object_type = str(request.GET['type'])
     param_type = object_type
     view_type = object_type
+
     if view_type == 'publisher':
         param_type = 'publisher_name'
     elif view_type == 'brand_group':
@@ -467,6 +741,18 @@ def search(request):
         param_type = 'brand_name'
     elif view_type == 'indicia_publisher':
         param_type = 'ind_pub_name'
+    elif view_type == 'award':
+        param_type = 'award_name'
+    elif view_type == 'creator':
+        param_type = 'creator_name'
+    elif view_type == 'creator_membership':
+        param_type = 'creator_membership_name'
+    elif view_type == 'creator_award':
+        param_type = 'creator_award_name'
+    elif view_type == 'creator_art_influence':
+        param_type = 'creator_art_influence_name'
+    elif view_type == 'creator_non_comic_work':
+        param_type = 'creator_non_comic_work_name'
 
     view = '%s_by_name' % view_type
 
@@ -474,9 +760,9 @@ def search(request):
         param_type = 'title'
         view = story_by_title
     elif object_type in ('credit', 'job_number', 'feature'):
-        view = 'apps.gcd.views.search.story_by_%s' % object_type
+        view = 'story_by_%s' % object_type
     elif object_type in ('barcode', 'isbn'):
-        view = 'apps.gcd.views.search.issue_by_%s' % object_type
+        view = 'issue_by_%s' % object_type
 
     if object_type == 'credit':
         param_type = 'name'
@@ -488,8 +774,8 @@ def search(request):
     param_type_value = request.GET['query'].strip().encode('utf-8')
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
-                           kwargs = { param_type: param_type_value,
-                                      'sort': sort }))
+                           kwargs={param_type: param_type_value,
+                                      'sort': sort}))
 
 
 def checklist_by_name(request, creator, country=None, language=None):
@@ -534,36 +820,35 @@ def checklist_by_name(request, creator, country=None, language=None):
     context['used_search_terms'] = used_search_terms
 
     return paginate_response(request, items, template, context)
+
         
 def advanced_search(request):
     """Displays the advanced search page."""
 
     if ('target' not in request.GET):
-        return render_to_response('gcd/search/advanced.html',
-          { 'form': AdvancedSearch() },
-          context_instance=RequestContext(request))
+        return render(request, 'gcd/search/advanced.html',
+                      {'form': AdvancedSearch(user=request.user)})
     else:
         search_values = request.GET.copy()
-        search_values_as_list = dict(request.GET.lists())
         # convert a bit since MultipleChoiceField takes a list of IDs
         search_values['type'] = search_values.getlist('type')
         search_values['indexer'] = search_values.getlist('indexer')
         search_values['country'] = search_values.getlist('country')
         search_values['language'] = search_values.getlist('language')
-        return render_to_response('gcd/search/advanced.html',
-          { 'form': AdvancedSearch(initial=search_values) },
-          context_instance=RequestContext(request))
+        return render(request, 'gcd/search/advanced.html',
+                      {'form': AdvancedSearch(user=request.user,
+                                              initial=search_values)})
+
 
 def do_advanced_search(request):
     """
     Runs advanced searches.
     """
-    form = AdvancedSearch(request.GET)
+    form = AdvancedSearch(request.GET, user=request.user)
     if not form.is_valid():
-        raise ViewTerminationError(response = render_to_response(
-          'gcd/search/advanced.html',
-          { 'form': form },
-          context_instance=RequestContext(request)))
+        raise ViewTerminationError(
+          response = render(request, 'gcd/search/advanced.html',
+          { 'form': form }))
 
     data = form.cleaned_data
     op = str(data['method'] or 'iregex')
@@ -587,24 +872,22 @@ def do_advanced_search(request):
                                 bq_obj, bgq_obj, ipq_obj, cq_obj)
         terms = compute_order(data)
     except SearchError, se:
-        raise ViewTerminationError, render_to_response(
-          'gcd/search/advanced.html',
+        raise ViewTerminationError, render(
+          request, 'gcd/search/advanced.html',
           {
               'form': form,
               'error_text': '%s' % se,
-          },
-          context_instance=RequestContext(request))
+          })
 
     if (not query) and terms and (not data['keywords']):
-        raise ViewTerminationError, render_to_response(
-          'gcd/search/advanced.html',
+        raise ViewTerminationError, render(
+          request, 'gcd/search/advanced.html',
           {
             'form': form,
             'error_text': "Please enter at least one search term "
                           "or clear the 'ordering' fields.  Ordered searches "
                           "must have at least one search term."
-          },
-          context_instance=RequestContext(request))
+          })
 
     items = []
     if data['target'] == 'publisher':
@@ -623,7 +906,8 @@ def do_advanced_search(request):
         filter = Brand.objects.exclude(deleted=True)
         if query:
             filter = filter.filter(query)
-        items = filter.order_by(*terms).select_related('group__parent').distinct()
+        items = filter.order_by(*terms).prefetch_related('group__parent')\
+                                       .distinct()
 
     elif data['target'] == 'indicia_publisher':
         filter = IndiciaPublisher.objects.exclude(deleted=True)
@@ -658,10 +942,26 @@ def do_advanced_search(request):
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
 
-    if data['keywords'] and data['target'] not in ['cover', 'issue_cover']:
+    if data['keywords']:
         for keyword in data['keywords'].split(';'):
-            items = items.filter(Q(**{ 'keywords__name__%s' % (op): keyword.strip() }))
-        
+            if data['target'] == 'cover':
+                items = items.filter(Q(**{'issue__story__keywords__name__%s'
+                                          % (op): keyword.strip(),
+                                          'issue__story__type':
+                                          STORY_TYPES['cover']}))
+            elif data['target'] == 'issue_cover':
+                items = items.filter(Q(**{'issue__story__keywords__name__%s'
+                                          % (op): keyword.strip()}))
+            else:
+                items = items.filter(Q(**{'keywords__name__%s'
+                                          % (op): keyword.strip()}))
+
+    if data.get('updated_since'):
+        d = data['updated_since']
+        items = items.filter(modified__gte='%04d-%02d-%02d' % (d.year,
+                                                               d.month,
+                                                               d.day))
+
     return items, data['target']
 
 
@@ -716,6 +1016,15 @@ def used_search(search_values):
             text += ', %s' % storytype
         used_search_terms.append(('type', text))
         del search_values['type']
+    if 'publication_type' in search_values:
+        types = SeriesPublicationType.objects.filter(id__in=\
+          search_values.getlist('publication_type')).values_list('name',
+                                                                 flat=True)
+        text = types[0]
+        for publication_type in types[1:]:
+            text += ', %s' % publication_type
+        used_search_terms.append(('publication_type', text))
+        del search_values['publication_type']
     if 'country' in search_values:
         countries = Country.objects.filter(code__in=\
           search_values.getlist('country')).values_list('name', flat=True)
@@ -745,7 +1054,8 @@ def used_search(search_values):
             used_search_terms.append((i, search_values[i]))
     return target, method, logic, used_search_terms
 
-def process_advanced(request):
+
+def process_advanced(request, export_csv=False):
     """
     Runs advanced searches.
     """
@@ -796,6 +1106,16 @@ def process_advanced(request):
     context['logic'] = logic
     context['used_search_terms'] = used_search_terms
 
+    if export_csv:
+        fields = [f.name for f in items.model._meta.get_fields()
+                              if f.auto_created==False]
+        fields = [f for f in fields if f not in {'created', 'modified',
+                                                 'deleted', 'keywords',
+                                                 'tagged_items'}]
+        fields.insert(0, 'id')
+        return render_to_csv_response(items.values(*fields),
+                                      append_datestamp=True)
+
     if item_name in ['cover', 'issue_cover']:
         context['table_width'] = COVER_TABLE_WIDTH
         context['NO_ADS'] = True
@@ -804,6 +1124,7 @@ def process_advanced(request):
                                  callback=get_image_tags_per_page)
     else:
         return paginate_response(request, items, template, context)
+
 
 def combine_q(data, *qobjs):
     """
@@ -885,6 +1206,7 @@ def search_publishers(data, op):
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
 
+
 def search_brand_groups(data, op):
     """
     Handle brand group fields.
@@ -911,6 +1233,7 @@ def search_brand_groups(data, op):
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
+
 
 def search_brands(data, op):
     """
@@ -942,6 +1265,7 @@ def search_brands(data, op):
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
+
 
 def search_indicia_publishers(data, op):
     """
@@ -978,6 +1302,7 @@ def search_indicia_publishers(data, op):
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
     return compute_qobj(data, q_and_only, q_objs)
 
+
 def search_series(data, op):
     """
     Handle series fields.
@@ -990,6 +1315,11 @@ def search_series(data, op):
         q_and_only.extend(search_dates(data,
                                        start_name='%syear_began' % prefix,
                                        end_name='%syear_ended' % prefix))
+
+    if data['publication_type']:
+        publication_type_qargs = { '%spublication_type__in' % prefix:
+                                   data['publication_type'] }
+        q_and_only.append(Q(**publication_type_qargs))
 
     if data['language']:
         language_qargs = { '%slanguage__code__in' % prefix: data['language'] }
@@ -1018,11 +1348,6 @@ def search_series(data, op):
             q_objs.append(Q(**{ '%sis_comics_publication' % prefix: False }))
 
     # Format fields
-    if data['format']:
-        q_objs.append(Q(**{ '%sformat__%s' % (prefix, op):  data['format'] }))
-    if data['has_format']:
-        # Note the ~ for negation
-        q_objs.append(~Q(**{ '%sformat' % prefix: u'' }))
     if data['color']:
         q_objs.append(Q(**{ '%scolor__%s' % (prefix, op): data['color'] }))
     if data['dimensions']:
@@ -1162,6 +1487,14 @@ def search_issues(data, op, stories_q=None):
             q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
                    Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
 
+    if 'in_collection' in data and data['in_collection']:
+        if data['in_selected_collection']:
+            q_objs.append(Q(**{'%scollectionitem__collections__in' % prefix:
+                                data['in_collection']}))
+        else:
+            q_objs.append(~Q(**{'%scollectionitem__collections__in' % prefix:
+                               data['in_collection']}))
+
     try:
         if data['issue_pages'] is not None and data['issue_pages'] != '':
             range_match = match(PAGE_RANGE_REGEXP, data['issue_pages'])
@@ -1234,6 +1567,7 @@ def handle_numbers(field, data, prefix):
 
     return reduce(lambda x, y: x | y, q_or_only)
 
+
 def search_stories(data, op):
     """
     Build the query against the story table.  As it is the lowest
@@ -1250,7 +1584,7 @@ def search_stories(data, op):
             q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op):
                                 data[field] }))
 
-    for field in ('feature', 'title', 'genre', 'job_number', 'characters',
+    for field in ('feature', 'title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
         if data[field]:
             q_and_only.append(Q(**{ '%s%s__%s' % (prefix, field, op):
@@ -1258,6 +1592,10 @@ def search_stories(data, op):
 
     if data['type']:
         q_and_only.append(Q(**{ '%stype__in' % prefix: data['type'] }))
+
+    if data['genre']:
+        for genre in data['genre']:
+            q_and_only.append(Q(**{ '%sgenre__icontains' % prefix: genre }))
 
     if data['story_editing']:
         q_objs.append(Q(**{ '%sediting__%s' % (prefix, op):
@@ -1470,7 +1808,10 @@ def compute_order(data):
 
         elif target == 'issue':
             if order == 'date':
-                terms.append('key_date')
+                if data['use_on_sale_date']:
+                    terms.append('on_sale_date')
+                else:
+                    terms.append('key_date')
             elif order == 'series':
                 terms.append('series')
             elif order == 'indicia_publisher':
@@ -1494,7 +1835,10 @@ def compute_order(data):
             elif order == 'series':
                 terms.append('issue__series')
             elif order == 'date':
-                terms.append('issue__key_date')
+                if data['use_on_sale_date']:
+                    terms.append('issue__on_sale_date')
+                else:
+                    terms.append('issue__key_date')
             elif order == 'country':
                 terms.append('issue__series__country__name')
             elif order == 'language':

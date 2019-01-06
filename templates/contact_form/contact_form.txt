@@ -1,0 +1,10 @@
+{{ name }} <{{ email }}> sends the following message via our contact form
+
++++++
+
+{{ body|safe }}
+
++++++
+
+This message was sent via our contact form www.comics.org/contact/. When replying, please make sure to use the email given in the mail and that the reply does not have do-not-reply@comics.org as the recipient.
+

@@ -22,6 +22,8 @@
 dl.credits dt {
     clear: left;
     padding-right: 0.5em;
+    width: 70px;
+    text-align: right;
 }
 dl.credits dd {
     float: none;
@@ -82,14 +84,14 @@ div.single_story {
 
 .single_story h2 {
     clear: both;
-    padding: 0.2em 6px;
+    padding: 0.1em 6px;
     float: left;
 }
 
 .single_story h3 {
     clear: both;
     background-color: #DDD;
-    padding: 0.2em 6px;
+    padding: 0.1em 6px;
     margin-top: 0;
     margin-bottom: 0.15em;
 }
@@ -112,11 +114,11 @@ div.non_comics {
 
 .single_story h4 {
     clear: both;
-    padding: 0.2em 6px;
+    padding: 0.1em 6px;
 }
 
 .single_story dl {
-    padding: 0.2em 0;
+    padding: 0.1em 0;
     margin: 0;
 }
 
@@ -127,7 +129,7 @@ div.non_comics {
 }
 
 .single_story p {
-    padding: 0.2em 6px;
+    padding: 0.1em 6px;
     margin: 0 0 0.5em 0;
 }
 
@@ -148,7 +150,7 @@ h3.feature {
     margin-top: 0;
     width: 100%;
     float: left;
-    padding: 0.2em 0;
+    padding: 0.1em 0;
 }
 
 h3.feature a {
@@ -161,7 +163,7 @@ h2.title {
     margin-top: 0;
     margin-bottom: 0;
     font-weight: normal;
-    padding: 0.2em 0;
+    padding: 0.1em 0;
     width: 100%;
 }
 

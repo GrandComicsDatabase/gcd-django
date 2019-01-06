@@ -1,5 +1,5 @@
-{% extends "gcd/base.html" %}
-{% load url from future %}
+{% extends "gcd/base_view.html" %}
+
 {% load staticfiles %}
 
 {% block title %}
@@ -11,9 +11,7 @@
       href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
-{% block body %}
-
-  {% include "gcd/bits/search_bar.html" %}
+{% block view_body %}
 
   {% with 'top' as position %}
   {% with 'bottom' as link_direction %}
@@ -52,8 +50,6 @@
   {% if used_search_terms %}
     {% include "gcd/bits/search_terms.html" %}
   {% endif %}
-
-  {% include "gcd/bits/search_bar.html" %}
 
   {% with 'bottom' as position %}
   {% with 'top' as link_direction %}

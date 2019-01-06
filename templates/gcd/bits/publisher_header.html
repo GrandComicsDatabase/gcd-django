@@ -6,33 +6,22 @@
 {% ifnotequal paginate_only 1 %}
 <h1 class="item_id">
   <div class="left">
-  {% if preview %}
-    {% if publisher.group.count %}
-      {% for group in publisher.group.all %}
-        {{ group }}
-      {% endfor %}
-    <!-- TODO how to show for more than one group ? -->
-      : {{ publisher }}
-    {% else %}
-      {% if publisher.parent %}{{ publisher.parent }} :{% endif %} {{ publisher }}
-    {% endif %}
+  {% if publisher.parent %}
+    <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
+  {% endif %}
+  {% if extra or description and publisher.id %}
+    <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a> {{ extra }}
   {% else %}
-    {% if publisher.parent %}
-      <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
-    {% endif %}
-      <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a>
-    {% if extra %}
-      {{ extra }}
-    {% endif %}
-    {% if description %}
-      {% ifnotequal description 'Publisher' %}
-        {% if description = 'Brand Emblem' %}
-      ({{ description }})
-        {% else %}
-      (<a href="{{ publisher.parent.get_absolute_url }}{{ url_suffix }}/">{{ description }}</a>)
-        {% endif %}
-      {% endifnotequal %}
-    {% endif %}
+    {{ publisher.name }}
+  {% endif %}
+  {% if description %}
+    {% ifnotequal description 'Publisher' %}
+      {% if description == 'Brand Emblem' %}
+    ({{ description }})
+      {% else %}
+    (<a href="{{ publisher.parent.get_absolute_url }}{{ url_suffix }}/">{{ description }}</a>)
+      {% endif %}
+    {% endifnotequal %}
   {% endif %}
   </div>
 </h1>
@@ -41,7 +30,7 @@
 <div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
      class="item_id">
 {% ifnotequal paginate_only 1 %}
-  <div class="left">
+  <div class="flex_left">
     <!-- Each of these things should have one space between them, currently
          done via newline, but if they are put on one line please preserve
          the space. -->
@@ -52,5 +41,7 @@
     {% if publisher.year_ended_uncertain %}?{% endif %}
   </div>
 {% endifnotequal %}
+  <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
+  </div>
 </div>

@@ -1,6 +1,5 @@
 {% load credits %}
 {% load display %}
-{% load url from future %}
 
 <table class="story_list">
 {% for issue_revision in changeset.issuerevisions.all %}
@@ -35,17 +34,19 @@
   <form class="changeset" method="GET"
         action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
     <td colspan="2" align="left">
+      <div class="left">
       <input type="submit" id="add_story" name="add" value="Add story">
     {% if issue_revision.variant_of %}
       <br>Only a cover sequence can be added to a variant, and only if the cover artwork is different. On the issue display page the <br>sequences from the <a href="{% url "show_issue" issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence, if that one exists.
-      <input type="hidden"
+      <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
     {% else %}
+      <input type="submit" id="copy_story" name="copy" value="Copy story">
+      </div>
+      <div class="right">
       sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
-      <input type="text" size="4"
+      <input type="text" size="4" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
+      </div>
     {% endif %}
-             id="added_sequence_number"
-             name="added_sequence_number"
-             value="{{ issue_revision.next_sequence_number }}">
     </td>
   </form>
   </tr>
@@ -82,7 +83,7 @@
     </td>
   </tr>
   {% endif %}
-  {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count = 1 and changeset.reprintrevisions.count = 0 %}
+  {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
   <tr>
     <td colspan="2">
       <form class="changeset" method="GET"
@@ -132,7 +133,7 @@
   {% for issuerevision in changeset.issuerevisions.all %}
     {% if changeset.issuerevisions.count > 1 %}
       {{ issuerevision.full_name }}
-      {% if issuerevision.story_set.count = 0 %}
+      {% if issuerevision.story_set.count == 0 %}
 <p>No stories for this issue/variant.</p>
       {% endif %}
     {% endif %}
@@ -150,7 +151,7 @@
       </form>
         {% if changeset.change_type == CTYPES.issue %}
       <form class="story_button" method="GET"
-            action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id %}">
+            action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id reprint_note=story.reprint_notes|default:" "|urlencode %}">
         <input type="submit" id="reprint_{{ story.id }}" name="reprint_{{ story.id }}"
                value="Add reprint">
       </form>
@@ -186,12 +187,6 @@
           {% csrf_token %}
         <input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
                value="Move To Other Issue">
-      </form>
-        {% endif %}
-        {% if story.migration_status and not story.migration_status.reprint_confirmed %}
-      <form class="story_button" method="GET"
-            action="{% url "confirm_reprint_migration" id=story.story.id changeset_id=changeset.id %}">
-        <input type="submit" value="Confirm Reprint Migration">
       </form>
         {% endif %}
       {% else %}

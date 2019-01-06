@@ -1,5 +1,4 @@
 {% load collecting %}
-{% load url from future %}
 
 <div class="panel panel-default">
   <div class="panel-heading"
@@ -22,7 +21,7 @@
       {% if not collection|is_default_collection %}
       <button type="button" class="btn btn-primary btn-sm"
               style="display: inline-block;" data-toggle="modal"
-              href="#remove-collection" onclick="selected_collection={{ collection.id }}">
+              onclick="remove_collection({{ collection.id }}, '{{ collection.name }}', {{ collection.items.count }})">
         <span class="glyphicon glyphicon-remove"></span>
       </button>
       {% endif %}

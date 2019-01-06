@@ -45,11 +45,11 @@ def issues_with_several_covers(request):
         vars['query_string'] = get_copy.urlencode()
     else:
         form = IssuesWithCoversForm()
-        issues = issues.filter(series__publisher__id=78) # initial is Marvel, need to keep #issues smaller
+        issues = issues.filter(series__publisher__id=709) #need to keep #issues smaller
         # for the pagination bar and select box
-        vars['query_string'] = 'publisher=54'
+        vars['query_string'] = 'publisher=709'
         get_copy = request.GET.copy()
-        get_copy['items'] = [(u'publisher', 54),]
+        get_copy['items'] = [(u'publisher', 709),]
         request.GET = get_copy
     issues = issues.filter(**qargs).order_by(*qorder)
     vars['form'] = form
@@ -57,45 +57,3 @@ def issues_with_several_covers(request):
 
     return paginate_response(request, issues,
                              'projects/issues_with_several_covers.html', vars, per_page=50)
-
-
-def story_reprint_inspection(request):
-    stories = Story.objects.filter(deleted=False,
-      migration_status__reprint_confirmed=False)
-
-    qargs = {'deleted': False}
-    qorder = ['issue__series__sort_name', 'issue__series__year_began', 'issue__sort_code', 'issue__number', 'sequence_number']
-
-    vars = {
-        'heading': 'Sequences',
-        'search_item': 'whose migrated reprint notes need confirmation',
-        'item_name': 'sequence',
-        'plural_suffix': 's',
-    }
-
-    if (request.GET):
-        form = ReprintInspectionForm(request.GET)
-        form.is_valid()
-        if form.is_valid():
-            data = form.cleaned_data
-
-            # Extra filters
-            if data['publisher']:
-                qargs['issue__series__publisher__id'] = data['publisher']
-            if data['country']:
-                qargs['issue__series__country'] = data['country']
-            if data['language']:
-                qargs['issue__series__language'] = data['language']
-
-        get_copy = request.GET.copy()
-        get_copy.pop('page', None)
-        vars['query_string'] = get_copy.urlencode()
-    else:
-        form = ReprintInspectionForm()
-    stories = stories.filter(**qargs).order_by(*qorder)
-    print stories.count()
-    vars['form'] = form
-    vars['advanced_search'] = True
-
-    return paginate_response(request, stories,
-                             'projects/story_reprint_inspection.html', vars, per_page=50)

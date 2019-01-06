@@ -1,8 +1,40 @@
 {% extends "mycomics/user_base.html" %}
-{% load url from future %}
 {% load i18n %}
 {% load collecting %}
 {% load bootstrap3 %}
+
+{% block modals %}
+  {{ block.super }}
+  {% if request.user.collector == collection.collector %}
+  <form action="url_placeholder" method="POST" id="remove_item_form_id">
+    {% csrf_token %}
+  </form>
+  <script>
+    function remove_issue(item_id, collection_id, issue_name, collection_name) {
+        var delete_url = '{% url "delete_item" '12345' '45678' %}';
+        var delete_url = delete_url.replace('12345', item_id);
+        var delete_url = delete_url.replace('45678', collection_id);
+        var item = document.getElementById('remove-item-'+item_id);
+        var issue_name = item.dataset.issue;
+        var collection_name = item.dataset.collection;
+        BootstrapDialog.confirm({
+            title: '<h4 class="modal-title">{% trans "Remove issue from collection " %}'+collection_name+'</h4>',
+            message: '{% trans "Do you want to remove the issue <b>" %}'+issue_name+'</b> ?',
+            closable: true,
+            btnCancelLabel: '{% trans "Cancel" %}',
+            btnOKLabel: '{% trans "Confirm" %}',
+            btnOKClass: 'btn-primary',
+            callback: function(result) {
+                if(result) {
+                    $("#remove_item_form_id").attr("action", delete_url);
+                    $("#remove_item_form_id").submit();
+                };
+            }
+            });
+        }
+  </script>
+  {% endif %}
+{% endblock %}
 
 {% block content %}
   {% bootstrap_messages %}
@@ -51,6 +83,13 @@
       <div class="row">
         {% for item in items %}
           <div class="col-md-2">
+            <div class="btn-group pull-right">
+              <button type="button" class="my-btn btn-primary btn-sm"
+                      style="display: inline-block;" data-toggle="modal" onclick="remove_issue({{ item.id }}, {{ collection.id }});"
+                      id="remove-item-{{ item.id }}" data-issue="{{ item.issue.full_name }}" data-collection="{{ collection.name }}">
+                  <span class="glyphicon glyphicon-remove"></span>
+              </button>
+            </div>
           <a href="{% url "view_item" item.id collection.id %}">
             <div class="thumbnail">
               {{ item.issue|show_cover_tag }}

@@ -1,6 +1,5 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load credits %}
 {% load editing %}
@@ -120,8 +119,8 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
     The variant cover has the same artwork as the base issue, no separate story sequence needed.
   {% endif %}
   </p>
-  {% if changeset.state = states.REVIEWING %}
-    {% if user = changeset.approver %}
+  {% if changeset.state == states.REVIEWING %}
+    {% if user == changeset.approver %}
       <form action="{% url "flip_artwork_flag" revision_id=revision.id %}" method="POST">
         {% csrf_token %}
         <input type="submit" name="flip_artwork_flag" value="Flip the variant artwork flag" />

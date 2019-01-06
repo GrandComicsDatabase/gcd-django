@@ -6,6 +6,8 @@
           action="{{ choose_url }}"
           style="display:inline">
       <select name="year" id="year">
+        <option value="2018">2018</option>
+        <option value="2017">2017</option>
         <option value="2016">2016</option>
         <option value="2015">2015</option>
         <option value="2014">2014</option>
@@ -37,7 +39,7 @@
       <input type="text" name="day" id="day" size="2">
       <input type="submit" value="{% trans 'Go' %}">
     </form>
-  {% if date_after %}
+  {% if choose_url_after %}
    | <a href="{{ choose_url_after }}">{% trans "Day after" %} &gt;</a>
   {% endif %}
 </div>

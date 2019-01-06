@@ -23,29 +23,35 @@ Adding {{ object_name }}
 
 {% block view_body %}
 {% include "oi/bits/multi_selector.html" %}
-<h1>Adding {{ object_name }}</h1>
+<h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
 
 <div class="edit">
 <form action="{{ object_url }}" method="POST">
   {% csrf_token %}
+  {% if include_before_form %}
+    {% include include_before_form %}
+  {% endif %}
   <table class="editing">
   {{ form.as_table }}
   </table>
+  {% if include_after_form %}
+    {% include include_after_form %}
+  {% endif %}
 {% if alternative_action %}
   <input type="submit" name="{{ alternative_action }}" value="{{ alternative_label }}"></input>
 {% endif %}
   <input type="submit" name="add" value="{{ action_label}} {{ object_name }}"></input>
 {% ifequal object_name "Story" %}
-  <input type="submit" name="cancel_return" value="Cancel"></input>
+  <input type="submit" name="cancel_return" value="Cancel" formnovalidate></input>
 {% else %}
-  <input type="submit" name="cancel" value="Cancel"></input>
+  <input type="submit" name="cancel" value="Cancel" formnovalidate></input>
 {% endifequal %}
 </form>
 </div>
 {% endblock %}
 
 {% block footer %}
-  {% if object_name in 'Issues Story' or 'Variant Issue' in object_name %}
+  {% if object_name in 'Issues Story Creator' or 'Variant Issue' in object_name %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}
 {% endblock %}

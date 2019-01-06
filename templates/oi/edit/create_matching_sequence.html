@@ -1,6 +1,5 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load credits %}
 
 {% block css %}
@@ -24,13 +23,11 @@ Do you want to create a new sequence in {{ issue }} which is reprinted {{ direct
 
 <h3>The new sequence will have a copy of the following sequence data:</h3>
 
-{% with 1 as no_navigation %}
 {% with 1 as preview %}
   <div id="story_data">
   {% include "gcd/details/single_story.html" %}
   </div>
   <hr class="divider">
-{% endwith %}
 {% endwith %}
 <hr class="divider">
 <form style="display:inline;" method="POST"

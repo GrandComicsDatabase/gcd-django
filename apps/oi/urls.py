@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.core import urlresolvers
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.views.generic import base as bv
@@ -11,7 +11,7 @@ from apps.oi import import_export as oi_import
 from apps.oi import coordinators as oi_coordinators
 from apps.oi import states
 
-urlpatterns = patterns('',
+urlpatterns = [
     # General-purpose new record add page.
     url(r'^add/$',
         login_required(
@@ -20,6 +20,34 @@ urlpatterns = patterns('',
 
     url(r'^mentoring/$', oi_views.mentoring,
         name='mentoring'),
+    url(r'^contacting/$', oi_views.contacting,
+        name='contacting'),
+
+
+    url(r'^award/add/$',
+     oi_views.add_award, name='add_award'),
+    url(r'^award/(?P<award_id>\d+)/received_award/add/$',
+     oi_views.select_award_recipient, name='select_award_recipient'),
+    url(r'^award/(?P<award_id>\d+)/received_award/(?P<model_name>\w+)/(?P<id>\d+)/add/$',
+     oi_views.add_received_award, name='add_received_award'),
+
+    # Creator URLs
+    url(r'^creator/add/$',
+     oi_views.add_creator, name='add_creator'),
+    url(r'^creator/(?P<creator_id>\d+)/award/add/$',
+     oi_views.add_creator_award, name='add_creator_award'),
+    url(r'^creator/(?P<creator_id>\d+)/influence/add/$',
+     oi_views.add_creator_art_influence, name='add_creator_art_influence'),
+    url(r'^creator/(?P<creator_id>\d+)/membership/add/$',
+     oi_views.add_creator_membership, name='add_creator_membership'),
+    url(r'^creator/(?P<creator_id>\d+)/non_comic_work/add/$',
+     oi_views.add_creator_non_comic_work, name='add_creator_non_comic_work'),
+    url(r'^creator/(?P<creator_id>\d+)/relation/add/$',
+     oi_views.add_creator_relation, name='add_creator_relation'),
+    url(r'^creator/(?P<creator_id>\d+)/school/add/$',
+     oi_views.add_creator_school, name='add_creator_school'),
+    url(r'^creator/(?P<creator_id>\d+)/degree/add/$',
+     oi_views.add_creator_degree, name='add_creator_degree'),
 
     # Publisher URLs
     url(r'^publisher/add/$',
@@ -133,13 +161,13 @@ urlpatterns = patterns('',
         name='toggle_delete_story_revision'),
     url(r'^story/revision/(?P<id>\d+)/move/$', oi_views.move_story_revision,
         name='move_story_revision'),
-    url(r'^story/(?P<id>\d+)/reprint_migration/(?P<changeset_id>\d+)/$', oi_views.confirm_reprint_migration,
-        name='confirm_reprint_migration'),
 
     # Image URLs
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', oi_covers.upload_image,
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$',
+        oi_covers.upload_image,
         name='upload_image'),
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$', oi_covers.replace_image,
+    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$',
+        oi_covers.replace_image,
         name='replace_image'),
     url(r'^mark_image_revision/(?P<revision_id>.+)/$', oi_covers.mark_image,
       {'marked': True}, name='mark_image_revision'),
@@ -180,7 +208,7 @@ urlpatterns = patterns('',
     url(r'^cover/(?P<cover_id>\d+)/changeset/(?P<id>\d+)/undo_move$',
       oi_views.undo_move_cover, name='undo_move_cover'),
 
-    url(r'^ongoing/$', oi_views.ongoing),
+    url(r'^ongoing/$', oi_views.ongoing, name='reserve_ongoing'),
     url(r'^ongoing/(?P<series_id>\d+)/delete/$', oi_views.delete_ongoing,
         name='delete_ongoing'),
 
@@ -193,7 +221,7 @@ urlpatterns = patterns('',
     url(r'^reprint/revision/(?P<id>\d+)/$',
       oi_views.edit_reprint, name='edit_reprint'),
 
-    url(r'^story/revision/(?P<story_id>\d+)/add_reprint/(?P<changeset_id>\d+)/reprint_note/(?P<reprint_note>.+)/$',
+    url(r'^story/revision/(?P<story_id>\d+)/add_reprint/(?P<changeset_id>\d+)/reprint_note/(?P<reprint_note>.+|)/$',
       oi_views.add_reprint, name='add_story_reprint'),
     url(r'^story/revision/(?P<story_id>\d+)/add_reprint/(?P<changeset_id>\d+)/$',
       oi_views.add_reprint, name='add_story_reprint'),
@@ -296,8 +324,9 @@ urlpatterns = patterns('',
     url(r'^coordinator/$',
         bv.TemplateView.as_view(template_name='oi/edit/coordinators.html'),
         name='coordinators_toc'),
-)
+]
 
-urlpatterns += patterns('',
-    (r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare')),
-)
+urlpatterns += [
+    url(r'^changeset/(?P<id>\d+)/$', bv.RedirectView.as_view(url='compare',
+                                                             permanent=False)),
+]

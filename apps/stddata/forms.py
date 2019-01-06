@@ -47,20 +47,41 @@ class DateForm(ModelForm):
         year = dparts[0][:4]
         year_uncertain = dparts[0].endswith('?')
 
+        if len(year.strip('?')) > 0:
+            try:
+                int(year.strip('?'))
+            except:
+                raise verror
+
         if len(dparts) > 1:
             if not (1 <= len(dparts[1]) <= 3):
                 raise verror
-            month = dparts[1][:2]
+            month = (dparts[1][:2]).strip('?')
             month_uncertain = dparts[1].endswith('?')
+
+            if len(month) > 0:
+                try:
+                    int(month)
+                except:
+                    raise verror
+                if not (1 <= int(month) <=12):
+                    raise ValidationError(_('Month is not between 1 and 12.'))
 
         if len(dparts) > 2:
             if not (1 <= len(dparts[2]) <= 3):
                 raise verror
-            day = dparts[2][:2]
+            day = (dparts[2][:2]).strip('?')
             day_uncertain = dparts[2].endswith('?')
+            if len(day) > 0:
+                try:
+                    int(day)
+                except:
+                    raise verror
+                if not (1 <= int(day) <=31):
+                    raise ValidationError(_('Day is not between 1 and 31.'))
 
         self.instance.set(year=year, month=month, day=day,
                           year_uncertain=year_uncertain,
                           month_uncertain=month_uncertain,
-                          day_uncertain=day_uncertain)
+                          day_uncertain=day_uncertain, empty=True)
         return date

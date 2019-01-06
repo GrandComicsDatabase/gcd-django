@@ -1,7 +1,7 @@
 {% extends "gcd/search/base_list.html" %}
 
-{% load url from future %}
 {% load credits %}
+{% load display %}
 {% load i18n %}
 {% load mathfilter %}
 
@@ -19,7 +19,8 @@
     <th> Publisher </th>
   </tr>
 {% for story in items %}
-  {% with story.issue.get_absolute_url as url %}
+  {% with story=story|object_filter %}
+  {% with url=story.issue.get_absolute_url %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     {% if select_key %}
     <td>
@@ -40,13 +41,7 @@
       {{ story|show_credit:which_credit|safe }}
       </dl>
     {% endif %}
-    <td> <a href="{{ url }}#{{ story.id}}">
-      {% if story.title %}
-        {{ story.title }}
-      {% else %}
-        [ no title ]
-      {% endif %}
-         </a><br>
+    <td> <a href="{{ url }}#{{ story.id}}">{{ story|show_title:1 }}</a><br>
     {% if story.feature %}
     {{ story.feature }} /
     {% endif %}
@@ -64,6 +59,7 @@
     {{ story.issue.publication_date }}
     <td> <a href="{{ story.issue.series.publisher.get_absolute_url }}">{{ story.issue.series.publisher.name }}</a> </td>
   </tr>
+  {% endwith %}
   {% endwith %}
 {% endfor %}
 </table>

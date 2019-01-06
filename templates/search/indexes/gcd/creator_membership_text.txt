@@ -1,0 +1,4 @@
+{{ object.organization_name|safe }}
+{{ object.creator|safe }}
+{{ object.membership_type|safe }}
+{{ object.notes|safe }}

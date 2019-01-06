@@ -1,15 +1,14 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/DTD/strict.dtd">
+<!DOCTYPE html>
 {% load statustags %}
 {% load humanize %}
 {% load i18n %}
 {% load compress %}
 {% load staticfiles %}
-{% load url from future %}
 
 <html>
 <head>
   <title> {{ site_name }} </title>
-{% compress css %}
+{% compress css inline %}
   <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default.css" %}"/>
   <link rel="stylesheet" type="text/css"
@@ -23,6 +22,11 @@
   <![endif]-->
   <link rel="shortcut icon" href="{% static "img/favicon.ico" %}">
   <link href="https://plus.google.com/114804467432159116851" rel="publisher" />
+  <meta name="msvalidate.01" content="75FC73707997CA1DE7B4BC39F77C829A" />
+  <meta name="description" content = "The GCD is building the most comprehensive comics database. It is fully searchable and includes data on creator credits, story details, or other publication details for comic books worldwide." />
+{% if USE_TEMPLATESADMIN and ADVERTISING and not EDITING %}
+  {% include "managed_content/gcd/ads/common.html" %}
+{% endif %}
 </head>
 
 <body>
@@ -91,17 +95,12 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             </a>
           </div>
           <div class="social_item">
-            <a href="https://plus.google.com/+GrandComicsDatabase">
-              <img alt="google+" src="{% static "img/gcd/social/google_plus_32.png" %}">
-            </a>
-          </div>
-          <div class="social_item">
             <a href="http://www.pinterest.com/gcdcomics/">
               <img alt="pinterest" src="{% static "img/gcd/social/pinterest_32.png" %}">
             </a>
           </div>
           <div class="social_item">
-            <a href="mailto:{% trans 'contact@comics.org' %}">
+            <a href="{% url "contact_form" %}">
               <img alt="email" src="{% static "img/gcd/social/email_32.png" %}">
             </a>
           </div>
@@ -119,11 +118,8 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
         <span id="calendarTitle" style="font-size:medium"><a href="/calendar/">Comics Calendar</a></span>
         <iframe src="/agenda/{{ language.code }}/" style=" border-width:0 " width="100%" height="400" frameborder="0" scrolling="no"></iframe>
 {% endif %}
-{% if ADVERTISING and not BETA %}
-        <div style="clear: both;">
-        </div>
-        <script id="mNCC" language="javascript">  medianet_width='160';  medianet_height= '600';  medianet_crid='247738828';  </script>
-        <script id="mNSC" src="http://contextual.media.net/nmedianet.js?cid=8CU73W537" language="javascript"></script>
+{% if USE_TEMPLATESADMIN and ADVERTISING and not BETA %}
+  {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
 {% endif %}
       </div>
 
@@ -147,16 +143,16 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
               <li><a href="{% url "international_stats_country" %}">{% trans "by Country" %}</a>
               </ul>
               {% if language and language.code != 'en' %}
-              <li><a href="{% url "apps.gcd.views.index" %}">English start page</a></li>
+              <li><a href="{% url "home" %}">English start page</a></li>
               {% endif %}
               {% ifnotequal language.code 'de' %}
-              <li><a href="{% url "apps.gcd.views.index" %}?lang=de">Deutsche Startseite</a></li>
+              <li><a href="{% url "home" %}?lang=de">Deutsche Startseite</a></li>
               {% endifnotequal %}
               {% ifnotequal language.code 'nl' %}
-              <li><a href="{% url "apps.gcd.views.index" %}?lang=nl">Nederlandse startpagina</a></li>
+              <li><a href="{% url "home" %}?lang=nl">Nederlandse startpagina</a></li>
               {% endifnotequal %}
               {% ifnotequal language.code 'sv' %}
-              <li><a href="{% url "apps.gcd.views.index" %}?lang=sv">Svensk startsida</a></li>
+              <li><a href="{% url "home" %}?lang=sv">Svensk startsida</a></li>
               {% endifnotequal %}
             </ul>
           </div>
@@ -206,8 +202,10 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
             {% endfor %}
           </div>
         </div>
-{% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
-  {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
+{% if ADVERTISING and not EDITING %}
+        <div id='banner-160x600-2'>
+          <script>googletag.cmd.push(function() { googletag.display('banner-160x600-2'); });</script>
+        </div>
 {% endif %}
         <!-- Right Column end -->
       </div>
@@ -217,7 +215,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 
 <div id="footer">
   {% include "gcd/bits/legalese.html" %}
-{% if USE_TEMPLATESADMIN %}
+{% if USE_TEMPLATESADMIN and ADVERTISING %}
   {% include "managed_content/gcd/ads/ad_bottom.html" %}
 {% endif %}
 </div>

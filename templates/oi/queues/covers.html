@@ -1,6 +1,5 @@
 {% extends "oi/base_view.html" %}
 
-{% load url from future %}
 {% load staticfiles %}
 {% load i18n %}
 {% load credits %}
@@ -13,6 +12,8 @@
       href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/oi/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default/queues.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -41,7 +42,7 @@
         {% endif %}
         {{ cover.created }}<br>
         {{ cover.changeset.indexer.indexer|absolute_url }}<br>
-        {% if cover.changeset.state = states.REVIEWING or cover.changeset.state = states.DISCUSSED %}
+        {% if cover.changeset.state == states.REVIEWING or cover.changeset.state == states.DISCUSSED %}
           reviewed by {{ cover.changeset.approver.indexer|absolute_url }}
         {% else %}
             {% if perms.indexer.can_approve %}

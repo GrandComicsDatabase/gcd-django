@@ -20,7 +20,7 @@ from apps.gcd.models import Issue, Brand, IndiciaPublisher
 
 
 def get_issue_revision_form(publisher, series=None, revision=None,
-                            variant_of=None, user=None):
+                            variant_of=None, user=None, edit_with_base=False):
     if series is None and revision is not None:
         series = revision.series
     if revision is not None and revision.variant_of:
@@ -107,6 +107,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             display_volume_with_number = forms.BooleanField(
                 widget=forms.HiddenInput, required=False)
             volume = forms.CharField(widget=HiddenInput, required=False)
+            volume_not_printed = forms.BooleanField(widget=forms.HiddenInput,
+                                                    required=False)
             turned_off_list += 'volume, '
 
         if not series.has_indicia_frequency:
@@ -193,6 +195,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             cd['notes'] = cd['notes'].strip()
             cd['comments'] = cd['comments'].strip()
             cd['isbn'] = cd['isbn'].strip()
+            if 'variant_name' in cd:
+                cd['variant_name'] = cd['variant_name'].strip()
 
             if cd['volume'] != "" and cd['no_volume']:
                 raise forms.ValidationError(
@@ -240,6 +244,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 cd['month_on_sale'] = cd['on_sale_date'].month
                 cd['day_on_sale'] = cd['on_sale_date'].day
 
+            if cd['key_date'] == '' and (cd['year_on_sale'] or
+                                         cd['publication_date']):
+                raise forms.ValidationError(
+                  'Dates are present, but the key date is empty.')
+
             if cd['page_count_uncertain'] and not cd['page_count']:
                 raise forms.ValidationError(
                     'You cannot check page count '
@@ -283,20 +292,29 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     fields = ['after'] + fields
                     labels['after'] = 'Add this issue after'
 
+                if not edit_with_base:
+                    fields = ['reservation_requested'] + fields
+
+                    help_texts = RuntimeIssueRevisionForm.Meta.help_texts
+                    help_texts.update(
+                      reservation_requested='Check this box to have this '
+                                            'issue reserved to you '
+                                            'automatically when it is '
+                                            'approved, unless someone '
+                                            "has acquired the series' "
+                                            'ongoing reservation before '
+                                            'then.')
+
             def __init__(self, *args, **kwargs):
                 super(RuntimeAddVariantIssueRevisionForm,
                       self).__init__(*args, **kwargs)
                 # can add after one of the variants
-                # TODO where to put later printings which come out later
                 if 'after' in self.fields:
                     self.fields['after'].queryset = (
                         variant_of.variant_set.filter(deleted=False) |
                         Issue.objects.filter(id=variant_of.id))
                     self.fields['after'].empty_label = None
 
-                # TODO: is this even used?  flake8 complains on it.
-                #       Turning flake8 off with 'noqa' for now.
-                widgets = RuntimeIssueRevisionForm.Meta.widgets  # noqa
 
         return RuntimeAddVariantIssueRevisionForm
 
@@ -424,25 +442,27 @@ def get_bulk_issue_revision_form(series, method, user=None):
             if not series.has_indicia_frequency:
                 indicia_frequency = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_indicia_frequency = forms.CharField(
+                no_indicia_frequency = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_volume:
                 volume = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_volume = forms.CharField(
+                no_volume = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
-                display_volume_with_number = forms.CharField(
+                display_volume_with_number = forms.BooleanField(
+                    widget=forms.HiddenInput, required=False)
+                volume_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_isbn:
-                no_isbn = forms.CharField(
+                no_isbn = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_barcode:
-                no_barcode = forms.CharField(
+                no_barcode = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
             if not series.has_rating:
                 rating = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_rating = forms.CharField(
+                no_rating = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
 
         after = forms.ModelChoiceField(
@@ -542,7 +562,7 @@ class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
     def __init__(self, *args, **kwargs):
         super(BulkEditIssueRevisionForm, self).__init__(*args, **kwargs)
         ordering = ['no_title', 'volume', 'display_volume_with_number',
-                    'no_volume']
+                    'no_volume', 'volume_not_printed']
         ordering.extend(self._shared_key_order())
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields

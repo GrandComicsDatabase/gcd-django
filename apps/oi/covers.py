@@ -1,19 +1,13 @@
 # -*- coding: utf-8 -*-
-import re
-from urllib import urlopen, urlretrieve, quote
 import PIL.Image as pyImage
-import os, shutil, glob
-import codecs
-import tempfile
+import os
+import shutil
+import glob
 
-from django import forms
 from django.core import urlresolvers
 from django.conf import settings
-from django.shortcuts import get_list_or_404, \
-                             get_object_or_404, \
-                             render_to_response
+from django.shortcuts import render, get_object_or_404
 from django.template import RequestContext
-from django.utils.encoding import smart_unicode as uni
 from django.core.files import temp as tempfile
 from django.core.files import File
 from django.utils.safestring import mark_safe
@@ -21,18 +15,19 @@ from django.utils.html import conditional_escape as esc
 from django.http import HttpResponseRedirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
-
-from apps.stats.models import CountStats
 from apps.indexer.views import render_error
 
-from apps.gcd.models import Cover, Series, Issue
-from apps.gcd.views import paginate_response
+from apps.gcd.models import Cover, Issue, Image
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue, \
                                   get_generic_image_tag
 
-from apps.oi.models import *
+from apps.oi.models import (
+  Changeset, CoverRevision, ImageRevision, IssueRevision, StoryRevision,
+  StoryType, ImageType, CTYPES, states,
+  _get_revision_lock, _free_revision_lock)
 from apps.oi.forms import UploadScanForm, UploadVariantScanForm, \
                           GatefoldScanForm, UploadImageForm
+from apps.oi.templatetags.editing import is_locked
 
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 
@@ -47,6 +42,7 @@ LOCAL_NEW_SCANS = settings.NEW_COVERS_DIR
 NEW_COVERS_LOCATION = settings.IMAGE_SERVER_URL + settings.NEW_COVERS_DIR
 # only while testing:
 NEW_COVERS_LOCATION = settings.MEDIA_URL + LOCAL_NEW_SCANS
+
 
 def get_preview_generic_image_tag(revision, alt_text):
     img_class = 'cover_img'
@@ -248,15 +244,13 @@ def edit_covers(request, issue_id):
     if issue.has_covers():
         covers = get_image_tags_per_issue(issue, "current covers", ZOOM_MEDIUM,
                                           as_list=True, variants=True)
-        return render_to_response(
-        'oi/edit/edit_covers.html',
-        {
-            'issue': issue,
-            'covers': covers,
-            'table_width': UPLOAD_WIDTH
-        },
-        context_instance=RequestContext(request)
-        )
+        return render(
+          request,
+          'oi/edit/edit_covers.html',
+          {'issue': issue,
+           'covers': covers,
+           'table_width': UPLOAD_WIDTH
+          })
     else:
         return upload_cover(request, issue_id=issue_id)
 
@@ -309,13 +303,12 @@ def uploaded_cover(request, revision_id):
                                               marked=True),
                                       issue, cover=True)
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
-    return render_to_response(uploaded_template, {
-              'marked_covers' : marked_covers,
-              'blank_issues' : blank_issues,
-              'revision': revision,
-              'issue' : issue,
-              'tag'   : tag},
-              context_instance=RequestContext(request))
+    return render(request, uploaded_template,
+                  {'marked_covers' : marked_covers,
+                   'blank_issues' : blank_issues,
+                   'revision': revision,
+                   'issue' : issue,
+                   'tag'   : tag})
 
 def process_edited_gatefold_cover(request):
     ''' process the edited gatefold cover and generate CoverRevision '''
@@ -343,27 +336,27 @@ def process_edited_gatefold_cover(request):
     # create OI records
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                             change_type=CTYPES['cover'])
-    changeset.save()
 
     if cd['cover_id']:
         cover = get_object_or_404(Cover, id=cd['cover_id'])
         issue = cover.issue
         # check if there is a pending change for the cover
-        if CoverRevision.objects.filter(cover=cover,
-                                 changeset__state__in=states.ACTIVE):
-            revision = CoverRevision.objects.get(cover=cover,
-                                     changeset__state__in=states.ACTIVE)
-            changeset.delete()
-            return render_error(request,
-              ('There currently is a <a href="%s">pending replacement</a> '
-               'for this cover of %s.') % (urlresolvers.reverse('compare',
-                kwargs={'id': revision.changeset.id}), esc(cover.issue)),
-            redirect=False, is_safe=True)
+        revision_lock = _get_revision_lock(cover)
+        if not revision_lock:
+            return render_error(
+              request,
+              u'Cannot replace %s as it is already reserved.' %
+              cover.issue)
+        changeset.save()
+        revision_lock.changeset = changeset
+        revision_lock.save()
+
         revision = CoverRevision(changeset=changeset, issue=issue,
             cover=cover, file_source=cd['source'], marked=cd['marked'],
             is_replacement = True)
     # no cover_id, therefore upload a cover to an issue (first or variant)
     else:
+        changeset.save()
         issue = get_object_or_404(Issue, id=cd['issue_id'])
         cover = None
         revision = CoverRevision(changeset=changeset, issue=issue,
@@ -439,18 +432,21 @@ def handle_gatefold_cover(request, cover, issue, form):
             'comments': comments, 'real_width': im.size[0]}
     if cover:
         vars['cover_id'] = cover.id
+        #  gatefold cover replacement might not be done till the end
+        _free_revision_lock(cover)
+
     form = GatefoldScanForm(initial=vars)
 
-    return render_to_response('oi/edit/upload_gatefold_cover.html', {
-                                'remember_source': remember_source,
-                                'scan_name': scan_name,
-                                'form': form,
-                                'issue': issue,
-                                'width': min(SHOW_GATEFOLD_WIDTH, im.size[0])},
-                              context_instance=RequestContext(request))
+    return render(request, 'oi/edit/upload_gatefold_cover.html',
+                  {'remember_source': remember_source,
+                   'scan_name': scan_name,
+                   'form': form,
+                   'issue': issue,
+                   'width': min(SHOW_GATEFOLD_WIDTH, im.size[0])})
 
 
-def handle_uploaded_cover(request, cover, issue, variant=False):
+def handle_uploaded_cover(request, cover, issue, variant=False,
+                          revision_lock=None):
     ''' process the uploaded file and generate CoverRevision '''
 
     try:
@@ -484,6 +480,12 @@ def handle_uploaded_cover(request, cover, issue, variant=False):
         revision = CoverRevision(changeset=changeset, issue=issue,
             cover=cover, file_source=file_source, marked=marked,
             is_replacement = True)
+        revision_lock.changeset = changeset
+        revision_lock.save()
+        revision.previous_revision = cover.revisions.get(
+                                           next_revision=None,
+                                           changeset__state=states.APPROVED,
+                                           committed=True)
     else:
         revision = CoverRevision(changeset=changeset, issue=issue,
             file_source=file_source, marked=marked)
@@ -681,19 +683,27 @@ def upload_cover(request, cover_id=None, issue_id=None):
           redirect=False, is_safe=True)
 
     # check if there is a pending change for the cover
-    if cover_id and CoverRevision.objects.filter(cover=cover,
-                    changeset__state__in=states.ACTIVE):
-        revision = CoverRevision.objects.get(cover=cover,
-          changeset__state__in=states.ACTIVE)
-        return render_error(request,
-          ('There currently is a <a href="%s">pending replacement</a> '
-          'for this cover of %s.') % (urlresolvers.reverse('compare',
-          kwargs={'id': revision.changeset.id}), esc(cover.issue)),
-          redirect=False, is_safe=True)
+    # if POST, get a lock
+    if cover_id and request.method == 'POST':
+        revision_lock = _get_revision_lock(cover)
+        if not revision_lock:
+            return render_error(
+              request,
+              u'Cannot replace %s as it is already reserved.' %
+              cover.issue)
+    # if GET, check for a lock
+    elif cover_id and is_locked(cover):
+        return render_error(
+          request,
+          ('There currently is a pending replacement for this cover of %s.')
+          % (cover.issue), redirect=False, is_safe=True)
+    else:
+        revision_lock = None
 
     # current request is an upload
     if request.method == 'POST':
-        return handle_uploaded_cover(request, cover, issue)
+        return handle_uploaded_cover(request, cover, issue,
+                                     revision_lock=revision_lock)
     # request is a GET for the form
     else:
         if 'oi_file_source' in request.session:
@@ -764,8 +774,8 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
     kwargs['issue'] = issue
     kwargs['active_covers'] = active_covers_tags
     kwargs['table_width'] = UPLOAD_WIDTH
-    return render_to_response(upload_template, kwargs,
-                              context_instance=RequestContext(request))
+    return render(request, upload_template, kwargs)
+
 
 @permission_required('indexer.can_approve')
 def flip_artwork_flag(request, revision_id=None):
@@ -783,7 +793,8 @@ def flip_artwork_flag(request, revision_id=None):
         for s in story:
             s.delete()
     elif len(story) == 0:
-        story_revision = StoryRevision(changeset=changeset,
+        story_revision = StoryRevision(
+          changeset=changeset,
           type=StoryType.objects.get(name='cover'),
           pencils='?',
           inks='?',
@@ -794,10 +805,11 @@ def flip_artwork_flag(request, revision_id=None):
         story_revision.save()
     else:
         # this should never happen
-        raise ValueError, 'More than one story sequence in a cover revision.'
+        raise ValueError, "More than one story sequence in a cover revision."
 
     return HttpResponseRedirect(urlresolvers.reverse('compare',
-            kwargs={'id': cover.changeset.id} ))
+                                kwargs={'id': cover.changeset.id}))
+
 
 @permission_required('indexer.can_approve')
 def mark_cover(request, marked, cover_id=None, revision_id=None):
@@ -817,10 +829,10 @@ def mark_cover(request, marked, cover_id=None, revision_id=None):
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
     elif revision_id:
         return HttpResponseRedirect(urlresolvers.reverse('compare',
-                kwargs={'id': cover.changeset.id} ))
+                                    kwargs={'id': cover.changeset.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
-                kwargs={'issue_id': cover.issue.id} ))
+                                    kwargs={'issue_id': cover.issue.id}))
 
 
 def handle_uploaded_image(request, display_obj, model_name, image_type,
@@ -829,52 +841,62 @@ def handle_uploaded_image(request, display_obj, model_name, image_type,
 
     try:
         form = UploadImageForm(request.POST, request.FILES)
-    except IOError: # sometimes uploads misbehave. connection dropped ?
+    except IOError:  # sometimes uploads misbehave. connection dropped ?
         error_text = 'Something went wrong with the upload. ' + \
                         'Please <a href="' + request.path + '">try again</a>.'
-        return render_error(request, error_text, redirect=False,
-            is_safe=True)
+        return render_error(request, error_text, redirect=False, is_safe=True)
 
     if not form.is_valid():
-        return _display_image_upload_form(request, form, display_obj, model_name, image_type)
+        return _display_image_upload_form(request, form, display_obj,
+                                          model_name, image_type)
 
     # process form
     image = form.cleaned_data['image']
 
     if current_image:
-        from apps.oi.views import _is_reservable
-        is_reservable = _is_reservable('image', current_image.id)
-
-        if is_reservable == 0:
-            return render_error(request,
-              u'Cannot replace %s as it is already reserved.' % \
+        revision_lock = _get_revision_lock(current_image)
+        if not revision_lock:
+            return render_error(
+              request,
+              u'Cannot replace %s as it is already reserved.' %
               current_image.description())
 
     # create OI records
     changeset = Changeset(indexer=request.user, state=states.OPEN,
-                            change_type=CTYPES['image'])
+                          change_type=CTYPES['image'])
     changeset.save()
+    if current_image:
+        revision_lock.changeset = changeset
+        revision_lock.save()
 
-    revision = ImageRevision(changeset=changeset,
+    revision = ImageRevision(
+      changeset=changeset,
       content_type=ContentType.objects.get_for_model(display_obj),
       object_id=display_obj.id, type=ImageType.objects.get(name=image_type),
       marked=form.cleaned_data['marked'])
     if current_image:
         revision.image = current_image
         revision.is_replacement = True
+        revision.previous_revision = current_image.revisions.get(
+                                     next_revision=None,
+                                     changeset__state=states.APPROVED,
+                                     committed=True)
     revision.save()
     revision.image_file.save(str(revision.id) + '.jpg', content=File(image))
     revision.changeset.submit(form.cleaned_data['comments'])
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
+
 @login_required
 def replace_image(request, model_name, id, image_id):
     image = get_object_or_404(Image, id=image_id, deleted=False)
-    if image.reserved:
-        return render_error(request,
-            ('%s is reserved.') % (image.description()),
-            redirect=False, is_safe=True)
+    if is_locked(image):
+        return render_error(
+          request,
+          ('%s is reserved.') % (image.description()),
+          redirect=False, is_safe=True)
     return upload_image(request, model_name, id, image.type.name, image=image)
+
 
 @login_required
 def upload_image(request, model_name, id, image_type, image=None):
@@ -890,33 +912,37 @@ def upload_image(request, model_name, id, image_type, image=None):
     # replacement
     if image:
         if image.object != display_obj:
-            return render_error(request,
-              'Image and object id do not match.',
+            return render_error(
+              request, 'Image and object id do not match.',
               redirect=False, is_safe=True)
-        kwargs = {'upload_type': 'replacement', 'current_image': image,
+        kwargs = {
+          'upload_type': 'replacement', 'current_image': image,
           'current_image_tag': get_generic_image_tag(image, 'current image')}
     # check if there is an image if image_type.unique is set
     else:
         img_type = get_object_or_404(ImageType, name=image_type)
         if img_type.unique:
-            if Image.objects.filter(content_type=\
-              ContentType.objects.get_for_model(display_obj),
+            if Image.objects.filter(
+              content_type=ContentType.objects.get_for_model(display_obj),
               object_id=display_obj.id, type=img_type, deleted=False).count():
-                return render_error(request,
+                return render_error(
+                  request,
                   ('%s has an image. Further images cannot be added, '
-                  'only replaced.') % (esc(display_obj)),
+                   'only replaced.') % (esc(display_obj)),
                   redirect=False, is_safe=True)
 
     # check if there is a pending object deletion
-    filter_dict = {model_name : display_obj, 'deleted' : True,
-                   'changeset__state__in' : states.ACTIVE}
+    filter_dict = {model_name: display_obj, 'deleted': True,
+                   'changeset__state__in': states.ACTIVE}
     revision = REVISION_CLASSES[model_name].objects.filter(**filter_dict)
     if revision:
         revision = revision.get()
-        return render_error(request,
+        return render_error(
+          request,
           ('%s is <a href="%s">pending deletion</a>. Images '
-          'cannot be added or modified.') % (esc(display_obj),
-          urlresolvers.reverse('compare', kwargs={'id': revision.changeset.id})),
+           'cannot be added or modified.') % (
+            esc(display_obj), urlresolvers.reverse(
+              'compare', kwargs={'id': revision.changeset.id})),
           redirect=False, is_safe=True)
 
     # current request is an upload
@@ -932,35 +958,53 @@ def upload_image(request, model_name, id, image_type, image=None):
         form = UploadImageForm()
         # display the form
         return _display_image_upload_form(request, form, display_obj,
-                                          model_name, image_type, kwargs=kwargs)
+                                          model_name, image_type,
+                                          kwargs=kwargs)
+
 
 def general_guidelines(type_name):
-    return ['The uploaded scan needs to be a readable scan of the %s.' % type_name,
-        'Please use large images scanned with at least 150 DPI, where 300 DPI is preferred.',
-        'Upload only the %s and not a scan of the full page, i.e. without any artwork.' % type_name]
+    return ['The uploaded scan needs to be a readable scan of the %s.' %
+            type_name,
+            'Please use large images scanned with at least 150 DPI, where '
+            '300 DPI is preferred.',
+            'Upload only the %s and not a scan of the full page, i.e. without'
+            ' any artwork.' % type_name]
+
 
 def _display_image_upload_form(request, form, display_obj, model_name,
                                image_type, kwargs=None):
-    if kwargs == None:
+    if kwargs is None:
         kwargs = {'upload_type': ''}
     upload_template = 'oi/edit/upload_image.html'
-    #kwargs[] = ''
 
     kwargs['form'] = form
     if image_type == 'IndiciaScan':
-        kwargs['header'] = 'Upload a %s scan of the indicia for' % kwargs['upload_type']
+        kwargs['header'] = 'Upload a %s scan of the indicia for' \
+                           % kwargs['upload_type']
         kwargs['guidelines'] = general_guidelines('indicia')
     if image_type == 'SoOScan':
-        kwargs['header'] = 'Upload a %s scan of the statement of ownership' % kwargs['upload_type']
+        kwargs['header'] = 'Upload a %s scan of the statement of ownership' \
+                           % kwargs['upload_type']
         kwargs['guidelines'] = general_guidelines('statement of ownership')
     if image_type == 'BrandScan':
-        kwargs['header'] = 'Upload a %s scan of the brand emblem' % kwargs['upload_type']
-        kwargs['guidelines'] = ['Please only upload an image of the brand emblem.']
+        kwargs['header'] = 'Upload a %s scan of the brand emblem' \
+                           % kwargs['upload_type']
+        kwargs['guidelines'] = ['Please only upload an image of the brand '
+                                'emblem.']
+    if image_type == 'CreatorPortrait':
+        kwargs['header'] = 'Upload a %s portrait of the creator' \
+                           % kwargs['upload_type']
+        kwargs['guidelines'] = ['Please only upload an image of the creator']
+    if image_type == 'SampleScan':
+        kwargs['header'] = 'Upload a %s scan of a sample for the work of ' \
+                           'creator' % kwargs['upload_type']
+        kwargs['guidelines'] = ['Please upload a representative example for '
+                                'the work of the creator']
     kwargs['display_obj'] = display_obj
     kwargs['model_name'] = model_name
     kwargs['image_type'] = image_type
-    return render_to_response(upload_template, kwargs,
-                              context_instance=RequestContext(request))
+    return render(request, upload_template, kwargs)
+
 
 @permission_required('indexer.can_approve')
 def mark_image(request, marked, image_id=None, revision_id=None):
@@ -976,7 +1020,7 @@ def mark_image(request, marked, image_id=None, revision_id=None):
     image.save()
 
     # Typically present, but not for direct URLs
-    if request.META.has_key('HTTP_REFERER'):
+    if 'HTTP_REFERER' in request.META:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
     else:
         return HttpResponseRedirect(urlresolvers.reverse('reviewing'))

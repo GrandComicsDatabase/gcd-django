@@ -10,15 +10,15 @@ requests, responses and errors.
 import hashlib
 from random import random
 
-from urllib import quote
 from django.conf import settings
 from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.safestring import mark_safe
 
-from apps.gcd.views.pagination import DiggPaginator
+from .pagination import DiggPaginator
+from .alpha_pagination import AlphaPaginator
 
 from apps.stddata.models import Language
 from apps.stats.models import CountStats
@@ -65,8 +65,7 @@ def index(request):
         'stats_for_language': stats_for_language,
         'CALENDAR': settings.CALENDAR,
     })
-    return render_to_response('gcd/index.html', template_vars,
-                              context_instance=RequestContext(request))
+    return render(request, 'gcd/index.html', template_vars)
 
 
 class ResponsePaginator(object):
@@ -75,31 +74,23 @@ class ResponsePaginator(object):
     http://bitbucket.org/miracle2k/djutils/src/tip/djutils/pagination.py.
     We could reconsider writing our own code.
     """
-    def __init__(self, queryset, vars=None, template=None, per_page=100,
-                 callback_key=None, callback=None, view=None):
-        """
-        Either template or view should be set
-        """
-        if template is None and view is None:
-            raise ValueError
-        self.template = template
-        self.vars = vars and vars or {}
-        self.callback_key = callback_key
-        self.callback = callback
-        self.view = view
+    def __init__(self, queryset, vars=None, per_page=100, alpha=False):
+        self.vars = vars or {}
         self.p = DiggPaginator(queryset, per_page, body=7, padding=2, tail=1)
+        if alpha:
+            alpha_paginator = AlphaPaginator(queryset, per_page=per_page)
+            self.vars['alpha_paginator'] = alpha_paginator
 
     def paginate(self, request):
         page_num = 1
         self.vars['pagination_type'] = 'num'
-        redirect = None
         if ('page' in request.GET):
             try:
                 page_num = int(request.GET['page'])
                 if page_num > self.p.num_pages:
-                    redirect = self.p.num_pages
+                    page_num = self.p.num_pages
                 elif page_num < 1:
-                    redirect = 1
+                    page_num  = 1
             except ValueError:
                 if 'alpha_paginator' in self.vars and \
                   request.GET['page'][:2] == 'a_':
@@ -107,49 +98,36 @@ class ResponsePaginator(object):
                     try:
                         alpha_page_num = int(request.GET['page'][2:])
                         if alpha_page_num > self.alpha_paginator.num_pages:
-                            redirect = 'a_%d' % self.alpha_paginator.num_pages
-                        elif page_num < 1:
-                            redirect = 'a_1'
-                        else:
-                            alpha_page = \
-                              self.alpha_paginator.page(alpha_page_num)
-                            self.vars['pagination_type'] = 'alpha'
-                            self.vars['alpha_page'] = alpha_page
-                            issue_count = self.alpha_paginator.number_offset
-                            for i in range(1,alpha_page_num):
-                                issue_count += \
-                                  self.alpha_paginator.page(i).count
-                            page_num = int(issue_count/self.p.per_page) + 1
+                            alpha_page_num = self.alpha_paginator.num_pages
+                        elif alpha_page_num < 1:
+                            alpha_page_num  = 1
+                        alpha_page = \
+                          self.alpha_paginator.page(alpha_page_num)
+                        self.vars['pagination_type'] = 'alpha'
+                        self.vars['alpha_page'] = alpha_page
+                        issue_count = self.alpha_paginator.number_offset
+                        for i in range(1,alpha_page_num):
+                            issue_count += \
+                              self.alpha_paginator.page(i).count
+                        page_num = int(issue_count/self.p.per_page) + 1
                     except ValueError:
-                        redirect = 1
+                        page_num = 1
                 else:
-                    redirect = 1
-
-        if redirect is not None:
-            args = request.GET.copy()
-            args['page'] = redirect
-            return HttpResponseRedirect(quote(request.path.encode('UTF-8')) +
-                                        u'?' + args.urlencode())
+                    page_num = 1
 
         page = self.p.page(page_num)
-        self.vars['items'] = page.object_list
-        self.vars['paginator'] = self.p
         self.vars['page'] = page
-        self.vars['page_number'] = page_num
-
-        if self.callback_key is not None:
-            self.vars[self.callback_key] = self.callback(page)
-
-        if self.view:
-            return self.view()
-
-        return render_to_response(self.template, self.vars,
-                                  context_instance=RequestContext(request))
+        self.vars['items'] = page.object_list
+        return page
 
 
 def paginate_response(request, queryset, template, vars, per_page=100,
-                      callback_key=None, callback=None):
-    return ResponsePaginator(queryset, vars=vars, template=template,
-                             per_page=per_page,
-                             callback_key=callback_key,
-                             callback=callback).paginate(request)
+                      callback_key=None, callback=None, alpha=False):
+    paginator = ResponsePaginator(queryset, vars=vars, per_page=per_page,
+                                  alpha=alpha)
+    page = paginator.paginate(request)
+
+    if callback_key is not None:
+        vars[callback_key] = callback(page)
+
+    return render(request, template, vars)

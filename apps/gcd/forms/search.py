@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 from re import match
 from decimal import Decimal, InvalidOperation
+
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.conf import settings
+
 from apps.stddata.models import Country, Language
 from apps.indexer.models import Indexer
-from apps.gcd.models import StoryType, OLD_TYPES
+from apps.gcd.models import StoryType, OLD_TYPES, SeriesPublicationType
+from apps.gcd.models.support import GENRES
 
 ORDERINGS = [['', '--'],
              ['date', 'Date'],
@@ -36,6 +40,30 @@ PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
 COUNT_RANGE_REGEXP = r'(?P<min>\d+)?\s*-\s*(?P<max>\d+)?$'
 
 class AdvancedSearch(forms.Form):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super(AdvancedSearch, self).__init__(*args, **kwargs)
+        self.fields['country'] = forms.MultipleChoiceField(
+          required=False,
+          widget=FilteredSelectMultiple('Countries', False),
+          choices=([c.code, c.name.title()]
+                   for c in Country.objects.order_by('name')))
+        self.fields['language'] = forms.MultipleChoiceField(
+          required=False,
+          choices=([l.code, l.name]
+                   for l in Language.objects.order_by('name')),
+          widget=FilteredSelectMultiple('Languages', False))
+        if user and user.is_authenticated:
+            self.fields['in_collection'] = forms.ModelMultipleChoiceField(
+              label='',
+              widget=FilteredSelectMultiple('Collections', False),
+              queryset=user.collector.collections.all(),
+              required=False)
+            self.user = user
+            self.fields['in_selected_collection'] = forms.BooleanField(
+              label="Is in the selected collections", required=False,
+              initial=True)
+
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
                                         ['brand_group', 'Publisher Brand Group'],
                                         ['brand_emblem', 'Publisher Brand Emblem'],
@@ -89,6 +117,8 @@ class AdvancedSearch(forms.Form):
                                  input_formats=DATE_FORMATS)
     use_on_sale_date = forms.BooleanField(label="Use On-Sale Date",
                                           required=False)
+    updated_since = forms.DateField(label='Updated Since', required=False,
+                                    input_formats=DATE_FORMATS)
 
     pub_name = forms.CharField(label='Publisher', required=False)
     pub_notes = forms.CharField(label='Notes', required=False)
@@ -122,13 +152,14 @@ class AdvancedSearch(forms.Form):
                                    (True, "yes"),
                                    (False, "no"))))
 
-    format = forms.CharField(label='Format', required=False)
-    has_format = forms.BooleanField(label='Has Format', required=False)
     color = forms.CharField(label='Color', required=False)
     dimensions = forms.CharField(label='Dimensions', required=False)
     paper_stock = forms.CharField(label='Paper Stock', required=False)
     binding = forms.CharField(label='Binding', required=False)
     publishing_format = forms.CharField(label='Publishing Format', required=False)
+    publication_type = forms.ModelMultipleChoiceField(label='Publication Type',
+                             queryset=SeriesPublicationType.objects.all(),
+                             required=False)
 
     issues = forms.CharField(label='Issues', required=False)
     volume = forms.CharField(label='Volume', required=False)
@@ -172,7 +203,7 @@ class AdvancedSearch(forms.Form):
                ('has_indicia', 'Has Indicia Scan'),
                ('needs_indicia', 'Needs Indicia Scan')),
       required=False)
-    indexer = forms.ModelMultipleChoiceField(required=False,
+    indexer = forms.ModelMultipleChoiceField(required=False, label='',
       queryset=Indexer.objects.filter(imps__gt=0).\
       order_by('user__first_name', 'user__last_name').select_related('user'),
       widget=FilteredSelectMultiple('Indexers', False, attrs={'size': '6'}))
@@ -199,7 +230,10 @@ class AdvancedSearch(forms.Form):
     story_editing = forms.CharField(label='Story Editing', required=False)
     job_number = forms.CharField(label='Job Number', required=False)
 
-    genre = forms.CharField(required=False)
+    first_line = forms.CharField(required=False)
+    genre = forms.MultipleChoiceField(required=False,
+      widget=FilteredSelectMultiple('Genres', False),
+      choices=([c, c] for c in GENRES['en']))
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
@@ -211,15 +245,8 @@ class AdvancedSearch(forms.Form):
 
     notes = forms.CharField(label='Notes', required=False)
 
-    country = forms.MultipleChoiceField(required=False, 
-      widget=FilteredSelectMultiple('Countries', False),
-      choices=([c.code, c.name.title()]
-               for c in Country.objects.order_by('name')))
     alt_country = forms.CharField(label='', required=False, max_length=3)
 
-    language = forms.MultipleChoiceField(required=False,
-      choices=([l.code, l.name] for l in Language.objects.order_by('name')),
-      widget=FilteredSelectMultiple('Languages', False))
     alt_language = forms.CharField(label='', required=False, max_length=3)
 
     def clean_pages(self):
@@ -277,28 +304,44 @@ class AdvancedSearch(forms.Form):
 
         return keywords
 
+    def clean_in_collection(self):
+        collections = self.cleaned_data['in_collection']
+        if collections.exclude(collector=self.user.collector).count():
+            raise forms.ValidationError(
+                  "One cannot search in the collections of other users.")
+        return collections
+
     def clean(self):
         cleaned_data = self.cleaned_data
         if self.is_valid():
             if cleaned_data['cover_needed']:
                 # use of in since after distinction stuff is cleared add series
-                if cleaned_data['target'] not in ['issue','series']:
+                if cleaned_data['target'] not in ['issue', 'series']:
                     raise forms.ValidationError(
                       "Searching for covers which are missing or need to be"
                       " replaced is valid only for issue or series searches.")
             if cleaned_data['target'] == 'cover' and cleaned_data['type']:
                 if len(cleaned_data['type']) > 1 or StoryType.objects\
                   .get(name='cover') not in cleaned_data['type']:
-                    raise forms.ValidationError("When searching for covers"
-                          " only type cover can be selected.")
+                    raise forms.ValidationError(
+                      "When searching for covers only type cover can be "
+                      "selected.")
             if cleaned_data['use_on_sale_date']:
-                if cleaned_data['target'] not in ['issue','sequence']:
+                if cleaned_data['target'] not in ['issue', 'sequence',
+                                                  'issue_cover']:
                     raise forms.ValidationError(
                       "The on-sale date can only be used in issue or story "
                       "searches.")
-            if cleaned_data['keywords']:
-                if cleaned_data['target'] in ['cover','issue_cover']:
-                    raise forms.ValidationError(
-                      "For technical reasons keywords cannot be used for "
-                      "searches for covers and covers for issues.")
+            if cleaned_data['start_date'] or cleaned_data['end_date']:
+                if (cleaned_data['start_date'] and
+                    len(self.data['start_date'])<=4) or \
+                  (cleaned_data['end_date'] and len(self.data['end_date'])<=4):
+                    if cleaned_data['target'] in ['issue', 'issue_cover',
+                                                  'sequence', 'cover']:
+                        raise forms.ValidationError(
+                          "For issue-level search targets please use full "
+                          "dates. To get everything from a year/month you need"
+                          " to use the last day of the preceding year/month, "
+                          "e.g. 1989-12-31 will find all comics we have "
+                          "recorded with a publication date 1990 and later.")
         return cleaned_data

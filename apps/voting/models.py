@@ -294,20 +294,24 @@ class Topic(models.Model):
             return Receipt.objects.filter(topic=self).count()
         return User.objects.filter(votes__option__topic=self).distinct().count()
 
+    def expected_voters(self):
+        expected_voters = self.agenda.expected_voters\
+                              .filter(Q(tenure_began__lte=self.deadline) &
+                                      (Q(tenure_ended__isnull=True) |
+                                       Q(tenure_ended__gte=self.deadline)))\
+                              .order_by('tenure_began', 'tenure_ended',
+                                        'voter__last_name',
+                                        'voter__first_name')\
+                              .select_related('voter')
+        return expected_voters
+
     def absent_voters(self):
         """
         If there is a pre-set list of expected voters for this agenda, displays the
         voters who did not vote.  Returns an empty list if the voter pool
         is flexible.  Primarily intended for Board votes.
         """
-        expected_for_topic = self.agenda.expected_voters\
-                                 .filter(Q(tenure_began__lte=self.deadline) &
-                                         (Q(tenure_ended__isnull=True) |
-                                          Q(tenure_ended__gte=self.deadline)))\
-                                 .order_by('tenure_began', 'tenure_ended',
-                                           'voter__last_name',
-                                           'voter__first_name')\
-                                 .select_related('voter')
+        expected_for_topic = self.expected_voters()
         if expected_for_topic.count() == 0:
             return []
         voters = User.objects.filter(votes__option__topic=self).distinct()

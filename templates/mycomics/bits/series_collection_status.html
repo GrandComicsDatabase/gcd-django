@@ -1,8 +1,8 @@
 {% load gcdtable %}
 {% load collecting %}
-{% load url from future %}
 
-<table border="1" class="status" id="key">
+<div class="left" style="width:calc(100% - 200px);">
+  <table class="status">
   <tr>
     <td class="collection_status_own"> Issue Owned </td>
     <td class="collection_status_want"> On Wantlist </td>
@@ -10,23 +10,12 @@
     <td class="collection_status_several"> Several Copies </td>
     <td class="collection_status_empty"> Not in a Collection </td>
   </tr>
-</table>
-<p class="spacer"/>
-<table border="1" class="status">
-  <tr>
+  </table>
+  <div class="status_grid">
   {% for issue in series.active_issues %}
-    <td class="{{ issue|collection_status:request.user }}">
-      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor }}</a> </td>
-    {% if forloop.counter|divisibleby:table_width %}
-  </tr>
-      {% if not forloop.last %}
-  <tr>
-      {% endif %}
-    {% else %}
-      {% if forloop.last %}
-        {{ forloop.counter|finishrow:table_width }}
-  </tr>
-      {% endif %}
-    {% endif %}
+    <div class="status_grid_flex {{ cover_status_width }} {{ issue|collection_status:request.user }}">
+      <a href="{{ issue.get_absolute_url }}">{{ issue.full_descriptor }}</a>
+    </div>
   {% endfor %}
-</table>
+  </div>
+</div>

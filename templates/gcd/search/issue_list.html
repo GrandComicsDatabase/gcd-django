@@ -1,11 +1,10 @@
 {% extends "gcd/search/base_list.html" %}
-{% load url from future %}
 
 {% block list_contents %}
 
 {% if request.user.is_authenticated and items and not no_bulk_edit and not MYCOMICS %}
 <div id="bulk_change_info">
-{% ifequal paginator.num_pages 1 %}
+{% ifequal page.paginator.num_pages 1 %}
 &nbsp;Use this search result for a <a href="{% url "edit_issues_in_bulk" %}?{{ query_string }}">
 bulk change</a>
 {% else %}

@@ -1,5 +1,4 @@
 {% extends "oi/base_view.html" %}
-{% load url from future %}
 {% load staticfiles %}
 
 {% load credits %}
@@ -82,6 +81,7 @@
 <p class="error">Series not supported in group changesets.</p>
       {% endif %}
 
+
     {% comment %}
       For now, assume the app ensures that there are either many issues and
       no stories, or one issue and optionally stories that may be assumed to
@@ -137,3 +137,8 @@ This change is being edited by {{ changeset.indexer.indexer }}.
 </div>
 {% endblock %}
 
+{% block footer %}
+  {% if changeset.state == states.OPEN and changeset.indexer == user and object_name == 'Creator' %}
+    {% include 'oi/bits/revision_form_utils.html' %}
+  {% endif %}
+{% endblock %}
