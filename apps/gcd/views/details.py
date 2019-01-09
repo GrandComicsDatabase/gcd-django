@@ -661,32 +661,28 @@ def series_details(request, series_id, by_date=False):
         issues_left_over = series.active_issues().filter(
           no_key_date_q | Q(id__in=bad_key_dates))
 
-    # These need to be numbers not True/False booleans so they work
-    # in the template.
-    num_issues = series.issue_count
-    volume_present = series.has_volume and \
-      series.active_issues().filter(no_volume=True, variant_of=None)\
-                            .count() - num_issues
-    brand_present = \
-      series.active_issues().filter(no_brand=True, variant_of=None)\
-                            .count() - num_issues
-    frequency_present = series.has_indicia_frequency and \
-      series.active_issues().filter(no_indicia_frequency=True, variant_of=None)\
-                            .count() - num_issues
-    isbn_present = series.has_isbn and \
-      series.active_issues().filter(no_isbn=True, variant_of=None)\
-                            .count() - num_issues
-    barcode_present = series.has_barcode and \
-      series.active_issues().filter(no_barcode=True, variant_of=None)\
-                            .count() - num_issues
-    title_present = series.has_issue_title and \
-      series.active_issues().filter(no_title=True, variant_of=None)\
-                            .count() - num_issues
-    on_sale_date_present = series.active_issues().exclude(on_sale_date='')\
-                                                 .count()
-    rating_present = series.has_rating and \
-      series.active_issues().filter(no_rating=True, variant_of=None)\
-                            .count() - num_issues
+    volume_present = (series.has_volume and
+        series.active_issues().filter(no_volume=False)
+              .exclude(volume='').exists())
+    brand_present = (series.active_issues().filter(no_brand=False)
+                           .exclude(brand__isnull=True).exists())
+    frequency_present = (series.has_indicia_frequency and
+        series.active_issues().filter(no_indicia_frequency=False)
+              .exclude(indicia_frequency='').exists())
+    isbn_present = (series.has_isbn and
+        series.active_issues().filter(no_isbn=False)
+              .exclude(isbn='').exists())
+    barcode_present = (series.has_barcode and
+        series.active_issues().filter(no_barcode=False)
+              .exclude(barcode='').exists())
+    title_present = (series.has_issue_title and
+        series.active_issues().filter(no_title=False)
+              .exclude(title='').exists())
+    on_sale_date_present = (series.active_issues()
+                                  .exclude(on_sale_date='').exists())
+    rating_present = (series.has_rating and
+        series.active_issues().filter(no_rating=False)
+              .exclude(rating='').exists())
 
     return render(request, 'gcd/details/series_details.html',
       {
