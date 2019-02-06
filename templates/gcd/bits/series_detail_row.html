@@ -47,7 +47,7 @@
     {% if issue.no_isbn %}
   <td>&nbsp;</td>
     {% else %}
-  <td> {{ issue.isbn|default:"?" }} </td>
+  <td> {{ issue.isbn|show_isbn|default:"?" }} </td>
     {% endif %}
   {% endif %}
   {% if barcode_present %}
