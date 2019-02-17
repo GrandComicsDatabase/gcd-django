@@ -665,10 +665,10 @@ class ForeignKeyField(forms.IntegerField):
         try:
             return self.queryset.get(id=id)
         except ObjectDoesNotExist:
-            raise forms.ValidationError, ("%d is not the ID of a valid %s" %
+            raise forms.ValidationError("%d is not the ID of a valid %s" %
                                (id, self.target_name))
         except MultipleObjectsReturned:
-            raise forms.ValidationError, (
+            raise forms.ValidationError(
               "%d matched multiple instances of %s" % (id, self.target_name))
 
 

@@ -642,7 +642,7 @@ def series_details(request, series_id, by_date=False):
             # at the weekly level anyway.
             try:
                 grid_date = date(int(year), month, 1)
-            except ValueError, ve:
+            except ValueError as ve:
                 bad_key_dates.append(issue.id)
                 continue
 

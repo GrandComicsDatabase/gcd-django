@@ -805,7 +805,7 @@ def flip_artwork_flag(request, revision_id=None):
         story_revision.save()
     else:
         # this should never happen
-        raise ValueError, "More than one story sequence in a cover revision."
+        raise ValueError("More than one story sequence in a cover revision.")
 
     return HttpResponseRedirect(urlresolvers.reverse('compare',
                                 kwargs={'id': cover.changeset.id}))
@@ -825,7 +825,7 @@ def mark_cover(request, marked, cover_id=None, revision_id=None):
     cover.save()
 
     # Typically present, but not for direct URLs
-    if request.META.has_key('HTTP_REFERER'):
+    if 'HTTP_REFERER' in request.META:
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
     elif revision_id:
         return HttpResponseRedirect(urlresolvers.reverse('compare',

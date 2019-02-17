@@ -1688,7 +1688,7 @@ def edit_issues_in_bulk(request):
         series = Series.objects.get(id=series_list[0])
     else:
         if len(items) > 100: # shouldn't happen, just in case
-            raise ValueError, 'not more than 100 issues if more than one series'
+            raise ValueError('not more than 100 issues if more than one series')
         series = Series.objects.exclude(deleted=True).filter(id__in=series_list)
         publisher_list = Publisher.objects.exclude(deleted=True) \
           .filter(series__in=series).distinct()
@@ -4254,7 +4254,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
 
         if num_children < min:
             current_code = 1
-        elif num_children <= sys.maxint - max:
+        elif num_children <= sys.maxsize - max:
             current_code = max + 1
         else:
             # This should be extremely rare, so let's not bother to

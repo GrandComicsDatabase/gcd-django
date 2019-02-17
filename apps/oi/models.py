@@ -48,6 +48,7 @@ from apps.gcd.models.creator import _display_day, _display_place
 from apps.indexer.views import ErrorWithMessage
 
 from apps.legacy.models import Reservation, MigrationStoryStatus
+from functools import reduce
 
 LANGUAGE_STATS = ['de']
 
@@ -458,9 +459,9 @@ class Changeset(models.Model):
                     self._inline_revision = self.coverrevisions.get()
                 else:
                     if cache_safe is True:
-                        return self.cached_revisions.next()
+                        return next(self.cached_revisions)
                     else:
-                        self._inline_revision = self.revisions.next()
+                        self._inline_revision = next(self.revisions)
         return self._inline_revision
 
     def deleted(self):
@@ -560,7 +561,7 @@ class Changeset(models.Model):
         elif self.change_type == CTYPES['issue_bulk']:
             return ACTION_MODIFY
 
-        revision = self.cached_revisions.next()
+        revision = next(self.cached_revisions)
         if revision.deleted:
             return ACTION_DELETE
         if not revision.previous_revision:

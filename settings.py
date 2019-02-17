@@ -393,7 +393,7 @@ DOWNLOAD_DELTA = 5
 # get local settings, will override settings from here
 try:
     from settings_local import *
-except ImportError, exp:
+except ImportError as exp:
     pass
 try:
     import settings_local

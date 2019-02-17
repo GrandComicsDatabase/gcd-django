@@ -43,6 +43,7 @@ from apps.gcd.views.covers import get_image_tags_per_page
 # Should not be importing anything from oi, but we're doing this in several places.
 # TODO: states should probably live somewhere else.
 from apps.oi import states
+from functools import reduce
 
 
 class SearchError(Exception):
@@ -281,7 +282,7 @@ def generic_by_name(request, name, q_obj, sort,
                                          "sequence_number")
 
     else:
-        raise TypeError, "Unsupported search target!"
+        raise TypeError("Unsupported search target!")
 
     if not selected:
         selected = credit
@@ -688,13 +689,13 @@ def search(request):
     """
 
     # redirect if url starts with '/search/' but the rest is of no use
-    if not request.GET.has_key('type'):
+    if 'type' not in request.GET:
         return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
 
-    if not request.GET.has_key('query') or not request.GET['query'] or \
+    if 'query' not in request.GET or not request.GET['query'] or \
        request.GET['query'].isspace():
         # if no query, but a referer page
-        if request.META.has_key('HTTP_REFERER'):
+        if 'HTTP_REFERER' in request.META:
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
         else: # rare, but possible
             return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
@@ -801,7 +802,7 @@ def checklist_by_name(request, creator, country=None, language=None):
 
     try:
         items, target = do_advanced_search(request)
-    except ViewTerminationError, response:
+    except ViewTerminationError as response:
         return response.response
 
     context = {
@@ -871,23 +872,23 @@ def do_advanced_search(request):
         query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj,
                                 bq_obj, bgq_obj, ipq_obj, cq_obj)
         terms = compute_order(data)
-    except SearchError, se:
-        raise ViewTerminationError, render(
+    except SearchError as se:
+        raise ViewTerminationError(render(
           request, 'gcd/search/advanced.html',
           {
               'form': form,
               'error_text': '%s' % se,
-          })
+          }))
 
     if (not query) and terms and (not data['keywords']):
-        raise ViewTerminationError, render(
+        raise ViewTerminationError(render(
           request, 'gcd/search/advanced.html',
           {
             'form': form,
             'error_text': "Please enter at least one search term "
                           "or clear the 'ordering' fields.  Ordered searches "
                           "must have at least one search term."
-          })
+          }))
 
     items = []
     if data['target'] == 'publisher':
@@ -1062,7 +1063,7 @@ def process_advanced(request, export_csv=False):
 
     try:
         items, target = do_advanced_search(request)
-    except ViewTerminationError, response:
+    except ViewTerminationError as response:
         return response.response
 
     count = items.count()
@@ -1380,7 +1381,7 @@ def search_series(data, op):
                 q_objs.append(Q(**{ '%sissue_count__exact' % prefix:
                                     int(data['issue_count']) }))
     except ValueError:
-        raise SearchError, ("Issue count must be an integer or an integer "
+        raise SearchError("Issue count must be an integer or an integer "
                             "range reparated by a hyphen (e.g. 100-200, "
                             "100-, -200).")
 
@@ -1507,7 +1508,7 @@ def search_issues(data, op, stories_q=None):
                 q_objs.append(Q(**{ '%spage_count' % prefix:
                                     Decimal(data['issue_pages']) }))
     except ValueError:
-        raise SearchError, ("Page count must be a decimal number or a pair of "
+        raise SearchError("Page count must be a decimal number or a pair of "
                             "decimal numbers separated by a hyphen.")
     if data['issue_pages_uncertain'] is not None:
         q_objs.append(Q(**{ '%spage_count_uncertain' % \
@@ -1623,7 +1624,7 @@ def search_stories(data, op):
                 q_and_only.append(Q(**{ '%spage_count' % prefix:
                                         Decimal(data['pages']) }))
     except ValueError:
-        raise SearchError, ("Page count must be a decimal number or a pair of "
+        raise SearchError("Page count must be a decimal number or a pair of "
                             "decimal numbers separated by a hyphen.")
 
     if data['pages_uncertain'] is not None:
@@ -1670,7 +1671,7 @@ def compute_prefix(target, current):
             return 'issue__series__publisher__'
     elif current == 'brand_group':
         if target == 'indicia_publisher':
-            raise SearchError, ('Cannot search for Indicia Publishers by '
+            raise SearchError('Cannot search for Indicia Publishers by '
               'Publisher Brand attributes, as they are not directly related')
         if target == 'publisher':
             return 'brandgroup__'
@@ -1680,7 +1681,7 @@ def compute_prefix(target, current):
             return 'issue__brand__group__'
     elif current == 'brand_emblem':
         if target == 'indicia_publisher':
-            raise SearchError, ('Cannot search for Indicia Publishers by '
+            raise SearchError('Cannot search for Indicia Publishers by '
               'Publisher Brand attributes, as they are not directly related')
         if target == 'publisher':
             return 'brandgroup__brand__'
@@ -1690,7 +1691,7 @@ def compute_prefix(target, current):
             return 'issue__brand__'
     elif current == 'indicia_publisher':
         if target in ('brand_group', 'brand_emblem'):
-            raise SearchError, ('Cannot search for Publisher Brands by '
+            raise SearchError('Cannot search for Publisher Brands by '
               'Indicia Publisher attributes, as they are not directly related')
         if target == 'publisher':
             return 'indiciapublisher__'
