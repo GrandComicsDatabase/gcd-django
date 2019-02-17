@@ -2,6 +2,7 @@
 
 from django.core.paginator import (
     Paginator, Page, InvalidPage, EmptyPage, PageNotAnInteger)
+from functools import reduce
 
 
 __all__ = (
@@ -41,7 +42,7 @@ class ExPaginator(Paginator):
     def page(self, number, softlimit=False):
         try:
             return super(ExPaginator, self).page(number)
-        except EmptyPage, e:
+        except EmptyPage as e:
             # we know "number" is a valid int at this point
             if int(number) > self.num_pages and softlimit:
                 return self.page(self.num_pages, softlimit=False)

@@ -197,7 +197,6 @@ class Issue(GcdData):
         """
         Simplifies UI checks for conditionals.  Content fields
         """
-        print self.other_variants
         return self.notes or \
                self.variant_of or \
                self.other_variants() or \
