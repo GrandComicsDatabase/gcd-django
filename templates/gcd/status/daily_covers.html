@@ -46,11 +46,13 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all uploa
 {% include "gcd/bits/choose_date.html" %}
 </h1>
 <div id="item_id_footer" class="item_id">
-  <div class="left">
+  <div class="flex_left">
   Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}{% trans " covers posted" %}
   </div>
   {% if page %}
+  <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
+  </div>
   {% endif %}
 </div>
 
