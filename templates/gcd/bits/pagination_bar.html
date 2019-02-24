@@ -25,12 +25,12 @@
     <li>
   {% if page.has_previous %}
     {% if extra_string %}
-      <a class="btn btn-default btn-sm btn-arrow-right" href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&#128896;</a>
+      <a class="btn btn-default btn-sm btn-arrow-right" href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&#9668;</a>
     {% else %}
-      <a class="btn btn-default btn-sm btn-arrow-right" href="?page={{ page.previous_page_number }}">&#128896;</a>
+      <a class="btn btn-default btn-sm btn-arrow-right" href="?page={{ page.previous_page_number }}">&#9668;</a>
     {% endif %}
   {% else %}
-      <span class="btn btn-default btn-sm" style="text-decoration: none">&#128896;</span>
+      <span class="btn btn-default btn-sm" style="text-decoration: none">&#9668;</span>
   {% endif %} <!-- has_previous -->
     </li>
   {% for number in page.page_range %}
@@ -50,17 +50,17 @@
     {% endifequal %}
     </li>
   {% endfor %}
-  {% if page.has_next %}
     <li>
+  {% if page.has_next %}
     {% if extra_string %}
-      <a class="btn btn-default btn-sm" href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">&#128898;</a>
+      <a class="btn btn-default btn-sm" href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">&#9658;</a>
     {% else %}
-      <a class="btn btn-default btn-sm" href="?page={{ page.next_page_number }}">&#128898;</a>
+      <a class="btn btn-default btn-sm" href="?page={{ page.next_page_number }}">&#9658;</a>
     {% endif %}
   {% else %}
-      <span class="btn btn-default btn-sm" style="text-decoration: none">&#128898;</span>
-    </li>
+      <span class="btn btn-default btn-sm" style="text-decoration: none">&#9658;</span>
   {% endif %} <!-- has_next -->
+    </li>
   {% endspaceless %}
 {% else %}
   &lt; {% trans "Previous" %} | {{ page.number }} | {% trans "Next" %} &gt;
