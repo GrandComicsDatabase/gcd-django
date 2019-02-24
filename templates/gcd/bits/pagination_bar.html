@@ -63,7 +63,7 @@
     </li>
   {% endspaceless %}
 {% else %}
-  &lt; {% trans "Previous" %} | {{ page.number }} | {% trans "Next" %} &gt;
+    <li> <span class="btn btn-default btn-sm" style="text-decoration: none">{{ page.number }}</span> </li>
 {% endif %}
     <li>
       <form method="GET" style="display:inline">
