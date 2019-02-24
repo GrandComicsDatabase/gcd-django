@@ -7,8 +7,6 @@ import glob
 from django.core import urlresolvers
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404
-from django.template import RequestContext
-from django.core.files import temp as tempfile
 from django.core.files import File
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -324,7 +322,7 @@ def process_edited_gatefold_cover(request):
         return render_error(request, error_text, redirect=False)
     cd = form.cleaned_data
 
-    tmpdir = tempfile.gettempdir()
+    tmpdir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + 'tmp'
     scan_name = cd['scan_name']
     tmp_name = os.path.join(tmpdir, scan_name)
 
@@ -403,11 +401,10 @@ def handle_gatefold_cover(request, cover, issue, form):
     remember_source = cd['remember_source']
     marked = cd['marked']
     comments = cd['comments']
-    # either we use the system tmp directory and do a symlink from there
-    # to the media/img/gcd/new_covers/tmp directory, or we actually use
-    # media/img/gcd/new_covers/tmp and accept that it could fill up with
+    # we cannot use the system tmp directory due to apache security settings
+    # use media/img/gcd/new_covers/tmp and accept that it could fill up with
     # abandoned files
-    tmpdir = tempfile.gettempdir()
+    tmpdir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + 'tmp'
     if cover: # upload_type is 'replacement':
         scan_name = "%d_%d_%d" % (request.user.id, issue.id, cover.id)
     else:
