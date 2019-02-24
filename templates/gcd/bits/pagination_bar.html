@@ -22,8 +22,8 @@
 {% endif %}
 {% if page.has_other_pages %}
   {% spaceless %}
-  {% if page.has_previous %}
     <li>
+  {% if page.has_previous %}
     {% if extra_string %}
       <a class="btn btn-default btn-sm btn-arrow-right" href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&#128896;</a>
     {% else %}
@@ -31,8 +31,8 @@
     {% endif %}
   {% else %}
       <span class="btn btn-default btn-sm" style="text-decoration: none">&#128896;</span>
-    </li>
   {% endif %} <!-- has_previous -->
+    </li>
   {% for number in page.page_range %}
     <li>
     {% ifequal number page.number %}
