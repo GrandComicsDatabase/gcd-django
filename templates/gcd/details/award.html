@@ -53,10 +53,12 @@ GCD :: Award :: {{ award.name }}
          {% include "gcd/bits/status_banner.html" %}
        {% endwith %}
      {% endif %}
+     {% if request.user.is_authenticated %}
       <form method="GET"
             action="{% url "select_award_recipient" award_id=award.id %}">
           <input name="select_award_recipient" type="submit" value="Add Award"/>
       </form>
+      {% endif %}
     </div>
   {% endif %} <!-- MYCOMICS -->
     <div id="change_history" class="edit_footer">
