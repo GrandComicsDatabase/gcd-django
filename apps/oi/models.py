@@ -2158,7 +2158,7 @@ class Revision(models.Model):
         pass
 
     def has_keywords(self):
-        return self.keywords
+        return self.keywords != ''
 
 
 class OngoingReservation(models.Model):
@@ -4269,6 +4269,9 @@ class PreviewIssue(Issue):
     def to_issue_reprints(self):
         return self.revision.to_issue_reprints_oi(preview=True)
 
+    def has_keywords(self):
+        return self.revision.has_keywords()
+
 
 def get_story_field_list():
     return ['sequence_number', 'title', 'title_inferred', 'first_line',
@@ -4703,6 +4706,10 @@ class StoryRevision(Revision):
         else:
             return from_reprints
 
+    @property
+    def from_reprints(self):
+        return self.from_reprints_oi(preview=True)
+
     def from_issue_reprints_oi(self, preview=False):
         if self.story is None:
             return self.target_reprint_revisions\
@@ -4732,6 +4739,10 @@ class StoryRevision(Revision):
             return new_revisions | old_revisions
         else:
             return from_issue_reprints
+
+    @property
+    def from_issue_reprints(self):
+        return self.from_issue_reprints_oi(preview=True)
 
     def to_reprints_oi(self, preview=False):
         if self.story is None:
