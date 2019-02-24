@@ -210,10 +210,23 @@ div.stats_header {
     font-weight: normal;
 }
 
+.pagination ul {
+    list-style-type: none;
+    margin: 0;
+    overflow: hidden;
+}
+
+.pagination li {
+    line-height: 1.8em;
+    float: left;
+}
+
+
 .btn {
     border: 1px solid black;
-    padding: 5px;
+    display: block;
     margin-left: -1px;
+    padding: 0 0.4em;
 }
 
 a.btn:link {
