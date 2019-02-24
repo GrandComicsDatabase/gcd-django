@@ -21,11 +21,13 @@
 </h1>
 
 <div class="item_id">
-  <div class="left">
+  <div class="flex_left">
   Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}{% trans " covers posted" %}
   </div>
   {% if page %}
+  <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
+  </div>
   {% endif %}
 </div>
 

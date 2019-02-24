@@ -35,12 +35,12 @@
      class="item_id" style="min-height: 2em">
 
 {% ifnotequal paginate_only 1 %}
-  <div class="item_data left">
+  <div class="item_data flex_left">
   {{ series.publisher|absolute_url }},
   {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} Series
   </div>
   {% if language %}
-  <div class="language_country right">
+  <div class="language_country flex_right">
     Published in {{ language }}
   {% endif %}
   {% if country %}
@@ -88,7 +88,9 @@
 &nbsp;
 {% endif %}
 {% if page %}
+  <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
+  </div>
 {% endif %}
 </div>
 
