@@ -2,54 +2,56 @@
 
 <div class="right pagination">
 {% if alpha_paginator.count > 1 %}
+  {% spaceless %}
     {% for a_page in alpha_paginator.page_range %}
       {% if a_page %}
         {% if a_page == alpha_page %}
-    <span>{{ a_page }}</span>
+    <span class="btn btn-default btn-sm btn-selected">{{ a_page }}</span>
         {% else %}
-    <a href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
+    <a class="btn btn-default btn-sm" href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
         {% endif %}
       {% else %}
     <a>...</a>
       {% endif %}
     {% endfor %}
+  {% endspaceless %}
 {% endif %}
 {% if page.has_other_pages %}
+  {% spaceless %}
   {% if page.has_previous %}
     {% if extra_string %}
-  <a href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+  <a class="btn btn-default btn-sm btn-arrow-right" href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&#128896;</a>
     {% else %}
-  <a href="?page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
+  <a class="btn btn-default btn-sm btn-arrow-right" href="?page={{ page.previous_page_number }}">&#128896;</a>
     {% endif %}
   {% else %}
-    &lt; {% trans "Previous" %}
+    <span class="btn btn-default btn-sm" style="text-decoration: none">&#128896;</span>
   {% endif %} <!-- has_previous -->
-    |
   {% for number in page.page_range %}
     {% ifequal number page.number %}
-  <span style="text-decoration: none">{{ number }}</span>
+  <span class="btn btn-default btn-sm btn-selected" style="text-decoration: none">{{ number }}</span>
     {% else %}
       {% if not number %}
   ...  {# literally dots #}
       {% else %}{# pagelink num #}
         {% if extra_string %}
-  <a href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
+  <a class="btn btn-default btn-sm" href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
         {% else %}
-  <a href="?page={{ number }}">{{ number }}</a>
+  <a class="btn btn-default btn-sm" href="?page={{ number }}">{{ number }}</a>
         {% endif %}
       {% endif %}
     {% endifequal %}
-  |
   {% endfor %}
   {% if page.has_next %}
     {% if extra_string %}
-  <a href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+  <a class="btn btn-default btn-sm" href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">&#128898;</a>
     {% else %}
-  <a href="?page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
+  <a class="btn btn-default btn-sm" href="?page={{ page.next_page_number }}">&#128898;</a>
     {% endif %}
   {% else %}
-    {% trans "Next" %} &gt;
+  <span class="btn btn-default btn-sm" style="text-decoration: none">&#128898;</span>
   {% endif %} <!-- has_next -->
+  {% endspaceless %}
 {% else %}
   &lt; {% trans "Previous" %} | {{ page.number }} | {% trans "Next" %} &gt;
 {% endif %}

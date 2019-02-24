@@ -210,6 +210,26 @@ div.stats_header {
     font-weight: normal;
 }
 
+.btn {
+    border: 1px solid black;
+    padding: 5px;
+    margin-left: -1px;
+}
+
+a.btn:link {
+    text-decoration: none;
+}
+
+.btn-selected {
+    background-color: DarkGray;
+}
+
+a.btn:hover {
+    background-color: DarkGray;
+    color: DarkSlateGray;
+    text-decoration: none;
+}
+
 div.item_id {
     background-color: #EEE;
     color: black;
