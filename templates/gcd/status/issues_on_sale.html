@@ -22,12 +22,14 @@
 </h1>
 
 <div class="item_id">
-  <div class="left" class="item_data">
+  <div class="flex_left" class="item_data">
   Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} issue{{ page.paginator.count|pluralize }} on-sale the week {{ dates }}.
   </div>
+  <div class="flex_right">
   {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
   {% endwith %}
+  </div>
 </div>
 <div id="search_reminder">
 You can filter the list using the <a href="{% url "advanced_search" %}?{{ query_string }}">advanced search</a>.

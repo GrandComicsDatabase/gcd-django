@@ -1,27 +1,29 @@
 {% load i18n %}
 
 <div>
-<h1 class="item_id search_id">
-<div class="left">
+  <h1 class="item_id search_id">
+    <div class="left">
   {{ heading }}: {{ search_item }}
-</div>
-<div class="search_id_nav right">
-<a name="{{ position }}"></a>
-<a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
-<img src="{{ STATIC_URL }}/img/gcd/icons/{{ ICON_SET }}/19x19/actions/go-{{ link_direction }}.png">
-</a>
-</div>
-</h1>
+    </div>
+    <div class="search_id_nav right">
+      <a name="{{ position }}"></a>
+      <a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
+        <img src="{{ STATIC_URL }}/img/gcd/icons/{{ ICON_SET }}/19x19/actions/go-{{ link_direction }}.png">
+      </a>
+    </div>
+  </h1>
 
-<div class="item_id">
-  <div class="left" class="item_data">
+  <div class="item_id">
+    <div class="flex_left" class="item_data">
   Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}
   matching your {% if used_search_terms %}<a href="#search_terms">query</a>{% else %}query{% endif %}{% if search_term %} for '{{ search_term }}'{% endif %}.
-  </div>
+    </div>
+    <div class="flex_right">
   {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
   {% endwith %}
-</div>
+    </div>
+  </div>
 </div>
 {% if position == 'top' and not select_key and not confirm_selection %}
 <div id="search_reminder">
