@@ -6,6 +6,7 @@ import calendar
 import os
 import glob
 from stdnum import isbn
+from datetime import datetime, timedelta
 
 from django import forms
 from django.conf import settings
@@ -680,7 +681,8 @@ class Changeset(models.Model):
         the examiner's approval queue.
         """
         if self.state != states.PENDING:
-            raise ErrorWithMessage("Only PENDING changes can be reviewed.")
+            if self.state == states.REVIEWING and not self.review_is_overdue:
+                raise ErrorWithMessage("Only PENDING changes can be reviewed.")
 
         # TODO: check that the approver has approval priviliges.
         if not isinstance(approver, User):
@@ -806,6 +808,12 @@ class Changeset(models.Model):
                              new_state=states.OPEN)
         self.state = states.OPEN
         self.save()
+
+    def review_is_overdue(self):
+        if datetime.today() - timedelta(weeks=1) > self.modified:
+            return True
+        else:
+            return False
 
     def calculate_imps(self):
         """

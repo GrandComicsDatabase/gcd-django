@@ -6,7 +6,11 @@
   <input type="hidden" name="comments" class="comments" />
 </form>
   {% else %}
+    {% if changeset.state == states.REVIEWING and perms.indexer.can_approve and changeset.review_is_overdue %}
+  Review is overdue
+    {% else %}
   No actions available
+    {% endif %}
   {% endif %}
 {% else %}
   {% if perms.indexer.can_approve and changeset.indexer != user or changeset.indexer == user and changeset.editable and section.object_type != 'cover' %}
