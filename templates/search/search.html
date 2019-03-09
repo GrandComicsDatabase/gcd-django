@@ -52,13 +52,11 @@
         {% if request.GET.q %}
           Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} results matching your search for '{{ request.GET.q }}'.
         {% endif %}
-        <div class="flex_right">
         {% with extra_string=query|add:facet_page|add:sort %}
           {% with advanced_search=1 %}
             {% include "gcd/bits/pagination_bar.html" %}
           {% endwith %}
         {% endwith %}
-        </div>
       </div>
       <div style="clear: both;"></div>
       {% if facets.fields.facet_model_name %}

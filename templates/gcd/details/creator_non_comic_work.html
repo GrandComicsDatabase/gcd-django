@@ -35,10 +35,6 @@
         <dt> Work Role:
         <dd> {{ creator_non_comic_work.work_role }}
         {% endif %}
-        {% if creator_non_comic_work.work_title %}
-        <dt> Work Notes:
-        <dd> {{ creator_non_comic_work.work_notes }}
-        {% endif %}
         {% if creator_non_comic_work.display_years %}
         <dt> Work Years:
         <dd> {{ creator_non_comic_work.display_years }}
@@ -48,7 +44,7 @@
         <dd> {{ creator_non_comic_work.work_urls|urlize|linebreaksbr }}
         {% endif %}
         {% if creator_non_comic_work.notes %}
-        <dt>Notes
+        <dt>Notes:
         <dd>{{ creator_non_comic_work.notes }}
         {% endif %}
       </dl>

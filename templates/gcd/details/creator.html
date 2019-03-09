@@ -111,11 +111,6 @@
         {% if school.notes %}
               <p><strong>Notes: </strong>{{ school.notes }}</p>
         {% endif %}
-              <dl>
-        {% with school.data_source.all as data_sources %}
-          {% include "gcd/bits/show_sources.html" %}
-        {% endwith %}
-              </dl>
             </li>
       {% endfor %}
           </ol>
@@ -135,11 +130,6 @@
       {% if degree.notes %}
             <p><strong>Notes: </strong>{{ degree.notes }}</p>
       {% endif %}
-            <dl>
-      {% with degree.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-      {% endwith %}
-            </dl>
           </li>
     {% endfor %}
           </ol>
@@ -165,11 +155,6 @@
       {% if award.notes %}
             <p><strong>Notes: </strong>{{ award.notes }}</p>
       {% endif %}
-            <dl>
-      {% with award.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-      {% endwith %}
-            </dl>
           </li>
     {% endfor %}
           </ol>
@@ -187,11 +172,6 @@
       {% if influence.notes %}
               <p><strong>Notes: </strong>{{ influence.notes }}</p>
       {% endif %}
-              <dl>
-      {% with influence.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-      {% endwith %}
-              </dl>
             </li>
     {% endfor %}
           </ol>
@@ -214,11 +194,6 @@
       {% if membership.notes %}
               <p><strong>Notes: </strong>{{ membership.notes }}</p>
       {% endif %}
-              <dl>
-      {% with membership.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-      {% endwith %}
-              </dl>
             </li>
     {% endfor %}
           </ol>
@@ -250,11 +225,6 @@
       {% if ncw.notes %}
               <p><strong>Notes: </strong>{{ ncw.notes }}</p>
       {% endif %}
-              <dl>
-      {% with membership.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-      {% endwith %}
-              </dl>
             </li>
     {% endfor %}
           </ol>
@@ -270,9 +240,6 @@
       {% if relation.3 %}
             <p><strong>Notes: </strong>{{ relation.3 }}</p>
       {% endif %}
-      {% with relation.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-      {% endwith %}
             </li>
     {% endfor %}
           </ol>

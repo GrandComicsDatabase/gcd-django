@@ -18,11 +18,9 @@
   Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}
   matching your {% if used_search_terms %}<a href="#search_terms">query</a>{% else %}query{% endif %}{% if search_term %} for '{{ search_term }}'{% endif %}.
     </div>
-    <div class="flex_right">
   {% with query_string as extra_string %}
   {% include "gcd/bits/pagination_bar.html" %}
   {% endwith %}
-    </div>
   </div>
 </div>
 {% if position == 'top' and not select_key and not confirm_selection %}
