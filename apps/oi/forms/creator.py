@@ -4,7 +4,7 @@ from collections import OrderedDict
 from django import forms
 
 from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
-                           CreatorAwardRevision, CreatorArtInfluenceRevision, \
+                           CreatorArtInfluenceRevision, \
                            CreatorNonComicWorkRevision, CreatorRelationRevision, \
                            CreatorSchoolRevision, get_creator_field_list,\
                            DataSourceRevision, CreatorDegreeRevision, \

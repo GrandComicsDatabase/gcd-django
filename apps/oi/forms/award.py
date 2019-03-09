@@ -4,7 +4,7 @@ from collections import OrderedDict
 from django import forms
 
 from apps.oi.models import AwardRevision, ReceivedAwardRevision, \
-                           DataSourceRevision, _check_year, CreatorAwardRevision
+                           DataSourceRevision, _check_year
 
 from .support import (GENERIC_ERROR_MESSAGE, AWARD_HELP_LINKS,
                       CREATOR_AWARD_HELP_LINKS, _set_help_labels,

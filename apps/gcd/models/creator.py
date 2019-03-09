@@ -220,21 +220,23 @@ class Creator(GcdData):
         else:
             return False
 
-    def deletable(self):
-        # TODO check once more, e.g. influence_link
-        if self.award_revisions.filter(changeset__state__in=
-                                       states.ACTIVE).count():
-            return False
-        if self.non_comic_work_revisions.filter(changeset__state__in=
-                                                states.ACTIVE).count():
-            return False
-        if self.art_influence_revisions.filter(changeset__state__in=
-                                               states.ACTIVE).count():
-            return False
-        if self.membership_revisions.filter(changeset__state__in=
-                                            states.ACTIVE).count():
-            return False
-        return True
+    def has_dependents(self):
+        if self.art_influence_revisions.active_set().count():
+            return True
+        # TODO how to handle GenericRelation for ReceivedAward
+        #if self.award_revisions.filter.active_set().count():
+            #return True
+        if self.degree_revisions.active_set().count():
+            return True
+        if self.membership_revisions.active_set().count():
+            return True
+        if self.non_comic_work_revisions.active_set().count():
+            return True
+        if self.school_revisions.active_set().count():
+            return True
+        if self.active_relations():
+            return True
+        return False
 
     def pending_deletion(self):
         return self.revisions.filter(changeset__state__in=states.ACTIVE,
@@ -357,8 +359,8 @@ class CreatorSchool(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
-    def deletable(self):
-        return self.creator.pending_deletion() is False
+    def has_dependents(self):
+        return self.creator.pending_deletion()
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -405,8 +407,8 @@ class CreatorDegree(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
-    def deletable(self):
-        return self.creator.pending_deletion() is False
+    def has_dependents(self):
+        return self.creator.pending_deletion()
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -442,8 +444,8 @@ class CreatorArtInfluence(GcdData):
         else:
             return self.influence_name
 
-    def deletable(self):
-        return self.creator.pending_deletion() is False
+    def has_dependents(self):
+        return self.creator.pending_deletion()
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -497,55 +499,55 @@ class CreatorMembership(GcdData):
                 'show_creator_membership',
                 kwargs={'creator_membership_id': self.id})
 
-    def deletable(self):
-        return self.creator.pending_deletion() is False
+    def has_dependents(self):
+        return self.creator.pending_deletion()
 
     def __unicode__(self):
         return '%s' % unicode(self.organization_name)
 
 
-class CreatorAward(GcdData):
-    """
-    record any awards and honors a creator received
-    """
+#class CreatorAward(GcdData):
+    #"""
+    #record any awards and honors a creator received
+    #"""
 
-    class Meta:
-        db_table = 'gcd_creator_award'
-        app_label = 'gcd'
-        ordering = ('award_year',)
-        verbose_name_plural = 'Creator Awards'
+    #class Meta:
+        #db_table = 'gcd_creator_award'
+        #app_label = 'gcd'
+        #ordering = ('award_year',)
+        #verbose_name_plural = 'Creator Awards'
 
-    creator = models.ForeignKey(Creator, related_name='award_set')
-    award = models.ForeignKey(Award, null=True)
-    award_name = models.CharField(max_length=255)
-    no_award_name = models.BooleanField(default=False)
-    award_year = models.PositiveSmallIntegerField(null=True)
-    award_year_uncertain = models.BooleanField(default=False)
-    notes = models.TextField()
-    data_source = models.ManyToManyField(DataSource)
+    #creator = models.ForeignKey(Creator, related_name='award_set')
+    #award = models.ForeignKey(Award, null=True)
+    #award_name = models.CharField(max_length=255)
+    #no_award_name = models.BooleanField(default=False)
+    #award_year = models.PositiveSmallIntegerField(null=True)
+    #award_year_uncertain = models.BooleanField(default=False)
+    #notes = models.TextField()
+    #data_source = models.ManyToManyField(DataSource)
 
-    def deletable(self):
-        return self.creator.pending_deletion() is False
+    #def has_dependents(self):
+        #return self.creator.pending_deletion()
 
-    def display_name(self):
-        if not self.no_award_name:
-            return self.award_name
-        else:
-            return '[no name]'
+    #def display_name(self):
+        #if not self.no_award_name:
+            #return self.award_name
+        #else:
+            #return '[no name]'
 
-    def display_year(self):
-        if not self.award_year:
-            return '?'
-        else:
-            return '%d%s' % (self.award_year, '?' if self.award_year_uncertain else '')
+    #def display_year(self):
+        #if not self.award_year:
+            #return '?'
+        #else:
+            #return '%d%s' % (self.award_year, '?' if self.award_year_uncertain else '')
 
-    def get_absolute_url(self):
-        return urlresolvers.reverse(
-                'show_creator_award',
-                kwargs={'creator_award_id': self.id})
+    #def get_absolute_url(self):
+        #return urlresolvers.reverse(
+                #'show_creator_award',
+                #kwargs={'creator_award_id': self.id})
 
-    def __unicode__(self):
-        return unicode(self.award_name)
+    #def __unicode__(self):
+        #return unicode(self.award_name)
 
 
 class NonComicWorkType(models.Model):
@@ -601,8 +603,8 @@ class CreatorNonComicWork(GcdData):
     data_source = models.ManyToManyField(DataSource)
     notes = models.TextField()
 
-    def deletable(self):
-        return self.creator.pending_deletion() is False
+    def has_dependents(self):
+        return self.creator.pending_deletion()
 
     def display_years(self):
         years = self.noncomicworkyears.all().order_by('work_year')

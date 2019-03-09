@@ -711,7 +711,8 @@ def change_history(request, model_name, id):
                           'indicia_publisher', 'series', 'issue', 'cover',
                           'image', 'series_bond', 'award', 'creator_degree',
                           'creator', 'creator_membership', 'received_award',
-                          'creator_art_influence', 'creator_non_comic_work']:
+                          'creator_art_influence', 'creator_non_comic_work',
+                          'creator_relation']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id).deleted):
             return render(

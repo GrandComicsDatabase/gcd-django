@@ -41,11 +41,12 @@
 </form>
 <form method="GET" action="{% url "delete_revision" model_name=object_class id=object.id %}">
   <input type="submit" value="Delete"
-         {% if not object.deletable %}disabled{% endif %}>
-    {% if not object.deletable %}
+    {% if not object.deletable %}disabled>
   <span class="cant_delete">
     <a href="http://docs.comics.org/wiki/Cannot_Edit_or_Delete">(?)</a>
   </span>
+    {% else %}
+    >
     {% endif %}
 </form>
   {% else %}

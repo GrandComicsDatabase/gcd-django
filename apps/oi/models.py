@@ -36,7 +36,7 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse,
     Series, SeriesBond, Cover, Image, Issue, Story, Reprint, ReprintToIssue,
     ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
-    StoryType, ImageType, Creator, CreatorArtInfluence, CreatorAward,
+    StoryType, ImageType, Creator, CreatorArtInfluence,
     CreatorDegree, CreatorMembership, CreatorNameDetail, CreatorNonComicWork,
     CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear,
     BiblioEntry, ReceivedAward, STORY_TYPES)
@@ -5981,18 +5981,6 @@ class CreatorRevision(Revision):
                 creator_non_comic_work_revision.deleted = True
                 creator_non_comic_work_revision.save()
 
-            for creator_relation in self.creator.active_relations():
-                relation_lock = _get_revision_lock(creator_relation,
-                                                   changeset=self.changeset)
-                if relation_lock is None:
-                    raise IntegrityError("needed CreatorRelation lock not "
-                                         "possible")
-                creator_relation_revision = \
-                  CreatorRelationRevision.clone(creator_relation,
-                                                self.changeset)
-                creator_relation_revision.deleted = True
-                creator_relation_revision.save()
-
             for creator_school in self.creator.active_schools():
                 school_lock = _get_revision_lock(creator_school,
                                                  changeset=self.changeset)
@@ -6645,110 +6633,110 @@ class PreviewCreatorMembership(CreatorMembership):
           content_type=ContentType.objects.get_for_model(self.revision))
 
 
-class CreatorAwardRevisionManager(RevisionManager):
-    def clone_revision(self, creator_award, changeset):
-        return CreatorAwardRevision.clone(creator_award, changeset)
+#class CreatorAwardRevisionManager(RevisionManager):
+    #def clone_revision(self, creator_award, changeset):
+        #return CreatorAwardRevision.clone(creator_award, changeset)
 
 
-class CreatorAwardRevision(Revision):
-    """
-    record the awards of creator
-    """
+#class CreatorAwardRevision(Revision):
+    #"""
+    #record the awards of creator
+    #"""
 
-    class Meta:
-        db_table = 'oi_creator_award_revision'
-        ordering = ['created', '-id']
-        verbose_name_plural = 'Creator Award Revisions'
+    #class Meta:
+        #db_table = 'oi_creator_award_revision'
+        #ordering = ['created', '-id']
+        #verbose_name_plural = 'Creator Award Revisions'
 
-    objects = CreatorAwardRevisionManager()
-    creator_award = models.ForeignKey('gcd.CreatorAward',
-                                      null=True,
-                                      related_name='revisions')
-    creator = models.ForeignKey('gcd.Creator',
-                                related_name='award_revisions')
-    award = models.ForeignKey(Award, null=True, blank=True)
-    award_name = models.CharField(max_length=255, blank=True)
-    no_award_name = models.BooleanField(default=False)
-    award_year = models.PositiveSmallIntegerField(null=True, blank=True)
-    award_year_uncertain = models.BooleanField(default=False)
-    notes = models.TextField(blank=True)
+    #objects = CreatorAwardRevisionManager()
+    #creator_award = models.ForeignKey('gcd.CreatorAward',
+                                      #null=True,
+                                      #related_name='revisions')
+    #creator = models.ForeignKey('gcd.Creator',
+                                #related_name='award_revisions')
+    #award = models.ForeignKey(Award, null=True, blank=True)
+    #award_name = models.CharField(max_length=255, blank=True)
+    #no_award_name = models.BooleanField(default=False)
+    #award_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    #award_year_uncertain = models.BooleanField(default=False)
+    #notes = models.TextField(blank=True)
 
-    source_name = 'creator_award'
-    source_class = CreatorAward
+    #source_name = 'creator_award'
+    #source_class = CreatorAward
 
-    @property
-    def source(self):
-        return self.creator_award
+    #@property
+    #def source(self):
+        #return self.creator_award
 
-    @source.setter
-    def source(self, value):
-        self.creator_award = value
+    #@source.setter
+    #def source(self, value):
+        #self.creator_award = value
 
-    def _do_complete_added_revision(self, creator):
-        self.creator = creator
+    #def _do_complete_added_revision(self, creator):
+        #self.creator = creator
 
-    def _create_dependent_revisions(self, delete=False):
-        data_sources = self.creator_award.data_source.all()
-        reserve_data_sources(data_sources, self.changeset, self, delete)
+    #def _create_dependent_revisions(self, delete=False):
+        #data_sources = self.creator_award.data_source.all()
+        #reserve_data_sources(data_sources, self.changeset, self, delete)
 
-    def get_absolute_url(self):
-        if self.creator_award is None:
-            return "/creator_award/revision/%i/preview" % self.id
-        return self.creator_award.get_absolute_url()
+    #def get_absolute_url(self):
+        #if self.creator_award is None:
+            #return "/creator_award/revision/%i/preview" % self.id
+        #return self.creator_award.get_absolute_url()
 
-    def __unicode__(self):
-        if self.award:
-            name = u'%s - %s' % (self.award.name, self.award_name)
-        else:
-            name = u'%s' % (self.award_name)
-        if self.award_year:
-            return u'%s: %s (%d)' % (self.creator, name, self.award_year)
-        else:
-            return u'%s: %s' % (self.creator, name)
+    #def __unicode__(self):
+        #if self.award:
+            #name = u'%s - %s' % (self.award.name, self.award_name)
+        #else:
+            #name = u'%s' % (self.award_name)
+        #if self.award_year:
+            #return u'%s: %s (%d)' % (self.creator, name, self.award_year)
+        #else:
+            #return u'%s: %s' % (self.creator, name)
 
 
-    # #####################################################################
-    # Old methods. t.b.c, if deprecated.
+    ## #####################################################################
+    ## Old methods. t.b.c, if deprecated.
 
-    _base_field_list = ['award',
-                        'award_name',
-                        'no_award_name',
-                        'award_year',
-                        'award_year_uncertain',
-                        'notes',
-                        ]
+    #_base_field_list = ['award',
+                        #'award_name',
+                        #'no_award_name',
+                        #'award_year',
+                        #'award_year_uncertain',
+                        #'notes',
+                        #]
 
-    def _field_list(self):
-        return self._base_field_list
+    #def _field_list(self):
+        #return self._base_field_list
 
-    def _get_blank_values(self):
-        return {
-            'award': '',
-            'award_name': '',
-            'no_award_name': False,
-            'award_year': None,
-            'award_year_uncertain': False,
-            'notes': '',
-        }
+    #def _get_blank_values(self):
+        #return {
+            #'award': '',
+            #'award_name': '',
+            #'no_award_name': False,
+            #'award_year': None,
+            #'award_year_uncertain': False,
+            #'notes': '',
+        #}
 
-    def _start_imp_sum(self):
-        self._seen_year = False
-        self._seen_award_name = False
+    #def _start_imp_sum(self):
+        #self._seen_year = False
+        #self._seen_award_name = False
 
-    def _imps_for(self, field_name):
-        if field_name in ('award_year',
-                          'award_year_uncertain'):
-            if not self._seen_year:
-                self._seen_year = True
-                return 1
-        elif field_name in ('award_name',
-                            'no_award_name'):
-            if not self._seen_award_name:
-                self._seen_award_name = True
-                return 1
-        elif field_name in self._base_field_list:
-            return 1
-        return 0
+    #def _imps_for(self, field_name):
+        #if field_name in ('award_year',
+                          #'award_year_uncertain'):
+            #if not self._seen_year:
+                #self._seen_year = True
+                #return 1
+        #elif field_name in ('award_name',
+                            #'no_award_name'):
+            #if not self._seen_award_name:
+                #self._seen_award_name = True
+                #return 1
+        #elif field_name in self._base_field_list:
+            #return 1
+        #return 0
 
 
 class CreatorArtInfluenceRevisionManager(RevisionManager):
