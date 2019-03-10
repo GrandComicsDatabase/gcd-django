@@ -4369,6 +4369,11 @@ def show_queue(request, queue_name, state):
                   'changesets': awards.order_by('modified', 'id')
               },
               {
+                  'object_name': 'Received Awards',
+                  'object_type': 'received_award',
+                  'changesets': received_awards.order_by('modified', 'id')
+              },
+              {
                   'object_name': 'Creators',
                   'object_type': 'creator',
                   'changesets': creators.order_by('modified', 'id') \
@@ -4381,13 +4386,6 @@ def show_queue(request, queue_name, state):
                   'changesets': creator_memberships.order_by('modified', 'id') \
                       .annotate(country=Max(
                       'creatormembershiprevisions__creator__birth_country__id'))
-              },
-              {
-                  'object_name': 'Received Awards',
-                  'object_type': 'received_award',
-                  'changesets': received_awards.order_by('modified', 'id') \
-                      .annotate(country=Max(
-                      'creatorawardrevisions__creator__birth_country__id'))
               },
               {
                   'object_name': 'Art Influences',
