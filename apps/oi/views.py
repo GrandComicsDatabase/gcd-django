@@ -524,6 +524,8 @@ def _display_edit_form(request, changeset, form, revision=None):
         death_date_form.fields['date'].label = 'Death date'
 
         name_types = NameType.objects.all()
+        add_name_types = list(NameType.objects.values())
+        add_name_types.insert(0, {'type': u'--------', u'id': ''})
         sources = SourceType.objects.all()
         other_name_details = []
         for creator_name_revision in changeset.creatornamedetailrevisions\
@@ -564,6 +566,7 @@ def _display_edit_form(request, changeset, form, revision=None):
               'settings': settings,
               'CTYPES': CTYPES,
               'name_types': name_types,
+              'add_name_types': add_name_types,
               'sources': sources,
               'official_name_details': official_name_details,
               'other_name_details': other_name_details,
@@ -5233,6 +5236,9 @@ def add_creator(request):
     birth_date_form.fields['date'].label = 'Birth date'
     death_date_form.fields['date'].label = 'Death date'
 
+    add_name_types = list(NameType.objects.values())
+    add_name_types.insert(0, {'type': u'---------', u'id': ''})
+
     context = {'form': creator_form,
                'birth_date_form': birth_date_form,
                'death_date_form': death_date_form,
@@ -5241,6 +5247,7 @@ def add_creator(request):
                'include_before_form': 'oi/bits/creator_before_form.html',
                'action_label': 'Submit new',
                'name_types': NameType.objects.all(),
+               'add_name_types': add_name_types,
                'sources': SourceType.objects.all(),
                'official_name_details': official_name_details,
                'other_name_details': other_name_details,

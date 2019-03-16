@@ -10,7 +10,7 @@
   <li>
   <form action="{% url "basic_search" %}" method="get">
     {% include "gcd/bits/search_for.html" %}
-    <input type="text" name="query" size="15" value="{{ search_term|default:"" }}">
+    <input type="search" name="query" size="15" value="{{ search_term|default:"" }}" placeholder="Search..">
     <input type="submit" name="submit" value="Search">
     Sort by
     {% include "gcd/bits/search_order.html" %}

@@ -1,7 +1,7 @@
 <script type="text/javascript">
     $(document).ready(function () {
         var name_type_dropdown = '';
-        {% for name_type in name_types %}
+        {% for name_type in add_name_types %}
             {% if not name_type.type == settings.GCD_OFFICIAL_NAME_FIELDNAME %}
                 name_type_dropdown = name_type_dropdown + '<option value="{{ name_type.id }}">{{ name_type.type }}</option>';
             {% endif %}
@@ -23,7 +23,7 @@
                     ' <label>Sort Name:</label>' +
                     '<input type="text" id="sort_name_' + next_index + '" name="sort_name_' + next_index + '" style="margin-left: -9px;width: 138px;"> &nbsp; ' +
                     '<label>Type:</label>' +
-                    '<select name="name_type_' + next_index + '" id="name_type_' + next_index + '" style="margin-left: -9px;">'
+                    '<select name="name_type_' + next_index + '" id="name_type_' + next_index + '" style="margin-left: -9px;" required="">'
                     + name_type_dropdown +
                     '</select> &nbsp;' +
 {% comment %}
