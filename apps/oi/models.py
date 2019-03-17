@@ -681,7 +681,7 @@ class Changeset(models.Model):
         the examiner's approval queue.
         """
         if self.state != states.PENDING:
-            if self.state == states.REVIEWING and not self.review_is_overdue:
+            if self.state != states.REVIEWING or self.review_is_overdue:
                 raise ErrorWithMessage("Only PENDING changes can be reviewed.")
 
         # TODO: check that the approver has approval priviliges.

@@ -153,7 +153,8 @@ class Story(GcdData):
             kwargs={'issue_id': self.issue_id } ) + "#%d" % self.id
 
     def __unicode__(self):
-        return u'%s (%s: %s)' % (self.feature, self.type, self.page_count)
+        from apps.gcd.templatetags.display import show_story_short
+        return show_story_short(self, no_number=True, markup=False)
 
 
 class BiblioEntry(Story):
