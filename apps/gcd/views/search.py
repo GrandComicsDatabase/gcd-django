@@ -1848,6 +1848,8 @@ def compute_order(data):
                 terms.append(order)
         else:
             raise ValueError
+        if target == 'issue':
+            terms.append('sort_code')
 
     return terms
 
