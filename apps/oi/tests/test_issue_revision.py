@@ -62,6 +62,7 @@ def test_classification():
     }
 
     irregular_fields = {
+        'awards': gf('awards'),
         'valid_isbn': gf('valid_isbn'),
         'on_sale_date': gf('on_sale_date'),
         'sort_code': gf('sort_code'),
