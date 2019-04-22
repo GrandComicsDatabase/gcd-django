@@ -18,4 +18,10 @@ urlpatterns = [
 
     url(r'^select_objects/(?P<select_key>.+)/$',
       select_views.process_multiple_selects, name='process_multiple_selects'),
+
+    url(
+        r'^autocomplete/creator/$',
+        select_views.CreatorAutocomplete.as_view(),
+        name='creator_autocomplete',
+    ),
 ]

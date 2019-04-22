@@ -51,6 +51,7 @@ Adding {{ object_name }}
 {% endblock %}
 
 {% block footer %}
+  {{ form.media }}
   {% if object_name in 'Issues Story Creator' or 'Variant Issue' in object_name %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}

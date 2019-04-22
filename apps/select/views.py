@@ -4,20 +4,25 @@ from random import random
 from haystack.forms import FacetedSearchForm
 
 from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
 
-from apps.gcd.models import Publisher, Series, Issue, Story, StoryType
+from dal import autocomplete
+
+from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
+                            Creator, CreatorNameDetail
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
 from apps.indexer.views import render_error
 from apps.select.forms import get_select_cache_form, get_select_search_form
 
+
 ##############################################################################
-# Helper functions
+# helper functions
 ##############################################################################
 
 
@@ -27,8 +32,9 @@ def _cant_get_key(request):
       'Internal data for selecting objects is corrupted. If this message '
       'persists try logging out and logging in.', redirect=False)
 
+
 ##############################################################################
-# Cache and select objects
+# cache and select objects
 ##############################################################################
 
 
@@ -395,3 +401,30 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
         request.session['cached_covers'] = _process_caching(cached_covers,
                                                             cover_story_id)
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+##############################################################################
+# auto-complete objects
+##############################################################################
+
+
+class CreatorAutocomplete(LoginRequiredMixin,
+                          autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Creator.objects.filter(deleted=False)
+
+        if self.q:
+            qs = qs.filter(sort_name__istartswith=self.q)
+
+        return qs
+
+
+class CreatorNameAutocomplete(LoginRequiredMixin,
+                              autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = CreatorNameDetail.objects.filter(deleted=False)
+
+        if self.q:
+            qs = qs.filter(sort_name__istartswith=self.q)
+
+        return qs

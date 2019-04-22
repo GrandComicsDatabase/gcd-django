@@ -138,6 +138,7 @@ This change is being edited by {{ changeset.indexer.indexer }}.
 {% endblock %}
 
 {% block footer %}
+  {{ form.media }}
   {% if changeset.state == states.OPEN and changeset.indexer == user and object_name == 'Creator' %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}

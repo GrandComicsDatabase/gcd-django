@@ -3,6 +3,8 @@
 from collections import OrderedDict
 from django import forms
 
+from dal import autocomplete
+
 from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
                            CreatorArtInfluenceRevision, \
                            CreatorNonComicWorkRevision, CreatorRelationRevision, \
@@ -10,6 +12,8 @@ from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
                            DataSourceRevision, CreatorDegreeRevision, \
                            _get_creator_sourced_fields, _check_year, \
                            AwardRevision
+
+from apps.gcd.models import Creator
 
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
@@ -232,6 +236,11 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
         model = CreatorArtInfluenceRevision
         fields = model._base_field_list
         help_texts = CREATOR_ARTINFLUENCE_HELP_TEXTS
+
+    influence_link = forms.ModelChoiceField(
+        queryset=Creator.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='creator_autocomplete')
+    )
 
     def __init__(self, *args, **kwargs):
         super(CreatorArtInfluenceRevisionForm, self).__init__(*args, **kwargs)
