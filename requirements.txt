@@ -9,6 +9,7 @@ PyYAML<3.13
 # pytz==2016.6.1
 # not ours
 # argparse==1.2.1
+django-autocomplete-light<3.3
 diff-match-patch==20121119
 django-appconf==1.0.2
 django-bootstrap3<9.2
