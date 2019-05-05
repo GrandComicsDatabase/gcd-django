@@ -1183,6 +1183,7 @@ def do_on_sale_weekly(request, year=None, week=None):
     query_val['start_date'] = monday.isoformat()
     query_val['end_date'] = sunday.isoformat()
     query_val['use_on_sale_date'] = True
+    issues_on_sale = issues_on_sale.filter(deleted=False)
     vars = { 
         'items': issues_on_sale,
         'heading': heading,
