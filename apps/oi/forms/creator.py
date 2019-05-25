@@ -239,7 +239,8 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
 
     influence_link = forms.ModelChoiceField(
         queryset=Creator.objects.filter(deleted=False),
-        widget=autocomplete.ModelSelect2(url='creator_autocomplete')
+        widget=autocomplete.ModelSelect2(url='creator_autocomplete'),
+        required=False
     )
 
     def __init__(self, *args, **kwargs):
@@ -360,6 +361,16 @@ class CreatorRelationRevisionForm(forms.ModelForm):
         insert_data_source_fields('', ordering, self.fields, 'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
+
+    from_creator = forms.ModelChoiceField(
+        queryset=Creator.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='creator_autocomplete')
+    )
+
+    to_creator = forms.ModelChoiceField(
+        queryset=Creator.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='creator_autocomplete')
+    )
 
     comments = _get_comments_form_field()
 
