@@ -4973,7 +4973,7 @@ class FeatureRevision(Revision):
     name = models.CharField(max_length=255)
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language)
-    year_created = models.IntegerField(db_index=True)
+    year_created = models.IntegerField(db_index=True, blank=True, null=True)
     year_created_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
@@ -5009,7 +5009,7 @@ class FeatureRevision(Revision):
             'genre': '',
             'language': None,
             'year_created': None,
-            'year_created_uncertain': None,
+            'year_created_uncertain': False,
             'notes': '',
             'keywords': '',
         }
@@ -5049,11 +5049,11 @@ class FeatureLogoRevision(Revision):
                                      related_name='revisions')
 
     name = models.CharField(max_length=255)
-    year_began = models.IntegerField(db_index=True)
-    year_ended = models.IntegerField(null=True)
+    year_began = models.IntegerField(db_index=True, null=True, blank=True)
+    year_ended = models.IntegerField(null=True, blank=True)
     year_began_uncertain = models.BooleanField(default=False)
     year_ended_uncertain = models.BooleanField(default=False)
-    notes = models.TextField()
+    notes = models.TextField(blank=True)
 
     source_name = 'feature_logo'
     source_class = FeatureLogo
@@ -5092,8 +5092,8 @@ class FeatureLogoRevision(Revision):
             'name': '',
             'year_began': None,
             'year_ended': None,
-            'year_began_uncertain': None,
-            'year_ended_uncertain': None,
+            'year_began_uncertain': False,
+            'year_ended_uncertain': False,
             'notes': '',
         }
 
