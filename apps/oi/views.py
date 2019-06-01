@@ -30,7 +30,7 @@ from apps.gcd.models import (
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
     CreatorRelation, CreatorSchool, NameType, SourceType, STORY_TYPES,
-    BiblioEntry)
+    BiblioEntry, Feature, FeatureLogo)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
@@ -53,8 +53,8 @@ from apps.oi.models import (
     _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last,
     BiblioEntryRevision, DataSourceRevision, AwardRevision, CreatorRevision,
     CreatorNameDetailRevision, CreatorMembershipRevision, ReceivedAwardRevision,
-    CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
-    CreatorSchoolRevision, CreatorDegreeRevision,
+    CreatorArtInfluenceRevision, CreatorNonComicWorkRevision, FeatureRevision,
+    CreatorSchoolRevision, CreatorDegreeRevision, FeatureLogoRevision,
     CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
     PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
@@ -72,6 +72,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_revision_form,
                            get_series_revision_form,
                            get_story_revision_form,
+                           get_feature_logo_revision_form,
                            get_date_revision_form,
                            OngoingReservationForm,
                            CreatorArtInfluenceRevisionForm,
@@ -101,6 +102,8 @@ REVISION_CLASSES = {
     'issue': IssueRevision,
     'story': StoryRevision,
     'biblio_entry': BiblioEntryRevision,
+    'feature': FeatureRevision,
+    'feature_logo': FeatureLogoRevision,
     'cover': CoverRevision,
     'reprint': ReprintRevision,
     'image': ImageRevision,
@@ -127,6 +130,8 @@ DISPLAY_CLASSES = {
     'issue': Issue,
     'story': Story,
     'biblio_entry': BiblioEntry,
+    'feature': Feature,
+    'feature_logo': FeatureLogo,
     'cover': Cover,
     'reprint': Reprint,
     'reprint_to_issue': ReprintToIssue,
@@ -2614,6 +2619,90 @@ def _display_bulk_issue_form(request, series, form, method=None):
 
 
 @permission_required('indexer.can_reserve')
+def add_generic(request, model_name):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse('add'))
+
+    form = get_revision_form(model_name=model_name,
+                             user=request.user)(request.POST or None)
+    if form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES[model_name])
+        changeset.save()
+        revision = form.save(commit=False)
+        revision.save_added_revision(changeset=changeset)
+        return submit(request, changeset.id)
+    else:
+        object_name = DISPLAY_CLASSES[model_name]
+        object_url = urlresolvers.reverse('add_%s' % model_name)
+
+        return oi_render(
+          request, 'oi/edit/add_frame.html',
+          {
+            'object_name': object_name,
+            'object_url': object_url,
+            'action_label': 'Submit new',
+            'form': form,
+          })
+
+
+def add_feature(request):
+    return add_generic(request, 'feature')
+
+
+@permission_required('indexer.can_reserve')
+def add_feature_logo(request, feature_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    feature = get_object_or_404(Feature, id=feature_id)
+
+    if feature.deleted or feature.pending_deletion():
+        return render_error(request, u'Cannot add a feature logo '
+          u'since "%s" is deleted or pending deletion.' % feature)
+
+    if request.method != 'POST':
+        form = get_feature_logo_revision_form(user=request.user)()
+        return _display_add_feature_logo_form(request, feature, form)
+
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'show_feature',
+          kwargs={ 'feature_id': feature_id }))
+
+    form = \
+      get_feature_logo_revision_form(user=request.user)(request.POST)
+    if not form.is_valid():
+        return _display_add_feature_logo_form(request, feature, form)
+
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['feature_logo'])
+    changeset.save()
+    revision = form.save(commit=False)
+    revision.save_added_revision(changeset=changeset,
+                                 feature=feature)
+    return submit(request, changeset.id)
+
+
+def _display_add_feature_logo_form(request, feature, form):
+    object_name = 'Feature Logo'
+    object_url = urlresolvers.reverse('add_feature_logo',
+                                          kwargs={ 'feature_id': feature.id })
+
+    return oi_render(
+      request, 'oi/edit/add_frame.html',
+      {
+        'object_name': object_name,
+        'object_url': object_url,
+        'action_label': 'Submit new',
+        'form': form,
+      })
+
+
+@permission_required('indexer.can_reserve')
 def add_story(request, issue_revision_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -4353,6 +4442,8 @@ def show_queue(request, queue_name, state):
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])\
                     .prefetch_related('coverrevisions__issue__series')
+    features = changes.filter(change_type=CTYPES['feature'])
+    feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
     images = changes.filter(change_type=CTYPES['image'])
     countries = dict(Country.objects.values_list('id', 'code'))
     country_names = dict(Country.objects.values_list('id', 'name'))
@@ -4365,67 +4456,67 @@ def show_queue(request, queue_name, state):
         'states': states,
         'countries': countries,
         'country_names': country_names,
-          'data': [
-              {
-                  'object_name': 'Awards',
-                  'object_type': 'award',
-                  'changesets': awards.order_by('modified', 'id')
-              },
-              {
-                  'object_name': 'Received Awards',
-                  'object_type': 'received_award',
-                  'changesets': received_awards.order_by('modified', 'id')
-              },
-              {
-                  'object_name': 'Creators',
-                  'object_type': 'creator',
-                  'changesets': creators.order_by('modified', 'id') \
-                      .annotate(
-                      country=Max('creatorrevisions__birth_country__id'))
-              },
-              {
-                  'object_name': 'Memberships',
-                  'object_type': 'creator_membership',
-                  'changesets': creator_memberships.order_by('modified', 'id') \
-                      .annotate(country=Max(
-                      'creatormembershiprevisions__creator__birth_country__id'))
-              },
-              {
-                  'object_name': 'Art Influences',
-                  'object_type': 'creator_art_influence',
-                  'changesets': creator_art_influences.order_by('modified',
-                                                               'id') \
-                      .annotate(country=Max(
-                      'creatorartinfluencerevisions__creator__birth_country__id'))
-              },
-              {
-                  'object_name': 'Non Comic Works',
-                  'object_type': 'creator_non_comic_work',
-                  'changesets': creator_non_comic_works.order_by('modified', 'id') \
-                      .annotate(country=Max(
-                      'creatornoncomicworkrevisions__creator__birth_country__id'))
-              },
-              {
-                  'object_name': 'Creator Relations',
-                  'object_type': 'creator_relation',
-                  'changesets': creator_relations.order_by('modified', 'id') \
-                      .annotate(country=Max(
-                      'creatorrelationrevisions__from_creator__birth_country__id'))
-              },
-              {
-                  'object_name': 'Creator Schools',
-                  'object_type': 'creator_school',
-                  'changesets': creator_schools.order_by('modified', 'id') \
-                      .annotate(country=Max(
-                      'creatorschoolrevisions__creator__birth_country__id'))
-              },
-              {
-                  'object_name': 'Creator Degrees',
-                  'object_type': 'creator_degree',
-                  'changesets': creator_degres.order_by('modified', 'id') \
-                      .annotate(country=Max(
-                      'creatordegreerevisions__creator__birth_country__id'))
-              },
+        'data': [
+          {
+            'object_name': 'Awards',
+            'object_type': 'award',
+            'changesets': awards.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Received Awards',
+            'object_type': 'received_award',
+            'changesets': received_awards.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Creators',
+            'object_type': 'creator',
+            'changesets': creators.order_by('modified', 'id') \
+                .annotate(
+                country=Max('creatorrevisions__birth_country__id'))
+          },
+          {
+            'object_name': 'Memberships',
+            'object_type': 'creator_membership',
+            'changesets': creator_memberships.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatormembershiprevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Art Influences',
+            'object_type': 'creator_art_influence',
+            'changesets': creator_art_influences.order_by('modified',
+                                                          'id') \
+                .annotate(country=Max(
+                'creatorartinfluencerevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Non Comic Works',
+            'object_type': 'creator_non_comic_work',
+            'changesets': creator_non_comic_works.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatornoncomicworkrevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Relations',
+            'object_type': 'creator_relation',
+            'changesets': creator_relations.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatorrelationrevisions__from_creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Schools',
+            'object_type': 'creator_school',
+            'changesets': creator_schools.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatorschoolrevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Degrees',
+            'object_type': 'creator_degree',
+            'changesets': creator_degres.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatordegreerevisions__creator__birth_country__id'))
+          },
           {
             'object_name': 'Publishers',
             'object_type': 'publisher',
@@ -4467,6 +4558,16 @@ def show_queue(request, queue_name, state):
             'object_type': 'series_bond',
             'changesets': series_bonds.order_by('modified', 'id')\
               .annotate(country=Max('seriesbondrevisions__origin__country__id')),
+          },
+          {
+            'object_name': 'Features',
+            'object_type': 'feature',
+            'changesets': features.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Feature Logos',
+            'object_type': 'feature_logo',
+            'changesets': feature_logos.order_by('modified', 'id')
           },
           {
             'object_name': 'Issue Skeletons',
@@ -4990,32 +5091,7 @@ def process_data_source(creator_form, field_name, changeset=None,
 
 @permission_required('indexer.can_reserve')
 def add_award(request):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-
-    if request.method == 'POST' and 'cancel' in request.POST:
-        return HttpResponseRedirect(urlresolvers.reverse('add'))
-
-    form = get_award_revision_form(user=request.user)(request.POST or None)
-    if form.is_valid():
-        changeset = Changeset(indexer=request.user, state=states.OPEN,
-                              change_type=CTYPES['award'])
-        changeset.save()
-        revision = form.save(commit=False)
-        revision.save_added_revision(changeset=changeset)
-        return submit(request, changeset.id)
-    else:
-        object_name = 'Award'
-        object_url = urlresolvers.reverse('add_award')
-
-        return oi_render(
-          request, 'oi/edit/add_frame.html',
-          {
-            'object_name': object_name,
-            'object_url': object_url,
-            'action_label': 'Submit new',
-            'form': form,
-          })
+    return add_generic(request, 'award')
 
 
 @permission_required('indexer.can_reserve')

@@ -22,6 +22,8 @@ from .issue import (    # noqa
     get_issue_revision_form, get_bulk_issue_revision_form)
 from .story import (get_story_revision_form, get_biblio_revision_form,
                     get_reprint_revision_form)
+from .feature import (get_feature_revision_form,
+                      get_feature_logo_revision_form)
 from .image import (get_cover_revision_form,
                     UploadScanForm,
                     UploadVariantScanForm,
@@ -84,6 +86,12 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'story':
         return get_story_revision_form(revision, **kwargs)
+
+    if model_name == 'feature':
+        return get_feature_revision_form(revision, **kwargs)
+
+    if model_name == 'feature_logo':
+        return get_feature_logo_revision_form(revision, **kwargs)
 
     if model_name == 'biblio_entry':
         return get_biblio_revision_form(revision, **kwargs)

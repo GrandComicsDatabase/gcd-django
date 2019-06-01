@@ -220,6 +220,12 @@ urlpatterns = [
     url(r'^issue/(?P<issue_id>\d+)/image/$',
       gcd_views.details.issue_images, name='issue_images'),
 
+    # Feature
+    url(r'^feature/(?P<feature_id>\d+)/$',
+      gcd_views.details.feature, name='show_feature'),
+    url(r'^feature_logo/(?P<feature_logo_id>\d+)/$',
+      gcd_views.details.feature_logo, name='show_feature_logo'),
+
     # Attribute searches
     url(r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
       gcd_views.search.character_by_name, name='character_by_name'),

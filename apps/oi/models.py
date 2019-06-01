@@ -33,10 +33,10 @@ from apps.stddata.models import Country, Language, Date
 from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
-    Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse,
-    Series, SeriesBond, Cover, Image, Issue, Story, Reprint, ReprintToIssue,
+    Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
+    SeriesBond, Cover, Image, Issue, Story, Feature, Reprint, ReprintToIssue,
     ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
-    StoryType, ImageType, Creator, CreatorArtInfluence,
+    StoryType, FeatureLogo, ImageType, Creator, CreatorArtInfluence,
     CreatorDegree, CreatorMembership, CreatorNameDetail, CreatorNonComicWork,
     CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear,
     BiblioEntry, ReceivedAward, STORY_TYPES)
@@ -82,6 +82,8 @@ CTYPES = {
     'creator_relation': 22,
     'creator_school': 23,
     'award': 24,
+    'feature': 25,
+    'feature_logo': 26,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -90,6 +92,8 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['brand_use'],
                            CTYPES['indicia_publisher'],
                            CTYPES['series'],
+                           CTYPES['feature'],
+                           CTYPES['feature_logo'],
                            CTYPES['cover'],
                            CTYPES['reprint'],
                            CTYPES['image'],
@@ -334,6 +338,12 @@ class Changeset(models.Model):
                                                              'series'),
                     self.coverrevisions.all(),
                     self.storyrevisions.all())
+
+        if self.change_type == CTYPES['feature']:
+            return (self.featurerevisions.all(),)
+
+        if self.change_type == CTYPES['feature_logo']:
+            return (self.featurelogorevisions.all(),)
 
         if self.change_type == CTYPES['series']:
             return (self.seriesrevisions.all(),
@@ -4943,6 +4953,165 @@ class BiblioEntryRevision(StoryRevision):
             self.deleted = True
 
         return super(StoryRevision, self).compare_changes()
+
+
+class FeatureRevisionManager(RevisionManager):
+    def clone_revision(self, feature, changeset):
+        return FeatureRevision.clone(feature, changeset)
+
+
+class FeatureRevision(Revision):
+    class Meta:
+        db_table = 'oi_feature'
+        ordering = ['-created', '-id']
+
+    objects = FeatureRevisionManager()
+
+    feature = models.ForeignKey(Feature, null=True,
+                                related_name='revisions')
+
+    name = models.CharField(max_length=255)
+    genre = models.CharField(max_length=255)
+    language = models.ForeignKey(Language)
+    year_created = models.IntegerField(db_index=True)
+    year_created_uncertain = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
+    keywords = models.TextField(blank=True, default='')
+
+    source_name = 'feature'
+    source_class = Feature
+
+    @property
+    def source(self):
+        return self.feature
+
+    @source.setter
+    def source(self, value):
+        self.feature = value
+
+    def get_absolute_url(self):
+        if self.feature is None:
+            return "/feature/revision/%i/preview" % self.id
+        return self.feature.get_absolute_url()
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    _base_field_list = ['name', 'genre', 'language', 'year_created',
+                        'year_created_uncertain', 'notes', 'keywords']
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'genre': '',
+            'language': None,
+            'year_created': None,
+            'year_created_uncertain': None,
+            'notes': '',
+            'keywords': '',
+        }
+
+    def _start_imp_sum(self):
+        self._seen_year_created = False
+
+    def _imps_for(self, field_name):
+        if field_name in ('year_created',
+                          'year_created_uncertain'):
+            if not self._seen_year_created:
+                self._seen_year_created = True
+                return 1
+        elif field_name in self._field_list():
+            return 1
+        return 0
+
+    def _queue_name(self):
+        return u'%s (%s)' % (self.name, self.year_created)
+
+
+class FeatureLogoRevisionManager(RevisionManager):
+    def clone_revision(self, feature_logo, changeset):
+        return FeatureLogoRevision.clone(feature_logo, changeset)
+
+
+class FeatureLogoRevision(Revision):
+    class Meta:
+        db_table = 'oi_feature_logo'
+        ordering = ['-created', '-id']
+
+    objects = FeatureLogoRevisionManager()
+
+    feature = models.ForeignKey(Feature, related_name='logo_revisions')
+
+    feature_logo = models.ForeignKey(FeatureLogo, null=True,
+                                     related_name='revisions')
+
+    name = models.CharField(max_length=255)
+    year_began = models.IntegerField(db_index=True)
+    year_ended = models.IntegerField(null=True)
+    year_began_uncertain = models.BooleanField(default=False)
+    year_ended_uncertain = models.BooleanField(default=False)
+    notes = models.TextField()
+
+    source_name = 'feature_logo'
+    source_class = FeatureLogo
+
+    @property
+    def source(self):
+        return self.feature_logo
+
+    @source.setter
+    def source(self, value):
+        self.feature_logo = value
+
+    def _do_complete_added_revision(self, feature):
+        self.feature = feature
+
+    def get_absolute_url(self):
+        if self.feature_logo is None:
+            return "/feature_logo/revision/%i/preview" % self.id
+        return self.feature_logo.get_absolute_url()
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    _base_field_list = ['name', 'year_began', 'year_began_uncertain',
+                        'year_ended', 'year_ended_uncertain', 'notes']
+
+    def _field_list(self):
+        fields = []
+        fields.extend(self._base_field_list)
+        fields.insert(0, 'feature')
+        return fields
+
+    def _get_blank_values(self):
+        return {
+            'feature': None,
+            'name': '',
+            'year_began': None,
+            'year_ended': None,
+            'year_began_uncertain': None,
+            'year_ended_uncertain': None,
+            'notes': '',
+        }
+
+    def _start_imp_sum(self):
+        self._seen_year_began = False
+        self._seen_year_ended = False
+
+    def _imps_for(self, field_name):
+        years_found, value = _imps_for_years(self, field_name,
+                                             'year_began', 'year_ended')
+        if years_found:
+            return value
+        elif field_name in self._base_field_list:
+            return 1
+        return 0
+
+    def _queue_name(self):
+        return u'%s (%s)' % (self.name, self.year_began)
 
 
 class ReprintRevisionManager(RevisionManager):

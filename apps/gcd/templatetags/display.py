@@ -17,10 +17,7 @@ from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorDegree, CreatorRelation, Award
 from apps.gcd.models import IndiciaPublisher, Brand, BrandGroup, \
                                       Publisher
-from apps.gcd.models import Series
-from apps.gcd.models import Issue
-from apps.gcd.models import Cover
-from apps.gcd.models import Image
+from apps.gcd.models import Series, Issue, Cover, Image, Feature, FeatureLogo
 from apps.gcd.models.seriesbond import SeriesBond, BOND_TRACKING, \
                                        SUBNUMBER_TRACKING, MERGE_TRACKING
 from apps.gcd.views.covers import get_image_tag
@@ -338,6 +335,10 @@ def changed_fields(changeset, object):
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
+    elif object_class is Feature:
+        revision = changeset.featurerevisions.get(feature=object.id)
+    elif object_class is FeatureLogo:
+        revision = changeset.featurelogorevisions.get(feature_logo=object.id)
     elif object_class is Award:
         revision = changeset.awardrevisions.get(award=object.id)
     elif object_class is ReceivedAward:

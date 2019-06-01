@@ -41,6 +41,29 @@ class ReprintRevisionForm(forms.ModelForm):
         fields = get_reprint_field_list()
 
 
+def _genre_choices(language=None, additional_genres=None):
+    fantasy_id = GENRES['en'].index(u'fantasy')
+    if language and language.code != 'en' and language.code in GENRES:
+        choices = [[g, g + ' / ' + h]
+                    for g, h in zip(GENRES['en'], GENRES[language.code])]
+        choices[fantasy_id] = [
+            u'fantasy',
+            (u'fantasy-supernatural / %s' %
+              GENRES[language.code][fantasy_id])
+        ]
+    else:
+        choices = [[g, g] for g in GENRES['en']]
+        choices[fantasy_id] = [u'fantasy', u'fantasy-supernatural']
+    if additional_genres:
+        additional_genres.reverse()
+        for genre in additional_genres:
+            choices.insert(0, [genre, genre + ' (deprecated)'])
+    return forms.MultipleChoiceField(
+        required=False,
+        widget=FilteredSelectMultiple('Genres', False),
+        choices=choices)
+
+
 def get_story_revision_form(revision=None, user=None,
                             series=None):
     extra = {}
@@ -100,27 +123,8 @@ def get_story_revision_form(revision=None, user=None,
 
     class RuntimeStoryRevisionForm(StoryRevisionForm):
         type = forms.ModelChoiceField(queryset=queryset, **extra)
-
-        fantasy_id = GENRES['en'].index(u'fantasy')
-        if language and language.code != 'en' and language.code in GENRES:
-            choices = [[g, g + ' / ' + h]
-                       for g, h in zip(GENRES['en'], GENRES[language.code])]
-            choices[fantasy_id] = [
-                u'fantasy',
-                (u'fantasy-supernatural / %s' %
-                 GENRES[language.code][fantasy_id])
-            ]
-        else:
-            choices = [[g, g] for g in GENRES['en']]
-            choices[fantasy_id] = [u'fantasy', u'fantasy-supernatural']
-        if additional_genres:
-            additional_genres.reverse()
-            for genre in additional_genres:
-                choices.insert(0, [genre, genre + ' (deprecated)'])
-        genre = forms.MultipleChoiceField(
-            required=False,
-            widget=FilteredSelectMultiple('Genres', False),
-            choices=choices)
+        genre = _genre_choices(language=language,
+                               additional_genres=additional_genres)
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:

@@ -1,0 +1,93 @@
+{% extends "gcd/base_view.html" %}
+{% load staticfiles %}
+{% load i18n %}
+{% load editing %}
+
+
+{% block title %}
+  GCD :: Feature Logo :: {{ feature_logo }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+    href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h1 class="item_id">
+  <div class="left">
+    {{ feature_logo }}
+  </div>
+</h1>
+ <div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+      <dl class="pub_data">
+        <dt> Feature:
+        <dd> <a href="{{ feature_logo.feature.get_absolute_url }}">{{ feature_logo.feature }}</a>
+        <dt> Years: 
+        <dd> {{ feature_logo.display_years }}
+        {% if feature_logo.notes %}
+        <dt>Notes:
+        <dd>{{ feature_logo.notes }}
+        {% endif %}
+      </dl>
+{% if feature_logo.logo %}
+<img src="{{ feature_logo.logo.scaled_image.url }}">
+{% endif %}
+    </div> <!-- control_center -->
+  {% if not preview  %}
+    <div id="control_rail">
+      <div class="edit_box">
+        <div class="edit_header">Editing</div>
+  {% if not preview %}
+    {% with feature_logo as object %}
+    {% with 'feature_logo' as object_class %}
+    {% with 'feature_logo' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% if feature_logo.logo %}
+      {% if feature_logo.logo|is_locked %}
+      <div style='padding:.4em' class="index_status_1">
+      Logo changes pending
+      </div>
+      {% else %}
+        {% if user.is_authenticated %}
+      <form method="GET"
+        action="{% url "replace_image" model_name='feature_logo' id=feature_logo.id image_id=feature_logo.logo.id %}">
+        <input type="submit" value="{% trans 'Replace Feature Logo Scan' %}">
+      </form>
+      <form method="GET"
+        action="{% url "delete_revision" model_name='image' id=feature_logo.logo.id %}">
+        <input type="submit" value="{% trans 'Delete Feature Logo Scan' %}">
+      </form>
+        {% endif %}
+      {% endif %}
+    {% else %}
+        {% if user.is_authenticated %}
+      <form method="GET"
+        action="{% url "upload_image" model_name='feature_logo' id=feature_logo.id image_type='FeatureLogo' %}">
+        <input type="submit" value="{% trans 'Add Feature Logo Scan' %}">
+      </form>
+      {% endif %}
+    {% endif %}
+
+  {% endif %} <!-- not preview -->
+      </div> <!-- edit_box -->
+      <div id="change_history" class="edit_footer">
+  {% if preview %}
+        <a href="{% url "change_history" model_name='feature_logo' id=feature_logo.source.id %}">View Change History</a>
+  {% else %}
+        <a href="{% url "change_history" model_name='feature_logo' id=feature_logo.id %}">View Change History</a>
+  {% endif %}
+      </div>
+        </div> <!-- control_rail -->
+{% endif %}
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+
+
+{% endblock %}

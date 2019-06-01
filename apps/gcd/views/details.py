@@ -29,10 +29,11 @@ from apps.stats.models import CountStats
 
 from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
-                            IndiciaPublisher, Brand, BrandGroup, Cover, \
+                            IndiciaPublisher, Brand, BrandGroup, Cover,\
                             SeriesBond, Award, Creator, CreatorMembership,\
                             ReceivedAward, CreatorDegree, CreatorArtInfluence,\
-                            CreatorNonComicWork, CreatorSchool, CreatorRelation
+                            CreatorNonComicWork, CreatorSchool, CreatorRelation,\
+                            Feature, FeatureLogo
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -712,7 +713,7 @@ def change_history(request, model_name, id):
                           'image', 'series_bond', 'award', 'creator_degree',
                           'creator', 'creator_membership', 'received_award',
                           'creator_art_influence', 'creator_non_comic_work',
-                          'creator_relation']:
+                          'creator_relation', 'feature', 'feature_logo']:
         if not (model_name == 'imprint' and
           get_object_or_404(Publisher, id=id).deleted):
             return render(
@@ -1255,7 +1256,52 @@ def int_stats(request, object_type, choices):
         'type' : object_name,
         'form': form
       })
- 
+
+
+def feature(request, feature_id):
+    """
+    Display the details page for a Feature.
+    """
+    feature = get_object_or_404(Feature, id = feature_id)
+    if feature.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'feature', 'id': feature_id}))
+
+    return show_feature(request, feature)
+
+
+def show_feature(request, feature, preview=False):
+    logos = feature.active_logos().order_by(
+      'year_began', 'name')
+
+    vars = { 'feature' : feature,
+             'error_subject': '%s' % feature,
+             'preview': preview }
+    return paginate_response(request,
+                             logos,
+                             'gcd/details/feature.html',
+                             vars)
+
+
+def feature_logo(request, feature_logo_id):
+    """
+    Display the details page for a Feature.
+    """
+    feature_logo = get_object_or_404(FeatureLogo, id = feature_logo_id)
+    if feature_logo.deleted:
+        return HttpResponseRedirect(urlresolvers.reverse('change_history',
+          kwargs={'model_name': 'feature_logo', 'id': feature_logo_id}))
+
+    return show_feature_logo(request, feature_logo)
+
+
+def show_feature_logo(request, feature_logo, preview=False):
+    vars = { 'feature_logo' : feature_logo,
+             'error_subject': '%s' % feature_logo,
+             'preview': preview }
+    return render(request, 'gcd/details/feature_logo.html', vars)
+
+
 def cover(request, issue_id, size):
     """
     Display the cover for a single issue on its own page.

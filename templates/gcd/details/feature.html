@@ -1,0 +1,109 @@
+{% extends "gcd/base_view.html" %}
+
+{% load staticfiles %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Feature :: {{ feature.name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+
+<h1 class="item_id">
+  <div class="left">
+    {{ feature }}
+  </div>
+</h1>
+<div class="item_id">
+  <div class="flex_left">
+    {{ feature.language }}
+  </div>
+  <div class="flex_right">
+  {% include "gcd/bits/pagination_bar.html" %}
+  </div>
+</div>
+
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+      <dl class="pub_data">
+{% if feature.genre %}
+        <p><strong>Genre:</strong> {{ feature.genre }}</p>
+{% endif %}
+{% if feature.year_created %}
+        <p><strong>Created in:</strong> {{ feature.display_year_created }}</p>
+{% endif %}
+{% if feature.notes %}
+        <dt> Notes:
+        <dd> {{ feature.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+
+{{ feature|show_credit:'keywords' }}
+      </dl>
+    </div>
+  </div>
+
+{% if not preview or feature.source %}
+  <div id="control_rail">
+    <div class="edit_box">
+  {% if MYCOMICS %}
+      <div class="edit_header">
+        <div>my.comics.org</div>
+      </div>
+  {% else %}
+      <div class="edit_header">Editing</div>
+     {% if not preview %}
+       {% with object=feature object_class='feature' object_name='Feature' %}
+         {% include "gcd/bits/status_banner.html" %}
+       {% endwith %}
+     {% endif %}
+     {% if request.user.is_authenticated %}
+      <form method="GET"
+            action="{% url "add_feature_logo" feature_id=feature.id %}">
+          <input name="add_feature_logo" type="submit" value="Add Feature Logo"/>
+      </form>
+      {% endif %}
+    </div>
+  {% endif %} <!-- MYCOMICS -->
+    <div id="change_history" class="edit_footer">
+  {% if preview %}
+      <a href="{% url "change_history" model_name='feature' id=feature.source.id %}">View Change History</a>
+  {% else %}
+      <a href="{% url "change_history" model_name='feature' id=feature.id %}">View Change History</a>
+  {% endif %}
+    </div>
+  </div>
+{% endif %}
+</div>
+
+{% if page.object_list.count %}
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Name </th>
+    <th> Year Began </th>
+    <th> Year Ended </th>
+  </tr>
+  {% for logo in page.object_list %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ logo.get_absolute_url }}">{{ logo.name }}</a> </td>
+    <td> {{ logo.year_began }} </td>
+    <td> {{ logo.year_ended }} </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<div class="item_id">
+  <div class="flex_right">
+  {% include "gcd/bits/pagination_bar.html" %}
+  </div>
+</div>
+
+{% endblock %}

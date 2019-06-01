@@ -183,11 +183,12 @@ def field_value(revision, field):
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
         return ''
-
     elif field == 'cr_creator_names':
         creator_names = ", ".join(revision.cr_creator_names.all().values_list('name', flat=True))
         return creator_names
-
+    elif field == 'feature' and \
+      revision._meta.model_name == 'featurelogorevision':
+        return absolute_url(value)
     return value
 
 @register.assignment_tag
