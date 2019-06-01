@@ -22,7 +22,7 @@ class Feature(GcdData):
     name = models.CharField(max_length=255)
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language)
-    year_created = models.IntegerField(db_index=True)
+    year_created = models.IntegerField(db_index=True, null=True)
     year_created_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
     keywords = TaggableManager()
@@ -58,7 +58,7 @@ class FeatureLogo(GcdData):
 
     feature = models.ForeignKey(Feature)
     name = models.CharField(max_length=255)
-    year_began = models.IntegerField(db_index=True)
+    year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
     year_began_uncertain = models.BooleanField(default=False)
     year_ended_uncertain = models.BooleanField(default=False)
