@@ -4971,6 +4971,7 @@ class FeatureRevision(Revision):
                                 related_name='revisions')
 
     name = models.CharField(max_length=255)
+    leading_article = models.BooleanField(default=False)
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language)
     year_created = models.IntegerField(db_index=True, blank=True, null=True)
@@ -4989,6 +4990,16 @@ class FeatureRevision(Revision):
     def source(self, value):
         self.feature = value
 
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset()):
+        self.leading_article = self.feature.name != self.feature.sort_name
+
+    def _post_assign_fields(self, changes):
+        if self.leading_article:
+            self.feature.sort_name = remove_leading_article(self.name)
+        else:
+            self.feature.sort_name = self.name
+
     def get_absolute_url(self):
         if self.feature is None:
             return "/feature/revision/%i/preview" % self.id
@@ -5000,8 +5011,9 @@ class FeatureRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'genre', 'language', 'year_created',
-                        'year_created_uncertain', 'notes', 'keywords']
+    _base_field_list = ['name', 'leading_article', 'genre', 'language',
+                        'year_created', 'year_created_uncertain', 'notes',
+                        'keywords']
 
     def _field_list(self):
         return self._base_field_list
@@ -5009,6 +5021,7 @@ class FeatureRevision(Revision):
     def _get_blank_values(self):
         return {
             'name': '',
+            'leading_article': False,
             'genre': '',
             'language': None,
             'year_created': None,
@@ -5052,6 +5065,7 @@ class FeatureLogoRevision(Revision):
                                      related_name='revisions')
 
     name = models.CharField(max_length=255)
+    leading_article = models.BooleanField(default=False)
     year_began = models.IntegerField(db_index=True, null=True, blank=True)
     year_ended = models.IntegerField(null=True, blank=True)
     year_began_uncertain = models.BooleanField(default=False)
@@ -5069,6 +5083,17 @@ class FeatureLogoRevision(Revision):
     def source(self, value):
         self.feature_logo = value
 
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset()):
+        self.leading_article = (self.feature_logo.name !=
+                                self.feature_logo.sort_name)
+
+    def _post_assign_fields(self, changes):
+        if self.leading_article:
+            self.feature_logo.sort_name = remove_leading_article(self.name)
+        else:
+            self.feature_logo.sort_name = self.name
+
     def _do_complete_added_revision(self, feature):
         self.feature = feature
 
@@ -5083,8 +5108,9 @@ class FeatureLogoRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'year_began', 'year_began_uncertain',
-                        'year_ended', 'year_ended_uncertain', 'notes']
+    _base_field_list = ['name', 'leading_article', 'year_began',
+                        'year_began_uncertain', 'year_ended',
+                        'year_ended_uncertain', 'notes']
 
     def _field_list(self):
         fields = []
@@ -5096,6 +5122,7 @@ class FeatureLogoRevision(Revision):
         return {
             'feature': None,
             'name': '',
+            'leading_article': False,
             'year_began': None,
             'year_ended': None,
             'year_began_uncertain': False,

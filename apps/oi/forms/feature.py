@@ -5,7 +5,8 @@ from django import forms
 
 from apps.gcd.models.support import GENRES
 
-from apps.oi.models import FeatureRevision, FeatureLogoRevision
+from apps.oi.models import (FeatureRevision, FeatureLogoRevision,
+                            remove_leading_article)
 
 from .support import (GENERIC_ERROR_MESSAGE, #FEATURE_HELP_LINKS,
                       _set_help_labels, _clean_keywords,
@@ -70,6 +71,15 @@ class FeatureRevisionForm(forms.ModelForm):
         else:
             cd['genre'] = u''
 
+        if 'name' in cd:
+            cd['name'] = cd['name'].strip()
+            if (cd['leading_article'] and
+                    cd['name'] == remove_leading_article(cd['name'])):
+                raise forms.ValidationError(
+                    'The series name is only one word, you cannot specify '
+                    'a leading article in this case.')
+        return cd
+
 
 def get_feature_logo_revision_form(revision=None, user=None):
     class RuntimeFeatureRevisionForm(FeatureLogoRevisionForm):
@@ -87,3 +97,15 @@ class FeatureLogoRevisionForm(forms.ModelForm):
         fields = model._base_field_list
 
     comments = _get_comments_form_field()
+
+    def clean(self):
+        cd = self.cleaned_data
+
+        if 'name' in cd:
+            cd['name'] = cd['name'].strip()
+            if (cd['leading_article'] and
+                    cd['name'] == remove_leading_article(cd['name'])):
+                raise forms.ValidationError(
+                    'The series name is only one word, you cannot specify '
+                    'a leading article in this case.')
+        return cd

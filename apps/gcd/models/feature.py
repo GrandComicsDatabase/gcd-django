@@ -19,7 +19,8 @@ class Feature(GcdData):
         ordering = ('name',)
         db_table = 'gcd_feature'
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True)
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language)
     year_created = models.IntegerField(db_index=True, null=True)
@@ -57,7 +58,8 @@ class FeatureLogo(GcdData):
         verbose_name_plural = 'Feature Logos'
 
     feature = models.ForeignKey(Feature)
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True)
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
     year_began_uncertain = models.BooleanField(default=False)
