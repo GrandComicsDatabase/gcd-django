@@ -4994,6 +4994,9 @@ class FeatureRevision(Revision):
             return "/feature/revision/%i/preview" % self.id
         return self.feature.get_absolute_url()
 
+    def __unicode__(self):
+        return u'%s' % (self.name)
+
     ######################################
     # TODO old methods, t.b.c
 
@@ -5073,6 +5076,9 @@ class FeatureLogoRevision(Revision):
         if self.feature_logo is None:
             return "/feature_logo/revision/%i/preview" % self.id
         return self.feature_logo.get_absolute_url()
+
+    def __unicode__(self):
+        return u'%s' % (self.name)
 
     ######################################
     # TODO old methods, t.b.c
