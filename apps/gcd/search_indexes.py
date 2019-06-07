@@ -3,7 +3,7 @@ from haystack import indexes
 from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
-    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork
+    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature
 
 from apps.oi.models import on_sale_date_fields
 
@@ -245,9 +245,15 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
-    year = indexes.IntegerField(model_attr='year_created')
-    language = indexes.CharField(model_attr='feature__language__code',
+    year = indexes.IntegerField()
+    language = indexes.CharField(model_attr='language__code',
                                  faceted=True, indexed=False)
+
+    def prepare_year(self, obj):
+        if obj.year_created:
+            return obj.year_created
+        else:
+            return 9999
 
     def get_model(self):
         return Feature

@@ -180,6 +180,10 @@
                 <a href="{{ result.object.issue.get_absolute_url }}">
               {{ result.object.issue.full_name }}</a> {{ result.object.issue.publication_date|str_encl:'(' }})</td>
             {% endif %}
+            {% if result.model_name == 'feature' %}
+                <td>[FEATURE]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
             {% if result.model_name == 'publisher' %}
                 <td>[PUBLISHER]</td>
                 <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
