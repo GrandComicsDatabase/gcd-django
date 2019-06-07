@@ -236,6 +236,26 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             type=STORY_TYPES['blank']).filter(deleted=False)
 
 
+class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/feature_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
+    year = indexes.IntegerField(model_attr='year_created')
+    language = indexes.CharField(model_attr='feature__language__code',
+                                 faceted=True, indexed=False)
+
+    def get_model(self):
+        return Feature
+
+    def prepare_facet_model_name(self, obj):
+        return "feature"
+
+
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
