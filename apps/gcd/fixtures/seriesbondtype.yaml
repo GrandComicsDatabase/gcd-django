@@ -1,17 +1,24 @@
-- fields: {description: Tracks numbering from one series to another due to minor name
-      changes., name: minor_name_numbering_continues, notes: Minor name changes include
-      for example adding or dropping of leading articles.}
-  model: gcd.seriesbondtype
+- model: gcd.seriesbondtype
   pk: 1
-- fields: {description: Tracks numbering from one series to another due to major name
-      changes., name: major_name_numbering_continues, notes: ''}
-  model: gcd.seriesbondtype
+  fields: {name: minor_name_numbering_continues, description: Tracks numbering from
+      one series to another due to minor name changes., notes: Minor name changes
+      include for example adding or dropping of leading articles.}
+- model: gcd.seriesbondtype
   pk: 2
-- fields: {description: Tracks numbering from one series to another due to publisher
-      changes., name: publisher_numbering_continues, notes: ''}
-  model: gcd.seriesbondtype
+  fields: {name: major_name_numbering_continues, description: Tracks numbering from
+      one series to another due to major name changes., notes: ''}
+- model: gcd.seriesbondtype
   pk: 3
-- fields: {description: Tracks subnumbering from one series to another., name: subnumbering_continues,
-    notes: ''}
-  model: gcd.seriesbondtype
+  fields: {name: publisher_numbering_continues, description: Tracks numbering from
+      one series to another due to publisher changes., notes: ''}
+- model: gcd.seriesbondtype
   pk: 4
+  fields: {name: subnumbering_continues, description: Tracks subnumbering from one
+      series to another., notes: ''}
+- model: gcd.seriesbondtype
+  pk: 5
+  fields: {name: merge_numbering_continues, description: Tracks merging of one series
+      into another with continued numbering., notes: ''}
+- model: gcd.seriesbondtype
+  pk: 6
+  fields: {name: merge, description: Tracks merging of one series into another., notes: ''}

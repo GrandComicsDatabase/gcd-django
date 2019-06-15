@@ -23,7 +23,8 @@ from .issue import (    # noqa
 from .story import (get_story_revision_form, get_biblio_revision_form,
                     get_reprint_revision_form)
 from .feature import (get_feature_revision_form,
-                      get_feature_logo_revision_form)
+                      get_feature_logo_revision_form,
+                      get_feature_relation_revision_form)
 from .image import (get_cover_revision_form,
                     UploadScanForm,
                     UploadVariantScanForm,

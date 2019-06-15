@@ -13,7 +13,7 @@ from django.utils.datastructures import MultiValueDictKeyError
 from dal import autocomplete
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
-                            Creator, CreatorNameDetail
+                            Creator, CreatorNameDetail, Feature
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -423,6 +423,17 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = CreatorNameDetail.objects.filter(deleted=False)
+
+        if self.q:
+            qs = qs.filter(sort_name__istartswith=self.q)
+
+        return qs
+
+
+class FeatureAutocomplete(LoginRequiredMixin,
+                          autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Feature.objects.filter(deleted=False)
 
         if self.q:
             qs = qs.filter(sort_name__istartswith=self.q)

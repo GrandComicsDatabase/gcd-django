@@ -39,7 +39,7 @@ from apps.gcd.models import (
     StoryType, FeatureLogo, FeatureType, ImageType, Creator, CreatorArtInfluence,
     CreatorDegree, CreatorMembership, CreatorNameDetail, CreatorNonComicWork,
     CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear,
-    BiblioEntry, ReceivedAward, STORY_TYPES)
+    BiblioEntry, ReceivedAward, STORY_TYPES, FeatureRelation)
 
 from apps.gcd.models.gcddata import GcdData
 
@@ -84,6 +84,7 @@ CTYPES = {
     'award': 24,
     'feature': 25,
     'feature_logo': 26,
+    'feature_relation': 27,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -94,6 +95,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['series'],
                            CTYPES['feature'],
                            CTYPES['feature_logo'],
+                           CTYPES['feature_relation'],
                            CTYPES['cover'],
                            CTYPES['reprint'],
                            CTYPES['image'],
@@ -344,6 +346,9 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['feature_logo']:
             return (self.featurelogorevisions.all(),)
+
+        if self.change_type == CTYPES['feature_relation']:
+            return (self.featurerelationrevisions.all(),)
 
         if self.change_type == CTYPES['series']:
             return (self.seriesrevisions.all(),
@@ -5147,6 +5152,84 @@ class FeatureLogoRevision(Revision):
 
     def _queue_name(self):
         return u'%s (%s)' % (self.name, self.year_began)
+
+
+class FeatureRelationRevisionManager(RevisionManager):
+    def clone_revision(self, feature_relation, changeset):
+        return FeatureLogoRevision.clone(feature_relation, changeset)
+
+
+class FeatureRelationRevision(Revision):
+    """
+    Relations between features.
+    """
+
+    class Meta:
+        db_table = 'oi_feature_relation_revision'
+        ordering = ('to_feature', 'relation_type', 'from_feature')
+        verbose_name_plural = 'Feature Relation Revisions'
+
+    objects = FeatureRelationRevisionManager()
+    feature_relation = models.ForeignKey('gcd.FeatureRelation',
+                                         null=True,
+                                         related_name='revisions')
+
+    to_feature = models.ForeignKey('gcd.Feature',
+                                    related_name='to_feature_revisions')
+    relation_type = models.ForeignKey('gcd.FeatureRelationType',
+                                      related_name='revisions')
+    from_feature = models.ForeignKey('gcd.Feature',
+                                     related_name='from_feature_revisions')
+    notes = models.TextField(blank=True)
+
+    _base_field_list = ['from_feature', 'relation_type', 'to_feature', 'notes']
+
+    def _field_list(self):
+        field_list = self._base_field_list
+        return field_list
+
+    def _get_blank_values(self):
+        return {
+            'from_feature': None,
+            'to_feature': None,
+            'relation_type': None,
+            'notes': ''
+        }
+
+    def _get_source(self):
+        return self.feature_relation
+
+    def _get_source_name(self):
+        return 'feature_relation'
+
+    def _imps_for(self, field_name):
+        return 1
+
+    # TODO general code ?
+    def commit_to_display(self):
+        feature_relation = self.feature_relation
+
+        if feature_relation is None:
+            feature_relation = FeatureRelation()
+        elif self.deleted:
+            feature_relation.delete()
+            return
+
+        feature_relation.to_feature = self.to_feature
+        feature_relation.from_feature = self.from_feature
+        feature_relation.relation_type = self.relation_type
+        feature_relation.notes = self.notes
+        feature_relation.save()
+
+        if self.feature_relation is None:
+            self.feature_relation = feature_relation
+            self.save()
+
+    def __unicode__(self):
+        return u'%s >%s< %s' % (unicode(self.from_feature),
+                                unicode(self.relation_type),
+                                unicode(self.to_feature)
+                                )
 
 
 class ReprintRevisionManager(RevisionManager):

@@ -9,8 +9,23 @@ from django.utils.html import conditional_escape as esc
 from taggit.managers import TaggableManager
 
 from apps.stddata.models import Language
-from .gcddata import GcdData
+from .gcddata import GcdData, GcdLink
 from .image import Image
+
+
+class FeatureRelationType(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_feature_relation_type'
+
+    # technical name, not to be changed
+    name = models.CharField(max_length=255, db_index=True)
+    # short description, e.g. shown in selection boxes
+    description = models.CharField(max_length=255)
+    reverse_description = models.CharField(max_length=255)
+
+    def __unicode__(self):
+        return self.name
 
 
 class FeatureType(models.Model):
@@ -64,6 +79,10 @@ class Feature(GcdData):
 
 
 class FeatureLogo(GcdData):
+    """
+    Logos of features.
+    """
+
     class Meta:
         ordering = ('name',)
         app_label = 'gcd'
@@ -117,3 +136,29 @@ class FeatureLogo(GcdData):
 
     def __unicode__(self):
         return unicode(self.name)
+
+
+class FeatureRelation(GcdLink):
+    """
+    Relations between features.
+    """
+
+    class Meta:
+        db_table = 'gcd_feature_relation'
+        app_label = 'gcd'
+        ordering = ('to_feature', 'relation_type', 'from_feature')
+        verbose_name_plural = 'Feature Relations'
+
+    to_feature = models.ForeignKey(Feature,
+                                   related_name='from_related_feature')
+    from_feature = models.ForeignKey(Feature,
+                                     related_name='to_related_feature')
+    relation_type = models.ForeignKey(FeatureRelationType,
+                                      related_name='relation_type')
+    notes = models.TextField()
+
+    def __unicode__(self):
+        return '%s >Relation< %s :: %s' % (unicode(self.from_feature),
+                                           unicode(self.to_feature),
+                                           unicode(self.relation_type)
+                                          )

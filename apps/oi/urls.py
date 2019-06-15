@@ -167,6 +167,8 @@ urlpatterns = [
      oi_views.add_feature, name='add_feature'),
     url(r'^feature/(?P<feature_id>\d+)/logo/add/$',
      oi_views.add_feature_logo, name='add_feature_logo'),
+    url(r'^feature/(?P<feature_id>\d+)/relation/add/$',
+     oi_views.add_feature_relation, name='add_feature_relation'),
 
     # Image URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$',

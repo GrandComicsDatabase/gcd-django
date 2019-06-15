@@ -30,7 +30,7 @@ from apps.gcd.models import (
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
     CreatorRelation, CreatorSchool, NameType, SourceType, STORY_TYPES,
-    BiblioEntry, Feature, FeatureLogo)
+    BiblioEntry, Feature, FeatureLogo, FeatureRelation)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
@@ -58,7 +58,8 @@ from apps.oi.models import (
     CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
     PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
-    PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string)
+    PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
+    FeatureRelationRevision)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -73,6 +74,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_series_revision_form,
                            get_story_revision_form,
                            get_feature_logo_revision_form,
+                           get_feature_relation_revision_form,
                            get_date_revision_form,
                            OngoingReservationForm,
                            CreatorArtInfluenceRevisionForm,
@@ -104,6 +106,7 @@ REVISION_CLASSES = {
     'biblio_entry': BiblioEntryRevision,
     'feature': FeatureRevision,
     'feature_logo': FeatureLogoRevision,
+    'feature_relation': FeatureRelationRevision,
     'cover': CoverRevision,
     'reprint': ReprintRevision,
     'image': ImageRevision,
@@ -132,6 +135,7 @@ DISPLAY_CLASSES = {
     'biblio_entry': BiblioEntry,
     'feature': Feature,
     'feature_logo': FeatureLogo,
+    'feature_relation': FeatureRelation,
     'cover': Cover,
     'reprint': Reprint,
     'reprint_to_issue': ReprintToIssue,
@@ -2687,6 +2691,48 @@ def add_feature_logo(request, feature_id):
     return submit(request, changeset.id)
 
 
+@permission_required('indexer.can_reserve')
+def add_feature_relation(request, feature_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    feature = get_object_or_404(Feature, id=feature_id, deleted=False)
+
+    if feature.pending_deletion():
+        return render_error(request, u'Cannot add Relation for '
+                                     u'feature "%s" since the record is '
+                                     u'pending deletion.' % feature)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+                'show_feature', kwargs={'feature_id': feature_id}))
+
+    initial = {}
+    initial['from_feature'] = feature
+    relation_form = get_feature_relation_revision_form(user=request.user)\
+                                                      (request.POST or None,
+                                                       initial=initial)
+
+    if relation_form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['feature_relation'])
+        changeset.save()
+
+        revision = relation_form.save(commit=False)
+        revision.save_added_revision(changeset=changeset, feature=feature)
+        revision.save()
+
+        return submit(request, changeset.id)
+
+    context = {'form': relation_form,
+               'object_name': 'Relation with Feature',
+               'object_url': urlresolvers.reverse('add_feature_relation',
+                                                  kwargs={'feature_id': feature_id}),
+               'action_label': 'Submit new',
+               'settings': settings}
+    return oi_render(request, 'oi/edit/add_frame.html', context)
+
+
 def _display_add_feature_logo_form(request, feature, form):
     object_name = 'Feature Logo'
     object_url = urlresolvers.reverse('add_feature_logo',
@@ -4444,6 +4490,7 @@ def show_queue(request, queue_name, state):
                     .prefetch_related('coverrevisions__issue__series')
     features = changes.filter(change_type=CTYPES['feature'])
     feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
+    feature_relations = changes.filter(change_type=CTYPES['feature_relation'])
     images = changes.filter(change_type=CTYPES['image'])
     countries = dict(Country.objects.values_list('id', 'code'))
     country_names = dict(Country.objects.values_list('id', 'name'))
@@ -4568,6 +4615,11 @@ def show_queue(request, queue_name, state):
             'object_name': 'Feature Logos',
             'object_type': 'feature_logo',
             'changesets': feature_logos.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Feature Relations',
+            'object_type': 'feature_relations',
+            'changesets': feature_relations.order_by('modified', 'id')
           },
           {
             'object_name': 'Issue Skeletons',

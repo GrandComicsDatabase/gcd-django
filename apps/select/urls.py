@@ -24,4 +24,9 @@ urlpatterns = [
         select_views.CreatorAutocomplete.as_view(),
         name='creator_autocomplete',
     ),
+    url(
+        r'^autocomplete/feature/$',
+        select_views.FeatureAutocomplete.as_view(),
+        name='feature_autocomplete',
+    ),
 ]

@@ -3,10 +3,13 @@
 from collections import OrderedDict
 from django import forms
 
+from dal import autocomplete
+
+from apps.gcd.models import Feature
 from apps.gcd.models.support import GENRES
 
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision,
-                            remove_leading_article)
+                            FeatureRelationRevision, remove_leading_article)
 
 from .support import (GENERIC_ERROR_MESSAGE, #FEATURE_HELP_LINKS,
                       _set_help_labels, _clean_keywords,
@@ -106,6 +109,37 @@ class FeatureLogoRevisionForm(forms.ModelForm):
             if (cd['leading_article'] and
                     cd['name'] == remove_leading_article(cd['name'])):
                 raise forms.ValidationError(
-                    'The series name is only one word, you cannot specify '
+                    'The feature name is only one word, you cannot specify '
                     'a leading article in this case.')
         return cd
+
+
+def get_feature_relation_revision_form(revision=None, user=None):
+    class RuntimeFeatureRelationRevisionForm(FeatureRelationRevisionForm):
+        def as_table(self):
+            #if not user or user.indexer.show_wiki_links:
+                #_set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
+            return super(FeatureRelationRevisionForm, self).as_table()
+
+    return RuntimeFeatureRelationRevisionForm
+
+
+class FeatureRelationRevisionForm(forms.ModelForm):
+    class Meta:
+        model = FeatureRelationRevision
+        fields = model._base_field_list
+        #help_texts = FEATURE_RELATION_HELP_TEXTS
+        labels = {'from_feature': 'Feature A', 'relation_type': 'Relation',
+                  'to_creator': 'Feature B'}
+
+    from_feature = forms.ModelChoiceField(
+        queryset=Feature.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='feature_autocomplete')
+    )
+
+    to_feature = forms.ModelChoiceField(
+        queryset=Feature.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='feature_autocomplete')
+    )
+
+    comments = _get_comments_form_field()

@@ -70,6 +70,12 @@ GCD :: Feature :: {{ feature.name }}
           <input name="add_feature_logo" type="submit" value="Add Feature Logo"/>
       </form>
       {% endif %}
+     {% if request.user.is_authenticated %}
+      <form method="GET"
+            action="{% url "add_feature_relation" feature_id=feature.id %}">
+          <input name="add_feature_relation" type="submit" value="Add Feature Relation"/>
+      </form>
+      {% endif %}
     </div>
   {% endif %} <!-- MYCOMICS -->
     <div id="change_history" class="edit_footer">
@@ -84,6 +90,8 @@ GCD :: Feature :: {{ feature.name }}
 </div>
 
 {% if page.object_list.count %}
+<hr>
+<h2> Feature Logos</h2>
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Name </th>
@@ -98,6 +106,17 @@ GCD :: Feature :: {{ feature.name }}
   </tr>
   {% endfor %}
 </table>
+{% endif %}
+
+{% if feature.from_related_feature.exists or feature.to_related_feature.exists %}
+<hr>
+<h2> Feature Relations </h2>
+  {% for relation in feature.from_related_feature.all %}
+    {{ relation.relation_type.reverse_description }}: {{ relation.from_feature|absolute_url }}
+  {% endfor %}
+  {% for relation in feature.to_related_feature.all %}
+    {{ relation.relation_type.description }}: {{ relation.to_feature|absolute_url }}
+  {% endfor %}
 {% endif %}
 
 <div class="item_id">
