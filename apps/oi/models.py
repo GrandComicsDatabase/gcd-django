@@ -36,7 +36,7 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
     SeriesBond, Cover, Image, Issue, Story, Feature, Reprint, ReprintToIssue,
     ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
-    StoryType, FeatureLogo, ImageType, Creator, CreatorArtInfluence,
+    StoryType, FeatureLogo, FeatureType, ImageType, Creator, CreatorArtInfluence,
     CreatorDegree, CreatorMembership, CreatorNameDetail, CreatorNonComicWork,
     CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear,
     BiblioEntry, ReceivedAward, STORY_TYPES)
@@ -4974,6 +4974,7 @@ class FeatureRevision(Revision):
     leading_article = models.BooleanField(default=False)
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language)
+    feature_type = models.ForeignKey(FeatureType)
     year_created = models.IntegerField(db_index=True, blank=True, null=True)
     year_created_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
@@ -5012,8 +5013,8 @@ class FeatureRevision(Revision):
     # TODO old methods, t.b.c
 
     _base_field_list = ['name', 'leading_article', 'genre', 'language',
-                        'year_created', 'year_created_uncertain', 'notes',
-                        'keywords']
+                        'feature_type', 'year_created',
+                        'year_created_uncertain', 'notes', 'keywords']
 
     def _field_list(self):
         return self._base_field_list
@@ -5024,6 +5025,7 @@ class FeatureRevision(Revision):
             'leading_article': False,
             'genre': '',
             'language': None,
+            'feature_type': None,
             'year_created': None,
             'year_created_uncertain': False,
             'notes': '',

@@ -13,6 +13,18 @@ from .gcddata import GcdData
 from .image import Image
 
 
+class FeatureType(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_feature_type'
+        ordering = ('id',)
+
+    name = models.CharField(max_length=255, db_index=True)
+
+    def __unicode__(self):
+        return self.name
+
+
 class Feature(GcdData):
     class Meta:
         app_label = 'gcd'
@@ -23,6 +35,7 @@ class Feature(GcdData):
     sort_name = models.CharField(max_length=255, db_index=True)
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language)
+    feature_type = models.ForeignKey(FeatureType)
     year_created = models.IntegerField(db_index=True, null=True)
     year_created_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
