@@ -119,7 +119,8 @@ class FeatureLogo(GcdData):
             years = '%d%s - ' % (self.year_began, 
                               '?' if self.year_began_uncertain else '')
         if not self.year_ended:
-            years = years + '?'
+            years = '%s %s' % (years,
+                               '?' if self.year_ended_uncertain else 'present')
         else:
             years = '%s%d%s' % (years, self.year_ended, 
                                 '?' if self.year_ended_uncertain else '')

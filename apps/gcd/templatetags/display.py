@@ -455,6 +455,17 @@ def field_name(field):
 
 
 @register.filter
+def uncertain_year(object, field_name):
+    """
+    display year with uncertain information
+    """
+    year = object.__dict__[field_name] if object.__dict__[field_name] else ''
+    if object.__dict__[field_name + '_uncertain']:
+        year =  '%s ?' % (year)
+    return year
+
+
+@register.filter
 def link_other_reprint(reprint, is_source):
     if is_source:
         if hasattr(reprint, 'target'):

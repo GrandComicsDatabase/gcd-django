@@ -44,8 +44,7 @@ GCD :: Feature :: {{ feature.name }}
         <dt> Notes:
         <dd> {{ feature.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
-
-{{ feature|show_credit:'keywords' }}
+<p>{{ feature|show_credit:'keywords' }}</P>
       </dl>
     </div>
   </div>
@@ -94,15 +93,17 @@ GCD :: Feature :: {{ feature.name }}
 <h2> Feature Logos</h2>
 <table id="publisher_detail_listing" class="listing">
   <tr>
+    <th> Logo</th>
     <th> Name </th>
     <th> Year Began </th>
     <th> Year Ended </th>
   </tr>
   {% for logo in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> {% if logo.logo %} <a href="{{ logo.get_absolute_url }}"> <img src="{{ logo.logo.thumbnail.url }}"> {% endif %} </a> </td>
     <td> <a href="{{ logo.get_absolute_url }}">{{ logo.name }}</a> </td>
-    <td> {{ logo.year_began }} </td>
-    <td> {{ logo.year_ended }} </td>
+    <td> {{ logo|uncertain_year:"year_began"|default:"" }} </td>
+    <td> {{ logo|uncertain_year:"year_ended"|default:"" }} </td>
   </tr>
   {% endfor %}
 </table>
@@ -111,12 +112,26 @@ GCD :: Feature :: {{ feature.name }}
 {% if feature.from_related_feature.exists or feature.to_related_feature.exists %}
 <hr>
 <h2> Feature Relations </h2>
+<table id="publisher_detail_listing" class="listing">
   {% for relation in feature.from_related_feature.all %}
-    {{ relation.relation_type.reverse_description }}: {{ relation.from_feature|absolute_url }}
+  <tr>
+    <td>{{ relation.relation_type.reverse_description }}
+    {% if relation.relation_type.id == 1 %}
+    ({{ relation.from_feature.language.name }})
+    {% endif %}:</td>
+    <td>{{ relation.from_feature|absolute_url }}</td>
+  </tr>
   {% endfor %}
   {% for relation in feature.to_related_feature.all %}
-    {{ relation.relation_type.description }}: {{ relation.to_feature|absolute_url }}
+  <tr>
+    <td>{{ relation.relation_type.description }}
+    {% if relation.relation_type.id == 1 %}
+    ({{ relation.to_feature.language.name }})
+    {% endif %}:</td>
+    <td>{{ relation.to_feature|absolute_url }}</td>
+  </tr>
   {% endfor %}
+</table>
 {% endif %}
 
 <div class="item_id">

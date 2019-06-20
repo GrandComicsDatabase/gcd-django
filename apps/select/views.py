@@ -9,6 +9,7 @@ from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
+from django.utils.html import format_html
 
 from dal import autocomplete
 
@@ -432,6 +433,9 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
 
 class FeatureAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
+    def get_result_label(self, feature):
+        return format_html('{} ({})', feature.name, feature.language.name)
+
     def get_queryset(self):
         qs = Feature.objects.filter(deleted=False)
 
