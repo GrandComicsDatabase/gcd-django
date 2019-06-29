@@ -317,7 +317,8 @@ class StoryRevisionForm(forms.ModelForm):
                     ['%s field and No %s checkbox cannot both be filled in.' %
                      (seq_type.capitalize(), seq_type.capitalize())])
 
-        if (len(cd['synopsis']) > settings.LIMIT_SYNOPSIS_LENGTH and
+        synopsis_length = len(' '.join(cd['synopsis'].split()))
+        if (synopsis_length > settings.LIMIT_SYNOPSIS_LENGTH and
                 (self.instance is None or
                  self.instance.synopsis.strip() != cd['synopsis'])):
 
