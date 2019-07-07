@@ -3116,7 +3116,7 @@ class SeriesRevision(Revision):
         if changes['from is_current']:
             reservation = self.series.get_ongoing_reservation()
             if reservation:
-                 reservation.delete()
+                reservation.delete()
 
         if changes['to is_comics_publication']:
             # TODO: But don't we count covers for some non-comics?
@@ -3130,7 +3130,9 @@ class SeriesRevision(Revision):
                                            series=self.series,
                                            after=None,
                                            number='[nn]',
-                                           publication_date=self.year_began)
+                                           publication_date=self.year_began,
+                                           reservation_requested=
+                                             self.reservation_requested)
             # We assume that a non-four-digit year is a typo of some
             # sort, and do not propagate it.  The approval process
             # should catch that sort of thing.

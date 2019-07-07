@@ -1311,12 +1311,14 @@ thanks,
     # Note that series ongoing reservations must be processed first, as
     # they could potentially apply to the issue reservations if we ever
     # implement complex changesets.
+    # TODO does this belong into model.py ?
     for series_revision in \
         changeset.seriesrevisions.filter(deleted=False,
                                          reservation_requested=True,
                                          series__created__gt=F('created'),
                                          series__is_current=True,
-                                         series__ongoing_reservation=None):
+                                         series__ongoing_reservation=None,
+                                         is_singleton=False):
         if (changeset.indexer.ongoing_reservations.count() >=
            changeset.indexer.indexer.max_ongoing):
             _send_declined_ongoing_email(changeset.indexer,
@@ -1329,7 +1331,7 @@ thanks,
     for issue_revision in \
         changeset.issuerevisions.filter(deleted=False,
                                         reservation_requested=True,
-                                        issue__created__gt=F('created'),
+                                        issue__created__gte=F('created'),
                                         series__ongoing_reservation=None):
         _reserve_newly_created_issue(issue_revision.issue, changeset,
                                      changeset.indexer)
@@ -1338,7 +1340,7 @@ thanks,
         changeset.issuerevisions.filter(
                                  deleted=False,
                                  reservation_requested=True,
-                                 issue__created__gt=F('created'),
+                                 issue__created__gte=F('created'),
                                  series__ongoing_reservation__isnull=False,
                                  issue__variant_of__isnull=False):
         _reserve_newly_created_issue(issue_revision.issue, changeset,
@@ -1347,7 +1349,7 @@ thanks,
     for issue_revision in \
         changeset.issuerevisions.filter(
                                  deleted=False,
-                                 issue__created__gt=F('created'),
+                                 issue__created__gte=F('created'),
                                  series__ongoing_reservation__isnull=False,
                                  issue__variant_of=None):
         _reserve_newly_created_issue(

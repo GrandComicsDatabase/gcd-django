@@ -146,11 +146,6 @@ class SeriesRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
                 'Singleton series do not continue and therefore cannot be '
                 'current in our sense.')
-        if (cd['is_singleton'] and 'reservation_requested' in cd and
-                cd['reservation_requested']):
-            raise forms.ValidationError(
-                'Reservations for the created issue of a singleton series '
-                'are not supported for technical reasons.')
 
         # TODO How to get to series ?
         # Then we could check the number of issues for singletons
