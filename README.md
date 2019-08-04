@@ -1,13 +1,13 @@
 # GCD Web Application
 
-This file last updated: *May 2018*
+This file last updated: *Aug 2019*
 
 This is the current implementation of the Grand Comics Database, hosted at
 http://www.comics.org/ (production) and http://beta.comics.org/ (public beta
 for new features).
 
 See the [Technical section on docs.comics.org](http://docs.comics.org/wiki/Main_Page#Technical_Details)
-for more detailed information about how we work and what has been done to date.
+and the [Wiki](https://github.com/GrandComicsDatabase/gcd-django/wiki) for more detailed information about how we work and what has been done to date.
 This file just covers the essentials of branches and code reviews.
 
 Please join the [gcd-tech list](http://groups.google.com/group/gcd-tech/) for
@@ -17,20 +17,17 @@ http://groups.google.com/group/gcd-tech/
 
 ## Setting up a Development Environment
 
-We recommend that you use [our Vagrant-based development environment](https://github.com/GrandComicsDatabase/gcd-django-vagrant-install).
+Our Vagrant-setup needs updating ! We used recommend that you use [our Vagrant-based development environment](https://github.com/GrandComicsDatabase/gcd-django-vagrant-install).
 
-You can find manual instructions for various platforms in the Technical section
-of the [GCD Docs wiki](http://docs.comics.org/wiki/Main_Page) but they aren't
-necessarily up to date.  As of May 2015 they should work.
+You can find manual instructions for various platforms in the docs directory
+[GCD Docs](https://github.com/GrandComicsDatabase/gcd-django/tree/beta/docs) but they aren't
+necessarily up to date.  As of Aug 2019 they should work.
 
 ## Workflow
 
 Our primary collaboration space is the
 [gcd-tech](http://groups.google.com/group/gcd-tech/) mailing list.
-Partially due to GitHub pull requests and reviews not working for us in code 
-review, we used a Review Board installation at http://reviews.comics.org/ for
-discussing code changes for a long time. We now use the inbetween improved 
-GitHub code review system.
+We use the GitHub code review system for discussing code changes.
 
 Pull requests are welcome, but you might want to poke the mailing list if
 no one seems to be paying attention.
