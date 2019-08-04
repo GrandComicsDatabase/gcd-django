@@ -42,7 +42,7 @@ Creating your test database
 Create your database and set up whatever permissions you want.  Django
 will create the tables for you, but you need to create the database first.
 
-E.g. from MySQL command line client do:
+E.g. from MySQL command line client do (this is without a password):
 create schema gcdonline;
 create user gcdonline;
 grant all on gcdonline.* to gcdonline;
