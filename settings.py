@@ -271,6 +271,17 @@ ELASTICSEARCH_DEFAULT_ANALYZER = 'default'
 
 USE_ELASTICSEARCH = False
 
+# override on production
+RQ_QUEUES = {
+    'default': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'PASSWORD': 'some-password',
+        'DEFAULT_TIMEOUT': 360,
+    },
+}
+
 #################################################################################
 # GCD site settings
 #################################################################################
