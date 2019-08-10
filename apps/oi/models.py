@@ -4969,7 +4969,7 @@ class FeatureRevisionManager(RevisionManager):
 
 class FeatureRevision(Revision):
     class Meta:
-        db_table = 'oi_feature'
+        db_table = 'oi_feature_revision'
         ordering = ['-created', '-id']
 
     objects = FeatureRevisionManager()
@@ -5063,7 +5063,7 @@ class FeatureLogoRevisionManager(RevisionManager):
 
 class FeatureLogoRevision(Revision):
     class Meta:
-        db_table = 'oi_feature_logo'
+        db_table = 'oi_feature_logo_revision'
         ordering = ['-created', '-id']
 
     objects = FeatureLogoRevisionManager()

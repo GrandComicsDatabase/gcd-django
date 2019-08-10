@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ['-created', '-id'],
-                'db_table': 'oi_feature_logo',
+                'db_table': 'oi_feature_logo_revision',
             },
         ),
         migrations.CreateModel(
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'ordering': ['-created', '-id'],
-                'db_table': 'oi_feature',
+                'db_table': 'oi_feature_revision',
             },
         ),
     ]
