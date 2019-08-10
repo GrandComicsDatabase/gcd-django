@@ -99,8 +99,15 @@ class FeatureLogoRevisionForm(forms.ModelForm):
         model = FeatureLogoRevision
         fields = model._base_field_list
 
+    feature = forms.ModelMultipleChoiceField(
+        queryset=Feature.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2Multiple(url='feature_autocomplete')
+    )
+
     comments = _get_comments_form_field()
 
+    # TODO once FeatureLogo is connected to story, need to disallow
+    # removing a Feature which has issues assigned to this FeatureLogo
     def clean(self):
         cd = self.cleaned_data
 

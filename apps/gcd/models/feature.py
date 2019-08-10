@@ -89,7 +89,8 @@ class FeatureLogo(GcdData):
         db_table = 'gcd_feature_logo'
         verbose_name_plural = 'Feature Logos'
 
-    feature = models.ForeignKey(Feature)
+    feature = models.ManyToManyField(Feature,
+                                     db_table='gcd_feature_logo_2_feature')
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
     year_began = models.IntegerField(db_index=True, null=True)

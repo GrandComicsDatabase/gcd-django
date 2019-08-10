@@ -2664,11 +2664,11 @@ def add_feature_logo(request, feature_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
-    feature = get_object_or_404(Feature, id=feature_id)
+    feature = get_object_or_404(Feature, id=feature_id, deleted=False)
 
-    if feature.deleted or feature.pending_deletion():
+    if feature.pending_deletion():
         return render_error(request, u'Cannot add a feature logo '
-          u'since "%s" is deleted or pending deletion.' % feature)
+          u'since "%s" is pending deletion.' % feature)
 
     if request.method != 'POST':
         form = get_feature_logo_revision_form(user=request.user)()
@@ -2688,8 +2688,8 @@ def add_feature_logo(request, feature_id):
                           change_type=CTYPES['feature_logo'])
     changeset.save()
     revision = form.save(commit=False)
-    revision.save_added_revision(changeset=changeset,
-                                 feature=feature)
+    revision.save_added_revision(changeset=changeset)
+    form.save_m2m()
     return submit(request, changeset.id)
 
 

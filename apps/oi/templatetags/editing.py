@@ -114,6 +114,8 @@ def header_link(changeset):
             issue_num = u'%s - %s' % (issue_num, last_issue_num)
 
         return mark_safe(u'%s (%s) %s' % (series_url, pub_url, issue_num))
+    elif changeset.change_type in [CTYPES['feature'], CTYPES['feature_logo']]:
+        return mark_safe(u'%s' % (absolute_url(revision)))
     elif changeset.change_type == CTYPES['image']:
         return absolute_url(revision.object)
     elif changeset.change_type == CTYPES['award']:

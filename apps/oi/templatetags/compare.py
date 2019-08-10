@@ -40,12 +40,14 @@ def valid_barcode(barcode):
 
     return stdean.is_valid(barcode)
 
+
 # check to return True for yellow css compare highlighting
 @register.filter
 def check_changed(changed, field):
     if changed:
         return changed[field]
     return False
+
 
 # display certain similar fields' data in the same way
 @register.filter
@@ -67,7 +69,8 @@ def field_value(revision, field):
                   (res_holder.first_name, res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
     elif field in ['publisher', 'indicia_publisher', 'series',
-                   'origin_issue', 'target_issue', 'award']:
+                   'origin_issue', 'target_issue', 'award',
+                   'from_feature', 'to_feature']:
         return absolute_url(value)
     elif field in ['origin', 'target']:
         return value.full_name_with_link()
@@ -188,15 +191,21 @@ def field_value(revision, field):
         return creator_names
     elif field == 'feature' and \
       revision._meta.model_name == 'featurelogorevision':
-        return absolute_url(value)
+        features = ''
+        for feature in value.all():
+            features += absolute_url(feature) + '; '
+        if features:
+            features = features[:-2]
+        return mark_safe(features)
     return value
+
 
 @register.assignment_tag
 def diff_list(prev_rev, revision, field):
     """Generates an array which describes the change in text fields"""
     if field in ['notes', 'tracking_notes', 'publication_notes',
                  'characters', 'synopsis', 'script', 'pencils', 'inks',
-                 'colors', 'letters', 'editing', 'feature', 'title',
+                 'colors', 'letters', 'editing', 'title',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name',
                  'price', 'indicia_frequency', 'variant_name',

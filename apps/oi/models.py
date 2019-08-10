@@ -5068,8 +5068,7 @@ class FeatureLogoRevision(Revision):
 
     objects = FeatureLogoRevisionManager()
 
-    feature = models.ForeignKey(Feature, related_name='logo_revisions')
-
+    feature = models.ManyToManyField(Feature, related_name='logo_revisions')
     feature_logo = models.ForeignKey(FeatureLogo, null=True,
                                      related_name='revisions')
 
@@ -5103,9 +5102,6 @@ class FeatureLogoRevision(Revision):
         else:
             self.feature_logo.sort_name = self.name
 
-    def _do_complete_added_revision(self, feature):
-        self.feature = feature
-
     def get_absolute_url(self):
         if self.feature_logo is None:
             return "/feature_logo/revision/%i/preview" % self.id
@@ -5117,15 +5113,12 @@ class FeatureLogoRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'leading_article', 'year_began',
+    _base_field_list = ['name', 'leading_article', 'feature', 'year_began',
                         'year_began_uncertain', 'year_ended',
                         'year_ended_uncertain', 'notes']
 
     def _field_list(self):
-        fields = []
-        fields.extend(self._base_field_list)
-        fields.insert(0, 'feature')
-        return fields
+        return self._base_field_list
 
     def _get_blank_values(self):
         return {
