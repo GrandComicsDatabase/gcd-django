@@ -89,7 +89,7 @@
             <div class="btn-group pull-right">
               <button type="button" class="my-btn btn-primary btn-sm"
                       style="display: inline-block;" data-toggle="modal"
-                      onclick="unsubscribe_series({{ subscription.id }}, '{{ subscription.series.full_name }}', '{{ collection.name }}');">
+                      onclick="unsubscribe_series({{ subscription.id }}, '{{ subscription.series.full_name|escapejs }}', '{{ collection.name }}');">
                   <span class="glyphicon glyphicon-remove"></span>
               </button>
             </div>

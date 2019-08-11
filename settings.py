@@ -227,6 +227,9 @@ DATETIME_FORMAT = 'Y-m-d H:i:s'
 # this line is here.  The false positive warning is removed in Django 1.9.
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
+# for series reorders with many issues
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 5120
+
 #################################################################################
 # 3rd-party app settings
 #################################################################################

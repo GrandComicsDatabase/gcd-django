@@ -385,7 +385,14 @@ class Series(GcdData):
             issues = '%d issue%s in' % (self.issue_count,
                                         pluralize(self.issue_count))
 
-        return '%s (%s) %s %s' % (self.name, self.publisher, issues, date)
+        return '%s %s (%s) %s %s' % (self.name, self.short_pub_type(),
+                                     self.publisher, issues, date)
+
+    def short_pub_type(self):
+        if self.publication_type:
+            return '[' + self.publication_type.name[0] + ']'
+        else:
+            return ''
 
     def full_name(self):
         return '%s (%s, %s%s series)' % (self.name, self.publisher,
@@ -443,8 +450,9 @@ class PublishedColumn(tables.Column):
 
 class NameColumn(tables.Column):
     def render(self, record):
-        name_link = '<a href="%s">%s</a>' % (record.get_absolute_url(),
-                                             esc(record.name))
+        name_link = '<a href="%s">%s</a> %s' % (record.get_absolute_url(),
+                                                esc(record.name),
+                                                record.short_pub_type())
         return mark_safe(name_link)
 
     def order(self, QuerySet, is_descending):
