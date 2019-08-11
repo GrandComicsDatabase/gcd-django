@@ -20,7 +20,7 @@
 
 <div class="item_id" id="item_id_footer_replace_top">
   <div class="flex_left">
-  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} covers pending for approval.
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} covers pending for approval.
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}

@@ -20,7 +20,7 @@ GCD :: {{ user.indexer }} :: Approved Changes
 {% block view_body %}
 <div class="item_id" id="item_id_footer_replace_top">
   <div class="left">
-  Showing approved changes {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }}.
+  Showing approved changes {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }}.
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}
