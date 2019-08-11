@@ -2642,7 +2642,7 @@ def add_generic(request, model_name):
         revision.save_added_revision(changeset=changeset)
         return submit(request, changeset.id)
     else:
-        object_name = DISPLAY_CLASSES[model_name]
+        object_name = DISPLAY_CLASSES[model_name].__name__
         object_url = urlresolvers.reverse('add_%s' % model_name)
 
         return oi_render(
@@ -2670,27 +2670,36 @@ def add_feature_logo(request, feature_id):
         return render_error(request, u'Cannot add a feature logo '
           u'since "%s" is pending deletion.' % feature)
 
-    if request.method != 'POST':
-        form = get_feature_logo_revision_form(user=request.user)()
-        return _display_add_feature_logo_form(request, feature, form)
-
-    if 'cancel' in request.POST:
+    if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
-          'show_feature',
-          kwargs={ 'feature_id': feature_id }))
+          'show_feature', kwargs={ 'feature_id': feature_id }))
 
-    form = \
-      get_feature_logo_revision_form(user=request.user)(request.POST)
-    if not form.is_valid():
-        return _display_add_feature_logo_form(request, feature, form)
+    initial = {'feature': feature}
+    form = get_feature_logo_revision_form(user=request.user)\
+                                         (request.POST or None,
+                                          initial=initial)
 
-    changeset = Changeset(indexer=request.user, state=states.OPEN,
-                          change_type=CTYPES['feature_logo'])
-    changeset.save()
-    revision = form.save(commit=False)
-    revision.save_added_revision(changeset=changeset)
-    form.save_m2m()
-    return submit(request, changeset.id)
+    if form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['feature_logo'])
+        changeset.save()
+        revision = form.save(commit=False)
+        revision.save_added_revision(changeset=changeset)
+        form.save_m2m()
+        return submit(request, changeset.id)
+
+    object_name = 'Feature Logo'
+    object_url = urlresolvers.reverse('add_feature_logo',
+                                      kwargs={ 'feature_id': feature.id })
+
+    return oi_render(
+      request, 'oi/edit/add_frame.html',
+      {
+        'object_name': object_name,
+        'object_url': object_url,
+        'action_label': 'Submit new',
+        'form': form,
+      })
 
 
 @permission_required('indexer.can_reserve')
@@ -2733,21 +2742,6 @@ def add_feature_relation(request, feature_id):
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
-
-
-def _display_add_feature_logo_form(request, feature, form):
-    object_name = 'Feature Logo'
-    object_url = urlresolvers.reverse('add_feature_logo',
-                                          kwargs={ 'feature_id': feature.id })
-
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': object_name,
-        'object_url': object_url,
-        'action_label': 'Submit new',
-        'form': form,
-      })
 
 
 @permission_required('indexer.can_reserve')
