@@ -49,27 +49,12 @@ grant all on gcdonline.* to gcdonline;
 
 Populating your database with empty tables
 ==========================================
-From the root project directory, run
-
-python manage.py syncdb
-
-which will create the various tables that are not present in the data dump and
-load data in tables that need them. DO NOT create a local admin user when
-syncdb prompts you to do so.  Creating such a user will produce a user without
-a profile (gcd_indexer row) which will cause problems.
-
-You will notice that syncdb says that it cannot sync some apps because they
-are controlled by South migrations.  To run the migrations, run:
+To create the various tables run the migrations with
 
 python manage.py migrate
 
-This will create the remainder of the tables, populate them with the required
-initial data, and update your schema if any updates beyond the initial state
-are required. See
-
-http://south.aeracode.org/
-
-for help with any difficulties with South.
+This will create the tables, populate them with the required initial data, and 
+update your schema if any updates beyond the initial state are required. 
 
 Finally run 
 
