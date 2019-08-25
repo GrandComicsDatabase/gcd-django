@@ -347,7 +347,7 @@ urlpatterns = [
      bv.TemplateView.as_view(template_name='gcd/status/calendar.html')),
 
     # GCD comics history award
-    url(r'^gcd_history_award',
+    url(r'^gcd_history_award/$',
       bv.TemplateView.as_view(template_name='gcd/gcd_history_award.html'),
       name='gcd_history_award'),
 
