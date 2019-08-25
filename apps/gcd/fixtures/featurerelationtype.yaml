@@ -2,6 +2,3 @@
   pk: 1
   fields: {name: translated as, description: feature in other language, reverse_description: feature
       in original language}
-- model: gcd.featurerelationtype
-  pk: 2
-  fields: {name: related, description: is related, reverse_description: is related}
