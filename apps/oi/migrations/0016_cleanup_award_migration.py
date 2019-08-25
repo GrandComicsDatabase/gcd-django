@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('gcd', '0015_cleanup_award_migration'),
-        ('oi', '0015_migrate_awards'),
+        ('oi', '0014_receivedawardrevision'),
     ]
 
     operations = [

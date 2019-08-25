@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gcd', '0014_migrate_awards'),
+        ('gcd', '0013_receivedaward'),
         ('contenttypes', '0002_remove_content_type_name'),
         ('oi', '0013_add_bibliography'),
     ]
