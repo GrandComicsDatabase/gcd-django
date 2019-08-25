@@ -75,7 +75,7 @@ class Feature(GcdData):
                 kwargs={'feature_id': self.id})
 
     def __unicode__(self):
-        return unicode(self.name)
+        return unicode('%s (%s)' % (self.name, self.language.name))
 
 
 class FeatureLogo(GcdData):

@@ -18,7 +18,7 @@ GCD :: Feature :: {{ feature.name }}
 
 <h1 class="item_id">
   <div class="left">
-    {{ feature }}
+    {{ feature.name }}
   </div>
 </h1>
 <div class="item_id">
@@ -115,19 +115,13 @@ GCD :: Feature :: {{ feature.name }}
 <table id="publisher_detail_listing" class="listing">
   {% for relation in feature.from_related_feature.all %}
   <tr>
-    <td>{{ relation.relation_type.reverse_description }}
-    {% if relation.relation_type.id == 1 %}
-    ({{ relation.from_feature.language.name }})
-    {% endif %}:</td>
+    <td>{{ relation.relation_type.reverse_description }}:</td>
     <td>{{ relation.from_feature|absolute_url }}</td>
   </tr>
   {% endfor %}
   {% for relation in feature.to_related_feature.all %}
   <tr>
-    <td>{{ relation.relation_type.description }}
-    {% if relation.relation_type.id == 1 %}
-    ({{ relation.to_feature.language.name }})
-    {% endif %}:</td>
+    <td>{{ relation.relation_type.description }}:</td>
     <td>{{ relation.to_feature|absolute_url }}</td>
   </tr>
   {% endfor %}
