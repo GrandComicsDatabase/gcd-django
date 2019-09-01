@@ -241,6 +241,24 @@ def __format_credit(story, credit):
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
 
+@register.filter
+def show_creator_credit(story, credit_type):
+    credits = story.active_credits.filter(credit_type__name=credit_type)
+    if not credits:
+        return ''
+    credit_value = '%s' % credits[0].creator.display_credit(credits[0])
+
+    for credit in credits[1:]:
+        credit_value = '%s; %s' % (credit_value,
+                                   credit.creator.display_credit(credit))
+
+    return mark_safe(
+           '<dt class="credit_tag"><span class="credit_label">'
+           + credit_type.capitalize() + '</span></dt>' +
+           '<dd class="credit_def"><span class="credit_value">'
+           + credit_value + '</span></dd>')
+
+
 def __format_keywords(keywords, join_on='; '):
     if type(keywords) == unicode:
         credit_value = keywords

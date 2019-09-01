@@ -1,0 +1,31 @@
+{% load crispy_forms_tags %}
+{% load staticfiles %}
+{{ formset.management_form|crispy }}
+
+    {% for form in formset.forms %}
+            <tr class="{% cycle 'row1' 'row2' %} formset_row-{{ formset.prefix }}">
+                <td colspan="2"><table class="editing">
+                {{ form.non_field_errors }} 
+                {% for field in form.visible_fields %}
+                    {# Include the hidden fields in the form #}
+                    {% if forloop.first %}
+                        {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                    {% endif %}
+                    {% include "oi/bits/uni_field.html" %}
+                {% endfor %}
+                </table></td>
+            </tr>
+    {% endfor %}
+
+<script src="{% static 'js/jquery.formset.js' %}"></script>
+<script type="text/javascript">
+    $('.formset_row-{{ formset.prefix }}').formset({
+        addText: 'add another',
+        deleteText: 'remove',
+        prefix: '{{ formset.prefix }}',
+	added: function (row) {
+    row.find('input[type=checkbox]').change()},
+    });
+</script>

@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 {% load staticfiles %}
+{% load crispy_forms_tags %}
 
 {% block title %}
 Adding {{ object_name }}
@@ -27,12 +28,18 @@ Adding {{ object_name }}
 
 <div class="edit">
 <form action="{{ object_url }}" method="POST">
-  {% csrf_token %}
+  {% if object_name == 'Story' %}
+    {% csrf_token %}
+  {% endif %}
   {% if include_before_form %}
     {% include include_before_form %}
   {% endif %}
   <table class="editing">
-  {{ form.as_table }}
+  {% if object_name == 'Story' %}
+    {% crispy form %}
+  {% else %}
+    {{ form.as_table }}
+  {% endif %}
   </table>
   {% if include_after_form %}
     {% include include_after_form %}
@@ -52,6 +59,7 @@ Adding {{ object_name }}
 
 {% block footer %}
   {{ form.media }}
+  {{ credits_formset.media }}
   {% if object_name in 'Issues Story Creator' or 'Variant Issue' in object_name %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}

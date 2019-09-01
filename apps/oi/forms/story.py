@@ -4,20 +4,25 @@ from __future__ import unicode_literals
 from django import forms
 from django.conf import settings
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.forms.models import inlineformset_factory
+
+from dal import autocomplete
+
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field
+from crispy_forms.utils import render_field
 
 from apps.oi.models import (
     get_reprint_field_list, get_story_field_list,
-    BiblioEntryRevision, ReprintRevision, StoryRevision)
+    BiblioEntryRevision, ReprintRevision, StoryRevision,
+    StoryCreditRevision)
 
 
-from apps.gcd.models import StoryType, STORY_TYPES, OLD_TYPES
+from apps.gcd.models import CreatorNameDetail, StoryType, STORY_TYPES,\
+                            NON_OPTIONAL_TYPES, OLD_TYPES, CREDIT_TYPES
 from apps.gcd.models.support import GENRES
 
-# TODO: Should not be reaching inside gcd.models sub-package.
-#       This should either be exported thorugh gcd.models or
-#       we should not be using it here.
-from apps.gcd.models.story import NON_OPTIONAL_TYPES
-
+from .custom_layout_object import Formset
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
@@ -30,7 +35,7 @@ def get_reprint_revision_form(revision=None, user=None):
         def as_table(self):
             # TODO: Why is there commented-out code?
             # if not user or user.indexer.show_wiki_links:
-                # _set_help_labels(self, REPRINT_HELP_LINKS)
+            #   _set_help_labels(self, REPRINT_HELP_LINKS)
             return super(RuntimeReprintRevisionForm, self).as_table()
     return RuntimeReprintRevisionForm
 
@@ -45,11 +50,11 @@ def _genre_choices(language=None, additional_genres=None):
     fantasy_id = GENRES['en'].index(u'fantasy')
     if language and language.code != 'en' and language.code in GENRES:
         choices = [[g, g + ' / ' + h]
-                    for g, h in zip(GENRES['en'], GENRES[language.code])]
+                   for g, h in zip(GENRES['en'], GENRES[language.code])]
         choices[fantasy_id] = [
             u'fantasy',
             (u'fantasy-supernatural / %s' %
-              GENRES[language.code][fantasy_id])
+             GENRES[language.code][fantasy_id])
         ]
     else:
         choices = [[g, g] for g in GENRES['en']]
@@ -133,6 +138,51 @@ def get_story_revision_form(revision=None, user=None,
     return RuntimeStoryRevisionForm
 
 
+class StoryCreditRevisionForm(forms.ModelForm):
+    class Meta:
+        model = StoryCreditRevision
+        fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
+                  'is_signed', 'signed_as', 'uncertain', 'credit_name']
+
+    def __init__(self, *args, **kwargs):
+        super(StoryCreditRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+
+    creator = forms.ModelChoiceField(
+      queryset=CreatorNameDetail.objects.filter(deleted=False),
+      widget=autocomplete.ModelSelect2(url='creator_name_autocomplete'),
+      required=True)
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['credited_as'] and not cd['is_credited']:
+            raise forms.ValidationError(
+                ['Is credited needs to be selected when entering a name as '
+                 'credited.'])
+
+        if cd['signed_as'] and not cd['is_signed']:
+            raise forms.ValidationError(
+                ['Is signed needs to be selected when entering a name as '
+                 'signed.'])
+
+
+StoryRevisionFormSet = inlineformset_factory(
+    StoryRevision, StoryCreditRevision, form=StoryCreditRevisionForm,
+    can_delete=True, extra=1)
+
+
+class BaseField(Field):
+    def render(self, form, form_style, context, template_pack=None):
+        fields = ''
+
+        for field in self.fields:
+            fields += render_field(field, form, form_style, context,
+                                   template_pack=template_pack)
+        return fields
+
+
 class StoryRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryRevision
@@ -148,6 +198,25 @@ class StoryRevisionForm(forms.ModelForm):
                 '"red kryptonite", "Vietnam". or "time travel".  Multiple '
                 'entries are to be separated by semi-colons.',
         }
+
+    def __init__(self, *args, **kwargs):
+        super(StoryRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.form_tag = False
+        fields = list(self.fields)
+        credit_start = fields.index('script')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields[:credit_start]]
+        field_list.append(Formset('credits_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[credit_start:]])
+        self.helper.layout = Layout(*(f for f in field_list))
 
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
@@ -306,13 +375,27 @@ class StoryRevisionForm(forms.ModelForm):
 
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
+            nr_credit_forms = self.data['story_credit_revisions-TOTAL_FORMS']
+            seq_type_found = False
+            for i in range(int(nr_credit_forms)):
+                delete_i = 'story_credit_revisions-%d-DELETE' % i
+                form_deleted = False
+                if delete_i in self.data:
+                    if self.data[delete_i]:
+                        form_deleted = True
+                if not form_deleted and \
+                   self.data['story_credit_revisions-%d-credit_type' % i] == \
+                   CREDIT_TYPES[seq_type]:
+                    seq_type_found = True
             if cd['type'].id in NON_OPTIONAL_TYPES:
-                if not cd['no_%s' % seq_type] and cd[seq_type] == "":
+                if not cd['no_%s' % seq_type] and cd[seq_type] == "" \
+                   and not seq_type_found:
                     raise forms.ValidationError(
                         ['%s field or No %s checkbox must be filled in.' %
                          (seq_type.capitalize(), seq_type.capitalize())])
 
-            if cd['no_%s' % seq_type] and cd[seq_type] != "":
+            if cd['no_%s' % seq_type] and (cd[seq_type] != "" or
+                                           seq_type_found):
                 raise forms.ValidationError(
                     ['%s field and No %s checkbox cannot both be filled in.' %
                      (seq_type.capitalize(), seq_type.capitalize())])

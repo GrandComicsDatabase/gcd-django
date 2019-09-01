@@ -178,7 +178,7 @@ def process_select_search(request, select_key):
             search = search.filter(sequence_number=cd['sequence_number'])
             heading += ', seq.# ' + str(cd['sequence_number'])
         if 'search_cover' in request.GET:
-                # ? make StoryType.objects.get(name='cover').id a CONSTANT ?
+            # ? make StoryType.objects.get(name='cover').id a CONSTANT ?
             search = search.filter(type=StoryType.objects.get(name='cover'))
             base_name = 'cover'
             plural_suffix = 's'
@@ -423,7 +423,8 @@ class CreatorAutocomplete(LoginRequiredMixin,
 class CreatorNameAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = CreatorNameDetail.objects.filter(deleted=False)
+        qs = CreatorNameDetail.objects.filter(deleted=False,
+                                              type__id__in=[1, 2, 5, 6, 7, 8])
 
         if self.q:
             qs = qs.filter(sort_name__istartswith=self.q)

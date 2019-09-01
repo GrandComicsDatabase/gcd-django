@@ -25,6 +25,11 @@ urlpatterns = [
         name='creator_autocomplete',
     ),
     url(
+        r'^autocomplete/creator_name/$',
+        select_views.CreatorNameAutocomplete.as_view(),
+        name='creator_name_autocomplete',
+    ),
+    url(
         r'^autocomplete/feature/$',
         select_views.FeatureAutocomplete.as_view(),
         name='feature_autocomplete',

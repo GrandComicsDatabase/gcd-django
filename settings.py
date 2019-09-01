@@ -122,7 +122,8 @@ MIDDLEWARE_CLASSES = (
    'django_mobile.middleware.MobileDetectionMiddleware',
    'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
-   'apps.middleware.errorhandling.ErrorHandlingMiddleware'
+   'apps.middleware.errorhandling.ErrorHandlingMiddleware',
+   'apps.middleware.stripwhitespace.StripWhitespaceMiddleware'
 )
 
 LANGUAGES = (
@@ -170,6 +171,7 @@ INSTALLED_APPS = (
     'bootstrap3',
     'contact_form',
     'captcha',
+    'crispy_forms'
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -241,6 +243,8 @@ COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                        'templates/managed_content/')),]
 TEMPLATESADMIN_GROUP = 'templateadmin'
+
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
 #################################################################################
 # Haystack and search

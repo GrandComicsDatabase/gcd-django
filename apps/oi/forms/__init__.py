@@ -21,7 +21,7 @@ from .series import get_series_revision_form, get_series_bond_revision_form
 from .issue import (    # noqa
     get_issue_revision_form, get_bulk_issue_revision_form)
 from .story import (get_story_revision_form, get_biblio_revision_form,
-                    get_reprint_revision_form)
+                    get_reprint_revision_form, StoryRevisionFormSet)
 from .feature import (get_feature_revision_form,
                       get_feature_logo_revision_form,
                       get_feature_relation_revision_form)
@@ -36,14 +36,16 @@ from .award import (get_award_revision_form,
 from .creator import (    # noqa
     CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
     CreatorMembershipRevisionForm,
-    CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm, 
+    CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm,
     CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
     get_creator_art_influence_revision_form,
     get_creator_membership_revision_form, get_creator_revision_form,
-    get_creator_non_comic_work_revision_form, get_creator_relation_revision_form,
+    get_creator_non_comic_work_revision_form,
+    get_creator_relation_revision_form,
     get_creator_school_revision_form, get_creator_degree_revision_form)
 from .support import (add_data_source_fields, init_data_source_fields,
-    _set_help_labels)
+                      _set_help_labels)
+
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
     if revision is not None and model_name is None:
@@ -173,6 +175,7 @@ def get_date_revision_form(revision=None, user=None, date_help_links=[]):
             super(RuntimeDateRevisionForm, self).__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields(self.prefix, revision, self.fields)
+
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
                 _set_help_labels(self, date_help_links)

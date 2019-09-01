@@ -4,6 +4,7 @@
 
 {% load credits %}
 {% load editing %}
+{% load crispy_forms_tags %}
 
 {% block title %}
 {{ changeset }}
@@ -35,7 +36,11 @@
 <form action="{% url "process_revision" model_name=revision.source_name id=revision.id %}" method="POST">
   {% csrf_token %}
   <table class="editing">
-  {{ form.as_table }}
+  {% if revision.source_name == 'story' %}
+    {% crispy form %}
+  {% else %}
+    {{ form.as_table }}
+  {% endif %}
   </table>
   {% with changeset.comments as comments %}
   {% include 'oi/bits/comments.html' %}
@@ -51,6 +56,7 @@
 
 {% block footer %}
   {{ form.media }}
+  {{ credits_formset.media }}
   {% if revision.source_name in 'issue story' %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}

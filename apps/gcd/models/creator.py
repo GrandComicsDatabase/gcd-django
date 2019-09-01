@@ -4,9 +4,11 @@ from django.core import urlresolvers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from .gcddata import GcdData
-from .award import Award, ReceivedAward
+from .award import ReceivedAward
 from .datasource import DataSource
 from .image import Image
 from apps.stddata.models import Country, Date
@@ -94,7 +96,7 @@ class CreatorNameDetail(GcdData):
     class Meta:
         db_table = 'gcd_creator_name_detail'
         app_label = 'gcd'
-        ordering = ['type__id', 'sort_name', '-id']
+        ordering = ['sort_name', 'type__id', 'id']
         verbose_name_plural = 'CreatorName Details'
 
     name = models.CharField(max_length=255, db_index=True)
@@ -102,10 +104,50 @@ class CreatorNameDetail(GcdData):
     creator = models.ForeignKey('Creator', related_name='creator_names')
     type = models.ForeignKey('NameType', related_name='nametypes', null=True)
 
+    def display_credit(self, credit, url=True):
+        if self.type.id == 1:
+            name = self.name
+        else:
+            name = u'%s [as %s]' % (self.creator, self.name)
+        if url:
+            credit_text = u'<a href="%s">%s</a>' % (self.get_absolute_url(),
+                                                    esc(name))
+        else:
+            credit_text = esc(name)
+        if credit.is_signed and credit.is_credited:
+            credit_text += ' (credited, signed)'
+        elif credit.is_signed:
+            credit_text += ' (signed)'
+        elif credit.is_credited:
+            credit_text += ' (credited)'
+
+        if credit.credited_as:
+            credit_text += ' [credited as %s]' % esc(credit.credited_as)
+        if credit.signed_as:
+            credit_text += ' [signed as %s]' % esc(credit.signed_as)
+
+        if credit.credit_name:
+            credit_text += ' (%s)' % esc(credit.credit_name)
+
+        return mark_safe(credit_text)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_creator',
+                kwargs={'creator_id': self.creator.id})
+
     def __unicode__(self):
-        return '%s - %s(%s)' % (unicode(self.creator),
-                                unicode(self.name),
-                                unicode(self.type.type))
+        if self.creator.birth_date.year:
+            year = '(%s)' % self.creator.birth_date.year
+        else:
+            year = ''
+        if self.type.id == 1:
+            return '%s %s (%s)' % (unicode(self.name), year,
+                                   unicode(self.type.type))
+        else:
+            return '%s %s - %s (%s)' % (unicode(self.creator), year,
+                                        unicode(self.name),
+                                        unicode(self.type.type))
 
 
 class RelationType(models.Model):
@@ -224,8 +266,8 @@ class Creator(GcdData):
         if self.art_influence_revisions.active_set().count():
             return True
         # TODO how to handle GenericRelation for ReceivedAward
-        #if self.award_revisions.filter.active_set().count():
-            #return True
+        # if self.award_revisions.filter.active_set().count():
+            # return True
         if self.degree_revisions.active_set().count():
             return True
         if self.membership_revisions.active_set().count():
@@ -320,7 +362,7 @@ class CreatorRelation(GcdData):
         return '%s >Relation< %s :: %s' % (unicode(self.from_creator),
                                            unicode(self.to_creator),
                                            unicode(self.relation_type)
-                                          )
+                                           )
 
 
 class School(models.Model):
@@ -506,50 +548,6 @@ class CreatorMembership(GcdData):
         return '%s' % unicode(self.organization_name)
 
 
-#class CreatorAward(GcdData):
-    #"""
-    #record any awards and honors a creator received
-    #"""
-
-    #class Meta:
-        #db_table = 'gcd_creator_award'
-        #app_label = 'gcd'
-        #ordering = ('award_year',)
-        #verbose_name_plural = 'Creator Awards'
-
-    #creator = models.ForeignKey(Creator, related_name='award_set')
-    #award = models.ForeignKey(Award, null=True)
-    #award_name = models.CharField(max_length=255)
-    #no_award_name = models.BooleanField(default=False)
-    #award_year = models.PositiveSmallIntegerField(null=True)
-    #award_year_uncertain = models.BooleanField(default=False)
-    #notes = models.TextField()
-    #data_source = models.ManyToManyField(DataSource)
-
-    #def has_dependents(self):
-        #return self.creator.pending_deletion()
-
-    #def display_name(self):
-        #if not self.no_award_name:
-            #return self.award_name
-        #else:
-            #return '[no name]'
-
-    #def display_year(self):
-        #if not self.award_year:
-            #return '?'
-        #else:
-            #return '%d%s' % (self.award_year, '?' if self.award_year_uncertain else '')
-
-    #def get_absolute_url(self):
-        #return urlresolvers.reverse(
-                #'show_creator_award',
-                #kwargs={'creator_award_id': self.id})
-
-    #def __unicode__(self):
-        #return unicode(self.award_name)
-
-
 class NonComicWorkType(models.Model):
     """
     record the type of work performed
@@ -622,7 +620,8 @@ class CreatorNonComicWork(GcdData):
                 year_range = True
             else:
                 if year_range:
-                    year_string += u' - %d; %d' % (year_before.work_year, year.work_year)
+                    year_string += u' - %d; %d' % (year_before.work_year,
+                                                   year.work_year)
                     if year.work_year_uncertain:
                         year_string += u'?'
                 else:
@@ -666,4 +665,3 @@ class NonComicWorkYear(models.Model):
     def __unicode__(self):
         return '%s - %s' % (unicode(self.non_comic_work),
                             unicode(self.work_year))
-

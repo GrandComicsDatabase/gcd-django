@@ -73,6 +73,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_revision_form,
                            get_series_revision_form,
                            get_story_revision_form,
+                           StoryRevisionFormSet,
                            get_feature_logo_revision_form,
                            get_feature_relation_revision_form,
                            get_date_revision_form,
@@ -492,7 +493,8 @@ def edit_revision(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     form_class = get_revision_form(revision, user=request.user)
     form = form_class(instance=revision)
-    return _display_edit_form(request, revision.changeset, form, revision)
+    extra_forms = revision.extra_forms()
+    return _display_edit_form(request, revision.changeset, form, revision, extra_forms)
 
 
 @permission_required('indexer.can_reserve')
@@ -511,7 +513,7 @@ def edit(request, id):
     return _display_edit_form(request, changeset, form, revision)
 
 
-def _display_edit_form(request, changeset, form, revision=None):
+def _display_edit_form(request, changeset, form, revision=None, extra_forms=None):
     if revision is None or changeset.inline():
         template = 'oi/edit/changeset.html'
         if revision is None:
@@ -520,6 +522,7 @@ def _display_edit_form(request, changeset, form, revision=None):
         template = 'oi/edit/revision.html'
 
     # TODO generalize, e.g. make a multiform-flag for a changeset
+    # look at how it is now done for StoryRevision
     if changeset.change_type == CTYPES['creator']:
         form_class = get_date_revision_form(revision, user=request.user,
                                             date_help_links=CREATOR_HELP_LINKS)
@@ -559,7 +562,7 @@ def _display_edit_form(request, changeset, form, revision=None):
                         'name': creator_name['name'],
                         'type_id': creator_name['type_id'],
                         'relation_id': creator_name['relation_type_id']})
-                
+
         response = oi_render(
           request,
           template,
@@ -582,17 +585,17 @@ def _display_edit_form(request, changeset, form, revision=None):
           })
         return response
 
-    response = oi_render(
-      request,
-      template,
-      {
+    context_vars = {
         'changeset': changeset,
         'revision': revision,
         'form': form,
         'states': states,
         'settings': settings,
         'CTYPES': CTYPES
-      })
+    }
+    if extra_forms:
+        context_vars.update(extra_forms)
+    response = oi_render(request, template, context_vars)
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
@@ -689,6 +692,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                                          new_state=changeset.state)
 
         revision.save()
+        revision.process_extra_forms(request)
         if revision.changeset.change_type == CTYPES['series'] and \
           'move_to_publisher_with_id' in form.cleaned_data and \
           request.user.has_perm('indexer.can_approve') and \
@@ -842,10 +846,12 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
         revision = get_object_or_404(REVISION_CLASSES[model_name],
                                      id=revision_id)
         changeset = revision.changeset
+        # TODO generalize
+        extra_forms = {'credits_formset': StoryRevisionFormSet(request.POST),}
     elif changeset == None:
         # cannot happen, but to be safe
         raise ValueError
-    return _display_edit_form(request, changeset, form, revision)
+    return _display_edit_form(request, changeset, form, revision, extra_forms=extra_forms)
 
 
 @permission_required('indexer.can_reserve')
@@ -2764,6 +2770,11 @@ def add_story(request, issue_revision_id, changeset_id):
         initial = _get_initial_add_story_data(request, issue_revision, seq)
         return copy_sequence(request, changeset_id, issue_id,
                              sequence_number=initial['sequence_number'])
+
+    if request.method == 'POST' and 'cancel_return' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit', kwargs={'id': changeset_id}))
+
     # Process add form if this is a POST.
     try:
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
@@ -2774,10 +2785,7 @@ def add_story(request, issue_revision_id, changeset_id):
                   'You cannot add more than one story to a variant issue.',
                   redirect=False)
 
-        if issue:
-            is_comics_publication = issue.series.is_comics_publication
-        else: # for variants added with base issue the issue is not set
-            is_comics_publication = True
+        initial = {}
         if request.method != 'POST':
             seq = ''
             if 'added_sequence_number' in request.GET:
@@ -2789,20 +2797,29 @@ def add_story(request, issue_revision_id, changeset_id):
             else:
                 initial = _get_initial_add_story_data(request, issue_revision,
                                                       seq)
-                form = get_story_revision_form(user=request.user,
-                  series=issue_revision.series)(initial=initial)
-            return _display_add_story_form(request, issue_revision, form,
-                                           changeset_id)
-
-        if 'cancel_return' in request.POST:
-            return HttpResponseRedirect(urlresolvers.reverse('edit',
-              kwargs={ 'id': changeset_id }))
-
         form = get_story_revision_form(user=request.user,
-                                       series=issue_revision.series)(request.POST)
-        if not form.is_valid():
-            return _display_add_story_form(request, issue_revision, form,
-                                           changeset_id)
+                                       series=issue_revision.series)\
+                                      (request.POST or None,
+                                       initial=initial)
+        credits_formset = StoryRevisionFormSet(request.POST or None)
+
+        if not form.is_valid() or not credits_formset.is_valid():
+            kwargs = {
+                'issue_revision_id': issue_revision_id,
+                'changeset_id': changeset_id,
+            }
+            url = urlresolvers.reverse('add_story', kwargs=kwargs)
+
+            return oi_render(
+                request, 'oi/edit/add_frame.html',
+                {
+                    'object_name': 'Story',
+                    'object_url': url,
+                    'action_label': 'Save',
+                    'form': form,
+                    'settings': settings,
+                    'credits_formset': credits_formset,
+                })
 
         revision = form.save(commit=False)
         stories = issue_revision.active_stories()
@@ -2811,12 +2828,16 @@ def add_story(request, issue_revision_id, changeset_id):
 
         revision.save_added_revision(changeset=changeset,
                                      issue=issue)
+        revision.save()
         if form.cleaned_data['comments']:
             revision.comments.create(commenter=request.user,
                                      changeset=changeset,
                                      text=form.cleaned_data['comments'],
                                      old_state=changeset.state,
                                      new_state=changeset.state)
+
+        revision.process_extra_forms(request)
+
         if revision.source_class == Story \
           and revision.type.id == STORY_TYPES['about comics']:
             biblio_revision = BiblioEntryRevision(storyrevision_ptr=
@@ -2827,6 +2848,7 @@ def add_story(request, issue_revision_id, changeset_id):
               urlresolvers.reverse('edit_revision',
                                     kwargs={'model_name': 'biblio_entry',
                                             'id': biblio_revision.id }))
+
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
 
@@ -2881,22 +2903,6 @@ def _get_initial_add_story_data(request, issue_revision, seq):
     initial['sequence_number'] = seq_num
     return initial
 
-
-def _display_add_story_form(request, issue, form, changeset_id):
-    kwargs = {
-        'issue_revision_id': issue.id,
-        'changeset_id': changeset_id,
-    }
-    url = urlresolvers.reverse('add_story', kwargs=kwargs)
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': 'Story',
-        'object_url': url,
-        'action_label': 'Save',
-        'form': form,
-        'settings': settings,
-      })
 
 ##############################################################################
 # Series Bond Editing

@@ -1,0 +1,27 @@
+{% load crispy_forms_field %}
+
+{% if field.is_hidden %}
+    {{ field }}
+{% else %}
+{% comment %}        {% if form_show_errors %}
+            {% for error in field.errors %}
+                <p id="error_{{ forloop.counter }}_{{ field.auto_id }}" class="errorlist">
+                    {{ error }}
+                </p>
+            {% endfor %}
+        {% endif %}
+{% endcomment %}
+    <tr><th style="width:150px">
+            {% if field.label %}
+            <label for="{{ field.id_for_label }}" {% if field.field.required %}class="requiredField"{% endif %}>
+                {{ field.label|safe }}:
+            </label>
+        {% endif %}
+        </th>
+            <td>{{ field.errors }}{% crispy_field field %}
+
+        {% if field.help_text %}
+            <br /><span class="helptext">{{ field.help_text|safe }}</span>
+        {% endif %}
+            </td></tr>
+{% endif %}
