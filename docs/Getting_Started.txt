@@ -53,10 +53,11 @@ To create the various tables run the migrations with
 
 python manage.py migrate
 
-This will create the tables, populate them with the required initial data, and 
-update your schema if any updates beyond the initial state are required. 
+This will create the tables, populate them with some of the required initial data, 
+and update your schema if any updates beyond the initial state are required. 
 
-Finally run 
+Currently it is needed to manually perform python manage.py loaddata on all
+files in apps/gcd/fixtures/, e.g. run 
 
 python manage.py loaddata users
 

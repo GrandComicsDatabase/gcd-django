@@ -1328,6 +1328,7 @@ thanks,
                                      series=series_revision.series)
         ongoing.save()
 
+    # here created_gte needed for singleton issues freshly created
     for issue_revision in \
         changeset.issuerevisions.filter(deleted=False,
                                         reservation_requested=True,
@@ -1340,16 +1341,18 @@ thanks,
         changeset.issuerevisions.filter(
                                  deleted=False,
                                  reservation_requested=True,
-                                 issue__created__gte=F('created'),
+                                 issue__created__gt=F('created'),
                                  series__ongoing_reservation__isnull=False,
                                  issue__variant_of__isnull=False):
         _reserve_newly_created_issue(issue_revision.issue, changeset,
                                      changeset.indexer)
 
+    # here created_gt since for issues reserved by an ongoing reservation the
+    # timestamps can be the same
     for issue_revision in \
         changeset.issuerevisions.filter(
                                  deleted=False,
-                                 issue__created__gte=F('created'),
+                                 issue__created__gt=F('created'),
                                  series__ongoing_reservation__isnull=False,
                                  issue__variant_of=None):
         _reserve_newly_created_issue(
