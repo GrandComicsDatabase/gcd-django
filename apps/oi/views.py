@@ -493,7 +493,7 @@ def edit_revision(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     form_class = get_revision_form(revision, user=request.user)
     form = form_class(instance=revision)
-    extra_forms = revision.extra_forms()
+    extra_forms = revision.extra_forms(request)
     return _display_edit_form(request, revision.changeset, form, revision, extra_forms)
 
 
@@ -678,8 +678,23 @@ def _other_forms_valid(request, changeset):
     return False
 
 
+def _extra_forms_valid(request, revision):
+    extra_forms = revision.extra_forms(request)
+    is_valid = True
+    for form in extra_forms:
+        is_valid = is_valid and extra_forms[form].is_valid()
+    return is_valid
+
+
 def _save(request, form, changeset=None, revision_id=None, model_name=None):
-    if form.is_valid() and _other_forms_valid(request, changeset):
+    if revision_id:
+        revision = get_object_or_404(REVISION_CLASSES[model_name],
+                                     id=revision_id)
+        extra_forms_is_valid = _extra_forms_valid(request, revision)
+    else:
+        extra_forms_is_valid = True
+    if form.is_valid() and _other_forms_valid(request, changeset)\
+      and extra_forms_is_valid:
         revision = form.save(commit=False)
         changeset = revision.changeset
         if 'comments' in form.cleaned_data and 'submit' not in request.POST:
@@ -841,17 +856,14 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
           'Revision saved but cannot determine which '
           'page to load now.  Contact an editor if this error persists.')
 
-    revision = None
-    if revision_id is not None:
-        revision = get_object_or_404(REVISION_CLASSES[model_name],
-                                     id=revision_id)
+    if revision_id:
         changeset = revision.changeset
-        # TODO generalize
-        extra_forms = {'credits_formset': StoryRevisionFormSet(request.POST),}
+        extra_forms = revision.extra_forms(request)
     elif changeset == None:
         # cannot happen, but to be safe
         raise ValueError
-    return _display_edit_form(request, changeset, form, revision, extra_forms=extra_forms)
+    return _display_edit_form(request, changeset, form, revision,
+                              extra_forms=extra_forms)
 
 
 @permission_required('indexer.can_reserve')

@@ -1889,13 +1889,13 @@ class Revision(models.Model):
             if (name not in c or reduce(getattr, c[name], self)):
                 setattr(target, name, getattr(self, name))
 
-    def extra_forms(self):
+    def extra_forms(self, request):
         """
         Fetch additional forms of other/related objects for editing.
         """
         pass
 
-    def process_extra_forms(self):
+    def process_extra_forms(self, request):
         """
         Process additional forms of other/related objects on save.
         """
@@ -4628,9 +4628,9 @@ class StoryRevision(Revision):
             if issue.is_indexed:
                 RecentIndexedIssue.objects.update_recents(issue)
 
-    def extra_forms(self):
+    def extra_forms(self, request):
         from apps.oi.forms.story import StoryRevisionFormSet
-        credits_formset = StoryRevisionFormSet(
+        credits_formset = StoryRevisionFormSet(request.POST or None,
           instance=self,
           queryset=self.story_credit_revisions.filter(deleted=False))
         return {'credits_formset': credits_formset, }
