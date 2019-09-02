@@ -3,11 +3,17 @@
 {{ object.first_line|safe }}
 {{ object.feature|safe }}
 {{ object.script|safe }}
+{{ object|search_creator_credit:"script" }}
 {{ object.pencils|safe }}
+{{ object|search_creator_credit:"pencils" }}
 {{ object.inks|safe }}
+{{ object|search_creator_credit:"inks" }}
 {{ object.colors|safe }}
+{{ object|search_creator_credit:"colors" }}
 {{ object.letters|safe }}
+{{ object|search_creator_credit:"letters" }}
 {{ object.editing|safe }}
+{{ object|search_creator_credit:"editing" }}
 {{ object.genre }}
 {{ object.characters|safe }}
 {{ object.synopsis|safe }}

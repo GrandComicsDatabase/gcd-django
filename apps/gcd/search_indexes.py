@@ -199,9 +199,13 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return_val = [(val.strip()) for val in getattr(obj, field).split(';')]
         credits = obj.active_credits.filter(credit_type__name=field)
         if credits:
-            return_val.extend([val.creator.display_credit(credits[0],
-                                                          url=False)
-                               for val in credits])
+            if return_val == ['']:
+                return_val = [val.creator.display_credit(val, url=False)
+                              for val in credits]
+            else:
+                return_val.extend([val.creator.display_credit(val,
+                                                              url=False)
+                                   for val in credits])
         if return_val == ['']:
             return None
         else:
@@ -229,9 +233,13 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                           getattr(obj.issue, 'editing').split(';')])
         credits = obj.active_credits.filter(credit_type__name='editing')
         if credits:
-            return_val.extend([val.creator.display_credit(credits[0],
-                                                          url=False)
-                               for val in credits])
+            if return_val == ['']:
+                return_val = [val.creator.display_credit(val, url=False)
+                              for val in credits]
+            else:
+                return_val.extend([val.creator.display_credit(val,
+                                                              url=False)
+                                   for val in credits])
         if return_val == ['']:
             return None
         else:
