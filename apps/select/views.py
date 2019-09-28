@@ -415,7 +415,7 @@ class CreatorAutocomplete(LoginRequiredMixin,
         qs = Creator.objects.filter(deleted=False)
 
         if self.q:
-            qs = qs.filter(sort_name__istartswith=self.q)
+            qs = qs.filter(name__icontains=self.q)
 
         return qs
 
