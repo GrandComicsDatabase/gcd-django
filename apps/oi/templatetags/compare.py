@@ -404,6 +404,61 @@ def compare_current_reprints(object_type, changeset):
 
 
 @register.filter
+def show_credit_status(story):
+    """
+    Display a set of letters indicating which of the required credit fields
+    have been filled out.  Technically, the editing field is not required but
+    it has historically been displayed as well.  The required editing field
+    is now directly on the issue record.
+    """
+    status = []
+    required_remaining = 5
+
+    if story.script or story.no_script or \
+       story.story_credit_revisions.filter(credit_type__name='script')\
+                                   .exists():
+        status.append('S')
+        required_remaining -= 1
+
+    if story.pencils or story.no_pencils or \
+       story.story_credit_revisions.filter(credit_type__name='pencils')\
+                                   .exists():
+        status.append('P')
+        required_remaining -= 1
+
+    if story.inks or story.no_inks or \
+       story.story_credit_revisions.filter(credit_type__name='inks')\
+                                   .exists():
+        status.append('I')
+        required_remaining -= 1
+
+    if story.colors or story.no_colors or \
+       story.story_credit_revisions.filter(credit_type__name='colors')\
+                                   .exists():
+        status.append('C')
+        required_remaining -= 1
+
+    if story.letters or story.no_letters or \
+       story.story_credit_revisions.filter(credit_type__name='letters')\
+                                   .exists():
+        status.append('L')
+        required_remaining -= 1
+
+    if story.editing or story.no_editing or \
+       story.story_credit_revisions.filter(credit_type__name='editing')\
+                                   .exists():
+        status.append('E')
+
+    completion = 'complete'
+    if required_remaining:
+        completion = 'incomplete'
+    snippet = '[<span class="%s">' % completion
+    snippet += ' '.join(status)
+    snippet += '</span>]'
+    return mark_safe(snippet)
+
+
+@register.filter
 def get_source_revisions(changeset, field):
     revisions = changeset.datasourcerevisions.filter(field=field)
     for revision in revisions:

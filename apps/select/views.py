@@ -427,7 +427,7 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
                                               type__id__in=[1, 2, 5, 6, 7, 8])
 
         if self.q:
-            qs = qs.filter(sort_name__istartswith=self.q)
+            qs = qs.filter(name__icontains=self.q)
 
         return qs
 

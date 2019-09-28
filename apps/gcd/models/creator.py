@@ -114,20 +114,24 @@ class CreatorNameDetail(GcdData):
                                                     esc(name))
         else:
             credit_text = esc(name)
-        if credit.is_signed and credit.is_credited:
+        if credit.is_signed and credit.is_credited \
+          and not credit.credited_as and not credit.signed_as:
             credit_text += ' (credited, signed)'
-        elif credit.is_signed:
+        elif credit.is_signed and not credit.signed_as:
             credit_text += ' (signed)'
-        elif credit.is_credited:
+        elif credit.is_credited and not credit.credited_as:
             credit_text += ' (credited)'
 
         if credit.credited_as:
-            credit_text += ' [credited as %s]' % esc(credit.credited_as)
+            credit_text += ' (credited as %s)' % esc(credit.credited_as)
         if credit.signed_as:
-            credit_text += ' [signed as %s]' % esc(credit.signed_as)
+            credit_text += ' (signed as %s)' % esc(credit.signed_as)
 
         if credit.credit_name:
             credit_text += ' (%s)' % esc(credit.credit_name)
+
+        if credit.uncertain:
+            credit_text += ' ?'
 
         return mark_safe(credit_text)
 

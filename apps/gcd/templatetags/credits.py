@@ -295,49 +295,6 @@ def show_keywords_comma(object):
 
 
 @register.filter
-def show_credit_status(story):
-    """
-    Display a set of letters indicating which of the required credit fields
-    have been filled out.  Technically, the editing field is not required but
-    it has historically been displayed as well.  The required editing field
-    is now directly on the issue record.
-    """
-    status = []
-    required_remaining = 5
-
-    if story.script or story.no_script:
-        status.append('S')
-        required_remaining -= 1
-
-    if story.pencils or story.no_pencils:
-        status.append('P')
-        required_remaining -= 1
-
-    if story.inks or story.no_inks:
-        status.append('I')
-        required_remaining -= 1
-
-    if story.colors or story.no_colors:
-        status.append('C')
-        required_remaining -= 1
-
-    if story.letters or story.no_letters:
-        status.append('L')
-        required_remaining -= 1
-
-    if story.editing or story.no_editing:
-        status.append('E')
-
-    completion = 'complete'
-    if required_remaining:
-        completion = 'incomplete'
-    snippet = '[<span class="%s">' % completion
-    snippet += ' '.join(status)
-    snippet += '</span>]'
-    return mark_safe(snippet)
-
-
-@register.filter
 def show_cover_contributor(cover_revision):
     if cover_revision.file_source:
         if cover_revision.changeset.indexer.id == 381:  # anon user

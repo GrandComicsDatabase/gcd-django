@@ -4524,6 +4524,7 @@ class StoryRevision(Revision):
                         credit.compare_changes()
                         if credit.is_changed:
                             self.changed[credit_type] = True
+                            self.is_changed = True
                             break
 
     def _do_complete_added_revision(self, issue):
