@@ -1,18 +1,22 @@
 {% extends "gcd/search/base_list.html" %}
 
 {% block list_contents %}
+  {% if request.user.is_authenticated and items and not no_bulk_edit and not MYCOMICS %}
+    <div id="bulk_change_info">
+      {% ifequal page.paginator.num_pages 1 %}
+        &nbsp;Use this search result for a <a href="{% url "edit_issues_in_bulk" %}?{{ query_string }}">bulk change</a>
+      {% else %}
+        &nbsp;Note that for a bulk change the number of issues cannot be larger than 100.
+      {% endifequal %}
+    </div>
+  {% endif %}
 
-{% if request.user.is_authenticated and items and not no_bulk_edit and not MYCOMICS %}
-<div id="bulk_change_info">
-{% ifequal page.paginator.num_pages 1 %}
-&nbsp;Use this search result for a <a href="{% url "edit_issues_in_bulk" %}?{{ query_string }}">
-bulk change</a>
-{% else %}
-&nbsp;Note that for a bulk change the number of issues cannot be larger than 100.
-{% endifequal %}
-</div>
-{% endif %}
+  {%  if not_found %}
+    <div>
+      <h4>For the following lines no corresponding issue was found:</h4>
+      {{ not_found|linebreaksbr }}
+    </div>
+  {%  endif %}
 
-{% include "gcd/bits/issue_list.html" %}
-
+  {% include "gcd/bits/issue_list.html" %}
 {% endblock %}

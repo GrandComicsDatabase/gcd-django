@@ -1,5 +1,7 @@
 import os
 import tempfile
+import chardet
+
 from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
@@ -563,7 +565,8 @@ def add_selected_issues_to_collection(request, data):
 @login_required
 def select_issues_from_preselection(request, issues, cancel,
                                     post_process_selection=None,
-                                    collection_list=None):
+                                    collection_list=None,
+                                    not_found=None):
     if not issues.exists():
         raise ErrorWithMessage("No issues to select from.")
     data = {'issue': True,
@@ -581,7 +584,8 @@ def select_issues_from_preselection(request, issues, cancel,
                'plural_suffix': 's',
                'no_bulk_edit': True,
                'all_pre_selected': True,
-               'heading': 'Issues'
+               'heading': 'Issues',
+               'not_found': not_found
                }
     return paginate_response(request, issues,
                             'gcd/search/issue_list.html', context,
@@ -609,6 +613,13 @@ def select_from_on_sale_weekly(request, year=None, week=None):
                              per_page=max(1, issues_on_sale.count()))
 
 
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
+
 @login_required
 def import_items(request):
     if 'import_my_issues' in request.FILES:
@@ -617,37 +628,81 @@ def import_items(request):
         for chunk in request.FILES['import_my_issues'].chunks():
             os.write(tmpfile_handle, chunk)
         os.close(tmpfile_handle)
+
+        number_of_lines = file_len(tmpfile_name)
+        if number_of_lines > 501:
+            messages.error(request, _(u'More than 500 lines. Please split'
+                                      ' the import file into smaller chunks.'))
+            return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
+        rawdata = open(tmpfile_name, 'rb').read()
+        result = chardet.detect(rawdata)
+        charenc = result['encoding']
+
         tmpfile = open(tmpfile_name, 'U')
-        upload = UnicodeReader(tmpfile)
+        upload = UnicodeReader(tmpfile, encoding=charenc)
         issues = Issue.objects.none()
+        line = upload.next()
+        not_found = ""
+        if line[0] == 'Title' and line[1] == 'Issue Number':
+            comicbookdb = True
+        else:
+            comicbookdb = False
+            upload = UnicodeReader(tmpfile, encoding=charenc)
         for line in upload:
             issue = Issue.objects.none()
-            if len(line) >= 2:
-                series = line[0].strip()
-                number = line[1].strip().lstrip('#')
-                if series != '' and number != '':
-                    issue = Issue.objects.filter(
-                                          series__name__icontains=series,
-                                          number=number)
+            if comicbookdb:
+                if line[0][-1] == ')' and line[0][-6] == '(':
+                    series = line[0][:-6].strip()
+                    year_began = int(line[0][-5:-1])
                 else:
-                    issue = Issue.objects.none()
-            if len(line) >= 3:
-                publisher = line[2].strip()
-                if publisher != '':
-                    issue = issue.filter(
-                            series__publisher__name__icontains=publisher)
-            if len(line) >= 4:
-                language_code = line[3].strip()
-                if language_code != '':
-                    issue = issue.filter(
-                            series__language__code__iexact=language_code)
-            issues = issues | issue
+                    raise ValueError
+                number = line[1].strip().lstrip('#')
+                publisher = line[4].strip()
+                if publisher == "Image Comics Inc.":
+                    publisher = "Image"
+                elif publisher == "DC Comics":
+                    publisher = "DC"
+                elif publisher == "Valiant Entertainment LLC":
+                    publisher = "Valiant Entertainment"
+                elif publisher == "Archie Comic Publications Inc.":
+                    publisher = "Archie"
+                elif publisher == "IDW Publishing":
+                    publisher = "IDW"
+                issue = Issue.objects.filter(
+                    series__name=series,
+                    number=number,
+                    series__publisher__name=publisher)
+            else:
+                if len(line) >= 2:
+                    series = line[0].strip()
+                    number = line[1].strip().lstrip('#')
+                    if series != '' and number != '':
+                        issue = Issue.objects.filter(
+                                              series__name__icontains=series,
+                                              number=number)
+                    else:
+                        issue = Issue.objects.none()
+                if len(line) >= 3:
+                    publisher = line[2].strip()
+                    if publisher != '':
+                        issue = issue.filter(
+                                series__publisher__name__icontains=publisher)
+                if len(line) >= 4:
+                    language_code = line[3].strip()
+                    if language_code != '':
+                        issue = issue.filter(
+                                series__language__code__iexact=language_code)
+            if issue.count() == 0:
+                not_found += '","'.join(line) + '\n'
+            else:
+                issues = issues | issue
         issues = issues.distinct()
         tmpfile.close()
         os.remove(tmpfile_name)
         cancel = HttpResponseRedirect(urlresolvers
                                       .reverse('collections_list'))
-        return select_issues_from_preselection(request, issues, cancel)
+        return select_issues_from_preselection(request, issues, cancel,
+                                               not_found=not_found)
 
 
 @login_required

@@ -13,7 +13,7 @@
               <li>To add comics to a collection search inside the database using the regular search options or the <a href="{% url "advanced_search" %}">advanced search</a>. You can select and add comics from search results, from the series page, and from the issue pages. </li>
               <li>Ongoing series can be <a href="{% url "subscriptions_collection" request.user.collector.default_have_collection.id|default:1 %}">subscribed</a> to a collection. You can pull issues added to the database since the last time you did such a pull.</li>
               <li>You can add a comic several times to a collection, e.g. if you have several copies, or if you want a second copy.</li>
-              <li>A collection has several settings which control what additional information can be stored about a comic in that collection. You can store information about
+              <li>A collection has several settings which control what additional information can be stored about a comic in that collection. You can store the following information
               <ul>
                 <li>condition, where several grade systems are available</li>
                 <li>date of acquistion or sale</li>
@@ -21,6 +21,8 @@
                 <li>location of storage or purchase</li>
                 <li>was read, is for sale, or is signed</li>
                 <li>purchase price, market value, or sell price.</li>
+		<li>is in digital form</li>
+		<li>quality rating from 1 (poor) to 5 (excellent)</li>
               </ul>
               </li>
               <li>Items in the default have collection will get the 'own' status per default, and all items in the default want collection will have the 'want' status. For other collections these will not be set automatically, but the defaults can be changed accordingly.</li>

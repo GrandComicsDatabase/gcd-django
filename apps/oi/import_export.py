@@ -228,6 +228,8 @@ def _process_file(request, changeset, is_issue, use_csv=False):
     request.tmpfile = tmpfile
     request.tmpfile_name = tmpfile_name
 
+    # TODO use chardet
+
     # check if file starts with byte order mark
     if tmpfile.read(2) == BOM_UTF16:
         enc = 'utf-16'

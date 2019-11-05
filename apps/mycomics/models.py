@@ -4,6 +4,8 @@ from django.db import models
 from django.utils.safestring import mark_safe
 from django.core import urlresolvers
 
+from model_utils import Choices
+
 from apps.gcd.models import Issue, Series
 from apps.stddata.models import Currency, Date, Language
 from taggit.managers import TaggableManager
@@ -117,7 +119,10 @@ class Collection(models.Model):
                                verbose_name="show entered market value")
     sell_price_used = models.BooleanField(default=False,
                                           verbose_name="show sell price")
-
+    digital_used = models.BooleanField(default=False,
+                                       verbose_name="track digitial versions")
+    rating_used = models.BooleanField(default=False,
+                                      verbose_name="rate comics")
     def get_absolute_url(self):
         return urlresolvers.reverse('view_collection',
                                     kwargs={'collection_id':self.id})
@@ -170,6 +175,14 @@ class CollectionItem(models.Model):
         ordering = ['issue__series__sort_name', 'issue__series__year_began',
                     'issue__sort_code', 'id']
 
+    RATINGS = Choices(
+        (1, 'poor', '1 - Poor'),
+        (2, 'fair', '2 - Fair'),
+        (3, 'good', '3 - Good'),
+        (4, 'very_good ', '4 - Very Good'),
+        (5, 'excellent', '5 - Excellent'),
+    )
+
     collections = models.ManyToManyField(Collection, related_name="items",
                                 db_table="mycomics_collection_item_collections")
     issue = models.ForeignKey(Issue)
@@ -209,6 +222,14 @@ class CollectionItem(models.Model):
                                      blank=True, null=True)
     sell_price_currency = models.ForeignKey(Currency, related_name='+',
                                             null=True, blank=True)
+    rating = models.IntegerField(choices=RATINGS, blank=True, null=True)
+    is_digital = models.BooleanField(default=False)
+
+    def show_rating(self):
+        if self.rating:
+            return CollectionItem.RATINGS[self.rating]
+        else:
+            return '-'
 
     def get_absolute_url(self, collection):
         return urlresolvers.reverse('view_item', kwargs={'item_id':self.id,
