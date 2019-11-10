@@ -29,7 +29,7 @@ from taggit.managers import TaggableManager
 
 from apps.oi import states, relpath
 
-from apps.stddata.models import Country, Language, Date
+from apps.stddata.models import Country, Language, Date, Script
 from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
@@ -1893,9 +1893,9 @@ class Revision(models.Model):
         """
         Fetch additional forms of other/related objects for editing.
         """
-        pass
+        return {}
 
-    def process_extra_forms(self, request):
+    def process_extra_forms(self, request, extra_forms):
         """
         Process additional forms of other/related objects on save.
         """
@@ -4636,10 +4636,8 @@ class StoryRevision(Revision):
           queryset=self.story_credit_revisions.filter(deleted=False))
         return {'credits_formset': credits_formset, }
 
-    def process_extra_forms(self, request):
-        from apps.oi.forms.story import StoryRevisionFormSet
-
-        credits_formset = StoryRevisionFormSet(request.POST, instance=self)
+    def process_extra_forms(self, request, extra_forms):
+        credits_formset = extra_forms['credits_formset']
         for credit_form in credits_formset:
             if credit_form.is_valid() and credit_form.cleaned_data:
                 cd = credit_form.cleaned_data
@@ -6232,6 +6230,27 @@ class DataSourceRevision(Revision):
             unicode(self.field), unicode(self.source_type.type))
 
 
+def process_data_source(creator_form, field_name, changeset=None,
+                        revision=None, sourced_revision=None):
+    data_source = creator_form.cleaned_data.get('%s_source_type' % field_name)
+    data_source_description = creator_form.cleaned_data.get(
+                                          '%s_source_description' % field_name)
+
+    if revision:
+        # existing revision, only update data
+        revision.source_type = data_source
+        revision.source_description = data_source_description
+        revision.save()
+    elif data_source or data_source_description:
+        # new revision, create and set meta data
+        revision = DataSourceRevision.objects.create(
+                                source_type=data_source,
+                                source_description=data_source_description,
+                                changeset=changeset,
+                                sourced_revision=sourced_revision,
+                                field=field_name)
+
+
 def reserve_data_sources(data_sources, changeset, sourced_revision,
                          delete=False):
     for data_source in data_sources:
@@ -6344,6 +6363,9 @@ class CreatorRevision(Revision):
             creator_name = CreatorNameDetailRevision.objects\
                            .clone_revision(name_detail, self.changeset,
                                            self)  # noqa: E127
+            creator_name.save_added_revision(
+                changeset=self.changeset, creator_revision=self)
+
             if delete:
                 creator_name.deleted = True
                 creator_name.save()
@@ -6425,8 +6447,81 @@ class CreatorRevision(Revision):
                 creator_school_revision.deleted = True
                 creator_school_revision.save()
 
+    def extra_forms(self, request):
+        from apps.oi.forms.creator import CreatorRevisionFormSet
+        from apps.oi.forms.support import CREATOR_HELP_LINKS
+        from apps.oi.forms import get_date_revision_form
+
+        creator_names_formset = CreatorRevisionFormSet(
+          request.POST or None, instance=self,
+          queryset=self.cr_creator_names.filter(deleted=False))
+        form_class = get_date_revision_form(self,
+                                            user=request.user,
+                                            date_help_links=CREATOR_HELP_LINKS)
+        birth_date_form = form_class(request.POST or None,
+                                     prefix='birth_date',
+                                     instance=self.birth_date)
+        death_date_form = form_class(request.POST or None,
+                                     prefix='death_date',
+                                     instance=self.death_date)
+
+        return {'creator_names_formset': creator_names_formset,
+                'birth_date_form': birth_date_form,
+                'death_date_form': death_date_form
+                }
+
+    def process_extra_forms(self, request, extra_forms):
+        creator_names_formset = extra_forms['creator_names_formset']
+        for creator_name_form in creator_names_formset:
+            if creator_name_form.is_valid() and creator_name_form.cleaned_data:
+                cd = creator_name_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    creator_revision = creator_name_form.save()
+                else:
+                    creator_revision = creator_name_form.save(commit=False)
+                    creator_revision.save_added_revision(
+                      changeset=self.changeset, creator_revision=self)
+                if cd['is_official_name']:
+                    self.gcd_official_name = cd['name']
+            elif (
+              not creator_name_form.is_valid() and
+              creator_name_form not in creator_names_formset.deleted_forms
+            ):
+                raise ValueError
+
+        removed_names = creator_names_formset.deleted_forms
+        for removed_name in removed_names:
+            if removed_name.cleaned_data['id']:
+                if removed_name.cleaned_data['id'].creator_name_detail:
+                    removed_name.cleaned_data['id'].deleted = True
+                    removed_name.cleaned_data['id'].save()
+                else:
+                    removed_name.cleaned_data['id'].delete()
+
+        birth_date_form = extra_forms['birth_date_form']
+        death_date_form = extra_forms['death_date_form']
+        self.birth_date = birth_date_form.save()
+        self.death_date = death_date_form.save()
+        self.save()
+        # TODO support more than one revision
+        data_source_revision = self.changeset\
+            .datasourcerevisions.filter(field='birth_date')
+        if data_source_revision:
+            data_source_revision = data_source_revision[0]
+        process_data_source(birth_date_form, 'birth_date', self.changeset,
+                            revision=data_source_revision,
+                            sourced_revision=self)
+        data_source_revision = self.changeset\
+            .datasourcerevisions.filter(field='death_date')
+        if data_source_revision:
+            data_source_revision = data_source_revision[0]
+        process_data_source(death_date_form, 'death_date', self.changeset,
+                            revision=data_source_revision,
+                            sourced_revision=self)
+
     def _pre_save_object(self, changes):
-        name = self.changeset.creatornamedetailrevisions.get(type__id=1)
+        name = self.changeset.creatornamedetailrevisions.get(
+                                                         is_official_name=True)
         self.creator.sort_name = name.sort_name
 
         if self.added:
@@ -6683,14 +6778,13 @@ class CreatorNameDetailRevision(Revision):
 
     class Meta:
         db_table = 'oi_creator_name_detail_revision'
-        ordering = ['type__id', 'created', '-id']
+        ordering = ['-is_official_name', 'type__id', 'created', '-id']
         verbose_name_plural = 'Creator Name Detail Revisions'
 
     objects = CreatorNameDetailRevisionManager()
     creator_name_detail = models.ForeignKey('gcd.CreatorNameDetail',
                                             null=True,
                                             related_name='revisions')
-    # TODO remove creator_revision
     creator_revision = models.ForeignKey(CreatorRevision,
                                          related_name='cr_creator_names',
                                          null=True)
@@ -6698,8 +6792,11 @@ class CreatorNameDetailRevision(Revision):
                                 null=True)
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, default='', blank=True)
-    type = models.ForeignKey('gcd.NameType', related_name='cr_nametypes',
-                             null=True, blank=True)
+    is_official_name = models.BooleanField(default=False)
+    type = models.ForeignKey('gcd.NameType',
+                             related_name='revision_name_details',
+                             null=True)
+    in_script = models.ForeignKey(Script, default=Script.LATIN_PK)
 
     source_name = 'creator_name_detail'
     source_class = CreatorNameDetail
@@ -6712,6 +6809,9 @@ class CreatorNameDetailRevision(Revision):
     def source(self, value):
         self.creator_name_detail = value
 
+    def _do_complete_added_revision(self, creator_revision):
+        self.creator_revision = creator_revision
+
     def __unicode__(self):
         return u'%s - %s (%s)' % (
             unicode(self.creator), unicode(self.name), unicode(self.type.type))
@@ -6720,14 +6820,17 @@ class CreatorNameDetailRevision(Revision):
     # Old methods. t.b.c, if deprecated.
 
     def _field_list(self):
-        field_list = ['name', 'sort_name', 'type']
+        field_list = ['name', 'sort_name', 'is_official_name', 'type',
+                      'in_script']
         return field_list
 
     def _get_blank_values(self):
         return {
             'name': '',
             'sort_name': '',
+            'is_official_name': False,
             'type': None,
+            'in_script': ''
         }
 
     def _imps_for(self, field_name):

@@ -11,7 +11,7 @@ from .gcddata import GcdData
 from .award import ReceivedAward
 from .datasource import DataSource
 from .image import Image
-from apps.stddata.models import Country, Date
+from apps.stddata.models import Country, Date, Script
 from apps.oi import states
 
 MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
@@ -102,7 +102,9 @@ class CreatorNameDetail(GcdData):
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True, default='')
     creator = models.ForeignKey('Creator', related_name='creator_names')
-    type = models.ForeignKey('NameType', related_name='nametypes', null=True)
+    type = models.ForeignKey('NameType', related_name='creator_name_details',
+                             null=True)
+    in_script = models.ForeignKey(Script, default=Script.LATIN_PK)
 
     def display_credit(self, credit, url=True):
         if self.type.id == 1:

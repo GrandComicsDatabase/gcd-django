@@ -28,22 +28,14 @@ Adding {{ object_name }}
 
 <div class="edit">
 <form action="{{ object_url }}" method="POST">
-  {% if object_name == 'Story' %}
-    {% csrf_token %}
-  {% endif %}
-  {% if include_before_form %}
-    {% include include_before_form %}
-  {% endif %}
+  {% csrf_token %}
   <table class="editing">
-  {% if object_name == 'Story' %}
+  {% if object_name == 'Story' or object_name == 'Creator' %}
     {% crispy form %}
   {% else %}
     {{ form.as_table }}
   {% endif %}
   </table>
-  {% if include_after_form %}
-    {% include include_after_form %}
-  {% endif %}
 {% if alternative_action %}
   <input type="submit" name="{{ alternative_action }}" value="{{ alternative_label }}"></input>
 {% endif %}

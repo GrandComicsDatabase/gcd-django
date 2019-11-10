@@ -139,3 +139,16 @@ class Language(models.Model):
 
     def __unicode__(self):
         return self.name
+
+
+class Script(models.Model):
+    LATIN_PK = 37
+    class Meta:
+        ordering = ('name',)
+
+    code = models.CharField(max_length=4, unique=True)
+    number = models.PositiveSmallIntegerField(unique=True)
+    name = models.CharField(max_length=64)
+
+    def __unicode__(self):
+        return self.name

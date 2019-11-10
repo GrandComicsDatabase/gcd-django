@@ -2,19 +2,26 @@
 
 from collections import OrderedDict
 from django import forms
+from django.forms.models import inlineformset_factory
 
 from dal import autocomplete
 
-from apps.oi.models import CreatorRevision, CreatorMembershipRevision, \
-                           CreatorArtInfluenceRevision, \
-                           CreatorNonComicWorkRevision, CreatorRelationRevision, \
-                           CreatorSchoolRevision, get_creator_field_list,\
-                           DataSourceRevision, CreatorDegreeRevision, \
-                           _get_creator_sourced_fields, _check_year, \
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field
+from crispy_forms.utils import render_field
+
+from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
+                           CreatorArtInfluenceRevision, CreatorDegreeRevision,\
+                           CreatorNonComicWorkRevision, CreatorSchoolRevision,\
+                           CreatorMembershipRevision, CreatorRelationRevision,\
+                           DataSourceRevision, get_creator_field_list,\
+                           _get_creator_sourced_fields, _check_year,\
                            AwardRevision
 
 from apps.gcd.models import Creator
+from apps.stddata.models import Country
 
+from .custom_layout_object import Formset, FormAsField
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
                       CREATOR_NONCOMICWORK_HELP_TEXTS,
@@ -28,7 +35,6 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       init_data_source_fields, insert_data_source_fields,
                       HiddenInputWithHelp)
 
-
 def _generic_data_source_clean(form, cd):
     data_source_type = cd['_source_type']
     data_source_description = cd['_source_description']
@@ -36,6 +42,48 @@ def _generic_data_source_clean(form, cd):
         if not data_source_type or not data_source_description:
             form.add_error('_source_description',
               'Source description and source type must both be set.')
+
+
+class CreatorNameDetailRevisionForm(forms.ModelForm):
+    class Meta:
+        model = CreatorNameDetailRevision
+        fields = ['name', 'sort_name', 'is_official_name', 'type',
+                  'in_script']
+
+    def __init__(self, *args, **kwargs):
+        super(CreatorNameDetailRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+
+
+class CustomInlineFormSet(forms.BaseInlineFormSet):
+    def clean(self):
+        super(CustomInlineFormSet, self).clean()
+        # example custom validation across forms in the formset
+        gcd_official_count = 0
+        for form in self.forms:
+            cd = form.cleaned_data
+            if 'is_official_name' in cd and cd['is_official_name'] and not cd['DELETE']:
+                gcd_official_count += 1
+        if gcd_official_count != 1:
+            raise forms.ValidationError(
+              "Exactly one name needs to selected as the gcd_official_name.")
+
+
+CreatorRevisionFormSet = inlineformset_factory(
+    CreatorRevision, CreatorNameDetailRevision, form=CreatorNameDetailRevisionForm,
+    can_delete=True, extra=1, formset=CustomInlineFormSet)
+
+
+class BaseField(Field):
+    def render(self, form, form_style, context, template_pack=None):
+        fields = ''
+
+        for field in self.fields:
+            fields += render_field(field, form, form_style, context,
+                                   template_pack=template_pack)
+        return fields
 
 
 def get_creator_revision_form(revision=None, user=None):
@@ -67,6 +115,13 @@ class CreatorRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorRevisionForm, self).__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.form_tag = False
         ordering = self.fields.keys()
         creator_sourced_fields = _get_creator_sourced_fields()
         for field in creator_sourced_fields:
@@ -79,6 +134,23 @@ class CreatorRevisionForm(forms.ModelForm):
           "Biography source description"
         self.fields['bio_source_type'].label = \
           "Biography source type"
+        fields = list(self.fields)
+        field_list = []
+        field_list.append(Formset('creator_names_formset'))
+        field_list.append(FormAsField('birth_date_form'))
+        death_start = fields.index('death_country')
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[:death_start]])
+        field_list.append(FormAsField('death_date_form'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[death_start:]])
+        self.helper.layout = Layout(*(f for f in field_list))
+    birth_country = forms.ModelChoiceField(
+        queryset=Country.objects.exclude(code='xx'), required=False)
+    death_country = forms.ModelChoiceField(
+        queryset=Country.objects.exclude(code='xx'), required=False)
 
     comments = _get_comments_form_field()
 

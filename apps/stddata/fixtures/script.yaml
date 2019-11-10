@@ -1,0 +1,253 @@
+- model: stddata.script
+  pk: 1
+  fields: {code: Adlm, number: 166, name: Adlam}
+- model: stddata.script
+  pk: 2
+  fields: {code: Arab, number: 160, name: Arabic}
+- model: stddata.script
+  pk: 3
+  fields: {code: Armn, number: 230, name: Armenian}
+- model: stddata.script
+  pk: 4
+  fields: {code: Bali, number: 360, name: Balinese}
+- model: stddata.script
+  pk: 5
+  fields: {code: Bamu, number: 435, name: Bamum}
+- model: stddata.script
+  pk: 6
+  fields: {code: Batk, number: 365, name: Batak}
+- model: stddata.script
+  pk: 7
+  fields: {code: Beng, number: 325, name: Bengali}
+- model: stddata.script
+  pk: 8
+  fields: {code: Bugi, number: 367, name: Buginese}
+- model: stddata.script
+  pk: 9
+  fields: {code: Buhd, number: 372, name: Buhid}
+- model: stddata.script
+  pk: 10
+  fields: {code: Cakm, number: 349, name: Chakma}
+- model: stddata.script
+  pk: 11
+  fields: {code: Cans, number: 440, name: Unified Canadian Aboriginal Syllabics}
+- model: stddata.script
+  pk: 12
+  fields: {code: Cham, number: 358, name: Cham}
+- model: stddata.script
+  pk: 13
+  fields: {code: Cher, number: 445, name: Cherokee}
+- model: stddata.script
+  pk: 14
+  fields: {code: Cyrl, number: 220, name: Cyrillic}
+- model: stddata.script
+  pk: 15
+  fields: {code: Deva, number: 315, name: Devanagari (Nagari)}
+- model: stddata.script
+  pk: 16
+  fields: {code: Ethi, number: 430, name: "Ethiopic (Ge\u02BBez)"}
+- model: stddata.script
+  pk: 17
+  fields: {code: Geor, number: 240, name: Georgian (Mkhedruli)}
+- model: stddata.script
+  pk: 18
+  fields: {code: Grek, number: 200, name: Greek}
+- model: stddata.script
+  pk: 19
+  fields: {code: Gujr, number: 320, name: Gujarati}
+- model: stddata.script
+  pk: 20
+  fields: {code: Guru, number: 310, name: Gurmukhi}
+- model: stddata.script
+  pk: 21
+  fields: {code: Hanb, number: 503, name: Han with Bopomofo (alias for Han + Bopomofo)}
+- model: stddata.script
+  pk: 22
+  fields: {code: Hang, number: 286, name: "Hangul (Hang\u016Dl, Hangeul)"}
+- model: stddata.script
+  pk: 23
+  fields: {code: Hani, number: 500, name: 'Han (Hanzi, Kanji, Hanja)'}
+- model: stddata.script
+  pk: 24
+  fields: {code: Hano, number: 371, name: "Hanunoo (Hanun\xF3o)"}
+- model: stddata.script
+  pk: 25
+  fields: {code: Hans, number: 501, name: Han (Simplified variant)}
+- model: stddata.script
+  pk: 26
+  fields: {code: Hant, number: 502, name: Han (Traditional variant)}
+- model: stddata.script
+  pk: 27
+  fields: {code: Hebr, number: 125, name: Hebrew}
+- model: stddata.script
+  pk: 28
+  fields: {code: Hmng, number: 450, name: Pahawh Hmong}
+- model: stddata.script
+  pk: 29
+  fields: {code: Jamo, number: 284, name: Jamo (alias for Jamo subset of Hangul)}
+- model: stddata.script
+  pk: 30
+  fields: {code: Java, number: 361, name: Javanese}
+- model: stddata.script
+  pk: 31
+  fields: {code: Jpan, number: 413, name: Japanese (alias for Han + Hiragana + Katakana)}
+- model: stddata.script
+  pk: 32
+  fields: {code: Kali, number: 357, name: Kayah Li}
+- model: stddata.script
+  pk: 33
+  fields: {code: Khmr, number: 355, name: Khmer}
+- model: stddata.script
+  pk: 34
+  fields: {code: Knda, number: 345, name: Kannada}
+- model: stddata.script
+  pk: 35
+  fields: {code: Lana, number: 351, name: Tai Tham (Lanna)}
+- model: stddata.script
+  pk: 36
+  fields: {code: Laoo, number: 356, name: Lao}
+- model: stddata.script
+  pk: 37
+  fields: {code: Latn, number: 215, name: Latin}
+- model: stddata.script
+  pk: 38
+  fields: {code: Lepc, number: 335, name: "Lepcha (R\xF3ng)"}
+- model: stddata.script
+  pk: 39
+  fields: {code: Limb, number: 336, name: Limbu}
+- model: stddata.script
+  pk: 40
+  fields: {code: Lisu, number: 399, name: Lisu (Fraser)}
+- model: stddata.script
+  pk: 41
+  fields: {code: Mand, number: 140, name: 'Mandaic, Mandaean'}
+- model: stddata.script
+  pk: 42
+  fields: {code: Mend, number: 438, name: Mende Kikakui}
+- model: stddata.script
+  pk: 43
+  fields: {code: Mlym, number: 347, name: Malayalam}
+- model: stddata.script
+  pk: 44
+  fields: {code: Mong, number: 145, name: Mongolian}
+- model: stddata.script
+  pk: 45
+  fields: {code: Mroo, number: 199, name: 'Mro, Mru'}
+- model: stddata.script
+  pk: 46
+  fields: {code: Mtei, number: 337, name: 'Meitei Mayek (Meithei, Meetei)'}
+- model: stddata.script
+  pk: 47
+  fields: {code: Mymr, number: 350, name: Myanmar (Burmese)}
+- model: stddata.script
+  pk: 48
+  fields: {code: Newa, number: 333, name: "Newa, Newar, Newari, Nep\u0101la lipi"}
+- model: stddata.script
+  pk: 49
+  fields: {code: Nkoo, number: 165, name: "N\u2019Ko"}
+- model: stddata.script
+  pk: 50
+  fields: {code: Nshu, number: 499, name: "N\xFCshu"}
+- model: stddata.script
+  pk: 51
+  fields: {code: Olck, number: 261, name: "Ol Chiki (Ol Cemet\u2019, Ol, Santali)"}
+- model: stddata.script
+  pk: 52
+  fields: {code: Orya, number: 327, name: Oriya}
+- model: stddata.script
+  pk: 53
+  fields: {code: Osge, number: 219, name: Osage}
+- model: stddata.script
+  pk: 54
+  fields: {code: Osma, number: 260, name: Osmanya}
+- model: stddata.script
+  pk: 55
+  fields: {code: Pauc, number: 263, name: Pau Cin Hau}
+- model: stddata.script
+  pk: 56
+  fields: {code: Plrd, number: 282, name: Miao (Pollard)}
+- model: stddata.script
+  pk: 57
+  fields: {code: Rjng, number: 363, name: 'Rejang (Redjang, Kaganga)'}
+- model: stddata.script
+  pk: 58
+  fields: {code: Saur, number: 344, name: Saurashtra}
+- model: stddata.script
+  pk: 59
+  fields: {code: Sgnw, number: 95, name: SignWriting}
+- model: stddata.script
+  pk: 60
+  fields: {code: Shaw, number: 281, name: Shavian (Shaw)}
+- model: stddata.script
+  pk: 61
+  fields: {code: Shrd, number: 319, name: "Sharada, \u015A\u0101rad\u0101"}
+- model: stddata.script
+  pk: 62
+  fields: {code: Sind, number: 318, name: 'Khudawadi, Sindhi'}
+- model: stddata.script
+  pk: 63
+  fields: {code: Sinh, number: 348, name: Sinhala}
+- model: stddata.script
+  pk: 64
+  fields: {code: Sora, number: 398, name: Sora Sompeng}
+- model: stddata.script
+  pk: 65
+  fields: {code: Sund, number: 362, name: Sundanese}
+- model: stddata.script
+  pk: 66
+  fields: {code: Sylo, number: 316, name: Syloti Nagri}
+- model: stddata.script
+  pk: 67
+  fields: {code: Syrc, number: 135, name: Syriac}
+- model: stddata.script
+  pk: 68
+  fields: {code: Tagb, number: 373, name: Tagbanwa}
+- model: stddata.script
+  pk: 69
+  fields: {code: Takr, number: 321, name: "Takri, \u1E6C\u0101kr\u012B, \u1E6C\u0101\
+      \u1E45kr\u012B"}
+- model: stddata.script
+  pk: 70
+  fields: {code: Tale, number: 353, name: Tai Le}
+- model: stddata.script
+  pk: 71
+  fields: {code: Talu, number: 354, name: New Tai Lue}
+- model: stddata.script
+  pk: 72
+  fields: {code: Taml, number: 346, name: Tamil}
+- model: stddata.script
+  pk: 73
+  fields: {code: Tavt, number: 359, name: Tai Viet}
+- model: stddata.script
+  pk: 74
+  fields: {code: Telu, number: 340, name: Telugu}
+- model: stddata.script
+  pk: 75
+  fields: {code: Teng, number: 290, name: Tengwar}
+- model: stddata.script
+  pk: 76
+  fields: {code: Tfng, number: 120, name: Tifinagh (Berber)}
+- model: stddata.script
+  pk: 77
+  fields: {code: Tglg, number: 370, name: 'Tagalog (Baybayin, Alibata)'}
+- model: stddata.script
+  pk: 78
+  fields: {code: Thaa, number: 170, name: Thaana}
+- model: stddata.script
+  pk: 79
+  fields: {code: Thai, number: 352, name: Thai}
+- model: stddata.script
+  pk: 80
+  fields: {code: Tibt, number: 330, name: Tibetan}
+- model: stddata.script
+  pk: 81
+  fields: {code: Tirh, number: 326, name: Tirhuta}
+- model: stddata.script
+  pk: 82
+  fields: {code: Vaii, number: 470, name: Vai}
+- model: stddata.script
+  pk: 83
+  fields: {code: Wara, number: 262, name: Warang Citi (Varang Kshiti)}
+- model: stddata.script
+  pk: 84
+  fields: {code: Yiii, number: 460, name: Yi}

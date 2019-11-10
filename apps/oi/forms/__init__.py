@@ -35,7 +35,7 @@ from .award import (get_award_revision_form,
                     ReceivedAwardRevisionForm)
 from .creator import (    # noqa
     CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
-    CreatorMembershipRevisionForm,
+    CreatorMembershipRevisionForm, CreatorRevisionFormSet,
     CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm,
     CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
     get_creator_art_influence_revision_form,
