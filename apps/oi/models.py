@@ -4642,10 +4642,23 @@ class StoryRevision(Revision):
         self._seen_title = False
 
     def _imps_for(self, field_name):
-        if field_name in ('first_line', 'type', 'feature', 'genre',
+        if field_name in ('first_line', 'type', 'feature',
                           'characters', 'synopsis', 'job_number',
                           'reprint_notes', 'notes', 'keywords', 'issue'):
             return 1
+        if field_name == 'genre':
+            if not self.story:
+                return 1
+            if self.story.genre.find(';') > 0:
+                old_genre = self.story.genre.lower().split("; ")
+                old_genre.sort()
+                old_genre = "; ".join(old_genre)
+            else:
+                old_genre = self.story.genre.lower()
+            if self.genre.lower() != old_genre:
+                return 1
+            else:
+                return 0
         if not self._seen_title and field_name in ('title', 'title_inferred'):
             self._seen_title = True
             return 1
