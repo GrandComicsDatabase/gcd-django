@@ -101,7 +101,7 @@ class CreatorNameDetail(GcdData):
     class Meta:
         db_table = 'gcd_creator_name_detail'
         app_label = 'gcd'
-        ordering = ['sort_name', 'type__id', 'id']
+        ordering = ['sort_name', '-creator__birth_date__year', 'type__id']
         verbose_name_plural = 'CreatorName Details'
 
     name = models.CharField(max_length=255, db_index=True)
