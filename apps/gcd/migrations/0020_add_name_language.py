@@ -20,6 +20,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='creatornamedetail',
+            name='is_official_name',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name='creatornamedetail',
             name='in_script',
             field=models.ForeignKey(default=37, on_delete=django.db.models.deletion.CASCADE, to='stddata.Script'),
         ),

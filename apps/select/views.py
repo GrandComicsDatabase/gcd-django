@@ -424,7 +424,20 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = CreatorNameDetail.objects.filter(deleted=False,
-                                              type__id__in=[1, 2, 5, 6, 7, 8])
+                                              type__id__in=[1, 2, 5, 6, 7, 8,
+                                                            9, 10, 11, 12])
+
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+
+        return qs
+
+
+class CreatorName4RelationAutocomplete(LoginRequiredMixin,
+                                       autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = CreatorNameDetail.objects.filter(deleted=False,
+                                              type__id__in=[5,8])
 
         if self.q:
             qs = qs.filter(name__icontains=self.q)

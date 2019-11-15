@@ -18,7 +18,7 @@ from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
                            _get_creator_sourced_fields, _check_year,\
                            AwardRevision
 
-from apps.gcd.models import Creator
+from apps.gcd.models import Creator, CreatorNameDetail
 from apps.stddata.models import Country
 
 from .custom_layout_object import Formset, FormAsField
@@ -47,8 +47,8 @@ def _generic_data_source_clean(form, cd):
 class CreatorNameDetailRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorNameDetailRevision
-        fields = ['name', 'sort_name', 'is_official_name', 'type',
-                  'in_script']
+        fields = ['name', 'sort_name', 'is_official_name', 'given_name',
+                  'family_name', 'type', 'in_script']
 
     def __init__(self, *args, **kwargs):
         super(CreatorNameDetailRevisionForm, self).__init__(*args, **kwargs)
@@ -444,11 +444,23 @@ class CreatorRelationRevisionForm(forms.ModelForm):
         widget=autocomplete.ModelSelect2(url='creator_autocomplete')
     )
 
+    creator_name = forms.ModelChoiceField(
+        queryset=CreatorNameDetail.objects.filter(type__id=8, deleted=False),
+        widget=autocomplete.ModelSelect2(url='creator_name_4_relation_autocomplete'),
+        help_text='For employee or user of house name relations also add the '
+                  'involved creator name.',
+        required=False
+    )
+
     comments = _get_comments_form_field()
 
     def clean(self):
         cd = self.cleaned_data
 
+        if cd['creator_name'] and not cd['relation_type'].id in [3,4]:
+            self.add_error('creator_name',
+                'Select a creator name only for employees of a studio or for '
+                'house names.')
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         _generic_data_source_clean(self, cd)

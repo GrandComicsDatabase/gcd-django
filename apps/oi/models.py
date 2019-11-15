@@ -6683,6 +6683,7 @@ class CreatorRelationRevisionManager(RevisionManager):
             to_creator=creator_relation.to_creator,
             from_creator=creator_relation.from_creator,
             relation_type=creator_relation.relation_type,
+            creator_name=creator_relation.creator_name,
             notes=creator_relation.notes
         )
         revision.save()
@@ -6711,9 +6712,13 @@ class CreatorRelationRevision(Revision):
                                       related_name='revisions')
     from_creator = models.ForeignKey('gcd.Creator',
                                      related_name='from_creator_revisions')
+    creator_name = models.ForeignKey('gcd.CreatorNameDetail', null=True,
+                                     related_name='creator_relation_revisions',
+                                     blank=True)
     notes = models.TextField(blank=True)
 
-    _base_field_list = ['from_creator', 'relation_type', 'to_creator', 'notes']
+    _base_field_list = ['from_creator', 'relation_type', 'to_creator',
+                        'creator_name', 'notes']
 
     def _field_list(self):
         field_list = self._base_field_list
@@ -6724,6 +6729,7 @@ class CreatorRelationRevision(Revision):
             'from_creator': None,
             'to_creator': None,
             'relation_type': None,
+            'creator_name': None,
             'notes': ''
         }
 
@@ -6752,6 +6758,7 @@ class CreatorRelationRevision(Revision):
         creator_relation.to_creator = self.to_creator
         creator_relation.from_creator = self.from_creator
         creator_relation.relation_type = self.relation_type
+        creator_relation.creator_name = self.creator_name
         creator_relation.notes = self.notes
         creator_relation.save()
 
@@ -6793,6 +6800,10 @@ class CreatorNameDetailRevision(Revision):
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, default='', blank=True)
     is_official_name = models.BooleanField(default=False)
+    given_name = models.CharField(max_length=255, db_index=True, default='',
+                                  blank=True)
+    family_name = models.CharField(max_length=255, db_index=True, default='',
+                                   blank=True)
     type = models.ForeignKey('gcd.NameType',
                              related_name='revision_name_details',
                              null=True)
@@ -6812,6 +6823,9 @@ class CreatorNameDetailRevision(Revision):
     def _do_complete_added_revision(self, creator_revision):
         self.creator_revision = creator_revision
 
+    def _post_create_for_add(self, changes):
+        self.creator = self.creator_revision.creator
+
     def __unicode__(self):
         return u'%s - %s (%s)' % (
             unicode(self.creator), unicode(self.name), unicode(self.type.type))
@@ -6820,14 +6834,16 @@ class CreatorNameDetailRevision(Revision):
     # Old methods. t.b.c, if deprecated.
 
     def _field_list(self):
-        field_list = ['name', 'sort_name', 'is_official_name', 'type',
-                      'in_script']
+        field_list = ['name', 'sort_name', 'is_official_name', 'given_name',
+                      'family_name', 'type', 'in_script']
         return field_list
 
     def _get_blank_values(self):
         return {
             'name': '',
             'sort_name': '',
+            'given_name': '',
+            'family_name': '',
             'is_official_name': False,
             'type': None,
             'in_script': ''

@@ -16,6 +16,11 @@ from apps.oi import states
 
 MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
+NAME_TYPES = {
+    'house': 5,
+    'studio': 8,
+}
+
 
 def _display_day(date):
     if date.year:
@@ -101,23 +106,43 @@ class CreatorNameDetail(GcdData):
 
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True, default='')
+    is_official_name = models.BooleanField(default=False)
+    given_name = models.CharField(max_length=255, db_index=True, default='')
+    family_name = models.CharField(max_length=255, db_index=True, default='')
     creator = models.ForeignKey('Creator', related_name='creator_names')
     type = models.ForeignKey('NameType', related_name='creator_name_details',
                              null=True)
     in_script = models.ForeignKey(Script, default=Script.LATIN_PK)
 
     def display_credit(self, credit, url=True):
-        if self.type.id == 1:
+        co_name = ''
+        as_name = ''
+        if self.is_official_name:
             name = self.name
         else:
-            name = u'%s [as %s]' % (self.creator, self.name)
+            name = self.creator.gcd_official_name
+            as_name = self
+            if self.type.id == NAME_TYPES['studio']:
+                co_name = self.creator_relation.get().to_creator
         if url:
-            credit_text = u'<a href="%s">%s</a>' % (self.get_absolute_url(),
-                                                    esc(name))
+            credit_text = u'<a href="%s">%s</a>' % \
+                          (self.creator.get_absolute_url(),
+                           esc(name))
+            if co_name:
+                credit_text += u' of <a href="%s">%s</a>' % \
+                               (co_name.get_absolute_url(),
+                                esc(co_name))
+            if as_name:
+                credit_text += u' [as <a href="%s">%s</a>]' % \
+                               (as_name.get_absolute_url(),
+                                esc(as_name.name))
         else:
             credit_text = esc(name)
+            if as_name:
+                credit_text += u' [as %s]' % as_name
+
         if credit.is_signed and credit.is_credited \
-          and not credit.credited_as and not credit.signed_as:
+           and not credit.credited_as and not credit.signed_as:
             credit_text += ' (credited, signed)'
         elif credit.is_signed and not credit.signed_as:
             credit_text += ' (signed)'
@@ -361,6 +386,8 @@ class CreatorRelation(GcdData):
                                      related_name='to_related_creator')
     relation_type = models.ForeignKey(RelationType,
                                       related_name='relation_type')
+    creator_name = models.ForeignKey(CreatorNameDetail, null=True,
+                                     related_name='creator_relation')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
