@@ -16,11 +16,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='storyrevision',
             name='feature_logo',
-            field=models.ManyToManyField(to='gcd.FeatureLogo'),
+            field=models.ManyToManyField(blank=True, to='gcd.FeatureLogo'),
         ),
         migrations.AddField(
             model_name='storyrevision',
             name='feature_object',
-            field=models.ManyToManyField(to='gcd.Feature'),
+            field=models.ManyToManyField(blank=True, to='gcd.Feature'),
         ),
     ]
