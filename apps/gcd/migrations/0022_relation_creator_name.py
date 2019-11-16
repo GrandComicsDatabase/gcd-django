@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='creatorrelation',
             name='creator_name',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='creator_relation', to='gcd.CreatorNameDetail'),
+            field=models.ManyToManyField(related_name='creator_relation', to='gcd.CreatorNameDetail'),
         ),
     ]
