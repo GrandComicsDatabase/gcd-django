@@ -612,7 +612,7 @@ def _save(request, form, revision, changeset=None, model_name=None):
                                      'publisher_id': publisher_id}))
 
         if hasattr(form, 'save_m2m'):
-            # TODO
+            # TODO handle sources in standard workflow
             # I don't quite understand what is going on here, but for image
             # and cover revision form.save_m2m() fails with a comment.
             # But we don't need form.save_m2m() for these anyway. I suspect
@@ -629,6 +629,9 @@ def _save(request, form, revision, changeset=None, model_name=None):
                                         CTYPES['creator_relation'],
                                         CTYPES['creator_school']]:
                     _save_data_source_revision(form, revision, '')
+                    if revision.changeset.change_type == \
+                      CTYPES['creator_relation']:
+                        form.save_m2m()
                 else:
                     form.save_m2m()
 

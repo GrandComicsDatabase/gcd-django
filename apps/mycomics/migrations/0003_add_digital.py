@@ -30,6 +30,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='collectionitem',
             name='rating',
-            field=models.IntegerField(blank=True, choices=[(1, b'Poor'), (2, b'Fair'), (3, b'Good'), (4, b'Very Good'), (5, b'Excellent')], null=True),
+            field=models.IntegerField(blank=True, choices=[(1, b'1 - Poor'), (2, b'2 - Fair'), (3, b'3 - Good'), (4, b'4 - Very Good'), (5, b'5 - Excellent')], null=True),
         ),
     ]

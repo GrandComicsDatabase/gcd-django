@@ -207,6 +207,10 @@ def field_value(revision, field):
         creator_names = ", ".join(revision.cr_creator_names.all()
                                   .values_list('name', flat=True))
         return creator_names
+    elif field == 'creator_name':
+        creator_names = "; ".join(revision.creator_name.all()
+                                  .values_list('name', flat=True))
+        return creator_names
     elif field == 'feature' and \
       revision._meta.model_name == 'featurelogorevision':
         features = ''

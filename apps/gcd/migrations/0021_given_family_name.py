@@ -22,4 +22,8 @@ class Migration(migrations.Migration):
             name='given_name',
             field=models.CharField(db_index=True, default=b'', max_length=255),
         ),
+        migrations.AlterModelOptions(
+            name='creatornamedetail',
+            options={'ordering': ['sort_name', '-creator__birth_date__year', 'type__id'], 'verbose_name_plural': 'CreatorName Details'},
+        ),
     ]

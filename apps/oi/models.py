@@ -6696,10 +6696,13 @@ class CreatorRelationRevisionManager(RevisionManager):
             to_creator=creator_relation.to_creator,
             from_creator=creator_relation.from_creator,
             relation_type=creator_relation.relation_type,
-            creator_name=creator_relation.creator_name,
             notes=creator_relation.notes
         )
         revision.save()
+        if creator_relation.creator_name.count():
+            revision.creator_name.add(*list(creator_relation.
+                                            creator_name.all().
+                                            values_list('id', flat=True)))
         return revision
 
 
@@ -6725,9 +6728,9 @@ class CreatorRelationRevision(Revision):
                                       related_name='revisions')
     from_creator = models.ForeignKey('gcd.Creator',
                                      related_name='from_creator_revisions')
-    creator_name = models.ForeignKey('gcd.CreatorNameDetail', null=True,
-                                     related_name='creator_relation_revisions',
-                                     blank=True)
+    creator_name = models.ManyToManyField(
+                          'gcd.CreatorNameDetail', blank=True,
+                          related_name='creator_relation_revisions')
     notes = models.TextField(blank=True)
 
     _base_field_list = ['from_creator', 'relation_type', 'to_creator',
@@ -6771,9 +6774,13 @@ class CreatorRelationRevision(Revision):
         creator_relation.to_creator = self.to_creator
         creator_relation.from_creator = self.from_creator
         creator_relation.relation_type = self.relation_type
-        creator_relation.creator_name = self.creator_name
         creator_relation.notes = self.notes
         creator_relation.save()
+        creator_relation.creator_name.clear()
+        if self.creator_name.count():
+            creator_relation.creator_name.add(*list(self.creator_name.all().
+                                                    values_list('id',
+                                                                flat=True)))
 
         if self.creator_relation is None:
             self.creator_relation = creator_relation

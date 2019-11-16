@@ -444,12 +444,13 @@ class CreatorRelationRevisionForm(forms.ModelForm):
         widget=autocomplete.ModelSelect2(url='creator_autocomplete')
     )
 
-    creator_name = forms.ModelChoiceField(
-        queryset=CreatorNameDetail.objects.filter(type__id=8, deleted=False),
-        widget=autocomplete.ModelSelect2(url='creator_name_4_relation_autocomplete'),
-        help_text='For employee or user of house name relations also add the '
-                  'involved creator name.',
-        required=False
+    creator_name = forms.ModelMultipleChoiceField\
+      (queryset=CreatorNameDetail.objects.filter(type__id=8, deleted=False),
+       widget=autocomplete.ModelSelect2Multiple
+                           (url='creator_name_4_relation_autocomplete'),
+       help_text='For employee or user of house name relations also add the '
+                 'involved creator name.',
+       required=False
     )
 
     comments = _get_comments_form_field()
@@ -461,6 +462,12 @@ class CreatorRelationRevisionForm(forms.ModelForm):
             self.add_error('creator_name',
                 'Select a creator name only for employees of a studio or for '
                 'house names.')
+        if cd['creator_name'] and cd['relation_type'].id in [3,4]:
+            for creator_name in cd['creator_name']:
+                if creator_name.creator != cd['from_creator']:
+                    self.add_error\
+                        ('creator_name',
+                         'Selected creator name is from a different creator.')
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         _generic_data_source_clean(self, cd)

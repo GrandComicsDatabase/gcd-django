@@ -122,7 +122,8 @@ class CreatorNameDetail(GcdData):
         else:
             name = self.creator.gcd_official_name
             as_name = self
-            if self.type.id == NAME_TYPES['studio']:
+            if self.type.id == NAME_TYPES['studio'] \
+              and self.creator_relation.count():
                 co_name = self.creator_relation.get().to_creator
         if url:
             credit_text = u'<a href="%s">%s</a>' % \
@@ -139,7 +140,7 @@ class CreatorNameDetail(GcdData):
         else:
             credit_text = esc(name)
             if as_name:
-                credit_text += u' [as %s]' % as_name
+                credit_text += u' [as %s]' % esc(as_name.name)
 
         if credit.is_signed and credit.is_credited \
            and not credit.credited_as and not credit.signed_as:
@@ -386,8 +387,8 @@ class CreatorRelation(GcdData):
                                      related_name='to_related_creator')
     relation_type = models.ForeignKey(RelationType,
                                       related_name='relation_type')
-    creator_name = models.ForeignKey(CreatorNameDetail, null=True,
-                                     related_name='creator_relation')
+    creator_name = models.ManyToManyField(CreatorNameDetail,
+                                          related_name='creator_relation')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
