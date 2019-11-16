@@ -18,8 +18,9 @@ from apps.oi.models import (
     StoryCreditRevision)
 
 
-from apps.gcd.models import CreatorNameDetail, StoryType, STORY_TYPES,\
-                            NON_OPTIONAL_TYPES, OLD_TYPES, CREDIT_TYPES
+from apps.gcd.models import CreatorNameDetail, StoryType, Feature,\
+                            FeatureLogo, STORY_TYPES, NON_OPTIONAL_TYPES,\
+                            OLD_TYPES, CREDIT_TYPES
 from apps.gcd.models.support import GENRES
 
 from .custom_layout_object import Formset
@@ -87,6 +88,10 @@ def get_story_revision_form(revision=None, user=None,
             is_comics_publication = revision.issue.series.is_comics_publication
             has_about_comics = revision.issue.series.has_about_comics
             language = revision.issue.series.language
+        else:
+            # stories for variants in variant-add next to issue have issue
+            language = revision.my_issue_revision.other_issue_revision.\
+                                                  series.language
         if revision.genre:
             genres = revision.genre.split(';')
             for genre in genres:
@@ -130,6 +135,8 @@ def get_story_revision_form(revision=None, user=None,
         type = forms.ModelChoiceField(queryset=queryset, **extra)
         genre = _genre_choices(language=language,
                                additional_genres=additional_genres)
+        language_code = forms.CharField(widget=forms.HiddenInput,
+                                        initial=language.code)
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -151,9 +158,11 @@ class StoryCreditRevisionForm(forms.ModelForm):
         self.helper.layout = Layout(*(f for f in self.fields))
 
     creator = forms.ModelChoiceField(
-      queryset=CreatorNameDetail.objects.filter(deleted=False),
+      queryset=CreatorNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_name_autocomplete'),
-      required=True)
+      required=True,
+      help_text='By entering (any part of) a name select a creator from the database.'
+    )
 
     def clean(self):
         cd = self.cleaned_data
@@ -187,7 +196,7 @@ class StoryRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryRevision
         fields = get_story_field_list()
-        fields.insert(fields.index('job_number') + 1, 'creator_help')
+        fields.insert(fields.index('script'), 'creator_help')
         widgets = {
             'feature': forms.TextInput(attrs={'class': 'wide'}),
         }
@@ -208,7 +217,7 @@ class StoryRevisionForm(forms.ModelForm):
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
         fields = list(self.fields)
-        credit_start = fields.index('script')
+        credit_start = fields.index('creator_help')
         field_list = [BaseField(Field(field,
                                       template='oi/bits/uni_field.html'))
                       for field in fields[:credit_start]]
@@ -241,10 +250,33 @@ class StoryRevisionForm(forms.ModelForm):
                                     max_digits=10, decimal_places=3)
     page_count_uncertain = forms.BooleanField(required=False)
 
+    feature_object = forms.ModelMultipleChoiceField\
+      (queryset=Feature.objects.all(),
+       widget=autocomplete.ModelSelect2Multiple
+                           (url='feature_autocomplete',
+                            forward=['language_code']),
+       required=False
+    )
+
+    feature_logo = forms.ModelMultipleChoiceField\
+      (queryset=FeatureLogo.objects.all(),
+       widget=autocomplete.ModelSelect2Multiple
+                           (url='feature_logo_autocomplete',
+                            forward=['language_code']),
+       required=False,
+       help_text='The feature corresponding to the selected feature logos '
+                 'will be added automatically.'
+    )
+
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='Enter the relevant creator credits in the following '
+        help_text='If a credit cannot be entered above, a text field can be '
+                  'used.<br>'
+                  'For non-optional fields the corresponding no-field is to be'
+                  ' ticked.<br><br>'
+                  ''
+                  'Enter the relevant creator credits in the following '
                   'fields, where multiple credits are separated by '
                   'semi-colons. Notes are in () and aliases in []. If the '
                   'credit applies to a sequence type, but the creator is '

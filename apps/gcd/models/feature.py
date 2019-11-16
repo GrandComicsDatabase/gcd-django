@@ -57,10 +57,14 @@ class Feature(GcdData):
     keywords = TaggableManager()
 
     def has_dependents(self):
-        return bool(self.active_logos().exists())
+        return bool(self.active_logos().exists()) or \
+               bool(self.active_stories().exists())
 
     def active_logos(self):
         return self.featurelogo_set.filter(deleted=False)
+
+    def active_stories(self):
+        return self.story_set.filter(deleted=False)
 
     def display_year_created(self):
         if not self.year_created:
@@ -109,6 +113,12 @@ class FeatureLogo(GcdData):
             return img.get()
         else:
             return None
+
+    def has_dependents(self):
+        return bool(self.active_stories().exists())
+
+    def active_stories(self):
+        return self.story_set.filter(deleted=False)
 
     def display_years(self):
         if not self.year_began and not self.year_ended:

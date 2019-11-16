@@ -4330,9 +4330,9 @@ class PreviewIssue(Issue):
 
 def get_story_field_list():
     return ['sequence_number', 'title', 'title_inferred', 'first_line',
-            'type', 'feature', 'genre', 'job_number',
-            'script', 'no_script', 'pencils', 'no_pencils', 'inks',
-            'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
+            'type', 'feature', 'feature_object', 'feature_logo', 'genre',
+            'job_number', 'script', 'no_script', 'pencils', 'no_pencils',
+            'inks', 'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
             'editing', 'no_editing', 'page_count', 'page_count_uncertain',
             'characters', 'synopsis', 'reprint_notes', 'notes', 'keywords']
 
@@ -4432,6 +4432,8 @@ class StoryRevision(Revision):
     title_inferred = models.BooleanField(default=False)
     first_line = models.CharField(max_length=255, blank=True)
     feature = models.CharField(max_length=255, blank=True)
+    feature_object = models.ManyToManyField(Feature, blank=True)
+    feature_logo = models.ManyToManyField(FeatureLogo, blank=True)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
 
@@ -4699,7 +4701,7 @@ class StoryRevision(Revision):
         if not hasattr(self, '_saved_my_issue_revision'):
             self._saved_my_issue_revision = \
                 self.changeset.issuerevisions.filter(issue=self.issue)[0]
-            return self._saved_my_issue_revision
+        return self._saved_my_issue_revision
 
     def moveable(self):
         """
@@ -4749,6 +4751,8 @@ class StoryRevision(Revision):
             'title_inferred': False,
             'first_line': '',
             'feature': '',
+            'feature_object': None,
+            'feature_logo': None,
             'page_count': None,
             'page_count_uncertain': False,
             'script': '',
@@ -5044,6 +5048,26 @@ class PreviewStory(Story):
         return preview_story
 
     @property
+    def active_credits(self):
+        return self.revision.story_credit_revisions.exclude(deleted=True)
+
+    @property
+    def feature_logo(self):
+        return self.revision.feature_logo.all()
+
+    def has_credits(self):
+        """
+        Simplifies UI checks for conditionals.  Credit fields.
+        """
+        return self.script or \
+               self.pencils or \
+               self.inks or \
+               self.colors or \
+               self.letters or \
+               self.editing or \
+               self.active_credits.exists()
+
+    @property
     def from_reprints(self):
         return self.revision.from_reprints_oi(preview=True)
 
@@ -5061,6 +5085,15 @@ class PreviewStory(Story):
 
     def has_keywords(self):
         return self.revision.has_keywords()
+
+    def has_feature(self):
+        return self.revision.feature or self.revision.feature_object.count()
+
+    def show_feature(self):
+        return self._show_feature(self.revision)
+
+    def show_feature_logo(self):
+        return self._show_feature_logo(self.revision)
 
     @property
     def biblioentry(self):

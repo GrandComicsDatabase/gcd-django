@@ -39,4 +39,9 @@ urlpatterns = [
         select_views.FeatureAutocomplete.as_view(),
         name='feature_autocomplete',
     ),
+    url(
+        r'^autocomplete/feature_logo/$',
+        select_views.FeatureLogoAutocomplete.as_view(),
+        name='feature_logo_autocomplete',
+    ),
 ]

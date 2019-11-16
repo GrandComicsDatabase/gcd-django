@@ -14,13 +14,13 @@
       </h2>
       <h3 class="sequence_header feature">
         <span class="left">
-        {% if story.feature %}
-          <span class="feature">{{ story.feature }}</span>
+        {% if story.has_feature %}
+          <span class="feature">{{ story.show_feature }}</span>
         {% endif %}
         {% if story.type or story.page_count %}
           <span class="type">
           <!-- needs to be stuck together to get display spacing right. -->
-          {% if story.feature %} / {% endif %}
+          {% if story.has_feature %} / {% endif %}
           {% if story.type %}{{ story.type }} / {% endif %}
           {{ story|show_page_count }}
           {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
@@ -64,6 +64,7 @@
         <dl class="contents">
             {{ story|show_credit:"job_number" }}
             {{ story|show_credit:"first_line" }}
+            {{ story|show_credit:"feature_logo" }}
             {{ story|show_credit:"genre" }}
             {{ story|show_credit:"characters"|linebreaksbr }}
             {{ story|show_credit:"synopsis"|linebreaksbr }}

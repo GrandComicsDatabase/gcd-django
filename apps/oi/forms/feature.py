@@ -5,7 +5,7 @@ from django import forms
 
 from dal import autocomplete
 
-from apps.gcd.models import Feature
+from apps.gcd.models import Feature, FeatureRelation
 from apps.gcd.models.support import GENRES
 
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision,
@@ -106,8 +106,13 @@ class FeatureLogoRevisionForm(forms.ModelForm):
 
     comments = _get_comments_form_field()
 
-    # TODO once FeatureLogo is connected to story, need to disallow
-    # removing a Feature which has issues assigned to this FeatureLogo
+    def clean_feature(self):
+        languages = self.cleaned_data['feature'].values('language')
+        if languages.count() != languages.distinct().count():
+            raise forms.ValidationError(
+                'Only one feature can be assigned per language.')
+        return self.cleaned_data['feature']
+
     def clean(self):
         cd = self.cleaned_data
 

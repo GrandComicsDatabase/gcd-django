@@ -226,6 +226,8 @@ def __format_credit(story, credit):
         credit_value = __format_keywords(story.keywords)
         if credit_value == '':
             return ''
+    elif credit == 'feature_logo':
+        credit_value = esc(story.show_feature_logo())
     else:  # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'

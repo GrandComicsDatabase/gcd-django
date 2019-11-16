@@ -204,13 +204,17 @@ def field_value(revision, field):
         # for previous revision (no attr changed) display empty string
         return ''
     elif field == 'cr_creator_names':
-        creator_names = ", ".join(revision.cr_creator_names.all()
-                                  .values_list('name', flat=True))
+        creator_names = ", ".join(value.all().values_list('name', flat=True))
         return creator_names
     elif field == 'creator_name':
-        creator_names = "; ".join(revision.creator_name.all()
-                                  .values_list('name', flat=True))
+        creator_names = "; ".join(value.all().values_list('name', flat=True))
         return creator_names
+    elif field == 'feature_object':
+        features = "; ".join(value.all().values_list('name', flat=True))
+        return features
+    elif field == 'feature_logo':
+        features = "; ".join(value.all().values_list('name', flat=True))
+        return features
     elif field == 'feature' and \
       revision._meta.model_name == 'featurelogorevision':
         features = ''

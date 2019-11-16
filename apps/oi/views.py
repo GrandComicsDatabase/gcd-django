@@ -635,6 +635,21 @@ def _save(request, form, revision, changeset=None, model_name=None):
                 else:
                     form.save_m2m()
 
+        # TODO re-factor into model routine
+        if revision.source_name == 'story':
+            if revision.feature_logo.count():
+                # stories for variants in variant-add next to issue have issue
+                if revision.issue:
+                    language = revision.issue.series.language
+                else:
+                    language = revision.my_issue_revision.\
+                                        other_issue_revision.series.language
+                for feature_logo in revision.feature_logo.all():
+                    if feature_logo.feature.get(language=language) not in \
+                       revision.feature_object.all():
+                        revision.feature_object.add(feature_logo.feature.
+                                                    get(language=language))
+
         if 'submit' in request.POST:
             return submit(request, revision.changeset.id)
         if 'queue' in request.POST:
@@ -2653,6 +2668,19 @@ def add_story(request, issue_revision_id, changeset_id):
 
         extra_forms = {'credits_formset': credits_formset, }
         revision.process_extra_forms(request, extra_forms)
+        form.save_m2m()
+        if revision.feature_logo.count():
+            # stories for variants in variant-add next to issue have issue
+            if revision.issue:
+                language = revision.issue.series.language
+            else:
+                language = revision.my_issue_revision. \
+                    other_issue_revision.series.language
+            for feature_logo in revision.feature_logo.all():
+                if feature_logo.feature.get(language=language) not in \
+                  revision.feature_object.all():
+                    revision.feature_object.add(feature_logo.feature.
+                                                get(language=language))
 
         if revision.source_class == Story \
           and revision.type.id == STORY_TYPES['about comics']:

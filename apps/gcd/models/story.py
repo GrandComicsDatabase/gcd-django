@@ -7,6 +7,7 @@ from taggit.managers import TaggableManager
 from .gcddata import GcdData
 from .award import ReceivedAward
 from .creator import CreatorNameDetail
+from .feature import Feature, FeatureLogo
 
 STORY_TYPES = {
     'cover': 6,
@@ -110,6 +111,8 @@ class Story(GcdData):
     title_inferred = models.BooleanField(default=False, db_index=True)
     first_line = models.CharField(max_length=255, default='')
     feature = models.CharField(max_length=255)
+    feature_object = models.ManyToManyField(Feature)
+    feature_logo = models.ManyToManyField(FeatureLogo)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
 
@@ -168,7 +171,7 @@ class Story(GcdData):
                self.colors or \
                self.letters or \
                self.editing or \
-               self.credits.exists()
+               self.active_credits.exists()
 
     def has_content(self):
         """
@@ -181,7 +184,17 @@ class Story(GcdData):
                self.synopsis or \
                self.has_keywords() or \
                self.has_reprints() or \
+               self.feature_logo.count() or \
                self.active_awards().count()
+
+    def has_feature(self):
+        """
+        UI check for features.
+
+        feature_logo entry automatically results in corresponding
+        feature_object entry, therefore no check needed
+        """
+        return self.feature or self.feature_object.count()
 
     def has_reprints(self, notes=True):
         return (notes and self.reprint_notes) or \
@@ -198,6 +211,26 @@ class Story(GcdData):
 
     def active_awards(self):
         return self.awards.exclude(deleted=True)
+
+    def _show_feature(cls, story):
+        features = u"; ".join(story.feature_object.all().values_list('name',
+                                                                     flat=True))
+        if story.feature:
+            if features:
+                features += u'; %s' % story.feature
+            else:
+                features = story.feature
+        return features
+
+    def show_feature(self):
+        return self._show_feature(self)
+
+    def _show_feature_logo(self, story):
+        return u"; ".join(story.feature_logo.all().values_list('name',
+                                                              flat=True))
+
+    def show_feature_logo(self):
+        return self._show_feature_logo(self)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(

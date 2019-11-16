@@ -14,7 +14,7 @@ from django.utils.html import format_html
 from dal import autocomplete
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
-                            Creator, CreatorNameDetail, Feature
+                            Creator, CreatorNameDetail, Feature, FeatureLogo
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -452,6 +452,27 @@ class FeatureAutocomplete(LoginRequiredMixin,
 
     def get_queryset(self):
         qs = Feature.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+
+        if language:
+            qs = qs.filter(language__code=language)
+
+        if self.q:
+            qs = qs.filter(sort_name__istartswith=self.q)
+
+        return qs
+
+
+class FeatureLogoAutocomplete(LoginRequiredMixin,
+                              autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = FeatureLogo.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+
+        if language:
+            qs = qs.filter(feature__language__code=language)
 
         if self.q:
             qs = qs.filter(sort_name__istartswith=self.q)
