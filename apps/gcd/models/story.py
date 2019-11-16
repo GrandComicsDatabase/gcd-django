@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core import urlresolvers
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
@@ -213,14 +215,23 @@ class Story(GcdData):
         return self.awards.exclude(deleted=True)
 
     def _show_feature(cls, story):
-        features = u"; ".join(story.feature_object.all().values_list('name',
-                                                                     flat=True))
+        first = True
+        features = u''
+        for feature in story.feature_object.all():
+            if first:
+                first = False
+            else:
+                features += u'; '
+            features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
+                                                  esc(feature.name))
+        # features = u"; ".join(story.feature_object.all().
+        #                       values_list('name', flat=True))
         if story.feature:
             if features:
-                features += u'; %s' % story.feature
+                features += u'; %s' % esc(story.feature)
             else:
-                features = story.feature
-        return features
+                features = esc(story.feature)
+        return mark_safe(features)
 
     def show_feature(self):
         return self._show_feature(self)

@@ -255,7 +255,8 @@ class StoryRevisionForm(forms.ModelForm):
        widget=autocomplete.ModelSelect2Multiple
                            (url='feature_autocomplete',
                             forward=['language_code']),
-       required=False
+       required=False,
+       help_text='Only features for the series language can be selected.'
     )
 
     feature_logo = forms.ModelMultipleChoiceField\
@@ -265,7 +266,8 @@ class StoryRevisionForm(forms.ModelForm):
                             forward=['language_code']),
        required=False,
        help_text='The feature corresponding to the selected feature logos '
-                 'will be added automatically.'
+                 'will be added automatically. Only feature logos connected '
+                 'to features of the series language can be selected.'
     )
 
     creator_help = forms.CharField(
