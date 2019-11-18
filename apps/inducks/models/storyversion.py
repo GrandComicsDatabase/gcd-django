@@ -34,6 +34,6 @@ class StoryVersion(models.Model):
                             db_column = 'storycode', null = False)
 
 
-    def __unicode__(self):
+    def __str__(self):
         return self.id
 

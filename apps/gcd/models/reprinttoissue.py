@@ -51,6 +51,6 @@ class ReprintToIssue(models.Model):
             reprint = '%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s of %s reprinted in %s' % (self.origin, self.origin.issue,
                                               self.target_issue)

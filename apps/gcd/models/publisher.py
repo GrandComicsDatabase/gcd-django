@@ -63,7 +63,7 @@ class BasePublisher(GcdData):
     def full_name(self):
         return str(self)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -347,7 +347,7 @@ class BrandUse(GcdLink):
             'show_brand',
             kwargs={'brand_id': self.emblem.id } )
 
-    def __unicode__(self):
+    def __str__(self):
         return 'emblem %s was used from %s to %s by %s.' % (self.emblem,
           _display_year(self.year_began, self.year_began_uncertain),
           _display_year(self.year_ended, self.year_ended_uncertain),

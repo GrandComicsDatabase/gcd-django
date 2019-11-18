@@ -36,7 +36,7 @@ class SeriesPublicationType(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     notes = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -432,7 +432,7 @@ class Series(GcdData):
             else:
                 return mark_safe('<a href="%s">Add</a>' % (table_url))
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s (%s%s series)' % (self.name, self.year_began,
                                      self._date_uncertain(
                                        self.year_began_uncertain))

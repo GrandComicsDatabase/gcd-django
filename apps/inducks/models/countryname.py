@@ -16,5 +16,5 @@ class CountryName(models.Model):
     name = models.CharField(max_length = 20, db_column = 'countryname')
     language = models.ForeignKey(Language, primary_key = True, 
                                  db_column = 'languagecode')
-    def __unicode__(self):
+    def __str__(self):
         return self.name

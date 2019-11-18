@@ -88,7 +88,7 @@ class NameType(models.Model):
     description = models.TextField(default='', blank=True)
     type = models.CharField(max_length=50)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % str(self.type)
 
 
@@ -169,7 +169,7 @@ class CreatorNameDetail(GcdData):
                 'show_creator',
                 kwargs={'creator_id': self.creator.id})
 
-    def __unicode__(self):
+    def __str__(self):
         if self.creator.birth_date.year:
             year = '(b. %s)' % self.creator.birth_date.year
         else:
@@ -197,7 +197,7 @@ class RelationType(models.Model):
     type = models.CharField(max_length=50)
     reverse_type = models.CharField(max_length=50)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.type)
 
 
@@ -366,7 +366,7 @@ class Creator(GcdData):
                 'show_creator',
                 kwargs={'creator_id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % str(self.gcd_official_name)
 
 
@@ -393,7 +393,7 @@ class CreatorRelation(GcdData):
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_creator),
                                            str(self.to_creator),
                                            str(self.relation_type)
@@ -412,7 +412,7 @@ class School(models.Model):
 
     school_name = models.CharField(max_length=200)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.school_name)
 
 
@@ -444,7 +444,7 @@ class CreatorSchool(GcdData):
                 'show_creator_school',
                 kwargs={'creator_school_id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (str(self.creator),
                             str(self.school.school_name))
 
@@ -461,7 +461,7 @@ class Degree(models.Model):
 
     degree_name = models.CharField(max_length=200)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.degree_name)
 
 
@@ -492,7 +492,7 @@ class CreatorDegree(GcdData):
                 'show_creator_degree',
                 kwargs={'creator_degree_id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (str(self.creator),
                             str(self.degree.degree_name))
 
@@ -529,7 +529,7 @@ class CreatorArtInfluence(GcdData):
                 'show_creator_art_influence',
                 kwargs={'creator_art_influence_id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s > %s' % (self.influence(), self.creator.gcd_official_name)
 
 
@@ -545,7 +545,7 @@ class MembershipType(models.Model):
 
     type = models.CharField(max_length=100)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.type)
 
 
@@ -579,7 +579,7 @@ class CreatorMembership(GcdData):
     def has_dependents(self):
         return self.creator.pending_deletion()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % str(self.organization_name)
 
 
@@ -595,7 +595,7 @@ class NonComicWorkType(models.Model):
 
     type = models.CharField(max_length=100)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.type)
 
 
@@ -611,7 +611,7 @@ class NonComicWorkRole(models.Model):
 
     role_name = models.CharField(max_length=200)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.role_name)
 
 
@@ -676,7 +676,7 @@ class CreatorNonComicWork(GcdData):
                 'show_creator_non_comic_work',
                 kwargs={'creator_non_comic_work_id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % (str(self.publication_title))
 
 
@@ -697,6 +697,6 @@ class NonComicWorkYear(models.Model):
     work_year = models.PositiveSmallIntegerField(null=True)
     work_year_uncertain = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (str(self.non_comic_work),
                             str(self.work_year))

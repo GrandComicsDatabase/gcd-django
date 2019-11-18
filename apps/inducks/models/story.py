@@ -45,6 +45,6 @@ class Story(models.Model):
     language = models.ForeignKey(Language, primary_key = True, 
                                  db_column = 'languagecode')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.id
 

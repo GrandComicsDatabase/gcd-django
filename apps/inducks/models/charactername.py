@@ -19,5 +19,5 @@ class CharacterName(models.Model):
                                  db_column = 'languagecode')
     preferred = models.CharField(max_length = 5, db_column = 'preferred')
     
-    def __unicode__(self):
+    def __str__(self):
         return str(self.character) + str(self.name) + str(self.language)
