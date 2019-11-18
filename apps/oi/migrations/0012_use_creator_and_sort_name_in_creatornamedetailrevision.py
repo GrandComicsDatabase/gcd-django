@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='creatornamedetailrevision',
             name='sort_name',
-            field=models.CharField(blank=True, default=b'', max_length=255),
+            field=models.CharField(blank=True, default='', max_length=255),
         ),
         migrations.AlterField(
             model_name='creatornamedetailrevision',

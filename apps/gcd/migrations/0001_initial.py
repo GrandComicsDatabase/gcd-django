@@ -177,7 +177,7 @@ class Migration(migrations.Migration):
                 ('variant_name', models.CharField(max_length=255)),
                 ('barcode', models.CharField(max_length=38, db_index=True)),
                 ('no_barcode', models.BooleanField(default=False)),
-                ('rating', models.CharField(default=b'', max_length=255, db_index=True)),
+                ('rating', models.CharField(default='', max_length=255, db_index=True)),
                 ('no_rating', models.BooleanField(default=False, db_index=True)),
                 ('publication_date', models.CharField(max_length=255)),
                 ('key_date', models.CharField(max_length=10, db_index=True)),
@@ -553,7 +553,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='brand',
             name='group',
-            field=models.ManyToManyField(to='gcd.BrandGroup', db_table=b'gcd_brand_emblem_group', blank=True),
+            field=models.ManyToManyField(to='gcd.BrandGroup', db_table='gcd_brand_emblem_group', blank=True),
             preserve_default=True,
         ),
         migrations.AddField(

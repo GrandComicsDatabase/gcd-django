@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ('year_began_uncertain', models.BooleanField(default=False)),
                 ('year_ended_uncertain', models.BooleanField(default=False)),
                 ('notes', models.TextField()),
-                ('feature', models.ManyToManyField(db_table=b'gcd_feature_logo_2_feature', to='gcd.Feature')),
+                ('feature', models.ManyToManyField(db_table='gcd_feature_logo_2_feature', to='gcd.Feature')),
             ],
             options={
                 'ordering': ('name',),
