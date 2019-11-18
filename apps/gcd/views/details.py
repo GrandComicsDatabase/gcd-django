@@ -1601,7 +1601,7 @@ def agenda(request, language):
     except HTTPError:
         raise Http404
 
-    a = f.read()
+    a = f.read().decode(encoding='UTF-8')
     # two possibilites here
     # a) use an absolute url to the calendar, but than not all works,
     #    i.e. images don't show
@@ -1623,4 +1623,5 @@ def agenda(request, language):
     javascript_text = '<script type="text/javascript" src="'
     javascript_pos = a.find(javascript_text) + len(javascript_text)
     a = a[:javascript_pos] + '//www.google.com' + a[javascript_pos:]
-    return HttpResponse(a)
+
+    return HttpResponse(a.encode(encoding='UTF-8'))

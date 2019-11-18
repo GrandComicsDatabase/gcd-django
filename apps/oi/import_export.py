@@ -758,7 +758,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
         else:
             export += '\t'.join(export_data) + '\r\n'
     if not use_csv:
-        response = HttpResponse(export,
+        response = HttpResponse(export.encode(encoding='UTF-8'),
                                 content_type='text/tab-separated-values')
         response['Content-Disposition'] = 'attachment; filename="%s.tsv"' % \
                                           filename
