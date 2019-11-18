@@ -6,7 +6,6 @@ View methods related to displaying search and search results pages.
 from re import match, split, sub
 from urllib.parse import urlencode
 from decimal import Decimal
-from string import capitalize
 from haystack.backends import SQ
 from stdnum import isbn as stdisbn
 from random import randint
@@ -982,7 +981,7 @@ def used_search(search_values):
     elif search_values['target'] == 'issue_cover':
         target = "Covers"
     else:
-        target = capitalize(search_values['target'])
+        target = search_values['target'].capitalize()
         if target[-1] != 's':
             target += 's'
 

@@ -7,7 +7,7 @@ from mx.DateTime import DateTimeDelta
 from MySQLdb import OperationalError
 
 from django import template
-from django.utils.encoding import smart_unicode as uni
+from django.utils.encoding import smart_text as uni
 from django.utils.translation import ugettext as _
 from django.utils.translation import activate, deactivate
 from django.core.exceptions import MultipleObjectsReturned 

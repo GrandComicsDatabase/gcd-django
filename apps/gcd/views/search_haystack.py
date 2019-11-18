@@ -1,7 +1,7 @@
 import shlex
 from datetime import datetime
 from django.utils.http import urlencode
-from django.utils.encoding import smart_unicode as uni
+from django.utils.encoding import smart_text as uni
 
 from haystack.views import FacetedSearchView
 from apps.gcd.views import ResponsePaginator

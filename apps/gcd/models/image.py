@@ -1,5 +1,4 @@
 import os
-from string import capitalize
 
 from django.db import models
 from django.conf import settings
@@ -92,4 +91,4 @@ class Image(models.Model):
             return ''
 
     def __unicode__(self):
-        return '%s: %s' % (str(self.object), capitalize(self.type.description))
+        return '%s: %s' % (str(self.object), self.type.description.capitalize())
