@@ -90,7 +90,7 @@ class UTF8Recoder:
         return self
 
     def __next__(self):
-        return self.reader.next().encode("utf-8")
+        return next(self.reader).encode("utf-8")
 
 
 class UnicodeReader:

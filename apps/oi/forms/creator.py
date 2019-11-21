@@ -144,7 +144,7 @@ class CreatorRevisionForm(forms.ModelForm):
         self.helper.label_class = 'col-md-3 create-label'
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
-        ordering = list(self.fields.keys())
+        ordering = list(self.fields)
         creator_sourced_fields = _get_creator_sourced_fields()
         for field in creator_sourced_fields:
             insert_data_source_fields(field, ordering, self.fields,
@@ -236,7 +236,7 @@ class CreatorSchoolRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorSchoolRevisionForm, self).__init__(*args, **kwargs)
-        ordering = list(self.fields.keys())
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -275,7 +275,7 @@ class CreatorDegreeRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorDegreeRevisionForm, self).__init__(*args, **kwargs)
-        ordering = list(self.fields.keys())
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -315,7 +315,7 @@ class CreatorMembershipRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorMembershipRevisionForm, self).__init__(*args, **kwargs)
-        ordering = list(self.fields.keys())
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -367,7 +367,7 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorArtInfluenceRevisionForm, self).__init__(*args, **kwargs)
-        ordering = list(self.fields.keys())
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -423,7 +423,7 @@ class CreatorNonComicWorkRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorNonComicWorkRevisionForm, self).__init__(*args, **kwargs)
-        ordering = list(self.fields.keys())
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields, 'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
@@ -491,7 +491,7 @@ class CreatorRelationRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorRelationRevisionForm, self).__init__(*args, **kwargs)
-        ordering = list(self.fields.keys())
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields, 'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields

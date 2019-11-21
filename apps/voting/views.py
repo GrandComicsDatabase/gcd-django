@@ -283,7 +283,7 @@ def vote(request):
     ranks = {}
     if not option_params:
         # ranked_choice, collect all ranks
-        values = list(request.POST.keys())
+        values = list(request.POST)
         for value in values:
             if value.startswith('option'):
                 if request.POST[value]:
@@ -294,7 +294,7 @@ def vote(request):
                         'You must enter a full number for the ranking.')
                 else:
                     ranks[int(value[7:])] = None
-        options = Option.objects.filter(id__in=list(ranks.keys()))
+        options = Option.objects.filter(id__in=list(ranks))
     else:
         options = Option.objects.filter(id__in=option_params)
         # Get all of these now because we may need to iterate twice.
