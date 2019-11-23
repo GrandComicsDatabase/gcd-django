@@ -254,7 +254,8 @@ class StoryRevisionForm(forms.ModelForm):
       (queryset=Feature.objects.all(),
        widget=autocomplete.ModelSelect2Multiple
                            (url='feature_autocomplete',
-                            forward=['language_code']),
+                            forward=['language_code'],
+                            attrs={'style': 'min-width: 60em'}),
        required=False,
        help_text='Only features for the series language can be selected.'
     )
@@ -263,7 +264,9 @@ class StoryRevisionForm(forms.ModelForm):
       (queryset=FeatureLogo.objects.all(),
        widget=autocomplete.ModelSelect2Multiple
                            (url='feature_logo_autocomplete',
-                            forward=['language_code']),
+                            forward=['language_code'],
+                            attrs={'data-html': True,
+                                   'style': 'min-width: 60em'}),
        required=False,
        help_text='The feature corresponding to the selected feature logos '
                  'will be added automatically. Only feature logos connected '
@@ -406,6 +409,10 @@ class StoryRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
                 ['Do not use [] around unofficial story titles, check the '
                  'unofficial checkbox instead.'])
+
+        if cd['feature'] and (cd['feature_object'] or cd['feature_logo']):
+            raise forms.ValidationError(
+                ['Either use the text feature field or the database objects.'])
 
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:

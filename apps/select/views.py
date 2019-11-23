@@ -9,6 +9,7 @@ from django.core import urlresolvers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
+from django.utils.html import format_html
 
 from dal import autocomplete
 
@@ -465,6 +466,12 @@ class FeatureAutocomplete(LoginRequiredMixin,
 
 class FeatureLogoAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
+    def get_result_label(self, feature_logo):
+        if feature_logo.logo:
+            return format_html(u'%s <img src="%s">' % (feature_logo.name, feature_logo.logo.icon.url))
+        else:
+            return format_html(u'%s' % feature_logo.name)
+
     def get_queryset(self):
         qs = FeatureLogo.objects.filter(deleted=False)
 

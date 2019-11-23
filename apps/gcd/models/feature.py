@@ -43,7 +43,7 @@ class FeatureType(models.Model):
 class Feature(GcdData):
     class Meta:
         app_label = 'gcd'
-        ordering = ('name',)
+        ordering = ('sort_name',)
         db_table = 'gcd_feature'
 
     name = models.CharField(max_length=255, db_index=True)
@@ -88,7 +88,7 @@ class FeatureLogo(GcdData):
     """
 
     class Meta:
-        ordering = ('name',)
+        ordering = ('sort_name',)
         app_label = 'gcd'
         db_table = 'gcd_feature_logo'
         verbose_name_plural = 'Feature Logos'

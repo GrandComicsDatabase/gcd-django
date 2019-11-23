@@ -2092,10 +2092,16 @@ class Revision(models.Model):
                 old = old.all().values_list('id', flat=True)
                 new = new.all().values_list('id', flat=True)
                 field_changed = set(old) != set(new)
-            elif isinstance(old, Date):
+            elif isinstance(new, Date):
                 old = unicode(old)
                 new = unicode(new)
                 field_changed = old != new
+            elif isinstance(new, Manager):
+                new = new.all().values_list('id', flat=True)
+                if new:
+                    field_changed = True
+                else:
+                    field_changed = False
             else:
                 field_changed = old != new
             self.changed[field_name] = field_changed
@@ -4409,8 +4415,8 @@ class StoryCreditRevision(Revision):
         }
 
     def _imps_for(self, field_name):
-        # TODO decide how many imps !
-        return 10000
+        # imps already come from StoryRevision, since is_changed is True there
+        return 0
 
 
 class StoryRevisionManager(RevisionManager):
@@ -4794,9 +4800,10 @@ class StoryRevision(Revision):
         self._seen_editing = False
         self._seen_page_count = False
         self._seen_title = False
+        self._seen_feature = False
 
     def _imps_for(self, field_name):
-        if field_name in ('first_line', 'type', 'feature',
+        if field_name in ('first_line', 'type',
                           'characters', 'synopsis', 'job_number',
                           'reprint_notes', 'notes', 'keywords', 'issue'):
             return 1
@@ -4813,6 +4820,13 @@ class StoryRevision(Revision):
                 return 1
             else:
                 return 0
+
+        if not self._seen_feature and field_name in ('feature',
+                                                     'feature_object',
+                                                     'feature_logo'):
+            self._seen_feature = True
+            return 1
+
         if not self._seen_title and field_name in ('title', 'title_inferred'):
             self._seen_title = True
             return 1
@@ -4838,6 +4852,8 @@ class StoryRevision(Revision):
 
                 # Just putting in a question mark isn't worth an IMP.
                 # Note that the input data is already whitespace-stripped.
+                # StoryCredits give also positive is_changed and corresponding
+                # IMP here.
                 if field_name == name and getattr(self, field_name) == '?':
                     return 0
                 return 1
@@ -6510,6 +6526,8 @@ class CreatorRevision(Revision):
         death_date_form = form_class(request.POST or None,
                                      prefix='death_date',
                                      instance=self.death_date)
+        birth_date_form.fields['date'].label = 'Birth date'
+        death_date_form.fields['date'].label = 'Death date'
 
         return {'creator_names_formset': creator_names_formset,
                 'birth_date_form': birth_date_form,
