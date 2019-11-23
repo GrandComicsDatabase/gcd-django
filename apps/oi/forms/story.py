@@ -150,6 +150,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
         model = StoryCreditRevision
         fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
                   'is_signed', 'signed_as', 'uncertain', 'credit_name']
+        help_texts = {
+            'credit_name':
+                'Enter here additional specifications for the credit, for '
+                'example "finishes", "flats", or "pages 1-3".',
+        }
+        labels = {'credit_name': 'Credit description'}
 
     def __init__(self, *args, **kwargs):
         super(StoryCreditRevisionForm, self).__init__(*args, **kwargs)
