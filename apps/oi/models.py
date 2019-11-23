@@ -4505,6 +4505,9 @@ class StoryRevision(Revision):
             revision.title_inferred = False
             revision.first_line = u''
         revision.save()
+        for credit in story.active_credits:
+            StoryCreditRevision.clone(credit, revision.changeset,
+                                      fork=True, story_revision=revision)
         return revision
 
     def _get_major_changes(self, extra_field_tuples=frozenset()):
