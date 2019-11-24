@@ -65,7 +65,7 @@ def field_value(revision, field):
         if value and credits:
             value += '; '
         for credit in credits:
-            value += credit.creator.display_credit(credit, url=False) + '; '
+            value += credit.creator.display_credit(credit, url=True) + '; '
         if credits:
             value = value[:-2]
         return mark_safe(value)

@@ -23,7 +23,7 @@
 <script type="text/javascript">
     $('.formset_row-{{ formset.prefix }}').formset({
         addText: 'add another',
-        deleteText: 'remove',
+        deleteText: 'remove above',
         prefix: '{{ formset.prefix }}',
 	added: function (row) {
     row.find('input[type=checkbox]').change()},
