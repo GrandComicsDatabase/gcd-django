@@ -114,7 +114,7 @@ div.wide_form {
     margin: 0.5em 0 1em 0;
 }
 
-.errorlist {
+.alert, .errorlist {
     list-style-type: none;
     list-style-position: outside;
     color: red;
