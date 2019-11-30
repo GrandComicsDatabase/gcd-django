@@ -269,6 +269,8 @@ def show_creator_credit(story, credit_type):
     for credit in credits[1:]:
         credit_value = '%s; %s' % (credit_value,
                                    credit.creator.display_credit(credit))
+    if credit_type == 'story_editing':
+        credit_type = 'editing'
 
     return mark_safe(
            '<dt class="credit_tag"><span class="credit_label">'

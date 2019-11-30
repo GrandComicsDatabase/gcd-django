@@ -125,6 +125,10 @@ class CreatorNameDetail(GcdData):
             if self.type.id == NAME_TYPES['studio'] \
               and self.creator_relation.count():
                 co_name = self.creator_relation.get().to_creator
+
+        if credit.uncertain:
+            name += ' ?'
+
         if url:
             credit_text = u'<a href="%s">%s</a>' % \
                           (self.creator.get_absolute_url(),
@@ -158,9 +162,6 @@ class CreatorNameDetail(GcdData):
         if credit.credit_name:
             credit_text += ' (%s)' % esc(credit.credit_name)
 
-        if credit.uncertain:
-            credit_text += ' ?'
-
         return mark_safe(credit_text)
 
     def get_absolute_url(self):
@@ -170,7 +171,7 @@ class CreatorNameDetail(GcdData):
 
     def __unicode__(self):
         if self.creator.birth_date.year:
-            year = '(%s)' % self.creator.birth_date.year
+            year = '(b. %s)' % self.creator.birth_date.year
         else:
             year = ''
         if self.type.id == 1:

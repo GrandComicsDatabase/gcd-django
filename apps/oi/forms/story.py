@@ -165,9 +165,11 @@ class StoryCreditRevisionForm(forms.ModelForm):
 
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
-      widget=autocomplete.ModelSelect2(url='creator_name_autocomplete'),
+      widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
+                                       attrs={'style': 'min-width: 60em'}),
       required=True,
-      help_text='By entering (any part of) a name select a creator from the database.'
+      help_text='By entering (any part of) a name select a creator from the'
+                ' database.'
     )
 
     def clean(self):

@@ -35,6 +35,7 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       init_data_source_fields, insert_data_source_fields,
                       HiddenInputWithHelp)
 
+
 def _generic_data_source_clean(form, cd):
     data_source_type = cd['_source_type']
     data_source_description = cd['_source_description']
@@ -64,7 +65,8 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
         gcd_official_count = 0
         for form in self.forms:
             cd = form.cleaned_data
-            if 'is_official_name' in cd and cd['is_official_name'] and not cd['DELETE']:
+            if 'is_official_name' in cd and cd['is_official_name'] and \
+               not cd['DELETE']:
                 gcd_official_count += 1
         if gcd_official_count != 1:
             raise forms.ValidationError(
@@ -72,8 +74,9 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
 
 
 CreatorRevisionFormSet = inlineformset_factory(
-    CreatorRevision, CreatorNameDetailRevision, form=CreatorNameDetailRevisionForm,
-    can_delete=True, extra=1, formset=CustomInlineFormSet)
+    CreatorRevision, CreatorNameDetailRevision,
+    form=CreatorNameDetailRevisionForm, can_delete=True, extra=1,
+    formset=CustomInlineFormSet)
 
 
 class BaseField(Field):
@@ -184,6 +187,7 @@ def get_creator_school_revision_form(revision=None, user=None):
 
     return RuntimeCreatorSchoolRevisionForm
 
+
 class CreatorSchoolRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorSchoolRevision
@@ -287,7 +291,7 @@ class CreatorMembershipRevisionForm(forms.ModelForm):
 
 
 def get_creator_art_influence_revision_form(revision=None, user=None):
-    class RuntimeCreatorArtInfluenceRevisionForm(\
+    class RuntimeCreatorArtInfluenceRevisionForm(
                  CreatorArtInfluenceRevisionForm):
         def __init__(self, *args, **kwargs):
             super(RuntimeCreatorArtInfluenceRevisionForm, self)\
@@ -344,7 +348,7 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
 
 
 def get_creator_non_comic_work_revision_form(revision=None, user=None):
-    class RuntimeCreatorNonComicWorkRevisionForm(\
+    class RuntimeCreatorNonComicWorkRevisionForm(
                  CreatorNonComicWorkRevisionForm):
         def __init__(self, *args, **kwargs):
             super(RuntimeCreatorNonComicWorkRevisionForm, self)\
@@ -404,13 +408,20 @@ class CreatorNonComicWorkRevisionForm(forms.ModelForm):
 
 
 def get_creator_relation_revision_form(revision=None, user=None):
-    class RuntimeCreatorRelationRevisionForm(\
-                 CreatorRelationRevisionForm):
+    class RuntimeCreatorRelationRevisionForm(CreatorRelationRevisionForm):
         def __init__(self, *args, **kwargs):
             super(RuntimeCreatorRelationRevisionForm, self)\
                          .__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields('', revision, self.fields)
+            if 'to_creator' in self.initial:
+                self.initial['to_creator'] = CreatorNameDetail.objects.get(
+                  creator__id=self.initial['to_creator'],
+                  is_official_name=True, deleted=False).id
+            if 'from_creator' in self.initial:
+                self.initial['from_creator'] = CreatorNameDetail.objects.get(
+                  creator__id=self.initial['from_creator'],
+                  is_official_name=True, deleted=False).id
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -427,6 +438,7 @@ class CreatorRelationRevisionForm(forms.ModelForm):
         help_texts = CREATOR_RELATION_HELP_TEXTS
         labels = {'from_creator': 'Creator A', 'relation_type': 'Relation',
                   'to_creator': 'Creator B'}
+
     def __init__(self, *args, **kwargs):
         super(CreatorRelationRevisionForm, self).__init__(*args, **kwargs)
         ordering = self.fields.keys()
@@ -435,34 +447,45 @@ class CreatorRelationRevisionForm(forms.ModelForm):
         self.fields = new_fields
 
     from_creator = forms.ModelChoiceField(
-        queryset=Creator.objects.filter(deleted=False),
-        widget=autocomplete.ModelSelect2(url='creator_autocomplete')
+        queryset=CreatorNameDetail.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
+                                         attrs={'style': 'min-width: 60em'})
     )
 
     to_creator = forms.ModelChoiceField(
-        queryset=Creator.objects.filter(deleted=False),
-        widget=autocomplete.ModelSelect2(url='creator_autocomplete')
+        queryset=CreatorNameDetail.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
+                                         attrs={'style': 'min-width: 60em'})
     )
 
-    creator_name = forms.ModelMultipleChoiceField\
-      (queryset=CreatorNameDetail.objects.filter(type__id=8, deleted=False),
-       widget=autocomplete.ModelSelect2Multiple
-                           (url='creator_name_4_relation_autocomplete'),
-       help_text='For employee or user of house name relations also add the '
-                 'involved creator name.',
-       required=False
-    )
+    creator_name = forms.ModelMultipleChoiceField(
+      queryset=CreatorNameDetail.objects.filter(type__id=8, deleted=False),
+      widget=autocomplete.ModelSelect2Multiple(
+        url='creator_name_4_relation_autocomplete',
+        attrs={'style': 'min-width: 60em'}),
+      help_text='For employee or user of house name relations also add the '
+                'involved creator name.',
+      required=False
+      )
 
     comments = _get_comments_form_field()
+
+    def clean_from_creator(self):
+        creator = self.cleaned_data['from_creator']
+        return creator.creator
+
+    def clean_to_creator(self):
+        creator = self.cleaned_data['to_creator']
+        return creator.creator
 
     def clean(self):
         cd = self.cleaned_data
 
-        if cd['creator_name'] and not cd['relation_type'].id in [3,4]:
+        if cd['creator_name'] and not cd['relation_type'].id in [3, 4]:
             self.add_error('creator_name',
                 'Select a creator name only for employees of a studio or for '
                 'house names.')
-        if cd['creator_name'] and cd['relation_type'].id in [3,4]:
+        if cd['creator_name'] and cd['relation_type'].id in [3, 4]:
             for creator_name in cd['creator_name']:
                 if creator_name.creator != cd['from_creator']:
                     self.add_error\
