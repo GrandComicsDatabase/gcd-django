@@ -298,6 +298,10 @@ def get_creator_art_influence_revision_form(revision=None, user=None):
                          .__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields('', revision, self.fields)
+            if 'influence_link' in self.initial:
+                self.initial['influence_link'] = CreatorNameDetail.objects.get(
+                  creator__id=self.initial['influence_link'],
+                  is_official_name=True, deleted=False).id
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -314,8 +318,9 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
         help_texts = CREATOR_ARTINFLUENCE_HELP_TEXTS
 
     influence_link = forms.ModelChoiceField(
-        queryset=Creator.objects.filter(deleted=False),
-        widget=autocomplete.ModelSelect2(url='creator_autocomplete'),
+        queryset=CreatorNameDetail.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
+                                         attrs={'style': 'min-width: 60em'}),
         required=False
     )
 
@@ -329,6 +334,10 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
 
     comments = _get_comments_form_field()
 
+    def clean_influence_link(self):
+        creator = self.cleaned_data['influence_link']
+        return creator.creator
+
     def clean(self):
         cd = self.cleaned_data
 
@@ -340,8 +349,8 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
             self.add_error('influence_name',
                 'Enter either the name of an influence or a link to an '
                 'influence, but not both.')
-        if not cd['influence_link'] and ('influence_name' not in cd
-                                         or not cd['influence_name']):
+        if not cd['influence_link'] and ('influence_name' not in cd or
+                                         not cd['influence_name']):
             self.add_error('influence_name',
                 'Either the name of an influence or a link to an '
                 'influence needs to be given.')
@@ -488,9 +497,9 @@ class CreatorRelationRevisionForm(forms.ModelForm):
         if cd['creator_name'] and cd['relation_type'].id in [3, 4]:
             for creator_name in cd['creator_name']:
                 if creator_name.creator != cd['from_creator']:
-                    self.add_error\
-                        ('creator_name',
-                         'Selected creator name is from a different creator.')
+                    self.add_error(
+                      'creator_name',
+                      'Selected creator name is from a different creator.')
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         _generic_data_source_clean(self, cd)
