@@ -14,11 +14,10 @@ from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
                            CreatorArtInfluenceRevision, CreatorDegreeRevision,\
                            CreatorNonComicWorkRevision, CreatorSchoolRevision,\
                            CreatorMembershipRevision, CreatorRelationRevision,\
-                           DataSourceRevision, get_creator_field_list,\
-                           _get_creator_sourced_fields, _check_year,\
-                           AwardRevision
+                           get_creator_field_list,\
+                           _get_creator_sourced_fields, _check_year
 
-from apps.gcd.models import Creator, CreatorNameDetail
+from apps.gcd.models import CreatorNameDetail
 from apps.stddata.models import Country
 
 from .custom_layout_object import Formset, FormAsField
@@ -56,9 +55,29 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_tag = True
         self.helper.layout = Layout(*(f for f in self.fields))
+        if self.instance.creator_name_detail:
+            if self.instance.creator_name_detail.storycredit_set.count():
+                # TODO How can the 'remove'-link not be shown in this case ?
+                self.fields['name'].help_text = \
+                    'Creator names with existing credits cannot be removed.'
+            if self.instance.creator_name_detail.storycredit_set.filter(
+               is_credited=True, credit_name='').count():
+                self.fields['name'].widget.attrs['readonly'] = 'true'
+                self.fields['name'].help_text = \
+                  'The name of a creator name with existing credits marked as'\
+                  ' "is_credited" cannot be changed, nor can the creator name'\
+                  ' be removed.'
 
 
 class CustomInlineFormSet(forms.BaseInlineFormSet):
+    def _should_delete_form(self, form):
+        # TODO workaround, better to now allow the removal, see above
+        if form.instance.creator_name_detail:
+            if form.instance.creator_name_detail.storycredit_set.count():
+                form.cleaned_data['DELETE'] = False
+                return False
+        return super(CustomInlineFormSet, self)._should_delete_form(form)
+
     def clean(self):
         super(CustomInlineFormSet, self).clean()
         # example custom validation across forms in the formset
@@ -135,8 +154,7 @@ class CreatorRevisionForm(forms.ModelForm):
         self.fields = new_fields
         self.fields['bio_source_description'].label = \
           "Biography source description"
-        self.fields['bio_source_type'].label = \
-          "Biography source type"
+        self.fields['bio_source_type'].label = "Biography source type"
         fields = list(self.fields)
         field_list = []
         field_list.append(Formset('creator_names_formset'))
@@ -345,15 +363,15 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         _generic_data_source_clean(self, cd)
         if 'influence_name' in cd and cd['influence_name'] \
-          and cd['influence_link']:
-            self.add_error('influence_name',
-                'Enter either the name of an influence or a link to an '
-                'influence, but not both.')
+           and cd['influence_link']:
+            self.add_error(
+              'influence_name', 'Enter either the name of an influence or a '
+                                'link to an influence, but not both.')
         if not cd['influence_link'] and ('influence_name' not in cd or
                                          not cd['influence_name']):
-            self.add_error('influence_name',
-                'Either the name of an influence or a link to an '
-                'influence needs to be given.')
+            self.add_error(
+              'influence_name', 'Either the name of an influence or a link to'
+                                ' an influence needs to be given.')
 
 
 def get_creator_non_comic_work_revision_form(revision=None, user=None):
@@ -491,9 +509,9 @@ class CreatorRelationRevisionForm(forms.ModelForm):
         cd = self.cleaned_data
 
         if cd['creator_name'] and not cd['relation_type'].id in [3, 4]:
-            self.add_error('creator_name',
-                'Select a creator name only for employees of a studio or for '
-                'house names.')
+            self.add_error(
+              'creator_name', 'Select a creator name only for employees of a '
+                              'studio or for house names.')
         if cd['creator_name'] and cd['relation_type'].id in [3, 4]:
             for creator_name in cd['creator_name']:
                 if creator_name.creator != cd['from_creator']:
