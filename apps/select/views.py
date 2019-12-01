@@ -448,6 +448,9 @@ class CreatorName4RelationAutocomplete(LoginRequiredMixin,
 class FeatureAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
     def get_result_label(self, feature):
+        if feature.year_created:
+            return u'%s (%d, %s)' % (feature.name, feature.year_created,
+                                     feature.language.name)
         return u'%s (%s)' % (feature.name, feature.language.name)
 
     def get_queryset(self):

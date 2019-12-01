@@ -13,7 +13,7 @@
 {{ object.letters|safe }}
 {{ object|search_creator_credit:"letters" }}
 {{ object.editing|safe }}
-{{ object|search_creator_credit:"editing" }}
+{{ object|search_creator_credit:"story_editing" }}
 {{ object.genre }}
 {{ object.characters|safe }}
 {{ object.synopsis|safe }}
