@@ -71,7 +71,7 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
 
 class CustomInlineFormSet(forms.BaseInlineFormSet):
     def _should_delete_form(self, form):
-        # TODO workaround, better to now allow the removal, see above
+        # TODO workaround, better to not allow the removal, see above
         if form.instance.creator_name_detail:
             if form.instance.creator_name_detail.storycredit_set.count():
                 form.cleaned_data['DELETE'] = False
@@ -80,7 +80,6 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
 
     def clean(self):
         super(CustomInlineFormSet, self).clean()
-        # example custom validation across forms in the formset
         gcd_official_count = 0
         for form in self.forms:
             cd = form.cleaned_data

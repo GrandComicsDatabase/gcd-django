@@ -28,7 +28,7 @@ class ObjectIndex(object):
         self.prepared_data = super(ObjectIndex, self).prepare(obj)
 
         self.prepared_data['sort_name'] = \
-        self.prepared_data['sort_name'].lower()
+          self.prepared_data['sort_name'].lower()
 
         return self.prepared_data
 

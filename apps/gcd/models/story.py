@@ -224,8 +224,6 @@ class Story(GcdData):
                 features += u'; '
             features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
                                                   esc(feature.name))
-        # features = u"; ".join(story.feature_object.all().
-        #                       values_list('name', flat=True))
         if story.feature:
             if features:
                 features += u'; %s' % esc(story.feature)
