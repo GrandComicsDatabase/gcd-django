@@ -226,6 +226,8 @@ def __format_credit(story, credit):
         credit_value = __format_keywords(story.keywords)
         if credit_value == '':
             return ''
+    elif credit == 'feature_logo':
+        credit_value = esc(story.show_feature_logo())
     else:  # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
@@ -239,6 +241,42 @@ def __format_credit(story, credit):
     return mark_safe(
            dt + '<span class="credit_label">' + label + '</span></dt>' +
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
+
+
+@register.filter
+def search_creator_credit(story, credit_type):
+    credits = story.active_credits.filter(credit_type__name=credit_type)
+    if not credits:
+        return ''
+    credit_value = '%s' % credits[0].creator.display_credit(credits[0],
+                                                            url=False)
+
+    for credit in credits[1:]:
+        credit_value = '%s; %s' % (credit_value,
+                                   credit.creator.display_credit(credit,
+                                                                 url=False))
+
+    return mark_safe(credit_value)
+
+
+@register.filter
+def show_creator_credit(story, credit_type):
+    credits = story.active_credits.filter(credit_type__name=credit_type)
+    if not credits:
+        return ''
+    credit_value = '%s' % credits[0].creator.display_credit(credits[0])
+
+    for credit in credits[1:]:
+        credit_value = '%s; %s' % (credit_value,
+                                   credit.creator.display_credit(credit))
+    if credit_type == 'story_editing':
+        credit_type = 'editing'
+
+    return mark_safe(
+           '<dt class="credit_tag"><span class="credit_label">'
+           + credit_type.capitalize() + '</span></dt>' +
+           '<dd class="credit_def"><span class="credit_value">'
+           + credit_value + '</span></dd>')
 
 
 def __format_keywords(keywords, join_on='; '):
@@ -258,49 +296,6 @@ def show_keywords(object):
 @register.filter
 def show_keywords_comma(object):
     return __format_keywords(object.keywords, u', ')
-
-
-@register.filter
-def show_credit_status(story):
-    """
-    Display a set of letters indicating which of the required credit fields
-    have been filled out.  Technically, the editing field is not required but
-    it has historically been displayed as well.  The required editing field
-    is now directly on the issue record.
-    """
-    status = []
-    required_remaining = 5
-
-    if story.script or story.no_script:
-        status.append('S')
-        required_remaining -= 1
-
-    if story.pencils or story.no_pencils:
-        status.append('P')
-        required_remaining -= 1
-
-    if story.inks or story.no_inks:
-        status.append('I')
-        required_remaining -= 1
-
-    if story.colors or story.no_colors:
-        status.append('C')
-        required_remaining -= 1
-
-    if story.letters or story.no_letters:
-        status.append('L')
-        required_remaining -= 1
-
-    if story.editing or story.no_editing:
-        status.append('E')
-
-    completion = 'complete'
-    if required_remaining:
-        completion = 'incomplete'
-    snippet = '[<span class="%s">' % completion
-    snippet += ' '.join(status)
-    snippet += '</span>]'
-    return mark_safe(snippet)
 
 
 @register.filter

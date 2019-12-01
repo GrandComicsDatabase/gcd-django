@@ -1,0 +1,50 @@
+[
+{
+    "model": "gcd.credittype",
+    "pk": 1,
+    "fields": {
+        "name": "script",
+        "sort_code": 1
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 2,
+    "fields": {
+        "name": "pencils",
+        "sort_code": 2
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 3,
+    "fields": {
+        "name": "inks",
+        "sort_code": 3
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 4,
+    "fields": {
+        "name": "colors",
+        "sort_code": 4
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 5,
+    "fields": {
+        "name": "letters",
+        "sort_code": 5
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 6,
+    "fields": {
+        "name": "story_editing",
+        "sort_code": 6
+    }
+}
+]

@@ -44,10 +44,14 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     int(log10(revision.year_on_sale)) + 1 == 4:
                 issue_year = revision.year_on_sale
             if issue_year:
-                started_before = Q(in_use__year_began__lte=issue_year)
-                no_start = Q(in_use__year_began=None)
-                not_ended_before = (Q(in_use__year_ended__gte=issue_year) |
-                                    Q(in_use__year_ended=None))
+                started_before = Q(in_use__year_began__lte=issue_year,
+                                   in_use__publisher=series.publisher)
+                no_start = Q(in_use__year_began=None,
+                             in_use__publisher=series.publisher)
+                not_ended_before = (Q(in_use__year_ended__gte=issue_year,
+                                      in_use__publisher=series.publisher) |
+                                    Q(in_use__year_ended=None,
+                                      in_use__publisher=series.publisher))
 
                 brands = self.fields['brand'].queryset \
                              .filter(in_use__publisher=series.publisher) \

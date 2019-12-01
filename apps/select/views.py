@@ -14,7 +14,7 @@ from django.utils.html import format_html
 from dal import autocomplete
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
-                            Creator, CreatorNameDetail, Feature
+                            Creator, CreatorNameDetail, Feature, FeatureLogo
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -178,7 +178,7 @@ def process_select_search(request, select_key):
             search = search.filter(sequence_number=cd['sequence_number'])
             heading += ', seq.# ' + str(cd['sequence_number'])
         if 'search_cover' in request.GET:
-                # ? make StoryType.objects.get(name='cover').id a CONSTANT ?
+            # ? make StoryType.objects.get(name='cover').id a CONSTANT ?
             search = search.filter(type=StoryType.objects.get(name='cover'))
             base_name = 'cover'
             plural_suffix = 's'
@@ -415,7 +415,7 @@ class CreatorAutocomplete(LoginRequiredMixin,
         qs = Creator.objects.filter(deleted=False)
 
         if self.q:
-            qs = qs.filter(sort_name__istartswith=self.q)
+            qs = qs.filter(gcd_official_name__icontains=self.q)
 
         return qs
 
@@ -423,10 +423,24 @@ class CreatorAutocomplete(LoginRequiredMixin,
 class CreatorNameAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = CreatorNameDetail.objects.filter(deleted=False)
+        qs = CreatorNameDetail.objects.filter(deleted=False,
+                                              type__id__in=[1, 2, 5, 6, 7, 8,
+                                                            9, 10, 11, 12])
 
         if self.q:
-            qs = qs.filter(sort_name__istartswith=self.q)
+            qs = qs.filter(name__icontains=self.q)
+
+        return qs
+
+
+class CreatorName4RelationAutocomplete(LoginRequiredMixin,
+                                       autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = CreatorNameDetail.objects.filter(deleted=False,
+                                              type__id__in=[5,8])
+
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
 
         return qs
 
@@ -434,10 +448,40 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
 class FeatureAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
     def get_result_label(self, feature):
-        return format_html(u'{} ({})', feature.name, feature.language.name)
+        if feature.year_created:
+            return u'%s (%d, %s)' % (feature.name, feature.year_created,
+                                     feature.language.name)
+        return u'%s (%s)' % (feature.name, feature.language.name)
 
     def get_queryset(self):
         qs = Feature.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+
+        if language:
+            qs = qs.filter(language__code=language)
+
+        if self.q:
+            qs = qs.filter(sort_name__istartswith=self.q)
+
+        return qs
+
+
+class FeatureLogoAutocomplete(LoginRequiredMixin,
+                              autocomplete.Select2QuerySetView):
+    def get_result_label(self, feature_logo):
+        if feature_logo.logo:
+            return format_html(u'%s <img src="%s">' % (feature_logo.name, feature_logo.logo.icon.url))
+        else:
+            return format_html(u'%s' % feature_logo.name)
+
+    def get_queryset(self):
+        qs = FeatureLogo.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+
+        if language:
+            qs = qs.filter(feature__language__code=language)
 
         if self.q:
             qs = qs.filter(sort_name__istartswith=self.q)

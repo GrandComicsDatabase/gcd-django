@@ -1,11 +1,15 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core import urlresolvers
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
 
 from .gcddata import GcdData
 from .award import ReceivedAward
+from .creator import CreatorNameDetail
+from .feature import Feature, FeatureLogo
 
 STORY_TYPES = {
     'cover': 6,
@@ -14,6 +18,15 @@ STORY_TYPES = {
     'blank': 24,
     'preview': 26,
     'about comics': 27,
+}
+
+CREDIT_TYPES = {
+    'script': '1',
+    'pencils': '2',
+    'inks': '3',
+    'colors': '4',
+    'letters': '5',
+    'editing': '6',
 }
 
 OLD_TYPES = {
@@ -28,6 +41,43 @@ CORE_TYPES = [6, 7, 13, 19, 21]
 AD_TYPES = [2, 16, 26]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
+
+
+class CreditType(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_credit_type'
+        ordering = ['sort_code']
+
+    name = models.CharField(max_length=50, db_index=True, unique=True)
+    sort_code = models.IntegerField(unique=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+class StoryCredit(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_story_credit'
+
+    creator = models.ForeignKey(CreatorNameDetail)
+    credit_type = models.ForeignKey(CreditType)
+    story = models.ForeignKey('Story', related_name='credits')
+
+    is_credited = models.BooleanField(default=False, db_index=True)
+    is_signed = models.BooleanField(default=False, db_index=True)
+
+    uncertain = models.BooleanField(default=False, db_index=True)
+
+    signed_as = models.CharField(max_length=255)
+    credited_as = models.CharField(max_length=255)
+
+    # record for a wider range of creative work types, or how it is credited
+    credit_name = models.CharField(max_length=255)
+
+    def __unicode__(self):
+        return u"%s: %s (%s)" % (self.story, self.creator, self.credit_type)
 
 
 class StoryTypeManager(models.Manager):
@@ -63,6 +113,8 @@ class Story(GcdData):
     title_inferred = models.BooleanField(default=False, db_index=True)
     first_line = models.CharField(max_length=255, default='')
     feature = models.CharField(max_length=255)
+    feature_object = models.ManyToManyField(Feature)
+    feature_logo = models.ManyToManyField(FeatureLogo)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
 
@@ -99,6 +151,10 @@ class Story(GcdData):
 
     _update_stats = True
 
+    @property
+    def active_credits(self):
+        return self.credits.exclude(deleted=True)
+
     def stat_counts(self):
         if self.deleted:
             return {}
@@ -116,7 +172,8 @@ class Story(GcdData):
                self.inks or \
                self.colors or \
                self.letters or \
-               self.editing
+               self.editing or \
+               self.active_credits.exists()
 
     def has_content(self):
         """
@@ -129,8 +186,18 @@ class Story(GcdData):
                self.synopsis or \
                self.has_keywords() or \
                self.has_reprints() or \
+               self.feature_logo.count() or \
                self.active_awards().count()
-               
+
+    def has_feature(self):
+        """
+        UI check for features.
+
+        feature_logo entry automatically results in corresponding
+        feature_object entry, therefore no check needed
+        """
+        return self.feature or self.feature_object.count()
+
     def has_reprints(self, notes=True):
         return (notes and self.reprint_notes) or \
                self.from_reprints.count() or \
@@ -147,10 +214,37 @@ class Story(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
+    def _show_feature(cls, story):
+        first = True
+        features = u''
+        for feature in story.feature_object.all():
+            if first:
+                first = False
+            else:
+                features += u'; '
+            features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
+                                                  esc(feature.name))
+        if story.feature:
+            if features:
+                features += u'; %s' % esc(story.feature)
+            else:
+                features = esc(story.feature)
+        return mark_safe(features)
+
+    def show_feature(self):
+        return self._show_feature(self)
+
+    def _show_feature_logo(self, story):
+        return u"; ".join(story.feature_logo.all().values_list('name',
+                                                              flat=True))
+
+    def show_feature_logo(self):
+        return self._show_feature_logo(self)
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_issue',
-            kwargs={'issue_id': self.issue_id } ) + "#%d" % self.id
+            kwargs={'issue_id': self.issue_id}) + "#%d" % self.id
 
     def __unicode__(self):
         from apps.gcd.templatetags.display import show_story_short

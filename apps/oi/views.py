@@ -59,7 +59,7 @@ from apps.oi.models import (
     PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
-    FeatureRelationRevision)
+    FeatureRelationRevision, process_data_source)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -73,10 +73,12 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_revision_form,
                            get_series_revision_form,
                            get_story_revision_form,
+                           StoryRevisionFormSet,
                            get_feature_logo_revision_form,
                            get_feature_relation_revision_form,
                            get_date_revision_form,
                            OngoingReservationForm,
+                           CreatorRevisionFormSet,
                            CreatorArtInfluenceRevisionForm,
                            CreatorMembershipRevisionForm,
                            ReceivedAwardRevisionForm,
@@ -441,77 +443,34 @@ def extract_creator_names(request):
     return creator_names
 
 
-def process_creator_other_names(request, changeset, revision, creator_name):
-    # Update Creator's Other Names
-    updated_creator_name_list = []
-    updated_creator_name_list.append(creator_name.id)
-    updated_creator_name_relation_list = []
-    total_creator_names = int(request.POST.get('total_names'))
-    # TODO integrate sources for dynamic data field
-    creator_other_names = extract_creator_names(request)
-    for other_name in creator_other_names:
-        type = NameType.objects.get(id=other_name['type_id'])
-        if other_name['revision_id']:
-            creator_other_name = \
-                changeset.creatornamedetailrevisions.get(
-                  id=int(other_name['revision_id']))
-            creator_other_name.name = other_name['name']
-            if other_name['sort_name']:
-                creator_other_name.sort_name = other_name['sort_name']
-            else:
-                creator_other_name.sort_name = creator_other_name.name
-            creator_other_name.type = type
-            creator_other_name.save()
-        else:
-            if other_name['sort_name']:
-                sort_name = other_name['sort_name']
-            else:
-                sort_name = other_name['name']
-            creator_other_name = CreatorNameDetailRevision.objects.create(
-                creator=revision.creator,
-                name=other_name['name'],
-                sort_name=sort_name,
-                type=type,
-                changeset=changeset)
-        updated_creator_name_list.append(creator_other_name.id)
-
-    removed_creator_names = changeset.creatornamedetailrevisions\
-                            .filter(creator=revision.creator)\
-                            .exclude(id__in=updated_creator_name_list)
-    if removed_creator_names:
-        for removed_creator_name in removed_creator_names:
-            if removed_creator_name.creator_name_detail:
-                removed_creator_name.deleted = True
-                removed_creator_name.save()
-            else:
-                removed_creator_name.delete()
-
-
 @permission_required('indexer.can_reserve')
 def edit_revision(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
     form_class = get_revision_form(revision, user=request.user)
     form = form_class(instance=revision)
-    return _display_edit_form(request, revision.changeset, form, revision)
+    extra_forms = revision.extra_forms(request)
+    return _display_edit_form(request, revision.changeset, form, revision, extra_forms)
 
 
 @permission_required('indexer.can_reserve')
 def edit(request, id):
     changeset = get_object_or_404(Changeset, id=id)
-    form = None
-    revision = None
 
     if changeset.inline():
         revision = changeset.inline_revision()
         form_class = get_revision_form(revision, user=request.user)
         form = form_class(instance=revision)
-
+        extra_forms = revision.extra_forms(request)
+    else:
+        form = None
+        revision = None
+        extra_forms = None
     # Note that for non-inline changesets, no form is expected so
     # it may be None.
-    return _display_edit_form(request, changeset, form, revision)
+    return _display_edit_form(request, changeset, form, revision, extra_forms)
 
 
-def _display_edit_form(request, changeset, form, revision=None):
+def _display_edit_form(request, changeset, form, revision=None, extra_forms=None):
     if revision is None or changeset.inline():
         template = 'oi/edit/changeset.html'
         if revision is None:
@@ -519,80 +478,17 @@ def _display_edit_form(request, changeset, form, revision=None):
     else:
         template = 'oi/edit/revision.html'
 
-    # TODO generalize, e.g. make a multiform-flag for a changeset
-    if changeset.change_type == CTYPES['creator']:
-        form_class = get_date_revision_form(revision, user=request.user,
-                                            date_help_links=CREATOR_HELP_LINKS)
-        birth_date_form = form_class(request.POST or None,
-                                     instance=revision.birth_date,
-                                     prefix='birth_date')
-        birth_date_form.fields['date'].label = 'Birth date'
-        death_date_form = form_class(request.POST or None,
-                                     instance=revision.death_date,
-                                     prefix='death_date')
-        death_date_form.fields['date'].label = 'Death date'
-
-        name_types = NameType.objects.all()
-        add_name_types = list(NameType.objects.values())
-        add_name_types.insert(0, {'type': u'--------', u'id': ''})
-        sources = SourceType.objects.all()
-        other_name_details = []
-        for creator_name_revision in changeset.creatornamedetailrevisions\
-                                             .filter(deleted=False):
-            if creator_name_revision.type.type \
-              == settings.GCD_OFFICIAL_NAME_FIELDNAME:
-                official_name_details = {
-                  'name': creator_name_revision.name,
-                  'sort_name': creator_name_revision.sort_name,
-                  'revision_id': creator_name_revision.id}
-            else:
-                other_name_details.append({
-                  'name': creator_name_revision.name,
-                  'sort_name': creator_name_revision.sort_name,
-                  'type_id': creator_name_revision.type_id,
-                  'revision_id': creator_name_revision.id})
-        if request.POST:
-            creator_names = extract_creator_names(request)
-            for creator_name in creator_names:
-                if not creator_name['revision_id']:
-                    other_name_details.append({
-                        'name': creator_name['name'],
-                        'type_id': creator_name['type_id'],
-                        'relation_id': creator_name['relation_type_id']})
-                
-        response = oi_render(
-          request,
-          template,
-          {
-              'object_name': 'Creator',
-              'changeset': changeset,
-              'revision': revision,
-              'form': form,
-              'birth_date_form': birth_date_form,
-              'death_date_form': death_date_form,
-              'include_before_form': 'oi/bits/creator_before_form.html',
-              'states': states,
-              'settings': settings,
-              'CTYPES': CTYPES,
-              'name_types': name_types,
-              'add_name_types': add_name_types,
-              'sources': sources,
-              'official_name_details': official_name_details,
-              'other_name_details': other_name_details,
-          })
-        return response
-
-    response = oi_render(
-      request,
-      template,
-      {
+    context_vars = {
         'changeset': changeset,
         'revision': revision,
         'form': form,
         'states': states,
         'settings': settings,
         'CTYPES': CTYPES
-      })
+    }
+    if extra_forms:
+        context_vars.update(extra_forms)
+    response = oi_render(request, template, context_vars)
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
@@ -664,19 +560,16 @@ def _save_data_source_revision(form, revision, field):
                         sourced_revision=revision)
 
 
-def _other_forms_valid(request, changeset):
-    if not changeset or changeset.change_type != CTYPES['creator']:
-        return True
-    birth_date_form = DateRevisionForm(request.POST, prefix='birth_date')
-    death_date_form = DateRevisionForm(request.POST, prefix='death_date')
-    
-    if birth_date_form.is_valid() and death_date_form.is_valid():
-        return True
-    return False
+def _extra_forms_valid(request, extra_forms):
+    is_valid = True
+    for form in extra_forms:
+        is_valid = is_valid and extra_forms[form].is_valid()
+    return is_valid
 
 
-def _save(request, form, changeset=None, revision_id=None, model_name=None):
-    if form.is_valid() and _other_forms_valid(request, changeset):
+def _save(request, form, revision, changeset=None, model_name=None):
+    extra_forms = revision.extra_forms(request)
+    if form.is_valid() and _extra_forms_valid(request, extra_forms):
         revision = form.save(commit=False)
         changeset = revision.changeset
         if 'comments' in form.cleaned_data and 'submit' not in request.POST:
@@ -689,6 +582,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                                          new_state=changeset.state)
 
         revision.save()
+        revision.process_extra_forms(request, extra_forms)
         if revision.changeset.change_type == CTYPES['series'] and \
           'move_to_publisher_with_id' in form.cleaned_data and \
           request.user.has_perm('indexer.can_approve') and \
@@ -718,7 +612,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                                      'publisher_id': publisher_id}))
 
         if hasattr(form, 'save_m2m'):
-            # TODO
+            # TODO handle sources in standard workflow
             # I don't quite understand what is going on here, but for image
             # and cover revision form.save_m2m() fails with a comment.
             # But we don't need form.save_m2m() for these anyway. I suspect
@@ -726,78 +620,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
             # and the text 'field' is called that as well.
             if not (len(form.cleaned_data) == 1 and \
                                 'comments' in form.cleaned_data):
-                # TODO can we do this elsewhere, or nicer ?
-                if revision.changeset.change_type == CTYPES['creator']:
-
-                    revision.gcd_official_name = request.POST.get(
-                        'gcd_official_name')
-                    revision.save()
-
-                    for field in _get_creator_sourced_fields():
-                        data_source_revision = revision.changeset\
-                          .datasourcerevisions.filter(field=field)
-                        if data_source_revision:
-                            # TODO support more than one revision
-                            data_source_revision = data_source_revision[0]
-                        process_data_source(form, field, revision.changeset,
-                                            revision=data_source_revision,
-                                            sourced_revision=revision)
-
-                    # Update Creator's GCD Official Name
-                    gcd_official_name = request.POST.get('gcd_official_name')
-                    gcd_official_sort_name = \
-                      request.POST.get('gcd_official_sort_name')
-                    gcd_official_name_type_id = request.POST.get(
-                      'gcd_official_type')
-                    gcd_official_name_type = NameType.objects.get(
-                      id=gcd_official_name_type_id)
-
-                    creator_name = changeset.creatornamedetailrevisions.get(
-                        type=gcd_official_name_type)
-                    creator_name.name = gcd_official_name
-                    if gcd_official_sort_name:
-                        creator_name.sort_name = gcd_official_sort_name
-                    else:
-                        creator_name.sort_name = gcd_official_name
-                    creator_name.save()
-
-                    process_creator_other_names(request, changeset, revision,
-                                                creator_name)
-
-                    form_class = get_date_revision_form(
-                                    revision, user=request.user,
-                                    date_help_links=CREATOR_HELP_LINKS)
-                    birth_date_form = form_class(request.POST or None,
-                                                instance=revision.birth_date,
-                                                prefix='birth_date')
-                    birth_date_form.fields['date'].label = 'Birth date'
-                    birth_date_form.save()
-                    data_source_revision = revision.changeset\
-                        .datasourcerevisions.filter(field='birth_date')
-                    if data_source_revision:
-                        # TODO support more than one revision
-                        data_source_revision = data_source_revision[0]
-                    process_data_source(birth_date_form, 'birth_date', revision.changeset,
-                                        revision=data_source_revision,
-                                        sourced_revision=revision)
-
-                    death_date_form = form_class(request.POST or None,
-                                                 instance=revision.death_date,
-                                                prefix='death_date')
-                    #death_date_form = DateRevisionForm(request.POST,
-                                                       #instance=revision.death_date,
-                                                       #prefix='death_date')
-                    death_date_form.save()
-                    data_source_revision = revision.changeset\
-                        .datasourcerevisions.filter(field='death_date')
-                    if data_source_revision:
-                        # TODO support more than one revision
-                        data_source_revision = data_source_revision[0]
-                    process_data_source(death_date_form, 'death_date', revision.changeset,
-                                        revision=data_source_revision,
-                                        sourced_revision=revision)
-
-                elif revision.changeset.change_type in [
+                if revision.changeset.change_type in [
                                         CTYPES['received_award'],
                                         CTYPES['creator_art_influence'],
                                         CTYPES['creator_degree'],
@@ -806,8 +629,26 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
                                         CTYPES['creator_relation'],
                                         CTYPES['creator_school']]:
                     _save_data_source_revision(form, revision, '')
+                    if revision.changeset.change_type == \
+                      CTYPES['creator_relation']:
+                        form.save_m2m()
                 else:
                     form.save_m2m()
+
+        # TODO re-factor into model routine
+        if revision.source_name == 'story':
+            if revision.feature_logo.count():
+                # stories for variants in variant-add next to issue have issue
+                if revision.issue:
+                    language = revision.issue.series.language
+                else:
+                    language = revision.my_issue_revision.\
+                                        other_issue_revision.series.language
+                for feature_logo in revision.feature_logo.all():
+                    if feature_logo.feature.get(language=language) not in \
+                       revision.feature_object.all():
+                        revision.feature_object.add(feature_logo.feature.
+                                                    get(language=language))
 
         if 'submit' in request.POST:
             return submit(request, revision.changeset.id)
@@ -815,7 +656,7 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
             return HttpResponseRedirect(urlresolvers.reverse('editing'))
         if 'save' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
-              kwargs={ 'model_name': model_name, 'id': revision_id }))
+              kwargs={ 'model_name': model_name, 'id': revision.id }))
         if 'save_return' in request.POST:
             # BiblioEntry needs second form for specific fields
             if revision.source_class == Story \
@@ -837,15 +678,10 @@ def _save(request, form, changeset=None, revision_id=None, model_name=None):
           'Revision saved but cannot determine which '
           'page to load now.  Contact an editor if this error persists.')
 
-    revision = None
-    if revision_id is not None:
-        revision = get_object_or_404(REVISION_CLASSES[model_name],
-                                     id=revision_id)
+    if changeset == None:
         changeset = revision.changeset
-    elif changeset == None:
-        # cannot happen, but to be safe
-        raise ValueError
-    return _display_edit_form(request, changeset, form, revision)
+    return _display_edit_form(request, changeset, form, revision,
+                              extra_forms=extra_forms)
 
 
 @permission_required('indexer.can_reserve')
@@ -1595,7 +1431,7 @@ def process(request, id):
             revision = changeset.inline_revision()
             form_class = get_revision_form(revision, user=request.user)
             form = form_class(request.POST, request.FILES, instance=revision)
-            return _save(request, form, changeset=changeset)
+            return _save(request, form, revision, changeset=changeset)
         else:
             return submit(request, id)
 
@@ -1640,7 +1476,7 @@ def process_revision(request, id, model_name):
     if 'save' in request.POST or 'save_return' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         form = get_revision_form(revision)(request.POST, instance=revision)
-        return _save(request, form=form, revision_id=id, model_name=model_name)
+        return _save(request, form, revision, model_name=model_name)
 
     return render_error(request,
       'Unknown action requested!  Please try again.  If this error message '
@@ -2764,6 +2600,11 @@ def add_story(request, issue_revision_id, changeset_id):
         initial = _get_initial_add_story_data(request, issue_revision, seq)
         return copy_sequence(request, changeset_id, issue_id,
                              sequence_number=initial['sequence_number'])
+
+    if request.method == 'POST' and 'cancel_return' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit', kwargs={'id': changeset_id}))
+
     # Process add form if this is a POST.
     try:
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
@@ -2774,10 +2615,7 @@ def add_story(request, issue_revision_id, changeset_id):
                   'You cannot add more than one story to a variant issue.',
                   redirect=False)
 
-        if issue:
-            is_comics_publication = issue.series.is_comics_publication
-        else: # for variants added with base issue the issue is not set
-            is_comics_publication = True
+        initial = {}
         if request.method != 'POST':
             seq = ''
             if 'added_sequence_number' in request.GET:
@@ -2789,20 +2627,29 @@ def add_story(request, issue_revision_id, changeset_id):
             else:
                 initial = _get_initial_add_story_data(request, issue_revision,
                                                       seq)
-                form = get_story_revision_form(user=request.user,
-                  series=issue_revision.series)(initial=initial)
-            return _display_add_story_form(request, issue_revision, form,
-                                           changeset_id)
-
-        if 'cancel_return' in request.POST:
-            return HttpResponseRedirect(urlresolvers.reverse('edit',
-              kwargs={ 'id': changeset_id }))
-
         form = get_story_revision_form(user=request.user,
-                                       series=issue_revision.series)(request.POST)
-        if not form.is_valid():
-            return _display_add_story_form(request, issue_revision, form,
-                                           changeset_id)
+                                       series=issue_revision.series)\
+                                      (request.POST or None,
+                                       initial=initial)
+        credits_formset = StoryRevisionFormSet(request.POST or None)
+
+        if not form.is_valid() or not credits_formset.is_valid():
+            kwargs = {
+                'issue_revision_id': issue_revision_id,
+                'changeset_id': changeset_id,
+            }
+            url = urlresolvers.reverse('add_story', kwargs=kwargs)
+
+            return oi_render(
+                request, 'oi/edit/add_frame.html',
+                {
+                    'object_name': 'Story',
+                    'object_url': url,
+                    'action_label': 'Save',
+                    'form': form,
+                    'settings': settings,
+                    'credits_formset': credits_formset,
+                })
 
         revision = form.save(commit=False)
         stories = issue_revision.active_stories()
@@ -2811,12 +2658,30 @@ def add_story(request, issue_revision_id, changeset_id):
 
         revision.save_added_revision(changeset=changeset,
                                      issue=issue)
+        revision.save()
         if form.cleaned_data['comments']:
             revision.comments.create(commenter=request.user,
                                      changeset=changeset,
                                      text=form.cleaned_data['comments'],
                                      old_state=changeset.state,
                                      new_state=changeset.state)
+
+        extra_forms = {'credits_formset': credits_formset, }
+        revision.process_extra_forms(request, extra_forms)
+        form.save_m2m()
+        if revision.feature_logo.count():
+            # stories for variants in variant-add next to issue have issue
+            if revision.issue:
+                language = revision.issue.series.language
+            else:
+                language = revision.my_issue_revision. \
+                    other_issue_revision.series.language
+            for feature_logo in revision.feature_logo.all():
+                if feature_logo.feature.get(language=language) not in \
+                  revision.feature_object.all():
+                    revision.feature_object.add(feature_logo.feature.
+                                                get(language=language))
+
         if revision.source_class == Story \
           and revision.type.id == STORY_TYPES['about comics']:
             biblio_revision = BiblioEntryRevision(storyrevision_ptr=
@@ -2827,6 +2692,7 @@ def add_story(request, issue_revision_id, changeset_id):
               urlresolvers.reverse('edit_revision',
                                     kwargs={'model_name': 'biblio_entry',
                                             'id': biblio_revision.id }))
+
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': changeset.id }))
 
@@ -2881,22 +2747,6 @@ def _get_initial_add_story_data(request, issue_revision, seq):
     initial['sequence_number'] = seq_num
     return initial
 
-
-def _display_add_story_form(request, issue, form, changeset_id):
-    kwargs = {
-        'issue_revision_id': issue.id,
-        'changeset_id': changeset_id,
-    }
-    url = urlresolvers.reverse('add_story', kwargs=kwargs)
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': 'Story',
-        'object_url': url,
-        'action_label': 'Save',
-        'form': form,
-        'settings': settings,
-      })
 
 ##############################################################################
 # Series Bond Editing
@@ -5119,27 +4969,6 @@ def mentoring(request):
       })
 
 
-def process_data_source(creator_form, field_name, changeset=None,
-                        revision=None, sourced_revision=None):
-    data_source = creator_form.cleaned_data.get('%s_source_type' % field_name)
-    data_source_description = creator_form.cleaned_data.get(
-                                          '%s_source_description' % field_name)
-
-    if revision:
-        # existing revision, only update data
-        revision.source_type = data_source
-        revision.source_description = data_source_description
-        revision.save()
-    elif data_source or data_source_description:
-        # new revision, create and set meta data
-        revision = DataSourceRevision.objects.create(
-                                source_type=data_source,
-                                source_description=data_source_description,
-                                changeset=changeset,
-                                sourced_revision=sourced_revision,
-                                field=field_name)
-
-
 @permission_required('indexer.can_reserve')
 def add_award(request):
     return add_generic(request, 'award')
@@ -5298,89 +5127,40 @@ def add_creator(request):
     birth_date_form = form_class(request.POST or None, prefix='birth_date')
     death_date_form = form_class(request.POST or None, prefix='death_date')
 
-    if creator_form.is_valid() and birth_date_form.is_valid()\
-                                and death_date_form.is_valid():
-        changeset = Changeset(indexer=request.user, state=states.OPEN,
-                              change_type=CTYPES['creator'])
-        changeset.save()
-        revision = creator_form.save(commit=False)
-        revision.save_added_revision(changeset=changeset)
-        revision.gcd_official_name = request.POST.get('gcd_official_name')
-        revision.save()
+    creator_names_formset = CreatorRevisionFormSet(request.POST or None)
 
-        for field in _get_creator_sourced_fields():
-            process_data_source(creator_form, field, revision.changeset,
-                                sourced_revision=revision)
-        
-        revision.birth_date = birth_date_form.save()
-        revision.death_date = death_date_form.save()
-        revision.save()
-        process_data_source(birth_date_form, 'birth_date', changeset,
+    if not creator_form.is_valid() or not creator_names_formset.is_valid()\
+      or not birth_date_form.is_valid() or not death_date_form.is_valid():
+        birth_date_form.fields['date'].label = 'Birth date'
+        death_date_form.fields['date'].label = 'Death date'
+
+        context = {'form': creator_form,
+                   'creator_names_formset': creator_names_formset,
+                   'birth_date_form': birth_date_form,
+                   'death_date_form': death_date_form,
+                   'object_name': 'Creator',
+                   'object_url': urlresolvers.reverse('add_creator'),
+                   'action_label': 'Submit new',
+                   'mode': 'new',
+                   'settings': settings}
+        return oi_render(request, 'oi/edit/add_frame.html', context)
+
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['creator'])
+    changeset.save()
+    revision = creator_form.save(commit=False)
+    revision.save_added_revision(changeset=changeset)
+    revision.gcd_official_name = "Dummy"
+    extra_forms = {'creator_names_formset': creator_names_formset,
+                   'birth_date_form': birth_date_form,
+                   'death_date_form': death_date_form
+                   }
+    revision.process_extra_forms(request, extra_forms)
+
+    for field in _get_creator_sourced_fields():
+        process_data_source(creator_form, field, revision.changeset,
                             sourced_revision=revision)
-        process_data_source(death_date_form, 'death_date', changeset,
-                            sourced_revision=revision)
-
-        # Add Gcd Creator's Official Name
-        gcd_official_name = request.POST.get('gcd_official_name')
-        if request.POST.get('gcd_official_sort_name'):
-            gcd_official_sort_name = request.POST.get('gcd_official_sort_name')
-        else:
-            gcd_official_sort_name = gcd_official_name
-        gcd_official_name_type_id = request.POST.get('gcd_official_type')
-        gcd_official_name_sources = request.POST.getlist(
-            'gcd_official_sources')
-
-        gcd_official_name_type = NameType.objects.get(
-            id=gcd_official_name_type_id)
-        creator_name = CreatorNameDetailRevision.objects.create(
-            creator=None,
-            name=gcd_official_name,
-            sort_name=gcd_official_sort_name,
-            type=gcd_official_name_type,
-            changeset=changeset)
-        for source in gcd_official_name_sources:
-            creator_name.source.add(source)
-
-        process_creator_other_names(request, changeset, revision,
-                                    creator_name)
-
-        return submit(request, changeset.id)
-    elif request.POST:
-        # if not all forms are valid we need to fetch the names
-        official_name_details = {
-                'name': request.POST.get('gcd_official_name'),}
-        other_name_details = []
-        creator_names = extract_creator_names(request)
-        for creator_name in creator_names:
-            other_name_details.append({
-                'name': creator_name['name'],
-                'sort_name': creator_name['sort_name'],
-                'type_id': creator_name['type_id']})
-    else:
-        official_name_details = None
-        other_name_details = []
-
-    birth_date_form.fields['date'].label = 'Birth date'
-    death_date_form.fields['date'].label = 'Death date'
-
-    add_name_types = list(NameType.objects.values())
-    add_name_types.insert(0, {'type': u'---------', u'id': ''})
-
-    context = {'form': creator_form,
-               'birth_date_form': birth_date_form,
-               'death_date_form': death_date_form,
-               'object_name': 'Creator',
-               'object_url': urlresolvers.reverse('add_creator'),
-               'include_before_form': 'oi/bits/creator_before_form.html',
-               'action_label': 'Submit new',
-               'name_types': NameType.objects.all(),
-               'add_name_types': add_name_types,
-               'sources': SourceType.objects.all(),
-               'official_name_details': official_name_details,
-               'other_name_details': other_name_details,
-               'mode': 'new',
-               'settings': settings}
-    return oi_render(request, 'oi/edit/add_frame.html', context)
+    return submit(request, changeset.id)
 
 
 @permission_required('indexer.can_reserve')

@@ -15,6 +15,7 @@ django-appconf==1.0.2
 django-bootstrap3<9.2
 django-compressor<2.3
 django-contact-form<1.7
+django-crispy-forms==1.7.2
 django-haystack==2.8.1
 django-imagekit<4.1
 django-queryset-csv==1.0.0

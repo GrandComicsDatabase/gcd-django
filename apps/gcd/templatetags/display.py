@@ -10,16 +10,15 @@ from django import template
 from django.template.defaultfilters import title
 
 from apps.oi import states
-from apps.oi.models import StoryRevision, CTYPES, INDEXED
+from apps.oi.models import StoryRevision, CTYPES
 from apps.gcd.templatetags.credits import show_page_count, show_title
 from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
                                     CreatorDegree, CreatorRelation, Award
-from apps.gcd.models import IndiciaPublisher, Brand, BrandGroup, \
-                                      Publisher
-from apps.gcd.models import Series, Issue, Cover, Image, Feature, FeatureLogo
-from apps.gcd.models.seriesbond import SeriesBond, BOND_TRACKING, \
-                                       SUBNUMBER_TRACKING, MERGE_TRACKING
+from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup,\
+                            Series, Issue, Cover, Image, Feature, FeatureLogo,\
+                            INDEXED, SeriesBond, BOND_TRACKING, \
+                            SUBNUMBER_TRACKING, MERGE_TRACKING
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
@@ -342,7 +341,8 @@ def changed_fields(changeset, object):
     elif object_class is Award:
         revision = changeset.awardrevisions.get(award=object.id)
     elif object_class is ReceivedAward:
-        revision = changeset.receivedawardrevisions.get(received_award=object.id)
+        revision = changeset.receivedawardrevisions\
+                            .get(received_award=object.id)
     elif object_class is Creator:
         revision = changeset.creatorrevisions.get(creator=object.id)
     elif object_class is CreatorMembership:
@@ -417,7 +417,7 @@ def changed_story_list(changeset):
                 output += u'<li>Sequence %s : %s' % \
                           (story_revision.sequence_number,
                            ", ".join(story_changed_list))
-        if output is not u'':
+        if output != u'':
             output = u'<ul>%s</ul>' % output
     return mark_safe(output)
 
@@ -461,7 +461,7 @@ def uncertain_year(object, field_name):
     """
     year = object.__dict__[field_name] if object.__dict__[field_name] else ''
     if object.__dict__[field_name + '_uncertain']:
-        year =  '%s ?' % (year)
+        year = '%s ?' % (year)
     return year
 
 

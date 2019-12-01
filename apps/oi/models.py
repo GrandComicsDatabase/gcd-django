@@ -29,26 +29,26 @@ from taggit.managers import TaggableManager
 
 from apps.oi import states, relpath
 
-from apps.stddata.models import Country, Language, Date
+from apps.stddata.models import Country, Language, Date, Script
 from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
-    SeriesBond, Cover, Image, Issue, Story, Feature, Reprint, ReprintToIssue,
-    ReprintFromIssue, IssueReprint, SeriesPublicationType, SeriesBondType,
-    StoryType, FeatureLogo, FeatureType, ImageType, Creator, CreatorArtInfluence,
-    CreatorDegree, CreatorMembership, CreatorNameDetail, CreatorNonComicWork,
-    CreatorSchool, Award, DataSource, CreatorRelation, NonComicWorkYear,
-    BiblioEntry, ReceivedAward, STORY_TYPES, FeatureRelation)
+    SeriesBond, Cover, Image, Issue, Story, StoryCredit, Feature, BiblioEntry,
+    Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
+    SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
+    FeatureLogo, FeatureRelation, ImageType,
+    Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
+    CreatorNameDetail, CreatorNonComicWork, CreatorSchool, CreatorRelation,
+    NonComicWorkYear, Award, ReceivedAward, DataSource, STORY_TYPES,
+    CREDIT_TYPES)
 
 from apps.gcd.models.gcddata import GcdData
 
-from apps.gcd.models.issue import INDEXED, issue_descriptor
-from apps.gcd.models.creator import _display_day, _display_place
+from apps.gcd.models.issue import issue_descriptor
 
 from apps.indexer.views import ErrorWithMessage
 
-from apps.legacy.models import Reservation, MigrationStoryStatus
 from functools import reduce
 
 LANGUAGE_STATS = ['de']
@@ -328,7 +328,9 @@ class Changeset(models.Model):
         if self.change_type in [CTYPES['issue'], CTYPES['variant_add'],
                                 CTYPES['two_issues']]:
             return (self.issuerevisions.all(),
-                    self.storyrevisions.all(), self.coverrevisions.all(),
+                    self.storyrevisions.all(),
+                    self.storycreditrevisions.all(),
+                    self.coverrevisions.all(),
                     self.reprintrevisions.all())
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
@@ -353,10 +355,12 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['series']:
             return (self.seriesrevisions.all(),
                     self.issuerevisions.all().select_related('issue'),
-                    self.storyrevisions.all())
+                    self.storyrevisions.all(),
+                    self.storycreditrevisions.all())
 
         if self.change_type == CTYPES['series_bond']:
-            return (self.seriesbondrevisions.all().select_related('series_bond'),)
+            return (self.seriesbondrevisions.all()
+                        .select_related('series_bond'),)
 
         if self.change_type == CTYPES['publisher']:
             return (self.publisherrevisions.all(), self.brandrevisions.all(),
@@ -816,7 +820,7 @@ class Changeset(models.Model):
         if self.state not in [states.DISCUSSED, states.REVIEWING] or \
            self.approver is None:
             raise ErrorWithMessage(
-                  "Only REVIEWING changes with an approver can be disapproved.")
+              "Only REVIEWING changes with an approver can be disapproved.")
         self.comments.create(commenter=self.approver,
                              text=notes,
                              old_state=self.state,
@@ -908,6 +912,7 @@ class Changeset(models.Model):
         if self.id:
             return 'Changeset: %d' % self.id
         return "Changeset"
+
 
 class ChangesetComment(models.Model):
     """
@@ -1078,6 +1083,7 @@ class RevisionManager(models.Manager):
         revision.save()
 
         return revision
+
 
 class RevisionQuerySet(models.QuerySet):
     """
@@ -1527,7 +1533,7 @@ class Revision(models.Model):
     # including hook methods for use in customizing the cloning process.
 
     def _pre_initial_save(self, fork=False, fork_source=None,
-                          exclude=frozenset()):
+                          exclude=frozenset(), **kwargs):
         """
         Called just before saving to the database to handle unusual fields.
 
@@ -1549,7 +1555,8 @@ class Revision(models.Model):
         pass
 
     @classmethod
-    def clone(cls, data_object, changeset, fork=False, exclude=frozenset()):
+    def clone(cls, data_object, changeset, fork=False, exclude=frozenset(),
+              **kwargs):
         """
         Given an existing data object, create a new revision based on it.
 
@@ -1595,7 +1602,7 @@ class Revision(models.Model):
             revision.previous_revision = previous_revision
 
         revision._pre_initial_save(fork=fork, fork_source=data_object,
-                                   exclude=exclude)
+                                   exclude=exclude, **kwargs)
 
         revision.save()
 
@@ -1696,8 +1703,10 @@ class Revision(models.Model):
         to adjust counts stored in their display objects.
         """
         if self.source_class._update_stats and (old_counts != new_counts or
-                changes.get('country changed', False) or
-                changes.get('language changed', False)):
+                                                changes.get('country changed',
+                                                            False) or
+                                                changes.get('language changed',
+                                                            False)):
             CountStats.objects.update_all_counts(
                 old_counts,
                 country=changes.get('old country', None),
@@ -1880,6 +1889,18 @@ class Revision(models.Model):
             if (name not in c or reduce(getattr, c[name], self)):
                 setattr(target, name, getattr(self, name))
 
+    def extra_forms(self, request):
+        """
+        Fetch additional forms of other/related objects for editing.
+        """
+        return {}
+
+    def process_extra_forms(self, request, extra_forms):
+        """
+        Process additional forms of other/related objects on save.
+        """
+        pass
+
     def commit_to_display(self, clear_reservation=True):
         """
         Writes the changes from the revision back to the display object.
@@ -1938,7 +1959,6 @@ class Revision(models.Model):
         new_stats = self.source.stat_counts()
         self._adjust_stats(changes, old_stats, new_stats)
         self._handle_dependents(changes)
-        #self.refresh_from_db()
 
     # #####################################################################
     # Methods not involved in the Revision lifecycle.
@@ -2058,9 +2078,10 @@ class Revision(models.Model):
         if prev_rev is None:
             self.is_changed = True
             prev_values = self._get_blank_values()
-            get_prev_value = lambda field: prev_values[field]
+            get_prev_value = lambda field: prev_values[field]  # noqa: E731
         else:
-            get_prev_value = lambda field: getattr(prev_rev, field)
+            get_prev_value = lambda field: getattr(prev_rev,  # noqa: E731
+                                                   field)
 
         for field_name in self.field_list():
             old = get_prev_value(field_name)
@@ -2071,10 +2092,16 @@ class Revision(models.Model):
                 old = old.all().values_list('id', flat=True)
                 new = new.all().values_list('id', flat=True)
                 field_changed = set(old) != set(new)
-            elif isinstance(old, Date):
+            elif isinstance(new, Date):
                 old = unicode(old)
                 new = unicode(new)
                 field_changed = old != new
+            elif isinstance(new, Manager):
+                new = new.all().values_list('id', flat=True)
+                if new:
+                    field_changed = True
+                else:
+                    field_changed = False
             else:
                 field_changed = old != new
             self.changed[field_name] = field_changed
@@ -2313,9 +2340,9 @@ class PublisherRevision(PublisherRevisionBase):
                 if indicia_publishers_lock is None:
                     raise IntegrityError("needed IndiciaPublisher lock not"
                                          " possible")
-                indicia_publisher_revision =\
-                  IndiciaPublisherRevision.clone(indicia_publisher,
-                                                 self.changeset)
+                indicia_publisher_revision = IndiciaPublisherRevision.clone(
+                                                indicia_publisher,
+                                                self.changeset)
                 indicia_publisher_revision.deleted = True
                 indicia_publisher_revision.save()
             for brand_use in self.publisher.branduse_set.all():
@@ -2323,10 +2350,10 @@ class PublisherRevision(PublisherRevisionBase):
                                                     changeset=self.changeset)
                 if brand_use_lock is None:
                     raise IntegrityError("needed BrandUse lock not possible")
-                brand_use_revision = BrandUseRevision.clone(brand_group,
+                brand_use_revision = BrandUseRevision.clone(brand_use,
                                                             self.changeset)
-                brand_revision.deleted = True
-                brand_revision.save()
+                brand_use_revision.deleted = True
+                brand_use_revision.save()
 
     def get_absolute_url(self):
         if self.publisher is None:
@@ -3080,7 +3107,7 @@ class SeriesRevision(Revision):
         return frozenset({'format'})
 
     def _pre_initial_save(self, fork=False, fork_source=None,
-                          exclude=frozenset()):
+                          exclude=frozenset(), **kwargs):
         self.leading_article = self.series.name != self.series.sort_name
 
     def _do_complete_added_revision(self, publisher):
@@ -3132,7 +3159,7 @@ class SeriesRevision(Revision):
                                            number='[nn]',
                                            publication_date=self.year_began,
                                            reservation_requested=
-                                             self.reservation_requested)
+                                           self.reservation_requested)
             # We assume that a non-four-digit year is a typo of some
             # sort, and do not propagate it.  The approval process
             # should catch that sort of thing.
@@ -3554,7 +3581,7 @@ class IssueRevision(Revision):
         })
 
     def _pre_initial_save(self, fork=False, fork_source=None,
-                          exclude=frozenset()):
+                          exclude=frozenset(), **kwargs):
         source = fork_source if fork_source else self.issue
         if source.on_sale_date and 'on_sale_date' not in exclude:
             (self.year_on_sale,
@@ -4120,10 +4147,18 @@ class IssueRevision(Revision):
             story_lock = _get_revision_lock(story, changeset=self.changeset)
             if story_lock is None:
                 raise IntegrityError("needed Story lock not possible")
-            story_revision = StoryRevision.objects.clone_revision(
-              story=story, changeset=self.changeset)
+            story_revision = StoryRevision.clone(story, self.changeset)
             if delete:
                 story_revision.toggle_deleted()
+            for credit in story.active_credits:
+                credit_lock = _get_revision_lock(credit,
+                                                 changeset=self.changeset)
+                if credit_lock is None:
+                    raise IntegrityError("needed Credit lock not possible")
+                credit_revision = StoryCreditRevision.clone(
+                  credit, self.changeset, story_revision=story_revision)
+                if delete:
+                    credit_revision.toggle_deleted()
         if delete:
             for cover in self.issue.active_covers():
                 # cover can be reserved, so this can fail
@@ -4192,12 +4227,12 @@ class PreviewIssue(Issue):
         # we have a list. Better to use that one in templates for checks
         # when displaying something which is preview-relevant.
         # maybe iterchain helps, but that does not provide a count
-        #if self.revision.changeset.issuerevisions.filter(variant_of=self)\
-                                                 #.exists():
-            #return (self._active_variants() | self.revision.changeset
-                                                 #.issuerevisions
-                                                 #.filter(variant_of=self))
-        #else:
+        # if self.revision.changeset.issuerevisions.filter(variant_of=self)\
+        # .exists():
+        # return (self._active_variants() | self.revision.changeset
+        # .issuerevisions
+        # .filter(variant_of=self))
+        # else:
         return self._active_variants()
 
     def other_variants(self):
@@ -4243,7 +4278,8 @@ class PreviewIssue(Issue):
                 base_issue_revision = self.issuerevisions\
                                  .filter(issue=self.variant_of).get()
                 base_issue = PreviewIssue(base_issue_revision.source)
-                base_issue.storyrevisions = base_issue_revision.changeset.storyrevisions
+                base_issue.storyrevisions = base_issue_revision.changeset\
+                                                               .storyrevisions
                 base_issue.id = base_issue_revision.source.id
                 base_issue.revision = base_issue_revision
                 base_issue.series = base_issue_revision.series
@@ -4300,11 +4336,87 @@ class PreviewIssue(Issue):
 
 def get_story_field_list():
     return ['sequence_number', 'title', 'title_inferred', 'first_line',
-            'type', 'feature', 'genre', 'job_number',
-            'script', 'no_script', 'pencils', 'no_pencils', 'inks',
-            'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
+            'type', 'feature', 'feature_object', 'feature_logo', 'genre',
+            'job_number', 'script', 'no_script', 'pencils', 'no_pencils',
+            'inks', 'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
             'editing', 'no_editing', 'page_count', 'page_count_uncertain',
             'characters', 'synopsis', 'reprint_notes', 'notes', 'keywords']
+
+
+class StoryCreditRevision(Revision):
+    class Meta:
+        db_table = 'oi_story_credit_revision'
+        ordering = ['credit_type__sort_code', 'id']
+
+    story_credit = models.ForeignKey(StoryCredit, null=True,
+                                     related_name='revisions')
+
+    creator = models.ForeignKey(CreatorNameDetail)
+    credit_type = models.ForeignKey(CreditType)
+    story_revision = models.ForeignKey('StoryRevision',
+                                       related_name='story_credit_revisions')
+
+    is_credited = models.BooleanField(default=False, db_index=True)
+    is_signed = models.BooleanField(default=False, db_index=True)
+
+    uncertain = models.BooleanField(default=False, db_index=True)
+
+    signed_as = models.CharField(max_length=255, blank=True)
+    credited_as = models.CharField(max_length=255, blank=True)
+
+    # record for a wider range of creative work types, or how it is credited
+    credit_name = models.CharField(max_length=255, blank=True)
+
+    source_name = 'story_credit'
+    source_class = StoryCredit
+
+    @property
+    def source(self):
+        return self.story_credit
+
+    @source.setter
+    def source(self, value):
+        self.story_credit = value
+
+    def _pre_save_object(self, changes):
+        self.story_credit.story = self.story_revision.story
+
+    def _do_complete_added_revision(self, story_revision):
+        self.story_revision = story_revision
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        self.story_revision = kwargs['story_revision']
+
+    def __unicode__(self):
+        return u"%s: %s (%s)" % (self.story_revision, self.creator,
+                                 self.credit_type)
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    _base_field_list = ['creator', 'credit_type', 'is_credited', 'is_signed',
+                        'uncertain', 'signed_as', 'credited_as', 'credit_name']
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'creator': None,
+            'credit_type': None,
+            'story': None,
+            'is_credited': False,
+            'is_signed': False,
+            'uncertain': False,
+            'signed_as': '',
+            'credited_as': '',
+            'credit_name': '',
+        }
+
+    def _imps_for(self, field_name):
+        # imps already come from StoryRevision, since is_changed is True there
+        return 0
 
 
 class StoryRevisionManager(RevisionManager):
@@ -4326,6 +4438,8 @@ class StoryRevision(Revision):
     title_inferred = models.BooleanField(default=False)
     first_line = models.CharField(max_length=255, blank=True)
     feature = models.CharField(max_length=255, blank=True)
+    feature_object = models.ManyToManyField(Feature, blank=True)
+    feature_logo = models.ManyToManyField(FeatureLogo, blank=True)
     type = models.ForeignKey(StoryType)
     sequence_number = models.IntegerField()
 
@@ -4377,7 +4491,7 @@ class StoryRevision(Revision):
     @classmethod
     def copied_revision(cls, story, changeset, issue):
         """
-        Given an existing story, create a new revision based on it for a 
+        Given an existing story, create a new revision based on it for a
         new story with the copied data. 'fork' is set to true in such a case.
         """
         revision = StoryRevision.clone(story, changeset, fork=True)
@@ -4391,6 +4505,9 @@ class StoryRevision(Revision):
             revision.title_inferred = False
             revision.first_line = u''
         revision.save()
+        for credit in story.active_credits:
+            StoryCreditRevision.clone(credit, revision.changeset,
+                                      fork=True, story_revision=revision)
         return revision
 
     def _get_major_changes(self, extra_field_tuples=frozenset()):
@@ -4406,6 +4523,20 @@ class StoryRevision(Revision):
 
         return super(StoryRevision, self)._get_major_changes(
             extra_field_tuples=extras)
+
+    def compare_changes(self):
+        super(StoryRevision, self).compare_changes()
+        for credit_type in CREDIT_TYPES:
+            if not self.changed[credit_type]:
+                credits = self.story_credit_revisions.filter(
+                               credit_type__name=credit_type)
+                if credits:
+                    for credit in credits:
+                        credit.compare_changes()
+                        if credit.is_changed:
+                            self.changed[credit_type] = True
+                            self.is_changed = True
+                            break
 
     def _do_complete_added_revision(self, issue):
         """
@@ -4457,7 +4588,7 @@ class StoryRevision(Revision):
             # need to copy everything
             biblio_revision.__dict__.update(self.__dict__)
             source_story = biblio_revision.source
-            if fork == True:
+            if fork is True:
                 source_story = fork_source
             # copy single value fields which are specific to biblio_entry
             for field in biblio_revision.\
@@ -4475,7 +4606,6 @@ class StoryRevision(Revision):
                 biblio_entry = BiblioEntry(story_ptr=self.source)
                 biblio_entry.__dict__.update(self.source.__dict__)
                 biblio_entry.save()
-                #self.biblioentryrevision.source = biblio_entry
                 self.biblioentryrevision.save()
             self.biblioentryrevision._copy_fields_to(
               self.biblioentryrevision.source.biblioentry)
@@ -4492,7 +4622,7 @@ class StoryRevision(Revision):
         if changes['issue changed'] and not self.deleted:
             issues.append(changes['new issue'])
 
-        #import pytest
+        # import pytest
         for issue in issues:
             delta = issue.set_indexed_status()
             if delta:
@@ -4509,6 +4639,37 @@ class StoryRevision(Revision):
             # maybe can be done using changes[] on the changeset level ?
             if issue.is_indexed:
                 RecentIndexedIssue.objects.update_recents(issue)
+
+    def extra_forms(self, request):
+        from apps.oi.forms.story import StoryRevisionFormSet
+        credits_formset = StoryRevisionFormSet(request.POST or None,
+          instance=self,
+          queryset=self.story_credit_revisions.filter(deleted=False))
+        return {'credits_formset': credits_formset, }
+
+    def process_extra_forms(self, request, extra_forms):
+        credits_formset = extra_forms['credits_formset']
+        for credit_form in credits_formset:
+            if credit_form.is_valid() and credit_form.cleaned_data:
+                cd = credit_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    credit_form.save()
+                else:
+                    credit_revision = credit_form.save(commit=False)
+                    credit_revision.save_added_revision(
+                      changeset=self.changeset, story_revision=self)
+            elif not credit_form.is_valid() and \
+              credit_form not in credits_formset.deleted_forms:
+                raise ValueError
+        removed_credits = credits_formset.deleted_forms
+        if removed_credits:
+            for removed_credit in removed_credits:
+                if removed_credit.cleaned_data['id']:
+                    if removed_credit.cleaned_data['id'].story_credit:
+                        removed_credit.cleaned_data['id'].deleted = True
+                        removed_credit.cleaned_data['id'].save()
+                    else:
+                        removed_credit.cleaned_data['id'].delete()
 
     def deletable(self):
         if self.changeset.reprintrevisions \
@@ -4549,7 +4710,7 @@ class StoryRevision(Revision):
         if not hasattr(self, '_saved_my_issue_revision'):
             self._saved_my_issue_revision = \
                 self.changeset.issuerevisions.filter(issue=self.issue)[0]
-            return self._saved_my_issue_revision
+        return self._saved_my_issue_revision
 
     def moveable(self):
         """
@@ -4599,6 +4760,8 @@ class StoryRevision(Revision):
             'title_inferred': False,
             'first_line': '',
             'feature': '',
+            'feature_object': None,
+            'feature_logo': None,
             'page_count': None,
             'page_count_uncertain': False,
             'script': '',
@@ -4640,9 +4803,10 @@ class StoryRevision(Revision):
         self._seen_editing = False
         self._seen_page_count = False
         self._seen_title = False
+        self._seen_feature = False
 
     def _imps_for(self, field_name):
-        if field_name in ('first_line', 'type', 'feature',
+        if field_name in ('first_line', 'type',
                           'characters', 'synopsis', 'job_number',
                           'reprint_notes', 'notes', 'keywords', 'issue'):
             return 1
@@ -4659,6 +4823,13 @@ class StoryRevision(Revision):
                 return 1
             else:
                 return 0
+
+        if not self._seen_feature and field_name in ('feature',
+                                                     'feature_object',
+                                                     'feature_logo'):
+            self._seen_feature = True
+            return 1
+
         if not self._seen_title and field_name in ('title', 'title_inferred'):
             self._seen_title = True
             return 1
@@ -4684,11 +4855,12 @@ class StoryRevision(Revision):
 
                 # Just putting in a question mark isn't worth an IMP.
                 # Note that the input data is already whitespace-stripped.
+                # StoryCredits give also positive is_changed and corresponding
+                # IMP here.
                 if field_name == name and getattr(self, field_name) == '?':
                     return 0
                 return 1
         return 0
-
 
     # we need two checks if relevant reprint revisions exist:
     # 1) revisions which are active and link self.story with a story/issue
@@ -4886,13 +5058,33 @@ class PreviewStory(Story):
     def init(cls, story_revision):
         preview_story = PreviewStory()
         story_revision._copy_fields_to(preview_story)
-        preview_story.keywords = story_revision.keywords       
+        preview_story.keywords = story_revision.keywords
         preview_story.revision = story_revision
         if story_revision.source:
             preview_story.id = story_revision.source.id
         else:
             preview_story.id = 0
         return preview_story
+
+    @property
+    def active_credits(self):
+        return self.revision.story_credit_revisions.exclude(deleted=True)
+
+    @property
+    def feature_logo(self):
+        return self.revision.feature_logo.all()
+
+    def has_credits(self):
+        """
+        Simplifies UI checks for conditionals.  Credit fields.
+        """
+        return self.script or \
+               self.pencils or \
+               self.inks or \
+               self.colors or \
+               self.letters or \
+               self.editing or \
+               self.active_credits.exists()
 
     @property
     def from_reprints(self):
@@ -4912,6 +5104,15 @@ class PreviewStory(Story):
 
     def has_keywords(self):
         return self.revision.has_keywords()
+
+    def has_feature(self):
+        return self.revision.feature or self.revision.feature_object.count()
+
+    def show_feature(self):
+        return self._show_feature(self.revision)
+
+    def show_feature_logo(self):
+        return self._show_feature_logo(self.revision)
 
     @property
     def biblioentry(self):
@@ -4948,9 +5149,9 @@ class BiblioEntryRevision(StoryRevision):
     def _field_list(self):
         fields = ['page_began', 'page_ended', 'abstract', 'doi']
         # TODO after python 3 and OrderedDict, this might work
-        #fields += list(self._get_single_value_fields()
-                                                #.viewkeys() -
-                        #self.storyrevision_ptr._get_single_value_fields().viewkeys())
+        # fields += list(self._get_single_value_fields()
+        # .viewkeys() -
+        # self.storyrevision_ptr._get_single_value_fields().viewkeys())
         return fields
 
     def _imps_for(self, field_name):
@@ -5012,7 +5213,7 @@ class FeatureRevision(Revision):
         self.feature = value
 
     def _pre_initial_save(self, fork=False, fork_source=None,
-                          exclude=frozenset()):
+                          exclude=frozenset(), **kwargs):
         self.leading_article = self.feature.name != self.feature.sort_name
 
     def _post_assign_fields(self, changes):
@@ -5105,7 +5306,7 @@ class FeatureLogoRevision(Revision):
         self.feature_logo = value
 
     def _pre_initial_save(self, fork=False, fork_source=None,
-                          exclude=frozenset()):
+                          exclude=frozenset(), **kwargs):
         self.leading_article = (self.feature_logo.name !=
                                 self.feature_logo.sort_name)
 
@@ -5183,7 +5384,7 @@ class FeatureRelationRevision(Revision):
                                          related_name='revisions')
 
     to_feature = models.ForeignKey('gcd.Feature',
-                                    related_name='to_feature_revisions')
+                                   related_name='to_feature_revisions')
     relation_type = models.ForeignKey('gcd.FeatureRelationType',
                                       related_name='revisions')
     from_feature = models.ForeignKey('gcd.Feature',
@@ -5940,7 +6141,6 @@ class ReceivedAwardRevision(Revision):
         else:
             return u'%s: %s' % (self.recipient, name)
 
-
     # #####################################################################
     # Old methods. t.b.c, if deprecated.
 
@@ -5957,7 +6157,6 @@ class ReceivedAwardRevision(Revision):
 
     def _get_blank_values(self):
         return {
-            #'recipient': '',
             'award': '',
             'award_name': '',
             'no_award_name': False,
@@ -6005,12 +6204,12 @@ class DataSourceRevisionManager(RevisionManager):
 
         This new revision will be where the replacement is stored.
         """
-        return RevisionManager\
-          .clone_revision(self,
-                          instance=data_source,
-                          instance_class=DataSource,
-                          changeset=changeset,
-                          sourced_revision=sourced_revision)
+        return RevisionManager.clone_revision(
+                self,
+                instance=data_source,
+                instance_class=DataSource,
+                changeset=changeset,
+                sourced_revision=sourced_revision)
 
     def _do_create_revision(self, data_source, changeset,
                             sourced_revision, **ignore):
@@ -6094,6 +6293,27 @@ class DataSourceRevision(Revision):
     def __unicode__(self):
         return u'%s - %s' % (
             unicode(self.field), unicode(self.source_type.type))
+
+
+def process_data_source(creator_form, field_name, changeset=None,
+                        revision=None, sourced_revision=None):
+    data_source = creator_form.cleaned_data.get('%s_source_type' % field_name)
+    data_source_description = creator_form.cleaned_data.get(
+                                          '%s_source_description' % field_name)
+
+    if revision:
+        # existing revision, only update data
+        revision.source_type = data_source
+        revision.source_description = data_source_description
+        revision.save()
+    elif data_source or data_source_description:
+        # new revision, create and set meta data
+        revision = DataSourceRevision.objects.create(
+                                source_type=data_source,
+                                source_description=data_source_description,
+                                changeset=changeset,
+                                sourced_revision=sourced_revision,
+                                field=field_name)
 
 
 def reserve_data_sources(data_sources, changeset, sourced_revision,
@@ -6186,7 +6406,7 @@ class CreatorRevision(Revision):
         self.creator = value
 
     def _pre_initial_save(self, fork=False, fork_source=None,
-                          exclude=frozenset()):
+                          exclude=frozenset(), **kwargs):
         # clone date instances
         birth_date = self.creator.birth_date
         birth_date.pk = None
@@ -6206,7 +6426,11 @@ class CreatorRevision(Revision):
             if name_lock is None:
                 raise IntegrityError("needed Name lock not possible")
             creator_name = CreatorNameDetailRevision.objects\
-                           .clone_revision(name_detail, self.changeset, self)
+                           .clone_revision(name_detail, self.changeset,
+                                           self)  # noqa: E127
+            creator_name.save_added_revision(
+                changeset=self.changeset, creator_revision=self)
+
             if delete:
                 creator_name.deleted = True
                 creator_name.save()
@@ -6222,8 +6446,8 @@ class CreatorRevision(Revision):
                     raise IntegrityError("needed CreatorArtInfluence lock not"
                                          " possible")
                 creator_art_influence_revision = \
-                  CreatorArtInfluenceRevision.clone(creator_art_influence,
-                                                    self.changeset)
+                    CreatorArtInfluenceRevision.clone(creator_art_influence,
+                                                      self.changeset)
                 creator_art_influence_revision.deleted = True
                 creator_art_influence_revision.save()
 
@@ -6234,8 +6458,8 @@ class CreatorRevision(Revision):
                     raise IntegrityError("needed ReceivedAward lock not "
                                          "possible")
                 received_award_revision = \
-                  ReceivedAwardRevision.clone(received_award,
-                                             self.changeset)
+                    ReceivedAwardRevision.clone(received_award,
+                                                self.changeset)
                 received_award_revision.deleted = True
                 received_award_revision.save()
 
@@ -6246,8 +6470,8 @@ class CreatorRevision(Revision):
                     raise IntegrityError("needed CreatorDegree lock not "
                                          "possible")
                 creator_degree_revision = \
-                  CreatorDegreeRevision.clone(creator_degree,
-                                              self.changeset)
+                    CreatorDegreeRevision.clone(creator_degree,
+                                                self.changeset)
                 creator_degree_revision.deleted = True
                 creator_degree_revision.save()
 
@@ -6258,21 +6482,21 @@ class CreatorRevision(Revision):
                     raise IntegrityError("needed CreatorMembership lock not "
                                          "possible")
                 creator_membership_revision = \
-                  CreatorMembershipRevision.clone(creator_membership,
-                                                  self.changeset)
+                    CreatorMembershipRevision.clone(creator_membership,
+                                                    self.changeset)
                 creator_membership_revision.deleted = True
                 creator_membership_revision.save()
 
             for creator_non_comic_work in \
-              self.creator.active_non_comic_works():
+                    self.creator.active_non_comic_works():
                 noncomicwork_lock = _get_revision_lock(
                   creator_non_comic_work, changeset=self.changeset)
                 if noncomicwork_lock is None:
                     raise IntegrityError("needed CreatorNonComicWork lock not"
                                          " possible")
                 creator_non_comic_work_revision = \
-                  CreatorNonComicWorkRevision.clone(creator_non_comic_work,
-                                                    self.changeset)
+                    CreatorNonComicWorkRevision.clone(creator_non_comic_work,
+                                                      self.changeset)
                 creator_non_comic_work_revision.deleted = True
                 creator_non_comic_work_revision.save()
 
@@ -6283,13 +6507,88 @@ class CreatorRevision(Revision):
                     raise IntegrityError("needed CreatorSchool lock not "
                                          "possible")
                 creator_school_revision = \
-                  CreatorSchoolRevision.clone(creator_school,
-                                              self.changeset)
+                    CreatorSchoolRevision.clone(creator_school,
+                                                self.changeset)
                 creator_school_revision.deleted = True
                 creator_school_revision.save()
 
+    def extra_forms(self, request):
+        from apps.oi.forms.creator import CreatorRevisionFormSet
+        from apps.oi.forms.support import CREATOR_HELP_LINKS
+        from apps.oi.forms import get_date_revision_form
+
+        creator_names_formset = CreatorRevisionFormSet(
+          request.POST or None, instance=self,
+          queryset=self.cr_creator_names.filter(deleted=False))
+        form_class = get_date_revision_form(self,
+                                            user=request.user,
+                                            date_help_links=CREATOR_HELP_LINKS)
+        birth_date_form = form_class(request.POST or None,
+                                     prefix='birth_date',
+                                     instance=self.birth_date)
+        death_date_form = form_class(request.POST or None,
+                                     prefix='death_date',
+                                     instance=self.death_date)
+        birth_date_form.fields['date'].label = 'Birth date'
+        death_date_form.fields['date'].label = 'Death date'
+
+        return {'creator_names_formset': creator_names_formset,
+                'birth_date_form': birth_date_form,
+                'death_date_form': death_date_form
+                }
+
+    def process_extra_forms(self, request, extra_forms):
+        creator_names_formset = extra_forms['creator_names_formset']
+        for creator_name_form in creator_names_formset:
+            if creator_name_form.is_valid() and creator_name_form.cleaned_data:
+                cd = creator_name_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    creator_revision = creator_name_form.save()
+                else:
+                    creator_revision = creator_name_form.save(commit=False)
+                    creator_revision.save_added_revision(
+                      changeset=self.changeset, creator_revision=self)
+                if cd['is_official_name']:
+                    self.gcd_official_name = cd['name']
+            elif (
+              not creator_name_form.is_valid() and
+              creator_name_form not in creator_names_formset.deleted_forms
+            ):
+                raise ValueError
+
+        removed_names = creator_names_formset.deleted_forms
+        for removed_name in removed_names:
+            if removed_name.cleaned_data['id']:
+                if removed_name.cleaned_data['id'].creator_name_detail:
+                    removed_name.cleaned_data['id'].deleted = True
+                    removed_name.cleaned_data['id'].save()
+                else:
+                    removed_name.cleaned_data['id'].delete()
+
+        birth_date_form = extra_forms['birth_date_form']
+        death_date_form = extra_forms['death_date_form']
+        self.birth_date = birth_date_form.save()
+        self.death_date = death_date_form.save()
+        self.save()
+        # TODO support more than one revision
+        data_source_revision = self.changeset\
+            .datasourcerevisions.filter(field='birth_date')
+        if data_source_revision:
+            data_source_revision = data_source_revision[0]
+        process_data_source(birth_date_form, 'birth_date', self.changeset,
+                            revision=data_source_revision,
+                            sourced_revision=self)
+        data_source_revision = self.changeset\
+            .datasourcerevisions.filter(field='death_date')
+        if data_source_revision:
+            data_source_revision = data_source_revision[0]
+        process_data_source(death_date_form, 'death_date', self.changeset,
+                            revision=data_source_revision,
+                            sourced_revision=self)
+
     def _pre_save_object(self, changes):
-        name = self.changeset.creatornamedetailrevisions.get(type__id=1)
+        name = self.changeset.creatornamedetailrevisions.get(
+                                                         is_official_name=True)
         self.creator.sort_name = name.sort_name
 
         if self.added:
@@ -6454,6 +6753,10 @@ class CreatorRelationRevisionManager(RevisionManager):
             notes=creator_relation.notes
         )
         revision.save()
+        if creator_relation.creator_name.count():
+            revision.creator_name.add(*list(creator_relation.
+                                            creator_name.all().
+                                            values_list('id', flat=True)))
         return revision
 
 
@@ -6474,14 +6777,18 @@ class CreatorRelationRevision(Revision):
                                          related_name='revisions')
 
     to_creator = models.ForeignKey('gcd.Creator',
-                                    related_name='to_creator_revisions')
+                                   related_name='to_creator_revisions')
     relation_type = models.ForeignKey('gcd.RelationType',
                                       related_name='revisions')
     from_creator = models.ForeignKey('gcd.Creator',
                                      related_name='from_creator_revisions')
+    creator_name = models.ManyToManyField(
+                          'gcd.CreatorNameDetail', blank=True,
+                          related_name='creator_relation_revisions')
     notes = models.TextField(blank=True)
 
-    _base_field_list = ['from_creator', 'relation_type', 'to_creator', 'notes']
+    _base_field_list = ['from_creator', 'relation_type', 'to_creator',
+                        'creator_name', 'notes']
 
     def _field_list(self):
         field_list = self._base_field_list
@@ -6492,6 +6799,7 @@ class CreatorRelationRevision(Revision):
             'from_creator': None,
             'to_creator': None,
             'relation_type': None,
+            'creator_name': None,
             'notes': ''
         }
 
@@ -6522,6 +6830,11 @@ class CreatorRelationRevision(Revision):
         creator_relation.relation_type = self.relation_type
         creator_relation.notes = self.notes
         creator_relation.save()
+        creator_relation.creator_name.clear()
+        if self.creator_name.count():
+            creator_relation.creator_name.add(*list(self.creator_name.all().
+                                                    values_list('id',
+                                                                flat=True)))
 
         if self.creator_relation is None:
             self.creator_relation = creator_relation
@@ -6546,22 +6859,29 @@ class CreatorNameDetailRevision(Revision):
 
     class Meta:
         db_table = 'oi_creator_name_detail_revision'
-        ordering = ['type__id', 'created', '-id']
+        ordering = ['-is_official_name', 'type__id', 'created', '-id']
         verbose_name_plural = 'Creator Name Detail Revisions'
 
     objects = CreatorNameDetailRevisionManager()
     creator_name_detail = models.ForeignKey('gcd.CreatorNameDetail',
                                             null=True,
                                             related_name='revisions')
-    # TODO remove creator_revision
     creator_revision = models.ForeignKey(CreatorRevision,
-                                related_name='cr_creator_names', null=True)
+                                         related_name='cr_creator_names',
+                                         null=True)
     creator = models.ForeignKey(Creator, related_name='name_revisions',
                                 null=True)
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, default='', blank=True)
-    type = models.ForeignKey('gcd.NameType', related_name='cr_nametypes',
-                             null=True, blank=True)
+    is_official_name = models.BooleanField(default=False)
+    given_name = models.CharField(max_length=255, db_index=True, default='',
+                                  blank=True)
+    family_name = models.CharField(max_length=255, db_index=True, default='',
+                                   blank=True)
+    type = models.ForeignKey('gcd.NameType',
+                             related_name='revision_name_details',
+                             null=True)
+    in_script = models.ForeignKey(Script, default=Script.LATIN_PK)
 
     source_name = 'creator_name_detail'
     source_class = CreatorNameDetail
@@ -6574,6 +6894,12 @@ class CreatorNameDetailRevision(Revision):
     def source(self, value):
         self.creator_name_detail = value
 
+    def _do_complete_added_revision(self, creator_revision):
+        self.creator_revision = creator_revision
+
+    def _post_create_for_add(self, changes):
+        self.creator = self.creator_revision.creator
+
     def __unicode__(self):
         return u'%s - %s (%s)' % (
             unicode(self.creator), unicode(self.name), unicode(self.type.type))
@@ -6582,14 +6908,19 @@ class CreatorNameDetailRevision(Revision):
     # Old methods. t.b.c, if deprecated.
 
     def _field_list(self):
-        field_list = ['name', 'sort_name', 'type']
+        field_list = ['name', 'sort_name', 'is_official_name', 'given_name',
+                      'family_name', 'type', 'in_script']
         return field_list
 
     def _get_blank_values(self):
         return {
             'name': '',
             'sort_name': '',
+            'given_name': '',
+            'family_name': '',
+            'is_official_name': False,
             'type': None,
+            'in_script': ''
         }
 
     def _imps_for(self, field_name):
@@ -6928,115 +7259,10 @@ class PreviewCreatorMembership(CreatorMembership):
           content_type=ContentType.objects.get_for_model(self.revision))
 
 
-#class CreatorAwardRevisionManager(RevisionManager):
-    #def clone_revision(self, creator_award, changeset):
-        #return CreatorAwardRevision.clone(creator_award, changeset)
-
-
-#class CreatorAwardRevision(Revision):
-    #"""
-    #record the awards of creator
-    #"""
-
-    #class Meta:
-        #db_table = 'oi_creator_award_revision'
-        #ordering = ['created', '-id']
-        #verbose_name_plural = 'Creator Award Revisions'
-
-    #objects = CreatorAwardRevisionManager()
-    #creator_award = models.ForeignKey('gcd.CreatorAward',
-                                      #null=True,
-                                      #related_name='revisions')
-    #creator = models.ForeignKey('gcd.Creator',
-                                #related_name='award_revisions')
-    #award = models.ForeignKey(Award, null=True, blank=True)
-    #award_name = models.CharField(max_length=255, blank=True)
-    #no_award_name = models.BooleanField(default=False)
-    #award_year = models.PositiveSmallIntegerField(null=True, blank=True)
-    #award_year_uncertain = models.BooleanField(default=False)
-    #notes = models.TextField(blank=True)
-
-    #source_name = 'creator_award'
-    #source_class = CreatorAward
-
-    #@property
-    #def source(self):
-        #return self.creator_award
-
-    #@source.setter
-    #def source(self, value):
-        #self.creator_award = value
-
-    #def _do_complete_added_revision(self, creator):
-        #self.creator = creator
-
-    #def _create_dependent_revisions(self, delete=False):
-        #data_sources = self.creator_award.data_source.all()
-        #reserve_data_sources(data_sources, self.changeset, self, delete)
-
-    #def get_absolute_url(self):
-        #if self.creator_award is None:
-            #return "/creator_award/revision/%i/preview" % self.id
-        #return self.creator_award.get_absolute_url()
-
-    #def __unicode__(self):
-        #if self.award:
-            #name = u'%s - %s' % (self.award.name, self.award_name)
-        #else:
-            #name = u'%s' % (self.award_name)
-        #if self.award_year:
-            #return u'%s: %s (%d)' % (self.creator, name, self.award_year)
-        #else:
-            #return u'%s: %s' % (self.creator, name)
-
-
-    ## #####################################################################
-    ## Old methods. t.b.c, if deprecated.
-
-    #_base_field_list = ['award',
-                        #'award_name',
-                        #'no_award_name',
-                        #'award_year',
-                        #'award_year_uncertain',
-                        #'notes',
-                        #]
-
-    #def _field_list(self):
-        #return self._base_field_list
-
-    #def _get_blank_values(self):
-        #return {
-            #'award': '',
-            #'award_name': '',
-            #'no_award_name': False,
-            #'award_year': None,
-            #'award_year_uncertain': False,
-            #'notes': '',
-        #}
-
-    #def _start_imp_sum(self):
-        #self._seen_year = False
-        #self._seen_award_name = False
-
-    #def _imps_for(self, field_name):
-        #if field_name in ('award_year',
-                          #'award_year_uncertain'):
-            #if not self._seen_year:
-                #self._seen_year = True
-                #return 1
-        #elif field_name in ('award_name',
-                            #'no_award_name'):
-            #if not self._seen_award_name:
-                #self._seen_award_name = True
-                #return 1
-        #elif field_name in self._base_field_list:
-            #return 1
-        #return 0
-
-
 class CreatorArtInfluenceRevisionManager(RevisionManager):
     def clone_revision(self, creator_art_influence, changeset):
-        return CreatorArtInfluenceRevision.clone(creator_art_influence, changeset)
+        return CreatorArtInfluenceRevision.clone(creator_art_influence,
+                                                 changeset)
 
 
 class CreatorArtInfluenceRevision(Revision):
@@ -7190,7 +7416,7 @@ class CreatorNonComicWorkRevision(Revision):
         self.creator_non_comic_work = value
 
     def _pre_initial_save(self, fork=False, fork_source=None,
-                          exclude=frozenset()):
+                          exclude=frozenset(), **kwargs):
         self.work_years = self.creator_non_comic_work.display_years()
 
     def _do_complete_added_revision(self, creator):
