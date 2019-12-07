@@ -18,7 +18,7 @@ from apps.oi.models import (
     StoryCreditRevision)
 
 
-from apps.gcd.models import CreatorNameDetail, StoryType, Feature,\
+from apps.gcd.models import CreatorNameDetail, StoryType, Feature, CreditType,\
                             FeatureLogo, STORY_TYPES, NON_OPTIONAL_TYPES,\
                             OLD_TYPES, CREDIT_TYPES
 from apps.gcd.models.support import GENRES
@@ -138,10 +138,6 @@ def get_story_revision_form(revision=None, user=None,
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
 
-        def as_table(self):
-            if not user or user.indexer.show_wiki_links:
-                _set_help_labels(self, SEQUENCE_HELP_LINKS)
-            return super(StoryRevisionForm, self).as_table()
     return RuntimeStoryRevisionForm
 
 
@@ -151,6 +147,10 @@ class StoryCreditRevisionForm(forms.ModelForm):
         fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
                   'is_signed', 'signed_as', 'uncertain', 'credit_name']
         help_texts = {
+            'credit_type':
+                'Selecting "pencil and inks", "pencils, inks, and colors", or'
+                ' "painting" will after saving create credit entries for '
+                '"pencils", "inks" and for the latter two also for "colors".',
             'credit_name':
                 'Enter here additional specifications for the credit, for '
                 'example "finishes", "flats", or "pages 1-3".',
@@ -162,6 +162,11 @@ class StoryCreditRevisionForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_tag = True
         self.helper.layout = Layout(*(f for f in self.fields))
+        if self.instance.id:
+            self.fields['credit_type'].queryset = CreditType.objects\
+                                                            .filter(id__lt=7)
+            self.fields['credit_type'].empty_label = None
+            self.fields['credit_type'].help_text = ''
 
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
@@ -214,6 +219,9 @@ class StoryRevisionForm(forms.ModelForm):
                 'depicted in the content, such as "Phantom Zone", '
                 '"red kryptonite", "Vietnam". or "time travel".  Multiple '
                 'entries are to be separated by semi-colons.',
+            'job_number':
+                '<br>If a creator cannot be found in the creator box, '
+                'the corresponding credit field can also be used.'
         }
 
     def __init__(self, *args, **kwargs):
@@ -234,6 +242,7 @@ class StoryRevisionForm(forms.ModelForm):
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credit_start:]])
         self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = SEQUENCE_HELP_LINKS
 
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
@@ -258,35 +267,34 @@ class StoryRevisionForm(forms.ModelForm):
                                     max_digits=10, decimal_places=3)
     page_count_uncertain = forms.BooleanField(required=False)
 
-    feature_object = forms.ModelMultipleChoiceField\
-      (queryset=Feature.objects.all(),
-       widget=autocomplete.ModelSelect2Multiple
-                           (url='feature_autocomplete',
-                            forward=['language_code'],
-                            attrs={'style': 'min-width: 60em'}),
-       required=False,
-       help_text='Only features for the series language can be selected.'
-    )
+    feature_object = forms.ModelMultipleChoiceField(
+      queryset=Feature.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+                          url='feature_autocomplete',
+                          forward=['language_code'],
+                          attrs={'style': 'min-width: 60em'}),
+      required=False,
+      help_text='Only features for the series language can be selected.'
+     )
 
-    feature_logo = forms.ModelMultipleChoiceField\
-      (queryset=FeatureLogo.objects.all(),
-       widget=autocomplete.ModelSelect2Multiple
-                           (url='feature_logo_autocomplete',
-                            forward=['language_code'],
-                            attrs={'data-html': True,
-                                   'style': 'min-width: 60em'}),
-       required=False,
-       help_text='The feature corresponding to the selected feature logos '
-                 'will be added automatically. Only feature logos connected '
-                 'to features of the series language can be selected.'
-    )
+    feature_logo = forms.ModelMultipleChoiceField(
+      queryset=FeatureLogo.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+                          url='feature_logo_autocomplete',
+                          forward=['language_code'],
+                          attrs={'data-html': True,
+                                 'style': 'min-width: 60em'}),
+      required=False,
+      help_text='Only select a feature logo if it is present <b>directly</b> on the '
+                'sequence. The feature corresponding to the selected feature '
+                'logos will be added automatically. Only feature logos '
+                'connected to features of the series language can be selected.'
+      )
 
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='If a credit cannot be entered above, a text field can be '
-                  'used.<br>'
-                  'For non-optional fields the corresponding no-field is to be'
+        help_text='For non-optional fields the corresponding no-field is to be'
                   ' ticked.<br><br>'
                   ''
                   'Enter the relevant creator credits in the following '
@@ -422,6 +430,37 @@ class StoryRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
                 ['Either use the text feature field or the database objects.'])
 
+        if cd['feature_object']:
+            for feature in cd['feature_object']:
+                if feature.feature_type.id == 2 and \
+                   not cd['type'].id == STORY_TYPES['letters_page']:
+                    raise forms.ValidationError(
+                      ['Select the correct feature for a letters page.'])
+                if feature.feature_type.id == 3 and \
+                   not cd['type'].id == STORY_TYPES['ad']:
+                    raise forms.ValidationError(
+                      ['Select the correct feature for an ad.'])
+                if feature.feature_type.id in [2, 3]:
+                    raise forms.ValidationError(
+                      ['Incorrect feature for this sequence.'])
+
+        if cd['feature_logo']:
+            if cd['type'].id == STORY_TYPES['cover']:
+                raise forms.ValidationError(
+                  ['No feature logos for cover sequences.'])
+            for feature_logo in cd['feature_logo']:
+                if cd['type'].id == STORY_TYPES['letters_page'] and \
+                   not feature_logo.feature.feature_type.id == 2:
+                    raise forms.ValidationError(
+                      ['Select the correct feature for a letters page.'])
+                if feature_logo.feature.feature_type.id == 3 and \
+                   not cd['type'].id == STORY_TYPES['ad']:
+                    raise forms.ValidationError(
+                      ['Select the correct feature for an ad.'])
+                if feature_logo.feature.feature_type.id in [2, 3]:
+                    raise forms.ValidationError(
+                      ['Incorrect feature for this sequence.'])
+
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
             nr_credit_forms = self.data['story_credit_revisions-TOTAL_FORMS']
@@ -432,10 +471,17 @@ class StoryRevisionForm(forms.ModelForm):
                 if delete_i in self.data:
                     if self.data[delete_i]:
                         form_deleted = True
-                if not form_deleted and \
-                   self.data['story_credit_revisions-%d-credit_type' % i] == \
-                   CREDIT_TYPES[seq_type]:
-                    seq_type_found = True
+                if not form_deleted:
+                    credit_type = \
+                      self.data['story_credit_revisions-%d-credit_type' % i]
+                    if credit_type == CREDIT_TYPES[seq_type]:
+                        seq_type_found = True
+                    elif seq_type in ['pencils', 'inks'] and \
+                      credit_type in ['7', '8', '9']:
+                        seq_type_found = True
+                    elif seq_type == 'colors' and credit_type in ['8', '9']:
+                        seq_type_found = True
+
             if cd['type'].id in NON_OPTIONAL_TYPES:
                 if not cd['no_%s' % seq_type] and cd[seq_type] == "" \
                    and not seq_type_found:

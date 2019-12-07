@@ -4658,6 +4658,18 @@ class StoryRevision(Revision):
                     credit_revision = credit_form.save(commit=False)
                     credit_revision.save_added_revision(
                       changeset=self.changeset, story_revision=self)
+                    if credit_revision.credit_type.id in [7, 8, 9]:
+                        if credit_revision.credit_type.id == 9:
+                            credit_revision.credit_name = 'painting'
+                        credit_revision.credit_type = CreditType.objects.get(id=2)
+                        credit_revision.save()
+                        credit_revision.id = None
+                        credit_revision.credit_type = CreditType.objects.get(id=3)
+                        credit_revision.save()
+                        if cd['credit_type'].id in [8, 9]:
+                            credit_revision.id = None
+                            credit_revision.credit_type = CreditType.objects.get(id=4)
+                            credit_revision.save()
             elif not credit_form.is_valid() and \
               credit_form not in credits_formset.deleted_forms:
                 raise ValueError

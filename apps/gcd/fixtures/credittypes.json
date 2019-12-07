@@ -20,7 +20,7 @@
     "pk": 3,
     "fields": {
         "name": "inks",
-        "sort_code": 3
+        "sort_code": 6
     }
 },
 {
@@ -28,7 +28,7 @@
     "pk": 4,
     "fields": {
         "name": "colors",
-        "sort_code": 4
+        "sort_code": 7
     }
 },
 {
@@ -36,7 +36,7 @@
     "pk": 5,
     "fields": {
         "name": "letters",
-        "sort_code": 5
+        "sort_code": 8
     }
 },
 {
@@ -44,7 +44,31 @@
     "pk": 6,
     "fields": {
         "name": "story_editing",
-        "sort_code": 6
+        "sort_code": 9
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 7,
+    "fields": {
+        "name": "pencils and inks",
+        "sort_code": 3
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 8,
+    "fields": {
+        "name": "pencils, inks and colors",
+        "sort_code": 4
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 9,
+    "fields": {
+        "name": "painting",
+        "sort_code": 5
     }
 }
 ]

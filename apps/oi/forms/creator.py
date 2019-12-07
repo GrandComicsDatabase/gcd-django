@@ -155,7 +155,8 @@ class CreatorRevisionForm(forms.ModelForm):
           "Biography source description"
         self.fields['bio_source_type'].label = "Biography source type"
         fields = list(self.fields)
-        field_list = []
+        field_list = [BaseField(Field('creator_help',
+                                      template='oi/bits/uni_field.html'))]
         field_list.append(Formset('creator_names_formset'))
         field_list.append(FormAsField('birth_date_form'))
         death_start = fields.index('death_country')
@@ -165,14 +166,36 @@ class CreatorRevisionForm(forms.ModelForm):
         field_list.append(FormAsField('death_date_form'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[death_start:]])
+                           for field in fields[death_start:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = CREATOR_HELP_LINKS
+
     birth_country = forms.ModelChoiceField(
         queryset=Country.objects.exclude(code='xx'), required=False)
     death_country = forms.ModelChoiceField(
         queryset=Country.objects.exclude(code='xx'), required=False)
 
     comments = _get_comments_form_field()
+
+    creator_help = forms.CharField(
+        widget=HiddenInputWithHelp,
+        required=False,
+        help_text="<ul><li>All commonly known names for a creator can be "
+                  "recorded, where we use various types of names.</li>"
+                  "Besides legal names we use 'pen name' and 'common "
+                  "alternative name' for known alias and common name "
+                  "variations."
+                  "<li>One of the names has to be selected as the official "
+                  "name.</li>"
+                  "<li>For each name the given and family name(s) are "
+                  "recorded.</li> For alphabetical sorting we use the "
+                  "sort name, which often is 'family name, given name'."
+                  "<li>For each name we record the script, e.g. 'Japanese' "
+                  "for the name of a creator from Japan given in Japanese "
+                  "script. 'Latin' script is the default.</li>"
+                  "<li>The types 'Family', 'Given (birth)', 'GCD official', "
+                  "and the language types are deprecated.</li></ul>",
+        label='')
 
     def clean(self):
         cd = self.cleaned_data

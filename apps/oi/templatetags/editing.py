@@ -14,6 +14,8 @@ from apps.oi.coordinators import issue_revision_modified
 
 register = template.Library()
 
+DOC_URL = 'http://docs.comics.org/wiki/'
+
 
 @register.filter
 def header_link(changeset):
@@ -124,26 +126,32 @@ def header_link(changeset):
         return mark_safe(u'%s' % (absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_art_influence']:
         return mark_safe(u'%s : %s' %
-                         (absolute_url(revision.creator), absolute_url(revision)))
+                         (absolute_url(revision.creator),
+                          absolute_url(revision)))
     elif changeset.change_type == CTYPES['received_award']:
         return mark_safe(u'%s : %s' %
-                         (absolute_url(revision.recipient), absolute_url(revision)))
+                         (absolute_url(revision.recipient),
+                          absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_membership']:
         return mark_safe(u'%s : %s' %
-                         (absolute_url(revision.creator), absolute_url(revision)))
+                         (absolute_url(revision.creator),
+                          absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_non_comic_work']:
         return mark_safe(u'%s : %s' %
-                         (absolute_url(revision.creator), absolute_url(revision)))
+                         (absolute_url(revision.creator),
+                          absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_relation']:
         return mark_safe(u'%s : %s' %
                          (absolute_url(revision.from_creator),
                           absolute_url(revision.to_creator)))
     elif changeset.change_type == CTYPES['creator_school']:
         return mark_safe(u'%s : %s' %
-                         (absolute_url(revision.creator), absolute_url(revision)))
+                         (absolute_url(revision.creator),
+                          absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_degree']:
         return mark_safe(u'%s : %s' %
-                         (absolute_url(revision.creator), absolute_url(revision)))
+                         (absolute_url(revision.creator),
+                          absolute_url(revision)))
     else:
         return u''
 
@@ -196,7 +204,7 @@ def is_overdue(changeset):
             return mark_safe("class='overdue'")
     elif changeset.issuerevisions.earliest('created').issue and \
       changeset.issuerevisions.earliest('created').issue.revisions\
-                                                           .count() > 2:
+                                                        .count() > 2:
         if check_for_modified(changeset, settings.RESERVE_ISSUE_WEEKS):
             return mark_safe("class='overdue'")
     else:
@@ -210,3 +218,13 @@ def is_locked(object):
     return RevisionLock.objects.filter(
            object_id=object.id,
            content_type=ContentType.objects.get_for_model(object)).first()
+
+
+@register.filter
+def show_doc_link(doc_links, field):
+    if field in doc_links:
+        return mark_safe(
+            u' <a href="%s%s" target=_blank>[?]</a>' % (DOC_URL,
+                                                        doc_links[field]))
+    else:
+        return ""

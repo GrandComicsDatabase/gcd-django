@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (MembershipType, NameType, NonComicWorkRole,
+from .models import (MembershipType, NameType, NonComicWorkRole, CreditType,
                      NonComicWorkType, RelationType, School, SeriesBondType,
                      SourceType, FeatureType, FeatureRelationType, StoryType,
                      Degree)
@@ -24,6 +24,7 @@ admin.site.register(StoryType, StoryTypeAdmin)
 admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 admin.site.register(NameType)
 admin.site.register(SourceType)
+admin.site.register(CreditType)
 admin.site.register(FeatureType)
 admin.site.register(FeatureRelationType)
 admin.site.register(RelationType)

@@ -172,6 +172,8 @@ SEQUENCE_HELP_LINKS = {
     'title_inferred': 'Title',
     'first_line': 'First_Line',
     'feature': 'Feature',
+    'feature_object': 'Feature',
+    'feature_logo': 'Feature',
     'page_count': 'Page_Count',
     'page_count_uncertain': 'Page_Count',
     'genre': 'Genre',

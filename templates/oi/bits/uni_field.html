@@ -1,4 +1,5 @@
 {% load crispy_forms_field %}
+{% load editing %}
 
 {% if field.is_hidden %}
     {{ field }}
@@ -14,7 +15,7 @@
     <tr><th style="width:150px">
             {% if field.label %}
             <label for="{{ field.id_for_label }}" {% if field.field.required %}class="requiredField"{% endif %}>
-                {{ field.label|safe }}:
+                {{ field.label|safe }}{% if request.user.indexer.show_wiki_links %}{{ doc_links|show_doc_link:field.name }}{% endif %}:
             </label>
         {% endif %}
         </th>
