@@ -85,7 +85,7 @@ class NameType(models.Model):
         ordering = ('type',)
         verbose_name_plural = 'Name Types'
 
-    description = models.TextField(null=True)
+    description = models.TextField(default='', blank=True)
     type = models.CharField(max_length=50)
 
     def __unicode__(self):
