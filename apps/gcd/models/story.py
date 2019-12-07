@@ -12,8 +12,10 @@ from .creator import CreatorNameDetail
 from .feature import Feature, FeatureLogo
 
 STORY_TYPES = {
+    'ad': 2,
     'cover': 6,
     'insert': 11,
+    'letters_page': 12,
     'soo': 22,
     'blank': 24,
     'preview': 26,

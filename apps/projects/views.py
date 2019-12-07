@@ -11,7 +11,8 @@ from apps.projects.forms import IssuesWithCoversForm, ReprintInspectionForm
 
 def creators_sort_name(request):
     creators = Creator.objects.filter(creator_names__sort_name='',
-                                      creator_names__type__id=1)
+                                      creator_names__type__id=1,
+                                      deleted=False)
 
     vars = { 'item_name': 'creator',
              'plural_suffix': 's',

@@ -584,7 +584,7 @@ def select_issues_from_preselection(request, issues, cancel,
                'plural_suffix': 's',
                'no_bulk_edit': True,
                'all_pre_selected': True,
-               'heading': 'Issues',
+               'heading': 'Issues found that can be selected for import.',
                'not_found': not_found
                }
     return paginate_response(request, issues,
@@ -645,19 +645,31 @@ def import_items(request):
         not_found = ""
         if line[0] == 'Title' and line[1] == 'Issue Number':
             comicbookdb = True
+            publisher_col = -1
+            for i in range(2,len(line)):
+                if line[i] == 'Publisher':
+                    publisher_col = i
+            if publisher_col < 0:
+                raise ErrorWithMessage("We cannot find 'Publisher' in the "
+                                       "list of columns")
         else:
             comicbookdb = False
             upload = UnicodeReader(tmpfile, encoding=charenc)
         for line in upload:
+            if len(line) == 0:
+                break
             issue = Issue.objects.none()
             if comicbookdb:
                 if line[0][-1] == ')' and line[0][-6] == '(':
                     series = line[0][:-6].strip()
                     year_began = int(line[0][-5:-1])
                 else:
-                    raise ValueError
-                number = line[1].strip().lstrip('#')
-                publisher = line[4].strip()
+                    raise ErrorWithMessage("Cannot find '(year)')")
+                try:
+                    number = line[1].strip().lstrip('#')
+                    publisher = line[publisher_col].strip()
+                except IndexError:
+                    raise ErrorWithMessage("Not enough columns")
                 if publisher == "Image Comics Inc.":
                     publisher = "Image"
                 elif publisher == "DC Comics":

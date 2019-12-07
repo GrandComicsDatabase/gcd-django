@@ -350,7 +350,7 @@ LIMIT_SYNOPSIS_LENGTH = 600
 
 RECENTS_COUNT = 5
 
-SITE_URL = 'http://www.comics.org/'
+SITE_URL = 'https://www.comics.org/'
 SITE_NAME = 'Grand Comics Database'
 
 # image directories

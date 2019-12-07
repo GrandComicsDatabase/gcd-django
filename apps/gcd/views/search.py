@@ -1159,9 +1159,9 @@ def search_dates(data, formatter=lambda d: d.year,
           { '%s__gte' % end_name: formatter(data['start_date']) }
 
         if data['end_date']:
-            q_and_only.append(Q(**begin_after_start) | Q(**end_after_start))
+            q_and_only.append(Q(**begin_after_start) & Q(**end_after_start))
         else:
-            q_and_only.append(Q(**end_after_start))
+            q_and_only.append(Q(**begin_after_start))
 
     if data['end_date']:
         begin_before_end = \
@@ -1170,7 +1170,7 @@ def search_dates(data, formatter=lambda d: d.year,
           { '%s__lte' % end_name: formatter(data['end_date']) }
 
         if data['start_date']:
-            q_and_only.append(Q(**begin_before_end) | Q(**end_before_end))
+            q_and_only.append(Q(**begin_before_end) & Q(**end_before_end))
         else:
             q_and_only.append(Q(**begin_before_end))
 

@@ -447,12 +447,6 @@ class CreatorName4RelationAutocomplete(LoginRequiredMixin,
 
 class FeatureAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
-    def get_result_label(self, feature):
-        if feature.year_created:
-            return u'%s (%d, %s)' % (feature.name, feature.year_created,
-                                     feature.language.name)
-        return u'%s (%s)' % (feature.name, feature.language.name)
-
     def get_queryset(self):
         qs = Feature.objects.filter(deleted=False)
 
@@ -462,7 +456,7 @@ class FeatureAutocomplete(LoginRequiredMixin,
             qs = qs.filter(language__code=language)
 
         if self.q:
-            qs = qs.filter(sort_name__istartswith=self.q)
+            qs = qs.filter(name__icontains=self.q)
 
         return qs
 
@@ -484,6 +478,6 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
             qs = qs.filter(feature__language__code=language)
 
         if self.q:
-            qs = qs.filter(sort_name__istartswith=self.q)
+            qs = qs.filter(name__icontains=self.q)
 
         return qs

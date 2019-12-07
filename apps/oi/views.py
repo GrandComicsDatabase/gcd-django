@@ -4878,6 +4878,9 @@ def preview(request, id, model_name):
             model_object.series = revision.series
             model_object.revision = revision
             model_object.on_sale_date = on_sale_date_as_string(revision)
+            # on preview show all story types
+            request.GET = request.GET.copy()
+            request.GET['issue_detail'] = 2
         elif model_name == 'creator':
             model_object = PreviewCreator()
             model_object.revision = revision

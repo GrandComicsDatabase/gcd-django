@@ -146,12 +146,14 @@ class FeatureRelationRevisionForm(forms.ModelForm):
 
     from_feature = forms.ModelChoiceField(
         queryset=Feature.objects.filter(deleted=False),
-        widget=autocomplete.ModelSelect2(url='feature_autocomplete')
+        widget=autocomplete.ModelSelect2(url='feature_autocomplete',
+                                         attrs={'style': 'min-width: 45em'})
     )
 
     to_feature = forms.ModelChoiceField(
         queryset=Feature.objects.filter(deleted=False),
-        widget=autocomplete.ModelSelect2(url='feature_autocomplete')
+        widget=autocomplete.ModelSelect2(url='feature_autocomplete',
+                                         attrs={'style': 'min-width: 45em'})
     )
 
     comments = _get_comments_form_field()

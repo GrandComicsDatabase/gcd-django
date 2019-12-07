@@ -96,6 +96,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name == 'feature_logo':
         return get_feature_logo_revision_form(revision, **kwargs)
 
+    if model_name == 'feature_relation':
+        return get_feature_relation_revision_form(revision, **kwargs)
+
     if model_name == 'biblio_entry':
         return get_biblio_revision_form(revision, **kwargs)
 

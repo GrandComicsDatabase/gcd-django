@@ -37,6 +37,9 @@ GCD :: Feature :: {{ feature.name }}
 {% if feature.genre %}
         <p><strong>Genre:</strong> {{ feature.genre }}</p>
 {% endif %}
+{% if not feature.feature_type.id == 1 %}
+        <p><strong>Type:</strong> {{ feature.feature_type }}</p>
+{% endif %}
 {% if feature.year_created %}
         <p><strong>Created in:</strong> {{ feature.display_year_created }}</p>
 {% endif %}

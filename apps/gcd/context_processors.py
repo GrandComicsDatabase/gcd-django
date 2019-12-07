@@ -15,5 +15,7 @@ def gcd(request):
         stuff['USE_ELASTICSEARCH'] = settings.USE_ELASTICSEARCH
     if hasattr(settings, 'USE_TEMPLATESADMIN'):
         stuff['USE_TEMPLATESADMIN'] = settings.USE_TEMPLATESADMIN
+    if not hasattr(stuff, 'EDITING'):
+        stuff['EDITING'] = False
     return stuff
 
