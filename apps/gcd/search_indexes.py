@@ -246,7 +246,18 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return return_val
 
     def prepare_feature(self, obj):
-        return self._prepare_credit(obj, 'feature')
+        return_val = [(val.strip()) for val in
+                      getattr(obj, 'feature').split(';')]
+        features = obj.feature_objects.all()
+        if features:
+            if return_val == ['']:
+                return_val = [val.name for val in features]
+            else:
+                return_val.extend([val.name for val in credits])
+        if return_val == ['']:
+            return None
+        else:
+            return return_val
 
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
