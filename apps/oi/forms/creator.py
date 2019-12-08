@@ -17,15 +17,14 @@ from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
                            get_creator_field_list,\
                            _get_creator_sourced_fields, _check_year
 
-from apps.gcd.models import CreatorNameDetail
+from apps.gcd.models import NameType, CreatorNameDetail
 from apps.stddata.models import Country
 
 from .custom_layout_object import Formset, FormAsField
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
                       CREATOR_NONCOMICWORK_HELP_TEXTS,
-                      CREATOR_RELATION_HELP_TEXTS, AWARD_HELP_LINKS,
-                      CREATOR_HELP_LINKS, CREATOR_AWARD_HELP_LINKS,
+                      CREATOR_RELATION_HELP_TEXTS, CREATOR_HELP_LINKS,
                       CREATOR_ARTINFLUENCE_HELP_LINKS,
                       CREATOR_DEGREE_HELP_LINKS, CREATOR_MEMBERSHIP_HELP_LINKS,
                       CREATOR_NONCOMICWORK_HELP_LINKS,
@@ -40,7 +39,8 @@ def _generic_data_source_clean(form, cd):
     data_source_description = cd['_source_description']
     if data_source_type or data_source_description:
         if not data_source_type or not data_source_description:
-            form.add_error('_source_description',
+            form.add_error(
+              '_source_description',
               'Source description and source type must both be set.')
 
 
@@ -55,7 +55,13 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_tag = True
         self.helper.layout = Layout(*(f for f in self.fields))
+        self.fields['type'].queryset = NameType.objects.exclude(id__in=[1, 3,
+                                                                        4, 6,
+                                                                        9])
         if self.instance.creator_name_detail:
+            if self.instance.creator_name_detail.type.id in [1, 3, 4, 6, 9]:
+                self.fields['type'].queryset |= NameType.objects.filter(
+                  id=self.instance.creator_name_detail.type.id)
             if self.instance.creator_name_detail.storycredit_set.count():
                 # TODO How can the 'remove'-link not be shown in this case ?
                 self.fields['name'].help_text = \
@@ -114,11 +120,6 @@ def get_creator_revision_form(revision=None, user=None):
             if revision:
                 for field in _get_creator_sourced_fields():
                     init_data_source_fields(field, revision, self.fields)
-
-        def as_table(self):
-            if not user or user.indexer.show_wiki_links:
-                _set_help_labels(self, CREATOR_HELP_LINKS)
-            return super(CreatorRevisionForm, self).as_table()
 
     return RuntimeCreatorRevisionForm
 
