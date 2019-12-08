@@ -1,7 +1,7 @@
 {% load credits %}
 {{ object.title|safe }}
 {{ object.first_line|safe }}
-{{ object.feature|safe }}
+{{ object.show_feature_as_text|safe }}
 {{ object.script|safe }}
 {{ object|search_creator_credit:"script" }}
 {{ object.pencils|safe }}

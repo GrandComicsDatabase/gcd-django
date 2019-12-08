@@ -248,7 +248,7 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_feature(self, obj):
         return_val = [(val.strip()) for val in
                       getattr(obj, 'feature').split(';')]
-        features = obj.feature_objects.all()
+        features = obj.feature_object.all()
         if features:
             if return_val == ['']:
                 return_val = [val.name for val in features]

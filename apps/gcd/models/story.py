@@ -45,7 +45,7 @@ AD_TYPES = [2, 16, 26]
 NON_OPTIONAL_TYPES = [6, 7, 19]
 
 
-def show_feature(story):
+def show_feature(story, url=True):
     first = True
     features = u''
     for feature in story.feature_object.all():
@@ -53,8 +53,11 @@ def show_feature(story):
             first = False
         else:
             features += u'; '
-        features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
-                                              esc(feature.name))
+        if url:
+            features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
+                                                  esc(feature.name))
+        else:
+            features += u'%s' % esc(feature.name)
     if story.feature:
         if features:
             features += u'; %s' % esc(story.feature)
@@ -239,6 +242,9 @@ class Story(GcdData):
 
     def show_feature(self):
         return self._show_feature(self)
+
+    def show_feature_as_text(self):
+        return show_feature(self, url=False)
 
     def _show_feature_logo(self, story):
         return u"; ".join(story.feature_logo.all().values_list('name',

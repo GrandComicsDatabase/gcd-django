@@ -26,7 +26,7 @@ class StripWhitespaceMiddleware(object):
 
 
     def process_response(self, request, response):
-        if "text" in response['Content-Type']:
+        if "text" in response['Content-Type'] and hasattr(response, 'content'):
         #Use next line instead to avoid failure on cached / HTTP 304 NOT MODIFIED responses without Content-Type
         #if response.status_code == 200 and "text" in response['Content-Type']:
             if hasattr(self, 'whitespace_lead'):

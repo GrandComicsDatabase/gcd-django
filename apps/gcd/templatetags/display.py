@@ -68,8 +68,12 @@ def show_story_short(story, no_number=False, markup=True):
         else:
             title = 'no title'
     if story.has_feature():
-        story_line = u'%s %s (%s)' % (esc(story_line), title,
-                                      esc(story.show_feature()))
+        if markup:
+            story_line = u'%s %s (%s)' % (esc(story_line), title,
+                                          esc(story.show_feature()))
+        else:
+            story_line = u'%s %s (%s)' % (esc(story_line), title,
+                                          esc(story.show_feature_as_text()))
     else:
         if markup:
             story_line = u'%s %s (%s)' % (

@@ -78,7 +78,14 @@
           <ol>
   {% for creator_name in creator.active_names %}
             <li><p>{{ creator_name.name }}
-            <strong> type</strong>: {{ creator_name.type }}</p>
+    {% if creator_name.given_name %}
+               <strong>Given name</strong>: {{ creator_name.given_name }}
+    {% endif %}
+    {% if creator_name.family_name %}
+               <strong>Family name</strong>: {{ creator_name.family_name }}
+    {% endif %}
+               <strong>Type</strong>: {{ creator_name.type }}
+               </p>
     {% if creator_name.source.all %}
             <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
       {{ source.type }},{% endfor %}</p>
