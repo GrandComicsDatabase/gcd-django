@@ -154,6 +154,14 @@ class StoryCreditRevisionForm(forms.ModelForm):
             'credit_name':
                 'Enter here additional specifications for the credit, for '
                 'example "finishes", "flats", or "pages 1-3".',
+            'credited_as':
+                'Enter a name if the credited name is unusual and '
+                'therefore not a creator name record.',
+            'signed_as':
+                'Enter a name if the signed name is unusual, short hand, an '
+                'abbreviation, etc., and therefore not a creator name record. '
+                'For example, initials "S. G." alone do not result in a pen '
+                'name, but can be put here.',
         }
         labels = {'credit_name': 'Credit description'}
 
@@ -274,7 +282,8 @@ class StoryRevisionForm(forms.ModelForm):
                           forward=['language_code'],
                           attrs={'style': 'min-width: 60em'}),
       required=False,
-      help_text='Only features for the series language can be selected.'
+      help_text='Only features for the series language can be selected. '
+                '[l] marks letter page features, [a] stands for ad features.'
      )
 
     feature_logo = forms.ModelMultipleChoiceField(
