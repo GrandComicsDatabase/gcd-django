@@ -285,10 +285,11 @@ class StoryRevisionForm(forms.ModelForm):
                           attrs={'data-html': True,
                                  'style': 'min-width: 60em'}),
       required=False,
-      help_text='Only select a feature logo if it is present <b>directly</b> on the '
-                'sequence. The feature corresponding to the selected feature '
-                'logos will be added automatically. Only feature logos '
-                'connected to features of the series language can be selected.'
+      help_text='Only select a feature logo if it is present <b>directly</b> '
+                'on the sequence. The feature corresponding to the selected '
+                'feature logos will be added automatically. Only feature '
+                'logos connected to features of the series language can be '
+                'selected.'
       )
 
     creator_help = forms.CharField(
@@ -432,15 +433,15 @@ class StoryRevisionForm(forms.ModelForm):
 
         if cd['feature_object']:
             for feature in cd['feature_object']:
-                if feature.feature_type.id == 2 and \
-                   not cd['type'].id == STORY_TYPES['letters_page']:
-                    raise forms.ValidationError(
-                      ['Select the correct feature for a letters page.'])
-                if feature.feature_type.id == 3 and \
-                   not cd['type'].id == STORY_TYPES['ad']:
-                    raise forms.ValidationError(
-                      ['Select the correct feature for an ad.'])
-                if feature.feature_type.id in [2, 3]:
+                if cd['type'].id == STORY_TYPES['letters_page']:
+                    if not feature.feature_type.id == 2:
+                        raise forms.ValidationError(
+                          ['Select the correct feature for a letters page.'])
+                elif feature.feature_type.id == 3:
+                    if not cd['type'].id == STORY_TYPES['ad']:
+                        raise forms.ValidationError(
+                          ['Incorrect feature for this sequence.'])
+                elif feature.feature_type.id == 2:
                     raise forms.ValidationError(
                       ['Incorrect feature for this sequence.'])
 
@@ -449,17 +450,19 @@ class StoryRevisionForm(forms.ModelForm):
                 raise forms.ValidationError(
                   ['No feature logos for cover sequences.'])
             for feature_logo in cd['feature_logo']:
-                if cd['type'].id == STORY_TYPES['letters_page'] and \
-                   not feature_logo.feature.feature_type.id == 2:
+                if cd['type'].id == STORY_TYPES['letters_page']:
+                    if not feature_logo.feature.filter(feature_type__id=2)\
+                                               .count():
+                        raise forms.ValidationError(
+                          ['Select the correct feature logo for a '
+                           'letters page.'])
+                elif feature_logo.feature.filter(feature_type__id=3).count():
+                    if not cd['type'].id == STORY_TYPES['ad']:
+                        raise forms.ValidationError(
+                          ['Incorrect feature logo for this sequence.'])
+                elif feature_logo.feature.filter(feature_type_id=2).count():
                     raise forms.ValidationError(
-                      ['Select the correct feature for a letters page.'])
-                if feature_logo.feature.feature_type.id == 3 and \
-                   not cd['type'].id == STORY_TYPES['ad']:
-                    raise forms.ValidationError(
-                      ['Select the correct feature for an ad.'])
-                if feature_logo.feature.feature_type.id in [2, 3]:
-                    raise forms.ValidationError(
-                      ['Incorrect feature for this sequence.'])
+                      ['Incorrect feature logo for this sequence.'])
 
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
