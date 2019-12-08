@@ -42,7 +42,7 @@ from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM
-from apps.gcd.templatetags.display import show_revision_short
+from apps.oi.templatetags.editing import show_revision_short
 from apps.select.views import store_select_data
 
 from apps.oi.models import (

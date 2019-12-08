@@ -46,6 +46,7 @@ from apps.gcd.models import (
 from apps.gcd.models.gcddata import GcdData
 
 from apps.gcd.models.issue import issue_descriptor
+from apps.gcd.models.story import show_feature
 
 from apps.indexer.views import ErrorWithMessage
 
@@ -4707,6 +4708,16 @@ class StoryRevision(Revision):
             return "/issue/revision/%i/preview/#%i" % (
                 self.my_issue_revision.id, self.id)
         return self.story.get_absolute_url()
+
+    def has_feature(self):
+        """
+        feature_logo entry automatically results in corresponding
+        feature_object entry, therefore no check needed
+        """
+        return self.feature or self.feature_object.count()
+
+    def show_feature(self):
+        return show_feature(self)
 
     def __unicode__(self):
         """

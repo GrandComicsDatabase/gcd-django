@@ -10,7 +10,7 @@ from django import template
 from django.template.defaultfilters import title
 
 from apps.oi import states
-from apps.oi.models import StoryRevision, CTYPES
+from apps.oi.models import CTYPES
 from apps.gcd.templatetags.credits import show_page_count, show_title
 from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
@@ -67,9 +67,9 @@ def show_story_short(story, no_number=False, markup=True):
             title = '<span class="no_data">no title</span>'
         else:
             title = 'no title'
-    if story.feature:
+    if story.has_feature():
         story_line = u'%s %s (%s)' % (esc(story_line), title,
-                                      esc(story.feature))
+                                      esc(story.show_feature()))
     else:
         if markup:
             story_line = u'%s %s (%s)' % (
@@ -92,15 +92,6 @@ def show_story_short(story, no_number=False, markup=True):
 
 
 @register.filter
-def show_revision_short(revision, markup=True):
-    if revision is None:
-        return u''
-    if isinstance(revision, StoryRevision):
-        return show_story_short(revision, markup=markup)
-    return unicode(revision)
-
-
-@register.filter
 def show_volume(issue):
     if issue.no_volume:
         return u''
@@ -116,8 +107,8 @@ def show_issue_number(issue_number):
     """
     Return issue number.
     """
-    return mark_safe('<span class="issue_number">' + esc(issue_number)
-                     + '</span>')
+    return mark_safe('<span class="issue_number">' + esc(issue_number) +
+                     '</span>')
 
 
 def show_one_barcode(_barcode):
@@ -463,31 +454,6 @@ def uncertain_year(object, field_name):
     if object.__dict__[field_name + '_uncertain']:
         year = '%s ?' % (year)
     return year
-
-
-@register.filter
-def link_other_reprint(reprint, is_source):
-    if is_source:
-        if hasattr(reprint, 'target'):
-            text = '<a href="%s">%s</a> <br> of %s' % \
-                     (reprint.target.get_absolute_url(),
-                      show_story_short(reprint.target),
-                      reprint.target.issue.full_name())
-        else:
-            text = '<a href="%s">%s</a>' % \
-                     (reprint.target_issue.get_absolute_url(),
-                      reprint.target_issue.full_name())
-    else:
-        if hasattr(reprint, 'origin'):
-            text = '<a href="%s">%s</a> <br> of %s' % \
-                     (reprint.origin.get_absolute_url(),
-                      show_story_short(reprint.origin),
-                      reprint.origin.issue.full_name())
-        else:
-            text = '<a href="%s">%s</a>' % \
-                     (reprint.origin_issue.get_absolute_url(),
-                      reprint.origin_issue.full_name())
-    return mark_safe(text)
 
 
 @register.filter

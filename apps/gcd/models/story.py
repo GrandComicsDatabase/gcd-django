@@ -45,6 +45,24 @@ AD_TYPES = [2, 16, 26]
 NON_OPTIONAL_TYPES = [6, 7, 19]
 
 
+def show_feature(story):
+    first = True
+    features = u''
+    for feature in story.feature_object.all():
+        if first:
+            first = False
+        else:
+            features += u'; '
+        features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
+                                              esc(feature.name))
+    if story.feature:
+        if features:
+            features += u'; %s' % esc(story.feature)
+        else:
+            features = esc(story.feature)
+    return mark_safe(features)
+
+
 class CreditType(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -217,21 +235,7 @@ class Story(GcdData):
         return self.awards.exclude(deleted=True)
 
     def _show_feature(cls, story):
-        first = True
-        features = u''
-        for feature in story.feature_object.all():
-            if first:
-                first = False
-            else:
-                features += u'; '
-            features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
-                                                  esc(feature.name))
-        if story.feature:
-            if features:
-                features += u'; %s' % esc(story.feature)
-            else:
-                features = esc(story.feature)
-        return mark_safe(features)
+        return show_feature(story)
 
     def show_feature(self):
         return self._show_feature(self)

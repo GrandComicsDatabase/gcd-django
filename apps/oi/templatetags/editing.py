@@ -8,8 +8,8 @@ from django.utils.html import conditional_escape as esc
 
 from django import template
 
-from apps.gcd.templatetags.display import absolute_url
-from apps.oi.models import RevisionLock, CTYPES
+from apps.gcd.templatetags.display import absolute_url, show_story_short
+from apps.oi.models import RevisionLock, CTYPES, StoryRevision
 from apps.oi.coordinators import issue_revision_modified
 
 register = template.Library()
@@ -228,3 +228,37 @@ def show_doc_link(doc_links, field):
                                                         doc_links[field]))
     else:
         return ""
+
+
+@register.filter
+def show_revision_short(revision, markup=True):
+    if revision is None:
+        return u''
+    if isinstance(revision, StoryRevision):
+        return show_story_short(revision, markup=markup)
+    return unicode(revision)
+
+
+@register.filter
+def link_other_reprint(reprint, is_source):
+    if is_source:
+        if hasattr(reprint, 'target'):
+            text = '<a href="%s">%s</a> <br> of %s' % \
+                     (reprint.target.get_absolute_url(),
+                      show_story_short(reprint.target),
+                      reprint.target.issue.full_name())
+        else:
+            text = '<a href="%s">%s</a>' % \
+                     (reprint.target_issue.get_absolute_url(),
+                      reprint.target_issue.full_name())
+    else:
+        if hasattr(reprint, 'origin'):
+            text = '<a href="%s">%s</a> <br> of %s' % \
+                     (reprint.origin.get_absolute_url(),
+                      show_story_short(reprint.origin),
+                      reprint.origin.issue.full_name())
+        else:
+            text = '<a href="%s">%s</a>' % \
+                     (reprint.origin_issue.get_absolute_url(),
+                      reprint.origin_issue.full_name())
+    return mark_safe(text)
