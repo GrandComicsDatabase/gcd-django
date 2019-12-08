@@ -4528,7 +4528,7 @@ class StoryRevision(Revision):
     def compare_changes(self):
         super(StoryRevision, self).compare_changes()
         for credit_type in CREDIT_TYPES:
-            if not self.changed[credit_type]:
+            if not self.deleted and not self.changed[credit_type]:
                 credits = self.story_credit_revisions.filter(
                                credit_type__name=credit_type)
                 if credits:
@@ -4662,14 +4662,17 @@ class StoryRevision(Revision):
                     if credit_revision.credit_type.id in [7, 8, 9]:
                         if credit_revision.credit_type.id == 9:
                             credit_revision.credit_name = 'painting'
-                        credit_revision.credit_type = CreditType.objects.get(id=2)
+                        credit_revision.credit_type = \
+                          CreditType.objects.get(id=2)
                         credit_revision.save()
                         credit_revision.id = None
-                        credit_revision.credit_type = CreditType.objects.get(id=3)
+                        credit_revision.credit_type = \
+                          CreditType.objects.get(id=3)
                         credit_revision.save()
                         if cd['credit_type'].id in [8, 9]:
                             credit_revision.id = None
-                            credit_revision.credit_type = CreditType.objects.get(id=4)
+                            credit_revision.credit_type = \
+                              CreditType.objects.get(id=4)
                             credit_revision.save()
             elif not credit_form.is_valid() and \
               credit_form not in credits_formset.deleted_forms:
