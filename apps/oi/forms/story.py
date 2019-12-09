@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django import forms
 from django.conf import settings
@@ -48,18 +48,18 @@ class ReprintRevisionForm(forms.ModelForm):
 
 
 def _genre_choices(language=None, additional_genres=None):
-    fantasy_id = GENRES['en'].index(u'fantasy')
+    fantasy_id = GENRES['en'].index('fantasy')
     if language and language.code != 'en' and language.code in GENRES:
         choices = [[g, g + ' / ' + h]
                    for g, h in zip(GENRES['en'], GENRES[language.code])]
         choices[fantasy_id] = [
-            u'fantasy',
-            (u'fantasy-supernatural / %s' %
+            'fantasy',
+            ('fantasy-supernatural / %s' %
              GENRES[language.code][fantasy_id])
         ]
     else:
         choices = [[g, g] for g in GENRES['en']]
-        choices[fantasy_id] = [u'fantasy', u'fantasy-supernatural']
+        choices[fantasy_id] = ['fantasy', 'fantasy-supernatural']
     if additional_genres:
         additional_genres.reverse()
         for genre in additional_genres:
@@ -425,7 +425,7 @@ class StoryRevisionForm(forms.ModelForm):
                 genres = genres[:-2]
             cd['genre'] = genres
         else:
-            cd['genre'] = u''
+            cd['genre'] = ''
 
         if cd['title_inferred'] and cd['title'] == "":
             raise forms.ValidationError(

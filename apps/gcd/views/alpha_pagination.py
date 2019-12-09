@@ -43,11 +43,11 @@ class AlphaPaginator(object):
         # we sort them by the first model ordering key
         for obj in self.object_list:
             if queryset:
-                obj_str = unicode(get_field(obj, obj._meta.ordering[0]))
+                obj_str = str(get_field(obj, obj._meta.ordering[0]))
             else:
-                obj_str = unicode(obj)
+                obj_str = str(obj)
 
-            letter = unicode.upper(obj_str[0])
+            letter = str.upper(obj_str[0])
 
             if letter not in chunks:
                 chunks[letter] = []

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import mock
 import pytest
@@ -25,7 +25,7 @@ def _get_indexed_delta(was_indexed, is_indexed, is_comics):
 def test_create_add_revision(any_added_story_rev, story_add_values,
                              any_adding_changeset):
     rev = any_added_story_rev
-    for k, v in story_add_values.iteritems():
+    for k, v in story_add_values.items():
         assert getattr(rev, k) == v
 
     assert rev.story is None
@@ -77,7 +77,7 @@ def test_commit_added_revision(any_added_story_rev, story_add_values,
     assert rev.source is rev.story
     assert rev.date_inferred is False
 
-    for k, v in story_add_values.iteritems():
+    for k, v in story_add_values.items():
         if k == 'keywords':
             kws = [k for k in rev.story.keywords.names()]
             kws.sort()
@@ -135,7 +135,7 @@ def test_create_edit_revision(any_edit_story_rev, story_add_values,
             country=rev.issue.series.country,
             language=rev.issue.series.language)
 
-    for k, v in story_edit_values.iteritems():
+    for k, v in story_edit_values.items():
         if k == 'keywords':
             kws = [k for k in rev.story.keywords.names()]
             kws.sort()

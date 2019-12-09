@@ -23,16 +23,16 @@ def show_have_want(issue, user):
                     collections__collector__user=user).distinct().count()
 
     if have_count:
-        text = u'I own {} cop{} of this comic.'.format(have_count,
+        text = 'I own {} cop{} of this comic.'.format(have_count,
                                                        pluralize(have_count,
                                                                  "y,ies"))
     else:
-        text = u''
+        text = ''
 
     if want_count:
-        if text != u'':
+        if text != '':
             text += '<br>'
-        text += u'This comic is on my want list.'
+        text += 'This comic is on my want list.'
 
     return mark_safe(text)
 
@@ -52,7 +52,7 @@ def item_url(item, collection):
 @register.filter
 def show_cover_tag(issue, zoom_level=ZOOM_SMALL):
     if issue:
-        return get_image_tags_per_issue(issue, alt_text=u'',
+        return get_image_tags_per_issue(issue, alt_text='',
                                         zoom_level=zoom_level)
     else:
         return ""

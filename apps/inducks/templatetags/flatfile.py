@@ -289,10 +289,10 @@ def gcd_series(issue, publisher):
                     uni(gcd_series[0].year_began) + " series) #" + number
         else:
             for i in gcd_series:
-                print i, i.country_code
+                print(i, i.country_code)
             return ""
     except OperationalError:
-        print issue.series.name
+        print(issue.series.name)
 
 def reprints(story):
     try:
@@ -329,7 +329,7 @@ def reprints(story):
                         reprint += "from Scamp"
                     else:
                         reprint += "from some strip, find out and tell Jochen"
-                        print original_story
+                        print(original_story)
                     if original_story[0] == 'Y':
                         reprint += " daily"
                     elif original_story[0] == 'Z':

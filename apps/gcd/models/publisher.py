@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models
 from django.db.models import F
@@ -17,7 +17,7 @@ from .image import Image
 
 def _display_year(year, flag):
     if year:
-        return str(year) + (u' ?' if flag else u'')
+        return str(year) + (' ?' if flag else '')
     else:
         return '?'
 
@@ -34,7 +34,7 @@ class BasePublisher(GcdData):
     year_ended_uncertain = models.BooleanField(default=False, db_index=True)
     notes = models.TextField()
     keywords = TaggableManager()
-    url = models.URLField(max_length=255, blank=True, default=u'')
+    url = models.URLField(max_length=255, blank=True, default='')
 
     def update_cached_counts(self, deltas, negate=False):
         """
@@ -48,7 +48,7 @@ class BasePublisher(GcdData):
         """
         if negate:
             deltas = deltas.copy()
-            for k, v in deltas.iteritems():
+            for k, v in deltas.items():
                 deltas[k] = -v
 
         # TODO: Reconsider use of F() objects due to undesired behavior
@@ -61,7 +61,7 @@ class BasePublisher(GcdData):
             self.issue_count = F('issue_count') + deltas['issues']
 
     def full_name(self):
-        return unicode(self)
+        return str(self)
 
     def __unicode__(self):
         return self.name
@@ -115,7 +115,7 @@ class Publisher(BasePublisher):
         """
         if negate:
             deltas = deltas.copy()
-            for k, v in deltas.iteritems():
+            for k, v in deltas.items():
                 deltas[k] = -v
 
         # Don't apply F() if delta is 0, because we don't want
@@ -245,7 +245,7 @@ class BrandGroup(BasePublisher):
         """
         if negate:
             deltas = deltas.copy()
-            for k, v in deltas.iteritems():
+            for k, v in deltas.items():
                 deltas[k] = -v
 
         # Don't apply F() if delta is 0, because we don't want
@@ -348,7 +348,7 @@ class BrandUse(GcdLink):
             kwargs={'brand_id': self.emblem.id } )
 
     def __unicode__(self):
-        return u'emblem %s was used from %s to %s by %s.' % (self.emblem,
+        return 'emblem %s was used from %s to %s by %s.' % (self.emblem,
           _display_year(self.year_began, self.year_began_uncertain),
           _display_year(self.year_ended, self.year_ended_uncertain),
           self.publisher)

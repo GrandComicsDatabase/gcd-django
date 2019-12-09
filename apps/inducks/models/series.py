@@ -1,7 +1,7 @@
 from django.db import models
 
-from country import Country
-from language import Language
+from .country import Country
+from .language import Language
 #from publisher import Publisher
 
 class Series(models.Model):

@@ -72,7 +72,7 @@ class FeatureRevisionForm(forms.ModelForm):
                 genres = genres[:-2]
             cd['genre'] = genres
         else:
-            cd['genre'] = u''
+            cd['genre'] = ''
 
         if 'name' in cd:
             cd['name'] = cd['name'].strip()

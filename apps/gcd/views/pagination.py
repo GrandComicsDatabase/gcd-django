@@ -205,9 +205,9 @@ class DiggPaginator(ExPaginator):
         main_range = (number-body/2, number+body/2)
         # adjust bounds
         if main_range[0] < 1:
-            main_range = map(abs(main_range[0]-1).__add__, main_range)
+            main_range = list(map(abs(main_range[0]-1).__add__, main_range))
         if main_range[1] > num_pages:
-            main_range = map((num_pages-main_range[1]).__add__, main_range)
+            main_range = list(map((num_pages-main_range[1]).__add__, main_range))
 
         # Determine leading and trailing ranges; if possible and appropriate,
         # combine them with the main range, in which case the resulting main
@@ -229,7 +229,7 @@ class DiggPaginator(ExPaginator):
             main_range = [1, max(body, min(number+padding, main_range[1]))]
             main_range[0] = 1
         else:
-            leading = range(1, tail+1)
+            leading = list(range(1, tail+1))
         # basically same for trailing range, but not in ``left_align`` mode
         if self.align_left:
             trailing = []
@@ -245,7 +245,7 @@ class DiggPaginator(ExPaginator):
                 else:
                     main_range = [min(num_pages-body+1, max(number-padding, main_range[0])), num_pages]
             else:
-                trailing = range(num_pages-tail+1, num_pages+1)
+                trailing = list(range(num_pages-tail+1, num_pages+1))
 
         # finally, normalize values that are out of bound; this basically
         # fixes all the things the above code screwed up in the simple case
@@ -254,7 +254,7 @@ class DiggPaginator(ExPaginator):
 
         # make the result of our calculations available as custom ranges
         # on the ``Page`` instance.
-        page.main_range = range(main_range[0], main_range[1]+1)
+        page.main_range = list(range(main_range[0], main_range[1]+1))
         page.leading_range = leading
         page.trailing_range = trailing
         page.page_range = reduce(lambda x, y: x+((x and y) and [False])+y,
@@ -266,10 +266,10 @@ class DiggPaginator(ExPaginator):
 
 class DiggPage(Page):
     def __str__(self):
-        return " ... ".join(filter(None, [
+        return " ... ".join([_f for _f in [
                             " ".join(map(str, self.leading_range)),
                             " ".join(map(str, self.main_range)),
-                            " ".join(map(str, self.trailing_range))]))
+                            " ".join(map(str, self.trailing_range))] if _f])
 
 
 if __name__ == "__main__":

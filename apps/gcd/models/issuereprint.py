@@ -42,11 +42,11 @@ class IssueReprint(models.Model):
         else:
             direction = 'from'
             issue = self.origin_issue
-        reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
+        reprint = '%s <a target="_blank" href="%s">%s</a>' % \
                     (direction, issue.get_absolute_url(), esc(issue.full_name()))
         if self.notes:
-            reprint = u'%s [%s]' % (reprint, esc(self.notes))
+            reprint = '%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
     def __unicode__(self):
-        return u'from %s reprint in %s' % (self.origin_issue, self.target_issue)
+        return 'from %s reprint in %s' % (self.origin_issue, self.target_issue)

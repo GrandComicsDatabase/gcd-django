@@ -1,7 +1,7 @@
 from django.db import models
 
-from issue import Issue
-from creator import Creator
+from .issue import Issue
+from .creator import Creator
 
 class IssueRole(models.Model):
     class Meta:

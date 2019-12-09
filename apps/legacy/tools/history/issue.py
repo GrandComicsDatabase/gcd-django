@@ -10,6 +10,7 @@ from apps.oi.models import *
 from apps.legacy.tools.history import MigratoryTable, LogRecord, \
                        EARLIEST_OLD_SITE, LATEST_OLD_SITE, EARLIEST_DATA_DATE
 from apps.legacy.tools.history.story import MigratoryStoryRevision, LogStory
+from functools import reduce
 
 EPSILON = timedelta(5, 0, 0) # Five days
 
@@ -335,7 +336,7 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
 
     @classmethod
     def gather_changeset(klass, issue_record, attached_stories, anon, user=None):
-        records = attached_stories.values()
+        records = list(attached_stories.values())
         if issue_record is not None:
             records.append(issue_record)
         # We want to use the most recent revision for the changeset date+time.
@@ -358,7 +359,7 @@ UPDATE log_issue SET key_date = REPLACE(key_date, '.', '-');
         else:
             issue_record.create_revision(changeset, anon)
 
-        for attached_story in attached_stories.itervalues():
+        for attached_story in attached_stories.values():
             attached_story.create_revision(changeset, anon)
 
     def convert(self, changeset):

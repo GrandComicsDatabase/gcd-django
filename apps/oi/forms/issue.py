@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import re
 from collections import OrderedDict
@@ -161,7 +161,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def clean_month_on_sale(self):
             month_on_sale = self.cleaned_data['month_on_sale']
 
-            if month_on_sale is not None and month_on_sale not in range(1, 13):
+            if month_on_sale is not None and month_on_sale not in list(range(1, 13)):
                 raise forms.ValidationError(
                     'If entered, month needs to be between 1 and 12.')
             return month_on_sale
@@ -169,7 +169,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def clean_day_on_sale(self):
             day_on_sale = self.cleaned_data['day_on_sale']
 
-            if day_on_sale is not None and day_on_sale not in range(1, 32):
+            if day_on_sale is not None and day_on_sale not in list(range(1, 32)):
                 raise forms.ValidationError(
                     'If entered, day needs to be between 1 and 31.')
             return day_on_sale
@@ -626,7 +626,7 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
 
         basics = (cd['first_number'], cd['first_volume'])
         if None in basics and cd['after'] is not None:
-            if filter(lambda x: x is not None, basics):
+            if [x for x in basics if x is not None]:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, both '
                     'of "first number" and "first volume" must be specified, '
@@ -699,7 +699,7 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
 
         basics = (cd['first_number'], cd['first_year'])
         if None in basics and cd['after'] is not None:
-            if filter(lambda x: x is not None, basics):
+            if [x for x in basics if x is not None]:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, '
                     'both of "first number" and "first year" must be '
@@ -764,7 +764,7 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         basics = (cd['first_number'], cd['first_volume'], cd['first_year'])
         if None in basics and cd['after'] is not None:
-            if filter(lambda x: x is not None, basics):
+            if [x for x in basics if x is not None]:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, all '
                     'of "first number", "first volume" and "first year" must '

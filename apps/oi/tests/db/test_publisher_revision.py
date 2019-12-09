@@ -11,7 +11,7 @@ def test_create_add_revision(any_added_publisher_rev, publisher_add_values,
                              any_adding_changeset, keywords):
     rev = any_added_publisher_rev
 
-    for k, v in publisher_add_values.iteritems():
+    for k, v in publisher_add_values.items():
         assert getattr(rev, k) == v
     assert rev.publisher is None
 
@@ -32,7 +32,7 @@ def test_commit_added_revision(any_added_publisher_rev, publisher_add_values,
 
     updater.assert_has_calls([
         mock.call({}, country=None, language=None, negate=True),
-        mock.call({u'publishers': 1},
+        mock.call({'publishers': 1},
                   country=rev.publisher.country, language=None),
     ])
     assert updater.call_count == 2
@@ -40,7 +40,7 @@ def test_commit_added_revision(any_added_publisher_rev, publisher_add_values,
     assert rev.publisher is not None
     assert rev.source is rev.publisher
 
-    for k, v in publisher_add_values.iteritems():
+    for k, v in publisher_add_values.items():
         if k == 'keywords':
             pub_kws = [k for k in rev.publisher.keywords.names()]
             pub_kws.sort()
@@ -59,7 +59,7 @@ def test_create_edit_revision(any_added_publisher, publisher_add_values,
         data_object=any_added_publisher,
         changeset=any_editing_changeset)
 
-    for k, v in publisher_add_values.iteritems():
+    for k, v in publisher_add_values.items():
         assert getattr(rev, k) == v
     assert rev.publisher is any_added_publisher
 

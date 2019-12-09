@@ -3,8 +3,9 @@
 """View methods for pages displaying entity details."""
 
 import re
-from urllib import urlencode, quote
-from urllib2 import urlopen, HTTPError
+from urllib.parse import urlencode, quote
+from urllib.request import urlopen
+from urllib.error import HTTPError
 from datetime import date, datetime, time, timedelta
 from calendar import monthrange
 from operator import attrgetter
@@ -269,7 +270,7 @@ def show_publisher(request, publisher, preview=False):
             args = request.GET.copy()
             args['page'] = 1
             return HttpResponseRedirect(quote(request.path.encode('UTF-8')) +
-                                        u'?' + args.urlencode())
+                                        '?' + args.urlencode())
     else:
         extra_string = ''
 
@@ -1320,7 +1321,7 @@ def cover(request, issue_id, size):
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
     cover_tag = get_image_tags_per_issue(issue, "Cover for %s" % \
-                                                unicode(issue.full_name()), 
+                                                str(issue.full_name()), 
                                          size, variants=True, as_list=True)
     extra = 'cover/%d/' % size  # TODO: remove abstraction-breaking hack.
 
@@ -1458,7 +1459,7 @@ def show_issue(request, issue, preview=False):
     Helper function to handle the main work of displaying an issue.
     Also used by OI previews.
     """
-    alt_text = u'Cover Thumbnail for %s' % issue.full_name()
+    alt_text = 'Cover Thumbnail for %s' % issue.full_name()
     zoom_level = ZOOM_MEDIUM
 
     if 'issue_detail' in request.GET:
@@ -1495,7 +1496,7 @@ def show_issue(request, issue, preview=False):
     for variant_cover in issue.variant_covers():
         variant_image_tags.append([variant_cover.issue,
           get_image_tag(variant_cover, zoom_level=ZOOM_SMALL,
-          alt_text=u'Cover Thumbnail for %s' % unicode(variant_cover.issue))])
+          alt_text='Cover Thumbnail for %s' % str(variant_cover.issue))])
 
     series = issue.series
     [prev_issue, next_issue] = issue.get_prev_next_issue()

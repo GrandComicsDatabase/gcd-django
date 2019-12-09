@@ -128,7 +128,7 @@ class Collection(models.Model):
                                     kwargs={'collection_id':self.id})
 
     def __unicode__(self):
-        return unicode(self.name)
+        return str(self.name)
 
 
 class Subscription(models.Model):
@@ -151,7 +151,7 @@ class Location(models.Model):
     description = models.TextField(blank=True)
 
     def __unicode__(self):
-        return unicode(self.name)
+        return str(self.name)
 
 
 class PurchaseLocation(models.Model):
@@ -164,7 +164,7 @@ class PurchaseLocation(models.Model):
     description = models.TextField(blank=True)
 
     def __unicode__(self):
-        return unicode(self.name)
+        return str(self.name)
 
 
 class CollectionItem(models.Model):
@@ -244,7 +244,7 @@ class ConditionGradeScale(models.Model):
     description=models.CharField(max_length=2000, blank=True)
 
     def __unicode__(self):
-        return unicode(self.name)
+        return str(self.name)
 
 
 class ConditionGrade(models.Model):
@@ -262,5 +262,5 @@ class ConditionGrade(models.Model):
         return self.value.__cmp__(other.value)
 
     def __unicode__(self):
-        return u"%s - %s" % (self.code, self.name)
+        return "%s - %s" % (self.code, self.name)
 

@@ -343,7 +343,7 @@ def process_edited_gatefold_cover(request):
         if not revision_lock:
             return render_error(
               request,
-              u'Cannot replace %s as it is already reserved.' %
+              'Cannot replace %s as it is already reserved.' %
               cover.issue)
         changeset.save()
         revision_lock.changeset = changeset
@@ -686,7 +686,7 @@ def upload_cover(request, cover_id=None, issue_id=None):
         if not revision_lock:
             return render_error(
               request,
-              u'Cannot replace %s as it is already reserved.' %
+              'Cannot replace %s as it is already reserved.' %
               cover.issue)
     # if GET, check for a lock
     elif cover_id and is_locked(cover):
@@ -855,7 +855,7 @@ def handle_uploaded_image(request, display_obj, model_name, image_type,
         if not revision_lock:
             return render_error(
               request,
-              u'Cannot replace %s as it is already reserved.' %
+              'Cannot replace %s as it is already reserved.' %
               current_image.description())
 
     # create OI records

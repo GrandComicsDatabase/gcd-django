@@ -1,6 +1,6 @@
 from django.db import models
 
-from series import Series
+from .series import Series
 
 class Issue(models.Model):
     """ issue from inducks database"""
@@ -32,4 +32,4 @@ class Issue(models.Model):
                                db_column = 'publicationcode')
 
     def __unicode__(self):
-        return unicode(self.series.name) + " #" + self.number
+        return str(self.series.name) + " #" + self.number

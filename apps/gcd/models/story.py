@@ -47,17 +47,17 @@ NON_OPTIONAL_TYPES = [6, 7, 19]
 
 def show_feature(story):
     first = True
-    features = u''
+    features = ''
     for feature in story.feature_object.all():
         if first:
             first = False
         else:
-            features += u'; '
-        features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
+            features += '; '
+        features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
                                               esc(feature.name))
     if story.feature:
         if features:
-            features += u'; %s' % esc(story.feature)
+            features += '; %s' % esc(story.feature)
         else:
             features = esc(story.feature)
     return mark_safe(features)
@@ -97,7 +97,7 @@ class StoryCredit(GcdData):
     credit_name = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return u"%s: %s (%s)" % (self.story, self.creator, self.credit_type)
+        return "%s: %s (%s)" % (self.story, self.creator, self.credit_type)
 
 
 class StoryTypeManager(models.Manager):
@@ -242,22 +242,22 @@ class Story(GcdData):
 
     def show_feature_as_text(self):
         first = True
-        features = u''
+        features = ''
         for feature in self.feature_object.all():
             if first:
                 first = False
             else:
-                features += u'; '
-            features += u'%s' % feature.name
+                features += '; '
+            features += '%s' % feature.name
         if self.feature:
             if features:
-                features += u'; %s' % self.feature
+                features += '; %s' % self.feature
             else:
                 features = self.feature
         return features
 
     def _show_feature_logo(self, story):
-        return u"; ".join(story.feature_logo.all().values_list('name',
+        return "; ".join(story.feature_logo.all().values_list('name',
                                                               flat=True))
 
     def show_feature_logo(self):

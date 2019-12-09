@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
@@ -51,12 +51,12 @@ class Series(GcdData):
 
     # The "format" field is a legacy field that is being split into
     # color, dimensions, paper_stock, binding, and publishing_format
-    format = models.CharField(max_length=255, default=u'')
-    color = models.CharField(max_length=255, default=u'')
-    dimensions = models.CharField(max_length=255, default=u'')
-    paper_stock = models.CharField(max_length=255, default=u'')
-    binding = models.CharField(max_length=255, default=u'')
-    publishing_format = models.CharField(max_length=255, default=u'')
+    format = models.CharField(max_length=255, default='')
+    color = models.CharField(max_length=255, default='')
+    dimensions = models.CharField(max_length=255, default='')
+    paper_stock = models.CharField(max_length=255, default='')
+    binding = models.CharField(max_length=255, default='')
+    publishing_format = models.CharField(max_length=255, default='')
 
     publication_type = models.ForeignKey(SeriesPublicationType, null=True,
                                          blank=True)
@@ -231,7 +231,7 @@ class Series(GcdData):
         """
         if negate:
             deltas = deltas.copy()
-            for k, v in deltas.iteritems():
+            for k, v in deltas.items():
                 deltas[k] = -v
 
         # Don't apply F() if delta is 0, because we don't want
@@ -330,24 +330,24 @@ class Series(GcdData):
                    .exclude(is_indexed=INDEXED['skeleton']).count()
 
     def _date_uncertain(self, flag):
-        return u' ?' if flag else u''
+        return ' ?' if flag else ''
 
     def display_publication_dates(self):
         if not self.issue_count:
-            return u'%s%s' % (unicode(self.year_began),
+            return '%s%s' % (str(self.year_began),
                               self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:
             if self.first_issue.publication_date:
                 return self.first_issue.publication_date
             else:
-                return u'%s%s' % (unicode(self.year_began),
+                return '%s%s' % (str(self.year_began),
                                   self._date_uncertain(
                                     self.year_began_uncertain))
         else:
             if self.first_issue.publication_date:
-                date = u'%s - ' % self.first_issue.publication_date
+                date = '%s - ' % self.first_issue.publication_date
             else:
-                date = u'%s%s - ' % (self.year_began,
+                date = '%s%s - ' % (self.year_began,
                                      self._date_uncertain(
                                        self.year_began_uncertain))
             if self.is_current:
@@ -355,29 +355,29 @@ class Series(GcdData):
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
-                date += u'%s%s' % (unicode(self.year_ended),
+                date += '%s%s' % (str(self.year_ended),
                                    self._date_uncertain(
                                      self.year_ended_uncertain))
             else:
-                date += u'?'
+                date += '?'
             return date
 
     def search_result_name(self):
         if self.issue_count <= 1 and not self.is_current:
-            date = u'%s%s' % (unicode(self.year_began),
+            date = '%s%s' % (str(self.year_began),
                               self._date_uncertain(self.year_began_uncertain))
         else:
-            date = u'%s%s - ' % (self.year_began,
+            date = '%s%s - ' % (self.year_began,
                                  self._date_uncertain(
                                    self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.year_ended:
-                date += u'%s%s' % (unicode(self.year_ended),
+                date += '%s%s' % (str(self.year_ended),
                                    self._date_uncertain(
                                      self.year_ended_uncertain))
             else:
-                date += u'?'
+                date += '?'
 
         if self.is_singleton:
             issues = ''

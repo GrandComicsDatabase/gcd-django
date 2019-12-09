@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from decimal import Decimal
 
@@ -29,17 +29,17 @@ INDEXED = {
 
 def issue_descriptor(issue):
     if issue.number == '[nn]' and issue.series.is_singleton:
-        return u''
+        return ''
     if issue.title and issue.series.has_issue_title:
-        title = u' - ' + issue.title
+        title = ' - ' + issue.title
     else:
-        title = u''
+        title = ''
     if issue.display_volume_with_number:
         if issue.volume_not_printed:
-            volume = u'[v%s]' % issue.volume
+            volume = '[v%s]' % issue.volume
         else:
-            volume = u'v%s' % issue.volume
-        return u'%s#%s%s' % (volume, issue.number, title)
+            volume = 'v%s' % issue.volume
+        return '%s#%s%s' % (volume, issue.number, title)
     return issue.number + title
 
 
@@ -392,25 +392,25 @@ class Issue(GcdData):
     def display_full_descriptor(self):
         number = self.full_descriptor
         if number:
-            return u'#' + number
+            return '#' + number
         else:
-            return u''
+            return ''
 
     @property
     def display_number(self):
         number = self.issue_descriptor
         if number:
-            return u'#' + number
+            return '#' + number
         else:
-            return u''
+            return ''
 
     def full_name(self, variant_name=True):
         if variant_name and self.variant_name:
-            return u'%s %s [%s]' % (self.series.full_name(),
+            return '%s %s [%s]' % (self.series.full_name(),
                                     self.display_number,
                                     self.variant_name)
         else:
-            return u'%s %s' % (self.series.full_name(), self.display_number)
+            return '%s %s' % (self.series.full_name(), self.display_number)
 
     def full_name_with_link(self, publisher=False):
         name_link = self.series.full_name_with_link(publisher)
@@ -420,15 +420,15 @@ class Issue(GcdData):
 
     def short_name(self):
         if self.variant_name:
-            return u'%s %s [%s]' % (self.series.name,
+            return '%s %s [%s]' % (self.series.name,
                                     self.display_number,
                                     self.variant_name)
         else:
-            return u'%s %s' % (self.series.name, self.display_number)
+            return '%s %s' % (self.series.name, self.display_number)
 
     def __unicode__(self):
         if self.variant_name:
-            return u'%s %s [%s]' % (self.series, self.display_number,
+            return '%s %s [%s]' % (self.series, self.display_number,
                                     self.variant_name)
         else:
-            return u'%s %s' % (self.series, self.display_number)
+            return '%s %s' % (self.series, self.display_number)

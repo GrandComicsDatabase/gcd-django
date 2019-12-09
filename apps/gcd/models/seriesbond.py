@@ -49,13 +49,13 @@ class SeriesBond(models.Model):
 
     def __unicode__(self):
         if self.origin_issue:
-            object_string = u'%s' % self.origin_issue
+            object_string = '%s' % self.origin_issue
         else:
-            object_string = u'%s' % self.origin
+            object_string = '%s' % self.origin
         if self.target_issue:
-            object_string += u' continues at %s' % self.target_issue
+            object_string += ' continues at %s' % self.target_issue
         else:
-            object_string += u' continues at %s' % self.target
+            object_string += ' continues at %s' % self.target
         return object_string
 
 @total_ordering

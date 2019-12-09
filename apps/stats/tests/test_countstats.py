@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+
 
 import mock
 import pytest
@@ -27,7 +27,7 @@ def test_init_stats_not_both():
     with pytest.raises(ValueError) as excinfo:
         CountStats.objects.init_stats(language=ANY_LANGUAGE,
                                       country=ANY_COUNTRY)
-    assert 'either country or language stats' in unicode(excinfo.value)
+    assert 'either country or language stats' in str(excinfo.value)
 
 
 @pytest.yield_fixture
@@ -77,9 +77,9 @@ def _make_init_stats_kwargs(language=None, country=None):
         s_kwargs['is_comics_publication'] = True
 
         i_kwargs = {k if k == 'deleted' else 'series__%s' % k: v
-                    for k, v in s_kwargs.iteritems()}
+                    for k, v in s_kwargs.items()}
         c_t_kwargs = {k if k == 'deleted' else 'issue__series__%s' % k: v
-                      for k, v in s_kwargs.iteritems()
+                      for k, v in s_kwargs.items()
                       if k != 'is_comics_publication'}
 
         return p_b_ip_kwargs, s_kwargs, i_kwargs, c_t_kwargs
