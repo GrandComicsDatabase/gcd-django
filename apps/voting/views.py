@@ -13,6 +13,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 
 from apps.indexer.views import render_error
 from apps.voting.models import *
+from functools import reduce
 
 EMAIL_RESULT = """
 All ballots have been received for the following topic from the %s agenda:
@@ -282,7 +283,7 @@ def vote(request):
     ranks = {}
     if not option_params:
         # ranked_choice, collect all ranks
-        values = request.POST.keys()
+        values = list(request.POST.keys())
         for value in values:
             if value.startswith('option'):
                 if request.POST[value]:
@@ -293,7 +294,7 @@ def vote(request):
                         'You must enter a full number for the ranking.')
                 else:
                     ranks[int(value[7:])] = None
-        options = Option.objects.filter(id__in=ranks.keys())
+        options = Option.objects.filter(id__in=list(ranks.keys()))
     else:
         options = Option.objects.filter(id__in=option_params)
         # Get all of these now because we may need to iterate twice.
@@ -378,7 +379,7 @@ def vote(request):
                             (request.user.id, salt, vote_ids, key))
         voting_record.close()
 
-        vote_values = "\n".join([unicode(o) for o in options])
+        vote_values = "\n".join([str(o) for o in options])
         send_mail(from_email=settings.EMAIL_VOTING_FROM,
                   recipient_list=[request.user.email],
                   subject="GCD secret ballot receipt",

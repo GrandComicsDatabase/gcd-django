@@ -69,7 +69,7 @@ class Image(models.Model):
         return self.revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
     def description(self):
-        return u'%s for %s' % (self.type.description, unicode(self.object))
+        return '%s for %s' % (self.type.description, str(self.object))
 
     def get_absolute_url(self):
         if self.content_type == content_models.ContentType.objects\
@@ -92,4 +92,4 @@ class Image(models.Model):
             return ''
 
     def __unicode__(self):
-        return u'%s: %s' % (unicode(self.object), capitalize(self.type.description))
+        return '%s: %s' % (str(self.object), capitalize(self.type.description))

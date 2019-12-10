@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 
 class RelPath(object):
@@ -39,7 +39,7 @@ class RelPath(object):
 
         cls = self._first_model_class
         last_i = len(self._names) - 1
-        for i in xrange(0, len(self._names)):
+        for i in range(0, len(self._names)):
             field = cls._meta.get_field(self._names[i])
             if i != last_i and (field.many_to_many or field.one_to_many):
                 # Supporting internal multi-valued fields would get us into
@@ -158,7 +158,7 @@ class RelPath(object):
         """
         current_object = instance
         values = []
-        for name, i in zip(self._names, xrange(0, len(self._names))):
+        for name, i in zip(self._names, range(0, len(self._names))):
             try:
                 current_object = getattr(current_object, name)
                 values.append(current_object)

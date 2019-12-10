@@ -1,7 +1,7 @@
 from django.db import models
 
-from character import Character
-from language import Language
+from .character import Character
+from .language import Language
 
 class CharacterName(models.Model):
     class Meta:

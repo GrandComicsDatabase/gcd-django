@@ -89,7 +89,7 @@ class NameType(models.Model):
     type = models.CharField(max_length=50)
 
     def __unicode__(self):
-        return '%s' % unicode(self.type)
+        return '%s' % str(self.type)
 
 
 class CreatorNameDetail(GcdData):
@@ -130,21 +130,21 @@ class CreatorNameDetail(GcdData):
             name += ' ?'
 
         if url:
-            credit_text = u'<a href="%s">%s</a>' % \
+            credit_text = '<a href="%s">%s</a>' % \
                           (self.creator.get_absolute_url(),
                            esc(name))
             if co_name:
-                credit_text += u' of <a href="%s">%s</a>' % \
+                credit_text += ' of <a href="%s">%s</a>' % \
                                (co_name.get_absolute_url(),
                                 esc(co_name))
             if as_name:
-                credit_text += u' [as <a href="%s">%s</a>]' % \
+                credit_text += ' [as <a href="%s">%s</a>]' % \
                                (as_name.get_absolute_url(),
                                 esc(as_name.name))
         else:
             credit_text = esc(name)
             if as_name:
-                credit_text += u' [as %s]' % esc(as_name.name)
+                credit_text += ' [as %s]' % esc(as_name.name)
 
         if credit.is_signed and credit.is_credited \
            and not credit.credited_as and not credit.signed_as:
@@ -175,12 +175,12 @@ class CreatorNameDetail(GcdData):
         else:
             year = ''
         if self.type.id == 1:
-            return '%s %s (%s)' % (unicode(self.name), year,
-                                   unicode(self.type.type))
+            return '%s %s (%s)' % (str(self.name), year,
+                                   str(self.type.type))
         else:
-            return '%s %s - %s (%s)' % (unicode(self.creator), year,
-                                        unicode(self.name),
-                                        unicode(self.type.type))
+            return '%s %s - %s (%s)' % (str(self.creator), year,
+                                        str(self.name),
+                                        str(self.type.type))
 
 
 class RelationType(models.Model):
@@ -198,7 +198,7 @@ class RelationType(models.Model):
     reverse_type = models.CharField(max_length=50)
 
     def __unicode__(self):
-        return unicode(self.type)
+        return str(self.type)
 
 
 class CreatorManager(models.Manager):
@@ -275,7 +275,7 @@ class Creator(GcdData):
     samplescan = property(_samplescan)
 
     def full_name(self):
-        return unicode(self)
+        return str(self)
 
     def display_birthday(self):
         return _display_day(self.birth_date)
@@ -290,7 +290,7 @@ class Creator(GcdData):
         return _display_place(self, 'death')
 
     def has_death_info(self):
-        if unicode(self.death_date) != '':
+        if str(self.death_date) != '':
             return True
         else:
             return False
@@ -367,7 +367,7 @@ class Creator(GcdData):
                 kwargs={'creator_id': self.id})
 
     def __unicode__(self):
-        return '%s' % unicode(self.gcd_official_name)
+        return '%s' % str(self.gcd_official_name)
 
 
 class CreatorRelation(GcdData):
@@ -394,9 +394,9 @@ class CreatorRelation(GcdData):
     data_source = models.ManyToManyField(DataSource)
 
     def __unicode__(self):
-        return '%s >Relation< %s :: %s' % (unicode(self.from_creator),
-                                           unicode(self.to_creator),
-                                           unicode(self.relation_type)
+        return '%s >Relation< %s :: %s' % (str(self.from_creator),
+                                           str(self.to_creator),
+                                           str(self.relation_type)
                                            )
 
 
@@ -413,7 +413,7 @@ class School(models.Model):
     school_name = models.CharField(max_length=200)
 
     def __unicode__(self):
-        return unicode(self.school_name)
+        return str(self.school_name)
 
 
 class CreatorSchool(GcdData):
@@ -445,8 +445,8 @@ class CreatorSchool(GcdData):
                 kwargs={'creator_school_id': self.id})
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator),
-                            unicode(self.school.school_name))
+        return '%s - %s' % (str(self.creator),
+                            str(self.school.school_name))
 
 
 class Degree(models.Model):
@@ -462,7 +462,7 @@ class Degree(models.Model):
     degree_name = models.CharField(max_length=200)
 
     def __unicode__(self):
-        return unicode(self.degree_name)
+        return str(self.degree_name)
 
 
 class CreatorDegree(GcdData):
@@ -493,8 +493,8 @@ class CreatorDegree(GcdData):
                 kwargs={'creator_degree_id': self.id})
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.creator),
-                            unicode(self.degree.degree_name))
+        return '%s - %s' % (str(self.creator),
+                            str(self.degree.degree_name))
 
 
 class CreatorArtInfluence(GcdData):
@@ -530,7 +530,7 @@ class CreatorArtInfluence(GcdData):
                 kwargs={'creator_art_influence_id': self.id})
 
     def __unicode__(self):
-        return u'%s > %s' % (self.influence(), self.creator.gcd_official_name)
+        return '%s > %s' % (self.influence(), self.creator.gcd_official_name)
 
 
 class MembershipType(models.Model):
@@ -546,7 +546,7 @@ class MembershipType(models.Model):
     type = models.CharField(max_length=100)
 
     def __unicode__(self):
-        return unicode(self.type)
+        return str(self.type)
 
 
 class CreatorMembership(GcdData):
@@ -580,7 +580,7 @@ class CreatorMembership(GcdData):
         return self.creator.pending_deletion()
 
     def __unicode__(self):
-        return '%s' % unicode(self.organization_name)
+        return '%s' % str(self.organization_name)
 
 
 class NonComicWorkType(models.Model):
@@ -596,7 +596,7 @@ class NonComicWorkType(models.Model):
     type = models.CharField(max_length=100)
 
     def __unicode__(self):
-        return unicode(self.type)
+        return str(self.type)
 
 
 class NonComicWorkRole(models.Model):
@@ -612,7 +612,7 @@ class NonComicWorkRole(models.Model):
     role_name = models.CharField(max_length=200)
 
     def __unicode__(self):
-        return unicode(self.role_name)
+        return str(self.role_name)
 
 
 class CreatorNonComicWork(GcdData):
@@ -642,10 +642,10 @@ class CreatorNonComicWork(GcdData):
     def display_years(self):
         years = self.noncomicworkyears.all().order_by('work_year')
         if not years:
-            return u''
-        year_string = u'%d' % years[0].work_year
+            return ''
+        year_string = '%d' % years[0].work_year
         if years[0].work_year_uncertain:
-            year_string += u'?'
+            year_string += '?'
         year_before = years[0]
         year_range = False
         for year in years[1:]:
@@ -655,20 +655,20 @@ class CreatorNonComicWork(GcdData):
                 year_range = True
             else:
                 if year_range:
-                    year_string += u' - %d; %d' % (year_before.work_year,
+                    year_string += ' - %d; %d' % (year_before.work_year,
                                                    year.work_year)
                     if year.work_year_uncertain:
-                        year_string += u'?'
+                        year_string += '?'
                 else:
                     year_string += '; %d' % (year.work_year)
                     if year.work_year_uncertain:
-                        year_string += u'?'
+                        year_string += '?'
                 year_range = False
             year_before = year
         if year_range:
-            year_string += u' - %d' % (year.work_year)
+            year_string += ' - %d' % (year.work_year)
             if year.work_year_uncertain:
-                year_string += u'?'
+                year_string += '?'
         return year_string
 
     def get_absolute_url(self):
@@ -677,7 +677,7 @@ class CreatorNonComicWork(GcdData):
                 kwargs={'creator_non_comic_work_id': self.id})
 
     def __unicode__(self):
-        return '%s' % (unicode(self.publication_title))
+        return '%s' % (str(self.publication_title))
 
 
 class NonComicWorkYear(models.Model):
@@ -698,5 +698,5 @@ class NonComicWorkYear(models.Model):
     work_year_uncertain = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return '%s - %s' % (unicode(self.non_comic_work),
-                            unicode(self.work_year))
+        return '%s - %s' % (str(self.non_comic_work),
+                            str(self.work_year))

@@ -51,7 +51,7 @@ class Currency(models.Model):
         return (self.code,)
 
     def __unicode__(self):
-        return unicode(self.code) + u" - " + unicode(self.name)
+        return str(self.code) + " - " + str(self.name)
 
 
 class Date(models.Model):
@@ -99,13 +99,13 @@ class Date(models.Model):
         if self.day_uncertain and '?' not in day:
             day += '?'
         if day:
-            return year+u'-'+month+u'-'+day
+            return year+'-'+month+'-'+day
         elif month:
-            return year+u'-'+month
+            return year+'-'+month
         elif year:
             return year
         else:
-            return u''
+            return ''
 
 
 class LanguageManager(models.Manager):

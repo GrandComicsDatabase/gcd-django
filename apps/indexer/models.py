@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, absolute_import
+
 
 from django.conf import settings
 from django.db import models
@@ -136,13 +136,13 @@ class Indexer(models.Model):
 
     def __unicode__(self):
         if self.user.first_name and self.user.last_name:
-            full_name = u'%s %s' % (self.user.first_name, self.user.last_name)
+            full_name = '%s %s' % (self.user.first_name, self.user.last_name)
         elif self.user.first_name:
             full_name = self.user.first_name
         else:
             full_name = self.user.last_name
         if self.deceased:
-            full_name = full_name + u' (R.I.P.)'
+            full_name = full_name + ' (R.I.P.)'
 
         return full_name
 

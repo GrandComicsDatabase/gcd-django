@@ -143,7 +143,7 @@ def agenda_item_pre_save(sender, **kwargs):
         if item.notes:
             notes = item.notes
         else:
-            notes = u''
+            notes = ''
 
         for list_config in item.agenda.agenda_mailing_lists.all():
             if list_config.on_agenda_item_open and newly_opened:
@@ -426,7 +426,7 @@ class Vote(models.Model):
     updated = models.DateTimeField(null=True, auto_now=True, editable=False)
 
     def __unicode__(self):
-        string = u'%s: %s' % (self.voter.indexer, self.option)
+        string = '%s: %s' % (self.voter.indexer, self.option)
         if self.rank is not None:
             return string + (' %d' % self.rank)
         return string

@@ -36,18 +36,18 @@ def safe_split(value):
 class GcdNameQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdNameQuery, self).prepare(query_obj)
-        query_return = u''
+        query_return = ''
         for phrase in safe_split(query_string.encode('utf-8')):
             # if we also do * in front, searches with 'the' won't work somehow
-            query_return += phrase.decode('utf-8') + u'* '
+            query_return += phrase.decode('utf-8') + '* '
         return query_return
 
 
 class GcdAutoQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdAutoQuery, self).prepare(query_obj)
-        if u'\*' in query_string and len(query_string) > 2:
-            query_string = query_string.replace(u'\*', u'*')
+        if '\*' in query_string and len(query_string) > 2:
+            query_string = query_string.replace('\*', '*')
         if ' ' in query_string:
             query_string = '"' + query_string + '"'
         return query_string
@@ -115,7 +115,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.form = self.build_form()
         if 'search_object' in request.GET:
             if request.GET['search_object'] != "all":
-                self.form.selected_facets = [u'facet_model_name_exact:%s' %
+                self.form.selected_facets = ['facet_model_name_exact:%s' %
                                              request.GET['search_object']]
         self.query = self.get_query().strip('\\')
         # TODO List of fields should be gathered
@@ -148,15 +148,15 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                                  '-_score')
         elif len(self.form.selected_facets) >= 1:
             if self.sort:
-                if (u'facet_model_name_exact:publisher'
+                if ('facet_model_name_exact:publisher'
                     in self.form.selected_facets) or \
-                  (u'facet_model_name_exact:indicia publisher'
+                  ('facet_model_name_exact:indicia publisher'
                    in self.form.selected_facets) or \
-                  (u'facet_model_name_exact:brand group'
+                  ('facet_model_name_exact:brand group'
                    in self.form.selected_facets) or \
-                  (u'facet_model_name_exact:brand emblem'
+                  ('facet_model_name_exact:brand emblem'
                    in self.form.selected_facets) or \
-                  (u'facet_model_name_exact:series'
+                  ('facet_model_name_exact:series'
                    in self.form.selected_facets):
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
@@ -164,7 +164,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                     elif request.GET['sort'] == 'chrono':
                         self.results = self.results.order_by('year',
                                                              'sort_name')
-                elif u'facet_model_name_exact:issue' \
+                elif 'facet_model_name_exact:issue' \
                      in self.form.selected_facets:
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
@@ -174,7 +174,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                         self.results = self.results.order_by('key_date',
                                                              'sort_name',
                                                              'sort_code')
-                elif u'facet_model_name_exact:story' \
+                elif 'facet_model_name_exact:story' \
                      in self.form.selected_facets:
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
@@ -188,11 +188,11 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                                              'sequence_number')
 
                 elif self.form.selected_facets[0] in \
-                    [u'facet_model_name_exact:creator',
-                     u'facet_model_name_exact:creator membership',
-                     u'facet_model_name_exact:creator artinfluence',
-                     u'facet_model_name_exact:creator award',
-                     u'facet_model_name_exact:creator noncomicwork']:
+                    ['facet_model_name_exact:creator',
+                     'facet_model_name_exact:creator membership',
+                     'facet_model_name_exact:creator artinfluence',
+                     'facet_model_name_exact:creator award',
+                     'facet_model_name_exact:creator noncomicwork']:
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
                                                              'year')
@@ -212,7 +212,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
 
         suggestion = self.form.get_suggestion()
         if suggestion == self.get_query().lower():
-            suggestion = u''
+            suggestion = ''
         facet_page = ''
         is_model_selected = False
         is_country_selected = False
@@ -227,15 +227,15 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         if self.form.selected_facets:
             for facet in self.form.selected_facets:
                 facet_page += '&selected_facets=%s' % facet
-                if u'facet_model_name_exact:' in facet:
+                if 'facet_model_name_exact:' in facet:
                     is_model_selected = True
-                elif u'country_exact:' in facet:
+                elif 'country_exact:' in facet:
                     is_country_selected = True
-                elif u'language_exact:' in facet:
+                elif 'language_exact:' in facet:
                     is_language_selected = True
-                elif u'publisher_exact:' in facet:
+                elif 'publisher_exact:' in facet:
                     is_publisher_selected = True
-                elif u'feature_exact:' in facet:
+                elif 'feature_exact:' in facet:
                     is_feature_selected = True
         extra.update({'suggestion': suggestion,
                       'facet_page': facet_page,

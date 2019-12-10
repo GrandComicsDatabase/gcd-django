@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import os
 import os.path
@@ -75,7 +75,7 @@ def download(request):
                 (dump_info[0],
                  datetime.utcfromtimestamp(
                     os.stat(dump_info[1])[stat.ST_MTIME])))
-        except OSError, ose:
+        except OSError as ose:
             if ose.errno == errno.ENOENT:
                 timestamps.append((dump_info[0], 'never'))
             else:

@@ -1,7 +1,7 @@
 from django.db import models
 
-from character import Character
-from storyversion import StoryVersion
+from .character import Character
+from .storyversion import StoryVersion
 
 class Appearance(models.Model):
     class Meta:

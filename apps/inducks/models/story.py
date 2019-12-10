@@ -1,9 +1,9 @@
 from django.db import models
 
-from series import Series
-from issue import Issue
-from storyversion import StoryVersion
-from language import Language
+from .series import Series
+from .issue import Issue
+from .storyversion import StoryVersion
+from .language import Language
 
 class Story(models.Model):
     class Meta:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models, migrations
 from apps.oi import states
@@ -66,7 +66,7 @@ def move_first_line_from_title(apps, schema_editor):
 
     stories=Story.objects.filter(title_inferred=True,
                                  title__startswith='"',
-                                 title__endswith=u'\u201d',
+                                 title__endswith='\u201d',
                                  deleted=False)
     actual_move(apps, stories)
 

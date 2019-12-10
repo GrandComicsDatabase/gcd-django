@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from collections import OrderedDict
 
@@ -215,7 +215,7 @@ def get_brand_revision_form(user=None, revision=None,
         def __init__(self, *args, **kw):
             super(BrandRevisionForm, self).__init__(*args, **kw)
             # brand_group_other_publisher_id is last field, move it after group
-            ordering = self.fields.keys()
+            ordering = list(self.fields.keys())
             ordering.insert(ordering.index('group') + 1,
                             ordering.pop())
             new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])

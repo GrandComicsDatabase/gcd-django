@@ -41,13 +41,13 @@ class Reprint(models.Model):
         else:
             direction = 'from'
             story = self.origin
-        reprint = u'%s %s <i>sequence</i> <a target="_blank" href="%s#%d">%s</a>' % \
+        reprint = '%s %s <i>sequence</i> <a target="_blank" href="%s#%d">%s</a>' % \
                     (direction, story.issue.get_absolute_url(), 
                     esc(story.issue.full_name()), story.id, esc(story))
         if self.notes:
-            reprint = u'%s [%s]' % (reprint, esc(self.notes))
+            reprint = '%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
     def __unicode__(self):
-        return u'%s of %s is reprinted in %s of %s' % (self.origin,
+        return '%s of %s is reprinted in %s of %s' % (self.origin,
           self.origin.issue, self.target, self.target.issue)

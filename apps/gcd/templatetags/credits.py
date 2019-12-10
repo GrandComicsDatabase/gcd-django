@@ -154,7 +154,7 @@ def show_credit(story, credit):
         if language == 'en' or story.issue.series.language.code not in GENRES:
             story.genre = genres.replace('fantasy', 'fantasy-supernatural')
         else:
-            display_genre = u''
+            display_genre = ''
             for genre in genres.split(';'):
                 genre = genre.strip()
                 if genre in GENRES['en']:
@@ -162,7 +162,7 @@ def show_credit(story, credit):
                 else:
                     translation = ''
                 if translation:
-                    display_genre += u'%s (%s); ' % (translation, genre)
+                    display_genre += '%s (%s); ' % (translation, genre)
                 else:
                     display_genre += genre + '; '
             display_genre = display_genre.replace('(fantasy)',
@@ -282,7 +282,7 @@ def show_creator_credit(story, credit_type):
 
 
 def __format_keywords(keywords, join_on='; '):
-    if type(keywords) == unicode:
+    if type(keywords) == str:
         credit_value = keywords
     else:
         credit_value = esc(
@@ -297,7 +297,7 @@ def show_keywords(object):
 
 @register.filter
 def show_keywords_comma(object):
-    return __format_keywords(object.keywords, u', ')
+    return __format_keywords(object.keywords, ', ')
 
 
 @register.filter
@@ -312,7 +312,7 @@ def show_cover_contributor(cover_revision):
             else:
                 return text
         else:
-            return unicode(cover_revision.changeset.indexer.indexer) + \
+            return str(cover_revision.changeset.indexer.indexer) + \
               ' (from ' + cover_revision.file_source + ')'
     else:
         return cover_revision.changeset.indexer.indexer
@@ -320,11 +320,11 @@ def show_cover_contributor(cover_revision):
 
 @register.filter
 def show_country_info_by_code(code, name):
-    src = u'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
+    src = 'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
                                               code.lower())
-    alt = u'alt="%s"' % esc(code.upper())
-    title = u'title="%s"' % esc(name)
-    return mark_safe(u'%s %s %s' % (src, alt, title))
+    alt = 'alt="%s"' % esc(code.upper())
+    title = 'title="%s"' % esc(name)
+    return mark_safe('%s %s %s' % (src, alt, title))
 
 
 @register.filter
@@ -340,7 +340,7 @@ def show_country_info(country):
 
 @register.filter
 def get_country_flag(country):
-    return mark_safe(u'<img %s class="embedded_flag">'
+    return mark_safe('<img %s class="embedded_flag">'
                      % show_country_info(country))
 
 
@@ -361,18 +361,18 @@ def show_page_count(story, show_page=False):
     Return a properly formatted page count, with "?" as needed.
     """
     if story is None:
-        return u''
+        return ''
 
     if story.page_count is None:
         if story.page_count_uncertain:
-            return u'?'
-        return u''
+            return '?'
+        return ''
 
     p = format_page_count(story.page_count)
     if story.page_count_uncertain:
-        p = u'%s ?' % p
+        p = '%s ?' % p
     if show_page:
-        p = p + u' ' + ungettext('page', 'pages', story.page_count)
+        p = p + ' ' + ungettext('page', 'pages', story.page_count)
     return p
 
 
@@ -380,12 +380,12 @@ def show_page_count(story, show_page=False):
 def format_page_count(page_count):
     if page_count is not None:
         try:
-            return re.sub(r'\.?0+$', '', unicode(Decimal(page_count)
+            return re.sub(r'\.?0+$', '', str(Decimal(page_count)
                                                  .quantize(Decimal(10)**-3)))
         except InvalidOperation:
             return page_count
     else:
-        return u''
+        return ''
 
 
 @register.filter
@@ -394,14 +394,14 @@ def show_title(story, use_first_line=False):
     Return a properly formatted title.
     """
     if story is None:
-        return u''
+        return ''
     if story.title == '':
         if use_first_line and story.first_line:
-            return u'["%s"]' % story.first_line
+            return '["%s"]' % story.first_line
         else:
-            return u'[no title indexed]'
+            return '[no title indexed]'
     if story.title_inferred:
-        return u'[%s]' % story.title
+        return '[%s]' % story.title
     return story.title
 
 
@@ -410,10 +410,10 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
     ''' generate reprint link to_issue'''
 
     if only_number:
-        link = u', <a href="%s">%s</a>' % (issue.get_absolute_url(),
+        link = ', <a href="%s">%s</a>' % (issue.get_absolute_url(),
                                            esc(issue.display_number))
     else:
-        link = u'%s %s <a href="%s">%s</a>' % \
+        link = '%s %s <a href="%s">%s</a>' % \
           (get_country_flag(issue.series.country), from_to,
            issue.get_absolute_url(), esc(issue.full_name()))
 
@@ -431,16 +431,16 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
                                    only_number=False):
     ''' generate reprint link to story'''
     if only_number:
-        link = u', <a href="%s#%d">%s</a>' % (story.issue.get_absolute_url(),
+        link = ', <a href="%s#%d">%s</a>' % (story.issue.get_absolute_url(),
                                               story.id,
                                               esc(story.issue.display_number))
     elif story.sequence_number == 0:
-        link = u'%s %s <a href="%s#%d">%s</a>' % \
+        link = '%s %s <a href="%s#%d">%s</a>' % \
           (get_country_flag(story.issue.series.country), from_to,
            story.issue.get_absolute_url(), story.id,
            esc(story.issue.full_name()))
     else:
-        link = u'%s %s <a href="%s#%d">%s</a>' % \
+        link = '%s %s <a href="%s#%d">%s</a>' % \
           (get_country_flag(story.issue.series.country), from_to,
            story.issue.get_absolute_url(), story.id,
            esc(story.issue.full_name(variant_name=False)))

@@ -4,7 +4,7 @@ View methods related to displaying search and search results pages.
 """
 
 from re import match, split, sub
-from urllib import urlencode
+from urllib.parse import urlencode
 from decimal import Decimal
 from string import capitalize
 from haystack.backends import SQ
@@ -782,21 +782,21 @@ def search(request):
 def checklist_by_name(request, creator, country=None, language=None):
     creator = creator.replace('+', ' ').title()
     get = request.GET.copy()
-    get[u'target'] = u'issue'
-    get[u'script'] = creator
-    get[u'pencils'] = creator
-    get[u'inks'] = creator
-    get[u'colors'] = creator
-    get[u'letters'] = creator
-    get[u'story_editing'] = creator
-    get[u'logic'] = u'True'
-    get[u'order1'] = u'series'
-    get[u'order2'] = u'date'
-    get[u'method'] = u'icontains'
+    get['target'] = 'issue'
+    get['script'] = creator
+    get['pencils'] = creator
+    get['inks'] = creator
+    get['colors'] = creator
+    get['letters'] = creator
+    get['story_editing'] = creator
+    get['logic'] = 'True'
+    get['order1'] = 'series'
+    get['order2'] = 'date'
+    get['method'] = 'icontains'
     if country and Country.objects.filter(code=country).count() == 1:
-        get[u'country'] = country
+        get['country'] = country
     if language and Language.objects.filter(code=language).count() == 1:
-        get[u'language'] = language
+        get['language'] = language
     request.GET = get.copy()
     get.pop('page', None)
 
@@ -1045,9 +1045,9 @@ def used_search(search_values):
     if 'indexer' in search_values:
         indexers = Indexer.objects.filter(id__in=\
           search_values.getlist('indexer'))
-        text = unicode(indexers[0])
+        text = str(indexers[0])
         for indexer in indexers[1:]:
-            text += ', %s' % unicode(indexer)
+            text += ', %s' % str(indexer)
         used_search_terms.append(('indexer', text))
         del search_values['indexer']
     for i in search_values:
@@ -1134,7 +1134,7 @@ def combine_q(data, *qobjs):
     terms to work with the JOIN as they were added in each of the
     search_* methods.
     """
-    filtered = filter(lambda x: x != None, qobjs)
+    filtered = [x for x in qobjs if x != None]
     if filtered:
         return reduce(lambda x, y: x & y, filtered)
     return None
@@ -1545,8 +1545,8 @@ def handle_numbers(field, data, prefix):
             # as provided by __gte and __lte.  This is true even
             # when they *are* numbers because the database thinks
             # they are strings.
-            num_range = range(int(range_match.group('begin')),
-                              int(range_match.group('end')) + 1)
+            num_range = list(range(int(range_match.group('begin')),
+                              int(range_match.group('end')) + 1))
             nums_in.extend(num_range)
         else:
             nums_in.append(esc)

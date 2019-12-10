@@ -60,7 +60,7 @@ def issues_with_several_covers(request):
         # for the pagination bar and select box
         vars['query_string'] = 'publisher=709'
         get_copy = request.GET.copy()
-        get_copy['items'] = [(u'publisher', 709),]
+        get_copy['items'] = [('publisher', 709),]
         request.GET = get_copy
     issues = issues.filter(**qargs).order_by(*qorder)
     vars['form'] = form

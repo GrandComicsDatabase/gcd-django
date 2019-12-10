@@ -63,7 +63,7 @@ class ReceivedAwardRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ReceivedAwardRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields.keys())
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])

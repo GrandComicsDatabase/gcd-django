@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import re
 import six
@@ -541,7 +541,7 @@ def _set_help_labels(self, help_links):
                 label = self.fields[field].label
             self.fields[field].label = mark_safe(
                 label +
-                u' <a href="%s%s" target=_blank>[?]</a>' %
+                ' <a href="%s%s" target=_blank>[?]</a>' %
                 (DOC_URL, help_links[field]))
 
 
@@ -677,13 +677,13 @@ class ForeignKeyField(forms.IntegerField):
 class KeywordsWidget(forms.TextInput):
     def render(self, name, value, attrs=None):
         if value is not None and not isinstance(value, six.string_types):
-            value = u'; '.join([
+            value = '; '.join([
                 o.tag.name for o in value.select_related("tag")])
         return super(KeywordsWidget, self).render(name, value, attrs)
 
 
 class KeywordsField(forms.CharField):
-    _SPLIT_RE = re.compile(ur'\s*;\s*')
+    _SPLIT_RE = re.compile(r'\s*;\s*')
     _NOT_ALLOWED = ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']
 
     widget = KeywordsWidget

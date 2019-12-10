@@ -145,35 +145,35 @@ def field_value(revision, field):
                     total_pages = sum_page_counts(stories)
             sum_story_pages = format_page_count(total_pages)
 
-            return u'%s (note: total sum of story page counts is %s)' % \
+            return '%s (note: total sum of story page counts is %s)' % \
                    (format_page_count(value), sum_story_pages)
         return format_page_count(value)
     elif field == 'isbn':
         if value:
             if validated_isbn(value):
-                return u'%s (note: valid ISBN)' % show_isbn(value)
+                return '%s (note: valid ISBN)' % show_isbn(value)
             elif len(value.split(';')) > 1:
                 return_val = show_isbn(value) + ' (note: '
                 for isbn in value.split(';'):
-                    return_val = return_val + u'%s; ' % ("valid ISBN"
+                    return_val = return_val + '%s; ' % ("valid ISBN"
                                    if validated_isbn(isbn) else "invalid ISBN")
                 return return_val + 'ISBNs are inequal)'
             elif value:
-                return u'%s (note: invalid ISBN)' % value
+                return '%s (note: invalid ISBN)' % value
     elif field == 'barcode':
         if value:
             barcodes = value.split(';')
             return_val = show_barcode(value) + ' (note: '
             for barcode in barcodes:
-                return_val = return_val + u'%s; ' % ("valid UPC/EAN part"
+                return_val = return_val + '%s; ' % ("valid UPC/EAN part"
                              if valid_barcode(barcode)
                              else "invalid UPC/EAN part or non-standard")
             return return_val[:-2] + ')'
     elif field == 'leading_article':
         if value is True:
-            return u'Yes (sorted as: %s)' % remove_leading_article(revision.name)
+            return 'Yes (sorted as: %s)' % remove_leading_article(revision.name)
         else:
-            return u'No'
+            return 'No'
     elif field in ['has_barcode', 'has_isbn', 'has_issue_title',
                    'has_indicia_frequency', 'has_volume', 'has_rating']:
         if hasattr(revision, 'changed'):
@@ -254,7 +254,7 @@ def diff_list(prev_rev, revision, field):
 @register.filter
 def show_diff(diff_list, change):
     """show changes in diff with markings for add/delete"""
-    compare_string = u""
+    compare_string = ""
     span_tag = "<span class='%s'>%s</span>"
     if change == "orig":
         for i in diff_list:

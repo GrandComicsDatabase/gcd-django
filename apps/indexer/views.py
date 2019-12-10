@@ -7,7 +7,7 @@ The urls for these views are in the top-level urls.py file instead of
 the gcd app's urls.py, which was the start of an effort to split this
 out of the gcd app.
 """
-from __future__ import unicode_literals, absolute_import
+
 
 import re
 import hashlib
@@ -83,7 +83,7 @@ def render_error(request, error_text, redirect=True, is_safe=False):
                                  error_text=error_text,)
             return HttpResponseRedirect(
               urlresolvers.reverse('error') +
-              u'?error_key=' + key)
+              '?error_key=' + key)
 
         else:
             return HttpResponseRedirect(urlresolvers.reverse('error'))
@@ -280,7 +280,7 @@ def register(request):
     if cd['languages']:
         indexer.languages.add(*cd['languages'])
 
-    email_body = u"""
+    email_body = """
 Hello from the %s!
 
   We've received a request for an account using this email
@@ -362,7 +362,7 @@ def confirm_account(request, key):
         indexer.save()
         Collector.objects.create_collector(indexer.user)
 
-        email_body = u"""
+        email_body = """
 We have a new Indexer!
 
 Name: %s
@@ -451,7 +451,7 @@ def handle_existing_account(request, users):
               timedelta(settings.REGISTRATION_EXPIRATION_DELTA)
             user.indexer.save()
 
-            email_body = u"""
+            email_body = """
 Hello from the %s!
 
   We've received a request for resending the confirmation information
@@ -568,13 +568,13 @@ def update_profile(request, user_id=None):
     confirm = form.cleaned_data['confirm_new_password']
     if (new or confirm) and not old:
         errors.append(
-          u'You must supply your old password in order to change it.')
+          'You must supply your old password in order to change it.')
     elif old and (new or confirm):
         if not request.user.check_password(old):
-            errors.append(u'Old password incorrect, please try again.')
+            errors.append('Old password incorrect, please try again.')
         elif new != confirm:
             errors.append(
-              u'New password and confirm new password do not match.')
+              'New password and confirm new password do not match.')
         else:
             set_password = True
 

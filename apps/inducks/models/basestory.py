@@ -1,7 +1,7 @@
 from django.db import models
 
-from series import Series
-from issue import Issue
+from .series import Series
+from .issue import Issue
 
 class BaseStory(models.Model):
     class Meta:

@@ -142,7 +142,7 @@ def export_collection(request, collection_id):
     """
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
-    filename = unicode(collection).replace(' ', '_').encode('utf-8')
+    filename = str(collection).replace(' ', '_').encode('utf-8')
 
     export_data = ["issue__series__name", "issue__series__publisher__name",
                    "issue"]
@@ -247,7 +247,7 @@ def delete_item(request, item_id, collection_id):
     collection.items.remove(item)
     messages.success(
       request,
-      mark_safe(_(u"Item <b>%s</b> removed from %s" % (
+      mark_safe(_("Item <b>%s</b> removed from %s" % (
                   esc(item.issue.full_name()),
                   esc(collection)))))
     if not item.collections.count():
@@ -519,7 +519,7 @@ def add_single_issue_to_collection(request, issue_id):
     collected = create_collection_item(issue, collection)
     messages.success(
       request,
-      mark_safe(u"Issue <a href='%s'>%s</a> was added to your <b>%s</b> "
+      mark_safe("Issue <a href='%s'>%s</a> was added to your <b>%s</b> "
                 "collection." % (collected.get_absolute_url(collection),
                                  esc(issue), esc(collection.name))))
     request.session['collection_id'] = collection.id
@@ -631,7 +631,7 @@ def import_items(request):
 
         number_of_lines = file_len(tmpfile_name)
         if number_of_lines > 501:
-            messages.error(request, _(u'More than 500 lines. Please split'
+            messages.error(request, _('More than 500 lines. Please split'
                                       ' the import file into smaller chunks.'))
             return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
         rawdata = open(tmpfile_name, 'rb').read()
@@ -641,7 +641,7 @@ def import_items(request):
         tmpfile = open(tmpfile_name, 'U')
         upload = UnicodeReader(tmpfile, encoding=charenc)
         issues = Issue.objects.none()
-        line = upload.next()
+        line = next(upload)
         not_found = ""
         if line[0] == 'Title' and line[1] == 'Issue Number':
             comicbookdb = True
@@ -734,7 +734,7 @@ def add_series_issues_to_collection(request, series_id):
             page = ""
         messages.success(
           request,
-          mark_safe(u"All issues added to your <a href='%s%s'>%s</a> "
+          mark_safe("All issues added to your <a href='%s%s'>%s</a> "
                     "collection." % (collection.get_absolute_url(), page,
                                      esc(collection.name))))
         return add_issues_to_collection(
@@ -832,7 +832,7 @@ def subscribe_series(request, series_id):
                                                collection=collection)
     if subscription.exists():
         messages.error(
-          request, mark_safe(_(u'Series %s is already subscribed for the '
+          request, mark_safe(_('Series %s is already subscribed for the '
                              'collection %s.' % (esc(series),
                                                  esc(collection)))))
     elif series.is_current:
@@ -840,11 +840,11 @@ def subscribe_series(request, series_id):
                                             collection=collection,
                                             last_pulled=datetime.today())
         messages.success(
-          request, mark_safe(_(u'Series %s is now subscribed for the '
+          request, mark_safe(_('Series %s is now subscribed for the '
                              'collection %s.' % (esc(series),
                                                  esc(collection)))))
     else:
-        messages.error(request, _(u'Selected series is not ongoing.'))
+        messages.error(request, _('Selected series is not ongoing.'))
 
     return HttpResponseRedirect(urlresolvers.reverse('show_series',
                                 kwargs={'series_id': series_id}))

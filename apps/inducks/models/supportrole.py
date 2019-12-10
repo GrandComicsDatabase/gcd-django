@@ -1,7 +1,7 @@
 from django.db import models
 
-from story import Story
-from creator import Creator
+from .story import Story
+from .creator import Creator
 
 class SupportRole(models.Model):
     class Meta:

@@ -24,7 +24,7 @@ def test_create_add_revision(any_added_series_rev, series_add_values,
                              any_adding_changeset):
     rev = any_added_series_rev
 
-    for k, v in series_add_values.iteritems():
+    for k, v in series_add_values.items():
         assert getattr(rev, k) == v
 
     assert rev.series is None
@@ -68,7 +68,7 @@ def test_commit_added_revision(any_added_series_rev, series_add_values,
     assert rev.series is not None
     assert rev.source is rev.series
 
-    for k, v in series_add_values.iteritems():
+    for k, v in series_add_values.items():
         if k == 'keywords':
             kws = [k for k in rev.publisher.keywords.names()]
             kws.sort()
@@ -202,7 +202,7 @@ def test_create_edit_revision(any_added_series, series_add_values,
         rev = SeriesRevision.clone(data_object=any_added_series,
                                    changeset=any_editing_changeset)
 
-    for k, v in series_add_values.iteritems():
+    for k, v in series_add_values.items():
         assert getattr(rev, k) == v
 
     assert rev.series is any_added_series

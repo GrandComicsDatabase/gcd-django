@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from collections import OrderedDict
 
@@ -92,7 +92,7 @@ class UploadScanForm(forms.Form):
 class UploadVariantScanForm(UploadScanForm):
     def __init__(self, *args, **kwargs):
         super(UploadVariantScanForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields.keys())
         ordering.remove('variant_name')
         ordering.remove('variant_artwork')
         ordering.remove('reservation_requested')

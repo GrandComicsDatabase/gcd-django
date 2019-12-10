@@ -1,7 +1,7 @@
 """View methods for pages displaying entity details."""
 
 import re
-from urllib import urlopen
+from urllib.request import urlopen
 from datetime import date, timedelta
 
 from django.db.models import Q
@@ -30,7 +30,7 @@ def series(request, series_id):
     
     series = get_object_or_404(Series, id = series_id)
     issues = list(series.issue_set.order_by('number'))
-    print len(issues)
+    print(len(issues))
     
     return render_to_response('inducks/series.html', {
       'series' : series,

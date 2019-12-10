@@ -42,11 +42,11 @@ class AccountForm(forms.Form):
     """
     def __init__(self, *args, **kwargs):
         super(AccountForm, self).__init__(*args, **kwargs)
-        self.fields['email'].help_text = u'Your email address is your login' \
+        self.fields['email'].help_text = 'Your email address is your login' \
           ' name.  It will not be publicly displayed on the site.  Please ' \
           'see our <a target="_blank" href="%s">Privacy Policy</a> ' \
           'for more information.' % reverse('privacy')
-        self.fields['seen_privacy_policy'].help_text = u'Please confirm that' \
+        self.fields['seen_privacy_policy'].help_text = 'Please confirm that' \
           ' you have seen and agree with our <a target="_blank" href="%s">' \
           'Privacy Policy</a>.' % reverse('privacy')
 
@@ -73,23 +73,23 @@ class AccountForm(forms.Form):
       queryset=Language.objects.exclude(code='zxx').order_by('name'),
       required=False,
       widget=forms.SelectMultiple(attrs={'size': '6'}),
-      help_text=(u'Please let us know what languages you read so we know what '
-                 u'language(s) to use when contacting you.  Hold down your '
-                 u'Control (ctrl) key to select multiple languages (Command '
-                 u'key for some systems).'))
+      help_text=('Please let us know what languages you read so we know what '
+                 'language(s) to use when contacting you.  Hold down your '
+                 'Control (ctrl) key to select multiple languages (Command '
+                 'key for some systems).'))
 
     interests = forms.CharField(
       widget=forms.Textarea, required=False,
-      help_text=(u'Please tell us a bit about your comic book interests. '
-                 u'This helps us connect you with an editor knowledgeable in '
-                 u'your area to help you learn our indexing system. We might '
-                 u'also contact you in response to your given interests.'))
+      help_text=('Please tell us a bit about your comic book interests. '
+                 'This helps us connect you with an editor knowledgeable in '
+                 'your area to help you learn our indexing system. We might '
+                 'also contact you in response to your given interests.'))
 
     from_where = forms.CharField(
       widget=forms.Textarea, required=False,
       label='Where did you hear about us',
-      help_text=(u'Please tell us where you heard about the GCD. For example '
-                 u'a website, a blog, a search, a convention,...'))
+      help_text=('Please tell us where you heard about the GCD. For example '
+                 'a website, a blog, a search, a convention,...'))
 
     seen_privacy_policy = forms.BooleanField(label="Privacy policy",
                                              initial=False,
@@ -97,9 +97,9 @@ class AccountForm(forms.Form):
 
     opt_in_email = forms.BooleanField(
       label="Opt in for emails", initial=False, required=False,
-      help_text=(u'If checked, you indicate an interest in receiving '
-                 u'communication from the GCD, e.g. newsletters. You will '
-                 u'receive emails related to your data entries in any case.'))
+      help_text=('If checked, you indicate an interest in receiving '
+                 'communication from the GCD, e.g. newsletters. You will '
+                 'receive emails related to your data entries in any case.'))
 
     issue_detail = forms.ChoiceField(
       choices=[['0', 'core view'],
@@ -107,26 +107,26 @@ class AccountForm(forms.Form):
                ['2', 'all content (including ads)']],
       initial='1',
       label='Displayed content for issues',
-      help_text=(u'Select how detailed an issue is displayed. Core view '
-                 u'consists of story and cover sequences, editorial content '
-                 u'(default) has all content besides promos and ads. The other'
-                 u' issue content is accessible by a click.'))
+      help_text=('Select how detailed an issue is displayed. Core view '
+                 'consists of story and cover sequences, editorial content '
+                 '(default) has all content besides promos and ads. The other'
+                 ' issue content is accessible by a click.'))
 
     notify_on_approve = forms.BooleanField(
       label="All approval emails", initial=True, required=False,
-      help_text=(u'If checked, the system will email you when a change that '
-                 u'you submitted is approved.  You will always receive an'
-                 u' email if the editor comments on approval.'))
+      help_text=('If checked, the system will email you when a change that '
+                 'you submitted is approved.  You will always receive an'
+                 ' email if the editor comments on approval.'))
 
     collapse_compare_view = forms.BooleanField(
       label="Collapse issue compare view", required=False,
-      help_text=(u'If checked, the change comparison page for an issue will '
-                 u'show stories with no edits in a shortened version, with '
-                 u'a view of the full change accessible by a click.'))
+      help_text=('If checked, the change comparison page for an issue will '
+                 'show stories with no edits in a shortened version, with '
+                 'a view of the full change accessible by a click.'))
 
     show_wiki_links = forms.BooleanField(
       label="Wiki Links in OI", initial=True, required=False,
-      help_text=(u'If checked, the links to the documentation show in the OI'))
+      help_text=('If checked, the links to the documentation show in the OI'))
 
     def clean(self):
         cd = self.cleaned_data

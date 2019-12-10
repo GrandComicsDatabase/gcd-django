@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import mock
 import pytest
@@ -124,7 +124,7 @@ def test_init_prefix_multi(classes_and_fields):
         RelPath(starting_model_class, 'foo', 'bar')
 
     assert ("Many-valued relations cannot appear before the end of the path" in
-            unicode(excinfo.value))
+            str(excinfo.value))
 
 
 def test_init_non_rel(classes_and_fields):
@@ -156,13 +156,13 @@ def test_init_prefix_non_rel(classes_and_fields):
     with pytest.raises(ValueError) as excinfo:
         RelPath(starting_model_class, 'nonrel', 'doesntmatter')
 
-    assert "non-relational field" in unicode(excinfo.value)
+    assert "non-relational field" in str(excinfo.value)
 
 
 def test_init_no_field_names():
     with pytest.raises(TypeError) as excinfo:
         RelPath(models.Model)
-    assert "At least one field name is required" in unicode(excinfo.value)
+    assert "At least one field name is required" in str(excinfo.value)
 
 
 def test_empty_with_field(single_relpath, multi_relpath,
@@ -269,7 +269,7 @@ def test_get_value_instance_check(single_relpath, instance):
     single_relpath._first_model_class = models.Model
     with pytest.raises(ValueError) as excinfo:
         single_relpath.get_value(instance)
-    assert 'is not an instance of' in unicode(excinfo.value)
+    assert 'is not an instance of' in str(excinfo.value)
 
 
 def test_set_value_single(single_isinstance_passes, instance):
@@ -291,4 +291,4 @@ def test_set_value_instance_check(multi_relpath, instance):
     multi_relpath._first_model_class = models.Model
     with pytest.raises(ValueError) as excinfo:
         multi_relpath.set_value(instance, [1, 2, 3])
-    assert 'is not an instance of' in unicode(excinfo.value)
+    assert 'is not an instance of' in str(excinfo.value)

@@ -10,7 +10,7 @@ def show_form(field):
     on a per-field bases instead of the whole-form approach of the standard
     list display methods.
     """
-    return mark_safe(u'<li>%s%s%s</li>' %
+    return mark_safe('<li>%s%s%s</li>' %
                      (field.label_tag(), field, field.errors))
 
 def show_form_as_row(field):
@@ -20,8 +20,8 @@ def show_form_as_row(field):
     """
     last_row_tag = '<tr class="last_row_for_field">'
 
-    label_cell = u'<th>%s</th>' % field.label_tag()
-    value_cell = u'<td>%s</td>' % field
+    label_cell = '<th>%s</th>' % field.label_tag()
+    value_cell = '<td>%s</td>' % field
 
     main_row_tag = '<tr>'
     if not field.help_text and not field.errors:
@@ -32,11 +32,11 @@ def show_form_as_row(field):
         help_row_tag = '<tr>'
         if not field.errors:
             help_row_tag = last_row_tag
-        help_row = (u'%s<td></td><td class="help_cell">%s</td></tr>' %
+        help_row = ('%s<td></td><td class="help_cell">%s</td></tr>' %
                     (help_row_tag, field.help_text))
         rows += help_row
     if field.errors:
-        error_row = (u'%s<td></td><td class="error_cell">%s</td></tr>' %
+        error_row = ('%s<td></td><td class="error_cell">%s</td></tr>' %
                      (last_row_tag, field.errors))
         rows += error_row
 

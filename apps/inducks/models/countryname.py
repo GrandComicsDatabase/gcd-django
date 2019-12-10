@@ -1,7 +1,7 @@
 from django.db import models
 
-from country import Country
-from language import Language
+from .country import Country
+from .language import Language
 
 class CountryName(models.Model):
     class Meta:

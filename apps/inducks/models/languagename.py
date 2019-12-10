@@ -1,6 +1,6 @@
 from django.db import models
 
-from language import Language
+from .language import Language
 
 class LanguageName(models.Model):
     class Meta:

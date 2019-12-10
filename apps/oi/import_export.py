@@ -5,7 +5,7 @@ import tempfile
 import os
 import csv
 import codecs
-import cStringIO
+import io
 from codecs import EncodedFile, BOM_UTF16
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
@@ -89,7 +89,7 @@ class UTF8Recoder:
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
         return self.reader.next().encode("utf-8")
 
 
@@ -103,9 +103,9 @@ class UnicodeReader:
         f = UTF8Recoder(f, encoding)
         self.reader = csv.reader(f, dialect=dialect, **kwds)
 
-    def next(self):
+    def __next__(self):
         row = next(self.reader)
-        return [unicode(s, "utf-8") for s in row]
+        return [str(s, "utf-8") for s in row]
 
     def __iter__(self):
         return self
@@ -119,7 +119,7 @@ class UnicodeWriter:
 
     def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
         # Redirect output to a queue
-        self.queue = cStringIO.StringIO()
+        self.queue = io.StringIO()
         self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
         self.stream = f
         self.encoder = codecs.getincrementalencoder(encoding)()
@@ -149,10 +149,10 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
     ASCII string or a Unicode object.  The second element is True if the
     decoder was not successfully.
     """
-    if isinstance(s, unicode):
+    if isinstance(s, str):
         return s, False, None
     try:
-        x = unicode(s, "ascii")
+        x = str(s, "ascii")
         # if it's ascii, we're done
         return s, False, "ascii"
     except UnicodeError:
@@ -184,7 +184,7 @@ def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
                 continue
 
             try:
-                x = unicode(s, enc)
+                x = str(s, enc)
             except UnicodeError:
                 pass
             else:
@@ -263,7 +263,7 @@ def _process_file(request, changeset, is_issue, use_csv=False):
             decoded_line, failure, ignore = decode_heuristically(line, enc=enc)
             if failure:
                 error_text = 'line %s has unknown file encoding.' % line
-                error_text = unicode(error_text, errors='replace')
+                error_text = str(error_text, errors='replace')
                 return _handle_import_error(request, changeset, error_text)
 
             split_line = decoded_line.strip('\n').split('\t')
@@ -272,7 +272,7 @@ def _process_file(request, changeset, is_issue, use_csv=False):
         if is_issue and not lines:
             # check number of fields
             line_length = len(split_line)
-            if line_length not in range(MIN_ISSUE_FIELDS, MAX_ISSUE_FIELDS+1):
+            if line_length not in list(range(MIN_ISSUE_FIELDS, MAX_ISSUE_FIELDS+1)):
                 error_text = 'issue line %s has %d fields, it must have at '\
                              'least %d and not more than %d.' \
                   % (split_line, line_length, MIN_ISSUE_FIELDS,
@@ -294,8 +294,8 @@ def _process_file(request, changeset, is_issue, use_csv=False):
 
             # check number of fields
             line_length = len(split_line)
-            if line_length not in range(MIN_SEQUENCE_FIELDS,
-                                        MAX_SEQUENCE_FIELDS+1):
+            if line_length not in list(range(MIN_SEQUENCE_FIELDS,
+                                        MAX_SEQUENCE_FIELDS+1)):
                 error_text = 'sequence line %s has %d fields, it must have '\
                              'at least %d and not more than %d.' \
                   % (split_line, line_length, MIN_SEQUENCE_FIELDS,
@@ -409,10 +409,10 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         editing, no_editing = _check_for_none(fields[STORY_EDITING])
         genres = fields[GENRE].strip()
         if genres:
-            filtered_genres = u''
+            filtered_genres = ''
             for genre in genres.split(';'):
                 if genre.strip() in GENRES['en']:
-                    filtered_genres += u';' + genre
+                    filtered_genres += ';' + genre
             genre = filtered_genres[1:]
         else:
             genre = genres
@@ -640,11 +640,11 @@ def generate_reprint_link(reprints, direction):
                 issue = reprint.target_issue
             else:
                 issue = reprint.target.issue
-        reprint_note += u'%s %s' % (direction, issue.full_name())
+        reprint_note += '%s %s' % (direction, issue.full_name())
         if reprint.notes:
-            reprint_note = u'%s [%s]' % (reprint_note, reprint.notes)
+            reprint_note = '%s [%s]' % (reprint_note, reprint.notes)
         if issue.publication_date:
-            reprint_note += u" (" + issue.publication_date + ")"
+            reprint_note += " (" + issue.publication_date + ")"
         reprint_note += '; '
     return reprint_note
 
@@ -661,7 +661,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     else:
         issue = get_object_or_404(Issue, id=issue_id)
     series = issue.series
-    filename = unicode(issue).replace(' ', '_').encode('utf-8')
+    filename = str(issue).replace(' ', '_').encode('utf-8')
     if use_csv:
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="%s.csv"' % \
@@ -685,7 +685,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
           and getattr(issue, 'no_%s' % field_name):
             export_data.append('None')
         else:
-            export_data.append(unicode(getattr(issue, field_name)))
+            export_data.append(str(getattr(issue, field_name)))
     reprint = ''
     from_reprints = list(issue.from_reprints.select_related().all())
     from_reprints.extend(list(issue.from_issue_reprints.select_related()
@@ -699,7 +699,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     reprint += generate_reprint_link(to_reprints, 'in')
     if reprint != '':
         reprint = reprint[:-2]
-    export_data.append(unicode(reprint))
+    export_data.append(str(reprint))
     # keywords were added after reprint_links on issue level, so they come
     # later in the export
     # TODO check after refactor if this can be changed
@@ -720,7 +720,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                              getattr(sequence, 'no_%s' % field_name):
                 export_data.append('None')
             elif field_name == 'title' and sequence.title_inferred:
-                export_data.append(u'[%s]' % sequence.title)
+                export_data.append('[%s]' % sequence.title)
             elif field_name == 'reprint_notes':
                 reprint = ''
                 from_reprints = list(sequence.from_reprints.select_related()
@@ -744,7 +744,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                         reprint = reprint[:-2]
                 else:
                     reprint = sequence.reprint_notes
-                export_data.append(unicode(reprint))
+                export_data.append(str(reprint))
             elif field_name == 'keywords':
                 # TODO check after refactor if this can be changed
                 if revision:
@@ -752,7 +752,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                 else:
                     export_data.append(get_keywords(sequence))
             else:
-                export_data.append(unicode(getattr(sequence, field_name)))
+                export_data.append(str(getattr(sequence, field_name)))
         if use_csv:
             writer.writerow(export_data)
         else:

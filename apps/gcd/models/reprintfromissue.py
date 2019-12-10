@@ -39,18 +39,18 @@ class ReprintFromIssue(models.Model):
 
     def get_compare_string(self, base_issue):
         if self.origin_issue == base_issue:
-            reprint = u'in %s <i>sequence</i> <a target="_blank" href="%s#%d">%s</a>' % \
+            reprint = 'in %s <i>sequence</i> <a target="_blank" href="%s#%d">%s</a>' % \
                         (self.target.issue.get_absolute_url(),
                          esc(self.target.issue.full_name()),
                          self.target.id, esc(self.target))
         else:
-            reprint = u'from <a target="_blank" href="%s">%s</a>' % \
+            reprint = 'from <a target="_blank" href="%s">%s</a>' % \
                         (self.origin_issue.get_absolute_url(),
                          esc(self.origin_issue.full_name()))
         if self.notes:
-            reprint = u'%s [%s]' % (reprint, esc(self.notes))
+            reprint = '%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
     def __unicode__(self):
-        return u'%s reprinted in %s of %s' % (self.origin_issue, self.target,
+        return '%s reprinted in %s of %s' % (self.origin_issue, self.target,
                                               self.target.issue)
