@@ -123,7 +123,10 @@ MIDDLEWARE_CLASSES = (
    'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
    'apps.middleware.errorhandling.ErrorHandlingMiddleware',
-   'apps.middleware.stripwhitespace.StripWhitespaceMiddleware'
+   # TODO: This does not work on Python3.  We should measure
+   #       and see if we really need this functionality, and
+   #       if so how to get it on Python3.
+   # 'apps.middleware.stripwhitespace.StripWhitespaceMiddleware'
 )
 
 LANGUAGES = (
