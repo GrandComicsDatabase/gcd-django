@@ -45,7 +45,7 @@ def store_select_data(request, select_key, data):
         select_key = hashlib.sha1(salt + str(request.user)).hexdigest()
     for item in data:
         request.session['%s_%s' % (select_key, item)] = data[item]
-    request.session['%s_items' % select_key] = list(data.keys())
+    request.session['%s_items' % select_key] = list(data)
     return select_key
 
 

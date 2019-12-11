@@ -8,7 +8,7 @@ from django.http import HttpResponsePermanentRedirect
 
 
 def _find_key(request, key='SeriesID'):
-    matches = [k for k in list(request.GET.keys()) if re.match('%s$' %key, k, re.IGNORECASE)]
+    matches = [k for k in list(request.GET) if re.match('%s$' %key, k, re.IGNORECASE)]
     if len(matches) > 0:
         return request.GET[matches[0]]
 

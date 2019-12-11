@@ -2049,7 +2049,7 @@ def _display_add_series_form(request, publisher, form):
 
 
 def init_added_variant(form_class, initial, issue, revision=False):
-    for key in list(initial.keys()):
+    for key in list(initial):
         if key.startswith('_'):
             initial.pop(key)
     if issue.brand:
