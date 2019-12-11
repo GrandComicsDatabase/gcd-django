@@ -17,5 +17,5 @@ class Appearance(models.Model):
                                   db_column = 'charactercode')
     story_version = models.ForeignKey(StoryVersion, 
                             db_column = 'storyversioncode', null = True)
-    #def __unicode__(self):
+    #def __str__(self):
         #return str(self.character) + str(self.story_version)

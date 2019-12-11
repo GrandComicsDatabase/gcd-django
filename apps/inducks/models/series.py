@@ -38,6 +38,6 @@ class Series(models.Model):
     def get_absolute_url(self):
         return "/gcd/series/%i/" % self.id
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
