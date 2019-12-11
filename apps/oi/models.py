@@ -899,7 +899,7 @@ class Changeset(models.Model):
             return calculated + IMP_BONUS_ADD
         return calculated
 
-    def __unicode__(self):
+    def __str__(self):
         if self.inline():
             return str(self.inline_revision())
         if self.change_type in CTYPES_BULK:
@@ -1964,7 +1964,7 @@ class Revision(models.Model):
     # #####################################################################
     # Methods not involved in the Revision lifecycle.
 
-    def __unicode__(self):
+    def __str__(self):
         """
         String representation for debugging purposes only.
 
@@ -2152,7 +2152,7 @@ class Revision(models.Model):
     def queue_name(self):
         """
         Long name form to display in queues.
-        This allows revision objects to use their linked object's __unicode__
+        This allows revision objects to use their linked object's __str__
         method for compatibility in preview pages, but display a more
         verbose form in places like queues that need them.
 
@@ -2233,7 +2233,7 @@ class OngoingReservation(models.Model):
     """
     created = models.DateTimeField(auto_now_add=True, db_index=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s reserved by %s' % (self.series, self.indexer.indexer)
 
 
@@ -2252,7 +2252,7 @@ class PublisherRevisionBase(Revision):
     keywords = models.TextField(blank=True, default='')
     url = models.URLField(blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         if self.source is None:
             return self.name
         return str(self.source)
@@ -2743,7 +2743,7 @@ class BrandUseRevision(Revision):
         self.publisher = publisher
         self.emblem = emblem
 
-    def __unicode__(self):
+    def __str__(self):
         return 'brand emblem %s used by %s.' % (self.emblem, self.publisher)
 
     ######################################
@@ -2988,7 +2988,7 @@ class CoverRevision(Revision):
             return "/cover/revision/%i/preview" % self.id
         return self.cover.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.issue)
 
 
@@ -3174,7 +3174,7 @@ class SeriesRevision(Revision):
             return "/series/revision/%i/preview" % self.id
         return self.series.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.series is None:
             return '%s (%s series)' % (self.name, self.year_began)
         return str(self.series)
@@ -3364,7 +3364,7 @@ class SeriesBondRevision(Revision):
             self.series_bond = series_bond
             self.save()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.origin_issue:
             object_string = '%s' % self.origin_issue
         else:
@@ -4193,7 +4193,7 @@ class IssueRevision(Revision):
         else:
             return '%s %s' % (self.series.name, self.display_number)
 
-    def __unicode__(self):
+    def __str__(self):
         """
         Re-implement locally instead of using self.issue because it may change.
         """
@@ -4722,7 +4722,7 @@ class StoryRevision(Revision):
     def show_feature(self):
         return show_feature(self)
 
-    def __unicode__(self):
+    def __str__(self):
         """
         Re-implement locally instead of using self.story because it may change.
         """
@@ -5253,7 +5253,7 @@ class FeatureRevision(Revision):
             return "/feature/revision/%i/preview" % self.id
         return self.feature.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % (self.name)
 
     ######################################
@@ -5347,7 +5347,7 @@ class FeatureLogoRevision(Revision):
             return "/feature_logo/revision/%i/preview" % self.id
         return self.feature_logo.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % (self.name)
 
     ######################################
@@ -5460,7 +5460,7 @@ class FeatureRelationRevision(Revision):
             self.feature_relation = feature_relation
             self.save()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s >%s< %s' % (str(self.from_feature),
                                 str(self.relation_type),
                                 str(self.to_feature)
@@ -5884,7 +5884,7 @@ class ReprintRevision(Revision):
                     show_story_short(self.previous_revision.origin_story)
         return mark_safe(reprint)
 
-    def __unicode__(self):
+    def __str__(self):
         from apps.gcd.templatetags.credits import show_title
         if self.origin_story or self.origin_revision:
             if self.origin_story:
@@ -6040,7 +6040,7 @@ class ImageRevision(Revision):
             _clear_image_cache(image.icon)
         self.save()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.source is None:
             return 'Image for %s' % str(self.object)
         return str(self.source)
@@ -6082,7 +6082,7 @@ class AwardRevision(Revision):
             return "/award/revision/%i/preview" % self.id
         return self.award.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     # #####################################################################
@@ -6157,7 +6157,7 @@ class ReceivedAwardRevision(Revision):
             return "/received_award/revision/%i/preview" % self.id
         return self.received_award.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.award:
             name = '%s - %s' % (self.award.name, self.award_name)
         else:
@@ -6316,7 +6316,7 @@ class DataSourceRevision(Revision):
             self.data_source = data_source
             self.save()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (
             str(self.field), str(self.source_type.type))
 
@@ -6659,7 +6659,7 @@ class CreatorRevision(Revision):
             return "/creator/revision/%i/preview" % self.id
         return self.creator.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s' % str(self.gcd_official_name)
 
     # #####################################################################
@@ -6866,7 +6866,7 @@ class CreatorRelationRevision(Revision):
             self.creator_relation = creator_relation
             self.save()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s >%s< %s' % (str(self.from_creator),
                                 str(self.relation_type),
                                 str(self.to_creator)
@@ -6926,7 +6926,7 @@ class CreatorNameDetailRevision(Revision):
     def _post_create_for_add(self, changes):
         self.creator = self.creator_revision.creator
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s (%s)' % (
             str(self.creator), str(self.name), str(self.type.type))
 
@@ -7012,7 +7012,7 @@ class CreatorSchoolRevision(Revision):
             return "/creator_school/revision/%i/preview" % self.id
         return self.creator_school.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (
             str(self.creator), str(self.school.school_name))
 
@@ -7121,7 +7121,7 @@ class CreatorDegreeRevision(Revision):
             return "/creator_degree/revision/%i/preview" % self.id
         return self.creator_degree.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (
             str(self.creator), str(self.degree.degree_name))
 
@@ -7225,7 +7225,7 @@ class CreatorMembershipRevision(Revision):
             return "/creator_membership/revision/%i/preview" % self.id
         return self.creator_membership.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: %s' % (self.creator, str(self.organization_name))
 
     # #####################################################################
@@ -7337,7 +7337,7 @@ class CreatorArtInfluenceRevision(Revision):
             return "/creator_art_influence/revision/%i/preview" % self.id
         return self.creator_art_influence.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.influence_name:
             influence = self.influence_name
         else:
@@ -7499,7 +7499,7 @@ class CreatorNonComicWorkRevision(Revision):
             return "/creator_non_comic_work/revision/%i/preview" % self.id
         return self.creator_non_comic_work.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: %s' % (str(self.creator),
                             str(self.publication_title))
 

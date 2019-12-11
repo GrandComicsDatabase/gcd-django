@@ -20,7 +20,7 @@ class ImageType(models.Model):
     unique = models.BooleanField(default=True)
     description = models.CharField(max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 # we need to save the model instance first without a file to get an id and
@@ -90,5 +90,5 @@ class Image(models.Model):
         else:
             return ''
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s: %s' % (str(self.object), self.type.description.capitalize())

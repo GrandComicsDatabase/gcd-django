@@ -15,7 +15,7 @@ class SourceType(models.Model):
 
     type = models.CharField(max_length=50)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.type)
 
 
@@ -34,7 +34,7 @@ class DataSource(GcdData):
     source_description = models.TextField()
     field = models.CharField(max_length=256)
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s - %s' % (str(self.field),
                             str(self.source_type.type))
 

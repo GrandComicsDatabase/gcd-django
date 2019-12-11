@@ -119,7 +119,7 @@ class StoryType(models.Model):
     def natural_key(self):
         return (self.name,)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -268,7 +268,7 @@ class Story(GcdData):
             'show_issue',
             kwargs={'issue_id': self.issue_id}) + "#%d" % self.id
 
-    def __unicode__(self):
+    def __str__(self):
         from apps.gcd.templatetags.display import show_story_short
         return show_story_short(self, no_number=True, markup=False)
 

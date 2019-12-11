@@ -127,7 +127,7 @@ class Collection(models.Model):
         return urlresolvers.reverse('view_collection',
                                     kwargs={'collection_id':self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.name)
 
 
@@ -150,7 +150,7 @@ class Location(models.Model):
     name = models.CharField(blank=True, max_length=255)
     description = models.TextField(blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.name)
 
 
@@ -163,7 +163,7 @@ class PurchaseLocation(models.Model):
     name = models.CharField(blank=True, max_length=255)
     description = models.TextField(blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.name)
 
 
@@ -243,7 +243,7 @@ class ConditionGradeScale(models.Model):
     name=models.CharField(blank=False,max_length=255)
     description=models.CharField(max_length=2000, blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.name)
 
 
@@ -261,6 +261,6 @@ class ConditionGrade(models.Model):
     def __cmp__(self, other):
         return self.value.__cmp__(other.value)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s - %s" % (self.code, self.name)
 

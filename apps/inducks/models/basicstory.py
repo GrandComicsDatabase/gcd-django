@@ -21,6 +21,6 @@ class BaseStory(models.Model):
                              null = True)
     error_message = models.TextField(db_column = 'errormessage', null = True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.id
 

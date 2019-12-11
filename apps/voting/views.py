@@ -1,7 +1,7 @@
 import hashlib
 import os.path
 from datetime import datetime
-from pyvotecore.schulze_method import SchulzeMethod
+from py3votecore.schulze_method import SchulzeMethod
 
 from django.conf import settings
 from django.db.models import Q
