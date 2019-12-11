@@ -121,16 +121,16 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='creatorrevision',
             name='bio',
-            field=models.TextField(blank=True, default=b''),
+            field=models.TextField(blank=True, default=''),
         ),
         migrations.AlterField(
             model_name='creatorrevision',
             name='notes',
-            field=models.TextField(blank=True, default=b''),
+            field=models.TextField(blank=True, default=''),
         ),
         migrations.AlterField(
             model_name='creatorrevision',
             name='whos_who',
-            field=models.URLField(blank=True, default=b''),
+            field=models.URLField(blank=True, default=''),
         ),
     ]

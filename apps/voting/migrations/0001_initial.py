@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('uses_tokens', models.BooleanField(default=False)),
                 ('allows_abstentions', models.BooleanField(default=False)),
-                ('quorum', models.IntegerField(default=1, help_text=b'Quorum must always be at least 1', blank=True)),
+                ('quorum', models.IntegerField(default=1, help_text='Quorum must always be at least 1', blank=True)),
                 ('secret_ballot', models.BooleanField(default=False)),
                 ('permission', models.ForeignKey(to='auth.Permission')),
                 ('subscribers', models.ManyToManyField(related_name='subscribed_agendas', editable=False, to=settings.AUTH_USER_MODEL)),
@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=255)),
                 ('notes', models.TextField(null=True, blank=True)),
-                ('state', models.NullBooleanField(choices=[(None, b'Pending'), (True, b'Open'), (False, b'Closed')])),
+                ('state', models.NullBooleanField(choices=[(None, 'Pending'), (True, 'Open'), (False, 'Closed')])),
                 ('created', models.DateTimeField(auto_now_add=True, db_index=True)),
                 ('updated', models.DateTimeField(auto_now=True, null=True)),
                 ('agenda', models.ForeignKey(related_name='items', to='voting.Agenda')),
@@ -98,7 +98,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=255)),
                 ('text', models.TextField(null=True, blank=True)),
-                ('ballot_position', models.IntegerField(help_text=b'Optional whole number used to arrange the options in an order other than alphabetical by name.', null=True, blank=True)),
+                ('ballot_position', models.IntegerField(help_text='Optional whole number used to arrange the options in an order other than alphabetical by name.', null=True, blank=True)),
                 ('result', models.NullBooleanField()),
             ],
             options={
@@ -158,8 +158,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=255)),
-                ('max_votes', models.IntegerField(default=1, help_text=b'Having more votes than winners sets up ranked choice voting.  Leave max votes blank to allow as many ranks as options.', null=True, blank=True)),
-                ('max_winners', models.IntegerField(default=1, help_text=b'Having more than one winner allows votes to be cast for up to that many options.')),
+                ('max_votes', models.IntegerField(default=1, help_text='Having more votes than winners sets up ranked choice voting.  Leave max votes blank to allow as many ranks as options.', null=True, blank=True)),
+                ('max_winners', models.IntegerField(default=1, help_text='Having more than one winner allows votes to be cast for up to that many options.')),
             ],
             options={
                 'db_table': 'voting_vote_type',
@@ -169,7 +169,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='topic',
             name='vote_type',
-            field=models.ForeignKey(related_name='topics', to='voting.VoteType', help_text=b'Pass / Fail types will automatically create their own Options if none are specified directly.  For other types, add Options below.'),
+            field=models.ForeignKey(related_name='topics', to='voting.VoteType', help_text='Pass / Fail types will automatically create their own Options if none are specified directly.  For other types, add Options below.'),
             preserve_default=True,
         ),
         migrations.AddField(

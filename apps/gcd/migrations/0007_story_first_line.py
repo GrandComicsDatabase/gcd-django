@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='story',
             name='first_line',
-            field=models.CharField(default=b'', max_length=255),
+            field=models.CharField(default='', max_length=255),
             preserve_default=True,
         ),
     ]

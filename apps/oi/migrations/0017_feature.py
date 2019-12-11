@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                 ('year_created', models.IntegerField(blank=True, db_index=True, null=True)),
                 ('year_created_uncertain', models.BooleanField(default=False)),
                 ('notes', models.TextField(blank=True)),
-                ('keywords', models.TextField(blank=True, default=b'')),
+                ('keywords', models.TextField(blank=True, default='')),
                 ('changeset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='featurerevisions', to='oi.Changeset')),
                 ('feature', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='revisions', to='gcd.Feature')),
                 ('feature_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='gcd.FeatureType')),

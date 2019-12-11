@@ -15,12 +15,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='creatornamedetail',
             name='family_name',
-            field=models.CharField(db_index=True, default=b'', max_length=255),
+            field=models.CharField(db_index=True, default='', max_length=255),
         ),
         migrations.AddField(
             model_name='creatornamedetail',
             name='given_name',
-            field=models.CharField(db_index=True, default=b'', max_length=255),
+            field=models.CharField(db_index=True, default='', max_length=255),
         ),
         migrations.AlterModelOptions(
             name='creatornamedetail',
