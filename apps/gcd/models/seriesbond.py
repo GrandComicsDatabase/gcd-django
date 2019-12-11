@@ -17,7 +17,7 @@ class SeriesBondType(models.Model):
     description = models.TextField()
     notes = models.TextField(blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.description
 
 class SeriesBond(models.Model):
@@ -47,7 +47,7 @@ class SeriesBond(models.Model):
     def deletable(self):
         return True
 
-    def __unicode__(self):
+    def __str__(self):
         if self.origin_issue:
             object_string = '%s' % self.origin_issue
         else:

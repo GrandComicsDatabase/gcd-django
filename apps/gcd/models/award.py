@@ -33,7 +33,7 @@ class Award(GcdData):
                 'show_award',
                 kwargs={'award_id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.name)
 
 
@@ -91,5 +91,5 @@ class ReceivedAward(GcdData):
                 'show_received_award',
                 kwargs={'received_award_id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.award_name)

@@ -134,7 +134,7 @@ class Indexer(models.Model):
     def get_absolute_url(self):
         return self.user.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.user.first_name and self.user.last_name:
             full_name = '%s %s' % (self.user.first_name, self.user.last_name)
         elif self.user.first_name:
@@ -170,5 +170,5 @@ class Error(models.Model):
 
     is_safe = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.error_text

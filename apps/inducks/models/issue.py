@@ -31,5 +31,5 @@ class Issue(models.Model):
     series = models.ForeignKey(Series,
                                db_column = 'publicationcode')
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.series.name) + " #" + self.number

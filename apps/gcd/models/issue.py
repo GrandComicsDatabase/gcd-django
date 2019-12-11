@@ -426,7 +426,7 @@ class Issue(GcdData):
         else:
             return '%s %s' % (self.series.name, self.display_number)
 
-    def __unicode__(self):
+    def __str__(self):
         if self.variant_name:
             return '%s %s [%s]' % (self.series, self.display_number,
                                     self.variant_name)

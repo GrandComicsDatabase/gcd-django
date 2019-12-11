@@ -21,6 +21,6 @@ class BaseStory(models.Model):
     error_message = models.TextField(db_column = 'errormessage', null = True)
     original_story = models.CharField(max_length = 20, 
                                     db_column = 'originalstoryversioncode')
-    def __unicode__(self):
+    def __str__(self):
         return self.id
 

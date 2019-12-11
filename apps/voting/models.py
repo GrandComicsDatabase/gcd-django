@@ -69,7 +69,7 @@ class MailingList(models.Model):
     class Meta:
         db_table = 'voting_mailing_list'
     address = models.EmailField()
-    def __unicode__(self):
+    def __str__(self):
         return self.address
 
 class Agenda(models.Model):
@@ -89,7 +89,7 @@ class Agenda(models.Model):
     def get_absolute_url(self):
         return urlresolvers.reverse('agenda', kwargs={'id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class AgendaItem(models.Model):
@@ -123,7 +123,7 @@ class AgendaItem(models.Model):
     def closed(self):
         return self.state is False
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 def agenda_item_pre_save(sender, **kwargs):
@@ -224,7 +224,7 @@ class VoteType(models.Model):
     def natural_key(self):
         return (self.name,)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class Topic(models.Model):
@@ -323,7 +323,7 @@ class Topic(models.Model):
         receipts = self.receipts.filter(voter=user)
         return votes.count() > 0 or receipts.count() > 0
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 def topic_pre_save(sender, **kwargs):
@@ -406,7 +406,7 @@ class Option(models.Model):
     def rank(self, user):
         return self.votes.get(voter=user).rank
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class Receipt(models.Model):
@@ -425,7 +425,7 @@ class Vote(models.Model):
     created = models.DateTimeField(auto_now_add=True, editable=False)
     updated = models.DateTimeField(null=True, auto_now=True, editable=False)
 
-    def __unicode__(self):
+    def __str__(self):
         string = '%s: %s' % (self.voter.indexer, self.option)
         if self.rank is not None:
             return string + (' %d' % self.rank)
@@ -442,7 +442,7 @@ class ExpectedVoter(models.Model):
         ordering = ('tenure_began', 'tenure_ended',
                     'voter__last_name', 'voter__first_name')
 
-    def __unicode__(self):
+    def __str__(self):
         uni = '%s (%s - ' % (self.voter_name(), self.tenure_began)
         if self.tenure_ended is None:
             return uni + 'present)'

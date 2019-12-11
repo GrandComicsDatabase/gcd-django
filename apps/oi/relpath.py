@@ -166,7 +166,7 @@ class RelPath(object):
                 values.append(self.get_empty_value(field=self._fields[i]))
         return values
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s.%s' % (self._first_model_class.__name__,
                           '.'.join(self._names))
 
