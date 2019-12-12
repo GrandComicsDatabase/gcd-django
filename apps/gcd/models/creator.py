@@ -174,7 +174,7 @@ class CreatorNameDetail(GcdData):
             year = '(b. %s)' % self.creator.birth_date.year
         else:
             year = ''
-        if self.type.id == 1:
+        if self.type.id == 1 or self.is_official_name:
             return '%s %s (%s)' % (unicode(self.name), year,
                                    unicode(self.type.type))
         else:

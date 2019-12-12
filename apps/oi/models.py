@@ -608,7 +608,8 @@ class Changeset(models.Model):
         if self.approver is None and (
                 self.indexer.indexer.is_new and
                 self.indexer.indexer.mentor is not None and
-                self.change_type != CTYPES['cover']):
+                self.change_type != CTYPES['cover'] and
+                self.change_type != CTYPES['image']):
             self.approver = self.indexer.indexer.mentor
 
         new_state = states.PENDING
@@ -4499,14 +4500,16 @@ class StoryRevision(Revision):
         issue_revision = changeset.issuerevisions.get(issue=issue)
         revision.issue = issue
         revision.sequence_number = issue_revision.next_sequence_number()
+        credits = story.active_credits
         if revision.issue.series.language != story.issue.series.language:
             if revision.letters:
                 revision.letters = u'?'
             revision.title = u''
             revision.title_inferred = False
             revision.first_line = u''
+            credits = credits.exclude(CREDIT_TYPES['letters'])
         revision.save()
-        for credit in story.active_credits:
+        for credit in credits:
             StoryCreditRevision.clone(credit, revision.changeset,
                                       fork=True, story_revision=revision)
         return revision
