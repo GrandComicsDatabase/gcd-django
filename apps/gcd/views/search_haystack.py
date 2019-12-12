@@ -76,7 +76,7 @@ def parse_query_into_sq(query, fields):
     sq = None
     not_sq = None
     or_flag = False
-    for phrase in safe_split(query.encode('utf-8')):
+    for phrase in safe_split(query):
         if phrase[0] == '-' and len(phrase) > 1:
             not_sq = prepare_sq(phrase[1:], fields, not_sq)
             or_flag = False
