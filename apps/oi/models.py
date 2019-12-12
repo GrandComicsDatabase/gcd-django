@@ -4507,7 +4507,7 @@ class StoryRevision(Revision):
             revision.title = u''
             revision.title_inferred = False
             revision.first_line = u''
-            credits = credits.exclude(CREDIT_TYPES['letters'])
+            credits = credits.exclude(credit_type=CREDIT_TYPES['letters'])
         revision.save()
         for credit in credits:
             StoryCreditRevision.clone(credit, revision.changeset,
