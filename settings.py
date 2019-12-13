@@ -258,6 +258,9 @@ HAYSTACK_CONNECTIONS = {
     },
 }
 
+# This processes the updates inline, and shouldn't be used in production.
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+
 # assumingly this needs elasticstack
 ELASTICSEARCH_INDEX_SETTINGS = {
     # index settings
