@@ -155,6 +155,7 @@ h3.feature {
 
 h3.feature a {
     color: #000;
+    text-decoration: underline;
 }
 
 h2.title {

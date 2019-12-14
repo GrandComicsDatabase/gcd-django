@@ -525,7 +525,7 @@ VARIANT_NAME_HELP_TEXT = (
     'the issue), "2nd printing", "newsstand", "direct", or the name of '
     'the artist if different from the base issue.')
 
-BIBLIOGRAPHIC_ENTRY_HELP_LINKS = {
+BIBLIOGRAPHIC_ENTRY_HELP_TEXT = {
     'page_began': 'Enter the first and if existing last page.',
     'abstract': 'The printed abstract of the bibliographic entry.',
     'doi': 'The Digital Object Identifier (DOI) for the entry.',

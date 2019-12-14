@@ -28,7 +28,7 @@ from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
     SEQUENCE_HELP_LINKS, BIBLIOGRAPHIC_ENTRY_HELP_LINKS,
-    HiddenInputWithHelp, PageCountInput)
+    BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
 
 def get_reprint_revision_form(revision=None, user=None):
@@ -148,9 +148,10 @@ class StoryCreditRevisionForm(forms.ModelForm):
                   'is_signed', 'signed_as', 'uncertain', 'credit_name']
         help_texts = {
             'credit_type':
-                'Selecting "pencil and inks", "pencils, inks, and colors", or'
-                ' "painting" will after saving create credit entries for '
-                '"pencils", "inks" and for the latter two also for "colors".',
+                'Selecting multi-credit entries such as "pencil and inks", or'
+                ' "pencils, inks, and colors", will after saving create credit'
+                ' entries for the different credit types. Selecting "painting"'
+                ' will also add a credit description.',
             'credit_name':
                 'Enter here additional specifications for the credit, for '
                 'example "finishes", "flats", or "pages 1-3".',
@@ -488,10 +489,13 @@ class StoryRevisionForm(forms.ModelForm):
                       self.data['story_credit_revisions-%d-credit_type' % i]
                     if credit_type == CREDIT_TYPES[seq_type]:
                         seq_type_found = True
-                    elif seq_type in ['pencils', 'inks'] and \
-                      credit_type in ['7', '8', '9']:
+                    elif seq_type == 'script' and credit_type in ['10', '11']:
                         seq_type_found = True
-                    elif seq_type == 'colors' and credit_type in ['8', '9']:
+                    elif seq_type in ['pencils', 'inks'] and \
+                      credit_type in ['7', '8', '9', '10', '11']:
+                        seq_type_found = True
+                    elif seq_type == 'colors' and credit_type in ['8', '9',
+                                                                  '11']:
                         seq_type_found = True
 
             if cd['type'].id in NON_OPTIONAL_TYPES:
@@ -539,7 +543,11 @@ class BiblioRevisionForm(forms.ModelForm):
     class Meta:
         model = BiblioEntryRevision
         fields = ['page_began', 'page_ended', 'abstract', 'doi']
-        help_texts = BIBLIOGRAPHIC_ENTRY_HELP_LINKS
+        help_texts = BIBLIOGRAPHIC_ENTRY_HELP_TEXT
+
+    doi = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                          required=False, label='DOI',
+                          help_text=BIBLIOGRAPHIC_ENTRY_HELP_TEXT['doi'])
 
     def clean(self):
         cd = self.cleaned_data
