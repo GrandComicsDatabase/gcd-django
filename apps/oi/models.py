@@ -46,7 +46,7 @@ from apps.gcd.models import (
 from apps.gcd.models.gcddata import GcdData
 
 from apps.gcd.models.issue import issue_descriptor
-from apps.gcd.models.story import show_feature
+from apps.gcd.models.story import show_feature, show_feature_as_text
 
 from apps.indexer.views import ErrorWithMessage
 
@@ -4729,6 +4729,9 @@ class StoryRevision(Revision):
 
     def show_feature(self):
         return show_feature(self)
+
+    def show_feature_as_text(self):
+        return show_feature_as_text(self)
 
     def __unicode__(self):
         """

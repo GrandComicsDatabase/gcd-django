@@ -63,6 +63,23 @@ def show_feature(story):
     return mark_safe(features)
 
 
+def show_feature_as_text(story):
+    first = True
+    features = u''
+    for feature in story.feature_object.all():
+        if first:
+            first = False
+        else:
+            features += u'; '
+        features += u'%s' % feature.name
+    if story.feature:
+        if features:
+            features += u'; %s' % story.feature
+        else:
+            features = story.feature
+    return features
+
+
 class CreditType(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -241,20 +258,7 @@ class Story(GcdData):
         return self._show_feature(self)
 
     def show_feature_as_text(self):
-        first = True
-        features = u''
-        for feature in self.feature_object.all():
-            if first:
-                first = False
-            else:
-                features += u'; '
-            features += u'%s' % feature.name
-        if self.feature:
-            if features:
-                features += u'; %s' % self.feature
-            else:
-                features = self.feature
-        return features
+        return show_feature_as_text(self)
 
     def _show_feature_logo(self, story):
         return u"; ".join(story.feature_logo.all().values_list('name',
