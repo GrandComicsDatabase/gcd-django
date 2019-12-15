@@ -6916,7 +6916,7 @@ class CreatorNameDetailRevision(Revision):
     creator = models.ForeignKey(Creator, related_name='name_revisions',
                                 null=True)
     name = models.CharField(max_length=255, db_index=True)
-    sort_name = models.CharField(max_length=255, default='', blank=True)
+    sort_name = models.CharField(max_length=255, default='')
     is_official_name = models.BooleanField(default=False)
     given_name = models.CharField(max_length=255, db_index=True, default='',
                                   blank=True)

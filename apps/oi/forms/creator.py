@@ -58,6 +58,8 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
         self.fields['type'].queryset = NameType.objects.exclude(id__in=[1, 3,
                                                                         4, 6,
                                                                         9])
+        self.fields['sort_name'].help_text = "In the Western culture usually "\
+                                             " 'family name, given name'."
         if self.instance.creator_name_detail:
             if self.instance.creator_name_detail.type.id in [1, 3, 4, 6, 9]:
                 self.fields['type'].queryset |= NameType.objects.filter(
@@ -186,16 +188,19 @@ class CreatorRevisionForm(forms.ModelForm):
                   "Besides legal names we use 'pen name' and 'common "
                   "alternative name' for known alias and common name "
                   "variations."
-                  "<li>One of the names has to be selected as the official "
-                  "name.</li>"
+                  "<li>One of the names has to be selected as the GCD "
+                  "official name by selecting 'Is official name'.</li>"
                   "<li>For each name the given and family name(s) are "
                   "recorded.</li> For alphabetical sorting we use the "
                   "sort name, which often is 'family name, given name'."
                   "<li>For each name we record the script, e.g. 'Japanese' "
                   "for the name of a creator from Japan given in Japanese "
-                  "script. 'Latin' script is the default.</li>"
+                  "script.</li>'Latin' script is the default and for example "
+                  "used in West and Central Europe and the Americas."
                   "<li>The types 'Family', 'Given (birth)', 'GCD official', "
-                  "and the language types are deprecated.</li></ul>",
+                  "and the language types are deprecated and need to be "
+                  "removed from old creator records, they are not available "
+                  "as selections for new ones.</li></ul>",
         label='')
 
     def clean(self):
