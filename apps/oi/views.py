@@ -632,6 +632,16 @@ def _save(request, form, revision, changeset=None, model_name=None):
                     if revision.changeset.change_type == \
                       CTYPES['creator_relation']:
                         form.save_m2m()
+                elif revision.changeset.change_type == CTYPES['creator']:
+                    for field in _get_creator_sourced_fields():
+                        data_source_revision = revision.changeset \
+                            .datasourcerevisions.filter(field=field)
+                        if data_source_revision:
+                            # TODO support more than one revision
+                            data_source_revision = data_source_revision[0]
+                        process_data_source(form, field, revision.changeset,
+                                            revision=data_source_revision,
+                                            sourced_revision=revision)
                 else:
                     form.save_m2m()
 
