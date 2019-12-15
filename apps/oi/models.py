@@ -6924,7 +6924,7 @@ class CreatorNameDetailRevision(Revision):
                                    blank=True)
     type = models.ForeignKey('gcd.NameType',
                              related_name='revision_name_details',
-                             null=True)
+                             null=True, blank=True)
     in_script = models.ForeignKey(Script, default=Script.LATIN_PK)
 
     source_name = 'creator_name_detail'

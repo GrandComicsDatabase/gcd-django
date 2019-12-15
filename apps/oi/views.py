@@ -29,8 +29,8 @@ from apps.gcd.models import (
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
-    CreatorRelation, CreatorSchool, NameType, SourceType, STORY_TYPES,
-    BiblioEntry, Feature, FeatureLogo, FeatureRelation)
+    CreatorRelation, CreatorSchool, CreatorNameDetail, NameType, SourceType,
+    STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
@@ -5170,7 +5170,7 @@ def add_creator(request):
 def add_creator_relation(request, creator_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
-    
+
     creator = get_object_or_404(Creator, id=creator_id, deleted=False)
 
     if creator.pending_deletion():
@@ -5183,10 +5183,11 @@ def add_creator_relation(request, creator_id):
                 'show_creator', kwargs={'creator_id': creator_id}))
 
     initial = {}
-    initial['from_creator'] = creator
+    initial['from_creator'] = CreatorNameDetail.objects.get(
+      creator__id=creator.id, is_official_name=True, deleted=False).id
+
     relation_form = CreatorRelationRevisionForm(request.POST or None,
                                                 initial=initial)
-
 
     if relation_form.is_valid():
         changeset = Changeset(indexer=request.user, state=states.OPEN,
