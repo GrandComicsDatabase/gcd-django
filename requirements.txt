@@ -37,13 +37,14 @@ pytest-django
 ipython
 
 # These packages are primarily used in production for performance reasons.
-# By default their use is not enabled.  If you enable them, you may need
-# to install other (non-Python-package) software do perform further
-# configuration.  They are included here to ensure that we catch library
-# version dependency interactions.
-
-# TODO: Update for Python3 and Ubuntu 18.04 and uncomment
-# rq<0.11
-# django-rq<1.1
-# redis<2.11
-# git+git://github.com/mandx/haystack-rqueue.git
+# By default they are installed, but their use is not enabled.
+# If you enable them through settings_local.py, you will need to install
+# the Debian package redis-server in addition to the other software
+# needed to use elasticsearch.
+#
+# Note that django-rq 2.2 requires django>=2.0, so it is pinned
+# to a lower version.
+redis<3.4
+rq<1.2
+django-rq<2.2.0
+git+git://github.com/mandx/haystack-rqueue.git
