@@ -245,7 +245,7 @@
     {% for relation in creator.active_relations %}
       {% with relation_info=relation|pre_process_relation:creator %}
         <li><p>
-        <a href="{% url 'show_creator_relation' creator_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="/creator/{{ relation_info.0 }}/">{{ relation_info.0 }}</a>
+        <a href="{% url 'show_creator_relation' creator_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_creator' creator_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
         {% if relation.relation_type.id == 3 and relation.creator_name.count %} using the name{{ relation.creator_name.count|pluralize }}:
           {% for creator_name in relation.creator_name.all  %}
             {{ creator_name.name }}{% if not forloop.last %};{%  endif %}
