@@ -524,7 +524,7 @@ class CreatorRelationRevisionForm(forms.ModelForm):
         url='creator_name_4_relation_autocomplete',
         attrs={'style': 'min-width: 60em'}),
       help_text='For employee or user of house name relations also add the '
-                'involved creator name.',
+                'involved creator name(s).',
       required=False
       )
 

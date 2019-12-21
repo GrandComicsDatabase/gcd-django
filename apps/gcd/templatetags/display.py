@@ -509,3 +509,7 @@ def short_pub_type(publication_type):
         return '[' + publication_type.name[0] + ']'
     else:
         return ''
+
+@register.filter
+def pre_process_relation(relation, creator):
+    return relation.pre_process_relation(creator)

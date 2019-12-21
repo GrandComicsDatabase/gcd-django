@@ -1,5 +1,4 @@
 import calendar
-from operator import itemgetter
 from django.core import urlresolvers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
@@ -123,7 +122,7 @@ class CreatorNameDetail(GcdData):
             name = self.creator.gcd_official_name
             as_name = self
             if self.type.id == NAME_TYPES['studio'] \
-              and self.creator_relation.count():
+               and self.creator_relation.count():
                 co_name = self.creator_relation.get().to_creator
 
         if credit.uncertain:
@@ -340,16 +339,8 @@ class Creator(GcdData):
         return self.non_comic_work_set.exclude(deleted=True)
 
     def active_relations(self):
-        from_relations = self.from_related_creator.exclude(deleted=True)
-        relations = list(from_relations.values_list(
-                    'from_creator__id', 'from_creator__gcd_official_name',
-                    'relation_type__reverse_type', 'notes', 'id'))
-        to_relations = self.to_related_creator.exclude(deleted=True)
-        relations.extend(to_relations.values_list(
-                  'to_creator__id', 'to_creator__gcd_official_name',
-                  'relation_type__type', 'notes', 'id'))
-        relations.sort(key=itemgetter(2, 1))
-        return relations
+        return self.from_related_creator.exclude(deleted=True) | \
+               self.to_related_creator.exclude(deleted=True)
 
     def active_schools(self):
         return self.school_set.exclude(deleted=True)
@@ -396,6 +387,12 @@ class CreatorRelation(GcdData):
                                           related_name='creator_relation')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
+
+    def pre_process_relation(self, creator):
+        if self.from_creator == creator:
+            return [self.to_creator, self.relation_type.type]
+        if self.to_creator == creator:
+            return [self.from_creator, self.relation_type.reverse_type]
 
     def __unicode__(self):
         return '%s >Relation< %s :: %s' % (unicode(self.from_creator),

@@ -1,6 +1,7 @@
 {% extends "gcd/base_view.html" %}
 {% load staticfiles %}
 {% load i18n %}
+{% load display %}
 
 {% block title %}
   GCD :: Creator :: {{ creator }}
@@ -242,12 +243,19 @@
           <h3>Relations:</h3>
           <ol>
     {% for relation in creator.active_relations %}
-            <li>
-            <p><a href="{% url 'show_creator_relation' creator_relation_id=relation.4 %}">{{ relation.2 }}</a> - <a href="/creator/{{ relation.0 }}/">{{ relation.1 }}</a></p>
-      {% if relation.3 %}
-            <p><strong>Notes: </strong>{{ relation.3 }}</p>
-      {% endif %}
-            </li>
+      {% with relation_info=relation|pre_process_relation:creator %}
+        <li><p>
+        <a href="{% url 'show_creator_relation' creator_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="/creator/{{ relation_info.0 }}/">{{ relation_info.0 }}</a>
+        {% if relation.relation_type.id == 3 and relation.creator_name.count %} using the name{{ relation.creator_name.count|pluralize }}:
+          {% for creator_name in relation.creator_name.all  %}
+            {{ creator_name.name }}{% if not forloop.last %};{%  endif %}
+          {% endfor %}
+        {% endif %}
+        {% if relation.notes %}
+          <p><strong>Notes: </strong>{{ relation.notes }}</p>
+        {% endif %}
+        </p></li>
+      {% endwith %}
     {% endfor %}
           </ol>
   {% endif %}
