@@ -157,6 +157,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                   (u'facet_model_name_exact:brand emblem'
                    in self.form.selected_facets) or \
                   (u'facet_model_name_exact:series'
+                   in self.form.selected_facets) or \
+                  (u'facet_model_name_exact:feature'
                    in self.form.selected_facets):
                     if request.GET['sort'] == 'alpha':
                         self.results = self.results.order_by('sort_name',
