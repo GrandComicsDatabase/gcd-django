@@ -318,29 +318,29 @@ SERIES_HELP_TEXTS = {
         'Check if the name starts with an article.',
     'color':
         'What sort of color is used in the printing.  Common '
-        'values include Color, Four Color, Painted, '
-        'Two Color, Duotone, and Black and White. '
+        'values include color, four color, painted, '
+        'two color, duotone, and black and white. '
         'This may change over the life of the series.',
     'dimensions':
-        'The size of the comic, such as Standard Golden Age U.S.'
-        '(or Silver or Modern), A4, A5, Tabloid, Digest, 8.5" x 11", '
+        'The size of the comic, such as standard Golden Age U.S.'
+        '(or Silver or Modern), A4, A5, tabloid, digest, 8.5" x 11", '
         '21cm x 28cm.  This may change over the life of the series.',
     'paper_stock':
         'Type of paper used for the interior pages, such as '
-        'Newsprint, Glossy, Bond, Mando, Baxter, etc.  Information '
+        'newsprint, glossy, bond, Mando, Baxter, etc.  Information '
         'about cover paper stock may also be noted. This may change '
         'over the life of the series.',
     'binding':
-        'Binding type, such as Saddle-stitched (stapled in the spine, '
+        'Binding type, such as saddle-stitched (stapled in the spine, '
         'like most U.S. monthly comics), stapled (from front cover '
-        'through to back cover, near the spine), Bound, Squarebound, '
-        'Perfect Bound, Hardcover, Trade Paperback, Mass Market '
-        'Paperback. This may change over the life of the series.',
+        'through to back cover, near the spine), bound, squarebound, '
+        'perfect bound, hardcover, trade paperback, mass market '
+        'paperback. This may change over the life of the series.',
     'publishing_format':
         'Indicates the nature of this publication as a series (or '
-        'non-series), such as Ongoing Series, Limited Series, '
-        'Miniseries, Maxiseries, One-Shot, Graphic Novel.  '
-        '"Was Ongoing Series" may be used if it has ceased '
+        'non-series), such as ongoing series, limited series, '
+        'miniseries, maxiseries, one-shot, graphic novel.  '
+        '"was ongoing series" may be used if it has ceased '
         'publication.',
     'publication_type':
         "Describe the publication format for user reference.",
