@@ -123,7 +123,6 @@ MIDDLEWARE_CLASSES = (
    'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
    'apps.middleware.errorhandling.ErrorHandlingMiddleware',
-   'apps.middleware.stripwhitespace.StripWhitespaceMiddleware'
 )
 
 LANGUAGES = (
