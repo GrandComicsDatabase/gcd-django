@@ -190,13 +190,23 @@ class StoryCreditRevisionForm(forms.ModelForm):
         cd = self.cleaned_data
         if cd['credited_as'] and not cd['is_credited']:
             raise forms.ValidationError(
-                ['Is credited needs to be selected when entering a name as '
-                 'credited.'])
+              ['Is credited needs to be selected when entering a name as '
+               'credited.'])
+
+        if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
+            raise forms.ValidationError(
+              ['Name entered as "credited as" is identicial to creator name.']
+            )
 
         if cd['signed_as'] and not cd['is_signed']:
             raise forms.ValidationError(
-                ['Is signed needs to be selected when entering a name as '
-                 'signed.'])
+              ['Is signed needs to be selected when entering a name as '
+               'signed.'])
+
+        if cd['signed_as'] and cd['signed_as'] == cd['creator'].name:
+            raise forms.ValidationError(
+              ['Name entered as "signed as" is identicial to creator name.']
+            )
 
 
 StoryRevisionFormSet = inlineformset_factory(
