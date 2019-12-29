@@ -18,6 +18,22 @@
   <div class="control_body">
     <div id="control_container">
       <div id="control_center">
+        <div class="left">
+  {% if creator.portrait %}
+        <img style="margin:1em 1em 0 0" src="{{ creator.portrait.scaled_image.url }}">
+  {% endif %}
+  <!-- TODO Portrait Sources -->
+  {% if creator.portrait_source.all %}
+          <hr>
+          <h3>Portrait Sources</h3>
+          <p><strong>sources</strong> :
+    {% for portrait in creator.portrait_source.all %}
+      {{ portrait }},
+    {% endfor %}
+          </p>
+  {% endif %}
+        </div>
+
         <div class="pub_data">
           <div class="table-container">
             <p><strong>Born:</strong> {{ creator.display_birthday }} in {{ creator.display_birthplace }}</p>
@@ -41,22 +57,6 @@
             / <a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a>
   {% endif %}</p>
           </div> <!-- table-container -->
-  {% if creator.portrait %}
-          <h3>Portrait Image:</h3>
-          <img src="{{ creator.portrait.scaled_image.url }}">
-  {% endif %}
-
-  <!-- TODO Portrait Sources -->
-  {% if creator.portrait_source.all %}
-          <hr>
-          <h3>Portrait Sources</h3>
-          <p><strong>sources</strong> :
-    {% for portrait in creator.portrait_source.all %}
-      {{ portrait }},
-    {% endfor %}
-          </p>
-  {% endif %}
-
   <!-- TODO Bio Sources -->
   {% if creator.bio_source.all %}
           <hr>
@@ -69,6 +69,7 @@
   {% endif %}
 
   {% if creator.samplescan %}
+    <hr>
           <h3>Sample Scan:</h3>
           <img src="{{ creator.samplescan.scaled_image.url }}">
   {% endif %}
@@ -76,20 +77,23 @@
   <!-- Creator's Names -->
           <hr>
           <h3>Names:</h3>
+        {% if  creator.active_names.count > 1 %}
+          <ol style="columns: 2;">
+        {% else %}
           <ol>
+        {% endif %}
   {% for creator_name in creator.active_names %}
-            <li><p>{{ creator_name.name }}
+            <li style="page-break-inside: avoid;">{{ creator_name.name }}
+              <strong>Type</strong>: {{ creator_name.type }}<br>
     {% if creator_name.given_name %}
-               <strong>Given name</strong>: {{ creator_name.given_name }}
+              <strong>Given name</strong>: {{ creator_name.given_name }}
     {% endif %}
     {% if creator_name.family_name %}
-               <strong>Family name</strong>: {{ creator_name.family_name }}
+             <strong>Family name</strong>: {{ creator_name.family_name }}
     {% endif %}
-               <strong>Type</strong>: {{ creator_name.type }}
-               </p>
     {% if creator_name.source.all %}
-            <p><strong>Sources</strong> :{% for source in creator_name.source.all %}
-      {{ source.type }},{% endfor %}</p>
+             <strong>Sources</strong> :{% for source in creator_name.source.all %}
+      {{ source.type }},{% endfor %}
     {% endif %}
             </li>
   {% endfor %}
@@ -148,41 +152,53 @@
   {% if creator.active_awards %}
           <hr>
           <h3>Awards:</h3>
-          <ol>
+          <ol style="columns: 2;">
     {% for award in creator.active_awards %}
-          <li>
-            <p>
+          <li style="page-break-inside: avoid;">
+      {% if award.award_year %}
+        {{ award.award_year }}:
+      {% endif %}
       {% if award.award %}
         <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
       {% endif %}
             <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a>
-      {% if award.award_year %}
-        year: {{ award.award_year }}
-      {% endif %}
-            </p>
-      {% if award.notes %}
-            <p><strong>Notes: </strong>{{ award.notes }}</p>
-      {% endif %}
-          </li>
+	    </li>
     {% endfor %}
           </ol>
   {% endif %}
 
   <!--Creator's Art Influences-->
-  {% if creator.active_art_influences %}
+  {% if creator.active_art_influences or creator.active_influenced_creators %}
           <hr>
           <h3>Art Influences:</h3>
+    {% if creator.active_art_influences %}
+      {{ creator }} stated influences by:
+      {% if  creator.active_art_influences.count > 1 %}
+          <ol style="columns: 2;">
+      {% else %}
           <ol>
-    {% for influence in creator.active_art_influences %}
-            <li>
-              <p><a href="{{ influence.get_absolute_url }}">{% if influence.influence_link %}{{ influence.influence_link }}{% else %}{{ influence.influence_name }}{% endif %}</a>
-              </p>
-      {% if influence.notes %}
-              <p><strong>Notes: </strong>{{ influence.notes }}</p>
       {% endif %}
+      {% for influence in creator.active_art_influences %}
+            <li>
+              <a href="{{ influence.get_absolute_url }}">{% if influence.influence_link %}{{ influence.influence_link }}{% else %}{{ influence.influence_name }}{% endif %}</a>
             </li>
-    {% endfor %}
+      {% endfor %}
           </ol>
+    {% endif %}
+    {% if creator.active_influenced_creators %}
+      Influences by {{ creator }} were stated by:
+      {% if  creator.active_influenced_creators.count > 1 %}
+          <ol style="columns: 2;">
+      {% else %}
+          <ol>
+      {% endif %}
+      {% for influence in creator.active_influenced_creators %}
+            <li>
+              <a href="{{ influence.get_absolute_url }}">{{ influence.creator }}</a>
+            </li>
+      {% endfor %}
+          </ol>
+    {% endif %}
   {% endif %}
 
   <!--Creator's Memberships-->
@@ -239,12 +255,16 @@
   {% endif %}
 
   {% if creator.active_relations %}
-          <hr>
-          <h3>Relations:</h3>
-          <ol>
+        <hr>
+        <h3>Relations:</h3>
+        {% if  creator.active_relations.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
     {% for relation in creator.active_relations %}
       {% with relation_info=relation|pre_process_relation:creator %}
-        <li><p>
+        <li style="page-break-inside: avoid;">
         <a href="{% url 'show_creator_relation' creator_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_creator' creator_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
         {% if relation.relation_type.id == 3 and relation.creator_name.count %} using the name{{ relation.creator_name.count|pluralize }}:
           {% for creator_name in relation.creator_name.all  %}
@@ -252,9 +272,9 @@
           {% endfor %}
         {% endif %}
         {% if relation.notes %}
-          <p><strong>Notes: </strong>{{ relation.notes }}</p>
+          <br><strong>Notes: </strong>{{ relation.notes }}
         {% endif %}
-        </p></li>
+        </li>
       {% endwith %}
     {% endfor %}
           </ol>

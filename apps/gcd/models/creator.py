@@ -314,6 +314,9 @@ class Creator(GcdData):
             return True
         if self.active_relations():
             return True
+        if self.active_influenced_creators():
+            return True
+
         return False
 
     def pending_deletion(self):
@@ -324,7 +327,10 @@ class Creator(GcdData):
         return self.creator_names.exclude(deleted=True)
 
     def active_art_influences(self):
-        return self.art_influence_set.exclude(deleted=True)
+        return self.art_influences.exclude(deleted=True)
+
+    def active_influenced_creators(self):
+        return self.influenced_creators.exclude(deleted=True)
 
     def active_awards(self):
         return self.awards.exclude(deleted=True)
@@ -508,10 +514,10 @@ class CreatorArtInfluence(GcdData):
         app_label = 'gcd'
         verbose_name_plural = 'Creator Art Influences'
 
-    creator = models.ForeignKey(Creator, related_name='art_influence_set')
+    creator = models.ForeignKey(Creator, related_name='art_influences')
     influence_name = models.CharField(max_length=200)
     influence_link = models.ForeignKey(Creator, null=True,
-                                       related_name='exist_influencer')
+                                       related_name='influenced_creators')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 
