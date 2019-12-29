@@ -86,5 +86,21 @@
         "name": "script, pencils, inks, and colors",
         "sort_code": 3
     }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 12,
+    "fields": {
+        "name": "script, pencils, inks, and letters",
+        "sort_code": 4
+    }
+},
+{
+    "model": "gcd.credittype",
+    "pk": 13,
+    "fields": {
+        "name": "script, pencils, inks, colors, and letters",
+        "sort_code": 5
+    }
 }
 ]
