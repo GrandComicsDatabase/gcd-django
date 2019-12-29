@@ -30,9 +30,10 @@ from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             BrandGroup, Brand, IndiciaPublisher, STORY_TYPES, \
-                            Award, Creator, CreatorMembership, ReceivedAward, \
+                            CREDIT_TYPES, Creator, CreatorMembership, \
                             CreatorArtInfluence, CreatorNonComicWork, \
-                            CreatorNameDetail, SeriesPublicationType
+                            CreatorNameDetail, SeriesPublicationType, \
+                            Award, ReceivedAward
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
@@ -241,6 +242,8 @@ def generic_by_name(request, name, q_obj, sort,
                 query_val[credit_type] = name
         if sqs is None:
             # TODO: move this outside when series deletes are implemented
+            q_obj |= Q(credits__creator__name__icontains=name,
+                       credits__credit_type__id=CREDIT_TYPES[credit])
             q_obj &= Q(deleted=False)
 
             things = class_.objects.filter(q_obj)
@@ -1066,13 +1069,13 @@ def process_advanced(request, export_csv=False):
     except ViewTerminationError as response:
         return response.response
 
-    count = items.count()
-    if count and 'random_search' in request.GET:
-        # using DB random via order_by('?') is rather expensive
-        select = randint(0, count-1)
-        # nullify imposed ordering, use db one
-        item = items.order_by()[select]
-        return HttpResponseRedirect(item.get_absolute_url())
+    if 'random_search' in request.GET:
+        if items.count():
+            # using DB random via order_by('?') is rather expensive
+            select = randint(0, count-1)
+            # nullify imposed ordering, use db one
+            item = items.order_by()[select]
+            return HttpResponseRedirect(item.get_absolute_url())
 
     item_name = target
     plural_suffix = 's'
@@ -1582,8 +1585,12 @@ def search_stories(data, op):
 
     for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
         if data[field]:
-            q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op):
-                                data[field] }))
+            q_objs.append(Q(**{'%s%s__%s' % (prefix, field, op):
+                               data[field]}) |
+                          Q(**{'%scredits__creator__name__%s' % (prefix, op):
+                               data[field],
+                               '%scredits__credit_type__id' % (prefix):
+                               CREDIT_TYPES[field]}))
 
     for field in ('feature', 'title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
