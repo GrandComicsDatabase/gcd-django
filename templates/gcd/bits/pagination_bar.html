@@ -39,8 +39,7 @@
     {% ifequal number page.number %}
       <span class="btn btn-default btn-sm btn-selected" style="text-decoration: none">{{ number }}</span>
     {% else %}
-      {% if not number %}
-  ...  {# literally dots #}
+    {% if not number %}<span class="btn btn-default btn-sm"> ... {# literally dots #}</span>
       {% else %}{# pagelink num #}
         {% if extra_string %}
       <a class="btn btn-default btn-sm" href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>

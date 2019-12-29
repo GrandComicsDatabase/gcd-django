@@ -6,6 +6,12 @@
   {{ heading }}: {{ search_item }}
     </div>
     <div class="search_id_nav right">
+{% if change_order %}
+Order:
+  {% if 'chrono' in change_order %}Alpha | <a href="{{ change_order}}">Chrono</a>
+  {% else %} <a href="{{ change_order}}">Alpha</a> | Chrono
+  {% endif %}
+{% endif %}
       <a name="{{ position }}"></a>
       <a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
         <img src="{{ STATIC_URL }}/img/gcd/icons/{{ ICON_SET }}/19x19/actions/go-{{ link_direction }}.png">
@@ -25,12 +31,8 @@
 </div>
 {% if position == 'top' and not select_key and not confirm_selection %}
 <div id="search_reminder">
-Refine your query using an <a href="{% url 'advanced_search' %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>. Download <a href="{% url "process_advanced_search_csv" %}?{{ query_string }}">results as csv</a>.
-{% if change_order %}
-Change sort order to <a href="{{ change_order}}">{% if 'chrono' in change_order %} chronological{% else %} alphabetical{% endif %}</a>.
-  {% if item_name == 'series' %}
-<br>This series search result also shows series for which an issue title matches.
-  {% endif %}
-{% endif %}
+  Refine your query using an <a href="{% url 'advanced_search' %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>.
 </div>
+<div class="right">
+  Download <a href="{% url "process_advanced_search_csv" %}?{{ query_string }}">results as csv</a>.</div>
 {% endif %}

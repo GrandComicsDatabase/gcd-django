@@ -60,7 +60,7 @@
       </div>
       <div style="clear: both;"></div>
       {% if facets.fields.facet_model_name %}
-        <ul>
+        <ul style="columns: 3;">
           {% for model in facets.fields.facet_model_name %}
             <li><a href="?{{ query }}{{ facet_page }}{% if not is_model_selected %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}{% endif %}">{{ model.0 }}</a> ({{ model.1 }})</li>
           {% endfor %}
