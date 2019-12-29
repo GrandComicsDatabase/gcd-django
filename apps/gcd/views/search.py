@@ -242,8 +242,9 @@ def generic_by_name(request, name, q_obj, sort,
                 query_val[credit_type] = name
         if sqs is None:
             # TODO: move this outside when series deletes are implemented
-            q_obj |= Q(credits__creator__name__icontains=name,
-                       credits__credit_type__id=CREDIT_TYPES[credit])
+            if credit in ['script', 'pencils', 'inks', 'colors', 'letters']:
+                q_obj |= Q(credits__creator__name__icontains=name,
+                           credits__credit_type__id=CREDIT_TYPES[credit])
             q_obj &= Q(deleted=False)
 
             things = class_.objects.filter(q_obj)
