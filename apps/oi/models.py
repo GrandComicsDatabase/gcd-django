@@ -4719,6 +4719,10 @@ class StoryRevision(Revision):
         when the revision is committed.
         """
         self.deleted = not self.deleted
+        if bool(self.story_credit_revisions.all()):
+            for story_credit_revision in self.story_credit_revisions.all():
+                story_credit_revision.deleted = self.deleted
+                story_credit_revision.save()
         self.save()
 
     def get_absolute_url(self):
