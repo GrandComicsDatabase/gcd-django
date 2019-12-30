@@ -327,10 +327,12 @@ class Creator(GcdData):
         return self.creator_names.exclude(deleted=True)
 
     def active_art_influences(self):
-        return self.art_influences.exclude(deleted=True)
+        return self.art_influences.exclude(deleted=True)\
+                   .order_by('influence_link__sort_name', 'influence_name')
 
     def active_influenced_creators(self):
-        return self.influenced_creators.exclude(deleted=True)
+        return self.influenced_creators.exclude(deleted=True)\
+                   .order_by('creator__sort_name')
 
     def active_awards(self):
         return self.awards.exclude(deleted=True)
