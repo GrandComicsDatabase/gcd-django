@@ -77,7 +77,7 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
             return get_series_revision_form(**kwargs)
         if 'publisher' not in kwargs:
             kwargs['publisher'] = revision.publisher
-        return get_series_revision_form(source=revision.source, **kwargs)
+        return get_series_revision_form(revision=revision, **kwargs)
 
     if model_name == 'series_bond':
         return get_series_bond_revision_form(**kwargs)

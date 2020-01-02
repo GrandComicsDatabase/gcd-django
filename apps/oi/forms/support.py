@@ -377,8 +377,8 @@ SERIES_HELP_TEXTS = {
         "Issues in this series can contain sequences about comics.",
     'is_singleton':
         "Series consists of one and only one issue by design. "
-        "Note that for series adds an issue with no issue number will"
-        " be created upon approval.",
+        "Note that for an added series, or for a series with no issues, an "
+        "issue with no issue number will be created upon approval.",
     'keywords':
         'Significant objects, locations, or themes (NOT characters) '
         'depicted in the content, such as "Phantom Zone", '
