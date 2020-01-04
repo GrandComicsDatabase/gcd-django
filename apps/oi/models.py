@@ -774,11 +774,15 @@ class Changeset(models.Model):
         for revision in self.revisions:
             # TODO rethink the depency handling during committing
             #
-            # We might have saved other revision due to dependences.
+            # We might have saved other revision due to dependencies.
             # Other types, later in the itertools.chain, are fresh,
             # but revision of the same type can became stale
             # in self.revisions, so refresh_from_db. Could do a
             # check for type, i.e. same as before, to reduce db calls.
+            # save the committed and source status before the refresh
+            committed = revision.committed
+            source = revision.source
+
             revision.refresh_from_db()
 
             # For adds we might generate additional revisions, and call
@@ -789,10 +793,10 @@ class Changeset(models.Model):
             #      picked by up self.revisions anyway, so maybe not needed
             #      for purpose of avoiding double adds.
             #      But check shouldn't hurt anyway ?
-            if revision.committed is not True:
+            if committed is not True:
                 # adds have a (created) source only after commit_to_display
-                if revision.source:
-                    _free_revision_lock(revision.source)
+                if source:
+                    _free_revision_lock(source)
                 # first free the lock, commit_to_display might delete source
                 revision.commit_to_display()
 
@@ -977,10 +981,11 @@ def _get_revision_lock(object, changeset=None):
 # This should not have @transaction.atomic, since the lock should stay till
 # the end of the request ?
 def _free_revision_lock(object):
-    revision_lock = RevisionLock.objects.get(
-      object_id=object.id,
-      content_type=ContentType.objects.get_for_model(object))
-    revision_lock.delete()
+    with transaction.atomic():
+        revision_lock = RevisionLock.objects.get(
+          object_id=object.id,
+          content_type=ContentType.objects.get_for_model(object))
+        revision_lock.delete()
 
 
 class RevisionLock(models.Model):
@@ -3161,8 +3166,14 @@ class SeriesRevision(Revision):
                                            after=None,
                                            number='[nn]',
                                            publication_date=self.year_began,
+                                           notes=self.notes,
                                            reservation_requested=
                                            self.reservation_requested)
+            if self.notes:
+                self.notes = ''
+                self.save()
+                self.series.notes = ''
+                self.series.save()
             # We assume that a non-four-digit year is a typo of some
             # sort, and do not propagate it.  The approval process
             # should catch that sort of thing.
