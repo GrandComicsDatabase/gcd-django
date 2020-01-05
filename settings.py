@@ -325,7 +325,7 @@ EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_PRTEAM = 'pr-team@comics.org'
 EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
-CHAIRMAN = 'Lionel English'
+CHAIRMAN = 'Donald Dale Milne'
 EMAIL_CHAIRMAN = '%s <chair@comics.org>' % CHAIRMAN
 
 # Number of days for which a registraton confirmation token is valid.
