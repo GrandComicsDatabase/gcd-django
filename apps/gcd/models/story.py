@@ -40,7 +40,7 @@ OLD_TYPES = {
 # core sequence types: (photo, text) story, cover (incl. reprint)
 CORE_TYPES = [6, 7, 13, 19, 21]
 # ad sequence types: ad, promo
-AD_TYPES = [2, 16, 26]
+AD_TYPES = [2, 16, 26, 28]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
 
