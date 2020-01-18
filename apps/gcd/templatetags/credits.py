@@ -264,15 +264,22 @@ def search_creator_credit(story, credit_type):
 @register.filter
 def show_creator_credit(story, credit_type):
     credits = story.active_credits.filter(credit_type__name=credit_type)
+    if credit_type == 'story_editing':
+        credit_type = 'editing'
+    old_credit_field = getattr(story, credit_type)
     if not credits:
-        return ''
+        if not old_credit_field:
+            return ''
+        else:
+            return show_credit(story, credit_type)
     credit_value = '%s' % credits[0].creator.display_credit(credits[0])
 
     for credit in credits[1:]:
         credit_value = '%s; %s' % (credit_value,
                                    credit.creator.display_credit(credit))
-    if credit_type == 'story_editing':
-        credit_type = 'editing'
+
+    if old_credit_field:
+        credit_value = '%s; %s' % (credit_value, old_credit_field)
 
     return mark_safe(
            '<dt class="credit_tag"><span class="credit_label">'
