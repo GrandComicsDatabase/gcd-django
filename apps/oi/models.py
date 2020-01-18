@@ -779,8 +779,7 @@ class Changeset(models.Model):
             # but revision of the same type can became stale
             # in self.revisions, so refresh_from_db. Could do a
             # check for type, i.e. same as before, to reduce db calls.
-            # save the committed and source status before the refresh
-            committed = revision.committed
+            # save the source status before the refresh for locks ?
             source = revision.source
 
             revision.refresh_from_db()
@@ -793,7 +792,7 @@ class Changeset(models.Model):
             #      picked by up self.revisions anyway, so maybe not needed
             #      for purpose of avoiding double adds.
             #      But check shouldn't hurt anyway ?
-            if committed is not True:
+            if revision.committed is not True:
                 # adds have a (created) source only after commit_to_display
                 if source:
                     _free_revision_lock(source)
