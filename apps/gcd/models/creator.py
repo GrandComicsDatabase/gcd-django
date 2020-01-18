@@ -121,7 +121,7 @@ class CreatorNameDetail(GcdData):
         else:
             name = self.creator.gcd_official_name
             as_name = self
-            if self.type.id == NAME_TYPES['studio'] \
+            if self.type and self.type.id == NAME_TYPES['studio'] \
                and self.creator_relation.count():
                 co_name = self.creator_relation.get().to_creator
 
@@ -299,6 +299,8 @@ class Creator(GcdData):
             return False
 
     def has_dependents(self):
+        if self.creator_names.filter(storycredit__deleted=False).exists():
+            return True
         if self.art_influence_revisions.active_set().count():
             return True
         # TODO how to handle GenericRelation for ReceivedAward
