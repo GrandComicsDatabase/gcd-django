@@ -977,8 +977,6 @@ def _get_revision_lock(object, changeset=None):
     return revision_lock
 
 
-# This should not have @transaction.atomic, since the lock should stay till
-# the end of the request ?
 def _free_revision_lock(object):
     with transaction.atomic():
         revision_lock = RevisionLock.objects.get(
