@@ -1073,7 +1073,7 @@ def process_advanced(request, export_csv=False):
     if 'random_search' in request.GET:
         if items.count():
             # using DB random via order_by('?') is rather expensive
-            select = randint(0, count-1)
+            select = randint(0, items.count()-1)
             # nullify imposed ordering, use db one
             item = items.order_by()[select]
             return HttpResponseRedirect(item.get_absolute_url())
