@@ -227,6 +227,7 @@ def __format_credit(story, credit):
         if credit_value == '':
             return ''
     elif credit == 'feature_logo':
+        label = _('Feature Logo')
         credit_value = esc(story.show_feature_logo())
         if credit_value == '':
             return ''
