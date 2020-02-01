@@ -32,7 +32,7 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
                             SeriesBond, Award, Creator, CreatorMembership,\
                             ReceivedAward, CreatorDegree, CreatorArtInfluence,\
                             CreatorNonComicWork, CreatorSchool, CreatorRelation,\
-                            Feature, FeatureLogo, CREDIT_TYPES
+                            Feature, FeatureLogo, CREDIT_TYPES, CreatorNameDetail
 from apps.gcd.models.issue import IssueTable
 from apps.gcd.models.series import SeriesTable
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
@@ -164,33 +164,29 @@ def checklist_by_name(request, creator, country=None, language=None):
     op = 'icontains'
 
     q_objs_text = Q(**{'%s%s__%s' % (prefix, 'editing', op): creator})
-    q_objs_credits = Q(**{'%scredits__creator__name__%s' % (prefix, op):
-                            creator,
-                          '%scredits__credit_type__id' % (prefix):
-                            CREDIT_TYPES['editing']})
-
     for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
         q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
                             '%stype__id__in' % (prefix): CORE_TYPES})
-        q_objs_credits |= Q(**{'%scredits__creator__name__%s' % (prefix, op):
-                                 creator,
-                               '%scredits__credit_type__id' % (prefix):
-                                 CREDIT_TYPES[field],
-                               '%scredits__credit_type__id' % (prefix):
-                                   CREDIT_TYPES['editing']})
     items = Issue.objects.filter(q_objs_text).distinct()\
                          .annotate(series__name=F('series__name'))
-    items2 = Issue.objects.filter(q_objs_credits).distinct()\
-                          .annotate(series__name=F('series__name'))
+    creator = CreatorNameDetail.objects.filter(name__iexact=creator)
+    if creator:
+        q_objs_credits = Q(**{'%scredits__creator__in' % (prefix): creator,
+                              '%stype__id__in' % (prefix): CORE_TYPES})
+        items2 = Issue.objects.filter(q_objs_credits).distinct()\
+                              .annotate(series__name=F('series__name'))
     if country:
         country = get_object_or_404(Country, code=country)
         items = items.filter(series__country=country)
-        items2 = items2.filter(series__country=country)
+        if creator:
+            items2 = items2.filter(series__country=country)
     if language:
         language = get_object_or_404(Language, code=language)
         items = items.filter(series__language=language)
-        items2 = items2.filter(series__language=language)
-    items = items.union(items2)
+        if creator:
+            items2 = items2.filter(series__language=language)
+    if creator:
+        items = items.union(items2)
 
     paginator = ResponsePaginator(items, per_page=100, vars=context)
     page_number = paginator.paginate(request).number
