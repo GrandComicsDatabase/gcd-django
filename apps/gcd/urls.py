@@ -279,11 +279,17 @@ urlpatterns = [
 
     # Special display pages
     url(r'^checklist/name/(?P<creator>.+)/country/(?P<country>.+)/$',
-      gcd_views.search.checklist_by_name, name='checklist_by_name'),
+      gcd_views.details.checklist_by_name, name='checklist_by_name'),
     url(r'^checklist/name/(?P<creator>.+)/language/(?P<language>.+)/$',
-      gcd_views.search.checklist_by_name, name='checklist_by_name'),
+      gcd_views.details.checklist_by_name, name='checklist_by_name'),
     url(r'^checklist/name/(?P<creator>.+)/$',
-      gcd_views.search.checklist_by_name, name='checklist_by_name'),
+      gcd_views.details.checklist_by_name, name='checklist_by_name'),
+    url(r'^checklist/(?P<creator_id>.+)/country/(?P<country>.+)/$',
+      gcd_views.details.checklist_by_id, name='checklist_by_id'),
+    url(r'^checklist/(?P<creator_id>.+)/language/(?P<language>.+)/$',
+      gcd_views.details.checklist_by_id, name='checklist_by_id'),
+    url(r'^checklist/(?P<creator_id>\d+)/$',
+      gcd_views.details.checklist_by_id, name='checklist_by_id'),
 
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.
     url(r'^job_number/name/(?P<number>.+)/sort/(?P<sort>.+)/$',

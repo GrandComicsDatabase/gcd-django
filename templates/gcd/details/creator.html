@@ -51,11 +51,16 @@
   {% if creator.notes %}
             <p><strong>Notes:</strong> {{ creator.notes|urlizetrunc:75|linebreaksbr }}</p>
   {% endif %}
-            <p><strong>Links:</strong>
-            <a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Credits in the GCD (via search for "{{ creator }}")</a>
+            <p>
+          <ul style="columns: 2;">
+            <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue Checklist (via credit search for name "{{ creator }}")</a></li>
+            <li><a href='{% url "checklist_by_id" creator_id=creator.id %}'>Issue Checklist (via linked credit records)</a></li>
+            <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD (via search for "{{ creator }}")</a></li>
+
   {% if creator.whos_who %}
-            / <a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a>
+            <li><a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a></li>
   {% endif %}</p>
+          </ul>
           </div> <!-- table-container -->
   <!-- TODO Bio Sources -->
   {% if creator.bio_source.all %}

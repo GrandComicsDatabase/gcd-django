@@ -243,7 +243,10 @@ def generic_by_name(request, name, q_obj, sort,
         if sqs is None:
             # TODO: move this outside when series deletes are implemented
             if credit in ['script', 'pencils', 'inks', 'colors', 'letters']:
-                q_obj |= Q(credits__creator__name__icontains=name,
+                creators = list(CreatorNameDetail.objects
+                                .filter(name__icontains=name)
+                                .values_list('id', flat=True))
+                q_obj |= Q(credits__creator__id__in=creators,
                            credits__credit_type__id=CREDIT_TYPES[credit])
             q_obj &= Q(deleted=False)
 
@@ -783,50 +786,6 @@ def search(request):
                                       'sort': sort}))
 
 
-def checklist_by_name(request, creator, country=None, language=None):
-    creator = creator.replace('+', ' ').title()
-    get = request.GET.copy()
-    get[u'target'] = u'issue'
-    get[u'script'] = creator
-    get[u'pencils'] = creator
-    get[u'inks'] = creator
-    get[u'colors'] = creator
-    get[u'letters'] = creator
-    get[u'story_editing'] = creator
-    get[u'logic'] = u'True'
-    get[u'order1'] = u'series'
-    get[u'order2'] = u'date'
-    get[u'method'] = u'icontains'
-    if country and Country.objects.filter(code=country).count() == 1:
-        get[u'country'] = country
-    if language and Language.objects.filter(code=language).count() == 1:
-        get[u'language'] = language
-    request.GET = get.copy()
-    get.pop('page', None)
-
-    try:
-        items, target = do_advanced_search(request)
-    except ViewTerminationError as response:
-        return response.response
-
-    context = {
-        'item_name': 'issue',
-        'plural_suffix': 's',
-        'heading': 'Issue Checklist for Creator ' + creator,
-        'query_string': get.urlencode(),
-    }
-
-    template = 'gcd/search/issue_list.html'
-
-    target, method, logic, used_search_terms = used_search(get)
-    context['target'] = target
-    context['method'] = method
-    context['logic'] = logic
-    context['used_search_terms'] = used_search_terms
-
-    return paginate_response(request, items, template, context)
-
-        
 def advanced_search(request):
     """Displays the advanced search page."""
 
