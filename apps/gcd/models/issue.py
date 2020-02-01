@@ -5,11 +5,13 @@ from decimal import Decimal
 
 from django.db import models
 from django.core import urlresolvers
-from django.db.models import Sum
+from django.db.models import Sum, F, Subquery
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+
+import django_tables2 as tables
 
 from taggit.managers import TaggableManager
 
@@ -418,6 +420,22 @@ class Issue(GcdData):
                                                      self.get_absolute_url(),
                                                      esc(self.display_number)))
 
+    def show_series_and_issue_link(self):
+        if self.display_number:
+            issue_number = '%s' % (esc(self.display_number))
+        else:
+            issue_number = ''
+        if self.variant_name:
+            issue_number = '%s [%s]' % (issue_number, esc(self.variant_name))
+        if issue_number:
+            issue_number = '<a href="%s">%s</a>' % (self.get_absolute_url(),
+                                                    issue_number)
+        return mark_safe('<a href="%s">%s</a> (%s series) %s' %
+                         (self.series.get_absolute_url(),
+                          esc(self.series.name),
+                          esc(self.series.year_began),
+                          issue_number))
+
     def short_name(self):
         if self.variant_name:
             return u'%s %s [%s]' % (self.series.name,
@@ -432,3 +450,49 @@ class Issue(GcdData):
                                     self.variant_name)
         else:
             return u'%s %s' % (self.series, self.display_number)
+
+
+class IssueColumn(tables.Column):
+    def render(self, record):
+        return mark_safe(record.show_series_and_issue_link())
+
+    def order(self, query_set, is_descending):
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
+
+class IssueTable(tables.Table):
+    issue = IssueColumn(accessor='id', verbose_name='Issue')
+    publisher = tables.Column(accessor='series.publisher',
+                              verbose_name='Publisher',
+                              orderable=False)
+
+    class Meta:
+        model = Issue
+        fields = ('publisher', 'issue', 'publication_date', 'on_sale_date')
+        attrs = {'th': {'class': "non_visited"}}
+    def render_publisher(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        display_publisher = "<img %s>" % (show_country_info(value.country))
+        return mark_safe(display_publisher) + absolute_url(value)
+
+    def order_publication_date(self, query_set, is_descending):
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'key_date',
+                                       direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
+    def order_on_sale_date(self, query_set, is_descending):
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'on_sale_date',
+                                       direction + 'key_date',
+                                       direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)

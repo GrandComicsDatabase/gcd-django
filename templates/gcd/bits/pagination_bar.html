@@ -25,11 +25,7 @@
   {% spaceless %}
     <li>
   {% if page.has_previous %}
-    {% if extra_string %}
-      <a class="btn btn-default btn-sm btn-arrow-right" href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&#9668;</a>
-    {% else %}
-      <a class="btn btn-default btn-sm btn-arrow-right" href="?page={{ page.previous_page_number }}">&#9668;</a>
-    {% endif %}
+      <a class="btn btn-default btn-sm btn-arrow-right" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#9668;</a>
   {% else %}
       <span class="btn btn-default btn-sm" style="text-decoration: none">&#9668;</span>
   {% endif %} <!-- has_previous -->

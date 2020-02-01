@@ -166,20 +166,7 @@ def show_isbn(_isbn):
 
 @register.filter
 def show_issue(issue):
-    if issue.display_number:
-        issue_number = '%s' % (esc(issue.display_number))
-    else:
-        issue_number = ''
-    if issue.variant_name:
-        issue_number = '%s [%s]' % (issue_number, esc(issue.variant_name))
-    if issue_number:
-        issue_number = '<a href="%s">%s</a>' % (issue.get_absolute_url(),
-                                                issue_number)
-    return mark_safe('<a href="%s">%s</a> (%s series) %s' %
-                     (issue.series.get_absolute_url(),
-                      esc(issue.series.name),
-                      esc(issue.series.year_began),
-                      issue_number))
+    return issue.show_series_and_issue_link()
 
 
 @register.filter

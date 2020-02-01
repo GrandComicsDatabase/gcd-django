@@ -29,7 +29,7 @@ Order:
   {% endwith %}
   </div>
 </div>
-{% if position == 'top' and not select_key and not confirm_selection %}
+{% if position == 'top' and not select_key and not confirm_selection and not hide_info %}
 <div id="search_reminder">
   Refine your query using an <a href="{% url 'advanced_search' %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>.
 </div>
