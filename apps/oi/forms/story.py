@@ -20,7 +20,7 @@ from apps.oi.models import (
 
 from apps.gcd.models import CreatorNameDetail, StoryType, Feature, CreditType,\
                             FeatureLogo, STORY_TYPES, NON_OPTIONAL_TYPES,\
-                            OLD_TYPES, CREDIT_TYPES
+                            OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
 
 from .custom_layout_object import Formset
@@ -71,13 +71,16 @@ def _genre_choices(language=None, additional_genres=None):
 
 
 def get_story_revision_form(revision=None, user=None,
-                            series=None):
+                            issue_revision=None):
     extra = {}
     additional_genres = []
     selected_genres = []
     is_comics_publication = True
     has_about_comics = False
     language = None
+    current_type_not_allowed_id = None
+    # either there is a revision (editing a sequence) or
+    # an issue_revision (adding a sequence)
     if revision is not None:
         # Don't allow blanking out the type field.  However, when its a
         # new store make indexers consciously choose a type by allowing
@@ -100,7 +103,11 @@ def get_story_revision_form(revision=None, user=None,
                     additional_genres.append(genre)
                 selected_genres.append(genre)
             revision.genre = selected_genres
+        issue = revision.issue
+        series = revision.issue.series
     else:
+        issue = issue_revision.issue
+        series = issue_revision.series
         is_comics_publication = series.is_comics_publication
         has_about_comics = series.has_about_comics
         language = series.language
@@ -109,15 +116,21 @@ def get_story_revision_form(revision=None, user=None,
     if revision and (revision.issue is None or revision.issue.variant_of):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
-        # TODO prevent adding of non-covers directly in the form cleanup
         if revision.type not in queryset:
+            current_type_not_allowed_id = revision.type.id
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
-    elif not is_comics_publication:
+    if not is_comics_publication:
         sequence_filter = ['comic story', 'photo story', 'cartoon']
         if has_about_comics is True:
             sequence_filter.append('about comics')
+            if issue.is_indexed == INDEXED['full']:
+                sequence_filter.extend(['cover',
+                                        'cover reprint (on interior page)',
+                                        'illustration'])
         queryset = StoryType.objects.filter(name__in=sequence_filter)
+        # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:
+            current_type_not_allowed_id = revision.type.id
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     else:
         special_types = ['filler', ]
@@ -138,6 +151,15 @@ def get_story_revision_form(revision=None, user=None,
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
 
+        def clean_type(self):
+            if queryset:
+                type = self.cleaned_data['type']
+                sequence_queryset = queryset.exclude(
+                  id=current_type_not_allowed_id)
+                if type not in sequence_queryset:
+                    raise forms.ValidationError(
+                      ['Sequence type not allowed for this issue or series.'])
+            return type
     return RuntimeStoryRevisionForm
 
 

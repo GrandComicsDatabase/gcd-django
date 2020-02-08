@@ -2638,7 +2638,7 @@ def add_story(request, issue_revision_id, changeset_id):
                 initial = _get_initial_add_story_data(request, issue_revision,
                                                       seq)
         form = get_story_revision_form(user=request.user,
-                                       series=issue_revision.series)\
+                                       issue_revision=issue_revision)\
                                       (request.POST or None,
                                        initial=initial)
         credits_formset = StoryRevisionFormSet(request.POST or None)
