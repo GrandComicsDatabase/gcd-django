@@ -75,26 +75,21 @@ def get_story_revision_form(revision=None, user=None,
     extra = {}
     additional_genres = []
     selected_genres = []
-    is_comics_publication = True
-    has_about_comics = False
-    language = None
     current_type_not_allowed_id = None
     # either there is a revision (editing a sequence) or
     # an issue_revision (adding a sequence)
     if revision is not None:
         # Don't allow blanking out the type field.  However, when its a
-        # new store make indexers consciously choose a type by allowing
+        # new story make indexers consciously choose a type by allowing
         # an empty initial value.  So only set None if there is an existing
         # story revision.
         extra['empty_label'] = None
         if revision.issue:
-            is_comics_publication = revision.issue.series.is_comics_publication
-            has_about_comics = revision.issue.series.has_about_comics
-            language = revision.issue.series.language
+            issue = revision.issue
         else:
             # stories for variants in variant-add next to issue have issue
-            language = revision.my_issue_revision.other_issue_revision.\
-                                                  series.language
+            issue = revision.my_issue_revision.other_issue_revision.issue
+        series = issue.series
         if revision.genre:
             genres = revision.genre.split(';')
             for genre in genres:
@@ -103,23 +98,22 @@ def get_story_revision_form(revision=None, user=None,
                     additional_genres.append(genre)
                 selected_genres.append(genre)
             revision.genre = selected_genres
-        issue = revision.issue
-        series = revision.issue.series
     else:
         issue = issue_revision.issue
         series = issue_revision.series
-        is_comics_publication = series.is_comics_publication
-        has_about_comics = series.has_about_comics
-        language = series.language
+    is_comics_publication = series.is_comics_publication
+    has_about_comics = series.has_about_comics
+    language = series.language
 
     # for variants we can only have cover sequences (for now)
-    if revision and (revision.issue is None or revision.issue.variant_of):
+    if (revision and (revision.issue is None or revision.issue.variant_of))\
+       or (revision is None and issue_revision.issue is None):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
-        if revision.type not in queryset:
+        if revision and revision.type not in queryset:
             current_type_not_allowed_id = revision.type.id
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
-    if not is_comics_publication:
+    elif not is_comics_publication:
         sequence_filter = ['comic story', 'photo story', 'cartoon']
         if has_about_comics is True:
             sequence_filter.append('about comics')
