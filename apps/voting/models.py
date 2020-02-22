@@ -334,8 +334,9 @@ def topic_pre_save(sender, **kwargs):
     if kwargs['raw'] != True:
         topic = kwargs['instance']
         if topic.agenda.uses_tokens and topic.token is None:
-            salt = hashlib.sha1(str(random())).hexdigest()[:5]
-            topic.token = hashlib.sha1(salt + topic.name).hexdigest()
+            salt = hashlib.sha1(str(random()).encode('utf8')).hexdigest()[:5]
+            topic.token = hashlib.sha1(
+                (salt + topic.name).encode('utf8')).hexdigest()
 
         if topic.id is not None:
             old_topic = Topic.objects.get(pk=topic.id)
