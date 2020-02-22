@@ -72,7 +72,8 @@ class Indexer(models.Model):
 
         if self.is_new:
             if (self.user.changesets.filter(state__in=states.ACTIVE)
-               .exclude(change_type=CTYPES['cover']).count() >=
+               .exclude(change_type__in=[CTYPES['cover'],
+                                         CTYPES['image']]).count() >=
                self.max_reservations):
                 return False
         elif (self.user.changesets.filter(state=states.OPEN).count() >=

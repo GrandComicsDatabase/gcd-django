@@ -244,7 +244,7 @@ a.btn:hover {
 }
 
 div.item_id {
-    background-color: #EEE;
+    background-color: #ebf3ff;
     color: black;
     float: left;
     clear: both;
@@ -270,7 +270,10 @@ a:link, h1 a:visited {
 
 a:visited {
     text-decoration: None;
-    color: #0645ad;
+}
+
+.no_visited a:visited, a.no_visited:visited {
+   color: blue;
 }
 
 a:hover {

@@ -11,13 +11,12 @@ from calendar import monthrange
 from operator import attrgetter
 from random import randint
 
-from django.db.models import Q
+from django.db.models import F, Q
 from django.conf import settings
 from django.core import urlresolvers
 from django.shortcuts import get_object_or_404, \
                              render
 from django.http import HttpResponseRedirect, Http404, HttpResponse
-from django.utils.safestring import mark_safe
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
@@ -34,9 +33,12 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, Image,\
                             SeriesBond, Award, Creator, CreatorMembership,\
                             ReceivedAward, CreatorDegree, CreatorArtInfluence,\
                             CreatorNonComicWork, CreatorSchool, CreatorRelation,\
-                            Feature, FeatureLogo
+                            Feature, FeatureLogo, CREDIT_TYPES, CreatorNameDetail
+from apps.gcd.models.issue import IssueTable
+from apps.gcd.models.series import SeriesTable
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
-from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
+from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
+                           ResponsePaginator
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
                                   get_image_tags_per_page
@@ -47,8 +49,6 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, CoverRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset, \
                            SeriesBondRevision, CreatorRevision, CTYPES
-from apps.gcd.models.series import SeriesTable
-from apps.gcd.views import ResponsePaginator
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -112,6 +112,100 @@ def show_creator(request, creator, preview=False):
             'error_subject': creator,
             'preview': preview}
     return render(request, 'gcd/details/creator.html', vars)
+
+
+def checklist_by_id(request, creator_id, country=None, language=None):
+    template = 'gcd/search/issue_list_sortable.html'
+    creator = get_gcd_object(Creator, creator_id)
+    creator_names = creator.creator_names.filter(deleted=False)
+
+    issues = Issue.objects.filter(story__credits__creator__in=creator_names,
+                                  story__type__id__in=CORE_TYPES).distinct()\
+                          .select_related('series__publisher')
+    if country:
+        country = get_object_or_404(Country, code=country)
+        issues = issues.filter(series__country=country)
+    if language:
+        language = get_object_or_404(Language, code=language)
+        issues = issues.filter(series__language=language)
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue Checklist for Creator %s' % (creator)
+    }
+    paginator = ResponsePaginator(issues, per_page=100, vars=context)
+    page_number = paginator.paginate(request).number
+
+    if 'sort' in request.GET:
+        extra_string = 'sort=%s' % (request.GET['sort'])
+    else:
+        extra_string = ''
+
+    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
+                        template_name='gcd/bits/sortable_table.html',
+                        order_by=('publication_date'))
+    RequestConfig(request, paginate={'per_page': 100,
+                                     'page': page_number}).configure(table)
+    context['table'] = table
+    # are using /search/list_header.html in the template
+    context['query_string'] = extra_string
+    return render(request, template, context)
+
+
+def checklist_by_name(request, creator, country=None, language=None):
+    template = 'gcd/search/issue_list_sortable.html'
+    creator = creator.replace('+', ' ').title()
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue Checklist for Creator ' + creator,
+    }
+    prefix = 'story__'
+    op = 'icontains'
+
+    q_objs_text = Q(**{'%s%s__%s' % (prefix, 'editing', op): creator})
+    for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
+        q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
+                            '%stype__id__in' % (prefix): CORE_TYPES})
+    items = Issue.objects.filter(q_objs_text).distinct()\
+                         .annotate(series__name=F('series__name'))
+    creator = CreatorNameDetail.objects.filter(name__iexact=creator)
+    if creator:
+        q_objs_credits = Q(**{'%scredits__creator__in' % (prefix): creator,
+                              '%stype__id__in' % (prefix): CORE_TYPES})
+        items2 = Issue.objects.filter(q_objs_credits).distinct()\
+                              .annotate(series__name=F('series__name'))
+    if country:
+        country = get_object_or_404(Country, code=country)
+        items = items.filter(series__country=country)
+        if creator:
+            items2 = items2.filter(series__country=country)
+    if language:
+        language = get_object_or_404(Language, code=language)
+        items = items.filter(series__language=language)
+        if creator:
+            items2 = items2.filter(series__language=language)
+    if creator:
+        items = items.union(items2)
+
+    paginator = ResponsePaginator(items, per_page=100, vars=context)
+    page_number = paginator.paginate(request).number
+
+    if 'sort' in request.GET:
+        extra_string = 'sort=%s' % (request.GET['sort'])
+    else:
+        extra_string = ''
+
+    table = IssueTable(items, attrs={'class': 'sortable_listing'},
+                        template_name='gcd/bits/sortable_table.html',
+                        order_by=('publication_date'))
+    RequestConfig(request, paginate={'per_page': 100,
+                                     'page': page_number}).configure(table)
+    context['table'] = table
+    # are using /search/list_header.html in the template
+    context['query_string'] = extra_string
+    return render(request, template, context)
 
 
 def creator_membership(request, creator_membership_id):

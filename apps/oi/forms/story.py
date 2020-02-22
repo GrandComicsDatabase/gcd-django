@@ -20,7 +20,7 @@ from apps.oi.models import (
 
 from apps.gcd.models import CreatorNameDetail, StoryType, Feature, CreditType,\
                             FeatureLogo, STORY_TYPES, NON_OPTIONAL_TYPES,\
-                            OLD_TYPES, CREDIT_TYPES
+                            OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
 
 from .custom_layout_object import Formset
@@ -28,7 +28,7 @@ from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
     SEQUENCE_HELP_LINKS, BIBLIOGRAPHIC_ENTRY_HELP_LINKS,
-    HiddenInputWithHelp, PageCountInput)
+    BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
 
 def get_reprint_revision_form(revision=None, user=None):
@@ -71,27 +71,25 @@ def _genre_choices(language=None, additional_genres=None):
 
 
 def get_story_revision_form(revision=None, user=None,
-                            series=None):
+                            issue_revision=None):
     extra = {}
     additional_genres = []
     selected_genres = []
-    is_comics_publication = True
-    has_about_comics = False
-    language = None
+    current_type_not_allowed_id = None
+    # either there is a revision (editing a sequence) or
+    # an issue_revision (adding a sequence)
     if revision is not None:
         # Don't allow blanking out the type field.  However, when its a
-        # new store make indexers consciously choose a type by allowing
+        # new story make indexers consciously choose a type by allowing
         # an empty initial value.  So only set None if there is an existing
         # story revision.
         extra['empty_label'] = None
         if revision.issue:
-            is_comics_publication = revision.issue.series.is_comics_publication
-            has_about_comics = revision.issue.series.has_about_comics
-            language = revision.issue.series.language
+            issue = revision.issue
         else:
             # stories for variants in variant-add next to issue have issue
-            language = revision.my_issue_revision.other_issue_revision.\
-                                                  series.language
+            issue = revision.my_issue_revision.other_issue_revision.issue
+        series = issue.series
         if revision.genre:
             genres = revision.genre.split(';')
             for genre in genres:
@@ -101,23 +99,32 @@ def get_story_revision_form(revision=None, user=None,
                 selected_genres.append(genre)
             revision.genre = selected_genres
     else:
-        is_comics_publication = series.is_comics_publication
-        has_about_comics = series.has_about_comics
-        language = series.language
+        issue = issue_revision.issue
+        series = issue_revision.series
+    is_comics_publication = series.is_comics_publication
+    has_about_comics = series.has_about_comics
+    language = series.language
 
     # for variants we can only have cover sequences (for now)
-    if revision and (revision.issue is None or revision.issue.variant_of):
+    if (revision and (revision.issue is None or revision.issue.variant_of))\
+       or (revision is None and issue_revision.issue is None):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
-        # TODO prevent adding of non-covers directly in the form cleanup
-        if revision.type not in queryset:
+        if revision and revision.type not in queryset:
+            current_type_not_allowed_id = revision.type.id
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     elif not is_comics_publication:
         sequence_filter = ['comic story', 'photo story', 'cartoon']
         if has_about_comics is True:
             sequence_filter.append('about comics')
+            if issue.is_indexed == INDEXED['full']:
+                sequence_filter.extend(['cover',
+                                        'cover reprint (on interior page)',
+                                        'illustration'])
         queryset = StoryType.objects.filter(name__in=sequence_filter)
+        # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:
+            current_type_not_allowed_id = revision.type.id
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     else:
         special_types = ['filler', ]
@@ -138,6 +145,15 @@ def get_story_revision_form(revision=None, user=None,
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
 
+        def clean_type(self):
+            if queryset:
+                type = self.cleaned_data['type']
+                sequence_queryset = queryset.exclude(
+                  id=current_type_not_allowed_id)
+                if type not in sequence_queryset:
+                    raise forms.ValidationError(
+                      ['Sequence type not allowed for this issue or series.'])
+            return type
     return RuntimeStoryRevisionForm
 
 
@@ -148,15 +164,24 @@ class StoryCreditRevisionForm(forms.ModelForm):
                   'is_signed', 'signed_as', 'uncertain', 'credit_name']
         help_texts = {
             'credit_type':
-                'Selecting "pencil and inks", "pencils, inks, and colors", or'
-                ' "painting" will after saving create credit entries for '
-                '"pencils", "inks" and for the latter two also for "colors".',
+                'Selecting multi-credit entries such as "pencil and inks", or'
+                ' "pencils, inks, and colors", will after saving create credit'
+                ' entries for the different credit types. Selecting "painting"'
+                ' will also add a credit description.',
             'credit_name':
                 'Enter here additional specifications for the credit, for '
                 'example "finishes", "flats", or "pages 1-3".',
+            'is_credited':
+                'Check in case the creator is credited. If the credited name '
+                'is not the selected creator name, enter the credited name'
+                ' in the unfolded credited as field.',
             'credited_as':
                 'Enter a name if the credited name is unusual and '
                 'therefore not a creator name record.',
+            'is_signed':
+                'Check in case the creator did sign. If the signed name '
+                'is not the selected creator name, enter the name from the '
+                'signature in the unfolded signed as field.',
             'signed_as':
                 'Enter a name if the signed name is unusual, short hand, an '
                 'abbreviation, etc., and therefore not a creator name record. '
@@ -189,13 +214,23 @@ class StoryCreditRevisionForm(forms.ModelForm):
         cd = self.cleaned_data
         if cd['credited_as'] and not cd['is_credited']:
             raise forms.ValidationError(
-                ['Is credited needs to be selected when entering a name as '
-                 'credited.'])
+              ['Is credited needs to be selected when entering a name as '
+               'credited.'])
+
+        if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
+            raise forms.ValidationError(
+              ['Name entered as "credited as" is identicial to creator name.']
+            )
 
         if cd['signed_as'] and not cd['is_signed']:
             raise forms.ValidationError(
-                ['Is signed needs to be selected when entering a name as '
-                 'signed.'])
+              ['Is signed needs to be selected when entering a name as '
+               'signed.'])
+
+        if cd['signed_as'] and cd['signed_as'] == cd['creator'].name:
+            raise forms.ValidationError(
+              ['Name entered as "signed as" is identicial to creator name.']
+            )
 
 
 StoryRevisionFormSet = inlineformset_factory(
@@ -488,10 +523,16 @@ class StoryRevisionForm(forms.ModelForm):
                       self.data['story_credit_revisions-%d-credit_type' % i]
                     if credit_type == CREDIT_TYPES[seq_type]:
                         seq_type_found = True
-                    elif seq_type in ['pencils', 'inks'] and \
-                      credit_type in ['7', '8', '9']:
+                    elif seq_type == 'script' and credit_type in ['10', '11',
+                                                                  '12', '13']:
                         seq_type_found = True
-                    elif seq_type == 'colors' and credit_type in ['8', '9']:
+                    elif seq_type in ['pencils', 'inks'] and \
+                      credit_type in ['7', '8', '9', '10', '11', '12', '13']:
+                        seq_type_found = True
+                    elif seq_type == 'colors' and credit_type in ['8', '9',
+                                                                  '11', '13']:
+                        seq_type_found = True
+                    elif seq_type == 'letters' and credit_type in ['12', '13']:
                         seq_type_found = True
 
             if cd['type'].id in NON_OPTIONAL_TYPES:
@@ -539,7 +580,11 @@ class BiblioRevisionForm(forms.ModelForm):
     class Meta:
         model = BiblioEntryRevision
         fields = ['page_began', 'page_ended', 'abstract', 'doi']
-        help_texts = BIBLIOGRAPHIC_ENTRY_HELP_LINKS
+        help_texts = BIBLIOGRAPHIC_ENTRY_HELP_TEXT
+
+    doi = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+                          required=False, label='DOI',
+                          help_text=BIBLIOGRAPHIC_ENTRY_HELP_TEXT['doi'])
 
     def clean(self):
         cd = self.cleaned_data

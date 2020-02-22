@@ -22,7 +22,7 @@
   <div id="control_container">
     <div id="control_center">
       <div class="pub_data">
-        <dl class="pub_data">
+        <dl style="columns: 2" class="pub_data">
           <dt> Country:
           <dd> {{ publisher.country.name }}
 {% if publisher.indicia_publisher_count %}
@@ -61,7 +61,8 @@
           <dt> Show Covers by Month:
           <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a>
 {% if publisher.url or publisher.notes or publisher.has_keywords %}
-          <p>
+        </dl>
+        <dl style="margin-top: -0.5em" class="pub_data">
   {% if publisher.url %}
           <dt> Web Site:
           <dd> <a href="{{ publisher.url }}">{{ publisher.url }}</a>

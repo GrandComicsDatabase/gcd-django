@@ -29,9 +29,10 @@ from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             BrandGroup, Brand, IndiciaPublisher, STORY_TYPES, \
-                            Award, Creator, CreatorMembership, ReceivedAward, \
+                            CREDIT_TYPES, Creator, CreatorMembership, \
                             CreatorArtInfluence, CreatorNonComicWork, \
-                            CreatorNameDetail, SeriesPublicationType
+                            CreatorNameDetail, SeriesPublicationType, \
+                            Award, ReceivedAward
 from apps.gcd.models.issue import INDEXED
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
@@ -240,6 +241,12 @@ def generic_by_name(request, name, q_obj, sort,
                 query_val[credit_type] = name
         if sqs is None:
             # TODO: move this outside when series deletes are implemented
+            if credit in ['script', 'pencils', 'inks', 'colors', 'letters']:
+                creators = list(CreatorNameDetail.objects
+                                .filter(name__icontains=name)
+                                .values_list('id', flat=True))
+                q_obj |= Q(credits__creator__id__in=creators,
+                           credits__credit_type__id=CREDIT_TYPES[credit])
             q_obj &= Q(deleted=False)
 
             things = class_.objects.filter(q_obj)
@@ -778,50 +785,6 @@ def search(request):
                                       'sort': sort}))
 
 
-def checklist_by_name(request, creator, country=None, language=None):
-    creator = creator.replace('+', ' ').title()
-    get = request.GET.copy()
-    get['target'] = 'issue'
-    get['script'] = creator
-    get['pencils'] = creator
-    get['inks'] = creator
-    get['colors'] = creator
-    get['letters'] = creator
-    get['story_editing'] = creator
-    get['logic'] = 'True'
-    get['order1'] = 'series'
-    get['order2'] = 'date'
-    get['method'] = 'icontains'
-    if country and Country.objects.filter(code=country).count() == 1:
-        get['country'] = country
-    if language and Language.objects.filter(code=language).count() == 1:
-        get['language'] = language
-    request.GET = get.copy()
-    get.pop('page', None)
-
-    try:
-        items, target = do_advanced_search(request)
-    except ViewTerminationError as response:
-        return response.response
-
-    context = {
-        'item_name': 'issue',
-        'plural_suffix': 's',
-        'heading': 'Issue Checklist for Creator ' + creator,
-        'query_string': get.urlencode(),
-    }
-
-    template = 'gcd/search/issue_list.html'
-
-    target, method, logic, used_search_terms = used_search(get)
-    context['target'] = target
-    context['method'] = method
-    context['logic'] = logic
-    context['used_search_terms'] = used_search_terms
-
-    return paginate_response(request, items, template, context)
-
-        
 def advanced_search(request):
     """Displays the advanced search page."""
 
@@ -1065,13 +1028,13 @@ def process_advanced(request, export_csv=False):
     except ViewTerminationError as response:
         return response.response
 
-    count = items.count()
-    if count and 'random_search' in request.GET:
-        # using DB random via order_by('?') is rather expensive
-        select = randint(0, count-1)
-        # nullify imposed ordering, use db one
-        item = items.order_by()[select]
-        return HttpResponseRedirect(item.get_absolute_url())
+    if 'random_search' in request.GET:
+        if items.count():
+            # using DB random via order_by('?') is rather expensive
+            select = randint(0, items.count()-1)
+            # nullify imposed ordering, use db one
+            item = items.order_by()[select]
+            return HttpResponseRedirect(item.get_absolute_url())
 
     item_name = target
     plural_suffix = 's'
@@ -1581,8 +1544,12 @@ def search_stories(data, op):
 
     for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
         if data[field]:
-            q_objs.append(Q(**{ '%s%s__%s' % (prefix, field, op):
-                                data[field] }))
+            q_objs.append(Q(**{'%s%s__%s' % (prefix, field, op):
+                               data[field]}) |
+                          Q(**{'%scredits__creator__name__%s' % (prefix, op):
+                               data[field],
+                               '%scredits__credit_type__id' % (prefix):
+                               CREDIT_TYPES[field]}))
 
     for field in ('feature', 'title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):

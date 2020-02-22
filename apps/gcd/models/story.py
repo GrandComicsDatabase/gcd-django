@@ -40,7 +40,7 @@ OLD_TYPES = {
 # core sequence types: (photo, text) story, cover (incl. reprint)
 CORE_TYPES = [6, 7, 13, 19, 21]
 # ad sequence types: ad, promo
-AD_TYPES = [2, 16, 26]
+AD_TYPES = [2, 16, 26, 28]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
 
@@ -54,13 +54,30 @@ def show_feature(story):
         else:
             features += '; '
         features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
-                                              esc(feature.name))
+                                             esc(feature.name))
     if story.feature:
         if features:
             features += '; %s' % esc(story.feature)
         else:
             features = esc(story.feature)
     return mark_safe(features)
+
+
+def show_feature_as_text(story):
+    first = True
+    features = ''
+    for feature in story.feature_object.all():
+        if first:
+            first = False
+        else:
+            features += '; '
+        features += '%s' % feature.name
+    if story.feature:
+        if features:
+            features += '; %s' % story.feature
+        else:
+            features = story.feature
+    return features
 
 
 class CreditType(models.Model):
@@ -241,20 +258,7 @@ class Story(GcdData):
         return self._show_feature(self)
 
     def show_feature_as_text(self):
-        first = True
-        features = ''
-        for feature in self.feature_object.all():
-            if first:
-                first = False
-            else:
-                features += '; '
-            features += '%s' % feature.name
-        if self.feature:
-            if features:
-                features += '; %s' % self.feature
-            else:
-                features = self.feature
-        return features
+        return show_feature_as_text(self)
 
     def _show_feature_logo(self, story):
         return "; ".join(story.feature_logo.all().values_list('name',

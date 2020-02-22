@@ -1,5 +1,4 @@
 import calendar
-from operator import itemgetter
 from django.core import urlresolvers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
@@ -122,8 +121,8 @@ class CreatorNameDetail(GcdData):
         else:
             name = self.creator.gcd_official_name
             as_name = self
-            if self.type.id == NAME_TYPES['studio'] \
-              and self.creator_relation.count():
+            if self.type and self.type.id == NAME_TYPES['studio'] \
+               and self.creator_relation.count():
                 co_name = self.creator_relation.get().to_creator
 
         if credit.uncertain:
@@ -174,13 +173,17 @@ class CreatorNameDetail(GcdData):
             year = '(b. %s)' % self.creator.birth_date.year
         else:
             year = ''
-        if self.type.id == 1:
-            return '%s %s (%s)' % (str(self.name), year,
-                                   str(self.type.type))
+        if self.type:
+            type_as_string = '(%s)' % str(self.type.type)
         else:
-            return '%s %s - %s (%s)' % (str(self.creator), year,
-                                        str(self.name),
-                                        str(self.type.type))
+            type_as_string = ''
+        if self.is_official_name:
+            return '%s %s %s' % (str(self.name), year,
+                                 type_as_string)
+        else:
+            return '%s %s - %s %s' % (str(self.creator), year,
+                                      str(self.name),
+                                      type_as_string)
 
 
 class RelationType(models.Model):
@@ -296,6 +299,8 @@ class Creator(GcdData):
             return False
 
     def has_dependents(self):
+        if self.creator_names.filter(storycredit__deleted=False).exists():
+            return True
         if self.art_influence_revisions.active_set().count():
             return True
         # TODO how to handle GenericRelation for ReceivedAward
@@ -311,6 +316,9 @@ class Creator(GcdData):
             return True
         if self.active_relations():
             return True
+        if self.active_influenced_creators():
+            return True
+
         return False
 
     def pending_deletion(self):
@@ -321,7 +329,12 @@ class Creator(GcdData):
         return self.creator_names.exclude(deleted=True)
 
     def active_art_influences(self):
-        return self.art_influence_set.exclude(deleted=True)
+        return self.art_influences.exclude(deleted=True)\
+                   .order_by('influence_link__sort_name', 'influence_name')
+
+    def active_influenced_creators(self):
+        return self.influenced_creators.exclude(deleted=True)\
+                   .order_by('creator__sort_name')
 
     def active_awards(self):
         return self.awards.exclude(deleted=True)
@@ -336,16 +349,8 @@ class Creator(GcdData):
         return self.non_comic_work_set.exclude(deleted=True)
 
     def active_relations(self):
-        from_relations = self.from_related_creator.exclude(deleted=True)
-        relations = list(from_relations.values_list(
-                    'from_creator__id', 'from_creator__gcd_official_name',
-                    'relation_type__reverse_type', 'notes', 'id'))
-        to_relations = self.to_related_creator.exclude(deleted=True)
-        relations.extend(to_relations.values_list(
-                  'to_creator__id', 'to_creator__gcd_official_name',
-                  'relation_type__type', 'notes', 'id'))
-        relations.sort(key=itemgetter(2, 1))
-        return relations
+        return self.from_related_creator.exclude(deleted=True) | \
+               self.to_related_creator.exclude(deleted=True)
 
     def active_schools(self):
         return self.school_set.exclude(deleted=True)
@@ -392,6 +397,12 @@ class CreatorRelation(GcdData):
                                           related_name='creator_relation')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
+
+    def pre_process_relation(self, creator):
+        if self.from_creator == creator:
+            return [self.to_creator, self.relation_type.type]
+        if self.to_creator == creator:
+            return [self.from_creator, self.relation_type.reverse_type]
 
     def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_creator),
@@ -507,10 +518,10 @@ class CreatorArtInfluence(GcdData):
         app_label = 'gcd'
         verbose_name_plural = 'Creator Art Influences'
 
-    creator = models.ForeignKey(Creator, related_name='art_influence_set')
+    creator = models.ForeignKey(Creator, related_name='art_influences')
     influence_name = models.CharField(max_length=200)
     influence_link = models.ForeignKey(Creator, null=True,
-                                       related_name='exist_influencer')
+                                       related_name='influenced_creators')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
 

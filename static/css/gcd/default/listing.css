@@ -1,0 +1,101 @@
+/* Copy from queues.css, if we keep we need to combine the common part of the two css-files into one. */
+
+.sortable_listing {
+    margin-bottom: 1em;
+    margin-top: 1em;
+}
+
+table.sortable_listing {
+    border-collapse: collapse;
+    border: solid #DDD 1px;
+}
+
+.sortable_listing th a {
+    color: blue;
+}
+
+.sortable_listing td img {
+    padding-right: 0.25em;
+}
+.sortable_listing th {
+    padding: 0.4em;
+    background-color: #ebf3ff;
+    border-bottom: 1px solid #DDD;
+}
+
+.sortable_listing tr:hover {
+    background: #f6fbff;
+}
+
+.sortable_listing td {
+    padding: 0.2em 0.4em;
+    border-bottom: 1px solid #DDD;
+}
+
+.sortable_listing td a {
+    padding: 0.3em 0em;
+}
+
+.sortable_listing span.add {
+    background-color: palegreen;
+    color: black;
+}
+
+.sortable_listing span.delete {
+    background-color: tomato;
+    color: black;
+}
+
+.sortable_listing td a:link {
+    text-decoration: None;
+}
+
+.sortable_listing td a:hover {
+    text-decoration: underline;
+}
+
+.sortable_listing td.add {
+    background-color: palegreen;
+}
+
+.sortable_listing td.delete {
+    background-color: tomato;
+}
+
+.sortable_listing td.overdue {
+    color: red;
+}
+
+table#covers span.add {
+    background-color: palegreen;
+}
+
+table#covers span.delete {
+    background-color: tomato;
+}
+
+table#covers span.modify {
+    background-color: yellow;
+}
+
+.sortable_listing form {
+    margin: 0;
+    padding: 0;
+    display: inline;
+}
+
+.sortable_listing th.orderable > a {
+    padding-right: 20px;
+    background: right center no-repeat;
+}
+
+.sortable_listing th.orderable.asc > a {
+    background-image: url(../../../img/gcd/icons/gnome/19x19/actions/sort-asc.png);
+}
+.sortable_listing th.orderable.desc > a {
+    background-image: url(../../../img/gcd/icons/gnome/19x19/actions/sort-desc.png);
+}
+
+.label_binding {
+    white-space: nowrap;
+}

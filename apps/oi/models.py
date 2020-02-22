@@ -46,7 +46,7 @@ from apps.gcd.models import (
 from apps.gcd.models.gcddata import GcdData
 
 from apps.gcd.models.issue import issue_descriptor
-from apps.gcd.models.story import show_feature
+from apps.gcd.models.story import show_feature, show_feature_as_text
 
 from apps.indexer.views import ErrorWithMessage
 
@@ -608,7 +608,8 @@ class Changeset(models.Model):
         if self.approver is None and (
                 self.indexer.indexer.is_new and
                 self.indexer.indexer.mentor is not None and
-                self.change_type != CTYPES['cover']):
+                self.change_type != CTYPES['cover'] and
+                self.change_type != CTYPES['image']):
             self.approver = self.indexer.indexer.mentor
 
         new_state = states.PENDING
@@ -773,11 +774,14 @@ class Changeset(models.Model):
         for revision in self.revisions:
             # TODO rethink the depency handling during committing
             #
-            # We might have saved other revision due to dependences.
+            # We might have saved other revision due to dependencies.
             # Other types, later in the itertools.chain, are fresh,
             # but revision of the same type can became stale
             # in self.revisions, so refresh_from_db. Could do a
             # check for type, i.e. same as before, to reduce db calls.
+            # save the source status before the refresh for locks ?
+            source = revision.source
+
             revision.refresh_from_db()
 
             # For adds we might generate additional revisions, and call
@@ -790,8 +794,8 @@ class Changeset(models.Model):
             #      But check shouldn't hurt anyway ?
             if revision.committed is not True:
                 # adds have a (created) source only after commit_to_display
-                if revision.source:
-                    _free_revision_lock(revision.source)
+                if source:
+                    _free_revision_lock(source)
                 # first free the lock, commit_to_display might delete source
                 revision.commit_to_display()
 
@@ -868,6 +872,7 @@ class Changeset(models.Model):
 
                 if revision.deleted:
                     if isinstance(revision, StoryRevision) or \
+                       isinstance(revision, StoryCreditRevision) or \
                        isinstance(revision, ReprintRevision) or \
                        isinstance(revision, CreatorNameDetailRevision):
                         self.imps += IMP_DELETE
@@ -972,13 +977,12 @@ def _get_revision_lock(object, changeset=None):
     return revision_lock
 
 
-# This should not have @transaction.atomic, since the lock should stay till
-# the end of the request ?
 def _free_revision_lock(object):
-    revision_lock = RevisionLock.objects.get(
-      object_id=object.id,
-      content_type=ContentType.objects.get_for_model(object))
-    revision_lock.delete()
+    with transaction.atomic():
+        revision_lock = RevisionLock.objects.get(
+          object_id=object.id,
+          content_type=ContentType.objects.get_for_model(object))
+        revision_lock.delete()
 
 
 class RevisionLock(models.Model):
@@ -3159,8 +3163,14 @@ class SeriesRevision(Revision):
                                            after=None,
                                            number='[nn]',
                                            publication_date=self.year_began,
+                                           notes=self.notes,
                                            reservation_requested=
                                            self.reservation_requested)
+            if self.notes:
+                self.notes = ''
+                self.save()
+                self.series.notes = ''
+                self.series.save()
             # We assume that a non-four-digit year is a typo of some
             # sort, and do not propagate it.  The approval process
             # should catch that sort of thing.
@@ -4499,14 +4509,16 @@ class StoryRevision(Revision):
         issue_revision = changeset.issuerevisions.get(issue=issue)
         revision.issue = issue
         revision.sequence_number = issue_revision.next_sequence_number()
+        credits = story.active_credits
         if revision.issue.series.language != story.issue.series.language:
             if revision.letters:
                 revision.letters = '?'
             revision.title = ''
             revision.title_inferred = False
             revision.first_line = ''
+            credits = credits.exclude(credit_type=CREDIT_TYPES['letters'])
         revision.save()
-        for credit in story.active_credits:
+        for credit in credits:
             StoryCreditRevision.clone(credit, revision.changeset,
                                       fork=True, story_revision=revision)
         return revision
@@ -4659,7 +4671,8 @@ class StoryRevision(Revision):
                     credit_revision = credit_form.save(commit=False)
                     credit_revision.save_added_revision(
                       changeset=self.changeset, story_revision=self)
-                    if credit_revision.credit_type.id in [7, 8, 9]:
+                    if credit_revision.credit_type.id in [7, 8, 9, 10, 11,
+                                                          12, 13]:
                         if credit_revision.credit_type.id == 9:
                             credit_revision.credit_name = 'painting'
                         credit_revision.credit_type = \
@@ -4669,10 +4682,20 @@ class StoryRevision(Revision):
                         credit_revision.credit_type = \
                           CreditType.objects.get(id=3)
                         credit_revision.save()
-                        if cd['credit_type'].id in [8, 9]:
+                        if cd['credit_type'].id in [8, 9, 11, 13]:
                             credit_revision.id = None
                             credit_revision.credit_type = \
                               CreditType.objects.get(id=4)
+                            credit_revision.save()
+                        if cd['credit_type'].id in [10, 11, 12, 13]:
+                            credit_revision.id = None
+                            credit_revision.credit_type = \
+                              CreditType.objects.get(id=1)
+                            credit_revision.save()
+                        if cd['credit_type'].id in [12, 13]:
+                            credit_revision.id = None
+                            credit_revision.credit_type = \
+                                CreditType.objects.get(id=5)
                             credit_revision.save()
             elif not credit_form.is_valid() and \
               credit_form not in credits_formset.deleted_forms:
@@ -4704,6 +4727,10 @@ class StoryRevision(Revision):
         when the revision is committed.
         """
         self.deleted = not self.deleted
+        if bool(self.story_credit_revisions.all()):
+            for story_credit_revision in self.story_credit_revisions.all():
+                story_credit_revision.deleted = self.deleted
+                story_credit_revision.save()
         self.save()
 
     def get_absolute_url(self):
@@ -4721,6 +4748,9 @@ class StoryRevision(Revision):
 
     def show_feature(self):
         return show_feature(self)
+
+    def show_feature_as_text(self):
+        return show_feature_as_text(self)
 
     def __str__(self):
         """
@@ -5164,6 +5194,13 @@ class BiblioEntryRevision(StoryRevision):
     source_class = BiblioEntry
 
     _regular_fields = None
+
+    # otherwise the StoryRevision-routine is called
+    def extra_forms(self, request):
+        return {}
+
+    def process_extra_forms(self, request, extra_forms):
+        pass
 
     def previous(self):
         previous = super(StoryRevision, self).previous()
@@ -6898,7 +6935,7 @@ class CreatorNameDetailRevision(Revision):
     creator = models.ForeignKey(Creator, related_name='name_revisions',
                                 null=True)
     name = models.CharField(max_length=255, db_index=True)
-    sort_name = models.CharField(max_length=255, default='', blank=True)
+    sort_name = models.CharField(max_length=255, default='')
     is_official_name = models.BooleanField(default=False)
     given_name = models.CharField(max_length=255, db_index=True, default='',
                                   blank=True)
@@ -6906,7 +6943,7 @@ class CreatorNameDetailRevision(Revision):
                                    blank=True)
     type = models.ForeignKey('gcd.NameType',
                              related_name='revision_name_details',
-                             null=True)
+                             null=True, blank=True)
     in_script = models.ForeignKey(Script, default=Script.LATIN_PK)
 
     source_name = 'creator_name_detail'

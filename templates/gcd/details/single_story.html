@@ -45,17 +45,11 @@
         {% if story.has_credits %}
       <dl class="credits">
           {{ story|show_creator_credit:"script" }}
-          {{ story|show_credit:"script" }}
           {{ story|show_creator_credit:"pencils" }}
-          {{ story|show_credit:"pencils" }}
           {{ story|show_creator_credit:"inks" }}
-          {{ story|show_credit:"inks" }}
           {{ story|show_creator_credit:"colors" }}
-          {{ story|show_credit:"colors" }}
           {{ story|show_creator_credit:"letters" }}
-          {{ story|show_credit:"letters" }}
           {{ story|show_creator_credit:"story_editing" }}
-          {{ story|show_credit:"editing" }}
       </dl>
         {% endif %}
 
