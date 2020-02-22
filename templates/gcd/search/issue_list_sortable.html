@@ -1,0 +1,37 @@
+{% extends "gcd/base_view.html" %}
+
+{% load staticfiles %}
+{% load credits %}
+{% load display %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: {{ heading }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+
+  {% with position='top' link_direction='bottom' hide_info=True %}
+    {% include "gcd/search/list_header.html" %}
+  {% endwith %}
+<div style="clear: both;"></div>
+
+{% render_table table %}
+
+<div class="right">
+  {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
+    {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
+  {% endif %}
+</div>
+
+  {% with position='bottom' link_direction='top' %}
+    {% include "gcd/search/list_header.html" %}
+  {% endwith %}
+{% endblock %}

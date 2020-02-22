@@ -94,10 +94,10 @@
             <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
 {% endif %}
           </ul>
-
+<div style="columns: 2; margin-bottom: 1em">
 {% if brand_counts.no_brand != series.active_issues.count %}
           <div class="series_detail_header">Publisher's Brands:</div>
-          <ul class="series_detail_info">
+          <ul style="page-break-inside: avoid;" class="series_detail_info">
   {% for brand in brands %}
             <li> {{ brand|absolute_url }}
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ brand|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.used_issue_count }} issue{{ brand.used_issue_count|pluralize }}</a>)
@@ -112,8 +112,8 @@
   {% endif %}
           </ul>
 {% endif %}
-
 {% if series.active_issues.count %}
+          <div style="page-break-inside: avoid;">
           <div class="series_detail_header">Indicia Publishers:</div>
           <ul class="series_detail_info">
   {% for ip in series.ordered_indicia_publishers %}
@@ -124,9 +124,9 @@
             <li> without indicia publisher information
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)
   {% endif %}
-        </ul>
+	 </ul></div>
 {% endif %}
-
+</div>
           <div class="series_notes">
 {% if series.active_awards.count %}
             <div class="series_detail_header"> Awards: </div>

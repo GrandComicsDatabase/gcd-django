@@ -166,20 +166,7 @@ def show_isbn(_isbn):
 
 @register.filter
 def show_issue(issue):
-    if issue.display_number:
-        issue_number = '%s' % (esc(issue.display_number))
-    else:
-        issue_number = ''
-    if issue.variant_name:
-        issue_number = '%s [%s]' % (issue_number, esc(issue.variant_name))
-    if issue_number:
-        issue_number = '<a href="%s">%s</a>' % (issue.get_absolute_url(),
-                                                issue_number)
-    return mark_safe('<a href="%s">%s</a> (%s series) %s' %
-                     (issue.series.get_absolute_url(),
-                      esc(issue.series.name),
-                      esc(issue.series.year_began),
-                      issue_number))
+    return issue.show_series_and_issue_link()
 
 
 @register.filter
@@ -293,21 +280,6 @@ def show_revision_type(cover):
     return '[ADDED]'
 
 
-def compare_field_between_revs(field, rev, prev_rev):
-    old = getattr(prev_rev, field)
-    new = getattr(rev, field)
-    if type(new) == str:
-        field_changed = old.strip() != new.strip()
-    else:
-        # TODO should be not hard-coded
-        import apps.stddata.models
-        if type(old) == apps.stddata.models.Date:
-            field_changed = str(old) != str(new)
-        else:
-            field_changed = old != new
-    return field_changed
-
-
 @register.filter
 def changed_fields(changeset, object):
     """
@@ -358,25 +330,19 @@ def changed_fields(changeset, object):
     elif object_class in [Cover, Image]:
         return ""
 
-    prev_rev = revision.previous()
     changed_list = []
-    if prev_rev is None:
-        # There was no previous revision so only list the initial add of
-        # the object. Otherwise too many fields to list.
+    if revision.added:
+        # Only list the initial add of the object.
+        # Otherwise too many fields to list.
         changed_list = ['%s added' % title(revision.source_name
-                                                    .replace('_', ' '))]
+                                                   .replace('_', ' '))]
     elif revision.deleted:
         changed_list = ['%s deleted' %
                         title(revision.source_name.replace('_', ' '))]
     else:
+        revision.compare_changes()
         for field in revision._field_list():
-            if field == 'after':
-                # most ignorable fields handled in oi/view.py/compare()
-                # but this one should also be ignored on the initial change
-                # history page. the only time it's relevant the line will
-                # read "issue added"
-                continue
-            if compare_field_between_revs(field, revision, prev_rev):
+            if revision.changed[field]:
                 changed_list.append(field_name(field))
     return ", ".join(changed_list)
 
@@ -397,16 +363,15 @@ def changed_story_list(changeset):
     output = ''
     if story_revisions.count() > 0:
         for story_revision in story_revisions:
-            prev_story_rev = story_revision.previous()
             story_changed_list = []
-            if prev_story_rev is None:
+            if story_revision.added:
                 story_changed_list = ['Sequence added']
             elif story_revision.deleted:
                 story_changed_list = ['Sequence deleted']
             else:
+                story_revision.compare_changes()
                 for field in story_revision._field_list():
-                    if compare_field_between_revs(field, story_revision,
-                                                  prev_story_rev):
+                    if story_revision.changed[field]:
                         story_changed_list.append(field_name(field))
             if story_changed_list:
                 output += '<li>Sequence %s : %s' % \
@@ -509,3 +474,7 @@ def short_pub_type(publication_type):
         return '[' + publication_type.name[0] + ']'
     else:
         return ''
+
+@register.filter
+def pre_process_relation(relation, creator):
+    return relation.pre_process_relation(creator)

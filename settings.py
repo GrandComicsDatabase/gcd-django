@@ -123,10 +123,6 @@ MIDDLEWARE_CLASSES = (
    'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
    'apps.middleware.errorhandling.ErrorHandlingMiddleware',
-   # TODO: This does not work on Python3.  We should measure
-   #       and see if we really need this functionality, and
-   #       if so how to get it on Python3.
-   # 'apps.middleware.stripwhitespace.StripWhitespaceMiddleware'
 )
 
 LANGUAGES = (
@@ -332,7 +328,7 @@ EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_PRTEAM = 'pr-team@comics.org'
 EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
-CHAIRMAN = 'Lionel English'
+CHAIRMAN = 'Donald Dale Milne'
 EMAIL_CHAIRMAN = '%s <chair@comics.org>' % CHAIRMAN
 
 # Number of days for which a registraton confirmation token is valid.

@@ -4,11 +4,11 @@
     {% if user.is_authenticated %}
         <p>
         {% trans 'You are logged in as ' %}{{ user.indexer }}<br>
-        <a href="{% url "editing" %}">{% trans 'Editing' %}</a> |
-        <a href="{% url "default_profile" %}">{% trans 'Profile' %}</a>
+        <a class="no_visited" href="{% url "editing" %}">{% trans 'Editing' %}</a> |
+        <a class="no_visited" href="{% url "default_profile" %}">{% trans 'Profile' %}</a>
         </p>
         {% if user.is_staff %}
-        <a href="/admin">{% trans 'Admin' %}</a> |
+        <a class="no_visited" href="/admin">{% trans 'Admin' %}</a> |
         {% endif %}
         <form action="{% url "logout" %}" method="POST" class="login_form">
             {% csrf_token %}

@@ -53,10 +53,10 @@
       <span class="{{ changeset.changeset_action }}">{{ changeset.queue_descriptor }}</span></a>
     </td>
         {% if queue_name != 'editing' %}
-    <td> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
+    <td class="no_visited"> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
         {% endif %}
         {% if queue_name != 'reviews' %}
-    <td> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
+    <td class="no_visited"> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
         {% endif %}
     <td> {{ changeset.display_state }} </td>
     <td> {{ changeset.modified|naturaltime }} </td>
