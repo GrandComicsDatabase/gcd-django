@@ -4169,7 +4169,8 @@ class IssueRevision(Revision):
                 credit_revision = StoryCreditRevision.clone(
                   credit, self.changeset, story_revision=story_revision)
                 if delete:
-                    credit_revision.toggle_deleted()
+                    credit_revision.deleted = story_revision.deleted
+                    credit_revision.save()
         if delete:
             for cover in self.issue.active_covers():
                 # cover can be reserved, so this can fail

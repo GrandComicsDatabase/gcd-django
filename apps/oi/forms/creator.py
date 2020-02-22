@@ -65,7 +65,8 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
                self.instance.creator_name_detail.type.id in [1, 3, 4, 6, 9]:
                 self.fields['type'].queryset |= NameType.objects.filter(
                   id=self.instance.creator_name_detail.type.id)
-            if self.instance.creator_name_detail.storycredit_set.count():
+            if self.instance.creator_name_detail.storycredit_set\
+                                                .filter(deleted=False).count():
                 # TODO How can the 'remove'-link not be shown in this case ?
                 self.fields['name'].help_text = \
                     'Creator names with existing credits cannot be removed.'
@@ -82,7 +83,8 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
     def _should_delete_form(self, form):
         # TODO workaround, better to not allow the removal, see above
         if form.instance.creator_name_detail:
-            if form.instance.creator_name_detail.storycredit_set.count():
+            if form.instance.creator_name_detail.storycredit_set\
+                                                .filter(deleted=False).count():
                 form.cleaned_data['DELETE'] = False
                 return False
         return super(CustomInlineFormSet, self)._should_delete_form(form)

@@ -119,7 +119,8 @@ def checklist_by_id(request, creator_id, country=None, language=None):
     creator_names = creator.creator_names.filter(deleted=False)
 
     issues = Issue.objects.filter(story__credits__creator__in=creator_names,
-                                  story__type__id__in=CORE_TYPES).distinct()\
+                                  story__type__id__in=CORE_TYPES,
+                                  story__credits__deleted=False).distinct()\
                           .select_related('series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
