@@ -89,7 +89,7 @@ class CreditType(models.Model):
     name = models.CharField(max_length=50, db_index=True, unique=True)
     sort_code = models.IntegerField(unique=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -113,7 +113,7 @@ class StoryCredit(GcdData):
     # record for a wider range of creative work types, or how it is credited
     credit_name = models.CharField(max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s (%s)" % (self.story, self.creator, self.credit_type)
 
 
