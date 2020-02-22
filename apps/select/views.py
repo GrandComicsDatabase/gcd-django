@@ -42,8 +42,6 @@ def _cant_get_key(request):
 def store_select_data(request, select_key, data):
     if not select_key:
         salt = hashlib.sha1(str(random()).encode('utf8')).hexdigest()[:5]
-        x = str(request.user)
-        y = salt + x
         select_key = hashlib.sha1(
             (salt + str(request.user)).encode('utf8')).hexdigest()
     for item in data:
