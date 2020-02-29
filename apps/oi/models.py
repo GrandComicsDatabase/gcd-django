@@ -34,8 +34,8 @@ from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
-    SeriesBond, Cover, Image, Issue, Story, StoryCredit, Feature, BiblioEntry,
-    Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
+    SeriesBond, Cover, Image, Issue, IssueCredit, Story, StoryCredit, Feature,
+    BiblioEntry, Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     FeatureLogo, FeatureRelation, ImageType,
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
@@ -329,6 +329,7 @@ class Changeset(models.Model):
         if self.change_type in [CTYPES['issue'], CTYPES['variant_add'],
                                 CTYPES['two_issues']]:
             return (self.issuerevisions.all(),
+                    self.issuecreditrevisions.all(),
                     self.storyrevisions.all(),
                     self.storycreditrevisions.all(),
                     self.coverrevisions.all(),
@@ -356,6 +357,7 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['series']:
             return (self.seriesrevisions.all(),
                     self.issuerevisions.all().select_related('issue'),
+                    self.issuecreditrevisions.all(),
                     self.storyrevisions.all(),
                     self.storycreditrevisions.all())
 
@@ -873,6 +875,7 @@ class Changeset(models.Model):
                 if revision.deleted:
                     if isinstance(revision, StoryRevision) or \
                        isinstance(revision, StoryCreditRevision) or \
+                       isinstance(revision, IssueCreditRevision) or \
                        isinstance(revision, ReprintRevision) or \
                        isinstance(revision, CreatorNameDetailRevision):
                         self.imps += IMP_DELETE
@@ -3403,6 +3406,78 @@ def get_issue_field_list():
             'notes', 'keywords']
 
 
+class IssueCreditRevision(Revision):
+    class Meta:
+        db_table = 'oi_issue_credit_revision'
+        ordering = ['credit_type__sort_code', 'id']
+
+    issue_credit = models.ForeignKey(IssueCredit, null=True,
+                                     related_name='revisions')
+
+    creator = models.ForeignKey(CreatorNameDetail)
+    credit_type = models.ForeignKey(CreditType)
+    issue_revision = models.ForeignKey('IssueRevision',
+                                       related_name='issue_credit_revisions')
+
+    is_credited = models.BooleanField(default=False, db_index=True)
+
+    uncertain = models.BooleanField(default=False, db_index=True)
+
+    credited_as = models.CharField(max_length=255, blank=True)
+
+    # record for a wider range of work types, or how it is credited
+    credit_name = models.CharField(max_length=255, blank=True)
+
+    source_name = 'issue_credit'
+    source_class = IssueCredit
+
+    @property
+    def source(self):
+        return self.issue_credit
+
+    @source.setter
+    def source(self, value):
+        self.issue_credit = value
+
+    def _pre_save_object(self, changes):
+        self.issue_credit.issue = self.issue_revision.issue
+
+    def _do_complete_added_revision(self, issue_revision):
+        self.issue_revision = issue_revision
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        self.issue_revision = kwargs['issue_revision']
+
+    def __str__(self):
+        return "%s: %s (%s)" % (self.issue_revision, self.creator,
+                                self.credit_type)
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    _base_field_list = ['creator', 'credit_type', 'is_credited', 'uncertain',
+                        'credited_as', 'credit_name']
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'creator': None,
+            'credit_type': None,
+            'issue': None,
+            'is_credited': False,
+            'uncertain': False,
+            'credited_as': '',
+            'credit_name': '',
+        }
+
+    def _imps_for(self, field_name):
+        # imps already come from IssueRevision, since is_changed is True there
+        return 0
+
+
 class IssueRevision(Revision):
     class Meta:
         db_table = 'oi_issue_revision'
@@ -3591,6 +3666,19 @@ class IssueRevision(Revision):
             ('brand', 'group'),
         })
 
+    def compare_changes(self):
+        super(IssueRevision, self).compare_changes()
+        if not self.deleted: # and not self.changed['editing']:
+            credits = self.issue_credit_revisions.filter(
+                           credit_type__id=6)
+            if credits:
+                for credit in credits:
+                    credit.compare_changes()
+                    if credit.is_changed:
+                        self.changed['editing'] = True
+                        self.is_changed = True
+                        break
+
     def _pre_initial_save(self, fork=False, fork_source=None,
                           exclude=frozenset(), **kwargs):
         source = fork_source if fork_source else self.issue
@@ -3770,12 +3858,88 @@ class IssueRevision(Revision):
                 old_series.has_gallery = False
                 old_series.save()
 
+    def _create_dependent_revisions(self, delete=False):
+        for credit in self.issue.active_credits:
+            credit_lock = _get_revision_lock(credit,
+                                             changeset=self.changeset)
+            if credit_lock is None:
+                raise IntegrityError("needed Credit lock not possible")
+            credit_revision = IssueCreditRevision.clone(
+                credit, self.changeset, issue_revision=self)
+            if delete:
+                credit_revision.deleted = self.deleted
+                credit_revision.save()
+        for story in self.issue.active_stories():
+            # currently stories cannot be reserved without the issue, but
+            # check anyway
+            # TODO check if transaction rollback works
+            story_lock = _get_revision_lock(story, changeset=self.changeset)
+            if story_lock is None:
+                raise IntegrityError("needed Story lock not possible")
+            story_revision = StoryRevision.clone(story, self.changeset)
+            if delete:
+                story_revision.toggle_deleted()
+            for credit in story.active_credits:
+                credit_lock = _get_revision_lock(credit,
+                                                 changeset=self.changeset)
+                if credit_lock is None:
+                    raise IntegrityError("needed Credit lock not possible")
+                credit_revision = StoryCreditRevision.clone(
+                  credit, self.changeset, story_revision=story_revision)
+                if delete:
+                    credit_revision.deleted = story_revision.deleted
+                    credit_revision.save()
+        if delete:
+            for cover in self.issue.active_covers():
+                # cover can be reserved, so this can fail
+                # TODO check if transaction rollback works
+                cover_lock = _get_revision_lock(cover,
+                                                changeset=self.changeset)
+                if cover_lock is None:
+                    raise IntegrityError("needed Cover lock not possible")
+                # TODO change CoverRevision handling to normal one
+                cover_revision = CoverRevision(changeset=self.changeset,
+                                               issue=cover.issue,
+                                               cover=cover, deleted=True)
+                cover_revision.save()
+
     def _handle_dependents(self, changes):
         # These story revisions will handle their own stats when committed.
         # They will also update the issue's is_indexed field.
         for story in self.changeset.storyrevisions.filter(issue=None):
             story.issue = self.issue
             story.save()
+
+    def extra_forms(self, request):
+        from apps.oi.forms.issue import IssueRevisionFormSet
+        credits_formset = IssueRevisionFormSet(request.POST or None,
+          instance=self,
+          queryset=self.issue_credit_revisions.filter(deleted=False))
+        return {'credits_formset': credits_formset, }
+
+    def process_extra_forms(self, request, extra_forms):
+        credits_formset = extra_forms['credits_formset']
+        for credit_form in credits_formset:
+            if credit_form.is_valid() and credit_form.cleaned_data:
+                cd = credit_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    credit_form.save()
+                else:
+                    credit_revision = credit_form.save(commit=False)
+                    credit_revision.save_added_revision(
+                      changeset=self.changeset, issue_revision=self)
+            elif not credit_form.is_valid() and \
+              credit_form not in credits_formset.deleted_forms:
+                raise ValueError
+        removed_credits = credits_formset.deleted_forms
+        if removed_credits:
+            for removed_credit in removed_credits:
+                if removed_credit.cleaned_data['id']:
+                    if removed_credit.cleaned_data['id'].issue_credit:
+                        removed_credit.cleaned_data['id'].deleted = True
+                        removed_credit.cleaned_data['id'].save()
+                    else:
+                        removed_credit.cleaned_data['id'].delete()
 
     def get_absolute_url(self):
         if self.issue is None:
@@ -4150,41 +4314,6 @@ class IssueRevision(Revision):
         # Note, the "after" field does not directly contribute IMPs.
         return 0
 
-    def _create_dependent_revisions(self, delete=False):
-        for story in self.issue.active_stories():
-            # currently stories cannot be reserved without the issue, but
-            # check anyway
-            # TODO check if transaction rollback works
-            story_lock = _get_revision_lock(story, changeset=self.changeset)
-            if story_lock is None:
-                raise IntegrityError("needed Story lock not possible")
-            story_revision = StoryRevision.clone(story, self.changeset)
-            if delete:
-                story_revision.toggle_deleted()
-            for credit in story.active_credits:
-                credit_lock = _get_revision_lock(credit,
-                                                 changeset=self.changeset)
-                if credit_lock is None:
-                    raise IntegrityError("needed Credit lock not possible")
-                credit_revision = StoryCreditRevision.clone(
-                  credit, self.changeset, story_revision=story_revision)
-                if delete:
-                    credit_revision.deleted = story_revision.deleted
-                    credit_revision.save()
-        if delete:
-            for cover in self.issue.active_covers():
-                # cover can be reserved, so this can fail
-                # TODO check if transaction rollback works
-                cover_lock = _get_revision_lock(cover,
-                                                changeset=self.changeset)
-                if cover_lock is None:
-                    raise IntegrityError("needed Cover lock not possible")
-                # TODO change CoverRevision handling to normal one
-                cover_revision = CoverRevision(changeset=self.changeset,
-                                               issue=cover.issue,
-                                               cover=cover, deleted=True)
-                cover_revision.save()
-
     def _check_first_last(self):
         set_series_first_last(self.series)
 
@@ -4270,6 +4399,10 @@ class PreviewIssue(Issue):
             if self.id != 0:
                 return self._active_covers()
         return Cover.objects.none()
+
+    @property
+    def active_credits(self):
+        return self.revision.issue_credit_revisions.exclude(deleted=True)
 
     def active_stories(self):
         stories = self.revision.story_set.exclude(deleted=True)\
@@ -4400,9 +4533,9 @@ class StoryCreditRevision(Revision):
                           exclude=frozenset(), **kwargs):
         self.story_revision = kwargs['story_revision']
 
-    def __unicode__(self):
+    def __str__(self):
         return "%s: %s (%s)" % (self.story_revision, self.creator,
-                                 self.credit_type)
+                                self.credit_type)
 
     ######################################
     # TODO old methods, t.b.c

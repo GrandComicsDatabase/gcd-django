@@ -265,8 +265,6 @@ def search_creator_credit(story, credit_type):
 @register.filter
 def show_creator_credit(story, credit_type):
     credits = story.active_credits.filter(credit_type__name=credit_type)
-    if credit_type == 'story_editing':
-        credit_type = 'editing'
     old_credit_field = getattr(story, credit_type)
     if not credits:
         if not old_credit_field:
@@ -329,7 +327,7 @@ def show_cover_contributor(cover_revision):
 @register.filter
 def show_country_info_by_code(code, name):
     src = 'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
-                                              code.lower())
+                                             code.lower())
     alt = 'alt="%s"' % esc(code.upper())
     title = 'title="%s"' % esc(name)
     return mark_safe('%s %s %s' % (src, alt, title))
@@ -389,7 +387,7 @@ def format_page_count(page_count):
     if page_count is not None:
         try:
             return re.sub(r'\.?0+$', '', str(Decimal(page_count)
-                                                 .quantize(Decimal(10)**-3)))
+                                             .quantize(Decimal(10)**-3)))
         except InvalidOperation:
             return page_count
     else:
@@ -419,7 +417,7 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
 
     if only_number:
         link = ', <a href="%s">%s</a>' % (issue.get_absolute_url(),
-                                           esc(issue.display_number))
+                                          esc(issue.display_number))
     else:
         link = '%s %s <a href="%s">%s</a>' % \
           (get_country_flag(issue.series.country), from_to,
@@ -440,8 +438,8 @@ def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
     ''' generate reprint link to story'''
     if only_number:
         link = ', <a href="%s#%d">%s</a>' % (story.issue.get_absolute_url(),
-                                              story.id,
-                                              esc(story.issue.display_number))
+                                             story.id,
+                                             esc(story.issue.display_number))
     elif story.sequence_number == 0:
         link = '%s %s <a href="%s#%d">%s</a>' % \
           (get_country_flag(story.issue.series.country), from_to,

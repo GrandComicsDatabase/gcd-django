@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from django.db import models
 from django.core import urlresolvers
-from django.db.models import Sum, F, Subquery
+from django.db.models import Sum, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.safestring import mark_safe
@@ -18,7 +18,8 @@ from taggit.managers import TaggableManager
 from .gcddata import GcdData
 from .publisher import IndiciaPublisher, Brand
 from .image import Image
-from .story import StoryType, STORY_TYPES
+from .story import StoryType, STORY_TYPES, CreditType
+from .creator import CreatorNameDetail
 from .award import ReceivedAward
 
 INDEXED = {
@@ -43,6 +44,28 @@ def issue_descriptor(issue):
             volume = 'v%s' % issue.volume
         return '%s#%s%s' % (volume, issue.number, title)
     return issue.number + title
+
+
+class IssueCredit(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_issue_credit'
+
+    creator = models.ForeignKey(CreatorNameDetail)
+    credit_type = models.ForeignKey(CreditType)
+    issue = models.ForeignKey('Issue', related_name='credits')
+
+    is_credited = models.BooleanField(default=False, db_index=True)
+
+    uncertain = models.BooleanField(default=False, db_index=True)
+
+    credited_as = models.CharField(max_length=255)
+
+    # record for a wider range of work types, or how it is credited
+    credit_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return "%s: %s (%s)" % (self.issue, self.creator, self.credit_type)
 
 
 class Issue(GcdData):
@@ -130,6 +153,10 @@ class Issue(GcdData):
         else:
             return None
 
+    @property
+    def active_credits(self):
+        return self.credits.exclude(deleted=True)
+
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
@@ -193,7 +220,6 @@ class Issue(GcdData):
 
     def shown_covers(self):
         return self.active_covers(), self.variant_covers()
-
 
     def has_content(self):
         """
@@ -409,8 +435,8 @@ class Issue(GcdData):
     def full_name(self, variant_name=True):
         if variant_name and self.variant_name:
             return '%s %s [%s]' % (self.series.full_name(),
-                                    self.display_number,
-                                    self.variant_name)
+                                   self.display_number,
+                                   self.variant_name)
         else:
             return '%s %s' % (self.series.full_name(), self.display_number)
 
@@ -439,15 +465,15 @@ class Issue(GcdData):
     def short_name(self):
         if self.variant_name:
             return '%s %s [%s]' % (self.series.name,
-                                    self.display_number,
-                                    self.variant_name)
+                                   self.display_number,
+                                   self.variant_name)
         else:
             return '%s %s' % (self.series.name, self.display_number)
 
     def __str__(self):
         if self.variant_name:
             return '%s %s [%s]' % (self.series, self.display_number,
-                                    self.variant_name)
+                                   self.variant_name)
         else:
             return '%s %s' % (self.series, self.display_number)
 
@@ -474,6 +500,7 @@ class IssueTable(tables.Table):
         model = Issue
         fields = ('publisher', 'issue', 'publication_date', 'on_sale_date')
         attrs = {'th': {'class': "non_visited"}}
+
     def render_publisher(self, value):
         from apps.gcd.templatetags.display import absolute_url
         from apps.gcd.templatetags.credits import show_country_info

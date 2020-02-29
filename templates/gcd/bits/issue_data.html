@@ -50,7 +50,7 @@
 {% endif %}
       </dl>
 <dl>
-{{ issue|show_credit:"editing" }}
+{{ issue|show_creator_credit:"editing" }}
 </dl>
 {% with issue.series as s %}
   {% if s.format or s.color or s.dimensions or s.paper_stock or s.binding or s.publishing_format %}

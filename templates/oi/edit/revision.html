@@ -27,6 +27,7 @@
 {% endblock %}
 
 {% block view_body %}
+{% include "oi/bits/jquery.html" %}
 {% include "oi/bits/multi_selector.html" %}
 <h1>
 {{ changeset|header_link }}
@@ -36,7 +37,7 @@
 <form action="{% url "process_revision" model_name=revision.source_name id=revision.id %}" method="POST">
   {% csrf_token %}
   <table class="editing">
-  {% if revision.source_name == 'story' %}
+  {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
     {% crispy form %}
   {% else %}
     {{ form.as_table }}

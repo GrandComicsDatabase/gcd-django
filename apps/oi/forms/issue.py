@@ -8,15 +8,25 @@ from math import log10
 from django import forms
 from django.db.models import Q
 from django.forms.widgets import HiddenInput
+from django.forms.models import inlineformset_factory
 
+from dal import autocomplete
+
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field
+from crispy_forms.utils import render_field
+
+from .custom_layout_object import Formset
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       VARIANT_NAME_HELP_TEXT, ISSUE_LABELS, ISSUE_HELP_TEXTS,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
 
-from apps.oi.models import CTYPES, IssueRevision, get_issue_field_list
-from apps.gcd.models import Issue, Brand, IndiciaPublisher
+from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision,\
+                           get_issue_field_list
+from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType,\
+                            CreatorNameDetail
 
 
 def get_issue_revision_form(publisher, series=None, revision=None,
@@ -161,7 +171,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def clean_month_on_sale(self):
             month_on_sale = self.cleaned_data['month_on_sale']
 
-            if month_on_sale is not None and month_on_sale not in list(range(1, 13)):
+            if month_on_sale is not None and \
+               month_on_sale not in list(range(1, 13)):
                 raise forms.ValidationError(
                     'If entered, month needs to be between 1 and 12.')
             return month_on_sale
@@ -169,7 +180,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def clean_day_on_sale(self):
             day_on_sale = self.cleaned_data['day_on_sale']
 
-            if day_on_sale is not None and day_on_sale not in list(range(1, 32)):
+            if day_on_sale is not None and \
+               day_on_sale not in list(range(1, 32)):
                 raise forms.ValidationError(
                     'If entered, day needs to be between 1 and 31.')
             return day_on_sale
@@ -319,7 +331,6 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                         Issue.objects.filter(id=variant_of.id))
                     self.fields['after'].empty_label = None
 
-
         return RuntimeAddVariantIssueRevisionForm
 
     if revision is None or revision.source is None:
@@ -370,6 +381,72 @@ def get_issue_revision_form(publisher, series=None, revision=None,
     return RuntimeIssueRevisionForm
 
 
+class IssueCreditRevisionForm(forms.ModelForm):
+    class Meta:
+        model = IssueCreditRevision
+        fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
+                  'uncertain', 'credit_name']
+        help_texts = {
+            'credit_name':
+                'Enter here additional specifications for the credit, for '
+                'example "associate editor", or "design".',
+            'is_credited':
+                'Check in case the creator is credited. If the credited name '
+                'is not the selected creator name, enter the credited name'
+                ' in the unfolded credited as field.',
+            'credited_as':
+                'Enter a name if the credited name is unusual and '
+                'therefore not a creator name record.',
+        }
+        labels = {'credit_name': 'Credit description'}
+
+    def __init__(self, *args, **kwargs):
+        super(IssueCreditRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+        self.fields['credit_type'].queryset = CreditType.objects \
+            .filter(id=6)
+        if self.instance.id:
+            self.fields['credit_type'].empty_label = None
+
+    creator = forms.ModelChoiceField(
+      queryset=CreatorNameDetail.objects.all(),
+      widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
+                                       attrs={'style': 'min-width: 60em'}),
+      required=True,
+      help_text='By entering (any part of) a name select a creator from the'
+                ' database.'
+    )
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['credited_as'] and not cd['is_credited']:
+            raise forms.ValidationError(
+              ['Is credited needs to be selected when entering a name as '
+               'credited.'])
+
+        if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
+            raise forms.ValidationError(
+              ['Name entered as "credited as" is identicial to creator name.']
+            )
+
+
+IssueRevisionFormSet = inlineformset_factory(
+    IssueRevision, IssueCreditRevision, form=IssueCreditRevisionForm,
+    can_delete=True, extra=1)
+
+
+class BaseField(Field):
+    def render(self, form, form_style, context, template_pack=None):
+        fields = ''
+
+        for field in self.fields:
+            fields += render_field(field, form, form_style, context,
+                                   template_pack=template_pack)
+        return fields
+
+
 class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
@@ -395,6 +472,26 @@ class IssueRevisionForm(forms.ModelForm):
         }
         labels = ISSUE_LABELS
         help_texts = ISSUE_HELP_TEXTS
+
+    def __init__(self, *args, **kwargs):
+        super(IssueRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.form_tag = False
+        fields = list(self.fields)
+        credit_start = fields.index('editing')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields[:credit_start]]
+        field_list.append(Formset('credits_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[credit_start:]])
+        self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = ISSUE_HELP_LINKS
 
     comments = _get_comments_form_field()
     turned_off_help = forms.CharField(widget=HiddenInputWithHelp,

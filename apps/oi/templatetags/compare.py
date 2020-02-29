@@ -58,10 +58,13 @@ def field_value(revision, field):
     value = getattr(revision, field)
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
         if type(revision).__name__ == 'IssueRevision':
-            return value
-        credits = revision.story_credit_revisions.filter(
-                           credit_type__id=CREDIT_TYPES[field],
-                           deleted=False)
+            credits = revision.issue_credit_revisions.filter(
+                credit_type__id=CREDIT_TYPES[field],
+                deleted=False)
+        else:
+            credits = revision.story_credit_revisions.filter(
+                               credit_type__id=CREDIT_TYPES[field],
+                               deleted=False)
         if value and credits:
             value += '; '
         for credit in credits:
@@ -155,8 +158,8 @@ def field_value(revision, field):
             elif len(value.split(';')) > 1:
                 return_val = show_isbn(value) + ' (note: '
                 for isbn in value.split(';'):
-                    return_val = return_val + '%s; ' % ("valid ISBN"
-                                   if validated_isbn(isbn) else "invalid ISBN")
+                    return_val = return_val + '%s; ' % (
+                      "valid ISBN" if validated_isbn(isbn) else "invalid ISBN")
                 return return_val + 'ISBNs are inequal)'
             elif value:
                 return '%s (note: invalid ISBN)' % value
@@ -165,9 +168,9 @@ def field_value(revision, field):
             barcodes = value.split(';')
             return_val = show_barcode(value) + ' (note: '
             for barcode in barcodes:
-                return_val = return_val + '%s; ' % ("valid UPC/EAN part"
-                             if valid_barcode(barcode)
-                             else "invalid UPC/EAN part or non-standard")
+                return_val = return_val + '%s; ' % (
+                  "valid UPC/EAN part" if valid_barcode(barcode)
+                  else "invalid UPC/EAN part or non-standard")
             return return_val[:-2] + ')'
     elif field == 'leading_article':
         if value is True:
@@ -277,8 +280,8 @@ def compare_current_reprints(object_type, changeset):
     if object_type.changeset_id != changeset.id:
         if not object_type.source:
             return ''
-        active = ReprintRevision.objects.filter(next_revision__in=
-                                         changeset.reprintrevisions.all())
+        active = ReprintRevision.objects.filter(
+          next_revision__in=changeset.reprintrevisions.all())
         if type(object_type) == StoryRevision:
             active_origin = active.filter(origin_story=object_type.source)
             active_target = active.filter(target_story=object_type.source)
@@ -399,8 +402,8 @@ def compare_current_reprints(object_type, changeset):
               (reprint.next_revision.changeset != changeset and not
                 (reprint.next_revision.changeset.state == states.APPROVED and
                  reprint.next_revision.changeset.modified <= changeset.modified)):
-                kept_string = '%s<li>%s' % (kept_string,
-                  reprint.get_compare_string(object_type.issue))
+                kept_string = '%s<li>%s' % (
+                  kept_string, reprint.get_compare_string(object_type.issue))
                 if reprint.source and reprint.source.reserved:
                     kept_string += '<br>reserved in a different changeset'
                 kept_string += '</li>'

@@ -8,7 +8,7 @@ the traditional models.py and views.py files.
 
 from .publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, BrandUse
 from .series import Series, SeriesPublicationType
-from .issue import Issue, INDEXED
+from .issue import Issue, IssueCredit, INDEXED
 from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
                    STORY_TYPES, OLD_TYPES, NON_OPTIONAL_TYPES, CREDIT_TYPES
 from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
