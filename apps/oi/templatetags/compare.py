@@ -237,7 +237,15 @@ def diff_list(prev_rev, revision, field):
                                             field_value(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)
         new_diff = []
+        splitted_link = False
         for di in diff:
+            if splitted_link:
+                di = (di[0], ' <a href="/creator/' + di[1])
+                if di[0] == 1:
+                    splitted_link = False
+            if di[1].endswith(' <a href="/creator/'):
+                di = (di[0], di[1][:-len(' <a href="/creator/')])
+                splitted_link = True
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
