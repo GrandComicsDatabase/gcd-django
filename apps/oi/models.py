@@ -299,7 +299,8 @@ class Changeset(models.Model):
 
     state = models.IntegerField(db_index=True)
 
-    indexer = models.ForeignKey('auth.User', db_index=True,
+    indexer = models.ForeignKey('auth.User', on_delete=models.CASCADE,
+                                db_index=True,
                                 related_name='changesets')
     along_with = models.ManyToManyField(User,
                                         related_name='changesets_assisting')
@@ -308,7 +309,8 @@ class Changeset(models.Model):
 
     # Changesets don't get an approver until late in the workflow,
     # and for legacy cases we don't know who they were.
-    approver = models.ForeignKey('auth.User', db_index=True,
+    approver = models.ForeignKey('auth.User', on_delete=models.CASCADE,
+                                 db_index=True,
                                  related_name='approved_%(class)s', null=True)
 
     # In production, change_type is a tinyint(2) due to the small value set.
@@ -950,12 +952,14 @@ class ChangesetComment(models.Model):
         db_table = 'oi_changeset_comment'
         ordering = ['created']
 
-    commenter = models.ForeignKey(User)
+    commenter = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
 
-    changeset = models.ForeignKey(Changeset, related_name='comments')
+    changeset = models.ForeignKey(Changeset, on_delete=models.CASCADE,
+                                  related_name='comments')
 
-    content_type = models.ForeignKey(ContentType, null=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+                                     null=True)
     revision_id = models.IntegerField(db_index=True, null=True)
     revision = GenericForeignKey('content_type', 'revision_id')
 
@@ -1008,10 +1012,11 @@ class RevisionLock(models.Model):
         db_table = 'oi_revision_lock'
         unique_together = ('content_type', 'object_id')
 
-    changeset = models.ForeignKey(Changeset, null=True,
+    changeset = models.ForeignKey(Changeset, on_delete=models.CASCADE,
+                                  null=True,
                                   related_name='revision_locks')
 
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.IntegerField(db_index=True)
     locked_object = GenericForeignKey('content_type', 'object_id')
 
@@ -1130,8 +1135,10 @@ class Revision(models.Model):
 
     objects = RevisionManager()
 
-    changeset = models.ForeignKey(Changeset, related_name='%(class)ss')
-    previous_revision = models.OneToOneField('self', null=True,
+    changeset = models.ForeignKey(Changeset, on_delete=models.CASCADE,
+                                  related_name='%(class)ss')
+    previous_revision = models.OneToOneField('self', on_delete=models.CASCADE,
+                                             null=True,
                                              related_name='next_revision')
 
     # If True, this revision deletes the object in question.  Other fields
@@ -2230,8 +2237,10 @@ class OngoingReservation(models.Model):
     class Meta:
         db_table = 'oi_ongoing_reservation'
 
-    indexer = models.ForeignKey(User, related_name='ongoing_reservations')
-    series = models.OneToOneField(Series, related_name='ongoing_reservation')
+    indexer = models.ForeignKey(User, on_delete=models.CASCADE,
+                                related_name='ongoing_reservations')
+    series = models.OneToOneField(Series, on_delete=models.CASCADE,
+                                  related_name='ongoing_reservation')
     along_with = models.ManyToManyField(User, related_name='ongoing_assisting')
     on_behalf_of = models.ManyToManyField(User, related_name='ongoing_source')
 
@@ -2308,19 +2317,20 @@ class PublisherRevision(PublisherRevisionBase):
 
     objects = PublisherRevisionManager()
 
-    publisher = models.ForeignKey('gcd.Publisher', null=True,
-                                  related_name='revisions')
+    publisher = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
+                                  null=True, related_name='revisions')
 
-    country = models.ForeignKey('stddata.Country', db_index=True)
+    country = models.ForeignKey('stddata.Country', on_delete=models.CASCADE,
+                                db_index=True)
 
     # Deprecated fields about relating publishers/imprints to each other
     # TODO can these be removed, or does it make problems for the
     # change history of publishers ? Should not need to worry
     # about change history of old imprints
     is_master = models.BooleanField(default=True, db_index=True)
-    parent = models.ForeignKey('gcd.Publisher', default=None,
-                               null=True, blank=True, db_index=True,
-                               related_name='imprint_revisions')
+    parent = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
+                               default=None, null=True, blank=True,
+                               db_index=True, related_name='imprint_revisions')
 
     date_inferred = models.BooleanField(default=False)
 
@@ -2418,15 +2428,17 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
 
     objects = IndiciaPublisherRevisionManager()
 
-    indicia_publisher = models.ForeignKey('gcd.IndiciaPublisher', null=True,
+    indicia_publisher = models.ForeignKey('gcd.IndiciaPublisher',
+                                          on_delete=models.CASCADE, null=True,
                                           related_name='revisions')
 
     is_surrogate = models.BooleanField(default=False)
 
-    country = models.ForeignKey('stddata.Country', db_index=True,
+    country = models.ForeignKey('stddata.Country', on_delete=models.CASCADE,
+                                db_index=True,
                                 related_name='indicia_publishers_revisions')
 
-    parent = models.ForeignKey('gcd.Publisher',
+    parent = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
                                null=True, blank=True, db_index=True,
                                related_name='indicia_publisher_revisions')
 
@@ -2504,10 +2516,10 @@ class BrandGroupRevision(PublisherRevisionBase):
 
     objects = BrandGroupRevisionManager()
 
-    brand_group = models.ForeignKey('gcd.BrandGroup', null=True,
-                                    related_name='revisions')
+    brand_group = models.ForeignKey('gcd.BrandGroup', on_delete=models.CASCADE,
+                                    null=True, related_name='revisions')
 
-    parent = models.ForeignKey('gcd.Publisher',
+    parent = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
                                null=True, blank=True, db_index=True,
                                related_name='brand_group_revisions')
 
@@ -2590,9 +2602,10 @@ class BrandRevision(PublisherRevisionBase):
 
     objects = BrandRevisionManager()
 
-    brand = models.ForeignKey('gcd.Brand', null=True, related_name='revisions')
+    brand = models.ForeignKey('gcd.Brand', on_delete=models.CASCADE,
+                              null=True, related_name='revisions')
     # parent needs to be kept for old revisions
-    parent = models.ForeignKey('gcd.Publisher',
+    parent = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
                                null=True, blank=True, db_index=True,
                                related_name='brand_revisions')
     group = models.ManyToManyField('gcd.BrandGroup', blank=False,
@@ -2688,7 +2701,7 @@ class PreviewBrand(Brand):
         proxy = True
 
     @property
-    def group(self):
+    def TODOgroup(self):
         return self._group.all()
 
 
@@ -2710,13 +2723,14 @@ class BrandUseRevision(Revision):
 
     objects = BrandUseRevisionManager()
 
-    brand_use = models.ForeignKey('gcd.BrandUse', null=True,
-                                  related_name='revisions')
+    brand_use = models.ForeignKey('gcd.BrandUse', on_delete=models.CASCADE,
+                                  null=True, related_name='revisions')
 
-    emblem = models.ForeignKey('gcd.Brand', null=True,
-                               related_name='use_revisions')
+    emblem = models.ForeignKey('gcd.Brand', on_delete=models.CASCADE,
+                               null=True, related_name='use_revisions')
 
-    publisher = models.ForeignKey('gcd.Publisher', null=True, db_index=True,
+    publisher = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
+                                  null=True, db_index=True,
                                   related_name='brand_use_revisions')
 
     year_began = models.IntegerField(db_index=True, null=True)
@@ -2831,8 +2845,10 @@ class CoverRevision(Revision):
 
     objects = CoverRevisionManager()
 
-    cover = models.ForeignKey(Cover, null=True, related_name='revisions')
-    issue = models.ForeignKey(Issue, related_name='cover_revisions')
+    cover = models.ForeignKey(Cover, on_delete=models.CASCADE,
+                              null=True, related_name='revisions')
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
+                              related_name='cover_revisions')
 
     marked = models.BooleanField(default=False)
     is_replacement = models.BooleanField(default=False)
@@ -3022,7 +3038,8 @@ class SeriesRevision(Revision):
 
     objects = SeriesRevisionManager()
 
-    series = models.ForeignKey(Series, null=True, related_name='revisions')
+    series = models.ForeignKey(Series, on_delete=models.CASCADE,
+                               null=True, related_name='revisions')
 
     # When adding a series, this requests the ongoing reservation upon
     # approval of the new series.  The request will be granted unless the
@@ -3042,6 +3059,7 @@ class SeriesRevision(Revision):
     binding = models.CharField(max_length=255, blank=True)
     publishing_format = models.CharField(max_length=255, blank=True)
     publication_type = models.ForeignKey(SeriesPublicationType,
+                                         on_delete=models.CASCADE,
                                          null=True, blank=True)
 
     year_began = models.IntegerField()
@@ -3071,12 +3089,16 @@ class SeriesRevision(Revision):
     keywords = models.TextField(blank=True, default='')
 
     # Country and Language info.
-    country = models.ForeignKey(Country, related_name='series_revisions')
-    language = models.ForeignKey(Language, related_name='series_revisions')
+    country = models.ForeignKey(Country, on_delete=models.CASCADE,
+                                related_name='series_revisions')
+    language = models.ForeignKey(Language, on_delete=models.CASCADE,
+                                 related_name='series_revisions')
 
     # Fields related to the publishers table.
-    publisher = models.ForeignKey(Publisher, related_name='series_revisions')
-    imprint = models.ForeignKey(Publisher, null=True, blank=True, default=None,
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE,
+                                  related_name='series_revisions')
+    imprint = models.ForeignKey(Publisher, on_delete=models.CASCADE,
+                                null=True, blank=True, default=None,
                                 related_name='imprint_series_revisions')
     date_inferred = models.BooleanField(default=False)
 
@@ -3294,20 +3316,22 @@ class SeriesBondRevision(Revision):
 
     objects = SeriesBondRevisionManager()
 
-    series_bond = models.ForeignKey(SeriesBond, null=True,
-                                    related_name='revisions')
+    series_bond = models.ForeignKey(SeriesBond, on_delete=models.CASCADE,
+                                    null=True, related_name='revisions')
 
-    origin = models.ForeignKey(Series, null=True,
-                               related_name='origin_bond_revisions')
+    origin = models.ForeignKey(Series, on_delete=models.CASCADE,
+                               null=True, related_name='origin_bond_revisions')
     origin_issue = models.ForeignKey(
-        Issue, null=True, related_name='origin_series_bond_revisions')
-    target = models.ForeignKey(Series, null=True,
+      Issue, on_delete=models.CASCADE, null=True,
+      related_name='origin_series_bond_revisions')
+    target = models.ForeignKey(Series, on_delete=models.CASCADE, null=True,
                                related_name='target_bond_revisions')
     target_issue = models.ForeignKey(
-        Issue, null=True, related_name='target_series_bond_revisions')
+      Issue, on_delete=models.CASCADE, null=True,
+      related_name='target_series_bond_revisions')
 
-    bond_type = models.ForeignKey(SeriesBondType, null=True,
-                                  related_name='bond_revisions')
+    bond_type = models.ForeignKey(SeriesBondType, on_delete=models.CASCADE,
+                                  null=True, related_name='bond_revisions')
     notes = models.TextField(max_length=255, default='', blank=True)
 
     def _field_list(self):
@@ -3411,12 +3435,13 @@ class IssueCreditRevision(Revision):
         db_table = 'oi_issue_credit_revision'
         ordering = ['credit_type__sort_code', 'id']
 
-    issue_credit = models.ForeignKey(IssueCredit, null=True,
-                                     related_name='revisions')
+    issue_credit = models.ForeignKey(IssueCredit, on_delete=models.CASCADE,
+                                     null=True, related_name='revisions')
 
-    creator = models.ForeignKey(CreatorNameDetail)
-    credit_type = models.ForeignKey(CreditType)
+    creator = models.ForeignKey(CreatorNameDetail, on_delete=models.CASCADE)
+    credit_type = models.ForeignKey(CreditType, on_delete=models.CASCADE)
     issue_revision = models.ForeignKey('IssueRevision',
+                                       on_delete=models.CASCADE,
                                        related_name='issue_credit_revisions')
 
     is_credited = models.BooleanField(default=False, db_index=True)
@@ -3485,13 +3510,15 @@ class IssueRevision(Revision):
 
     objects = IssueRevisionManager()
 
-    issue = models.ForeignKey(Issue, null=True, related_name='revisions')
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
+                              null=True, related_name='revisions')
 
     # If not null, insert or move the issue after the given issue
     # when saving back the the DB. If null, place at the beginning of
     # the series.
     after = models.ForeignKey(
-        Issue, null=True, blank=True, related_name='after_revisions')
+      Issue, on_delete=models.CASCADE, null=True, blank=True,
+      related_name='after_revisions')
 
     # This is used *only* for multiple issues within the same changeset.
     # It does NOT correspond directly to gcd_issue.sort_code, which must be
@@ -3512,7 +3539,7 @@ class IssueRevision(Revision):
     no_volume = models.BooleanField(default=False)
     volume_not_printed = models.BooleanField(default=False)
     display_volume_with_number = models.BooleanField(default=False)
-    variant_of = models.ForeignKey(Issue, null=True,
+    variant_of = models.ForeignKey(Issue, on_delete=models.CASCADE, null=True,
                                    related_name='variant_revisions')
     variant_name = models.CharField(max_length=255, blank=True, default='')
 
@@ -3539,14 +3566,15 @@ class IssueRevision(Revision):
     notes = models.TextField(blank=True, default='')
     keywords = models.TextField(blank=True, default='')
 
-    series = models.ForeignKey(Series, related_name='issue_revisions')
+    series = models.ForeignKey(Series, on_delete=models.CASCADE,
+                               related_name='issue_revisions')
     indicia_publisher = models.ForeignKey(
-        IndiciaPublisher, null=True, blank=True, default=None,
-        related_name='issue_revisions')
+      IndiciaPublisher, on_delete=models.CASCADE, null=True, blank=True,
+      default=None, related_name='issue_revisions')
     indicia_pub_not_printed = models.BooleanField(default=False)
     brand = models.ForeignKey(
-        Brand, null=True, default=None, blank=True,
-        related_name='issue_revisions')
+      Brand, on_delete=models.CASCADE, null=True, default=None, blank=True,
+      related_name='issue_revisions')
     no_brand = models.BooleanField(default=False)
 
     isbn = models.CharField(max_length=32, blank=True, default='')
@@ -4493,12 +4521,13 @@ class StoryCreditRevision(Revision):
         db_table = 'oi_story_credit_revision'
         ordering = ['credit_type__sort_code', 'id']
 
-    story_credit = models.ForeignKey(StoryCredit, null=True,
-                                     related_name='revisions')
+    story_credit = models.ForeignKey(StoryCredit, on_delete=models.CASCADE,
+                                     null=True, related_name='revisions')
 
-    creator = models.ForeignKey(CreatorNameDetail)
-    credit_type = models.ForeignKey(CreditType)
+    creator = models.ForeignKey(CreatorNameDetail, on_delete=models.CASCADE)
+    credit_type = models.ForeignKey(CreditType, on_delete=models.CASCADE)
     story_revision = models.ForeignKey('StoryRevision',
+                                       on_delete=models.CASCADE,
                                        related_name='story_credit_revisions')
 
     is_credited = models.BooleanField(default=False, db_index=True)
@@ -4576,7 +4605,7 @@ class StoryRevision(Revision):
 
     objects = StoryRevisionManager()
 
-    story = models.ForeignKey(Story, null=True,
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, null=True,
                               related_name='revisions')
 
     title = models.CharField(max_length=255, blank=True)
@@ -4585,7 +4614,7 @@ class StoryRevision(Revision):
     feature = models.CharField(max_length=255, blank=True)
     feature_object = models.ManyToManyField(Feature, blank=True)
     feature_logo = models.ManyToManyField(FeatureLogo, blank=True)
-    type = models.ForeignKey(StoryType)
+    type = models.ForeignKey(StoryType, on_delete=models.CASCADE)
     sequence_number = models.IntegerField()
 
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
@@ -4614,7 +4643,8 @@ class StoryRevision(Revision):
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
 
-    issue = models.ForeignKey(Issue, null=True, related_name='story_revisions')
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, null=True,
+                              related_name='story_revisions')
     date_inferred = models.BooleanField(default=False)
 
     source_name = 'story'
@@ -5260,10 +5290,6 @@ class PreviewStory(Story):
     def active_credits(self):
         return self.revision.story_credit_revisions.exclude(deleted=True)
 
-    @property
-    def feature_logo(self):
-        return self.revision.feature_logo.all()
-
     def has_credits(self):
         """
         Simplifies UI checks for conditionals.  Credit fields.
@@ -5385,14 +5411,14 @@ class FeatureRevision(Revision):
 
     objects = FeatureRevisionManager()
 
-    feature = models.ForeignKey(Feature, null=True,
+    feature = models.ForeignKey(Feature, on_delete=models.CASCADE, null=True,
                                 related_name='revisions')
 
     name = models.CharField(max_length=255)
     leading_article = models.BooleanField(default=False)
     genre = models.CharField(max_length=255)
-    language = models.ForeignKey(Language)
-    feature_type = models.ForeignKey(FeatureType)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
     year_created = models.IntegerField(db_index=True, blank=True, null=True)
     year_created_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
@@ -5480,8 +5506,8 @@ class FeatureLogoRevision(Revision):
     objects = FeatureLogoRevisionManager()
 
     feature = models.ManyToManyField(Feature, related_name='logo_revisions')
-    feature_logo = models.ForeignKey(FeatureLogo, null=True,
-                                     related_name='revisions')
+    feature_logo = models.ForeignKey(FeatureLogo, on_delete=models.CASCADE,
+                                     null=True, related_name='revisions')
 
     name = models.CharField(max_length=255)
     leading_article = models.BooleanField(default=False)
@@ -5577,14 +5603,18 @@ class FeatureRelationRevision(Revision):
 
     objects = FeatureRelationRevisionManager()
     feature_relation = models.ForeignKey('gcd.FeatureRelation',
+                                         on_delete=models.CASCADE,
                                          null=True,
                                          related_name='revisions')
 
     to_feature = models.ForeignKey('gcd.Feature',
+                                   on_delete=models.CASCADE,
                                    related_name='to_feature_revisions')
     relation_type = models.ForeignKey('gcd.FeatureRelationType',
+                                      on_delete=models.CASCADE,
                                       related_name='revisions')
     from_feature = models.ForeignKey('gcd.Feature',
+                                     on_delete=models.CASCADE,
                                      related_name='from_feature_revisions')
     notes = models.TextField(blank=True)
 
@@ -5716,19 +5746,25 @@ class ReprintRevision(Revision):
 
     objects = ReprintRevisionManager()
 
-    reprint = models.ForeignKey(Reprint, null=True,
+    reprint = models.ForeignKey(Reprint, on_delete=models.CASCADE, null=True,
                                 related_name='revisions')
-    reprint_from_issue = models.ForeignKey(ReprintFromIssue, null=True,
+    reprint_from_issue = models.ForeignKey(ReprintFromIssue,
+                                           on_delete=models.CASCADE,
+                                           null=True,
                                            related_name='revisions')
-    reprint_to_issue = models.ForeignKey(ReprintToIssue, null=True,
+    reprint_to_issue = models.ForeignKey(ReprintToIssue,
+                                         on_delete=models.CASCADE, null=True,
                                          related_name='revisions')
-    issue_reprint = models.ForeignKey(IssueReprint, null=True,
+    issue_reprint = models.ForeignKey(IssueReprint, on_delete=models.CASCADE,
+                                      null=True,
                                       related_name='revisions')
 
-    origin_story = models.ForeignKey(Story, null=True,
+    origin_story = models.ForeignKey(Story, on_delete=models.CASCADE,
+                                     null=True,
                                      related_name='origin_reprint_revisions')
     origin_revision = models.ForeignKey(
-        StoryRevision, null=True, related_name='origin_reprint_revisions')
+      StoryRevision, on_delete=models.CASCADE, null=True,
+      related_name='origin_reprint_revisions')
 
     @property
     def origin(self):
@@ -5740,7 +5776,8 @@ class ReprintRevision(Revision):
             raise AttributeError
 
     origin_issue = models.ForeignKey(
-        Issue, null=True, related_name='origin_reprint_revisions')
+      Issue, on_delete=models.CASCADE, null=True,
+      related_name='origin_reprint_revisions')
 
     @property
     def origin_sort(self):
@@ -5759,10 +5796,12 @@ class ReprintRevision(Revision):
             return "%s-%d-%d" % (sort, self.origin.issue.series.year_began,
                                  self.origin.issue.sort_code)
 
-    target_story = models.ForeignKey(Story, null=True,
+    target_story = models.ForeignKey(Story, on_delete=models.CASCADE,
+                                     null=True,
                                      related_name='target_reprint_revisions')
     target_revision = models.ForeignKey(
-        StoryRevision, null=True, related_name='target_reprint_revisions')
+      StoryRevision, on_delete=models.CASCADE, null=True,
+      related_name='target_reprint_revisions')
 
     @property
     def target(self):
@@ -5773,7 +5812,8 @@ class ReprintRevision(Revision):
         else:
             raise AttributeError
 
-    target_issue = models.ForeignKey(Issue, null=True,
+    target_issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
+                                     null=True,
                                      related_name='target_reprint_revisions')
 
     @property
@@ -6126,13 +6166,15 @@ class ImageRevision(Revision):
 
     objects = ImageRevisionManager()
 
-    image = models.ForeignKey(Image, null=True, related_name='revisions')
+    image = models.ForeignKey(Image, on_delete=models.CASCADE, null=True,
+                              related_name='revisions')
 
-    content_type = models.ForeignKey(ContentType, null=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+                                     null=True)
     object_id = models.PositiveIntegerField(db_index=True, null=True)
     object = GenericForeignKey('content_type', 'object_id')
 
-    type = models.ForeignKey(ImageType)
+    type = models.ForeignKey(ImageType, on_delete=models.CASCADE)
 
     image_file = models.ImageField(upload_to='%s/%%m_%%Y' %
                                              settings.NEW_GENERIC_IMAGE_DIR)
@@ -6233,7 +6275,8 @@ class AwardRevision(Revision):
         verbose_name_plural = 'Award Revisions'
 
     objects = AwardRevisionManager()
-    award = models.ForeignKey('gcd.Award', null=True, related_name='revisions')
+    award = models.ForeignKey('gcd.Award', on_delete=models.CASCADE,
+                              null=True, related_name='revisions')
     name = models.CharField(max_length=200)
     notes = models.TextField(blank=True)
 
@@ -6291,13 +6334,16 @@ class ReceivedAwardRevision(Revision):
 
     objects = ReceivedAwardRevisionManager()
     received_award = models.ForeignKey('gcd.ReceivedAward',
+                                       on_delete=models.CASCADE,
                                        null=True,
                                        related_name='revisions')
-    content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+                                     null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     recipient = GenericForeignKey('content_type', 'object_id')
 
-    award = models.ForeignKey(Award, null=True, blank=True)
+    award = models.ForeignKey(Award, on_delete=models.CASCADE,
+                              null=True, blank=True)
     award_name = models.CharField(max_length=255, blank=True)
     no_award_name = models.BooleanField(default=False)
     award_year = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -6439,14 +6485,17 @@ class DataSourceRevision(Revision):
         verbose_name_plural = 'Data Source Revisions'
 
     objects = DataSourceRevisionManager()
-    content_type = models.ForeignKey(ContentType, null=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+                                     null=True)
     revision_id = models.IntegerField(db_index=True, null=True)
     sourced_revision = GenericForeignKey('content_type', 'revision_id')
 
     data_source = models.ForeignKey('gcd.DataSource',
+                                    on_delete=models.CASCADE,
                                     related_name='revisions',
                                     null=True)
-    source_type = models.ForeignKey('gcd.SourceType')
+    source_type = models.ForeignKey('gcd.SourceType',
+                                    on_delete=models.CASCADE)
     source_description = models.TextField()
     field = models.CharField(max_length=256)
 
@@ -6557,18 +6606,20 @@ class CreatorRevision(Revision):
     objects = CreatorRevisionManager()
 
     creator = models.ForeignKey('gcd.Creator',
+                                on_delete=models.CASCADE,
                                 null=True,
                                 related_name='revisions')
 
     gcd_official_name = models.CharField(max_length=255, db_index=True)
 
     # TODO change from null=True
-    birth_date = models.ForeignKey(Date, related_name='+', null=True,
-                                   blank=True)
-    death_date = models.ForeignKey(Date, related_name='+', null=True,
-                                   blank=True)
+    birth_date = models.ForeignKey(Date, on_delete=models.CASCADE,
+                                   related_name='+', null=True, blank=True)
+    death_date = models.ForeignKey(Date, on_delete=models.CASCADE,
+                                   related_name='+', null=True, blank=True)
 
     birth_country = models.ForeignKey('stddata.Country',
+                                      on_delete=models.CASCADE,
                                       related_name='cr_birth_country',
                                       null=True, blank=True)
     birth_country_uncertain = models.BooleanField(default=False)
@@ -6578,6 +6629,7 @@ class CreatorRevision(Revision):
     birth_city_uncertain = models.BooleanField(default=False)
 
     death_country = models.ForeignKey('stddata.Country',
+                                      on_delete=models.CASCADE,
                                       related_name='cr_death_country',
                                       null=True, blank=True)
     death_country_uncertain = models.BooleanField(default=False)
@@ -6970,14 +7022,16 @@ class CreatorRelationRevision(Revision):
 
     objects = CreatorRelationRevisionManager()
     creator_relation = models.ForeignKey('gcd.CreatorRelation',
+                                         on_delete=models.CASCADE,
                                          null=True,
                                          related_name='revisions')
 
-    to_creator = models.ForeignKey('gcd.Creator',
+    to_creator = models.ForeignKey('gcd.Creator', on_delete=models.CASCADE,
                                    related_name='to_creator_revisions')
     relation_type = models.ForeignKey('gcd.RelationType',
+                                      on_delete=models.CASCADE,
                                       related_name='revisions')
-    from_creator = models.ForeignKey('gcd.Creator',
+    from_creator = models.ForeignKey('gcd.Creator', on_delete=models.CASCADE,
                                      related_name='from_creator_revisions')
     creator_name = models.ManyToManyField(
                           'gcd.CreatorNameDetail', blank=True,
@@ -7061,13 +7115,15 @@ class CreatorNameDetailRevision(Revision):
 
     objects = CreatorNameDetailRevisionManager()
     creator_name_detail = models.ForeignKey('gcd.CreatorNameDetail',
+                                            on_delete=models.CASCADE,
                                             null=True,
                                             related_name='revisions')
     creator_revision = models.ForeignKey(CreatorRevision,
+                                         on_delete=models.CASCADE,
                                          related_name='cr_creator_names',
                                          null=True)
-    creator = models.ForeignKey(Creator, related_name='name_revisions',
-                                null=True)
+    creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
+                                related_name='name_revisions', null=True)
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, default='')
     is_official_name = models.BooleanField(default=False)
@@ -7075,10 +7131,11 @@ class CreatorNameDetailRevision(Revision):
                                   blank=True)
     family_name = models.CharField(max_length=255, db_index=True, default='',
                                    blank=True)
-    type = models.ForeignKey('gcd.NameType',
+    type = models.ForeignKey('gcd.NameType', on_delete=models.CASCADE,
                              related_name='revision_name_details',
                              null=True, blank=True)
-    in_script = models.ForeignKey(Script, default=Script.LATIN_PK)
+    in_script = models.ForeignKey(Script, on_delete=models.CASCADE,
+                                  default=Script.LATIN_PK)
 
     source_name = 'creator_name_detail'
     source_class = CreatorNameDetail
@@ -7148,11 +7205,12 @@ class CreatorSchoolRevision(Revision):
 
     objects = CreatorSchoolRevisionManager()
     creator_school = models.ForeignKey('gcd.CreatorSchool',
+                                       on_delete=models.CASCADE,
                                        null=True,
                                        related_name='revisions')
-    creator = models.ForeignKey('gcd.Creator',
+    creator = models.ForeignKey('gcd.Creator', on_delete=models.CASCADE,
                                 related_name='school_revisions')
-    school = models.ForeignKey('gcd.School',
+    school = models.ForeignKey('gcd.School', on_delete=models.CASCADE,
                                related_name='cr_schools')
     school_year_began = models.PositiveSmallIntegerField(null=True, blank=True)
     school_year_began_uncertain = models.BooleanField(default=False)
@@ -7256,14 +7314,15 @@ class CreatorDegreeRevision(Revision):
 
     objects = CreatorDegreeRevisionManager()
     creator_degree = models.ForeignKey('gcd.CreatorDegree',
+                                       on_delete=models.CASCADE,
                                        null=True,
                                        related_name='revisions')
-    creator = models.ForeignKey('gcd.Creator',
+    creator = models.ForeignKey('gcd.Creator', on_delete=models.CASCADE,
                                 related_name='degree_revisions')
-    school = models.ForeignKey('gcd.School',
+    school = models.ForeignKey('gcd.School', on_delete=models.CASCADE,
                                related_name='creator_degrees',
                                null=True)
-    degree = models.ForeignKey('gcd.Degree',
+    degree = models.ForeignKey('gcd.Degree', on_delete=models.CASCADE,
                                related_name='creator_degrees')
     degree_year = models.PositiveSmallIntegerField(null=True, blank=True)
     degree_year_uncertain = models.BooleanField(default=False)
@@ -7356,12 +7415,14 @@ class CreatorMembershipRevision(Revision):
 
     objects = CreatorMembershipRevisionManager()
     creator_membership = models.ForeignKey('gcd.CreatorMembership',
+                                           on_delete=models.CASCADE,
                                            null=True,
                                            related_name='revisions')
-    creator = models.ForeignKey('gcd.Creator',
+    creator = models.ForeignKey('gcd.Creator', on_delete=models.CASCADE,
                                 related_name='membership_revisions')
     organization_name = models.CharField(max_length=200)
     membership_type = models.ForeignKey('gcd.MembershipType',
+                                        on_delete=models.CASCADE,
                                         related_name='cr_membershiptype',
                                         null=True,
                                         blank=True)
@@ -7474,12 +7535,14 @@ class CreatorArtInfluenceRevision(Revision):
 
     objects = CreatorArtInfluenceRevisionManager()
     creator_art_influence = models.ForeignKey('gcd.CreatorArtInfluence',
+                                              on_delete=models.CASCADE,
                                               null=True,
                                               related_name='revisions')
-    creator = models.ForeignKey('gcd.Creator',
+    creator = models.ForeignKey('gcd.Creator', on_delete=models.CASCADE,
                                 related_name='art_influence_revisions')
     influence_name = models.CharField(max_length=200, blank=True)
     influence_link = models.ForeignKey('gcd.Creator',
+                                       on_delete=models.CASCADE,
                                        null=True,
                                        blank=True,
                                        related_name='influenced_revisions')
@@ -7582,11 +7645,13 @@ class CreatorNonComicWorkRevision(Revision):
 
     objects = CreatorNonComicWorkRevisionManager()
     creator_non_comic_work = models.ForeignKey('gcd.CreatorNonComicWork',
+                                               on_delete=models.CASCADE,
                                                null=True,
                                                related_name='revisions')
-    creator = models.ForeignKey('gcd.Creator',
+    creator = models.ForeignKey('gcd.Creator', on_delete=models.CASCADE,
                                 related_name='non_comic_work_revisions')
     work_type = models.ForeignKey('gcd.NonComicWorkType',
+                                  on_delete=models.CASCADE,
                                   null=True,
                                   blank=True,
                                   related_name='cr_worktype')
@@ -7594,6 +7659,7 @@ class CreatorNonComicWorkRevision(Revision):
     employer_name = models.CharField(max_length=200, blank=True)
     work_title = models.CharField(max_length=255, blank=True)
     work_role = models.ForeignKey('gcd.NonComicWorkRole',
+                                  on_delete=models.CASCADE,
                                   null=True,
                                   blank=True,
                                   related_name='cr_workrole')

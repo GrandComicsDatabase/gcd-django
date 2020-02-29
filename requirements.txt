@@ -1,9 +1,9 @@
-Django<2.0
+Django<3.0
 mysqlclient<1.5
 Pillow<6.3
 PyICU<2.5
 PyYAML<5.2
-django-autocomplete-light<3.3
+django-autocomplete-light<3.4
 diff-match-patch==20181111
 django-appconf<1.1
 django-bootstrap3<11.2

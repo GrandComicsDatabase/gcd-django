@@ -13,7 +13,7 @@ from random import randint
 
 from django.db.models import F, Q
 from django.conf import settings
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.shortcuts import get_object_or_404, \
                              render
 from django.http import HttpResponseRedirect, Http404, HttpResponse

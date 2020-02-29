@@ -4,7 +4,7 @@
 from collections import OrderedDict
 
 from django import forms
-from django.core import urlresolvers
+import django.urls as urlresolvers
 
 from apps.oi.models import CoverRevision, ImageRevision
 

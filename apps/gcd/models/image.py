@@ -4,7 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes.fields import GenericForeignKey
-from django.core import urlresolvers
+import django.urls as urlresolvers
 
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit
@@ -33,11 +33,12 @@ class Image(models.Model):
         app_label = 'gcd'
         db_table = 'gcd_image'
 
-    content_type = models.ForeignKey(content_models.ContentType, null=True)
+    content_type = models.ForeignKey(content_models.ContentType,
+                                     on_delete=models.CASCADE, null=True)
     object_id = models.PositiveIntegerField(db_index=True, null=True)
     object = GenericForeignKey('content_type', 'object_id')
 
-    type = models.ForeignKey(ImageType)
+    type = models.ForeignKey(ImageType, on_delete=models.CASCADE)
 
     image_file = models.ImageField(upload_to=get_generic_image_path)
     scaled_image = ImageSpecField([ResizeToFit(width=400, upscale=False),],

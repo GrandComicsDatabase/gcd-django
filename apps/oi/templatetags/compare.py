@@ -229,7 +229,7 @@ def field_value(revision, field):
     return value
 
 
-@register.assignment_tag
+@register.simple_tag
 def diff_list(prev_rev, revision, field):
     """Generates an array which describes the change in text fields"""
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:

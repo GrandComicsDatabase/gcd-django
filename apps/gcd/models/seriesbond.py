@@ -25,13 +25,17 @@ class SeriesBond(models.Model):
         app_label = 'gcd'
         db_table = 'gcd_series_bond'
 
-    origin = models.ForeignKey('Series', related_name='to_series_bond')
-    target = models.ForeignKey('Series', related_name='from_series_bond')
-    origin_issue = models.ForeignKey('Issue', null=True,
+    origin = models.ForeignKey('Series', on_delete=models.CASCADE,
+                               related_name='to_series_bond')
+    target = models.ForeignKey('Series', on_delete=models.CASCADE,
+                               related_name='from_series_bond')
+    origin_issue = models.ForeignKey('Issue', on_delete=models.CASCADE,
+                                     null=True,
                                      related_name='to_series_issue_bond')
-    target_issue = models.ForeignKey('Issue', null=True,
+    target_issue = models.ForeignKey('Issue', on_delete=models.CASCADE,
+                                     null=True,
                                      related_name='from_series_issue_bond')
-    bond_type = models.ForeignKey(SeriesBondType)
+    bond_type = models.ForeignKey(SeriesBondType, on_delete=models.CASCADE)
     # we don't use modelforms to edit seriesbonds, no blank=True needed
     notes = models.TextField(max_length=255)
 

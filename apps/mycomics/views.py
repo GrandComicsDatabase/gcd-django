@@ -7,7 +7,7 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.http import HttpResponseRedirect, Http404
 from django.core.exceptions import PermissionDenied
 from django.conf import settings

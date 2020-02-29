@@ -3,7 +3,7 @@
 
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.db.models import Count, Case, When, F
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
@@ -58,7 +58,9 @@ class Series(GcdData):
     binding = models.CharField(max_length=255, default='')
     publishing_format = models.CharField(max_length=255, default='')
 
-    publication_type = models.ForeignKey(SeriesPublicationType, null=True,
+    publication_type = models.ForeignKey(SeriesPublicationType,
+                                         on_delete=models.CASCADE,
+                                         null=True,
                                          blank=True)
     notes = models.TextField()
     keywords = TaggableManager()
@@ -70,9 +72,13 @@ class Series(GcdData):
     is_current = models.BooleanField(default=False, db_index=True)
     publication_dates = models.CharField(max_length=255)
 
-    first_issue = models.ForeignKey('Issue', null=True,
+    first_issue = models.ForeignKey('Issue',
+                                    on_delete=models.CASCADE,
+                                    null=True,
                                     related_name='first_issue_series_set')
-    last_issue = models.ForeignKey('Issue', null=True,
+    last_issue = models.ForeignKey('Issue',
+                                   on_delete=models.CASCADE,
+                                   null=True,
                                    related_name='last_issue_series_set')
     issue_count = models.IntegerField(default=0)
 
@@ -97,11 +103,11 @@ class Series(GcdData):
     has_gallery = models.BooleanField(default=False, db_index=True)
 
     # Country and Language info.
-    country = models.ForeignKey(Country)
-    language = models.ForeignKey(Language)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
 
     # Fields related to the publishers table.
-    publisher = models.ForeignKey(Publisher)
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
 
     def has_tracking(self):
         return self.tracking_notes or self.has_series_bonds()

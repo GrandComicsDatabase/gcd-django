@@ -7,9 +7,9 @@ import glob
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.db import transaction, IntegrityError

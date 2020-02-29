@@ -4,7 +4,7 @@ import os
 import shutil
 import glob
 
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.core.files import File

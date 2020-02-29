@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core import urlresolvers
+import django.urls as urlresolvers
 
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -49,8 +49,8 @@ class Feature(GcdData):
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
     genre = models.CharField(max_length=255)
-    language = models.ForeignKey(Language)
-    feature_type = models.ForeignKey(FeatureType)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
     year_created = models.IntegerField(db_index=True, null=True)
     year_created_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
@@ -164,11 +164,12 @@ class FeatureRelation(GcdLink):
         ordering = ('to_feature', 'relation_type', 'from_feature')
         verbose_name_plural = 'Feature Relations'
 
-    to_feature = models.ForeignKey(Feature,
+    to_feature = models.ForeignKey(Feature, on_delete=models.CASCADE,
                                    related_name='from_related_feature')
-    from_feature = models.ForeignKey(Feature,
+    from_feature = models.ForeignKey(Feature, on_delete=models.CASCADE,
                                      related_name='to_related_feature')
     relation_type = models.ForeignKey(FeatureRelationType,
+                                      on_delete=models.CASCADE,
                                       related_name='relation_type')
     notes = models.TextField()
 

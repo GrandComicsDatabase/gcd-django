@@ -588,7 +588,7 @@ class HiddenInputWithHelp(forms.TextInput):
         # form fields.
         return False
 
-    def render(self, name, value, *args, **kwargs):
+    def render(self, name, value, renderer=None, *args, **kwargs):
         return mark_safe(super(HiddenInputWithHelp, self).render(name, value,
                                                                  self.attrs))
 
@@ -648,7 +648,7 @@ def insert_data_source_fields(field_name, ordering, fields, insert_after):
 
 
 class PageCountInput(TextInput):
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, renderer=None, attrs=None):
         value = format_page_count(value)
         return super(PageCountInput, self).render(name, value, attrs)
 
@@ -675,7 +675,7 @@ class ForeignKeyField(forms.IntegerField):
 
 
 class KeywordsWidget(forms.TextInput):
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, renderer=None, attrs=None):
         if value is not None and not isinstance(value, six.string_types):
             value = '; '.join([
                 o.tag.name for o in value.select_related("tag")])

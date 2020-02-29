@@ -11,7 +11,7 @@ import hashlib
 from random import random
 
 from django.conf import settings
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.http import HttpResponseRedirect
 from django.template import RequestContext
 from django.shortcuts import render

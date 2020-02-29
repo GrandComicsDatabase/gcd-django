@@ -4,7 +4,7 @@
 from decimal import Decimal
 
 from django.db import models
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.db.models import Sum, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
@@ -51,9 +51,10 @@ class IssueCredit(GcdData):
         app_label = 'gcd'
         db_table = 'gcd_issue_credit'
 
-    creator = models.ForeignKey(CreatorNameDetail)
-    credit_type = models.ForeignKey(CreditType)
-    issue = models.ForeignKey('Issue', related_name='credits')
+    creator = models.ForeignKey(CreatorNameDetail, on_delete=models.CASCADE)
+    credit_type = models.ForeignKey(CreditType, on_delete=models.CASCADE)
+    issue = models.ForeignKey('Issue', on_delete=models.CASCADE,
+                              related_name='credits')
 
     is_credited = models.BooleanField(default=False, db_index=True)
 
@@ -86,7 +87,7 @@ class Issue(GcdData):
     isbn = models.CharField(max_length=32, db_index=True)
     no_isbn = models.BooleanField(default=False, db_index=True)
     valid_isbn = models.CharField(max_length=13, db_index=True)
-    variant_of = models.ForeignKey('self', null=True,
+    variant_of = models.ForeignKey('self', on_delete=models.CASCADE, null=True,
                                    related_name='variant_set')
     variant_name = models.CharField(max_length=255)
     barcode = models.CharField(max_length=38, db_index=True)
@@ -116,10 +117,11 @@ class Issue(GcdData):
     keywords = TaggableManager()
 
     # Series and publisher links
-    series = models.ForeignKey('Series')
-    indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
+    series = models.ForeignKey('Series', on_delete=models.CASCADE)
+    indicia_publisher = models.ForeignKey(IndiciaPublisher,
+                                          on_delete=models.CASCADE, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
-    brand = models.ForeignKey(Brand, null=True)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True)
     no_brand = models.BooleanField(default=False, db_index=True)
     image_resources = GenericRelation(Image)
 

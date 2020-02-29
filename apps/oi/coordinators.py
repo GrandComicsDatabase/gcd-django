@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.conf import settings
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
 from django.utils.safestring import mark_safe

@@ -1,6 +1,6 @@
 import calendar
 from operator import itemgetter
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, \
@@ -47,11 +47,12 @@ class ReceivedAward(GcdData):
         ordering = ('award_year',)
         verbose_name_plural = 'Received Awards'
       
-    content_type = models.ForeignKey(ContentType, null=True, blank=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+                                     null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
     recipient = GenericForeignKey('content_type', 'object_id')
     
-    award = models.ForeignKey(Award, null=True)
+    award = models.ForeignKey(Award, on_delete=models.CASCADE, null=True)
     award_name = models.CharField(max_length=255, blank=True)
     no_award_name = models.BooleanField(default=False)
     award_year = models.PositiveSmallIntegerField(null=True)

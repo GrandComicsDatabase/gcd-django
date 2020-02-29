@@ -3,7 +3,7 @@
 
 from django.db import models
 from django.db.models import F
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from apps.stddata.models import Country
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
@@ -72,7 +72,7 @@ class Publisher(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    country = models.ForeignKey(Country)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
     # Cached counts.
     brand_count = models.IntegerField(default=0, db_index=True)
@@ -182,9 +182,9 @@ class IndiciaPublisher(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    parent = models.ForeignKey(Publisher)
+    parent = models.ForeignKey(Publisher, on_delete=models.CASCADE)
     is_surrogate = models.BooleanField(default=False, db_index=True)
-    country = models.ForeignKey(Country)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
     issue_count = models.IntegerField(default=0)
 
@@ -218,7 +218,7 @@ class BrandGroup(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    parent = models.ForeignKey(Publisher)
+    parent = models.ForeignKey(Publisher, on_delete=models.CASCADE)
 
     issue_count = models.IntegerField(default=0)
 
@@ -324,8 +324,9 @@ class BrandUse(GcdLink):
         db_table = 'gcd_brand_use'
         app_label = 'gcd'
 
-    publisher = models.ForeignKey(Publisher)
-    emblem = models.ForeignKey(Brand, related_name='in_use')
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
+    emblem = models.ForeignKey(Brand, on_delete=models.CASCADE,
+                               related_name='in_use')
 
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)

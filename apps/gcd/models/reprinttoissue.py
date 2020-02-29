@@ -12,8 +12,10 @@ class ReprintToIssue(models.Model):
         app_label = 'gcd'
         db_table = 'gcd_reprint_to_issue'
 
-    origin = models.ForeignKey(Story, related_name='to_issue_reprints')
-    target_issue = models.ForeignKey(Issue, related_name='from_reprints')
+    origin = models.ForeignKey(Story, on_delete=models.CASCADE,
+                               related_name='to_issue_reprints')
+    target_issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
+                                     related_name='from_reprints')
     notes = models.TextField(max_length=255)
 
     # Fields related to change management.

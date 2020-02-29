@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -98,9 +98,10 @@ class StoryCredit(GcdData):
         app_label = 'gcd'
         db_table = 'gcd_story_credit'
 
-    creator = models.ForeignKey(CreatorNameDetail)
-    credit_type = models.ForeignKey(CreditType)
-    story = models.ForeignKey('Story', related_name='credits')
+    creator = models.ForeignKey(CreatorNameDetail, on_delete=models.CASCADE)
+    credit_type = models.ForeignKey(CreditType, on_delete=models.CASCADE)
+    story = models.ForeignKey('Story', on_delete=models.CASCADE,
+                              related_name='credits')
 
     is_credited = models.BooleanField(default=False, db_index=True)
     is_signed = models.BooleanField(default=False, db_index=True)
@@ -152,7 +153,7 @@ class Story(GcdData):
     feature = models.CharField(max_length=255)
     feature_object = models.ManyToManyField(Feature)
     feature_logo = models.ManyToManyField(FeatureLogo)
-    type = models.ForeignKey(StoryType)
+    type = models.ForeignKey(StoryType, on_delete=models.CASCADE)
     sequence_number = models.IntegerField()
 
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
@@ -184,7 +185,7 @@ class Story(GcdData):
     awards = GenericRelation(ReceivedAward)
 
     # Fields from issue.
-    issue = models.ForeignKey('Issue')
+    issue = models.ForeignKey('Issue', on_delete=models.CASCADE)
 
     _update_stats = True
 

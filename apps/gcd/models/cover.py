@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
 from django.db import models
-from django.core import urlresolvers
+import django.urls as urlresolvers
 
 from .issue import Issue
 
@@ -23,7 +23,7 @@ class Cover(models.Model):
         )
 
     # Cover belongs to an issue
-    issue = models.ForeignKey(Issue)
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
 
     # Fields directly related to cover images
     marked = models.BooleanField(default=False)

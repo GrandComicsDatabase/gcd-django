@@ -10,7 +10,7 @@ from codecs import EncodedFile, BOM_UTF16
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required

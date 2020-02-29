@@ -13,7 +13,7 @@ from random import randint
 from django.db.models import Q
 from django.conf import settings
 from django.http import HttpResponseRedirect
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.shortcuts import render
 from django.utils.http import urlquote
 

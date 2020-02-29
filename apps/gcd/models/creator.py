@@ -1,5 +1,5 @@
 import calendar
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
@@ -108,10 +108,12 @@ class CreatorNameDetail(GcdData):
     is_official_name = models.BooleanField(default=False)
     given_name = models.CharField(max_length=255, db_index=True, default='')
     family_name = models.CharField(max_length=255, db_index=True, default='')
-    creator = models.ForeignKey('Creator', related_name='creator_names')
-    type = models.ForeignKey('NameType', related_name='creator_name_details',
-                             null=True)
-    in_script = models.ForeignKey(Script, default=Script.LATIN_PK)
+    creator = models.ForeignKey('Creator', on_delete=models.CASCADE,
+                                related_name='creator_names')
+    type = models.ForeignKey('NameType', on_delete=models.CASCADE,
+                             related_name='creator_name_details', null=True)
+    in_script = models.ForeignKey(Script, on_delete=models.CASCADE,
+                                  default=Script.LATIN_PK)
 
     def display_credit(self, credit, url=True):
         co_name = ''
@@ -225,12 +227,14 @@ class Creator(GcdData):
     gcd_official_name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True, default='')
 
-    birth_date = models.ForeignKey(Date, related_name='+', null=True)
-    death_date = models.ForeignKey(Date, related_name='+', null=True)
+    birth_date = models.ForeignKey(Date, on_delete=models.CASCADE,
+                                   related_name='+', null=True)
+    death_date = models.ForeignKey(Date, on_delete=models.CASCADE,
+                                   related_name='+', null=True)
 
     whos_who = models.URLField(null=True)
 
-    birth_country = models.ForeignKey(Country,
+    birth_country = models.ForeignKey(Country, on_delete=models.CASCADE,
                                       related_name='birth_country',
                                       null=True)
     birth_country_uncertain = models.BooleanField(default=False)
@@ -239,7 +243,7 @@ class Creator(GcdData):
     birth_city = models.CharField(max_length=200)
     birth_city_uncertain = models.BooleanField(default=False)
 
-    death_country = models.ForeignKey(Country,
+    death_country = models.ForeignKey(Country, on_delete=models.CASCADE,
                                       related_name='death_country',
                                       null=True)
     death_country_uncertain = models.BooleanField(default=False)
@@ -389,11 +393,11 @@ class CreatorRelation(GcdData):
         ordering = ('to_creator', 'relation_type', 'from_creator')
         verbose_name_plural = 'Creator Relations'
 
-    to_creator = models.ForeignKey(Creator,
+    to_creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
                                    related_name='from_related_creator')
-    from_creator = models.ForeignKey(Creator,
+    from_creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
                                      related_name='to_related_creator')
-    relation_type = models.ForeignKey(RelationType,
+    relation_type = models.ForeignKey(RelationType, on_delete=models.CASCADE,
                                       related_name='relation_type')
     creator_name = models.ManyToManyField(CreatorNameDetail,
                                           related_name='creator_relation')
@@ -440,8 +444,10 @@ class CreatorSchool(GcdData):
         ordering = ('school_year_began', 'school_year_ended')
         verbose_name_plural = 'Creator Schools'
 
-    creator = models.ForeignKey(Creator, related_name='school_set')
-    school = models.ForeignKey(School, related_name='creator')
+    creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
+                                related_name='school_set')
+    school = models.ForeignKey(School, on_delete=models.CASCADE,
+                               related_name='creator')
     school_year_began = models.PositiveSmallIntegerField(null=True)
     school_year_began_uncertain = models.BooleanField(default=False)
     school_year_ended = models.PositiveSmallIntegerField(null=True)
@@ -489,9 +495,12 @@ class CreatorDegree(GcdData):
         ordering = ('degree_year',)
         verbose_name_plural = 'Creator Degrees'
 
-    creator = models.ForeignKey(Creator, related_name='degree_set')
-    school = models.ForeignKey(School, related_name='degree', null=True)
-    degree = models.ForeignKey(Degree, related_name='creator')
+    creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
+                                related_name='degree_set')
+    school = models.ForeignKey(School, on_delete=models.CASCADE,
+                               related_name='degree', null=True)
+    degree = models.ForeignKey(Degree, on_delete=models.CASCADE,
+                               related_name='creator')
     degree_year = models.PositiveSmallIntegerField(null=True)
     degree_year_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
@@ -520,9 +529,12 @@ class CreatorArtInfluence(GcdData):
         app_label = 'gcd'
         verbose_name_plural = 'Creator Art Influences'
 
-    creator = models.ForeignKey(Creator, related_name='art_influences')
+    creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
+                                related_name='art_influences')
     influence_name = models.CharField(max_length=200)
-    influence_link = models.ForeignKey(Creator, null=True,
+    influence_link = models.ForeignKey(Creator,
+                                       on_delete=models.CASCADE,
+                                       null=True,
                                        related_name='influenced_creators')
     notes = models.TextField()
     data_source = models.ManyToManyField(DataSource)
@@ -574,9 +586,12 @@ class CreatorMembership(GcdData):
         ordering = ('membership_type',)
         verbose_name_plural = 'Creator Memberships'
 
-    creator = models.ForeignKey(Creator, related_name='membership_set')
+    creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
+                                related_name='membership_set')
     organization_name = models.CharField(max_length=200)
-    membership_type = models.ForeignKey(MembershipType, null=True)
+    membership_type = models.ForeignKey(MembershipType,
+                                        on_delete=models.CASCADE,
+                                        null=True)
     membership_year_began = models.PositiveSmallIntegerField(null=True)
     membership_year_began_uncertain = models.BooleanField(default=False)
     membership_year_ended = models.PositiveSmallIntegerField(null=True)
@@ -639,12 +654,14 @@ class CreatorNonComicWork(GcdData):
         ordering = ('publication_title', 'employer_name', 'work_type')
         verbose_name_plural = 'Creator Non Comic Works'
 
-    creator = models.ForeignKey(Creator, related_name='non_comic_work_set')
-    work_type = models.ForeignKey(NonComicWorkType)
+    creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
+                                related_name='non_comic_work_set')
+    work_type = models.ForeignKey(NonComicWorkType, on_delete=models.CASCADE)
     publication_title = models.CharField(max_length=200)
     employer_name = models.CharField(max_length=200)
     work_title = models.CharField(max_length=255)
-    work_role = models.ForeignKey(NonComicWorkRole, null=True)
+    work_role = models.ForeignKey(NonComicWorkRole, on_delete=models.CASCADE,
+                                  null=True)
     work_urls = models.TextField()
     data_source = models.ManyToManyField(DataSource)
     notes = models.TextField()
@@ -706,6 +723,7 @@ class NonComicWorkYear(models.Model):
         verbose_name_plural = 'NonComic Work Years'
 
     non_comic_work = models.ForeignKey(CreatorNonComicWork,
+                                       on_delete=models.CASCADE,
                                        related_name='noncomicworkyears')
     work_year = models.PositiveSmallIntegerField(null=True)
     work_year_uncertain = models.BooleanField(default=False)

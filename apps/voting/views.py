@@ -5,7 +5,7 @@ from py3votecore.schulze_method import SchulzeMethod
 
 from django.conf import settings
 from django.db.models import Q
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.core.mail import send_mail
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
@@ -47,7 +47,7 @@ vote id:
 
 def _classify_topics(topics, user):
     # Permissions are returned as appname.codename by get_all_permissions().
-    if user.is_anonymous():
+    if user.is_anonymous:
         my_topics = ()
         forbidden_topics = topics
     elif user.is_superuser:

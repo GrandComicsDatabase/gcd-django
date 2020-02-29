@@ -35,9 +35,10 @@ class Indexer(models.Model):
             ('on_board', 'Is on the Board of Directors'),
         )
 
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
-    country = models.ForeignKey(Country, related_name='indexers')
+    country = models.ForeignKey(Country, related_name='indexers',
+                                on_delete=models.CASCADE)
     languages = models.ManyToManyField(Language, related_name='indexers',
                                        db_table='gcd_indexer_languages')
     interests = models.TextField(null=True, blank=True)
@@ -49,7 +50,7 @@ class Indexer(models.Model):
     max_ongoing = models.IntegerField(default=0)
 
     mentor = models.ForeignKey(User, related_name='mentees', null=True,
-                               blank=True)
+                               on_delete=models.CASCADE, blank=True)
     is_new = models.BooleanField(default=False, db_index=True)
     is_banned = models.BooleanField(default=False, db_index=True)
     deceased = models.BooleanField(default=False, db_index=True)
@@ -152,7 +153,8 @@ class ImpGrant(models.Model):
     class Meta:
         db_table = 'indexer_imp_grant'
 
-    indexer = models.ForeignKey(Indexer, related_name='imp_grant_set')
+    indexer = models.ForeignKey(Indexer, on_delete=models.CASCADE,
+                                related_name='imp_grant_set')
     imps = models.IntegerField()
     grant_type = models.CharField(max_length=50)
     notes = models.TextField()

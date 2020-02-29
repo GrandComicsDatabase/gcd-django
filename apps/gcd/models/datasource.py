@@ -30,7 +30,7 @@ class DataSource(GcdData):
         ordering = ('source_description',)
         verbose_name_plural = 'Creator Data Source'
 
-    source_type = models.ForeignKey(SourceType)
+    source_type = models.ForeignKey(SourceType, on_delete=models.CASCADE)
     source_description = models.TextField()
     field = models.CharField(max_length=256)
 

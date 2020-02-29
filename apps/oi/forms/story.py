@@ -239,9 +239,9 @@ StoryRevisionFormSet = inlineformset_factory(
 
 
 class BaseField(Field):
-    def render(self, form, form_style, context, template_pack=None):
+    def render(self, form, form_style, context, renderer=None,
+               template_pack=None):
         fields = ''
-
         for field in self.fields:
             fields += render_field(field, form, form_style, context,
                                    template_pack=template_pack)

@@ -146,8 +146,8 @@ class CountStats(models.Model):
 
     name = models.CharField(max_length=40, db_index=True)
     count = models.IntegerField()
-    language = models.ForeignKey(Language, null=True)
-    country = models.ForeignKey(Country, null=True)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE, null=True)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return self.name + ": " + str(self.count)
@@ -188,8 +188,9 @@ class RecentIndexedIssue(models.Model):
 
     objects = RecentIndexedIssueManager()
 
-    issue = models.ForeignKey('gcd.Issue')
-    language = models.ForeignKey('stddata.Language', null=True, db_index=True)
+    issue = models.ForeignKey('gcd.Issue', on_delete=models.CASCADE)
+    language = models.ForeignKey('stddata.Language', on_delete=models.CASCADE,
+                                 null=True, db_index=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
 
 
@@ -198,6 +199,6 @@ class Download(models.Model):
     Track downloads of bulk data.  Description may contain the filesystem
     paths or other information about what was downloaded.
     """
-    user = models.ForeignKey(User)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     description = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)

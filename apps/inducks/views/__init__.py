@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.shortcuts import render_to_response
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 def index(request):
     """Generates the front index page."""
