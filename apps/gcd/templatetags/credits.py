@@ -11,6 +11,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.stddata.models import Country, Language
+from apps.gcd.models.story import AD_TYPES
 from apps.gcd.models.support import GENRES
 from apps.gcd.models import STORY_TYPES
 
@@ -544,8 +545,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                              notes=to_reprint.notes)
                 last_follow = follow_info
         else:
-            if no_promo and (to_reprint.target.type.id ==
-                             STORY_TYPES['preview']):
+            if no_promo and to_reprint.target.type.id in AD_TYPES:
                 pass
             else:
                 follow_info = follow_reprint_link(to_reprint, 'in',

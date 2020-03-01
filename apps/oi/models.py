@@ -7056,7 +7056,7 @@ class CreatorNameDetailRevision(Revision):
 
     class Meta:
         db_table = 'oi_creator_name_detail_revision'
-        ordering = ['-is_official_name', 'type__id', 'created', '-id']
+        ordering = ['sort_name', '-creator__birth_date__year', 'type__id']
         verbose_name_plural = 'Creator Name Detail Revisions'
 
     objects = CreatorNameDetailRevisionManager()
