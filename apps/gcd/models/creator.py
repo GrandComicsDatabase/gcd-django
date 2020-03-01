@@ -177,17 +177,11 @@ class CreatorNameDetail(GcdData):
             year = '(b. %s)' % self.creator.birth_date.year
         else:
             year = ''
-        if self.type:
-            type_as_string = '(%s)' % str(self.type.type)
-        else:
-            type_as_string = ''
         if self.is_official_name:
-            return '%s %s %s' % (str(self.name), year,
-                                 type_as_string)
+            return '%s %s' % (str(self.name), year)
         else:
-            return '%s %s - %s %s' % (str(self.creator), year,
-                                      str(self.name),
-                                      type_as_string)
+            return '%s %s - %s' % (str(self.creator), year,
+                                   str(self.name))
 
 
 class RelationType(models.Model):

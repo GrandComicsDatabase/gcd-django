@@ -183,7 +183,7 @@ class CollectionItem(models.Model):
     class Meta:
         db_table = 'mycomics_collection_item'
         ordering = ['issue__series__sort_name', 'issue__series__year_began',
-                    'issue__sort_code', 'id']
+                    'issue__series__id', 'issue__sort_code', 'id']
 
     RATINGS = Choices(
         (1, 'poor', '1 - Poor'),
