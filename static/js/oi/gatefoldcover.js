@@ -5,7 +5,7 @@ function intString(num) {
 
 // This is the JQuery way to run a function (in this case, an
 // anonymous one) after the web page is ready
-$(window).load(function() {
+$(window).on('load', function() {
     // First get the width and height of the image with id 'cropbox'
     var width = $('#cropbox').width();
     var height = $('#cropbox').height();
