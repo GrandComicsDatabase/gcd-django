@@ -425,24 +425,6 @@ def reserve_other_issue(changeset, revision, issue_one):
     return True
 
 
-def extract_creator_names(request):
-    total_creator_names = int(request.POST.get('total_names'))
-    creator_names = []
-    for i in range(1, total_creator_names + 1):
-        if 'name_' + str(i) in request.POST:
-            name_data = {}
-            name_data['id'] = i
-            name_data['name'] = request.POST.get('name_' + str(i))
-            name_data['sort_name'] = request.POST.get('sort_name_' + str(i))
-            name_data['type_id'] = int(request.POST.get('name_type_' + str(i)))
-            name_data['revision_id'] = request.POST.get('name_revision_id_' + str(i))
-            name_data['relation_type_id'] = int(request.POST.get(
-                'relation_type_' + str(i))) if request.POST.get(
-                'relation_type_' + str(i)) else None
-            creator_names.append(name_data)
-    return creator_names
-
-
 @permission_required('indexer.can_reserve')
 def edit_revision(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
