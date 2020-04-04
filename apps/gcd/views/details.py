@@ -110,7 +110,8 @@ def creator(request, creator_id):
 def show_creator(request, creator, preview=False):
     vars = {'creator': creator,
             'error_subject': creator,
-            'preview': preview}
+            'preview': preview,
+            'studio_types': [2,3]}
     return render(request, 'gcd/details/creator.html', vars)
 
 
