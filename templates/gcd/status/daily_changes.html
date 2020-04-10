@@ -23,7 +23,7 @@
 
 {% if request.user.is_authenticated and request.user.indexer.imps > 0 %}
 <div class="left">
-Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all changes<a/>{% else %}my changes{% endif %}.
+Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all changes{% else %}my changes{% endif %}</a>.
 </div>
 {% endif %}
 
