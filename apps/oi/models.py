@@ -4874,6 +4874,59 @@ class StoryRevision(Revision):
                     else:
                         removed_credit.cleaned_data['id'].delete()
 
+    def old_credits(self):
+        for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',
+                            'editing'):
+            credit = getattr(self, credit_type)
+            if credit and credit != '?' and credit not in ['various', 'typeset']:
+                return True
+        return False
+
+
+    def migrate_credits(self):
+        for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',
+                            'editing'):
+            if getattr(self, credit_type) and \
+              getattr(self, credit_type) != '?':
+                credits = getattr(self, credit_type).split(';')
+                old_credits = ''
+                for credit in credits:
+                    save_credit = credit
+                    credit = credit.strip()
+                    if credit.strip()[-1] == '?':
+                        credit = credit[:-1]
+                        uncertain = True
+                    else:
+                        uncertain = False
+                    if credit.find('(') > 1:
+                        note = credit[credit.find('(')+1:].strip()
+                        note = note.strip(' )')
+                        credit = credit[:credit.find('(')-1]
+                    else:
+                        note = ''
+                    if credit.find('[') > 1:
+                        credit = credit[credit.find('[')+1:]
+                        credit = credit[credit.find(' ')+1:]
+                        credit = credit.strip().strip(']')
+                    creator = CreatorNameDetail.objects.filter(name=credit)
+                    if creator.count() == 1:
+                        creator = creator.get()
+                        credit_revision = StoryCreditRevision(
+                          changeset=self.changeset,
+                          story_revision_id=self.id,
+                          creator=creator,
+                          credit_type_id=CREDIT_TYPES[credit_type],
+                          uncertain=uncertain,
+                          credit_name=note)
+                        credit_revision.save()
+                    else:
+                        if old_credits:
+                            old_credits += '; ' + save_credit
+                        else:
+                            old_credits = save_credit
+                setattr(self, credit_type, old_credits)
+                self.save()
+
     def deletable(self):
         if self.changeset.reprintrevisions \
                          .filter(origin_story=self.story).count() \

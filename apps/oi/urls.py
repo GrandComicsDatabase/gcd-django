@@ -159,8 +159,12 @@ urlpatterns = [
     url(r'^story/revision/(?P<id>\d+)/delete/$',
         oi_views.toggle_delete_story_revision,
         name='toggle_delete_story_revision'),
-    url(r'^story/revision/(?P<id>\d+)/move/$', oi_views.move_story_revision,
+    url(r'^story/revision/(?P<id>\d+)/move/$',
+        oi_views.move_story_revision,
         name='move_story_revision'),
+    url(r'^story/revision/(?P<id>\d+)/migrate/$',
+        oi_views.migrate_story_revision,
+        name='migrate_story_revision'),
 
     # Feature URLs
     url(r'^feature/add/$',

@@ -5431,3 +5431,20 @@ def add_creator_non_comic_work(request, creator_id):
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
+
+
+@permission_required('indexer.can_reserve')
+def migrate_story_revision(request, id):
+    story = get_object_or_404(StoryRevision, id=id)
+    if request.user != story.changeset.indexer:
+        return render_error(request,
+          'Only the reservation holder may migrate stories.')
+
+    if request.method != 'POST':
+        return _cant_get(request)
+
+    if story.old_credits():
+        story.migrate_credits()
+
+    return HttpResponseRedirect(urlresolvers.reverse(
+        'edit', kwargs={'id': story.changeset.id}))

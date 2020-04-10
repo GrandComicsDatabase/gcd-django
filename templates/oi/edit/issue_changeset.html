@@ -190,6 +190,13 @@
                value="Move To Other Issue">
       </form>
         {% endif %}
+        {% if story.old_credits %}
+      <form class="story_button" method="POST"
+            action="{% url "migrate_story_revision" id=story.id %}">
+        {% csrf_token %}
+        <input type="submit" value="Migrate">
+      </form>
+        {% endif %}
       {% else %}
       <form class="story_button" method="POST"
             action="{% url "toggle_delete_story_revision" id=story.id %}">
