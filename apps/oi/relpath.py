@@ -43,7 +43,7 @@ class RelPath(object):
             field = cls._meta.get_field(self._names[i])
             if i != last_i and (field.many_to_many or field.one_to_many):
                 # Supporting internal multi-valued fields would get us into
-                # wierd set-of-sets (and set-of-set-of-sets, etc.) situations
+                # weird set-of-sets (and set-of-set-of-sets, etc.) situations
                 # that we don't currently need anyway.
                 raise ValueError("Many-valued relations cannot appear before "
                                  "the end of the path")
@@ -51,7 +51,7 @@ class RelPath(object):
             self._fields.append(field)
             if any((field.one_to_one, field.one_to_many,
                     field.many_to_many, field.many_to_one)):
-                cls = field.rel.model
+                cls = field.remote_field.model
                 self._model_classes.append(cls)
             elif i != last_i:
                 # We have further to go, but can't because the current
@@ -141,10 +141,14 @@ class RelPath(object):
 
         # We want values[-2] as the object on which we set the attribute.
         # values[-1] is the value that we are replacing, and is named
-        # by self._names[-1].  Insering the instance at the beginning of the
+        # by self._names[-1].  Inserting the instance at the beginning of the
         # values list returned from _expand() ensures that there is always
         # an existing values[-2]
-        setattr(values[-2], self._names[-1], value)
+        if self._multi_valued:
+            m2m_set = getattr(values[-2], self._names[-1])
+            m2m_set.set(value)
+        else:
+            setattr(values[-2], self._names[-1], value)
 
     def _expand(self, instance):
         """
