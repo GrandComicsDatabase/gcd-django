@@ -19,8 +19,8 @@ git+git://github.com/GrandComicsDatabase/django-mobile.git@django111
 django-model-utils<3.3
 git+git://github.com/GrandComicsDatabase/django-taggit.git@django111
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@python3
-elasticsearch<2.0
-elasticstack<0.6
+elasticsearch<3.0
+#elasticstack<0.6
 facebook-sdk<3.2
 python-graph-core<1.9
 python-memcached<1.60
