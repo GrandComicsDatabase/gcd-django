@@ -353,7 +353,8 @@ def changed_story_list(changeset):
     get a bulleted list of changes at the sequence level
     """
     if changeset.issuerevisions.count() and \
-       changeset.change_type != CTYPES['issue_bulk']:
+       changeset.change_type not in [CTYPES['series'],
+                                     CTYPES['issue_bulk']]:
         # only relevant for single issue changesets
         story_revisions = changeset.storyrevisions.all()\
                                    .order_by('sequence_number')
