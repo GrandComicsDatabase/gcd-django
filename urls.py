@@ -24,7 +24,7 @@ admin.autodiscover()
 # use the account views from the indexer app or include the other apps.
 
 js_info_dict = {
-    'packages': ('apps.gcd',),
+    'packages': ['apps.gcd',],
 }
 
 basic_patterns = [
@@ -41,7 +41,7 @@ basic_patterns = [
     url(r'^donate/thanks/$',
         bv.TemplateView.as_view(template_name='gcd/donate/thanks.html'),
         name='donate_thanks'),
-    url(r'^jsi18n/$', JavaScriptCatalog.as_view(), js_info_dict,
+    url(r'^jsi18n/$', JavaScriptCatalog.as_view(**js_info_dict),
         name='javascript-catalog'),
     url(r'^contact/$',
         ContactFormView.as_view(
