@@ -15,10 +15,12 @@
       href="{% static "css/oi/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/oi/default/edit.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default/widgets.css" %}">
 {% endblock %}
 
 {% block view_body %}
-{% include "oi/bits/multi_selector.html" %}
+{% include "oi/bits/jquery.html" %}
 <h1>
 {{ changeset|header_link }}
 </h1>
