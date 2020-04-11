@@ -37,9 +37,9 @@ class GcdNameQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdNameQuery, self).prepare(query_obj)
         query_return = ''
-        for phrase in safe_split(query_string.encode('utf-8')):
+        for phrase in safe_split(query_string):
             # if we also do * in front, searches with 'the' won't work somehow
-            query_return += phrase.decode('utf-8') + '* '
+            query_return += phrase + '* '
         return query_return
 
 
@@ -202,7 +202,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                         self.results = self.results.order_by('year',
                                                              'sort_name')
         if self.query:
-            self.query = urlencode({'q': self.query.encode('utf-8')})
+            self.query = urlencode({'q': self.query})
         self.paginator = ResponsePaginator(self.results,
                                            vars=context)
         self.paginator.vars['page'] = self.paginator.paginate(request)
