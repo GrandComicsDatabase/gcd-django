@@ -111,7 +111,7 @@ else:
                     [path('projects/', include('apps.projects.urls'))]
 
 if 'django_rq' in settings.INSTALLED_APPS:
-    urlpatterns += [path(r'^django-rq/', include('django_rq.urls'))]
+    urlpatterns += [path('django-rq/', include('django_rq.urls'))]
 
 # This only has any effect when DEBUG is True.
 urlpatterns += staticfiles_urlpatterns()
