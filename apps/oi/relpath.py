@@ -75,7 +75,7 @@ class RelPath(object):
         if field is None:
             field = self._fields[-1]
         if field.many_to_many or field.one_to_many:
-            return field.rel.model.objects.none()
+            return field.remote_field.model.objects.none()
         return None
 
     def get_field(self):
