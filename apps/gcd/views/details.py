@@ -102,6 +102,27 @@ def get_gcd_object(model, object_id, model_name=None):
     return object
 
 
+def generic_sortable_issuelist(request, issues, context):
+    template = 'gcd/search/issue_list_sortable.html'
+    paginator = ResponsePaginator(issues, per_page=100, vars=context)
+    page_number = paginator.paginate(request).number
+
+    if 'sort' in request.GET:
+        extra_string = 'sort=%s' % (request.GET['sort'])
+    else:
+        extra_string = ''
+
+    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('publication_date'))
+    RequestConfig(request, paginate={'per_page': 100,
+                                     'page': page_number}).configure(table)
+    context['table'] = table
+    # are using /search/list_header.html in the template
+    context['query_string'] = extra_string
+    return render(request, template, context)
+
+
 def creator(request, creator_id):
     creator = get_gcd_object(Creator, creator_id)
     return show_creator(request, creator)
@@ -116,7 +137,6 @@ def show_creator(request, creator, preview=False):
 
 
 def checklist_by_id(request, creator_id, country=None, language=None):
-    template = 'gcd/search/issue_list_sortable.html'
     creator = get_gcd_object(Creator, creator_id)
     creator_names = creator.creator_names.filter(deleted=False)
 
@@ -136,27 +156,10 @@ def checklist_by_id(request, creator_id, country=None, language=None):
         'plural_suffix': 's',
         'heading': 'Issue Checklist for Creator %s' % (creator)
     }
-    paginator = ResponsePaginator(issues, per_page=100, vars=context)
-    page_number = paginator.paginate(request).number
-
-    if 'sort' in request.GET:
-        extra_string = 'sort=%s' % (request.GET['sort'])
-    else:
-        extra_string = ''
-
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                        template_name='gcd/bits/sortable_table.html',
-                        order_by=('publication_date'))
-    RequestConfig(request, paginate={'per_page': 100,
-                                     'page': page_number}).configure(table)
-    context['table'] = table
-    # are using /search/list_header.html in the template
-    context['query_string'] = extra_string
-    return render(request, template, context)
+    return generic_sortable_issuelist(request, issues, context)
 
 
 def checklist_by_name(request, creator, country=None, language=None):
-    template = 'gcd/search/issue_list_sortable.html'
     creator = creator.replace('+', ' ').title()
     context = {
         'item_name': 'issue',
@@ -190,24 +193,7 @@ def checklist_by_name(request, creator, country=None, language=None):
             items2 = items2.filter(series__language=language)
     if creator:
         items = items.union(items2)
-
-    paginator = ResponsePaginator(items, per_page=100, vars=context)
-    page_number = paginator.paginate(request).number
-
-    if 'sort' in request.GET:
-        extra_string = 'sort=%s' % (request.GET['sort'])
-    else:
-        extra_string = ''
-
-    table = IssueTable(items, attrs={'class': 'sortable_listing'},
-                        template_name='gcd/bits/sortable_table.html',
-                        order_by=('publication_date'))
-    RequestConfig(request, paginate={'per_page': 100,
-                                     'page': page_number}).configure(table)
-    context['table'] = table
-    # are using /search/list_header.html in the template
-    context['query_string'] = extra_string
-    return render(request, template, context)
+    return generic_sortable_issuelist(request, items, context)
 
 
 def creator_membership(request, creator_membership_id):
@@ -1378,6 +1364,22 @@ def show_feature(request, feature, preview=False):
                              logos,
                              'gcd/details/feature.html',
                              vars)
+
+
+def feature_issuelist_by_id(request, feature_id):
+    feature = get_gcd_object(Feature, feature_id)
+
+    issues = Issue.objects.filter(story__feature_object=feature,
+                                  story__type__id__in=CORE_TYPES,
+                                  story__deleted=False).distinct()\
+                          .select_related('series__publisher')
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for Feature %s' % (feature)
+    }
+    return generic_sortable_issuelist(request, issues, context)
 
 
 def feature_logo(request, feature_logo_id):

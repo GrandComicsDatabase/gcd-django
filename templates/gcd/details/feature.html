@@ -49,6 +49,9 @@ GCD :: Feature :: {{ feature.name }}
 {% endif %}
 <p>{{ feature|show_credit:'keywords' }}</P>
       </dl>
+      <ul>
+        <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue Checklist (via linked story records)</a></li>
+      </ul>
     </div>
   </div>
 
@@ -103,7 +106,7 @@ GCD :: Feature :: {{ feature.name }}
   </tr>
   {% for logo in page.object_list %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> {% if logo.logo %} <a href="{{ logo.get_absolute_url }}"> <img src="{{ logo.logo.thumbnail.url }}"> {% endif %} </a> </td>
+    <td> {% if not FAKE_IMAGES and logo.logo %} <a href="{{ logo.get_absolute_url }}"> <img src="{{ logo.logo.thumbnail.url }}"> {% endif %} </a> </td>
     <td> <a href="{{ logo.get_absolute_url }}">{{ logo.name }}</a> </td>
     <td> {{ logo|uncertain_year:"year_began"|default:"" }} </td>
     <td> {{ logo|uncertain_year:"year_ended"|default:"" }} </td>
