@@ -213,9 +213,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
     def clean(self):
         cd = self.cleaned_data
         if cd['credited_as'] and not cd['is_credited']:
-            raise forms.ValidationError(
-              ['Is credited needs to be selected when entering a name as '
-               'credited.'])
+            cd['credited_as'] = ""
 
         if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
             raise forms.ValidationError(
@@ -223,9 +221,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
             )
 
         if cd['signed_as'] and not cd['is_signed']:
-            raise forms.ValidationError(
-              ['Is signed needs to be selected when entering a name as '
-               'signed.'])
+            cd['signed_as'] = ""
 
         if cd['signed_as'] and cd['signed_as'] == cd['creator'].name:
             raise forms.ValidationError(
