@@ -338,8 +338,16 @@ class Changeset(models.Model):
                     self.reprintrevisions.all())
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
-            return (self.issuerevisions.all().select_related('issue',
-                                                             'series'),)
+            if self.issuerevisions.get().variant_of:
+                return (self.issuerevisions.all(),
+                        self.issuecreditrevisions.all(),
+                        self.storyrevisions.all(),
+                        self.storycreditrevisions.all(),
+                        self.coverrevisions.all(),
+                        self.reprintrevisions.all())
+            else:
+                return (self.issuerevisions.all().select_related('issue',
+                                                                 'series'),)
 
         if self.change_type == CTYPES['cover']:
             return (self.issuerevisions.all().select_related('issue',
@@ -849,7 +857,7 @@ class Changeset(models.Model):
         to the database.
         """
         self.imps = 0
-        if self.change_type in CTYPES_BULK:
+        if self.change_type in CTYPES_BULK and self.issuerevisions.count() > 1:
             # Currently, bulk changes are only allowed when the changes
             # are uniform across all revisions in the change.  When we
             # allow non-uniform changes we may need to calculate all of

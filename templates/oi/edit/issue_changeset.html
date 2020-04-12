@@ -23,14 +23,13 @@
       </form>
     </td>
   </tr>
-  {% if issue_revision.changeset.change_type != CTYPES.issue_add  %}
-    {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
+  {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
   <tr>
     <td colspan="2" align="left">
       One cannot add another story to this variant since it has a cover sequence. On the issue display page the <br>sequences from the <a href="{% url "show_issue" issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence.
     </td>
   </tr>
-    {% else %}
+  {% else %}
   <tr>
   <form class="changeset" method="GET"
         action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
@@ -51,7 +50,6 @@
     </td>
   </form>
   </tr>
-    {% endif %}
   {% endif %}
   {% if issue_revision.source and issue_revision.story_set.count > 1 %}
   <tr>

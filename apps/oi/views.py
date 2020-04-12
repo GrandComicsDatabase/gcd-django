@@ -2122,6 +2122,9 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     revision.save_added_revision(changeset=changeset,
                                  series=series,
                                  variant_of=variant_of)
+    if variant_of:
+        return edit(request, changeset.id)
+
     return submit(request, changeset.id)
 
 
@@ -4573,7 +4576,8 @@ def compare(request, id):
 
     revision.compare_changes()
 
-    if changeset.change_type == CTYPES['issue_add']:
+    if changeset.change_type == CTYPES['issue_add'] \
+       and changeset.issuerevisions.count() > 1:
         template = 'oi/edit/compare_issue_skeletons.html'
     elif changeset.change_type == CTYPES['issue_bulk']:
         template = 'oi/edit/compare_bulk_issue.html'
