@@ -129,7 +129,11 @@ def creator(request, creator_id):
 
 
 def show_creator(request, creator, preview=False):
+    gcd_name = creator.active_names().get(is_official_name=True)
+    other_names = creator.active_names().filter(is_official_name=False)
     vars = {'creator': creator,
+            'gcd_name': gcd_name,
+            'other_names': other_names,
             'error_subject': creator,
             'preview': preview,
             'studio_types': [2,3]}

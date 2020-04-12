@@ -19,7 +19,7 @@
     <div id="control_container">
       <div id="control_center">
         <div class="left">
-  {% if creator.portrait %}
+  {% if creator.portrait and not FAKE_IMAGES %}
         <img style="margin:1em 1em 0 0" src="{{ creator.portrait.scaled_image.url }}">
   {% endif %}
   <!-- TODO Portrait Sources -->
@@ -73,7 +73,7 @@
           </p>
   {% endif %}
 
-  {% if creator.samplescan %}
+  {% if creator.samplescan and not FAKE_IMAGES %}
     <hr>
           <h3>Sample Scan:</h3>
           <img src="{{ creator.samplescan.scaled_image.url }}">
@@ -81,29 +81,41 @@
 
   <!-- Creator's Names -->
           <hr>
-          <h3>Names:</h3>
-        {% if  creator.active_names.count > 1 %}
-          <ol style="columns: 2;">
-        {% else %}
+          <h3>Name:</h3>
           <ol>
-        {% endif %}
-  {% for creator_name in creator.active_names %}
+            {{ gcd_name.name }}
+            <strong>Type</strong>: {{ gcd_name.type }}<br>
+  {% if gcd_name.given_name %}
+            <strong>Given name</strong>: {{ gcd_name.given_name }}
+  {% endif %}
+  {% if gcd_name.family_name %}
+            <strong>Family name</strong>: {{ gcd_name.family_name }}
+  {% endif %}
+          </ol>
+  {% if other_names %}
+          <h3>Other Names:</h3>
+    {% if  other_names.count > 1 %}
+          <ol style="columns: 2;">
+    {% else %}
+          <ol>
+    {% endif %}
+    {% for creator_name in other_names %}
             <li style="page-break-inside: avoid;">{{ creator_name.name }}
               <strong>Type</strong>: {{ creator_name.type }}<br>
-    {% if creator_name.given_name %}
+      {% if creator_name.given_name %}
               <strong>Given name</strong>: {{ creator_name.given_name }}
-    {% endif %}
-    {% if creator_name.family_name %}
+      {% endif %}
+      {% if creator_name.family_name %}
              <strong>Family name</strong>: {{ creator_name.family_name }}
-    {% endif %}
-    {% if creator_name.source.all %}
+      {% endif %}
+      {% if creator_name.source.all %}
              <strong>Sources</strong> :{% for source in creator_name.source.all %}
-      {{ source.type }},{% endfor %}
-    {% endif %}
+        {{ source.type }},{% endfor %}
+      {% endif %}
             </li>
-  {% endfor %}
+    {% endfor %}
           </ol>
-
+  {% endif %}
   <!--Creator's Schools-->
   {% if creator.active_schools %}
           <hr>
