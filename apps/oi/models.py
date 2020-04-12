@@ -3893,6 +3893,9 @@ class IssueRevision(Revision):
             if old_series.scan_count == 0:
                 old_series.has_gallery = False
                 old_series.save()
+        if self.source.variant_of and self.added:
+            self.source.is_indexed = self.source.variant_of.is_indexed
+            self.source.save()
 
     def _create_dependent_revisions(self, delete=False):
         for credit in self.issue.active_credits:
