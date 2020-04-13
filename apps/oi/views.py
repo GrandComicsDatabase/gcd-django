@@ -2743,6 +2743,40 @@ def _get_initial_add_story_data(request, issue_revision, seq):
     return initial
 
 
+@permission_required('indexer.can_reserve')
+def copy_story_revision(request, issue_revision_id, changeset_id):
+    changeset = get_object_or_404(Changeset, id=changeset_id)
+    if request.user != changeset.indexer:
+        raise ViewTerminationError(
+          render_error(request,
+                       'Only the reservation holder may add stories.',
+                       redirect=False))
+    issue_revision = changeset.issuerevisions.get()
+    if issue_revision.id != int(issue_revision_id):
+        raise ViewTerminationError(render_error(
+                                   request,
+                                   'Error in accessing this routine.',
+                                   redirect=False))
+    try:
+        sequence_number = int(request.GET['copied_sequence_number'])
+    except ValueError:
+        raise ViewTerminationError(render_error(
+                                   request,
+                                   "Sequence number must be a number.",
+                                   redirect=False))
+    try:
+        story_revision = changeset.storyrevisions.get(
+          sequence_number=sequence_number)
+    except StoryRevision.DoesNotExist:
+        raise ViewTerminationError(render_error(
+                                   request,
+                                   "Sequence with this number does not exist.",
+                                   redirect=False))
+    StoryRevision.clone_revision(story_revision, changeset,
+                                 issue_revision=issue_revision)
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'edit', kwargs={'id': changeset.id}))
+
 ##############################################################################
 # Series Bond Editing
 ##############################################################################

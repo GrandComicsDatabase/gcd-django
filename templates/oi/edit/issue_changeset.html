@@ -43,7 +43,7 @@
       <input type="submit" id="copy_story" name="copy" value="Copy story">
       </div>
       <div class="right">
-      sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
+      &nbsp;sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
       <input type="text" size="4" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
       </div>
     {% endif %}
@@ -207,6 +207,25 @@
     {% endfor %}
 </table>
   {% endfor %}
+
+  {% if changeset.issuerevisions.count == 1 %}
+    {% with issue_revision=changeset.issuerevisions.get %}
+<table class="story_list">
+  <form class="changeset" method="GET"
+      action="{% url "copy_story_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+    <td colspan="2" align="left">
+      <div class="left">
+      <input type="submit" id="copy_story_revision" name="copy_story_revision" value="Copy sequence">
+      </div>
+      <div class="right">
+      &nbsp;number of sequence to copy
+      <input type="text" size="4" id="copied_sequence_number" name="copied_sequence_number" value="">
+      </div>
+    </td>
+  </form>
+</table>
+    {% endwith %}
+  {% endif %}
 {% endif %} <!-- changeset.storyrevisions.count -->
 
 {% with changeset.issuerevisions.all.0 as issue_revision %}

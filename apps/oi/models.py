@@ -4698,6 +4698,24 @@ class StoryRevision(Revision):
                                       fork=True, story_revision=revision)
         return revision
 
+    @classmethod
+    def clone_revision(cls, story_revision, changeset, issue_revision):
+        """
+        Given an existing story revision of the changeset, create a new
+        revision based on it for a new story with the copied data.
+        'fork' is set to true in such a case.
+        """
+        new_revision = StoryRevision.clone(story_revision, changeset, fork=True,
+                                           exclude={'keywords'})
+        new_revision.issue = issue_revision.issue
+        new_revision.sequence_number = issue_revision.next_sequence_number()
+        new_revision.save()
+        credits = story_revision.story_credit_revisions.filter(deleted=False)
+        for credit in credits:
+            StoryCreditRevision.clone(credit, changeset,
+                                      fork=True, story_revision=new_revision)
+        return new_revision
+
     def _get_major_changes(self, extra_field_tuples=frozenset()):
         # We need to look at issue for index status changes, but it does
         # not otherwise behave like a normal parent field, nor does it
