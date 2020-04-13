@@ -4097,7 +4097,7 @@ def _process_reorder_form(request, parent, sort_field, child_name, child_class):
             return -1
         return 0
 
-    reorder_list.sort(_compare_sort_input)
+    reorder_list.sort(key=lambda b: reorder_map[b])
 
     # Use in_bulk to ensure the specific issue order
     child_map = child_class.objects.in_bulk(reorder_list)
