@@ -208,7 +208,7 @@
 </table>
   {% endfor %}
 
-  {% if changeset.issuerevisions.count == 1 %}
+  {% if changeset.issuerevisions.count == 1 and not changeset.issuerevisions.get.variant_of %}
     {% with issue_revision=changeset.issuerevisions.get %}
 <table class="story_list">
   <form class="changeset" method="GET"
