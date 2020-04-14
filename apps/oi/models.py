@@ -4004,6 +4004,8 @@ class IssueRevision(Revision):
                 self._saved_other_issue_revision = self.changeset\
                     .issuerevisions.exclude(issue=self.issue)[0]
             return self._saved_other_issue_revision
+        elif self.changeset.change_type == CTYPES['issue_add']:
+            return None
         else:
             raise ValueError
 

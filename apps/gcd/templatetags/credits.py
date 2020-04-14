@@ -145,7 +145,9 @@ def show_credit(story, credit):
             if search.first() != -1:
                 formatted_credit += __format_credit(story, 'feature')
         return formatted_credit
-    elif credit == 'genre' and getattr(story, credit) and story.issue:
+    elif credit == 'genre' and getattr(story, credit) and getattr(story,
+                                                                  'issue',
+                                                                  None):
         genres = story.genre.lower()
         language = story.issue.series.language.code
         if language == 'en' and story.issue.series.country.code != 'us':
