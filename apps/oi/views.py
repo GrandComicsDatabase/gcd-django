@@ -683,7 +683,7 @@ def retract(request, id):
     """
     if request.method != 'POST':
         return _cant_get(request)
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
 
     if request.user != changeset.indexer:
         return oi_render(request, 'indexer/error.html',
@@ -703,7 +703,7 @@ def confirm_discard(request, id, has_comment=0):
     """
     Indexer has to confirm the discard of a change.
     """
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.indexer:
         return render_error(request,
           'Only the author of the changeset can access this page.',
@@ -766,7 +766,7 @@ def discard(request, id):
     """
     if request.method != 'POST':
         return _cant_get(request)
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
 
     if (request.user != changeset.indexer and
         request.user != changeset.approver):
@@ -847,14 +847,14 @@ def assign(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user == changeset.indexer:
         return render_error(request, 'You may not approve your own changes.')
 
     comment_text = request.POST['comments'].strip()
     # TODO: rework error checking strategy.  This is a hack for the most
     # common case but we probably shouldn't be doing this check in the
-    # model layer in the first place.  See tech bug #199.
+    # model layer in the first place.
     try:
         changeset.assign(approver=request.user, notes=comment_text)
     except ViewTerminationError:
@@ -934,7 +934,7 @@ def release(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.approver:
         return oi_render(request, 'indexer/error.html',
           {'error_text': 'A change may only be released by its approver.'})
@@ -984,7 +984,7 @@ def discuss(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.approver and \
       request.user != changeset.indexer:
         return oi_render(request, 'indexer/error.html',
@@ -1073,7 +1073,7 @@ def approve(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.approver:
         return render_error(request,
           'A change may only be approved by its approver.')
@@ -1269,7 +1269,7 @@ def disapprove(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.approver:
         return render_error(request,
           'A change may only be rejected by its approver.')

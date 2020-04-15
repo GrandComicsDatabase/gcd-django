@@ -4939,7 +4939,8 @@ class StoryRevision(Revision):
                         credit = credit[credit.find('[')+1:]
                         credit = credit[credit.find(' ')+1:]
                         credit = credit.strip().strip(']')
-                    creator = CreatorNameDetail.objects.filter(name=credit)
+                    creator = CreatorNameDetail.objects.filter(name=credit,
+                                                               deleted=False)
                     if creator.count() == 1:
                         creator = creator.get()
                         credit_revision = StoryCreditRevision(
