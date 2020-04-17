@@ -494,20 +494,11 @@ class IssueColumn(tables.Column):
 
 class IssueTable(tables.Table):
     issue = IssueColumn(accessor='id', verbose_name='Issue')
-    publisher = tables.Column(accessor='series.publisher',
-                              verbose_name='Publisher',
-                              orderable=False)
 
     class Meta:
         model = Issue
-        fields = ('publisher', 'issue', 'publication_date', 'on_sale_date')
+        fields = ('issue', 'publication_date', 'on_sale_date')
         attrs = {'th': {'class': "non_visited"}}
-
-    def render_publisher(self, value):
-        from apps.gcd.templatetags.display import absolute_url
-        from apps.gcd.templatetags.credits import show_country_info
-        display_publisher = "<img %s>" % (show_country_info(value.country))
-        return mark_safe(display_publisher) + absolute_url(value)
 
     def order_publication_date(self, query_set, is_descending):
         query_set = query_set.annotate(series_name=F('series__sort_name'))
@@ -525,3 +516,90 @@ class IssueTable(tables.Table):
                                        direction + 'series_name',
                                        direction + 'sort_code')
         return (query_set, True)
+
+
+class CreatorIssueTable(IssueTable):
+    publisher = tables.Column(accessor='series.publisher',
+                              verbose_name='Publisher',
+                              orderable=False)
+
+    class Meta:
+        model = Issue
+        fields = ('publisher', 'issue', 'publication_date', 'on_sale_date')
+        attrs = {'th': {'class': "non_visited"}}
+
+    def render_publisher(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        display_publisher = "<img %s>" % (show_country_info(value.country))
+        return mark_safe(display_publisher) + absolute_url(value)
+
+
+class IndiciaPublisherIssueTable(IssueTable):
+    brand = tables.Column(accessor='brand',
+                          verbose_name='Brand')
+
+    class Meta:
+        model = Issue
+        fields = ('issue', 'publication_date', 'on_sale_date', 'brand')
+        attrs = {'th': {'class': "non_visited"}}
+
+    def order_brand(self, query_set, is_descending):
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'brand__name',
+                                       direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
+    def render_brand(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        return absolute_url(value)
+
+
+class BrandEmblemIssueTable(IssueTable):
+    indicia_publisher = tables.Column(accessor='indicia_publisher',
+                                      verbose_name='Indicia Publisher',
+                                      empty_values=())
+
+    class Meta:
+        model = Issue
+        fields = ('issue', 'publication_date', 'on_sale_date',
+                  'indicia_publisher')
+        attrs = {'th': {'class': "non_visited"}}
+
+    def order_indicia_publisher(self, query_set, is_descending):
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'indicia_publisher',
+                                       direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
+    def render_indicia_publisher(self, record):
+        from apps.gcd.templatetags.display import absolute_url,\
+                                                  show_indicia_pub
+        from apps.gcd.templatetags.credits import get_country_flag
+        return_val = show_indicia_pub(record)
+        if record.series.publisher.id not in record.brand.group_parents():
+            return_val += " (%s%s)" % (get_country_flag(record.series.publisher
+                                                                     .country),
+                                       absolute_url(record.series.publisher))
+        return mark_safe(return_val)
+
+
+class BrandGroupIssueTable(BrandEmblemIssueTable):
+    def __init__(self, *args, **kwargs):
+        self.brand = kwargs.pop('brand')
+        super(BrandEmblemIssueTable, self).__init__(*args, **kwargs)
+
+    def render_indicia_publisher(self, record):
+        from apps.gcd.templatetags.display import absolute_url,\
+                                                  show_indicia_pub
+        from apps.gcd.templatetags.credits import get_country_flag
+        return_val = show_indicia_pub(record)
+        if record.series.publisher != self.brand.parent:
+            return_val += " (%s%s)" % (get_country_flag(record.series.publisher
+                                                                     .country),
+                                       absolute_url(record.series.publisher))
+        return mark_safe(return_val)

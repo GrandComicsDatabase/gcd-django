@@ -4,6 +4,7 @@
 {% load i18n %}
 {% load display %}
 {% load credits %}
+{% load django_tables2 %}
 
 {% block title %}
 GCD :: Brand Group :: {{ brand.name }}
@@ -12,6 +13,8 @@ GCD :: Brand Group :: {{ brand.name }}
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -93,7 +96,7 @@ GCD :: Brand Group :: {{ brand.name }}
   </tr>
 {% for brand in brand_emblems %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> {% if brand.emblem %} <a href="{{ brand.get_absolute_url }}"> <img src="{{ brand.emblem.thumbnail.url }}"> {% endif %} </a> </td>
+    <td> {% if brand.emblem and not FAKE_IMAGES %} <a href="{{ brand.get_absolute_url }}"> <img src="{{ brand.emblem.thumbnail.url }}"> {% endif %} </a> </td>
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a> </td>
     <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }} </td>
@@ -103,26 +106,8 @@ GCD :: Brand Group :: {{ brand.name }}
 {% endfor %}
 </table>
 
-{% if items %}
-<table id="publisher_detail_listing" class="listing">
-  <tr>
-    <th> Issue </th>
-    <th> Publication Date </th>
-    <th> Indicia Publisher </th>
-  </tr>
-  {% for issue in items %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> {{ issue|show_issue }} </td>
-    <td> {{ issue.publication_date }} </td>
-    <td> {{ issue|show_indicia_pub }}
-    {% if issue.series.publisher != brand.parent %}
-    ({{ issue.series.publisher.country|get_country_flag }} <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher }}</a>)
-    {% endif %}
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+<div style="clear: both;"></div>
+{% render_table table %}
 
 {% with 1 as paginate_only %}
 {% with brand as publisher %}

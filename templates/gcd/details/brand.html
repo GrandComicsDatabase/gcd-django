@@ -5,6 +5,7 @@
 {% load display %}
 {% load credits %}
 {% load editing %}
+{% load django_tables2 %}
 
 {% block title %}
 GCD :: Brand Emblem :: {{ brand.name }}
@@ -13,6 +14,8 @@ GCD :: Brand Emblem :: {{ brand.name }}
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -41,7 +44,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
       </dl>
-{% if brand.emblem %}
+{% if brand.emblem and not FAKE_IMAGES %}
 <img src="{{ brand.emblem.scaled_image.url }}">
 {% endif %}
     </div> <!-- control_center -->
@@ -177,26 +180,8 @@ GCD :: Brand Emblem :: {{ brand.name }}
 </table>
 {% endif %}
 
-{% if items %}
-<table id="publisher_detail_listing" class="listing">
-  <tr>
-    <th> Issue </th>
-    <th> Publication Date </th>
-    <th> Indicia Publisher </th>
-  </tr>
-  {% for issue in items %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> {{ issue|show_issue }} </td>
-    <td> {{ issue.publication_date }} </td>
-    <td> {{ issue|show_indicia_pub }}
-      {% if issue.series.publisher.id not in brand.group_parents %}
-    ({{ issue.series.publisher.country|get_country_flag }} <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher }}</a>)
-      {% endif %}
-    </td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+<div style="clear: both;"></div>
+{% render_table table %}
 
 {% with 1 as paginate_only %}
 {% with brand as publisher %}

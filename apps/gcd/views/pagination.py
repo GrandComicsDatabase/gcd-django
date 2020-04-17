@@ -202,13 +202,12 @@ class DiggPaginator(ExPaginator):
             self.num_pages, self.body, self.tail, self.padding, self.margin
 
         # put active page in middle of main range
-        main_range = (number-body/2, number+body/2)
+        main_range = (number-int(body/2), number+int(body/2))
         # adjust bounds
         if main_range[0] < 1:
             main_range = list(map(abs(main_range[0]-1).__add__, main_range))
         if main_range[1] > num_pages:
             main_range = list(map((num_pages-main_range[1]).__add__, main_range))
-
         # Determine leading and trailing ranges; if possible and appropriate,
         # combine them with the main range, in which case the resulting main
         # block might end up considerable larger than requested. While we
@@ -251,7 +250,6 @@ class DiggPaginator(ExPaginator):
         # fixes all the things the above code screwed up in the simple case
         # of few enough pages where one range would suffice.
         main_range = [max(main_range[0], 1), min(main_range[1], num_pages)]
-
         # make the result of our calculations available as custom ranges
         # on the ``Page`` instance.
         page.main_range = list(range(main_range[0], main_range[1]+1))

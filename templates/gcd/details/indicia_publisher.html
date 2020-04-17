@@ -4,6 +4,7 @@
 {% load i18n %}
 {% load display %}
 {% load credits %}
+{% load django_tables2 %}
 
 {% block title %}
 GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
@@ -12,6 +13,8 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -82,24 +85,8 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 {% endif %}
 </div>
 
-{% if items %}
-<table id="publisher_detail_listing" class="listing">
-  <tr>
-    <th> Issue </th>
-    <th> Publication Date </th>
-    <th> Brand </th>
-  </tr>
-  {% for issue in items %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> {{ issue|show_issue }} </td>
-    <td> {{ issue.publication_date }} </td>
-    <td> {% if not issue.no_brand %}
-           {{ issue.brand|absolute_url|default:"?" }}
-         {% endif %} </td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+<div style="clear: both;"></div>
+{% render_table table %}
 
 {% with 1 as paginate_only %}
 {% with indicia_publisher as publisher %}

@@ -12,6 +12,8 @@
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -127,6 +129,7 @@
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 
+<div style="clear: both;"></div>
 {% render_table table %}
 
 {% with 1 as paginate_only %}
