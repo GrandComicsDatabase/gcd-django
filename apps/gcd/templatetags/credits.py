@@ -273,15 +273,16 @@ def show_creator_credit(story, credit_type, url=True):
         if not old_credit_field:
             return ''
         else:
-            return show_credit(story, credit_type)
+            if url:
+                return show_credit(story, credit_type)
+            else:
+                return old_credit_field
     credit_value = '%s' % credits[0].creator.display_credit(credits[0],
                                                             url=url)
-
     for credit in credits[1:]:
         credit_value = '%s; %s' % (credit_value,
                                    credit.creator.display_credit(credit,
                                                                  url=url))
-
     if old_credit_field:
         credit_value = '%s; %s' % (credit_value, old_credit_field)
 
