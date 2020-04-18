@@ -266,7 +266,7 @@ def search_creator_credit(story, credit_type):
 
 
 @register.filter
-def show_creator_credit(story, credit_type):
+def show_creator_credit(story, credit_type, url=True):
     credits = story.active_credits.filter(credit_type__name=credit_type)
     old_credit_field = getattr(story, credit_type)
     if not credits:
@@ -274,21 +274,25 @@ def show_creator_credit(story, credit_type):
             return ''
         else:
             return show_credit(story, credit_type)
-    credit_value = '%s' % credits[0].creator.display_credit(credits[0])
+    credit_value = '%s' % credits[0].creator.display_credit(credits[0],
+                                                            url=url)
 
     for credit in credits[1:]:
         credit_value = '%s; %s' % (credit_value,
-                                   credit.creator.display_credit(credit))
+                                   credit.creator.display_credit(credit,
+                                                                 url=url))
 
     if old_credit_field:
         credit_value = '%s; %s' % (credit_value, old_credit_field)
 
-    return mark_safe(
+    if url:
+        return mark_safe(
            '<dt class="credit_tag"><span class="credit_label">'
            + credit_type.capitalize() + '</span></dt>' +
            '<dd class="credit_def"><span class="credit_value">'
            + credit_value + '</span></dd>')
-
+    else:
+       return credit_value
 
 def __format_keywords(keywords, join_on='; '):
     if type(keywords) == str:
