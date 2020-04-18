@@ -224,10 +224,29 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     'You cannot specify a title and check "no title" at the '
                     'same time.')
 
-            if cd['editing'] != "" and cd['no_editing']:
-                raise forms.ValidationError(
-                    'You cannot specify an editing '
-                    'credit and check "no editing" at the same time')
+            if cd['no_editing']:
+                nr_credit_forms = self.data['issue_credit_revisions-TOTAL_FORMS']
+                seq_type_found = False
+                for i in range(int(nr_credit_forms)):
+                    delete_i = 'issue_credit_revisions-%d-DELETE' % i
+                    form_deleted = False
+                    if delete_i in self.data:
+                        if self.data[delete_i]:
+                            form_deleted = True
+                    if not form_deleted:
+                        credit_type = \
+                            self.data['issue_credit_revisions-%d-credit_type' % i]
+                        if credit_type == '6':
+                            seq_type_found = True
+                        elif credit_type:
+                            raise forms.ValidationError(
+                              ['Unsupported credit type.'])
+
+                # no_editing is present, no need to check here again
+                if cd['editing'] != "" or seq_type_found:
+                    raise forms.ValidationError(
+                        ['%s field and No %s checkbox cannot both be filled in.' %
+                         ("Editing", "Editing")])
 
             if cd['no_brand'] and cd['brand'] is not None:
                 raise forms.ValidationError(
