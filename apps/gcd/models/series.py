@@ -4,7 +4,7 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 import django.urls as urlresolvers
-from django.db.models import Count, Case, When, F
+from django.db.models import Count, Case, When, F, Q
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -21,10 +21,6 @@ from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
 from .award import ReceivedAward
-
-# TODO: should not be importing oi app into gcd app, dependency should be
-# the other way around.  Probably.
-from apps.oi import states
 
 
 class SeriesPublicationType(models.Model):
@@ -156,9 +152,8 @@ class Series(GcdData):
 
     def active_base_issues_variant_count(self):
         issues = self.active_base_issues()
-        issues = issues.annotate(variant_count=
-                                 Count(Case(When(variant_set__deleted=False,
-                                                 then=1))))
+        issues = issues.annotate(
+          variant_count=Count(Case(When(variant_set__deleted=False, then=1))))
         return issues
 
     def active_non_base_variants(self):
@@ -341,29 +336,29 @@ class Series(GcdData):
     def display_publication_dates(self):
         if not self.issue_count:
             return '%s%s' % (str(self.year_began),
-                              self._date_uncertain(self.year_began_uncertain))
+                             self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:
             if self.first_issue.publication_date:
                 return self.first_issue.publication_date
             else:
                 return '%s%s' % (str(self.year_began),
-                                  self._date_uncertain(
-                                    self.year_began_uncertain))
+                                 self._date_uncertain(
+                                   self.year_began_uncertain))
         else:
             if self.first_issue.publication_date:
                 date = '%s - ' % self.first_issue.publication_date
             else:
                 date = '%s%s - ' % (self.year_began,
-                                     self._date_uncertain(
-                                       self.year_began_uncertain))
+                                    self._date_uncertain(
+                                      self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
                 date += '%s%s' % (str(self.year_ended),
-                                   self._date_uncertain(
-                                     self.year_ended_uncertain))
+                                  self._date_uncertain(
+                                    self.year_ended_uncertain))
             else:
                 date += '?'
             return date
@@ -371,17 +366,17 @@ class Series(GcdData):
     def search_result_name(self):
         if self.issue_count <= 1 and not self.is_current:
             date = '%s%s' % (str(self.year_began),
-                              self._date_uncertain(self.year_began_uncertain))
+                             self._date_uncertain(self.year_began_uncertain))
         else:
             date = '%s%s - ' % (self.year_began,
-                                 self._date_uncertain(
-                                   self.year_began_uncertain))
+                                self._date_uncertain(
+                                  self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.year_ended:
                 date += '%s%s' % (str(self.year_ended),
-                                   self._date_uncertain(
-                                     self.year_ended_uncertain))
+                                  self._date_uncertain(
+                                    self.year_ended_uncertain))
             else:
                 date += '?'
 
@@ -471,8 +466,8 @@ class SeriesTable(tables.Table):
     name = NameColumn(verbose_name='Series')
     year = tables.Column(accessor='year_began', verbose_name='Year')
     issue_count = tables.Column(attrs={'td': {'style': "text-align: right"}},
-                                verbose_name='# Issues')
-    covers = CoversColumn(accessor='scan_count', orderable=False,
+                                verbose_name='Issues')
+    covers = CoversColumn(accessor='scan_count',
                           attrs={'td': {'style': "text-align: right"}})
     published = PublishedColumn(accessor='year_began',
                                 attrs={'td': {'style': "text-align: right"}},
@@ -482,6 +477,15 @@ class SeriesTable(tables.Table):
     class Meta:
         model = Series
         fields = ('name', 'year', 'issue_count', 'covers', 'published')
+
+    def order_covers(self, query_set, is_descending):
+        query_set = query_set.annotate(
+          covers=Count('issue__cover', filter=Q(issue__cover__deleted=False)))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'covers',
+                                       'sort_name',
+                                       'year_began')
+        return (query_set, True)
 
     def order_year(self, QuerySet, is_descending):
         QuerySet = QuerySet.order_by(('-' if is_descending else '')
