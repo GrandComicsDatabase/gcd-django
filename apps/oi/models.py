@@ -4799,10 +4799,9 @@ class StoryRevision(Revision):
             if fork is True:
                 source_story = fork_source
             # copy single value fields which are specific to biblio_entry
-            for field in biblio_revision.\
-                           list(_get_single_value_fields()) - \
-                         biblio_revision.storyrevision_ptr.\
-                           list(_get_single_value_fields()):
+            for field in biblio_revision._get_single_value_fields().keys() - \
+                         biblio_revision.storyrevision_ptr.
+                           _get_single_value_fields().keys():
                 setattr(biblio_revision, field,
                         getattr(source_story.biblioentry, field))
             biblio_revision.save()
