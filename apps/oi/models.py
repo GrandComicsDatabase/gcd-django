@@ -338,7 +338,8 @@ class Changeset(models.Model):
                     self.reprintrevisions.all())
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
-            if self.issuerevisions.get().variant_of:
+            if self.issuerevisions.all().count() == 1 and \
+               self.issuerevisions.get().variant_of:
                 return (self.issuerevisions.all(),
                         self.issuecreditrevisions.all(),
                         self.storyrevisions.all(),
