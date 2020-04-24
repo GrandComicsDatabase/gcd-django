@@ -329,7 +329,7 @@ class Issue(GcdData):
 
         if not self.variant_of:
             is_indexed = INDEXED['skeleton']
-            if self.page_count > 0:
+            if Decimal(self.page_count or 0) > 0:
                 total_count = self.active_stories()\
                               .aggregate(Sum('page_count'))['page_count__sum']
                 if (total_count > 0 and
