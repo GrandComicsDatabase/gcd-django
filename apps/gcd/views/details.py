@@ -33,7 +33,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             SeriesBond, Award, Creator, CreatorMembership,\
                             ReceivedAward, CreatorDegree, CreatorArtInfluence,\
                             CreatorRelation, CreatorSchool, CreatorNameDetail,\
-                            CreatorNonComicWork, Feature, FeatureLogo
+                            CreatorNonComicWork, Feature, FeatureLogo, \
+                            FeatureRelation
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
@@ -1559,6 +1560,19 @@ def show_feature_logo(request, feature_logo, preview=False):
             'error_subject': '%s' % feature_logo,
             'preview': preview}
     return render(request, 'gcd/details/feature_logo.html', vars)
+
+
+def feature_relation(request, feature_relation_id):
+    feature_relation = get_object_or_404(FeatureRelation,
+                                         id=feature_relation_id)
+    return show_feature_relation(request, feature_relation)
+
+
+def show_feature_relation(request, feature_relation, preview=False):
+    vars = {'feature_relation': feature_relation,
+            'error_subject': feature_relation,
+            'preview': preview}
+    return render(request, 'gcd/details/feature_relation.html', vars)
 
 
 def cover(request, issue_id, size):

@@ -122,13 +122,13 @@ GCD :: Feature :: {{ feature.name }}
 <table id="publisher_detail_listing" class="listing">
   {% for relation in feature.from_related_feature.all %}
   <tr>
-    <td>{{ relation.relation_type.reverse_description }}:</td>
+    <td><a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.reverse_description }}</a>:</td>
     <td>{{ relation.from_feature|absolute_url }}</td>
   </tr>
   {% endfor %}
   {% for relation in feature.to_related_feature.all %}
   <tr>
-    <td>{{ relation.relation_type.description }}:</td>
+  <td><a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.description }}</a>:</td>
     <td>{{ relation.to_feature|absolute_url }}</td>
   </tr>
   {% endfor %}

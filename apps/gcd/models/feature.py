@@ -58,7 +58,9 @@ class Feature(GcdData):
 
     def has_dependents(self):
         return bool(self.active_logos().exists()) or \
-               bool(self.active_stories().exists())
+               bool(self.active_stories().exists()) or \
+               bool(self.from_related_feature.all().exists()) or \
+               bool(self.to_related_feature.all().exists())
 
     def active_logos(self):
         return self.featurelogo_set.filter(deleted=False)

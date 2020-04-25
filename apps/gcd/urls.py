@@ -232,6 +232,8 @@ urlpatterns = [
       gcd_views.details.feature, name='show_feature'),
     url(r'^feature_logo/(?P<feature_logo_id>\d+)/$',
       gcd_views.details.feature_logo, name='show_feature_logo'),
+    url(r'^feature_relation/(?P<feature_relation_id>\d+)/$',
+      gcd_views.details.feature_relation, name='show_feature_relation'),
 
     # Attribute searches
     url(r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',

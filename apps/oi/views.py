@@ -190,7 +190,7 @@ def delete(request, id, model_name):
 
         # These can only be reached if people try to paste in URLs directly,
         # but as we know, some people do that sort of thing.
-        if display_obj.deleted:
+        if getattr(display_obj, 'deleted', False):
             return render_error(
               request,
               'Cannot delete "%s" as it is already deleted.' % display_obj,
@@ -240,7 +240,7 @@ def reserve(request, id, model_name, delete=False,
         return _cant_get(request)
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
 
-    if display_obj.deleted:
+    if getattr(display_obj, 'deleted', False):
         if model_name == 'cover':
             return HttpResponseRedirect(urlresolvers.reverse('show_issue',
               kwargs={'issue_id': display_obj.issue.id}))

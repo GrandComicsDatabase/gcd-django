@@ -594,7 +594,6 @@ class Changeset(models.Model):
             return ACTION_ADD
         elif self.change_type == CTYPES['issue_bulk']:
             return ACTION_MODIFY
-
         revision = next(self.cached_revisions)
         if revision.deleted:
             return ACTION_DELETE
@@ -5673,7 +5672,7 @@ class FeatureLogoRevision(Revision):
 
 class FeatureRelationRevisionManager(RevisionManager):
     def clone_revision(self, feature_relation, changeset):
-        return FeatureLogoRevision.clone(feature_relation, changeset)
+        return FeatureRelationRevision.clone(feature_relation, changeset)
 
 
 class FeatureRelationRevision(Revision):
@@ -5717,6 +5716,17 @@ class FeatureRelationRevision(Revision):
             'notes': ''
         }
 
+    source_name = 'feature_relation'
+    source_class = FeatureRelation
+
+    @property
+    def source(self):
+        return self.feature_relation
+
+    @source.setter
+    def source(self, value):
+        self.feature_relation = value
+
     def _get_source(self):
         return self.feature_relation
 
@@ -5733,6 +5743,9 @@ class FeatureRelationRevision(Revision):
         if feature_relation is None:
             feature_relation = FeatureRelation()
         elif self.deleted:
+            for revision in feature_relation.revisions.all():
+                setattr(revision, "feature_relation_id", None)
+                revision.save()
             feature_relation.delete()
             return
 
