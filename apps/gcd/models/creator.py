@@ -736,6 +736,7 @@ class CreatorTable(tables.Table):
     first_credit = tables.Column(verbose_name='First Credit')
     credits_count = tables.Column(accessor='credits_count',
                                   verbose_name='# Issues')
+    role = tables.Column(accessor='script', orderable=False)
 
     def order_name(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -762,6 +763,19 @@ class CreatorTable(tables.Table):
                         getattr(self, self.resolve_name).id})
         return mark_safe('<a href="%s">%s</a>' % (url, record.credits_count))
 
+    def render_role(self, record):
+        role = ''
+        if record.script:
+            role = 'script (%d); ' % record.script
+        if record.pencils:
+            role += 'pencils (%d); ' % record.pencils
+        if record.inks:
+            role += 'inks (%d); ' % record.inks
+        if record.colors:
+            role += 'colors (%d); ' % record.colors
+        if record.letters:
+            role += 'letters (%d); ' % record.letters
+        return role[:-2]
 
 class FeatureCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):

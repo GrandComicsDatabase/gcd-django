@@ -883,8 +883,23 @@ def series_creatorlist(request, series_id):
 
     creators = creators.annotate(
       first_credit=Min('storycredit__story__issue__key_date'))
+    script = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=1), distinct=True)
+    pencils = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=2), distinct=True)
+    inks = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=3), distinct=True)
+    colors = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=4), distinct=True)
+    letters = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=5), distinct=True)
     creators = creators.annotate(
-      credits_count=Count('storycredit__story__issue', distinct=True))
+      credits_count=Count('storycredit__story__issue', distinct=True),
+      script=script,
+      pencils=pencils,
+      inks=inks,
+      colors=colors,
+      letters=letters)
 
     context = {
         'item_name': 'creator',
@@ -1525,8 +1540,23 @@ def feature_creatorlist(request, feature_id):
 
     creators = creators.annotate(
       first_credit=Min('storycredit__story__issue__key_date'))
+    script = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=1), distinct=True)
+    pencils = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=2), distinct=True)
+    inks = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=3), distinct=True)
+    colors = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=4), distinct=True)
+    letters = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=5), distinct=True)
     creators = creators.annotate(
-      credits_count=Count('storycredit__story__issue', distinct=True))
+      credits_count=Count('storycredit__story__issue', distinct=True),
+      script=script,
+      pencils=pencils,
+      inks=inks,
+      colors=colors,
+      letters=letters)
 
     context = {
         'item_name': 'creator',
