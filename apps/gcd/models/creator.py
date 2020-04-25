@@ -6,6 +6,8 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
+import django_tables2 as tables
+
 from .gcddata import GcdData
 from .award import ReceivedAward
 from .datasource import DataSource
@@ -725,3 +727,51 @@ class NonComicWorkYear(models.Model):
     def __str__(self):
         return '%s - %s' % (str(self.non_comic_work),
                             str(self.work_year))
+
+
+class CreatorTable(tables.Table):
+    name = tables.Column(accessor='creator__gcd_official_name',
+                         verbose_name='Creator Name')
+    detail_name = tables.Column(accessor='name', verbose_name='Used Name')
+    first_credit = tables.Column(verbose_name='First Credit')
+    credits_count = tables.Column(accessor='credits_count',
+                                  verbose_name='# Issues')
+
+    def order_name(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'creator__sort_name')
+        return (query_set, True)
+
+    def order_detail_name(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'sort_name')
+        return (query_set, True)
+
+    def render_first_credit(self, value):
+        return value[:4]
+
+    def render_name(self, record):
+        from apps.gcd.templatetags.display import absolute_url
+        return absolute_url(record.creator)
+
+    def render_credits_count(self, record):
+        url = urlresolvers.reverse(
+                'creator_name_checklist',
+                kwargs={'creator_name_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url, record.credits_count))
+
+
+class FeatureCreatorTable(CreatorTable):
+    def __init__(self, *args, **kwargs):
+        self.feature = kwargs.pop('feature')
+        self.resolve_name = 'feature'
+        super(CreatorTable, self).__init__(*args, **kwargs)
+
+
+class SeriesCreatorTable(CreatorTable):
+    def __init__(self, *args, **kwargs):
+        self.series = kwargs.pop('series')
+        self.resolve_name = 'series'
+        super(CreatorTable, self).__init__(*args, **kwargs)

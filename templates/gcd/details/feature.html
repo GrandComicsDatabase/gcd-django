@@ -49,7 +49,8 @@ GCD :: Feature :: {{ feature.name }}
 {% endif %}
 <p>{{ feature|show_credit:'keywords' }}</P>
       </dl>
-      <ul>
+      <ul style="columns: 2;">
+	<li><a href='{% url "feature_creatorlist" feature_id=feature.id %}'>Creator Checklist (via linked story records)</a></li>
         <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue Checklist (via linked story records)</a></li>
       </ul>
     </div>
