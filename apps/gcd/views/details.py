@@ -880,8 +880,10 @@ def series_creatorlist(request, series_id):
                                storycredit__deleted=False).distinct()\
                        .select_related('creator')
 
-    creators = creators.annotate(first_credit=Min('storycredit__story__issue__key_date'))
-    creators = creators.annotate(credits_count=Count('storycredit__story__issue', distinct=True))
+    creators = creators.annotate(
+      first_credit=Min('storycredit__story__issue__key_date'))
+    creators = creators.annotate(
+      credits_count=Count('storycredit__story__issue', distinct=True))
 
     context = {
         'item_name': 'creator',
@@ -890,9 +892,9 @@ def series_creatorlist(request, series_id):
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = SeriesCreatorTable(creators, attrs={'class': 'sortable_listing'},
-                         series=series,
-                         template_name='gcd/bits/sortable_table.html',
-                         order_by=('creator__sort_name'))
+                               series=series,
+                               template_name='gcd/bits/sortable_table.html',
+                               order_by=('creator__sort_name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -1515,13 +1517,15 @@ def feature_creatorlist(request, feature_id):
     feature = get_gcd_object(Feature, feature_id)
 
     creators = CreatorNameDetail.objects.all()
-    creators = creators.filter(storycredit__story__feature_object__id=feature_id,
-                               storycredit__story__type__id__in=CORE_TYPES,
-                               storycredit__deleted=False).distinct()\
-                       .select_related('creator')
+    creators = creators.filter(
+      storycredit__story__feature_object__id=feature_id,
+      storycredit__story__type__id__in=CORE_TYPES,
+      storycredit__deleted=False).distinct().select_related('creator')
 
-    creators = creators.annotate(first_credit=Min('storycredit__story__issue__key_date'))
-    creators = creators.annotate(credits_count=Count('storycredit__story__issue', distinct=True))
+    creators = creators.annotate(
+      first_credit=Min('storycredit__story__issue__key_date'))
+    creators = creators.annotate(
+      credits_count=Count('storycredit__story__issue', distinct=True))
 
     context = {
         'item_name': 'creator',

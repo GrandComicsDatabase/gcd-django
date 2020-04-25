@@ -37,8 +37,8 @@ OLD_TYPES = {
     'biography (nonfictional)'
 }
 
-# core sequence types: (photo, text) story, cover (incl. reprint)
-CORE_TYPES = [6, 7, 13, 19, 21]
+# core sequence types: cartoon, (photo, text) story, cover (incl. reprint)
+CORE_TYPES = [5, 6, 7, 13, 19, 21]
 # ad sequence types: ad, promo
 AD_TYPES = [2, 16, 26, 28]
 # non-optional sequences: story, cover (incl. reprint)
