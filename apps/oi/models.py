@@ -2271,6 +2271,10 @@ class PublisherRevisionBase(Revision):
     year_ended = models.IntegerField(null=True, blank=True)
     year_began_uncertain = models.BooleanField(default=False)
     year_ended_uncertain = models.BooleanField(default=False)
+    year_overall_began = models.IntegerField(null=True, blank=True)
+    year_overall_ended = models.IntegerField(null=True, blank=True)
+    year_overall_began_uncertain = models.BooleanField(default=False)
+    year_overall_ended_uncertain = models.BooleanField(default=False)
 
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
@@ -2291,6 +2295,10 @@ class PublisherRevisionBase(Revision):
                         'year_began_uncertain',
                         'year_ended',
                         'year_ended_uncertain',
+                        'year_overall_began',
+                        'year_overall_began_uncertain',
+                        'year_overall_ended',
+                        'year_overall_ended_uncertain',
                         'url',
                         'notes',
                         'keywords']
@@ -2306,6 +2314,11 @@ class PublisherRevisionBase(Revision):
         years_found, value = _imps_for_years(self, field_name,
                                              'year_began', 'year_ended')
         if years_found:
+            return value
+        overall_years_found, value = _imps_for_years(self, field_name,
+                                                     'year_overall_began',
+                                                     'year_overall_ended')
+        if overall_years_found:
             return value
         elif field_name in self._base_field_list:
             return 1

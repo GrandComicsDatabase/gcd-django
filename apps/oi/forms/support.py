@@ -287,13 +287,23 @@ CREATOR_RELATION_HELP_TEXTS = {
 
 PUBLISHER_HELP_TEXTS = {
     'year_began':
-        'The first year in which the publisher was active.',
+        'The first year in which the publisher was active with comics.',
     'year_ended':
-        'The last year in which the publisher was active. '
+        'The last year in which the publisher was active with comics. '
         'Leave blank if the publisher is still active.',
     'year_began_uncertain':
         'Check if you are not certain of the beginning year.',
     'year_ended_uncertain':
+        'Check if you are not certain of the ending year, or if you '
+        'are not certain whether the publisher is still active.',
+    'year_overall_began':
+        'The first year in which the publisher was active.',
+    'year_overall_ended':
+        'The last year in which the publisher was active. '
+        'Leave blank if the publisher is still active.',
+    'year_overall_began_uncertain':
+        'Check if you are not certain of the beginning year.',
+    'year_overall_ended_uncertain':
         'Check if you are not certain of the ending year, or if you '
         'are not certain whether the publisher is still active.',
     'notes':

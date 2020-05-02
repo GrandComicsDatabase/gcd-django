@@ -24,6 +24,18 @@
   <div id="control_container">
     <div id="control_center">
       <div class="pub_data">
+{% if publisher.year_overall_began or publisher.year_overall_ended %}
+        <dl style="columns:2; margin-bottom: -1em" class="pub_data">
+          {% if publisher.year_overall_began %}
+            <dt>Publishing Began:</dt><dd>{{ publisher.year_overall_began }}</dd>
+            <dt>Comics Publishing Began:</dt><dd>{{ publisher.year_began }}</dd>
+          {% endif %}
+          {% if publisher.year_overall_endedpy %}
+            <dt> Publishing Ended:</dt><dd>{{ publisher.year_overall_ended }}</dd>
+            <dt> Comics Publishing Ended:</dt><dd>{{ publisher.year_ended }}</dd>
+          {% endif %}
+        </dl>
+{% endif %}
         <dl style="columns: 2" class="pub_data">
           <dt> Country:
           <dd> {{ publisher.country.name }}
@@ -61,7 +73,7 @@
           <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode  }}&is_current=on">{{ current.count }}</a>
 {% endif %}
           <dt> Show Covers by Month:
-          <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a>
+          <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
 {% if publisher.url or publisher.notes or publisher.has_keywords %}
         </dl>
         <dl style="margin-top: -0.5em" class="pub_data">

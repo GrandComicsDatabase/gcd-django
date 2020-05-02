@@ -39,7 +39,10 @@ def get_publisher_revision_form(source=None, user=None):
 
 def _get_publisher_fields(middle=None):
     first = ['name', 'year_began', 'year_began_uncertain',
-                     'year_ended', 'year_ended_uncertain']
+                     'year_ended', 'year_ended_uncertain',
+                     'year_overall_began', 'year_overall_began_uncertain',
+                     'year_overall_ended', 'year_overall_ended_uncertain'
+             ]
     last = ['url', 'notes', 'keywords']
     if middle is not None:
         first.extend(middle)
@@ -69,6 +72,11 @@ class PublisherRevisionForm(forms.ModelForm):
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        if cd['year_began'] and cd['year_overall_began']:
+            if cd['year_began'] < cd['year_overall_began']:
+                raise forms.ValidationError(
+                    "Publishing of comics cannot start before "
+                    "publishing at all.")
         return cd
 
 
@@ -107,19 +115,6 @@ class IndiciaPublisherRevisionForm(PublisherRevisionForm):
         help_text='Check if this was an independent company serving as a '
                   'surrogate for the master publisher, rather than a company '
                   'belonging to the master publisher.')
-
-    def clean_keywords(self):
-        return _clean_keywords(self.cleaned_data)
-
-    def clean(self):
-        cd = self.cleaned_data
-        if self._errors:
-            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
-        if 'name' in cd:
-            cd['name'] = cd['name'].strip()
-        cd['notes'] = cd['notes'].strip()
-        cd['comments'] = cd['comments'].strip()
-        return cd
 
 
 def get_brand_group_revision_form(source=None, user=None):
@@ -184,6 +179,11 @@ class BrandGroupRevisionForm(forms.ModelForm):
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
+        if cd['year_began'] and cd['year_overall_began']:
+            if cd['year_began'] < cd['year_overall_began']:
+                raise forms.ValidationError(
+                    "Publishing of comics cannot start before "
+                    "publishing at all.")
         return cd
 
 
@@ -312,6 +312,11 @@ class BrandRevisionForm(forms.ModelForm):
                     raise forms.ValidationError(
                         "A brand group with id %d does not exist." %
                         cd['brand_group_other_publisher_id'])
+        if cd['year_began'] and cd['year_overall_began']:
+            if cd['year_began'] < cd['year_overall_began']:
+                raise forms.ValidationError(
+                    "Publishing of comics cannot start before "
+                    "publishing at all.")
         return cd
 
 

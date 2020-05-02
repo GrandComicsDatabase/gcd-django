@@ -31,6 +31,18 @@ GCD :: Brand Emblem :: {{ brand.name }}
 <div class="control_body">
   <div id="control_container">
     <div id="control_center">
+{% if brand.year_overall_began or brand.year_overall_ended %}
+      <dl style="columns: 2; margin-bottom: -1em" class="pub_data">
+  {% if brand.year_overall_began %}
+        <dt> Publishing Began:</dt><dd>{{ brand.year_overall_began }}</dd>
+        <dt> Comics Publishing Began:</dt><dd>{{ brand.year_began }}</dd>
+  {% endif %}
+  {% if brand.year_overall_ended %}
+        <dt> Publishing Ended:</dt><dd>{{ brand.year_overall_ended }}</dd>
+        <dt> Comics Publishing Ended:</dt><dd>{{ brand.year_ended }}</dd>
+  {% endif %}
+      </dl>
+{% endif %}
       <dl class="pub_data">
         <dt> Number of Issues:
         <dd> {{ brand.issue_count }}
