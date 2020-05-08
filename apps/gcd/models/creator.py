@@ -132,6 +132,18 @@ class CreatorNameDetail(GcdData):
         if credit.uncertain:
             name += ' ?'
 
+        if hasattr(credit, 'is_signed') and (
+          credit.is_signed and not credit.signed_as) and (
+          credit.is_credited and not credit.credited_as):
+            credit_attribute = 'credited, signed '
+        elif hasattr(credit, 'is_signed') and (
+          credit.is_signed and not credit.signed_as):
+            credit_attribute = 'signed '
+        elif credit.is_credited and not credit.credited_as:
+            credit_attribute = 'credited '
+        else:
+            credit_attribute = ''
+
         if url:
             credit_text = '<a href="%s">%s</a>' % \
                           (self.creator.get_absolute_url(),
@@ -140,29 +152,26 @@ class CreatorNameDetail(GcdData):
                 credit_text += ' of <a href="%s">%s</a>' % \
                                (co_name.get_absolute_url(),
                                 esc(co_name))
+                if credit_attribute:
+                    credit_text += '(%s)' % credit_attribute
             if as_name:
-                credit_text += ' [as <a href="%s">%s</a>]' % \
-                               (as_name.get_absolute_url(),
+                credit_text += ' (%sas <a href="%s">%s</a>)' % \
+                               (credit_attribute,
+                                as_name.get_absolute_url(),
                                 esc(as_name.name))
         else:
             credit_text = esc(name)
             if as_name:
                 credit_text += ' [as %s]' % esc(as_name.name)
 
-        if hasattr(credit, 'is_signed') and (
-          credit.is_signed and not credit.signed_as) and (
-          credit.is_credited and not credit.credited_as):
-            credit_text += ' (credited, signed)'
-        elif hasattr(credit, 'is_signed') and (
-          credit.is_signed and not credit.signed_as):
-            credit_text += ' (signed)'
-        elif credit.is_credited and not credit.credited_as:
-            credit_text += ' (credited)'
-
-        if credit.credited_as:
-            credit_text += ' (credited as %s)' % esc(credit.credited_as)
-        if hasattr(credit, 'is_signed') and credit.signed_as:
-            credit_text += ' (signed as %s)' % esc(credit.signed_as)
+        if credit.credited_as and credit.signed_as and \
+           (credit.credited_as == credit.signed_as):
+            credit_text += ' (credited, signed as %s)' % esc(credit.credited_as)
+        else:
+            if credit.credited_as:
+                credit_text += ' (credited as %s)' % esc(credit.credited_as)
+            if hasattr(credit, 'is_signed') and credit.signed_as:
+                credit_text += ' (signed as %s)' % esc(credit.signed_as)
 
         if credit.credit_name:
             credit_text += ' (%s)' % esc(credit.credit_name)
