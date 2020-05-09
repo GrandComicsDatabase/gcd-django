@@ -18,7 +18,7 @@ from apps.oi.models import (
     StoryCreditRevision)
 
 
-from apps.gcd.models import CreatorNameDetail, StoryType, Feature, CreditType,\
+from apps.gcd.models import CreatorNameDetail, StoryType, Feature,\
                             FeatureLogo, STORY_TYPES, NON_OPTIONAL_TYPES,\
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
@@ -199,8 +199,6 @@ class StoryCreditRevisionForm(forms.ModelForm):
         self.helper.form_tag = True
         self.helper.layout = Layout(*(f for f in self.fields))
         if self.instance.id:
-            self.fields['credit_type'].queryset = CreditType.objects\
-                                                            .filter(id__lt=7)
             self.fields['credit_type'].empty_label = None
             self.fields['credit_type'].help_text = ''
 
@@ -251,6 +249,13 @@ class StoryRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryRevision
         fields = get_story_field_list()
+        sequence_type_list = ['script', 'pencils', 'inks', 'colors',
+                              'letters', 'editing']
+        sequence_type_list.reverse()
+        for seq_type in sequence_type_list:
+            fields.pop(fields.index('no_%s' % seq_type))
+            fields.insert(fields.index('job_number')+1, 'no_%s' % seq_type)
+
         fields.insert(fields.index('script'), 'creator_help')
         widgets = {
             'feature': forms.TextInput(attrs={'class': 'wide'}),
@@ -262,8 +267,10 @@ class StoryRevisionForm(forms.ModelForm):
                 '"red kryptonite", "Vietnam". or "time travel".  Multiple '
                 'entries are to be separated by semi-colons.',
             'job_number':
-                '<br>If a creator cannot be found in the creator box, '
-                'the corresponding credit field can also be used.'
+                '<br><br>If a credit field is not required for a sequence '
+                'type it can be left unset or blank. For sequence types with '
+                'non-optional fields the corresponding no-field is to be '
+                'ticked.'
         }
 
     def __init__(self, *args, **kwargs):
@@ -338,15 +345,12 @@ class StoryRevisionForm(forms.ModelForm):
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='For non-optional fields the corresponding no-field is to be'
-                  ' ticked.<br><br>'
-                  ''
-                  'Enter the relevant creator credits in the following '
-                  'fields, where multiple credits are separated by '
+        help_text='For creators so far not in the database and special credit '
+                  'entries you can enter the relevant creator credits in the '
+                  'following fields, where multiple credits are separated by '
                   'semi-colons. Notes are in () and aliases in []. If the '
                   'credit applies to a sequence type, but the creator is '
-                  'unknown enter a question mark. If a field is not required '
-                  'for a sequence type it can be left blank.',
+                  'unknown enter a question mark.',
         label='')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
@@ -403,7 +407,9 @@ class StoryRevisionForm(forms.ModelForm):
         required=False,
         help_text='Check this box if there is no separate editor for this '
                   'sequence. This is common when there is an editor for the '
-                  'whole issue.')
+                  'whole issue.<br><br>'
+                  'If a creator cannot be found in the creator box, '
+                  'the corresponding credit field can also be used.')
     synopsis = forms.CharField(
         widget=forms.Textarea(attrs={'style': 'height: 9em'}),
         required=False,

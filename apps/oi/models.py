@@ -260,7 +260,7 @@ def on_sale_date_fields(on_sale_date):
 
 def get_keywords(source):
     return '; '.join(str(i) for i in source.keywords.all()
-                                                .order_by('name'))
+                                           .order_by('name'))
 
 
 def save_keywords(revision, source):
@@ -543,7 +543,7 @@ class Changeset(models.Model):
             ir_count = self.issuerevisions.count()
             if self.change_type == CTYPES['issue_bulk']:
                 return str('%s and %d other issues' %
-                               (self.issuerevisions.all()[0], ir_count - 1))
+                           (self.issuerevisions.all()[0], ir_count - 1))
             if self.change_type == CTYPES['issue_add']:
                 if ir_count == 1:
                     return str(self.issuerevisions.all()[0])
@@ -553,8 +553,8 @@ class Changeset(models.Model):
                     last = self.issuerevisions \
                                .order_by('-revision_sort_code')[0]
                     return '%s %s - %s' % (first.series,
-                                            first.display_number,
-                                            last.display_number)
+                                           first.display_number,
+                                           last.display_number)
             return 'Unknown State'
         elif self.change_type == CTYPES['issue']:
             return next(self.cached_revisions).queue_name()
@@ -2404,7 +2404,7 @@ class PublisherRevision(PublisherRevisionBase):
 
     def _queue_name(self):
         return '%s (%s, %s)' % (self.name, self.year_began,
-                                 self.country.code.upper())
+                                self.country.code.upper())
 
     def _field_list(self):
         fields = []
@@ -2519,9 +2519,9 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
 
     def _queue_name(self):
         return '%s: %s (%s, %s)' % (self.parent.name,
-                                     self.name,
-                                     self.year_began,
-                                     self.country.code.upper())
+                                    self.name,
+                                    self.year_began,
+                                    self.country.code.upper())
 
 
 class BrandGroupRevisionManager(RevisionManager):
@@ -2714,7 +2714,7 @@ class BrandRevision(PublisherRevisionBase):
 
     def _queue_name(self):
         return '%s: %s (%s)' % (self.group.all()[0].name, self.name,
-                                 self.year_began)
+                                self.year_began)
 
 
 class PreviewBrand(Brand):
@@ -2824,7 +2824,7 @@ class BrandUseRevision(Revision):
 
     def _queue_name(self):
         return '%s at %s (%s)' % (self.emblem.name, self.publisher.name,
-                                   self.year_began)
+                                  self.year_began)
 
 
 class CoverRevisionManager(RevisionManager):
@@ -3717,7 +3717,7 @@ class IssueRevision(Revision):
 
     def compare_changes(self):
         super(IssueRevision, self).compare_changes()
-        if not self.deleted: # and not self.changed['editing']:
+        if not self.deleted:  # and not self.changed['editing']:
             credits = self.issue_credit_revisions.filter(
                            credit_type__id=6)
             if credits:
@@ -3755,9 +3755,10 @@ class IssueRevision(Revision):
     def _open_prereq_revisions(self):
         # Adds and moves go first to last, deletes last to first.
         if self.deleted:
-            return self._same_series_revisions().exclude(id__lte=self.id) \
-                                                .filter(committed=None) \
-                                                .order_by('-revision_sort_code')
+            return self._same_series_revisions()\
+                       .exclude(id__lte=self.id) \
+                       .filter(committed=None) \
+                       .order_by('-revision_sort_code')
         else:
             return self._same_series_revisions().exclude(id__gte=self.id) \
                                                 .filter(committed=None) \
@@ -3964,7 +3965,8 @@ class IssueRevision(Revision):
 
     def extra_forms(self, request):
         from apps.oi.forms.issue import IssueRevisionFormSet
-        credits_formset = IssueRevisionFormSet(request.POST or None,
+        credits_formset = IssueRevisionFormSet(
+          request.POST or None,
           instance=self,
           queryset=self.issue_credit_revisions.filter(deleted=False))
         return {'credits_formset': credits_formset, }
@@ -4393,7 +4395,7 @@ class IssueRevision(Revision):
         """
         if self.variant_name:
             return '%s %s [%s]' % (self.series, self.display_number,
-                                    self.variant_name)
+                                   self.variant_name)
         elif self.display_number:
             return '%s %s' % (self.series, self.display_number)
         else:
@@ -4720,8 +4722,8 @@ class StoryRevision(Revision):
         revision based on it for a new story with the copied data.
         'fork' is set to true in such a case.
         """
-        new_revision = StoryRevision.clone(story_revision, changeset, fork=True,
-                                           exclude={'keywords'})
+        new_revision = StoryRevision.clone(story_revision, changeset,
+                                           fork=True, exclude={'keywords'})
         new_revision.issue = issue_revision.issue
         new_revision.sequence_number = issue_revision.next_sequence_number()
         new_revision.save()
@@ -4813,8 +4815,8 @@ class StoryRevision(Revision):
                 source_story = fork_source
             # copy single value fields which are specific to biblio_entry
             for field in biblio_revision._get_single_value_fields().keys() - \
-                         biblio_revision.storyrevision_ptr.\
-                           _get_single_value_fields().keys():
+                         biblio_revision.storyrevision_ptr\
+                                        ._get_single_value_fields().keys():
                 setattr(biblio_revision, field,
                         getattr(source_story.biblioentry, field))
             biblio_revision.save()
@@ -4862,7 +4864,8 @@ class StoryRevision(Revision):
 
     def extra_forms(self, request):
         from apps.oi.forms.story import StoryRevisionFormSet
-        credits_formset = StoryRevisionFormSet(request.POST or None,
+        credits_formset = StoryRevisionFormSet(
+          request.POST or None,
           instance=self,
           queryset=self.story_credit_revisions.filter(deleted=False))
         return {'credits_formset': credits_formset, }
@@ -4873,37 +4876,37 @@ class StoryRevision(Revision):
             if credit_form.is_valid() and credit_form.cleaned_data:
                 cd = credit_form.cleaned_data
                 if 'id' in cd and cd['id']:
-                    credit_form.save()
+                    credit_revision = credit_form.save()
                 else:
                     credit_revision = credit_form.save(commit=False)
                     credit_revision.save_added_revision(
                       changeset=self.changeset, story_revision=self)
-                    if credit_revision.credit_type.id in [7, 8, 9, 10, 11,
-                                                          12, 13]:
-                        if credit_revision.credit_type.id == 9:
-                            credit_revision.credit_name = 'painting'
-                        credit_revision.credit_type = \
-                          CreditType.objects.get(id=2)
-                        credit_revision.save()
+                if credit_revision.credit_type.id in [7, 8, 9, 10, 11,
+                                                      12, 13]:
+                    if credit_revision.credit_type.id == 9:
+                        credit_revision.credit_name = 'painting'
+                    credit_revision.credit_type = \
+                      CreditType.objects.get(id=2)
+                    credit_revision.save()
+                    credit_revision.id = None
+                    credit_revision.credit_type = \
+                      CreditType.objects.get(id=3)
+                    credit_revision.save()
+                    if cd['credit_type'].id in [8, 9, 11, 13]:
                         credit_revision.id = None
                         credit_revision.credit_type = \
-                          CreditType.objects.get(id=3)
+                          CreditType.objects.get(id=4)
                         credit_revision.save()
-                        if cd['credit_type'].id in [8, 9, 11, 13]:
-                            credit_revision.id = None
-                            credit_revision.credit_type = \
-                              CreditType.objects.get(id=4)
-                            credit_revision.save()
-                        if cd['credit_type'].id in [10, 11, 12, 13]:
-                            credit_revision.id = None
-                            credit_revision.credit_type = \
-                              CreditType.objects.get(id=1)
-                            credit_revision.save()
-                        if cd['credit_type'].id in [12, 13]:
-                            credit_revision.id = None
-                            credit_revision.credit_type = \
-                                CreditType.objects.get(id=5)
-                            credit_revision.save()
+                    if cd['credit_type'].id in [10, 11, 12, 13]:
+                        credit_revision.id = None
+                        credit_revision.credit_type = \
+                          CreditType.objects.get(id=1)
+                        credit_revision.save()
+                    if cd['credit_type'].id in [12, 13]:
+                        credit_revision.id = None
+                        credit_revision.credit_type = \
+                            CreditType.objects.get(id=5)
+                        credit_revision.save()
             elif not credit_form.is_valid() and \
               credit_form not in credits_formset.deleted_forms:
                 raise ValueError
@@ -4921,10 +4924,10 @@ class StoryRevision(Revision):
         for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',
                             'editing'):
             credit = getattr(self, credit_type)
-            if credit and credit != '?' and credit not in ['various', 'typeset']:
+            if credit and credit != '?' and credit not in ['various',
+                                                           'typeset']:
                 return True
         return False
-
 
     def migrate_credits(self):
         for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',
@@ -5774,9 +5777,9 @@ class FeatureRelationRevision(Revision):
 
     def __str__(self):
         return '%s >%s< %s' % (str(self.from_feature),
-                                str(self.relation_type),
-                                str(self.to_feature)
-                                )
+                               str(self.relation_type),
+                               str(self.to_feature)
+                               )
 
 
 class ReprintRevisionManager(RevisionManager):
@@ -6298,7 +6301,7 @@ class ImageRevision(Revision):
 
     def description(self):
         return '%s for %s' % (self.type.description,
-                               str(self.object.full_name()))
+                              str(self.object.full_name()))
 
     def _get_source(self):
         return self.image
@@ -7204,9 +7207,9 @@ class CreatorRelationRevision(Revision):
 
     def __str__(self):
         return '%s >%s< %s' % (str(self.from_creator),
-                                str(self.relation_type),
-                                str(self.to_creator)
-                                )
+                               str(self.relation_type),
+                               str(self.to_creator)
+                               )
 
 
 class CreatorNameDetailRevisionManager(RevisionManager):
@@ -7849,7 +7852,7 @@ class CreatorNonComicWorkRevision(Revision):
 
     def __str__(self):
         return '%s: %s' % (str(self.creator),
-                            str(self.publication_title))
+                           str(self.publication_title))
 
     # #####################################################################
     # Old methods. t.b.c, if deprecated.
