@@ -30,14 +30,15 @@ from apps.gcd.models import (
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
     CreatorRelation, CreatorSchool, CreatorNameDetail, NameType, SourceType,
-    STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation)
+    STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
+    IndiciaPrinter)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
     show_creator_membership, show_received_award, show_creator_art_influence, \
     show_creator_non_comic_work, show_creator_school, show_creator_degree, \
-    show_award
+    show_award, show_printer, show_indicia_printer
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -59,7 +60,8 @@ from apps.oi.models import (
     PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
-    FeatureRelationRevision, process_data_source)
+    FeatureRelationRevision, process_data_source, PrinterRevision,
+    IndiciaPrinterRevision)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -101,6 +103,8 @@ REVISION_CLASSES = {
     'brand_group': BrandGroupRevision,
     'brand': BrandRevision,
     'brand_use': BrandUseRevision,
+    'printer': PrinterRevision,
+    'indicia_printer': IndiciaPrinterRevision,
     'series': SeriesRevision,
     'series_bond': SeriesBondRevision,
     'issue': IssueRevision,
@@ -130,6 +134,8 @@ DISPLAY_CLASSES = {
     'brand_group': BrandGroup,
     'brand': Brand,
     'brand_use': BrandUse,
+    'printer': Printer,
+    'indicia_printer': IndiciaPrinter,
     'series': Series,
     'series_bond': SeriesBond,
     'issue': Issue,
@@ -1691,145 +1697,47 @@ def _display_bulk_issue_change_form(request, form,
 
 @permission_required('indexer.can_reserve')
 def add_publisher(request):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-
-    if request.method != 'POST':
-        form = get_publisher_revision_form(user=request.user)()
-        return _display_add_publisher_form(request, form)
-
-    if 'cancel' in request.POST:
-        return HttpResponseRedirect(urlresolvers.reverse('add'))
-
-    form = get_publisher_revision_form(user=request.user)(request.POST)
-    if not form.is_valid():
-        return _display_add_publisher_form(request, form)
-
-    changeset = Changeset(indexer=request.user, state=states.OPEN,
-                          change_type=CTYPES['publisher'])
-    changeset.save()
-    revision = form.save(commit=False)
-    revision.save_added_revision(changeset=changeset)
-    return submit(request, changeset.id)
-
-
-def _display_add_publisher_form(request, form):
-    object_name = 'Publisher'
-    object_url = urlresolvers.reverse('add_publisher')
-
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': object_name,
-        'object_url': object_url,
-        'action_label': 'Submit new',
-        'form': form,
-      })
+    return add_generic(request, 'publisher')
 
 
 @permission_required('indexer.can_reserve')
 def add_indicia_publisher(request, parent_id):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-
-    try:
-        parent = Publisher.objects.get(id=parent_id)
-        if parent.deleted or parent.pending_deletion():
-            return render_error(request, 'Cannot add indicia / colophon '
-              'publishers since "%s" is deleted or pending deletion.' % parent)
-
-        if request.method != 'POST':
-            form = get_indicia_publisher_revision_form(user=request.user)()
-            return _display_add_indicia_publisher_form(request, parent, form)
-
-        if 'cancel' in request.POST:
-            return HttpResponseRedirect(urlresolvers.reverse(
-              'show_publisher',
-              kwargs={ 'publisher_id': parent_id }))
-
-        form = \
-          get_indicia_publisher_revision_form(user=request.user)(request.POST)
-        if not form.is_valid():
-            return _display_add_indicia_publisher_form(request, parent, form)
-
-        changeset = Changeset(indexer=request.user, state=states.OPEN,
-                              change_type=CTYPES['indicia_publisher'])
-        changeset.save()
-        revision = form.save(commit=False)
-        revision.save_added_revision(changeset=changeset,
-                                     parent=parent)
-        return submit(request, changeset.id)
-
-    except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
-        return render_error(request,
-          'Could not find publisher for id ' + parent_id)
-
-
-def _display_add_indicia_publisher_form(request, parent, form):
-    object_name = 'Indicia / Colophon Publisher'
+    parent = get_object_or_404(Publisher, id=parent_id)
+    if parent.deleted or parent.pending_deletion():
+        return render_error(
+          request,
+          'Cannot add indicia / colophon publishers since '
+          '"%s" is deleted or pending deletion.' % parent)
+    save_kwargs = {'parent': parent}
+    cancel = urlresolvers.reverse('show_publisher',
+                                  kwargs={ 'publisher_id': parent_id })
     object_url = urlresolvers.reverse('add_indicia_publisher',
-                                          kwargs={ 'parent_id': parent.id })
-
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': object_name,
-        'object_url': object_url,
-        'action_label': 'Submit new',
-        'form': form,
-      })
+                                      kwargs={ 'parent_id': parent.id })
+    return add_generic(request, 'indicia_publisher',
+                       object_url=object_url,
+                       object_name = 'Indicia / Colophon Publisher',
+                       cancel=cancel,
+                       save_kwargs=save_kwargs)
 
 
 @permission_required('indexer.can_reserve')
 def add_brand_group(request, parent_id):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-
-    try:
-        parent = Publisher.objects.get(id=parent_id)
-        if parent.deleted or parent.pending_deletion():
-            return render_error(request, 'Cannot add brands '
-              'since "%s" is deleted or pending deletion.' % parent)
-
-        if request.method != 'POST':
-            form = get_brand_group_revision_form(user=request.user)()
-            return _display_add_brand_group_form(request, parent, form)
-
-        if 'cancel' in request.POST:
-            return HttpResponseRedirect(urlresolvers.reverse(
-              'show_publisher',
-              kwargs={ 'publisher_id': parent_id }))
-
-        form = get_brand_group_revision_form(user=request.user)(request.POST)
-        if not form.is_valid():
-            return _display_add_brand_group_form(request, parent, form)
-
-        changeset = Changeset(indexer=request.user, state=states.OPEN,
-                              change_type=CTYPES['brand_group'])
-        changeset.save()
-        revision = form.save(commit=False)
-        revision.save_added_revision(changeset=changeset,
-                                     parent=parent)
-        return submit(request, changeset.id)
-
-    except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
-        return render_error(request,
-          'Could not find publisher for id ' + parent_id)
-
-
-def _display_add_brand_group_form(request, parent, form):
-    object_name = 'BrandGroup'
+    parent = get_object_or_404(Publisher, id=parent_id)
+    if parent.deleted or parent.pending_deletion():
+        return render_error(
+          request,
+          'Cannot add brands since '
+          '"%s" is deleted or pending deletion.' % parent)
+    save_kwargs = {'parent': parent}
+    cancel = urlresolvers.reverse('show_publisher',
+                                  kwargs={ 'publisher_id': parent_id })
     object_url = urlresolvers.reverse('add_brand_group',
                                       kwargs={ 'parent_id': parent.id })
-
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': object_name,
-        'object_url': object_url,
-        'action_label': 'Submit new',
-        'form': form,
-      })
+    return add_generic(request, 'brand_group',
+                       object_url=object_url,
+                       object_name = 'Brand Group',
+                       cancel=cancel,
+                       save_kwargs=save_kwargs)
 
 
 @permission_required('indexer.can_reserve')
@@ -1977,6 +1885,31 @@ def _display_add_brand_use_form(request, form, brand, publisher):
         'action_label': 'Submit new',
         'form': form,
       })
+
+
+@permission_required('indexer.can_reserve')
+def add_printer(request):
+    return add_generic(request, 'printer')
+
+
+@permission_required('indexer.can_reserve')
+def add_indicia_printer(request, parent_id):
+    parent = get_object_or_404(Printer, id=parent_id)
+    if parent.deleted or parent.pending_deletion():
+        return render_error(
+          request,
+          'Cannot add indicia printers since '
+          '"%s" is deleted or pending deletion.' % parent)
+    save_kwargs = {'parent': parent}
+    cancel = urlresolvers.reverse('show_printer',
+                                  kwargs={ 'printer_id': parent_id })
+    object_url = urlresolvers.reverse('add_indicia_printer',
+                                      kwargs={ 'parent_id': parent.id })
+    return add_generic(request, 'indicia_printer',
+                       object_url=object_url,
+                       object_name = 'Indicia Printer',
+                       cancel=cancel,
+                       save_kwargs=save_kwargs)
 
 
 @permission_required('indexer.can_reserve')
@@ -2459,11 +2392,15 @@ def _display_bulk_issue_form(request, series, form, method=None):
 
 
 @permission_required('indexer.can_reserve')
-def add_generic(request, model_name):
+def add_generic(request, model_name,
+                object_url='', object_name=None,
+                cancel='', save_kwargs={}):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
     if request.method == 'POST' and 'cancel' in request.POST:
+        if cancel:
+            return HttpResponseRedirect(cancel)
         return HttpResponseRedirect(urlresolvers.reverse('add'))
 
     form = get_revision_form(model_name=model_name,
@@ -2473,11 +2410,13 @@ def add_generic(request, model_name):
                               change_type=CTYPES[model_name])
         changeset.save()
         revision = form.save(commit=False)
-        revision.save_added_revision(changeset=changeset)
+        revision.save_added_revision(changeset=changeset, **save_kwargs)
         return submit(request, changeset.id)
     else:
-        object_name = DISPLAY_CLASSES[model_name].__name__
-        object_url = urlresolvers.reverse('add_%s' % model_name)
+        if not object_name:
+            object_name = DISPLAY_CLASSES[model_name].__name__
+        if not object_url:
+            object_url = urlresolvers.reverse('add_%s' % model_name)
 
         return oi_render(
           request, 'oi/edit/add_frame.html',
@@ -4349,23 +4288,34 @@ def show_queue(request, queue_name, state):
     creator_relations = changes.filter(change_type=CTYPES['creator_relation'])
     creator_schools = changes.filter(change_type=CTYPES['creator_school'])
     creator_degres = changes.filter(change_type=CTYPES['creator_degree'])
-    publishers = changes.filter(change_type=CTYPES['publisher'])
+    publishers = changes.filter(change_type=CTYPES['publisher']) \
+                        .prefetch_related('publisherrevisions__previous_revision',
+                                          'publisherrevisions__country')
     indicia_publishers = changes.filter(change_type=CTYPES['indicia_publisher'])
     brand_groups = changes.filter(change_type=CTYPES['brand_group'])
     brands = changes.filter(change_type=CTYPES['brand'])
     brand_uses = changes.filter(change_type=CTYPES['brand_use'])
+    printers = changes.filter(change_type=CTYPES['printer']) \
+                      .prefetch_related('printerrevisions__previous_revision',
+                                        'printerrevisions__country')
+    indicia_printers = changes.filter(change_type=CTYPES['indicia_printer'])
     series = changes.filter(change_type=CTYPES['series'])\
                     .prefetch_related('seriesrevisions__series')
     series_bonds = changes.filter(change_type=CTYPES['series_bond'])
-    issue_adds = changes.filter(change_type=CTYPES['issue_add'])
+    issue_adds = changes.filter(change_type=CTYPES['issue_add']) \
+                        .prefetch_related('issuerevisions__issue',
+                                          'issuerevisions__series')
     issues = changes.filter(change_type__in=[CTYPES['issue'],
                                              CTYPES['variant_add'],
                                              CTYPES['two_issues']])\
                     .prefetch_related('issuerevisions__issue',
-                                      'issuerevisions__series')
+                                      'issuerevisions__variant_of',
+                                      'issuerevisions__series',
+                                      'issuerevisions__previous_revision')
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])\
-                    .prefetch_related('coverrevisions__issue__series')
+                    .prefetch_related('coverrevisions__previous_revision',
+                                      'coverrevisions__cover')
     features = changes.filter(change_type=CTYPES['feature'])
     feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
     feature_relations = changes.filter(change_type=CTYPES['feature_relation'])
@@ -4471,6 +4421,18 @@ def show_queue(request, queue_name, state):
             'object_type': 'brand_uses',
             'changesets': brand_uses.order_by('modified', 'id')\
               .annotate(country=Max('branduserevisions__publisher__country__id')),
+          },
+          {
+            'object_name': 'Printers',
+            'object_type': 'printer',
+            'changesets': printers.order_by('modified', 'id')\
+              .annotate(country=Max('printerrevisions__country__id')),
+          },
+          {
+            'object_name': 'Indicia Printers',
+            'object_type': 'indicia_printer',
+            'changesets': indicia_printers.order_by('modified', 'id')\
+              .annotate(country=Max('indiciaprinterrevisions__country__id')),
           },
           {
             'object_name': 'Series',
@@ -4879,7 +4841,8 @@ def preview(request, id, model_name):
     template = 'gcd/details/%s.html' % model_name
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
-                      'brand', 'series', 'issue', 'award', 'creator',
+                      'brand', 'printer', 'indicia_printer', 'series',
+                      'issue', 'award', 'creator',
                       'received_award', 'creator_art_influence',
                       'creator_degree', 'creator_membership',
                       'creator_non_comic_work', 'creator_school']:

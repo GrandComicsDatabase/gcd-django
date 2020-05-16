@@ -34,7 +34,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             ReceivedAward, CreatorDegree, CreatorArtInfluence,\
                             CreatorRelation, CreatorSchool, CreatorNameDetail,\
                             CreatorNonComicWork, Feature, FeatureLogo, \
-                            FeatureRelation
+                            FeatureRelation, Printer, IndiciaPrinter
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
@@ -349,12 +349,7 @@ def award(request, award_id):
     """
     Display the details page for an Award.
     """
-    award = get_object_or_404(Award, id=award_id)
-    if award.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'award', 'id': award_id}))
-
+    award = get_gcd_object(Award, award_id)
     return show_award(request, award)
 
 
@@ -375,13 +370,7 @@ def publisher(request, publisher_id):
     """
     Display the details page for a Publisher.
     """
-    publisher = get_object_or_404(Publisher, id=publisher_id)
-    if publisher.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'publisher',
-                                       'id': publisher_id}))
-
+    publisher = get_gcd_object(Publisher, publisher_id)
     return show_publisher(request, publisher)
 
 
@@ -513,14 +502,7 @@ def indicia_publisher(request, indicia_publisher_id):
     """
     Display the details page for an Indicia Publisher.
     """
-    indicia_publisher = get_object_or_404(IndiciaPublisher,
-                                          id=indicia_publisher_id)
-    if indicia_publisher.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'indicia_publisher',
-                                       'id': indicia_publisher_id}))
-
+    indicia_publisher = get_gcd_object(IndiciaPublisher, indicia_publisher_id)
     return show_indicia_publisher(request, indicia_publisher)
 
 
@@ -543,13 +525,7 @@ def brand_group(request, brand_group_id):
     """
     Display the details page for a BrandGroup.
     """
-    brand_group = get_object_or_404(BrandGroup, id=brand_group_id)
-    if brand_group.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'brand_group',
-                                       'id': brand_group_id}))
-
+    brand_group = get_gcd_object(BrandGroup, brand_group_id)
     return show_brand_group(request, brand_group)
 
 
@@ -577,12 +553,7 @@ def brand(request, brand_id):
     """
     Display the details page for a Brand.
     """
-    brand = get_object_or_404(Brand, id=brand_id)
-    if brand.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'brand', 'id': brand_id}))
-
+    brand = get_gcd_object(Brand, brand_id)
     return show_brand(request, brand)
 
 
@@ -708,6 +679,45 @@ def indicia_publishers(request, publisher_id):
       })
 
 
+def printer(request, printer_id):
+    """
+    Display the details page for a Printer.
+    """
+    printer = get_gcd_object(Printer, printer_id)
+    return show_printer(request, printer)
+
+
+def show_printer(request, printer, preview=False):
+    if preview:
+        if printer.printer:
+            indicia_printers = printer.printer.active_indicia_printers()
+        else:
+            indicia_printers = None
+    else:
+        indicia_printers = printer.active_indicia_printers()
+
+    vars = {'printer': printer,
+            'indicia_printers': indicia_printers,
+            'error_subject': printer,
+            'preview': preview}
+    return render(request, 'gcd/details/printer.html', vars)
+
+
+def indicia_printer(request, indicia_printer_id):
+    """
+    Display the details page for an Indicia Printer.
+    """
+    indicia_printer = get_gcd_object(IndiciaPrinter, indicia_printer_id)
+    return show_indicia_printer(request, indicia_printer)
+
+
+def show_indicia_printer(request, indicia_printer, preview=False):
+    context = {'indicia_printer': indicia_printer,
+               'error_subject': '%s' % indicia_printer,
+               'preview': preview}
+    return render(request, 'gcd/details/indicia_printer.html', context)
+
+
 def series(request, series_id):
     """
     Display the details page for a series.
@@ -776,13 +786,7 @@ def series_details(request, series_id, by_date=False):
     other which attempts to graphically represent the issues in a timeline,
     with special handling for issues whose date cannot be resolved.
     """
-    series = get_object_or_404(Series, id=series_id)
-    if series.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'series',
-                                       'id': series_id}))
-
+    series = get_gcd_object(Series, series_id)
     issues_by_date = []
     issues_left_over = []
     bad_key_dates = []
@@ -1486,13 +1490,7 @@ def feature(request, feature_id):
     """
     Display the details page for a Feature.
     """
-    feature = get_object_or_404(Feature, id=feature_id)
-    if feature.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'feature',
-                                       'id': feature_id}))
-
+    feature = get_gcd_object(Feature, id=feature_id)
     return show_feature(request, feature)
 
 
@@ -1575,13 +1573,7 @@ def feature_logo(request, feature_logo_id):
     """
     Display the details page for a Feature.
     """
-    feature_logo = get_object_or_404(FeatureLogo, id=feature_logo_id)
-    if feature_logo.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'feature_logo',
-                                       'id': feature_logo_id}))
-
+    feature_logo = get_gcd_object(FeatureLogo, id=feature_logo_id)
     return show_feature_logo(request, feature_logo)
 
 
@@ -1652,13 +1644,7 @@ def covers(request, series_id):
     Display the cover gallery for a series.
     """
 
-    series = get_object_or_404(Series, id=series_id)
-    if series.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'series',
-                                       'id': series_id}))
-
+    series = get_gcd_object(Series, series_id)
     # TODO: Figure out optimal table width and/or make it user controllable.
     table_width = COVER_TABLE_WIDTH
 
@@ -1691,13 +1677,7 @@ def issue_images(request, issue_id):
     Display the images for a single issue on its own page.
     """
 
-    issue = get_object_or_404(Issue, id=issue_id)
-
-    if issue.deleted:
-        return HttpResponseRedirect(
-          urlresolvers.reverse('change_history',
-                               kwargs={'model_name': 'issue', 'id': issue_id}))
-
+    issue = get_gcd_object(Issue, issue_id)
     [prev_issue, next_issue] = issue.get_prev_next_issue()
 
     indicia_image = issue.indicia_image

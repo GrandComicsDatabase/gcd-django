@@ -6,7 +6,8 @@ the traditional models.py and views.py files.
 
 # Make imports work as if we just had a single "models.py" file.
 
-from .publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, BrandUse
+from .publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, \
+                       BrandUse, Printer, IndiciaPrinter
 from .series import Series, SeriesPublicationType
 from .issue import Issue, IssueCredit, INDEXED
 from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\

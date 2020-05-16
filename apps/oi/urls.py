@@ -72,6 +72,14 @@ urlpatterns = [
         oi_views.add_brand_use,
         name='add_brand_use'),
 
+    # Printer URLs
+    url(r'^printer/add/$',
+        oi_views.add_printer,
+        name='add_printer'),
+    url(r'^indicia_printer/add/parent/(?P<parent_id>\d+)/$',
+        oi_views.add_indicia_printer,
+        name='add_indicia_printer'),
+
     # Series URLs
     url(r'^series/add/publisher/(?P<publisher_id>\d+)/$',
         oi_views.add_series,

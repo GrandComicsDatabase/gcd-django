@@ -357,3 +357,74 @@ class BrandUse(GcdLink):
           _display_year(self.year_began, self.year_began_uncertain),
           _display_year(self.year_ended, self.year_ended_uncertain),
           self.publisher)
+
+
+class Printer(BasePublisher):
+    class Meta:
+        ordering = ['name']
+        app_label = 'gcd'
+
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+
+    # Cached counts.
+    indicia_printer_count = models.IntegerField(default=0, db_index=True)
+    issue_count = models.IntegerField(default=0)
+
+    def active_indicia_printers(self):
+        return self.indiciaprinter_set.exclude(deleted=True)
+
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.indicia_printer_revisions.active_set().exists())
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.items():
+                deltas[k] = -v
+
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('indicia printers', 0):
+            self.indicia_printer_count = (F('indicia_printer_count') +
+                                          deltas['indicia printers'])
+        if deltas.get('issues', 0):
+            self.issue_count = F('issue_count') + deltas['issues']
+
+    _update_stats = True
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_printer',
+            kwargs={'printer_id': self.id } )
+
+
+class IndiciaPrinter(BasePublisher):
+    class Meta:
+        db_table = 'gcd_indicia_printer'
+        ordering = ['name']
+        app_label = 'gcd'
+
+    parent = models.ForeignKey(Printer, on_delete=models.CASCADE)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+
+    issue_count = models.IntegerField(default=0)
+
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.issue_revisions.active_set().exists())
+
+    def active_issues(self):
+        return self.issue_set.exclude(deleted=True)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_indicia_printer',
+            kwargs={'indicia_printer_id': self.id } )

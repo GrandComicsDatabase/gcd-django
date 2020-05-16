@@ -98,6 +98,12 @@ urlpatterns = [
       gcd_views.search.indicia_publisher_by_name,
       name='indicia_publisher_by_name'),
 
+    # Printer
+    url(r'^printer/(?P<printer_id>\d+)/$',
+      gcd_views.details.printer, name='show_printer'),
+    url(r'^indicia_printer/(?P<indicia_printer_id>\d+)/$',
+      gcd_views.details.indicia_printer, name='show_indicia_printer'),
+
     url(r'^award/(?P<award_id>\d+)/$',
       gcd_views.details.award, name='show_award'),
     url(r'^award/name/(?P<award_name>.+)/sort/(?P<sort>.+)/$',

@@ -37,7 +37,7 @@ from apps.gcd.models import (
     SeriesBond, Cover, Image, Issue, IssueCredit, Story, StoryCredit, Feature,
     BiblioEntry, Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
-    FeatureLogo, FeatureRelation, ImageType,
+    FeatureLogo, FeatureRelation, ImageType, Printer, IndiciaPrinter,
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
     CreatorNameDetail, CreatorNonComicWork, CreatorSchool, CreatorRelation,
     NonComicWorkYear, Award, ReceivedAward, DataSource, STORY_TYPES,
@@ -86,6 +86,8 @@ CTYPES = {
     'feature': 25,
     'feature_logo': 26,
     'feature_relation': 27,
+    'printer': 28,
+    'indicia_printer': 29
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -93,6 +95,8 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['brand_group'],
                            CTYPES['brand_use'],
                            CTYPES['indicia_publisher'],
+                           CTYPES['printer'],
+                           CTYPES['indicia_printer'],
                            CTYPES['series'],
                            CTYPES['feature'],
                            CTYPES['feature_logo'],
@@ -351,9 +355,8 @@ class Changeset(models.Model):
                                                                  'series'),)
 
         if self.change_type == CTYPES['cover']:
-            return (self.issuerevisions.all().select_related('issue',
-                                                             'series'),
-                    self.coverrevisions.all(),
+            return (self.coverrevisions.all(),
+                    self.issuerevisions.all(),
                     self.storyrevisions.all())
 
         if self.change_type == CTYPES['feature']:
@@ -392,6 +395,13 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['indicia_publisher']:
             return (self.indiciapublisherrevisions.all(),)
+
+        if self.change_type == CTYPES['printer']:
+            return (self.printerrevisions.all(),
+                    self.indiciaprinterrevisions.all())
+
+        if self.change_type == CTYPES['indicia_printer']:
+            return (self.indiciaprinterrevisions.all(),)
 
         if self.change_type == CTYPES['reprint']:
             return (self.reprintrevisions.all(),)
@@ -490,7 +500,9 @@ class Changeset(models.Model):
                         self._inline_revision = \
                             self.publisherrevisions.get()
                 if self.change_type == CTYPES['cover']:
-                    self._inline_revision = self.coverrevisions.get()
+                    self._inline_revision = self.coverrevisions.filter()\
+                                                .select_related(
+                                                  'issue__series')[0]
                 else:
                     if cache_safe is True:
                         return next(self.cached_revisions)
@@ -2306,6 +2318,22 @@ class PublisherRevisionBase(Revision):
     def _field_list(self):
         return self._base_field_list
 
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'year_began': None,
+            'year_ended': None,
+            'year_began_uncertain': None,
+            'year_ended_uncertain': None,
+            'year_overall_began': None,
+            'year_overall_ended': None,
+            'year_overall_began_uncertain': None,
+            'year_overall_ended_uncertain': None,
+            'url': '',
+            'notes': '',
+            'keywords': '',
+        }
+
     def _start_imp_sum(self):
         self._seen_year_began = False
         self._seen_year_ended = False
@@ -2414,19 +2442,11 @@ class PublisherRevision(PublisherRevisionBase):
         return fields
 
     def _get_blank_values(self):
-        return {
-            'name': '',
-            'country': None,
-            'year_began': None,
-            'year_ended': None,
-            'year_began_uncertain': None,
-            'year_ended_uncertain': None,
-            'url': '',
-            'notes': '',
-            'keywords': '',
-            'is_master': True,
-            'parent': None,
-        }
+        blank_values = PublisherRevisionBase._get_blank_values(self)
+        blank_values['country'] = None
+        blank_values['is_master'] = True
+        blank_values['parent'] = None
+        return blank_values
 
     def _imps_for(self, field_name):
         # We don't actually ever change parent and is_master since imprint
@@ -2498,19 +2518,11 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
         return fields
 
     def _get_blank_values(self):
-        return {
-            'name': '',
-            'country': None,
-            'year_began': None,
-            'year_ended': None,
-            'year_began_uncertain': None,
-            'year_ended_uncertain': None,
-            'is_surrogate': None,
-            'url': '',
-            'notes': '',
-            'keywords': '',
-            'parent': None,
-        }
+        blank_values = PublisherRevisionBase._get_blank_values(self)
+        blank_values['country'] = None
+        blank_values['is_surrogate'] = True
+        blank_values['parent'] = None
+        return blank_values
 
     def _imps_for(self, field_name):
         if field_name in ['is_surrogate', 'parent', 'country']:
@@ -2590,17 +2602,9 @@ class BrandGroupRevision(PublisherRevisionBase):
         return fields
 
     def _get_blank_values(self):
-        return {
-            'name': '',
-            'year_began': None,
-            'year_ended': None,
-            'year_began_uncertain': None,
-            'year_ended_uncertain': None,
-            'url': '',
-            'notes': '',
-            'keywords': '',
-            'parent': None,
-        }
+        blank_values = PublisherRevisionBase._get_blank_values(self)
+        blank_values['parent'] = None
+        return blank_values
 
     def _imps_for(self, field_name):
         if field_name == 'parent':
@@ -2694,18 +2698,10 @@ class BrandRevision(PublisherRevisionBase):
         return fields
 
     def _get_blank_values(self):
-        return {
-            'name': '',
-            'year_began': None,
-            'year_ended': None,
-            'year_began_uncertain': None,
-            'year_ended_uncertain': None,
-            'url': '',
-            'notes': '',
-            'keywords': '',
-            'parent': None,
-            'group': None,
-        }
+        blank_values = PublisherRevisionBase._get_blank_values(self)
+        blank_values['parent'] = None
+        blank_values['group'] = True
+        return blank_values
 
     def _imps_for(self, field_name):
         if field_name == 'group':
@@ -2825,6 +2821,160 @@ class BrandUseRevision(Revision):
     def _queue_name(self):
         return '%s at %s (%s)' % (self.emblem.name, self.publisher.name,
                                   self.year_began)
+
+
+class PrinterRevisionManager(RevisionManager):
+
+    def clone_revision(self, printer, changeset):
+        return PrinterRevision.clone(printer, changeset)
+
+
+class PrinterRevision(PublisherRevisionBase):
+    class Meta:
+        db_table = 'oi_printer_revision'
+        ordering = ['-created', '-id']
+
+    objects = PrinterRevisionManager()
+
+    printer = models.ForeignKey('gcd.Printer', on_delete=models.CASCADE,
+                                null=True, related_name='revisions')
+
+    country = models.ForeignKey('stddata.Country', on_delete=models.CASCADE,
+                                db_index=True)
+
+    source_name = 'printer'
+    source_class = Printer
+
+    @property
+    def source(self):
+        return self.printer
+
+    @source.setter
+    def source(self, value):
+        self.printer = value
+
+    _update_stats = True
+
+    def _create_dependent_revisions(self, delete=False):
+        if delete:
+            for indicia_printer in self.printer\
+                                       .active_indicia_printer():
+                # indicia_printer is deletable if printer is deletable
+                indicia_printers_lock = _get_revision_lock(
+                                        indicia_printer,
+                                        changeset=self.changeset)
+                if indicia_printers_lock is None:
+                    raise IntegrityError("needed IndiciaPrinter lock not"
+                                         " possible")
+                indicia_printer_revision = IndiciaPrinterRevision.clone(
+                                             indicia_printer,
+                                             self.changeset)
+                indicia_printer_revision.deleted = True
+                indicia_printer_revision.save()
+
+    def get_absolute_url(self):
+        if self.printer is None:
+            return "/printer/revision/%i/preview" % self.id
+        return self.printer.get_absolute_url()
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    def _queue_name(self):
+        return '%s (%s, %s)' % (self.name, self.year_began,
+                                self.country.code.upper())
+
+    def _field_list(self):
+        fields = []
+        fields.extend(PublisherRevisionBase._field_list(self))
+        fields.insert(fields.index('url'), 'country')
+        return fields
+
+    def _get_blank_values(self):
+        blank_values = PublisherRevisionBase._get_blank_values(self)
+        blank_values['country'] = None
+        return blank_values
+
+    def _imps_for(self, field_name):
+        if field_name == 'country':
+            return 1
+        return PublisherRevisionBase._imps_for(self, field_name)
+
+
+class IndiciaPrinterRevisionManager(RevisionManager):
+
+    def clone_revision(self, indicia_printer, changeset):
+        return IndiciaPrinterRevision.clone(indicia_printer, changeset)
+
+
+class IndiciaPrinterRevision(PublisherRevisionBase):
+    class Meta:
+        db_table = 'oi_indicia_printer_revision'
+        ordering = ['-created', '-id']
+
+    objects = IndiciaPrinterRevisionManager()
+
+    indicia_printer = models.ForeignKey('gcd.IndiciaPrinter',
+                                        on_delete=models.CASCADE, null=True,
+                                        related_name='revisions')
+
+    country = models.ForeignKey('stddata.Country', on_delete=models.CASCADE,
+                                db_index=True,
+                                related_name='indicia_printers_revisions')
+
+    parent = models.ForeignKey('gcd.Printer', on_delete=models.CASCADE,
+                               null=True, blank=True, db_index=True,
+                               related_name='indicia_printer_revisions')
+
+    source_name = 'indicia_printer'
+    source_class = IndiciaPrinter
+
+    @property
+    def source(self):
+        return self.indicia_printer
+
+    @source.setter
+    def source(self, value):
+        self.indicia_printer = value
+
+    @classmethod
+    def _get_parent_field_tuples(cls):
+        return frozenset({('parent',)})
+
+    def _do_complete_added_revision(self, parent):
+        self.parent = parent
+
+    def get_absolute_url(self):
+        if self.indicia_printer is None:
+            return "/indicia_printer/revision/%i/preview" % self.id
+        return self.indicia_printer.get_absolute_url()
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    def _field_list(self):
+        fields = []
+        fields.extend(PublisherRevisionBase._field_list(self))
+        fields.insert(fields.index('url'), 'country')
+        fields.append(('parent'))
+        return fields
+
+    def _get_blank_values(self):
+        blank_values = PublisherRevisionBase._get_blank_values(self)
+        blank_values['country'] = None
+        blank_values['parent'] = None
+        return blank_values
+
+    def _imps_for(self, field_name):
+        if field_name in ['parent', 'country']:
+            return 1
+        return PublisherRevisionBase._imps_for(self, field_name)
+
+    def _queue_name(self):
+        return '%s: %s (%s, %s)' % (self.parent.name,
+                                    self.name,
+                                    self.year_began,
+                                    self.country.code.upper())
 
 
 class CoverRevisionManager(RevisionManager):

@@ -16,7 +16,9 @@ from .publisher import (get_publisher_revision_form,
                         get_indicia_publisher_revision_form,
                         get_brand_group_revision_form,
                         get_brand_revision_form,
-                        get_brand_use_revision_form)
+                        get_brand_use_revision_form,
+                        get_printer_revision_form,
+                        get_indicia_printer_revision_form)
 from .series import get_series_revision_form, get_series_bond_revision_form
 from .issue import (    # noqa
     get_issue_revision_form, get_bulk_issue_revision_form)
@@ -71,6 +73,18 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'brand_use':
         return get_brand_use_revision_form(**kwargs)
+
+    if model_name == 'printer':
+        source = None
+        if revision is not None:
+            source = revision.source
+        return get_printer_revision_form(source=source, **kwargs)
+
+    if model_name == 'indicia_printer':
+        source = None
+        if revision is not None:
+            source = revision.source
+        return get_indicia_printer_revision_form(source=source, **kwargs)
 
     if model_name == 'series':
         if revision is None:

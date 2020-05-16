@@ -13,7 +13,8 @@ from .support import (
 
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision, BrandGroupRevision,
-    BrandRevision, BrandUseRevision, get_brand_use_field_list)
+    BrandRevision, BrandUseRevision, get_brand_use_field_list,
+    PrinterRevision, IndiciaPrinterRevision)
 
 from apps.stddata.models import Country
 from apps.gcd.models import BrandGroup
@@ -361,3 +362,59 @@ class BrandUseRevisionForm(forms.ModelForm):
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
         return cd
+
+
+def get_printer_revision_form(source=None, user=None):
+    class RuntimePrinterRevisionForm(PrinterRevisionForm):
+        if source is not None:
+            # Don't allow country to be un-set:
+            if source.country.code == 'xx':
+                country_queryset = Country.objects.all()
+            else:
+                country_queryset = Country.objects.exclude(code='xx')
+            country = forms.ModelChoiceField(queryset=country_queryset,
+                                             empty_label=None)
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, PUBLISHER_HELP_LINKS)
+            return super(RuntimePrinterRevisionForm, self).as_table()
+    return RuntimePrinterRevisionForm
+
+
+class PrinterRevisionForm(PublisherRevisionForm):
+    class Meta:
+        model = PrinterRevision
+        fields = _get_publisher_fields(middle=('country',))
+        widgets = {'name': forms.TextInput(attrs={'autofocus': ''})}
+        help_texts = PUBLISHER_HELP_TEXTS
+
+
+def get_indicia_printer_revision_form(source=None, user=None):
+    class RuntimeIndiciaPrinterRevisionForm(IndiciaPrinterRevisionForm):
+        if source is not None:
+            # Don't allow country to be un-set:
+            country = forms.ModelChoiceField(
+                empty_label=None,
+                queryset=Country.objects.exclude(code='xx'))
+
+        def as_table(self):
+            if not user or user.indexer.show_wiki_links:
+                _set_help_labels(self, INDICIA_PUBLISHER_HELP_LINKS)
+            return super(RuntimeIndiciaPrinterRevisionForm, self).as_table()
+
+    return RuntimeIndiciaPrinterRevisionForm
+
+
+class IndiciaPrinterRevisionForm(PublisherRevisionForm):
+    class Meta(PrinterRevisionForm.Meta):
+        model = IndiciaPrinterRevision
+        fields = _get_publisher_fields(middle=('country',))
+
+    name = forms.CharField(
+        widget=forms.TextInput(attrs={'autofocus': ''}),
+        max_length=255,
+        required=True,
+        help_text='The name exactly as it appears in the indicia, '
+                  'including punctuation, abbreviations, suffixes like ", '
+                  'Inc.", etc. Do not move articles to the end of the name.')

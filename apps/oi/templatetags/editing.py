@@ -29,10 +29,11 @@ def header_link(changeset):
         else:
             raise NotImplementedError
 
-    if changeset.change_type == CTYPES['publisher']:
+    if changeset.change_type in [CTYPES['publisher'], CTYPES['printer']]:
         return absolute_url(revision)
-    elif changeset.change_type == CTYPES['brand_group'] or \
-            changeset.change_type == CTYPES['indicia_publisher']:
+    elif changeset.change_type in [CTYPES['brand_group'],
+                                   CTYPES['indicia_publisher'],
+                                   CTYPES['indicia_printer']]:
         return mark_safe('%s : %s' % (absolute_url(revision.parent),
                                        absolute_url(revision)))
     elif changeset.change_type == CTYPES['brand']:
