@@ -4688,9 +4688,10 @@ class PreviewIssue(Issue):
 def get_story_field_list():
     return ['sequence_number', 'title', 'title_inferred', 'first_line',
             'type', 'feature', 'feature_object', 'feature_logo', 'genre',
-            'job_number', 'script', 'no_script', 'pencils', 'no_pencils',
-            'inks', 'no_inks', 'colors', 'no_colors', 'letters', 'no_letters',
-            'editing', 'no_editing', 'page_count', 'page_count_uncertain',
+            'job_number', 'page_count', 'page_count_uncertain',
+            'script', 'no_script', 'pencils', 'no_pencils', 'inks', 'no_inks',
+            'colors', 'no_colors', 'letters', 'no_letters',
+            'editing', 'no_editing',
             'characters', 'synopsis', 'reprint_notes', 'notes', 'keywords']
 
 

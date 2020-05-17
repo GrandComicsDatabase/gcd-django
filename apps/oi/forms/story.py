@@ -266,11 +266,11 @@ class StoryRevisionForm(forms.ModelForm):
                 'depicted in the content, such as "Phantom Zone", '
                 '"red kryptonite", "Vietnam". or "time travel".  Multiple '
                 'entries are to be separated by semi-colons.',
-            'job_number':
-                '<br><br>If a credit field is not required for a sequence '
-                'type it can be left unset or blank. For sequence types with '
-                'non-optional fields the corresponding no-field is to be '
-                'ticked.'
+            'page_count_uncertain':
+                '<br><br> For sequence types with non-optional fields the '
+                'corresponding no-field is to be checked in case the type '
+                'of credit does not apply.<br>If a credit field is not '
+                'required for a sequence type it can be left unset or blank.'
         }
 
     def __init__(self, *args, **kwargs):
@@ -314,7 +314,6 @@ class StoryRevisionForm(forms.ModelForm):
 
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3)
-    page_count_uncertain = forms.BooleanField(required=False)
 
     feature_object = forms.ModelMultipleChoiceField(
       queryset=Feature.objects.all(),
