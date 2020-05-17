@@ -1490,7 +1490,7 @@ def feature(request, feature_id):
     """
     Display the details page for a Feature.
     """
-    feature = get_gcd_object(Feature, id=feature_id)
+    feature = get_gcd_object(Feature, feature_id)
     return show_feature(request, feature)
 
 

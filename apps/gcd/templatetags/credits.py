@@ -145,32 +145,40 @@ def show_credit(story, credit):
             if search.first() != -1:
                 formatted_credit += __format_credit(story, 'feature')
         return formatted_credit
-    elif credit == 'genre' and getattr(story, credit) and getattr(story,
-                                                                  'issue',
-                                                                  None):
+    elif credit == 'genre':
         genres = story.genre.lower()
-        language = story.issue.series.language.code
-        if language == 'en' and story.issue.series.country.code != 'us':
-            genres = genres.replace('humor', 'humour')
-            genres = genres.replace('sports', 'sport')
-            genres = genres.replace('math & science', 'maths & science')
-        if language == 'en' or story.issue.series.language.code not in GENRES:
-            story.genre = genres.replace('fantasy', 'fantasy-supernatural')
+        for genre in story.feature_object.values_list('genre', flat=True):
+            if genre not in genres:
+                if genres == '':
+                    genres = genre
+                else:
+                    genres += '; %s' % genre.name
+        if genres and getattr(story, 'issue', None):
+            language = story.issue.series.language.code
+            if language == 'en' and story.issue.series.country.code != 'us':
+                genres = genres.replace('humor', 'humour')
+                genres = genres.replace('sports', 'sport')
+                genres = genres.replace('math & science', 'maths & science')
+            if language == 'en' or story.issue.series.language.code not in GENRES:
+                display_genre = genres.replace('fantasy', 'fantasy-supernatural')
+            else:
+                display_genre = ''
+                for genre in genres.split(';'):
+                    genre = genre.strip()
+                    if genre in GENRES['en']:
+                        translation = GENRES[language][GENRES['en'].index(genre)]
+                    else:
+                        translation = ''
+                    if translation:
+                        display_genre += '%s (%s); ' % (translation, genre)
+                    else:
+                        display_genre += genre + '; '
+                display_genre = display_genre.replace('(fantasy)',
+                                                      '(fantasy-supernatural)')
+                display_genre = display_genre[:-2]
         else:
-            display_genre = ''
-            for genre in genres.split(';'):
-                genre = genre.strip()
-                if genre in GENRES['en']:
-                    translation = GENRES[language][GENRES['en'].index(genre)]
-                else:
-                    translation = ''
-                if translation:
-                    display_genre += '%s (%s); ' % (translation, genre)
-                else:
-                    display_genre += genre + '; '
-            display_genre = display_genre.replace('(fantasy)',
-                                                  '(fantasy-supernatural)')
-            story.genre = display_genre[:-2]
+            display_genre = genres
+        story.genre = display_genre
         return __format_credit(story, credit)
     elif credit == 'pages':
         if story.page_began:

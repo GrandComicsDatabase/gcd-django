@@ -219,6 +219,7 @@ class Story(GcdData):
         """
         return self.job_number or \
                self.genre or \
+               self.feature_object.values('genre') or \
                self.characters or \
                self.first_line or \
                self.synopsis or \
