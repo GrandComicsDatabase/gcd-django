@@ -254,7 +254,8 @@ class StoryRevisionForm(forms.ModelForm):
         sequence_type_list.reverse()
         for seq_type in sequence_type_list:
             fields.pop(fields.index('no_%s' % seq_type))
-            fields.insert(fields.index('job_number')+1, 'no_%s' % seq_type)
+            fields.insert(fields.index('page_count_uncertain')+1,
+                          'no_%s' % seq_type)
 
         fields.insert(fields.index('script'), 'creator_help')
         widgets = {
