@@ -453,7 +453,7 @@ class FeatureAutocomplete(LoginRequiredMixin,
         language = self.forwarded.get('language_code', None)
 
         if language:
-            qs = qs.filter(language__code=language)
+            qs = qs.filter(language__code__in=[language, 'zxx'])
 
         if self.q:
             qs = qs.filter(name__icontains=self.q)
@@ -475,7 +475,7 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
         language = self.forwarded.get('language_code', None)
 
         if language:
-            qs = qs.filter(feature__language__code=language)
+            qs = qs.filter(feature__language__code__in=[language, 'zxx'])
 
         if self.q:
             qs = qs.filter(name__icontains=self.q)
