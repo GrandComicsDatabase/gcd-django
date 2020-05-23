@@ -1,25 +1,31 @@
 # -*- coding: utf-8 -*-
 
-from collections import OrderedDict
 from django import forms
 
 from dal import autocomplete
 
-from apps.gcd.models import Feature, FeatureRelation
+from apps.gcd.models import Feature
 from apps.gcd.models.support import GENRES
 
-from apps.oi.models import (FeatureRevision, FeatureLogoRevision,
+from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, remove_leading_article)
 
-from .support import (GENERIC_ERROR_MESSAGE, #FEATURE_HELP_LINKS,
-                      _set_help_labels, _clean_keywords,
-                      _get_comments_form_field, init_data_source_fields,
-                      insert_data_source_fields, HiddenInputWithHelp)
+from .support import (_set_help_labels, _clean_keywords,
+                      _get_comments_form_field)
 from .story import _genre_choices
 
 
 def get_feature_revision_form(revision=None, user=None):
     class RuntimeFeatureRevisionForm(FeatureRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeFeatureRevisionForm, self).__init__(*args, **kwargs)
+            if revision:
+                self.fields['feature_type'].empty_label = None
+
+            if revision.source and revision.source.active_stories().exists():
+                self.fields['feature_type'].queryset = \
+                  FeatureType.objects.filter(id=revision.feature_type.id)
+
         language = None
         if revision is not None:
             if revision.language:
@@ -29,15 +35,14 @@ def get_feature_revision_form(revision=None, user=None):
                 genres = revision.genre.split(';')
                 for genre in genres:
                     genre = genre.strip().lower()
-                    if genre not in GENRES['en']:
-                        additional_genres.append(genre)
                     selected_genres.append(genre)
                 revision.genre = selected_genres
 
-        genre = _genre_choices(language=language) 
+        genre = _genre_choices(language=language)
+
         def as_table(self):
-            #if not user or user.indexer.show_wiki_links:
-                #_set_help_labels(self, AWARD_HELP_LINKS)
+            # if not user or user.indexer.show_wiki_links:
+                # _set_help_labels(self, FEATURE_HELP_LINKS)
             return super(FeatureRevisionForm, self).as_table()
 
     return RuntimeFeatureRevisionForm
@@ -87,8 +92,8 @@ class FeatureRevisionForm(forms.ModelForm):
 def get_feature_logo_revision_form(revision=None, user=None):
     class RuntimeFeatureRevisionForm(FeatureLogoRevisionForm):
         def as_table(self):
-            #if not user or user.indexer.show_wiki_links:
-                #_set_help_labels(self, AWARD_HELP_LINKS)
+            # if not user or user.indexer.show_wiki_links:
+                # _set_help_labels(self, AWARD_HELP_LINKS)
             return super(FeatureLogoRevisionForm, self).as_table()
 
     return RuntimeFeatureRevisionForm
@@ -129,8 +134,8 @@ class FeatureLogoRevisionForm(forms.ModelForm):
 def get_feature_relation_revision_form(revision=None, user=None):
     class RuntimeFeatureRelationRevisionForm(FeatureRelationRevisionForm):
         def as_table(self):
-            #if not user or user.indexer.show_wiki_links:
-                #_set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
+            # if not user or user.indexer.show_wiki_links:
+                # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
             return super(FeatureRelationRevisionForm, self).as_table()
 
     return RuntimeFeatureRelationRevisionForm
@@ -140,7 +145,7 @@ class FeatureRelationRevisionForm(forms.ModelForm):
     class Meta:
         model = FeatureRelationRevision
         fields = model._base_field_list
-        #help_texts = FEATURE_RELATION_HELP_TEXTS
+        # help_texts = FEATURE_RELATION_HELP_TEXTS
         labels = {'from_feature': 'Feature A', 'relation_type': 'Relation',
                   'to_creator': 'Feature B'}
 

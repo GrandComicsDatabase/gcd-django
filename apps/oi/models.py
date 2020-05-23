@@ -5742,7 +5742,8 @@ class FeatureRevision(Revision):
         return 0
 
     def _queue_name(self):
-        return '%s (%s)' % (self.name, self.year_created)
+        return '%s (%s, %s)' % (self.name, self.year_created,
+                                self.language.code.upper())
 
 
 class FeatureLogoRevisionManager(RevisionManager):
