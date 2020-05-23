@@ -97,7 +97,11 @@ GCD :: Feature :: {{ feature.name }}
 
 {% if page.object_list.count %}
 <hr>
+  {% if feature.feature_type == 1 %}
 <h2> Feature Logos</h2>
+  {%  else %}
+<h2> {{ feature.feature_type.name|title }} Logos</h2>
+  {% endif %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Logo</th>
