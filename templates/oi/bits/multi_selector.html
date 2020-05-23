@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %}
 
 {% if flavour != 'mobile' %}
   {% load compress %}
@@ -12,7 +13,6 @@
       href="{% static "css/oi/default/widgets.css" %}">
   {% endcompress %}
 
-<script type="text/javascript" src="/admin/jsi18n/"></script>
   {% compress js %}
 <script type='text/javascript'
         src='{% static "admin/js/vendor/jquery/jquery.min.js" %}'></script>
