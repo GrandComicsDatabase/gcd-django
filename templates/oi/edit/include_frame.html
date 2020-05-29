@@ -1,5 +1,5 @@
 {% load crispy_forms_tags %}
-<form action="{% url "process" id=changeset.id %}" method="POST">
+<form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
   <table class="editing">
   {% if changeset.change_type == CTYPES.creator %}

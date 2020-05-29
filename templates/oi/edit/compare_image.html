@@ -100,6 +100,12 @@ Reviewing :: {{ revision }}
 </table>
 {% endif %}
 
+{% if extra_revision %}
+  {% with revision=extra_revision %}
+    {% include 'oi/bits/compare.html' %}
+  {% endwith %}
+{% endif %}
+
 {% with changeset.comments as comments %}
 {% include 'oi/bits/comments.html' %}
 {% endwith %}

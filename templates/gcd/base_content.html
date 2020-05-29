@@ -1,0 +1,34 @@
+{% extends "gcd/base_view.html" %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+    href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+  {% block header %}
+  {% endblock header %}
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+    {% block content %}
+    {% endblock content %}
+    </div> <!-- control_center -->
+
+    <div id="control_rail">
+      <div class="edit_box">
+        <div class="edit_header">Editing</div>
+    {% block edit_box %}
+    {% endblock edit_box %}
+      </div> <!-- edit_box -->
+      <div id="change_history" class="edit_footer">
+    {% block change_history %}
+    {% endblock change_history %}
+      </div>
+    </div> <!-- control_rail -->
+
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+{% endblock view_body %}

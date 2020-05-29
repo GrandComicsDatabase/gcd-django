@@ -46,6 +46,8 @@ urlpatterns = [
      oi_views.add_creator_relation, name='add_creator_relation'),
     url(r'^creator/(?P<creator_id>\d+)/school/add/$',
      oi_views.add_creator_school, name='add_creator_school'),
+    url(r'^creator/(?P<creator_id>\d+)/signature/add/$',
+     oi_views.add_creator_signature, name='add_creator_signature'),
     url(r'^creator/(?P<creator_id>\d+)/degree/add/$',
      oi_views.add_creator_degree, name='add_creator_degree'),
 

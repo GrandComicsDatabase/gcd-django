@@ -23,7 +23,7 @@ from .seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING, \
                         SUBNUMBER_TRACKING, MERGE_TRACKING
 from .image import ImageType, Image
 from .creator import CreatorArtInfluence, Creator, CreatorDegree, \
-                    CreatorNameDetail, CreatorSchool,\
+                    CreatorNameDetail, CreatorSignature, CreatorSchool,\
                     Degree, CreatorMembership, CreatorRelation, NameType, \
                     CreatorNonComicWork, NonComicWorkType, NonComicWorkRole, \
                     NonComicWorkYear, RelationType, School, MembershipType

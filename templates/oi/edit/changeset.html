@@ -37,7 +37,7 @@
   This change has been submitted for approval, but is not yet under review.
   {% ifequal changeset.indexer user %}
     {% if changeset.editable %}
-  <form action="{% url "process" id=changeset.id %}" method="POST">
+  <form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     <input type="submit" name="retract" value="Retract change and edit further" />
     <label for="comments">Comments</label>

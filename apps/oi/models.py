@@ -40,8 +40,8 @@ from apps.gcd.models import (
     FeatureLogo, FeatureRelation, ImageType, Printer, IndiciaPrinter,
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
     CreatorNameDetail, CreatorNonComicWork, CreatorSchool, CreatorRelation,
-    NonComicWorkYear, Award, ReceivedAward, DataSource, STORY_TYPES,
-    CREDIT_TYPES)
+    CreatorSignature, NonComicWorkYear, Award, ReceivedAward, DataSource,
+    STORY_TYPES, CREDIT_TYPES)
 
 from apps.gcd.models.gcddata import GcdData
 
@@ -87,7 +87,8 @@ CTYPES = {
     'feature_logo': 26,
     'feature_relation': 27,
     'printer': 28,
-    'indicia_printer': 29
+    'indicia_printer': 29,
+    'creator_signature': 30,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -114,6 +115,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['creator_non_comic_work'],
                            CTYPES['creator_relation'],
                            CTYPES['creator_school'],
+                           CTYPES['creator_signature'],
                            ))
 
 # Change types that *might* be bulk changes.  But might just have one revision.
@@ -451,6 +453,11 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['creator_school']:
             return (self.creatorschoolrevisions.all(),
+                    self.datasourcerevisions.all())
+
+        if self.change_type == CTYPES['creator_signature']:
+            return (self.creatorsignaturerevisions.all(),
+                    self.imagerevisions.all(),
                     self.datasourcerevisions.all())
 
     @property
@@ -7450,6 +7457,92 @@ class CreatorNameDetailRevision(Revision):
                 return 0
             else:
                 return 1
+        if field_name in self._field_list():
+            return 1
+        return 0
+
+
+class CreatorSignatureRevisionManager(RevisionManager):
+    def clone_revision(self, creator_signature, changeset):
+        return CreatorSignatureRevision.clone(creator_signature, changeset)
+
+
+class CreatorSignatureRevision(Revision):
+    """
+    record of a creator's signature
+    """
+
+    class Meta:
+        db_table = 'oi_creator_signature_revision'
+        ordering = ['name', '-creator__sort_name',
+                    '-creator__birth_date__year']
+        verbose_name_plural = 'Creator Signature Revisions'
+
+    objects = CreatorSignatureRevisionManager()
+    creator_signature = models.ForeignKey('gcd.CreatorSignature',
+                                          on_delete=models.CASCADE,
+                                          null=True,
+                                          related_name='revisions')
+    creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
+                                related_name='signature_revisions')
+    name = models.CharField(max_length=255)
+    generic = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
+    image_revision = models.ForeignKey(ImageRevision,
+                                       on_delete=models.CASCADE,
+                                       null=True,
+                                       related_name='signature_revisions')
+
+    source_name = 'creator_signature'
+    source_class = CreatorSignature
+
+    @property
+    def source(self):
+        return self.creator_signature
+
+    @source.setter
+    def source(self, value):
+        self.creator_signature = value
+
+    def _do_complete_added_revision(self, creator):
+        self.creator = creator
+
+    def _create_dependent_revisions(self, delete=False):
+        data_sources = self.creator_signature.data_source.all()
+        reserve_data_sources(data_sources, self.changeset, self, delete)
+
+    def _handle_dependents(self, changes):
+        # align object from CreatorSignaturRevision to CreatorSignature
+        if self.changeset.imagerevisions.count():
+            image_revision = self.changeset.imagerevisions.get()
+            content_type = ContentType.objects.get_for_model(self.source)
+            image_revision.object_id = self.source.id
+            image_revision.content_type = content_type
+            image_revision.save()
+
+    def full_name(self):
+        return str(self)
+
+    def __str__(self):
+        return '%s signature %s' % (str(self.creator),
+                                    self.name)
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
+
+    _base_field_list = ['name', 'generic', 'notes']
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'generic': False,
+            'notes': ''
+        }
+
+    def _imps_for(self, field_name):
         if field_name in self._field_list():
             return 1
         return 0

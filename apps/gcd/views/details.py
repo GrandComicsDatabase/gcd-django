@@ -33,8 +33,9 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             SeriesBond, Award, Creator, CreatorMembership,\
                             ReceivedAward, CreatorDegree, CreatorArtInfluence,\
                             CreatorRelation, CreatorSchool, CreatorNameDetail,\
-                            CreatorNonComicWork, Feature, FeatureLogo, \
-                            FeatureRelation, Printer, IndiciaPrinter
+                            CreatorNonComicWork, CreatorSignature, \
+                            Feature, FeatureLogo, FeatureRelation, \
+                            Printer, IndiciaPrinter
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
@@ -343,6 +344,20 @@ def show_creator_school(request, creator_school, preview=False):
             'error_subject': creator_school,
             'preview': preview}
     return render(request, 'gcd/details/creator_school.html', vars)
+
+
+def creator_signature(request, creator_signature_id):
+    creator_signature = get_gcd_object(CreatorSignature,
+                                       creator_signature_id,
+                                       model_name='creator_signature')
+    return show_creator_signature(request, creator_signature)
+
+
+def show_creator_signature(request, creator_signature, preview=False):
+    vars = {'creator_signature': creator_signature,
+            'error_subject': creator_signature,
+            'preview': preview}
+    return render(request, 'gcd/details/creator_signature.html', vars)
 
 
 def award(request, award_id):

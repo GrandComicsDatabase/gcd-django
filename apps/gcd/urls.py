@@ -163,6 +163,8 @@ urlpatterns = [
       gcd_views.details.creator_school, name='show_creator_school'),
     url(r'^creator_degree/(?P<creator_degree_id>\d+)/$',
       gcd_views.details.creator_degree, name='show_creator_degree'),
+    url(r'^creator_signature/(?P<creator_signature_id>\d+)/$',
+      gcd_views.details.creator_signature, name='show_creator_signature'),
 
     url(r'^imprint/(?P<imprint_id>\d+)/$', gcd_views.details.imprint,
       name='show_imprint'),

@@ -16,3 +16,6 @@
 - fields: {description: feature logo, name: FeatureLogo, unique: true}
   model: gcd.imagetype
   pk: 6
+- fields: {description: signature scan, name: CreatorSignature, unique: true}
+  model: gcd.imagetype
+  pk: 7

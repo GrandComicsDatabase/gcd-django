@@ -28,7 +28,7 @@ Adding {{ object_name }}
 <h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
 
 <div class="edit">
-<form action="{{ object_url }}" method="POST">
+<form action="{{ object_url }}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
   <table class="editing">
   {% if object_name == 'Story' or object_name == 'Creator' or object_name == 'Issue' %}

@@ -164,6 +164,22 @@
           </ol>
   {% endif %}
 
+  <!--Creator's Signatures-->
+  {% if creator.active_signatures %}
+          <hr>
+          <h3>Signatures:</h3>
+          <ol>
+    {% for signature in creator.active_signatures %}
+      <li><a href="{{ signature.get_absolute_url }}">{{ signature.name }}</a>
+      {% if signature.signature %}
+              <img src="{{ signature.signature.scaled_image.url }}">
+      {% else %}
+               [generic]
+      {% endif %}
+            </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
 
   <!--Creator's Awards-->
   {% if creator.active_awards %}
@@ -341,6 +357,9 @@
           </a>
           <a href="{% url "add_creator_degree" creator.id %}">
             <button>Add School Degree</button>
+          </a>
+          <a href="{% url "add_creator_signature" creator.id %}">
+            <button>Add Signature</button>
           </a>
         {% endif %}
           {% if creator.portrait %}

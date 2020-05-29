@@ -22,9 +22,9 @@ def get_feature_revision_form(revision=None, user=None):
             if revision:
                 self.fields['feature_type'].empty_label = None
 
-            if revision.source and revision.source.active_stories().exists():
-                self.fields['feature_type'].queryset = \
-                  FeatureType.objects.filter(id=revision.feature_type.id)
+                if revision.source and revision.source.active_stories().exists():
+                    self.fields['feature_type'].queryset = \
+                      FeatureType.objects.filter(id=revision.feature_type.id)
 
         language = None
         if revision is not None:

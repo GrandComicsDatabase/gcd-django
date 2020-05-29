@@ -366,6 +366,9 @@ class Creator(GcdData):
     def active_schools(self):
         return self.school_set.exclude(deleted=True)
 
+    def active_signatures(self):
+        return self.signatures.exclude(deleted=True)
+
     _update_stats = True
 
     def stat_counts(self):
@@ -385,6 +388,45 @@ class Creator(GcdData):
     def __str__(self):
         return '%s' % str(self.gcd_official_name)
 
+
+class CreatorSignature(GcdData):
+    """
+    Various signatures of a creator.
+    """
+
+    class Meta:
+        db_table = 'gcd_creator_signature'
+        app_label = 'gcd'
+        ordering = ['name', '-creator__sort_name',
+                    '-creator__birth_date__year']
+        verbose_name_plural = 'Creator Signatures'
+
+    name = models.CharField(max_length=255, db_index=True)
+    creator = models.ForeignKey('Creator', on_delete=models.CASCADE,
+                                related_name='signatures')
+    notes = models.TextField()
+    generic = models.BooleanField(default=False)
+    data_source = models.ManyToManyField(DataSource)
+
+    def _signature(self):
+        content_type = ContentType.objects.get_for_model(self)
+        img = Image.objects.filter(object_id=self.id, deleted=False,
+                                   content_type=content_type, type__id=7)
+        if img:
+            return img.get()
+        else:
+            return None
+
+    signature = property(_signature)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_creator_signature',
+                kwargs={'creator_signature_id': self.id})
+
+    def __str__(self):
+        return '%s signature %s' % (str(self.creator),
+                                    self.name)
 
 class CreatorRelation(GcdData):
     """
