@@ -152,7 +152,7 @@ def show_credit(story, credit):
                 if genres == '':
                     genres = genre
                 else:
-                    genres += '; %s' % genre.name
+                    genres += '; %s' % genre
         if genres and getattr(story, 'issue', None):
             language = story.issue.series.language.code
             if language == 'en' and story.issue.series.country.code != 'us':
