@@ -25,8 +25,6 @@ from apps.gcd.templatetags.credits import show_keywords_comma
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
 
-from apps.oi.import_export import UnicodeReader
-
 from apps.select.views import store_select_data
 
 from apps.mycomics.forms import CollectionForm, CollectionItemForm, \
@@ -636,10 +634,10 @@ def import_items(request):
             return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
         rawdata = open(tmpfile_name, 'rb').read()
         result = chardet.detect(rawdata)
-        charenc = result['encoding']
+        encoding = result['encoding']
 
-        tmpfile = open(tmpfile_name, 'U')
-        upload = UnicodeReader(tmpfile, encoding=charenc)
+        tmpfile = open(tmpfile_name, encoding=encoding)
+        upload = csv.reader(tmpfile)
         issues = Issue.objects.none()
         line = next(upload)
         not_found = ""
@@ -654,7 +652,7 @@ def import_items(request):
                                        "list of columns")
         else:
             comicbookdb = False
-            upload = UnicodeReader(tmpfile, encoding=charenc)
+            upload = csv.reader(tmpfile)
         for line in upload:
             if len(line) == 0:
                 break
