@@ -4,11 +4,11 @@
   GCD :: Creator Signature :: {{ creator_signature.name }}
 {% endblock %}
 
-{% block header %}
+{% block content_header %}
   {% with first_object=creator_signature.creator %}
     {% include "gcd/bits/generic_header.html" %}
   {% endwith %}
-{% endblock header %}
+{% endblock content_header %}
 
 {% block content %}
   <dl class="pub_data">
