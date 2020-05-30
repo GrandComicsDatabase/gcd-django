@@ -1,48 +1,39 @@
-{% extends "gcd/base_view.html" %}
-{% load staticfiles %}
-{% load i18n %}
+{% extends "gcd/base_content.html" %}
 
 {% block title %}
-  GCD :: Creator Award :: {{ creator_award.award_name }}
+  GCD :: Creator Degree :: {{ creator_degree.creator }} - {{ creator_degree.degree }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-    href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
-
-{% block view_body %}
+{% block content_header %}
  {% include "gcd/bits/creator_header.html" %}
-<div class="control_body">
-  <div id="control_container">
-    <div id="control_center">
-      <dl class="pub_data">
-        <dt>School:
-        <dd>{{ creator_degree.school }}
-        <dt>Degree:
-        <dd>{{ creator_degree.degree }}
-        <dt>Year:
-        <dd>{{ creator_degree.degree_year }}{% if creator_degree.degree_year_uncertain %}?{% endif %}
-        {% if creator_degree.degree_year or creator_degree.degree_year_uncertain %}
-        <dd>{{ creator_school.school_year_began }} {% if creator_school.school_year_began_uncertain %}?{% endif %}
-        {% endif %}
-        {% if creator_school.school_year_ended or creator_school.school_year_ended_uncertain %}
-        <dt>Year ended:
-        <dd>{{ creator_school.school_year_ended }} {% if creator_school.school_year_ended_uncertain %}?{% endif %}
-        {% endif %}
-        {% if creator_degree.notes %}
-        <dt>Notes:
-        <dd>{{ creator_degree.notes }}
-        {% endif %}
-        {% with creator_degree.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-        {% endwith %}
-      </dl>
-    </div> <!-- control_center -->
-  {% if not preview or creator_award.source %}
-    <div id="control_rail">
-      <div class="edit_box">
-        <div class="edit_header">Editing</div>
+{% endblock content_header %}
+
+{% block content %}
+  <dl class="pub_data">
+    <dt>School:
+    <dd>{{ creator_degree.school }}
+    <dt>Degree:
+    <dd>{{ creator_degree.degree }}
+    <dt>Year:
+    <dd>{{ creator_degree.degree_year }}{% if creator_degree.degree_year_uncertain %}?{% endif %}
+    {% if creator_degree.degree_year or creator_degree.degree_year_uncertain %}
+      <dd>{{ creator_school.school_year_began }} {% if creator_school.school_year_began_uncertain %}?{% endif %}
+    {% endif %}
+    {% if creator_school.school_year_ended or creator_school.school_year_ended_uncertain %}
+      <dt>Year ended:
+      <dd>{{ creator_school.school_year_ended }} {% if creator_school.school_year_ended_uncertain %}?{% endif %}
+    {% endif %}
+    {% if creator_degree.notes %}
+      <dt>Notes:
+      <dd>{{ creator_degree.notes }}
+    {% endif %}
+    {% with creator_degree.data_source.all as data_sources %}
+      {% include "gcd/bits/show_sources.html" %}
+    {% endwith %}
+  </dl>
+{% endblock content %}
+
+{% block edit_box %}
   {% if not preview %}
     {% with creator_degree as object %}
     {% with 'creator_degree' as object_class %}
@@ -51,20 +42,13 @@
     {% endwith %}
     {% endwith %}
     {% endwith %}
-
   {% endif %} <!-- not preview -->
-      </div> <!-- edit_box -->
-      <div id="change_history" class="edit_footer">
+{% endblock edit_box %}
+
+{% block change_history %}
   {% if preview %}
-        <a href="{% url "change_history" model_name='creator_degree' id=creator_degree.source.id %}">View Change History</a>
+    <a href="{% url "change_history" model_name='creator_degree' id=creator_degree.source.id %}">View Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='creator_degree' id=creator_degree.id %}">View Change History</a>
+    <a href="{% url "change_history" model_name='creator_degree' id=creator_degree.id %}">View Change History</a>
   {% endif %}
-      </div>
-        </div> <!-- control_rail -->
-{% endif %}
-  </div> <!-- control_container -->
-</div> <!-- control_body -->
-
-
-{% endblock %}
+{% endblock change_history %}
