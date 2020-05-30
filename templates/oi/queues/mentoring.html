@@ -21,12 +21,14 @@ GCD :: Mentoring New Indexers
   <tr>
     <th> Indexer </th>
     <th> Country </th>
+    <th> Last Login </th>
     <th> Actions </th>
   </tr>
 {% for indexer in my_mentees %}
   <tr>
     <td><a href="{% url "view_profile" user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
     <td>{{ indexer.indexer.country }}</td>
+    <td>{{ indexer.last_login }}</td>
     <td> 
       <form method="POST" action="{% url "mentor_not_new" indexer_id=indexer.indexer.id %}">
         {% csrf_token %}
