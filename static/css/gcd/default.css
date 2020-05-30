@@ -424,7 +424,7 @@ h1.search_id {
     font-size: 0.9em;
 }
 
-.edit_box form, p {
+.edit_box form, .edit_box p {
     margin: 2px;
 }
 
