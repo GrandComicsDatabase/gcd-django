@@ -27,6 +27,8 @@
 {% endblock %}
 
 {% block view_body %}
+{{ form.media }}
+{{ credits_formset.media }}
 {% include "oi/bits/jquery.html" %}
 {% include "oi/bits/multi_selector.html" %}
 <h1>
@@ -56,8 +58,6 @@
 {% endblock %}
 
 {% block footer %}
-  {{ form.media }}
-  {{ credits_formset.media }}
   {% if revision.source_name in 'issue story' %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}

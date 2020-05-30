@@ -14,7 +14,8 @@ from django.utils.html import format_html
 from dal import autocomplete
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
-                            Creator, CreatorNameDetail, Feature, FeatureLogo
+                            Creator, CreatorNameDetail, CreatorSignature, \
+                            Feature, FeatureLogo
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -445,6 +446,30 @@ class CreatorName4RelationAutocomplete(LoginRequiredMixin,
         return qs
 
 
+class CreatorSignatureAutocomplete(LoginRequiredMixin,
+                                   autocomplete.Select2QuerySetView):
+    def get_result_label(self, creator_signature):
+        if creator_signature.signature:
+            return format_html(
+              '%s <img src="%s">' % (creator_signature.name,
+                                     creator_signature.signature.icon.url))
+        else:
+            return format_html('%s [generic]' % creator_signature.name)
+
+    def get_queryset(self):
+        qs = CreatorSignature.objects.filter(deleted=False)
+
+        creator_id = self.forwarded.get('creator', None)
+
+        if creator_id:
+            qs = qs.filter(creator__creator_names__id=creator_id)
+
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+
+        return qs
+
+
 class FeatureAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
     def get_queryset(self):
@@ -465,7 +490,9 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
     def get_result_label(self, feature_logo):
         if feature_logo.logo:
-            return format_html('%s <img src="%s">' % (feature_logo.name, feature_logo.logo.icon.url))
+            return format_html(
+              '%s <img src="%s">' % (feature_logo.name,
+                                     feature_logo.logo.icon.url))
         else:
             return format_html('%s' % feature_logo.name)
 

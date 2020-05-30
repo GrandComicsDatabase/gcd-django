@@ -18,8 +18,9 @@ from apps.oi.models import (
     StoryCreditRevision)
 
 
-from apps.gcd.models import CreatorNameDetail, StoryType, Feature,\
-                            FeatureLogo, STORY_TYPES, NON_OPTIONAL_TYPES,\
+from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
+                            Feature, FeatureLogo, \
+                            STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
 
@@ -209,6 +210,16 @@ class StoryCreditRevisionForm(forms.ModelForm):
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database.'
+    )
+
+    signature = forms.ModelChoiceField(
+      queryset=CreatorSignature.objects.all(),
+      widget=autocomplete.ModelSelect2(url='creator_signature_autocomplete',
+                                       attrs={'style': 'min-width: 60em'},
+                                       forward=['creator']),
+      required=True,
+      help_text='TRYOUT NOT SAVED By entering (any part of) a signature select one for the '
+                'creator.'
     )
 
     def clean(self):

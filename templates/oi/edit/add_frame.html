@@ -23,6 +23,8 @@ Adding {{ object_name }}
 {% endblock %}
 
 {% block view_body %}
+{{ form.media }}
+{{ credits_formset.media }}
 {% include "oi/bits/jquery.html" %}
 {% include "oi/bits/multi_selector.html" %}
 <h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
@@ -51,8 +53,6 @@ Adding {{ object_name }}
 {% endblock %}
 
 {% block footer %}
-  {{ form.media }}
-  {{ credits_formset.media }}
   {% if object_name in 'Issues Story Creator' or 'Variant Issue' in object_name %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}

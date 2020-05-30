@@ -35,6 +35,11 @@ urlpatterns = [
         name='creator_name_4_relation_autocomplete',
     ),
     url(
+        r'^autocomplete/creator_signature/$',
+        select_views.CreatorSignatureAutocomplete.as_view(),
+        name='creator_signature_autocomplete',
+    ),
+    url(
         r'^autocomplete/feature/$',
         select_views.FeatureAutocomplete.as_view(),
         name='feature_autocomplete',
