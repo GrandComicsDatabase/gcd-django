@@ -23,9 +23,9 @@ Adding {{ object_name }}
 {% endblock %}
 
 {% block view_body %}
-{{ form.media }}
-{{ credits_formset.media }}
 {% include "oi/bits/jquery.html" %}
+{{ credits_formset.media }}
+{{ form.media }}
 {% include "oi/bits/multi_selector.html" %}
 <h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
 
