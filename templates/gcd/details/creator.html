@@ -337,30 +337,30 @@
           {% endwith %}
         {% endwith %}
         {% if user.is_authenticated and not creator.pending_deletion %}
-          <a href="{% url "add_creator_art_influence" creator.id %}">
+          <p style="margin:2px;"><a href="{% url "add_creator_art_influence" creator.id %}">
             <button>Add Art Influence</button>
-          </a>
-          <a href="{% url "add_creator_award" creator.id %}">
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "add_creator_award" creator.id %}">
             <button>Add Award</button>
-          </a>
-          <a href="{% url "add_creator_membership" creator.id %}">
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "add_creator_membership" creator.id %}">
             <button>Add Membership</button>
-          </a>
-          <a href="{% url "add_creator_non_comic_work" creator.id %}">
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "add_creator_non_comic_work" creator.id %}">
             <button>Add Non Comic Work</button>
-          </a>
-          <a href="{% url "add_creator_relation" creator.id %}">
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "add_creator_relation" creator.id %}">
             <button>Add Relation</button>
-          </a>
-          <a href="{% url "add_creator_school" creator.id %}">
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "add_creator_school" creator.id %}">
             <button>Add School</button>
-          </a>
-          <a href="{% url "add_creator_degree" creator.id %}">
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "add_creator_degree" creator.id %}">
             <button>Add School Degree</button>
-          </a>
-          <a href="{% url "add_creator_signature" creator.id %}">
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "add_creator_signature" creator.id %}">
             <button>Add Signature</button>
-          </a>
+          </a></p>
         {% endif %}
           {% if creator.portrait %}
             {% if creator.portrait.reserved %}
@@ -369,22 +369,19 @@
           </div>
             {% else %}
               {% if user.is_authenticated %}
-          <form method="GET"
-                action="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.portrait.id %}">
-            <input type="submit" value="{% trans 'Replace Portrait image' %}">
-          </form>
-          <form method="GET"
-                action="{% url "delete_revision" model_name='image' id=creator.portrait.id %}">
-            <input type="submit" value="{% trans 'Delete Portrait image' %}">
-          </form>
+          <p style="margin:2px;"><a href="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.portrait.id %}">
+            <button>Replace Portrait Image</button>
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "delete_revision" model_name='image' id=creator.portrait.id %}">
+            <button>Delete Portrait Image</button>
+          </a></p>
               {% endif %}
             {% endif %}
           {% else %}
             {% if user.is_authenticated %}
-          <form method="GET"
-                action="{% url "upload_image" model_name='creator' id=creator.id image_type='CreatorPortrait' %}">
-            <input type="submit" value="{% trans 'Add Portrait image' %}">
-          </form>
+          <p style="margin:2px;"><a href="{% url "upload_image" model_name='creator' id=creator.id image_type='CreatorPortrait' %}">
+            <button>Add Portrait Image</button>
+          </a></p>
             {% endif %}
           {% endif %}
           {% if creator.samplescan %}
@@ -394,22 +391,19 @@
           </div>
           {% else %}
             {% if user.is_authenticated %}
-          <form method="GET"
-                action="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.samplescan.id %}">
-            <input type="submit" value="{% trans 'Replace sample scan image' %}">
-          </form>
-          <form method="GET"
-                action="{% url "delete_revision" model_name='image' id=creator.samplescan.id %}">
-            <input type="submit" value="{% trans 'Delete sample scan image' %}">
-          </form>
+          <p style="margin:2px;"><a href="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.samplescan.id %}">
+            <button>Replace Sample Scan Image</button>
+          </a></p>
+          <p style="margin:2px;"><a href="{% url "delete_revision" model_name='image' id=creator.samplescan.id %}">
+            <button>Delete Sample Scan Image</button>
+          </a></p>
             {% endif %}
           {% endif %}
         {% else %}
           {% if user.is_authenticated %}
-          <form method="GET"
-                action="{% url "upload_image" model_name='creator' id=creator.id image_type='SampleScan' %}">
-            <input type="submit" value="{% trans 'Add Sample scan image' %}">
-          </form>
+          <p style="margin:2px;"><a href="{% url "upload_image" model_name='creator' id=creator.id image_type='SampleScan' %}">
+            <button>Add Sample Scan Image</button>
+          </a></p>
           {% endif %}
         {% endif %} 
       {% endif %} <!-- not preview -->
