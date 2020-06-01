@@ -9,7 +9,7 @@
       week: <input type="text" name="week" id="week" size="2">
       <input type="submit" value="{% trans 'Go' %}">
     </form>
-  {% if next_week %}
+  {% if choose_url_after %}
    | <a href="{{ choose_url_after }}">{% trans "week after" %} &gt;</a>
   {% endif %}
 </div>

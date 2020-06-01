@@ -39,7 +39,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
-                                  IndiciaPublisherIssueTable
+                                  IndiciaPublisherIssueTable,\
+                                  IssuePublisherTable
 from apps.gcd.models.series import SeriesTable
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
@@ -124,6 +125,66 @@ def generic_sortable_list(request, items, table, template, context):
     return render(request, template, context)
 
 
+def _handle_date_picker(request, url_reverse,
+                        show_date=None, monthly=False, kwargs={}):
+    try:
+        daily = not monthly
+        if 'year' in request.GET:
+            year = int(request.GET['year'])
+            month = int(request.GET['month'])
+            if daily:
+                day = int(request.GET['day'])
+                # Do a redirect, otherwise pagination links point to today
+                requested_date = date(year, month, day)
+                show_date = requested_date.strftime('%Y-%m-%d')
+                return HttpResponseRedirect(
+                  urlresolvers.reverse(
+                    url_reverse,
+                    kwargs={'show_date': show_date})), False
+            elif monthly:
+                kwargs['year'] = int(year)
+                kwargs['month'] = int(month)
+                return HttpResponseRedirect(
+                    urlresolvers.reverse(
+                        url_reverse,
+                        kwargs=kwargs)), False
+        elif show_date:
+            year = int(show_date[0:4])
+            month = int(show_date[5:7])
+            day = int(show_date[8:10])
+            requested_date = date(year, month, day)
+        else:
+            # Don't redirect, as this is a proper default.
+            if daily:
+                requested_date = date.today()
+                show_date = requested_date.strftime('%Y-%m-%d')
+            elif monthly:
+                year = date.today().year
+                month = date.today().month
+    except (TypeError, ValueError):
+        if monthly:
+            kwargs = {}
+            kwargs['year'] = date.today().year
+            kwargs['month'] = date.today().month
+            return HttpResponseRedirect(
+                urlresolvers.reverse(
+                    url_reverse,
+                    kwargs=kwargs)), False
+        else:
+            # Redirect so the user sees the date in the URL that matches
+            # the output, instead of seeing the erroneous date.
+            return HttpResponseRedirect(
+              urlresolvers.reverse(
+                url_reverse,
+                kwargs={'show_date': date.today().strftime('%Y-%m-%d')})), \
+              False
+
+    if daily:
+        return requested_date, show_date
+    elif monthly:
+        return (year, month), True
+
+
 def creator(request, creator_id):
     creator = get_gcd_object(Creator, creator_id)
     return show_creator(request, creator)
@@ -162,9 +223,9 @@ def checklist_by_id(request, creator_id, country=None, language=None):
         'heading': 'Issue Checklist for Creator %s' % (creator)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
-                       order_by=('publication_date'))
+    table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
+                                template_name='gcd/bits/sortable_table.html',
+                                order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -203,9 +264,9 @@ def checklist_by_name(request, creator, country=None, language=None):
     if creator:
         issues = issues.union(items2)
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
-                       order_by=('publication_date'))
+    table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
+                                template_name='gcd/bits/sortable_table.html',
+                                order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -441,27 +502,18 @@ def publisher_monthly_covers(request,
     else:
         date_type = 'publisher_monthly_covers_pub_date'
 
-    # parts are generic and should be re-factored if we ever need it elsewhere
-    try:
-        if 'month' in request.GET:
-            year = int(request.GET['year'])
-            month = int(request.GET['month'])
-            # do a redirect, otherwise pagination links point to current month
-            return HttpResponseRedirect(
-              urlresolvers.reverse(date_type,
-                                   kwargs={'publisher_id': publisher_id,
-                                           'year': year,
-                                           'month': month}))
-        if year:
-            year = int(year)
-        if month:
-            month = int(month)
-    except ValueError:
-        year = None
-
-    if year is None:
-        year = date.today().year
-        month = date.today().month
+    if year and 'month' not in request.GET:
+        year = int(year)
+        month = int(month)
+    else:
+        return_val, show_date = _handle_date_picker(
+          request, date_type, monthly=True, kwargs={'publisher_id':
+                                                    publisher_id})
+        if show_date is False:
+            return return_val
+        elif show_date is True:
+            year = return_val[0]
+            month = return_val[1]
 
     table_width = COVER_TABLE_WIDTH
 
@@ -469,12 +521,14 @@ def publisher_monthly_covers(request,
                                   deleted=False).select_related('issue')
     if use_on_sale:
         covers = \
-          covers.filter(issue__on_sale_date__gte='%d-%02d-00' % (year, month),
-                        issue__on_sale_date__lte='%d-%02d-32' % (year, month))\
+          covers.filter(issue__on_sale_date__gte='%d-%02d-50' % (year,
+                                                                 month-1),
+                        issue__on_sale_date__lte='%d-%02d-32' % (year,
+                                                                 month))\
                 .order_by('issue__on_sale_date', 'issue__series')
     else:
         covers = \
-          covers.filter(issue__key_date__gte='%d-%02d-00' % (year, month),
+          covers.filter(issue__key_date__gte='%d-%02d-50' % (year, month-1),
                         issue__key_date__lte='%d-%02d-32' % (year, month))\
                 .order_by('issue__key_date', 'issue__series')
 
@@ -499,6 +553,8 @@ def publisher_monthly_covers(request,
     vars = {
       'publisher': publisher,
       'date': start_date,
+      'monthly': True,
+      'years': range(date.today().year, publisher.year_began or 1900, -1),
       'choose_url': choose_url,
       'choose_url_after': choose_url_after,
       'choose_url_before': choose_url_before,
@@ -829,7 +885,7 @@ def series_details(request, series_id, by_date=False):
             # at the weekly level anyway.
             try:
                 grid_date = date(int(year), month, 1)
-            except ValueError as ve:
+            except ValueError:
                 bad_key_dates.append(issue.id)
                 continue
 
@@ -903,13 +959,13 @@ def series_creatorlist(request, series_id):
     creators = creators.annotate(
       first_credit=Min('storycredit__story__issue__key_date'))
     script = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=1), distinct=True)
+                   filter=Q(storycredit__credit_type__id=1), distinct=True)
     pencils = Count('storycredit__story__issue',
                     filter=Q(storycredit__credit_type__id=2), distinct=True)
     inks = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=3), distinct=True)
+                 filter=Q(storycredit__credit_type__id=3), distinct=True)
     colors = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=4), distinct=True)
+                   filter=Q(storycredit__credit_type__id=4), distinct=True)
     letters = Count('storycredit__story__issue',
                     filter=Q(storycredit__credit_type__id=5), distinct=True)
     creators = creators.annotate(
@@ -1120,41 +1176,12 @@ def daily_covers(request, show_date=None, user=False):
     """
     Produce a page displaying the covers uploaded on a given day.
     """
-
-    # similar to the section in daily_changes. if we need it elsewhere,
-    # time to split it out.
-    requested_date = None
-    try:
-        if 'day' in request.GET:
-            year = int(request.GET['year'])
-            month = int(request.GET['month'])
-            day = int(request.GET['day'])
-            # Do a redirect, otherwise pagination links point to today
-            requested_date = date(year, month, day)
-            show_date = requested_date.strftime('%Y-%m-%d')
-            return HttpResponseRedirect(
-              urlresolvers.reverse(
-                '%scovers_by_date' % ('my_' if user else ''),
-                kwargs={'show_date': show_date}))
-
-        elif show_date:
-            year = int(show_date[0:4])
-            month = int(show_date[5:7])
-            day = int(show_date[8:10])
-            requested_date = date(year, month, day)
-
-        else:
-            # Don't redirect, as this is a proper default.
-            requested_date = date.today()
-            show_date = requested_date.strftime('%Y-%m-%d')
-
-    except (TypeError, ValueError):
-        # Redirect so the user sees the date in the URL that matches
-        # the output, instead of seeing the erroneous date.
-        return HttpResponseRedirect(
-          urlresolvers.reverse(
-            '%scovers_by_date' % ('my_' if user else ''),
-            kwargs={'show_date': date.today().strftime('%Y-%m-%d')}))
+    url_reverse = '%scovers_by_date' % ('my_' if user else '')
+    requested_date, show_date = _handle_date_picker(request,
+                                                    url_reverse,
+                                                    show_date=show_date)
+    if show_date is False:
+        return requested_date
 
     date_before = requested_date + timedelta(-1)
     if requested_date < date.today():
@@ -1186,6 +1213,8 @@ def daily_covers(request, show_date=None, user=False):
       'gcd/status/daily_covers.html',
       {
         'date': show_date,
+        'years': range(date.today().year, 2003, -1),
+        'daily': True,
         'RANDOM_IMAGE': 2,
         'choose_url_before': urlresolvers.reverse(
           '%scovers_by_date' % ('my_' if user else ''),
@@ -1222,40 +1251,12 @@ def daily_changes(request, show_date=None, user=False):
     Produce a page displaying the changes on a given day.
     """
 
-    # similar to the section in daily_covers. if we need it elsewhere,
-    # time to split it out.
-    requested_date = None
-    try:
-        if 'day' in request.GET:
-            year = int(request.GET['year'])
-            month = int(request.GET['month'])
-            day = int(request.GET['day'])
-            # Do a redirect, otherwise pagination links point to today
-            requested_date = date(year, month, day)
-            show_date = requested_date.strftime('%Y-%m-%d')
-            return HttpResponseRedirect(
-              urlresolvers.reverse(
-                '%schanges_by_date' % ('my_' if user is not None else ''),
-                kwargs={'show_date': show_date}))
-
-        elif show_date:
-            year = int(show_date[0:4])
-            month = int(show_date[5:7])
-            day = int(show_date[8:10])
-            requested_date = date(year, month, day)
-
-        else:
-            # Don't redirect, as this is a proper default.
-            requested_date = date.today()
-            show_date = requested_date.strftime('%Y-%m-%d')
-
-    except (TypeError, ValueError):
-        # Redirect so the user sees the date in the URL that matches
-        # the output, instead of seeing the erroneous date.
-        return HttpResponseRedirect(
-          urlresolvers.reverse(
-            '%schanges_by_date' % ('my_' if user is not None else ''),
-            kwargs={'show_date': date.today().strftime('%Y-%m-%d')}))
+    url_reverse = '%schanges_by_date' % ('my_' if user else '')
+    requested_date, show_date = _handle_date_picker(request,
+                                                    url_reverse,
+                                                    show_date=show_date)
+    if show_date is False:
+        return requested_date
 
     date_before = requested_date + timedelta(-1)
     if requested_date < date.today():
@@ -1349,14 +1350,16 @@ def daily_changes(request, show_date=None, user=False):
       request, 'gcd/status/daily_changes.html',
       {
         'date': show_date,
+        'years': range(date.today().year, 2009, -1),
+        'daily': True,
         'choose_url_before': urlresolvers.reverse(
-          '%schanges_by_date' % ('my_' if user is not None else ''),
+          '%schanges_by_date' % ('my_' if user else ''),
           kwargs={'show_date': date_before}),
         'choose_url_after': urlresolvers.reverse(
-          '%schanges_by_date' % ('my_' if user is not None else ''),
+          '%schanges_by_date' % ('my_' if user else ''),
           kwargs={'show_date': date_after}),
         'other_url': urlresolvers.reverse(
-          '%schanges_by_date' % ('my_' if user is None else ''),
+          '%schanges_by_date' % ('my_' if user is False else ''),
           kwargs={'show_date': requested_date}),
         'creators': creators,
         'publishers': publishers,
@@ -1425,12 +1428,25 @@ def do_on_sale_weekly(request, year=None, week=None):
     query_val['end_date'] = sunday.isoformat()
     query_val['use_on_sale_date'] = True
     issues_on_sale = issues_on_sale.filter(deleted=False)
+    choose_url = urlresolvers.reverse("on_sale_this_week")
+    choose_url_before = urlresolvers.reverse("on_sale_weekly",
+                                             kwargs={
+                                               'year': previous_week[0],
+                                               'week': previous_week[1]})
+    if next_week:
+        choose_url_after = urlresolvers.reverse("on_sale_weekly",
+                                                kwargs={
+                                                  'year': next_week[0],
+                                                  'week': next_week[1]})
+    else:
+        choose_url_after = ""
     vars = {
         'items': issues_on_sale,
         'heading': heading,
         'dates': dates,
-        'previous_week': previous_week,
-        'next_week': next_week,
+        'choose_url': choose_url,
+        'choose_url_after': choose_url_after,
+        'choose_url_before': choose_url_before,
         'query_string': urlencode(query_val),
     }
     return issues_on_sale, vars
@@ -1439,9 +1455,86 @@ def do_on_sale_weekly(request, year=None, week=None):
 def on_sale_weekly(request, year=None, week=None):
     issues_on_sale, vars = do_on_sale_weekly(request, year, week)
     if vars is None:
+        # MYCOMICS
         return issues_on_sale
+
+    table = IssuePublisherTable(
+      issues_on_sale, attrs={'class': 'sortable_listing'},
+      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    return generic_sortable_list(request, issues_on_sale, table,
+                                 'gcd/status/issues_on_sale.html', vars)
+
     return paginate_response(request, issues_on_sale,
                              'gcd/status/issues_on_sale.html', vars)
+
+
+def do_on_sale_monthly(request, year=None, month=None):
+    """
+    Produce a page displaying the comics on-sale in a given month.
+    """
+    if year and 'month' not in request.GET:
+        year = int(year)
+        month = int(month)
+    else:
+        return_val, show_date = _handle_date_picker(request,
+                                                    'on_sale_monthly',
+                                                    monthly=True)
+        if show_date is False:
+            return return_val, None
+        elif show_date is True:
+            year = int(return_val[0])
+            month = int(return_val[1])
+
+    issues_on_sale = Issue.objects.filter(
+      on_sale_date__gte='%d-%02d-50' % (year, month-1),
+      on_sale_date__lte='%d-%02d-32' % (year, month))
+
+    start_date = datetime(year, month, 1)
+    heading = "Issues on-sale in %s" % (start_date.strftime('%B %Y'))
+    query_val = {'target': 'issue',
+                 'method': 'icontains'}
+    query_val['use_on_sale_date'] = True
+    query_val['start_date'] = '%d-%02d-32' % (year, month-1)
+    query_val['end_date'] = '%d-%02d-32' % (year, month)
+    issues_on_sale = issues_on_sale.filter(deleted=False)
+    date_before = start_date + timedelta(-1)
+    date_after = start_date + timedelta(31)
+    choose_url = urlresolvers.reverse("on_sale_monthly",
+                                      kwargs={'year': year,
+                                              'month': month})
+    choose_url_before = urlresolvers.reverse("on_sale_monthly",
+                                             kwargs={
+                                               'year': date_before.year,
+                                               'month': date_before.month})
+    choose_url_after = urlresolvers.reverse("on_sale_monthly",
+                                            kwargs={
+                                              'year': date_after.year,
+                                              'month': date_after.month})
+    oldest = Issue.objects.exclude(on_sale_date='').order_by('on_sale_date')[0]
+
+    vars = {
+        'items': issues_on_sale,
+        'years': range(date.today().year, int(oldest.on_sale_date[:4]), -1),
+        'heading': heading,
+        'choose_url': choose_url,
+        'choose_url_after': choose_url_after,
+        'choose_url_before': choose_url_before,
+        'query_string': urlencode(query_val),
+        'date': start_date,
+    }
+    return issues_on_sale, vars
+
+
+def on_sale_monthly(request, year=None, month=None):
+    issues_on_sale, vars = do_on_sale_monthly(request, year, month)
+    if vars is None:
+        return issues_on_sale
+
+    table = IssuePublisherTable(
+      issues_on_sale, attrs={'class': 'sortable_listing'},
+      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    return generic_sortable_list(request, issues_on_sale, table,
+                                 'gcd/status/issues_on_sale.html', vars)
 
 
 def int_stats_language(request):
@@ -1554,13 +1647,13 @@ def feature_creatorlist(request, feature_id):
     creators = creators.annotate(
       first_credit=Min('storycredit__story__issue__key_date'))
     script = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=1), distinct=True)
+                   filter=Q(storycredit__credit_type__id=1), distinct=True)
     pencils = Count('storycredit__story__issue',
                     filter=Q(storycredit__credit_type__id=2), distinct=True)
     inks = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=3), distinct=True)
+                 filter=Q(storycredit__credit_type__id=3), distinct=True)
     colors = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=4), distinct=True)
+                   filter=Q(storycredit__credit_type__id=4), distinct=True)
     letters = Count('storycredit__story__issue',
                     filter=Q(storycredit__credit_type__id=5), distinct=True)
     creators = creators.annotate(

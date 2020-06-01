@@ -347,6 +347,10 @@ urlpatterns = [
       gcd_views.details.on_sale_weekly, name='on_sale_this_week'),
     url(r'^on_sale_weekly/(?P<year>\d{4})/week/(?P<week>\d{1,2})/$',
       gcd_views.details.on_sale_weekly, name='on_sale_weekly'),
+    url(r'^on_sale_monthly/$',
+      gcd_views.details.on_sale_monthly, name='on_sale_this_month'),
+    url(r'^on_sale_monthly/(?P<year>\d{4})/month/(?P<month>\d{1,2})/$',
+      gcd_views.details.on_sale_monthly, name='on_sale_monthly'),
 
     url(r'^international_stats_language/$',
       gcd_views.details.int_stats_language,

@@ -1,28 +1,18 @@
 {% load i18n %}
 
 <div class="right">
-  <a href="{{ choose_url_before }}">&lt; {% trans "Day before" %}</a> |
+  {% if daily %}
+  <a href="{{ choose_url_before }}">&lt; {% trans "day before" %}</a> |
+  {% else %}
+  <a href="{{ choose_url_before }}">&lt; {% trans "month before" %}</a> |
+  {% endif %}
     <form method="GET"
           action="{{ choose_url }}"
           style="display:inline">
       <select name="year" id="year">
-        <option value="2020">2020</option>
-        <option value="2019">2019</option>
-        <option value="2018">2018</option>
-        <option value="2017">2017</option>
-        <option value="2016">2016</option>
-        <option value="2015">2015</option>
-        <option value="2014">2014</option>
-        <option value="2013">2013</option>
-        <option value="2012">2012</option>
-        <option value="2011">2011</option>
-        <option value="2010">2010</option>
-        <option value="2009">2009</option>
-        <option value="2008">2008</option>
-        <option value="2007">2007</option>
-        <option value="2006">2006</option>
-        <option value="2005">2005</option>
-        <option value="2004">2004</option>
+        {% for year in years  %}
+        <option value="{{ year }}">{{ year }}</option>
+        {% endfor %}
       </select>
       <select name="month" id="month">
         <option value="1">{% trans 'January' %}</option>
@@ -38,10 +28,16 @@
         <option value="11">{% trans 'November' %}</option>
         <option value="12">{% trans 'December' %}</option>
       </select>
+    {% if daily %}
       <input type="text" name="day" id="day" size="2">
+    {% endif %}
       <input type="submit" value="{% trans 'Go' %}">
     </form>
   {% if choose_url_after %}
-   | <a href="{{ choose_url_after }}">{% trans "Day after" %} &gt;</a>
+    {% if daily %}
+   | <a href="{{ choose_url_after }}">{% trans "day after" %} &gt;</a>
+    {% else %}
+   | <a href="{{ choose_url_after }}">{% trans "month after" %} &gt;</a>
+    {% endif %}
   {% endif %}
 </div>
