@@ -215,7 +215,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
     signature = forms.ModelChoiceField(
       queryset=CreatorSignature.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_signature_autocomplete',
-                                       attrs={'style': 'min-width: 60em'},
+                                       attrs={'data-html': True,
+                                              'style': 'min-width: 60em'},
                                        forward=['creator']),
       required=False,
       help_text='TRYOUT NOT SAVED By entering (any part of) a signature select one for the '
