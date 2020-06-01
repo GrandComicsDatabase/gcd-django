@@ -518,15 +518,23 @@ class IssueTable(tables.Table):
         return (query_set, True)
 
 
-class CreatorIssueTable(IssueTable):
+class IssuePublisherTable(IssueTable):
     publisher = tables.Column(accessor='series.publisher',
-                              verbose_name='Publisher',
-                              orderable=False)
+                              verbose_name='Publisher')
 
     class Meta:
         model = Issue
         fields = ('publisher', 'issue', 'publication_date', 'on_sale_date')
         attrs = {'th': {'class': "non_visited"}}
+
+    def order_publisher(self, query_set, is_descending):
+        query_set = query_set.annotate(publisher_name=F('series__publisher__name'))
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'publisher_name',
+                                       direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
 
     def render_publisher(self, value):
         from apps.gcd.templatetags.display import absolute_url
