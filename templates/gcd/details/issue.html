@@ -30,13 +30,16 @@
 <div class="control_body">
   <div id="control_container">
     <div id="control_center">
+      <div class="cover">
+        <div class="coverContainer">
+          <div class="coverContent">
+            <div id="cover_data">
 {% include "gcd/bits/issue_data.html" %}
-
 {% if issue.has_content %}
-      <div class="issue_notes">
-        <div class="issue_notes_border">
-          <h3 class="notes_header"> Issue Notes </h3>
-          <p>
+              <div class="issue_notes">
+                <div class="issue_notes_border">
+                  <h3 class="notes_header"> Issue Notes </h3>
+                  <p>
   {% if issue.variant_of %}
 This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ issue.variant_of.full_name }}</a>.
   {% endif %}
@@ -46,35 +49,30 @@ There exist further variants.
     {% else %}
 This issue has variants.
     {% endif %}
-          </p>
-          <ul>
+                  </p>
+                  <ul>
     {% for variant in issue.other_variants %}
-            <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
+                    <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
     {% endfor %}
-          </ul><p>
+                  </ul><p>
   {% else %}
     {% if issue.variant_of %}
-          </p><p>
+                  </p><p>
     {% endif %}
   {% endif %}
             {{ issue.notes|urlizetrunc:75|linebreaksbr }}
             {{ issue|show_credit:'keywords' }}
-            <dl class="contents">
+                  <dl class="contents">
             {{ issue|show_credit:'show_awards' }}
-            </dl>
+                  </dl>
   {% if issue.has_reprints %}
-            <dl class="contents">
+                  <dl class="contents">
             {{ issue|show_reprints_for_issue }}
-            </dl>
+                  </dl>
   {% endif %}
-        </div>
-      </div>
+                </div>
+              </div> <!-- issue.notes -->
 {% endif %} <!-- issue.notes -->
-      <hr class="divider">
-      <div class="cover">
-        <div class="coverContainer">
-          <div class="coverContent">
-            <div id="cover_data">
 {% if issue.series.is_comics_publication %}
   {% with cover_story as story %}
   {% with 1 as is_cover %}
@@ -82,15 +80,15 @@ This issue has variants.
   {% endwith %}
   {% endwith %}
 {% else %}
-<div class="non_comics">
-<h3>
-<span class="left">The individual issues of this series are each less than 50% comics.  Only
-comics sequences are indexed and cover scans are accepted only if the issue has 10% indexed comics content.<span>
-</h3>
-</div>
+              <div class="non_comics">
+                <h3>
+                  <span class="left">The individual issues of this series are each less than 50% comics.  Only
+                  comics sequences are indexed and cover scans are accepted only if the issue has 10% indexed comics content.<span>
+                </h3>
+              </div>
 {% endif %}
             </div>
-          </div>
+          </div> <!-- coverContent -->
           <div class="coverImage">
 {% if issue.has_covers %}
             <a href="{{ issue.get_absolute_url }}cover/4">{{ image_tag }}</a>
@@ -115,7 +113,7 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
   {% endfor %}
 {% endif %}
             <div class="issue_cover_links">
-<div class="left">
+              <div class="left">
 {% if issue.has_covers %}
               View: <a href="{{ issue.get_absolute_url }}cover/4">Large</a>
               <br>
@@ -124,12 +122,12 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
               <br>
   {% endif %}
 {% endif %}
-</div>
-<div class="right">
+              </div>
+              <div class="right">
 {% if issue.series.has_gallery and not issue.series.is_singleton %}
               <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Cover gallery</a>
 {% endif %}
-</div>
+              </div>
             </div>
           </div>
         </div> <!-- coverContainer -->

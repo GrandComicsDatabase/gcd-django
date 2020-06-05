@@ -52,6 +52,7 @@
 <dl>
 {{ issue|show_creator_credit:"editing" }}
 </dl>
+{% if issue.series.is_singleton %}
 {% with issue.series as s %}
   {% if s.format or s.color or s.dimensions or s.paper_stock or s.binding or s.publishing_format %}
       <dl class="issue_format">
@@ -82,3 +83,4 @@
       </dl>
   {% endif %}
 {% endwith %}
+{% endif %}
