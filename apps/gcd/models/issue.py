@@ -181,7 +181,7 @@ class Issue(GcdData):
                                    .order_by('sequence_number')
                                    .select_related('type', 'migration_status'))
         if self.series.is_comics_publication:
-            if (len(stories) > 0):
+            if (len(stories) > 0) and stories[0].type.id==6:
                 cover_story = stories.pop(0)
                 if self.variant_of:
                     # can have only one sequence, the variant cover
