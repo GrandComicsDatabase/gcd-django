@@ -386,7 +386,11 @@ class Creator(GcdData):
                 kwargs={'creator_id': self.id})
 
     def __str__(self):
-        return '%s' % str(self.gcd_official_name)
+        if self.birth_date.year:
+            year = '(b. %s)' % self.creator.birth_date.year
+        else:
+            year = ''
+        return '%s %s' % (str(self.gcd_official_name), year)
 
 
 class CreatorSignature(GcdData):
