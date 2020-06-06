@@ -1,6 +1,5 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/base_content.html" %}
 
-{% load staticfiles %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
@@ -9,13 +8,7 @@
 GCD :: Feature :: {{ feature.name }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
-
-{% block view_body %}
-
+{% block content_header %}
 <h1 class="item_id">
   <div class="left">
     {{ feature.name }}
@@ -25,14 +18,10 @@ GCD :: Feature :: {{ feature.name }}
   <div class="flex_left">
     {{ feature.language }}
   </div>
-  <div class="flex_right">
-  {% include "gcd/bits/pagination_bar.html" %}
-  </div>
 </div>
+{% endblock content_header %}
 
-<div class="control_body">
-  <div id="control_container">
-    <div id="control_center">
+{% block content %}
       <dl class="pub_data">
 {% if feature.genre %}
         <p><strong>Genre:</strong> {{ feature.genre }}</p>
@@ -53,48 +42,9 @@ GCD :: Feature :: {{ feature.name }}
 	<li><a href='{% url "feature_creatorlist" feature_id=feature.id %}'>Creator Checklist (via linked story records)</a></li>
         <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue Checklist (via linked story records)</a></li>
       </ul>
-    </div>
-  </div>
+{% endblock content %}
 
-{% if not preview or feature.source %}
-  <div id="control_rail">
-    <div class="edit_box">
-  {% if MYCOMICS %}
-      <div class="edit_header">
-        <div>my.comics.org</div>
-      </div>
-  {% else %}
-      <div class="edit_header">Editing</div>
-     {% if not preview %}
-       {% with object=feature object_class='feature' object_name='Feature' %}
-         {% include "gcd/bits/status_banner.html" %}
-       {% endwith %}
-     {% endif %}
-     {% if request.user.is_authenticated %}
-      <form method="GET"
-            action="{% url "add_feature_logo" feature_id=feature.id %}">
-          <input name="add_feature_logo" type="submit" value="Add Feature Logo"/>
-      </form>
-      {% endif %}
-     {% if request.user.is_authenticated %}
-      <form method="GET"
-            action="{% url "add_feature_relation" feature_id=feature.id %}">
-          <input name="add_feature_relation" type="submit" value="Add Feature Relation"/>
-      </form>
-      {% endif %}
-    </div>
-  {% endif %} <!-- MYCOMICS -->
-    <div id="change_history" class="edit_footer">
-  {% if preview %}
-      <a href="{% url "change_history" model_name='feature' id=feature.source.id %}">View Change History</a>
-  {% else %}
-      <a href="{% url "change_history" model_name='feature' id=feature.id %}">View Change History</a>
-  {% endif %}
-    </div>
-  </div>
-{% endif %}
-</div>
-
+{% block listing %}
 {% if page.object_list.count %}
 <hr>
   {% if feature.feature_type == 1 %}
@@ -119,7 +69,6 @@ GCD :: Feature :: {{ feature.name }}
   {% endfor %}
 </table>
 {% endif %}
-
 {% if feature.from_related_feature.exists or feature.to_related_feature.exists %}
 <hr>
 <h2> Feature Relations </h2>
@@ -138,11 +87,32 @@ GCD :: Feature :: {{ feature.name }}
   {% endfor %}
 </table>
 {% endif %}
+{% endblock listing %}
 
-<div class="item_id">
-  <div class="flex_right">
-  {% include "gcd/bits/pagination_bar.html" %}
-  </div>
-</div>
+{% block edit_box %}
+ {% if not preview %}
+   {% with object=feature object_class='feature' object_name='Feature' %}
+     {% include "gcd/bits/status_banner.html" %}
+   {% endwith %}
+ {% endif %}
+ {% if request.user.is_authenticated %}
+  <form method="GET"
+        action="{% url "add_feature_logo" feature_id=feature.id %}">
+      <input name="add_feature_logo" type="submit" value="Add Feature Logo"/>
+  </form>
+  {% endif %}
+ {% if request.user.is_authenticated %}
+  <form method="GET"
+        action="{% url "add_feature_relation" feature_id=feature.id %}">
+      <input name="add_feature_relation" type="submit" value="Add Feature Relation"/>
+  </form>
+  {% endif %}
+{% endblock edit_box %}
 
-{% endblock %}
+{% block change_history %}
+  {% if preview %}
+    <a href="{% url "change_history" model_name='feature' id=feature.source.id %}">View Change History</a>
+  {% else %}
+    <a href="{% url "change_history" model_name='feature' id=feature.id %}">View Change History</a>
+  {% endif %}
+{% endblock change_history %}
