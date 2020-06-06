@@ -532,7 +532,7 @@ ISSUE_HELP_TEXTS = {
 
 VARIANT_NAME_HELP_TEXT = (
     'Name of this variant. Examples are: "Cover A" (if listed as such in '
-    'the issue), "2nd printing", "newsstand", "direct", or the name of '
+    'the issue), "Second Printing", "Newsstand", "Direct", or the name of '
     'the artist if different from the base issue.')
 
 BIBLIOGRAPHIC_ENTRY_HELP_TEXT = {
