@@ -978,6 +978,8 @@ class ChangesetComment(models.Model):
     class Meta:
         db_table = 'oi_changeset_comment'
         ordering = ['created']
+        get_latest_by = "created"
+
 
     commenter = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()

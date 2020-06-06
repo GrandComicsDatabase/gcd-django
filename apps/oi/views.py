@@ -61,7 +61,7 @@ from apps.oi.models import (
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
     FeatureRelationRevision, process_data_source, PrinterRevision,
-    IndiciaPrinterRevision, CreatorSignatureRevision)
+    IndiciaPrinterRevision, CreatorSignatureRevision, ChangesetComment)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -4262,7 +4262,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
 
 
 @permission_required('indexer.can_reserve')
-def show_queue(request, queue_name, state):
+def show_queue(request, queue_name):
     kwargs = {}
     if 'editing' == queue_name:
         kwargs['indexer'] = request.user
@@ -4278,6 +4278,8 @@ def show_queue(request, queue_name, state):
         return show_cover_queue(request)
     elif 'approved' == queue_name:
         return show_approved(request)
+    elif 'commented' == queue_name:
+        return show_commented(request)
     elif 'editor_log' == queue_name:
         return show_editor_log(request)
 
@@ -4519,6 +4521,26 @@ def show_approved(request):
       request,
       changes,
       'oi/queues/approved.html',
+      {'CTYPES': CTYPES, 'EDITING': True},
+      per_page=50)
+
+
+@login_required
+def show_commented(request):
+    comments = ChangesetComment.objects.exclude(text__in=['', 'Editing'])\
+                                       .filter(changeset__migrated=False,
+                                               commenter=request.user)
+
+    changes = Changeset.objects.filter(comments__in=comments)\
+                               .annotate(last_remark=Max('comments__created'))\
+                               .distinct().order_by('-last_remark')\
+                               .select_related('approver__indexer',
+                                               'indexer__indexer')
+
+    return paginate_response(
+      request,
+      changes,
+      'oi/queues/commented.html',
       {'CTYPES': CTYPES, 'EDITING': True},
       per_page=50)
 
