@@ -5103,10 +5103,14 @@ class StoryRevision(Revision):
                         uncertain = True
                     else:
                         uncertain = False
+                    is_credited = False
                     if credit.find('(') > 1:
                         note = credit[credit.find('(')+1:].strip()
                         note = note.strip(' )')
                         credit = credit[:credit.find('(')-1]
+                        if note == 'credited':
+                            is_credited = True
+                            note = ''
                     else:
                         note = ''
                     if credit.find('[') > 1:
@@ -5122,6 +5126,7 @@ class StoryRevision(Revision):
                           story_revision_id=self.id,
                           creator=creator,
                           credit_type_id=CREDIT_TYPES[credit_type],
+                          is_credited=is_credited,
                           uncertain=uncertain,
                           credit_name=note)
                         credit_revision.save()
