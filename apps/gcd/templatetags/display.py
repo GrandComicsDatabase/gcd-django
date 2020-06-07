@@ -69,11 +69,11 @@ def show_story_short(story, no_number=False, markup=True):
             title = 'no title'
     if story.has_feature():
         if markup:
-            story_line = '%s %s (%s)' % (esc(story_line), title,
-                                          esc(story.show_feature()))
+            story_line = '%s %s (%s)' % (esc(story_line), esc(title),
+                                         esc(story.show_feature()))
         else:
-            story_line = '%s %s (%s)' % (esc(story_line), title,
-                                          esc(story.show_feature_as_text()))
+            story_line = '%s %s (%s)' % (story_line, title,
+                                         story.show_feature_as_text())
     else:
         if markup:
             story_line = '%s %s (%s)' % (
@@ -92,7 +92,10 @@ def show_story_short(story, no_number=False, markup=True):
             story_line += '<span class="no_data"> no page count</span>'
         else:
             story_line += 'no page count'
-    return mark_safe(story_line)
+    if markup:
+        return mark_safe(story_line)
+    else:
+        return story_line
 
 
 @register.filter
@@ -475,6 +478,7 @@ def short_pub_type(publication_type):
         return '[' + publication_type.name[0] + ']'
     else:
         return ''
+
 
 @register.filter
 def pre_process_relation(relation, creator):
