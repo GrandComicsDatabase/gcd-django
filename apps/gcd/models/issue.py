@@ -173,6 +173,9 @@ class Issue(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
+    def active_printers(self):
+        return self.indicia_printer.all()
+
     def shown_stories(self):
         """ returns cover sequence and story sequences """
         if self.variant_of:
@@ -228,7 +231,7 @@ class Issue(GcdData):
     def show_printer(self):
         first = True
         printers = ''
-        for printer in self.indicia_printer.all():
+        for printer in self.active_printers():
             if first:
                 first = False
             else:

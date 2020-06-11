@@ -4638,6 +4638,9 @@ class PreviewIssue(Issue):
     def active_credits(self):
         return self.revision.issue_credit_revisions.exclude(deleted=True)
 
+    def active_printers(self):
+        return self.revision.indicia_printer.all()
+
     def active_stories(self):
         stories = self.revision.story_set.exclude(deleted=True)\
                                      .order_by('sequence_number')\
