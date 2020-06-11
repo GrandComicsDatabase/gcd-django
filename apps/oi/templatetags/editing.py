@@ -14,7 +14,7 @@ from apps.oi.coordinators import issue_revision_modified
 
 register = template.Library()
 
-DOC_URL = 'http://docs.comics.org/wiki/'
+DOC_URL = 'https://docs.comics.org/wiki/'
 
 
 @register.filter

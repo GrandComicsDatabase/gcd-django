@@ -26,7 +26,7 @@ GENERIC_ERROR_MESSAGE = (
     'Please correct the field errors.  Scroll down to see the specific error '
     'message(s) next to each field.')
 
-DOC_URL = 'http://docs.comics.org/wiki/'
+DOC_URL = 'https://docs.comics.org/wiki/'
 
 PUBLISHER_HELP_LINKS = {
     'name': 'Publisher_Name',
