@@ -52,7 +52,11 @@
           <dt> Web Site:
           <dd> <a href="{{ printer.url }}">{{ printer.url }}</a>
   {% endif %}
-  {{ publisher|show_credit:'keywords' }}
+  {% if printer.notes %}
+          <dt> Notes:
+          <dd> {{ printer.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {{ printer|show_credit:'keywords' }}
 {% endif %}
         </dl>
       </div> <!-- pub_data -->
