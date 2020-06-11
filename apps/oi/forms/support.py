@@ -372,6 +372,8 @@ SERIES_HELP_TEXTS = {
         "Barcodes are present for issues of this series.",
     'has_indicia_frequency':
         "Indicia frequencies are present for issues of this series.",
+    'has_indicia_printer':
+        "Indicia printers are present for issues of this series.",
     'has_isbn':
         "ISBNs are present for issues of this series.",
     'has_issue_title':
@@ -464,7 +466,8 @@ ISSUE_HELP_TEXTS = {
     'no_indicia_frequency':
         'Check this box if there is no publication frequency printed '
         'on the comic.',
-
+    'no_indicia_printer':
+        'Check this box if there is no printer given in the issue.',
     'price':
         'Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
         '"2.99 CAD" for $2.99 Canadian.  Use a format like '

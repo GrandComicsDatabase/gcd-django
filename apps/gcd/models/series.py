@@ -86,6 +86,7 @@ class Series(GcdData):
     # Fields for handling the presence of certain issue fields
     has_barcode = models.BooleanField(default=False)
     has_indicia_frequency = models.BooleanField(default=False)
+    has_indicia_printer = models.BooleanField(default=False)
     has_isbn = models.BooleanField(default=False)
     has_issue_title = models.BooleanField(default=False)
     has_volume = models.BooleanField(default=False)

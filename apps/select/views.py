@@ -15,7 +15,7 @@ from dal import autocomplete
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
-                            Feature, FeatureLogo
+                            Feature, FeatureLogo, IndiciaPrinter
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -503,6 +503,17 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
 
         if language:
             qs = qs.filter(feature__language__code__in=[language, 'zxx'])
+
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+
+        return qs
+
+
+class IndiciaPrinterAutocomplete(LoginRequiredMixin,
+                                 autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = IndiciaPrinter.objects.filter(deleted=False)
 
         if self.q:
             qs = qs.filter(name__icontains=self.q)

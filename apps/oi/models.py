@@ -3206,9 +3206,10 @@ def get_series_field_list():
             'publication_type', 'is_singleton', 'year_began',
             'year_began_uncertain', 'year_ended', 'year_ended_uncertain',
             'is_current', 'country', 'language', 'has_barcode',
-            'has_indicia_frequency', 'has_isbn', 'has_issue_title',
-            'has_volume', 'has_rating', 'is_comics_publication',
-            'has_about_comics', 'tracking_notes', 'notes', 'keywords']
+            'has_indicia_frequency', 'has_indicia_printer', 'has_isbn',
+            'has_issue_title', 'has_volume', 'has_rating',
+            'is_comics_publication', 'has_about_comics', 'tracking_notes',
+            'notes', 'keywords']
 
 
 class SeriesRevision(Revision):
@@ -3256,6 +3257,7 @@ class SeriesRevision(Revision):
     # Fields for handling the presence of certain issue fields
     has_barcode = models.BooleanField(default=False)
     has_indicia_frequency = models.BooleanField(default=False)
+    has_indicia_printer = models.BooleanField(default=False)
     has_isbn = models.BooleanField(default=False)
     has_issue_title = models.BooleanField(default=False)
     has_volume = models.BooleanField(default=False)
@@ -3606,6 +3608,7 @@ def get_issue_field_list():
             'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
             'key_date', 'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
+            'indicia_printer', 'no_indicia_printer',
             'isbn', 'no_isbn', 'barcode', 'no_barcode', 'rating', 'no_rating',
             'notes', 'keywords']
 
@@ -3756,6 +3759,9 @@ class IssueRevision(Revision):
       Brand, on_delete=models.CASCADE, null=True, default=None, blank=True,
       related_name='issue_revisions')
     no_brand = models.BooleanField(default=False)
+    indicia_printer = models.ManyToManyField(IndiciaPrinter, blank=True,
+      related_name='issue_revisions')
+    no_indicia_printer = models.BooleanField(default=False)
 
     isbn = models.CharField(max_length=32, blank=True, default='')
     no_isbn = models.BooleanField(default=False)
@@ -3846,6 +3852,7 @@ class IssueRevision(Revision):
         has_isbn = ('series', 'has_isbn')
         has_volume = ('series', 'has_volume')
         has_ind_freq = ('series', 'has_indicia_frequency')
+        has_ind_print = ('series', 'has_indicia_printer')
         return {
             'title': has_title,
             'no_title': has_title,
@@ -3859,6 +3866,8 @@ class IssueRevision(Revision):
             'display_volume_with_issue': has_volume,
             'indicia_frequency': has_ind_freq,
             'no_indicia_frequency': has_ind_freq,
+            'indicia_printer': has_ind_print,
+            'no_indicia_printer': has_ind_print,
         }
 
     @classmethod
@@ -4396,6 +4405,10 @@ class IssueRevision(Revision):
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('indicia_frequency')
             fields.remove('no_indicia_frequency')
+        if not self.series.has_indicia_printer and \
+           self.changeset.change_type != CTYPES['issue_bulk']:
+            fields.remove('indicia_printer')
+            fields.remove('no_indicia_printer')
         if not self.series.has_isbn and \
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('isbn')
@@ -4435,6 +4448,7 @@ class IssueRevision(Revision):
             'on_sale_date_uncertain': False,
             'indicia_frequency': '',
             'no_indicia_frequency': False,
+            'no_indicia_printer': False,
             'series': None,
             'indicia_publisher': None,
             'indicia_pub_not_printed': False,
@@ -4462,6 +4476,7 @@ class IssueRevision(Revision):
         self._seen_title = False
         self._seen_indicia_publisher = False
         self._seen_indicia_frequency = False
+        self._seen_indicia_printer = False
         self._seen_brand = False
         self._seen_page_count = False
         self._seen_editing = False
@@ -4489,6 +4504,10 @@ class IssueRevision(Revision):
         if not self._seen_indicia_frequency and \
            field_name in ('indicia_frequency', 'no_indicia_frequency'):
             self._seen_indicia_frequency = True
+            return 1
+        if not self._seen_indicia_printer and \
+           field_name in ('indicia_printer', 'no_indicia_printer'):
+            self._seen_indicia_printer = True
             return 1
         if not self._seen_brand and field_name in ('brand', 'no_brand'):
             self._seen_brand = True

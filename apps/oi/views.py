@@ -61,7 +61,8 @@ from apps.oi.models import (
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
     FeatureRelationRevision, process_data_source, PrinterRevision,
-    IndiciaPrinterRevision, CreatorSignatureRevision, ChangesetComment)
+    IndiciaPrinterRevision, CreatorSignatureRevision, ChangesetComment,
+    validated_isbn)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -4921,6 +4922,7 @@ def preview(request, id, model_name):
             model_object.series = revision.series
             model_object.revision = revision
             model_object.on_sale_date = on_sale_date_as_string(revision)
+            model_object.valid_isbn = validated_isbn(revision.isbn)
             # on preview show all story types
             request.GET = request.GET.copy()
             request.GET['issue_detail'] = 2

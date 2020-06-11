@@ -26,7 +26,7 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision,\
                            get_issue_field_list
 from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType,\
-                            CreatorNameDetail
+                            CreatorNameDetail, IndiciaPrinter
 
 
 def get_issue_revision_form(publisher, series=None, revision=None,
@@ -131,6 +131,15 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             indicia_frequency = forms.CharField(widget=HiddenInput,
                                                 required=False)
             turned_off_list += 'indicia_frequency, '
+
+        if not series.has_indicia_printer:
+            no_indicia_printer = forms.BooleanField(widget=forms.HiddenInput,
+                                         required=False)
+            indicia_printer = forms.ModelMultipleChoiceField(
+              widget=forms.MultipleHiddenInput,
+              queryset=IndiciaPrinter.objects.all(),
+              required=False)
+            turned_off_list += 'indicia_printer, '
 
         if not series.has_isbn:
             no_isbn = forms.BooleanField(widget=forms.HiddenInput,
@@ -257,6 +266,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 raise forms.ValidationError(
                     'You cannot specify an indicia frequency and check '
                     '"no indicia frequency" at the same time.')
+
+            if cd['no_indicia_printer'] and cd['indicia_printer']:
+                raise forms.ValidationError(
+                    'You cannot specify an indicia printer and check '
+                    '"no indicia printer" at the same time.')
 
             if cd['no_isbn'] and cd['isbn']:
                 raise forms.ValidationError(
@@ -511,6 +525,15 @@ class IssueRevisionForm(forms.ModelForm):
                            for field in fields[credit_start:]])
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = ISSUE_HELP_LINKS
+
+    indicia_printer = forms.ModelMultipleChoiceField(
+        queryset=IndiciaPrinter.objects.all(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url='indicia_printer_autocomplete',
+            attrs={'style': 'min-width: 60em'}),
+        required=False,
+        help_text='The exact printer listed in the indicia or colophon, if any.'
+    )
 
     comments = _get_comments_form_field()
     turned_off_help = forms.CharField(widget=HiddenInputWithHelp,

@@ -49,4 +49,9 @@ urlpatterns = [
         select_views.FeatureLogoAutocomplete.as_view(),
         name='feature_logo_autocomplete',
     ),
+    url(
+        r'^autocomplete/indicia_printer/$',
+        select_views.IndiciaPrinterAutocomplete.as_view(),
+        name='indicia_printer_autocomplete',
+    ),
 ]

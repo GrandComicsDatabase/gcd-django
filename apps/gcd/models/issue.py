@@ -16,7 +16,7 @@ import django_tables2 as tables
 from taggit.managers import TaggableManager
 
 from .gcddata import GcdData
-from .publisher import IndiciaPublisher, Brand
+from .publisher import IndiciaPublisher, Brand, IndiciaPrinter
 from .image import Image
 from .story import StoryType, STORY_TYPES, CreditType
 from .creator import CreatorNameDetail
@@ -123,6 +123,8 @@ class Issue(GcdData):
     indicia_pub_not_printed = models.BooleanField(default=False)
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True)
     no_brand = models.BooleanField(default=False, db_index=True)
+    indicia_printer = models.ManyToManyField(IndiciaPrinter)
+    no_indicia_printer = models.BooleanField(default=False)
     image_resources = GenericRelation(Image)
 
     awards = GenericRelation(ReceivedAward)
@@ -222,6 +224,18 @@ class Issue(GcdData):
 
     def shown_covers(self):
         return self.active_covers(), self.variant_covers()
+
+    def show_printer(self):
+        first = True
+        printers = ''
+        for printer in self.indicia_printer.all():
+            if first:
+                first = False
+            else:
+                printers += '; '
+            printers += '<a href="%s">%s</a>' % (printer.get_absolute_url(),
+                                                 esc(printer.name))
+        return mark_safe(printers)
 
     def has_content(self):
         """

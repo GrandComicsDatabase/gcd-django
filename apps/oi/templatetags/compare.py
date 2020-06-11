@@ -77,7 +77,8 @@ def field_value(revision, field):
                  'no_barcode', 'no_indicia_frequency', 'no_isbn',
                  'year_began_uncertain', 'year_overall_began_uncertain',
                  'year_ended_uncertain', 'year_overall_ended_uncertain',
-                 'on_sale_date_uncertain', 'is_comics_publication']:
+                 'on_sale_date_uncertain', 'is_comics_publication',
+                 'no_indicia_printer']:
         return yesno(value, 'Yes,No')
     elif field in ['is_current']:
         res_holder_display = ''
@@ -217,6 +218,9 @@ def field_value(revision, field):
         features = "; ".join(value.all().values_list('name', flat=True))
         return features
     elif field == 'feature_logo':
+        features = "; ".join(value.all().values_list('name', flat=True))
+        return features
+    elif field == 'indicia_printer':
         features = "; ".join(value.all().values_list('name', flat=True))
         return features
     elif field == 'feature' and \
