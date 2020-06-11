@@ -165,7 +165,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCreditRevision
         fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
-                  'is_signed', 'signed_as', 'uncertain', 'credit_name']
+                  'is_signed', 'signature', 'signed_as', 'uncertain',
+                  'credit_name']
         help_texts = {
             'credit_type':
                 'Selecting multi-credit entries such as "pencil and inks", or'
@@ -183,14 +184,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'Enter a name if the credited name is unusual and '
                 'therefore not a creator name record.',
             'is_signed':
-                'Check in case the creator did sign. If the signed name '
-                'is not the selected creator name, enter the name from the '
-                'signature in the unfolded signed as field.',
+                'Check in case the creator did sign.',
             'signed_as':
-                'Enter a name if the signed name is unusual, short hand, an '
-                'abbreviation, etc., and therefore not a creator name record. '
-                'For example, initials "S. G." alone do not result in a pen '
-                'name, but can be put here.',
+                'If the signature is not available enter a transcription here,'
+                ' a generic textual signature will be created on approval. If '
+                ' you want to record an image of the signature, you first have'
+                ' to upload it in a separate change.',
         }
         labels = {'credit_name': 'Credit description'}
 
@@ -218,9 +217,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
                                        attrs={'data-html': True,
                                               'style': 'min-width: 60em'},
                                        forward=['creator']),
+      help_text='Select an existing signature for a creator.',
       required=False,
-      help_text='TRYOUT NOT SAVED By entering (any part of) a signature select one for the '
-                'creator.'
     )
 
     def clean(self):

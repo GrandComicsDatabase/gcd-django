@@ -8,7 +8,7 @@ from taggit.managers import TaggableManager
 
 from .gcddata import GcdData
 from .award import ReceivedAward
-from .creator import CreatorNameDetail
+from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
 
 STORY_TYPES = {
@@ -105,6 +105,9 @@ class StoryCredit(GcdData):
 
     is_credited = models.BooleanField(default=False, db_index=True)
     is_signed = models.BooleanField(default=False, db_index=True)
+    signature = models.ForeignKey(CreatorSignature, on_delete=models.CASCADE,
+                                  related_name='credits', db_index=True,
+                                  null=True)
 
     uncertain = models.BooleanField(default=False, db_index=True)
 

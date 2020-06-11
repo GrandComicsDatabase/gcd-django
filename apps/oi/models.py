@@ -4742,6 +4742,8 @@ class StoryCreditRevision(Revision):
 
     is_credited = models.BooleanField(default=False, db_index=True)
     is_signed = models.BooleanField(default=False, db_index=True)
+    signature = models.ForeignKey(CreatorSignature, on_delete=models.CASCADE,
+                                  blank=True, null=True)
 
     uncertain = models.BooleanField(default=False, db_index=True)
 
@@ -4780,7 +4782,8 @@ class StoryCreditRevision(Revision):
     # TODO old methods, t.b.c
 
     _base_field_list = ['creator', 'credit_type', 'is_credited', 'is_signed',
-                        'uncertain', 'signed_as', 'credited_as', 'credit_name']
+                        'uncertain', 'signature', 'signed_as', 'credited_as',
+                        'credit_name']
 
     def _field_list(self):
         return self._base_field_list
@@ -4793,6 +4796,7 @@ class StoryCreditRevision(Revision):
             'is_credited': False,
             'is_signed': False,
             'uncertain': False,
+            'signature': None,
             'signed_as': '',
             'credited_as': '',
             'credit_name': '',
@@ -5128,12 +5132,16 @@ class StoryRevision(Revision):
                     else:
                         uncertain = False
                     is_credited = False
+                    is_signed = False
                     if credit.find('(') > 1:
                         note = credit[credit.find('(')+1:].strip()
                         note = note.strip(' )')
                         credit = credit[:credit.find('(')-1]
                         if note == 'credited':
                             is_credited = True
+                            note = ''
+                        if note == 'signed':
+                            is_signed = True
                             note = ''
                     else:
                         note = ''
@@ -5151,6 +5159,7 @@ class StoryRevision(Revision):
                           creator=creator,
                           credit_type_id=CREDIT_TYPES[credit_type],
                           is_credited=is_credited,
+                          is_signed=is_signed,
                           uncertain=uncertain,
                           credit_name=note)
                         credit_revision.save()

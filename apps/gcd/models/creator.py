@@ -132,12 +132,15 @@ class CreatorNameDetail(GcdData):
         if credit.uncertain:
             name += ' ?'
 
+        # no credited_as, signed_as
         if hasattr(credit, 'is_signed') and (
           credit.is_signed and not credit.signed_as) and (
+          credit.is_signed and not credit.signature) and (
           credit.is_credited and not credit.credited_as):
-            credit_attribute = 'credited, signed '
+            credit_attribute = 'credited, signed'
         elif hasattr(credit, 'is_signed') and (
-          credit.is_signed and not credit.signed_as):
+          credit.is_signed and not credit.signed_as) and (
+          credit.is_signed and not credit.signature):
             credit_attribute = 'signed'
         elif credit.is_credited and not credit.credited_as:
             credit_attribute = 'credited'
@@ -159,6 +162,10 @@ class CreatorNameDetail(GcdData):
                                (credit_attribute,
                                 as_name.get_absolute_url(),
                                 esc(as_name.name))
+            if credit.signature:
+                credit_text += ' (signed as <a href="%s">%s</a>)' % \
+                               (credit.signature.get_absolute_url(),
+                                esc(credit.signature.name))
         else:
             credit_text = esc(name)
             if as_name:
