@@ -64,7 +64,7 @@ def show_story_short(story, no_number=False, markup=True):
         title = show_title(story, True)
     else:
         if markup:
-            title = '<span class="no_data">no title</span>'
+            title = mark_safe('<span class="no_data">no title</span>')
         else:
             title = 'no title'
     if story.has_feature():
