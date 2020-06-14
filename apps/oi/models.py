@@ -5163,6 +5163,8 @@ class StoryRevision(Revision):
                         if note == 'signed':
                             is_signed = True
                             note = ''
+                        if note == 'painted':
+                            note = 'painting'
                     else:
                         note = ''
                     if credit.find('[') > 1:
