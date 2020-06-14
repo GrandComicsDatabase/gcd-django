@@ -980,7 +980,6 @@ class ChangesetComment(models.Model):
         ordering = ['created']
         get_latest_by = "created"
 
-
     commenter = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField()
 
@@ -3760,7 +3759,7 @@ class IssueRevision(Revision):
       related_name='issue_revisions')
     no_brand = models.BooleanField(default=False)
     indicia_printer = models.ManyToManyField(IndiciaPrinter, blank=True,
-      related_name='issue_revisions')
+                                             related_name='issue_revisions')
     no_indicia_printer = models.BooleanField(default=False)
 
     isbn = models.CharField(max_length=32, blank=True, default='')
@@ -4150,8 +4149,8 @@ class IssueRevision(Revision):
                     credit_revision = credit_form.save(commit=False)
                     credit_revision.save_added_revision(
                       changeset=self.changeset, issue_revision=self)
-            elif not credit_form.is_valid() and \
-              credit_form not in credits_formset.deleted_forms:
+            elif (not credit_form.is_valid() and
+                  credit_form not in credits_formset.deleted_forms):
                 raise ValueError
         removed_credits = credits_formset.deleted_forms
         if removed_credits:
@@ -4554,16 +4553,16 @@ class IssueRevision(Revision):
     def full_name(self):
         if self.variant_name:
             return '%s %s [%s]' % (self.series.full_name(),
-                                    self.display_number,
-                                    self.variant_name)
+                                   self.display_number,
+                                   self.variant_name)
         else:
             return '%s %s' % (self.series.full_name(), self.display_number)
 
     def short_name(self):
         if self.variant_name:
             return '%s %s [%s]' % (self.series.name,
-                                    self.display_number,
-                                    self.variant_name)
+                                   self.display_number,
+                                   self.variant_name)
         else:
             return '%s %s' % (self.series.name, self.display_number)
 
@@ -4763,6 +4762,26 @@ class StoryCreditRevision(Revision):
     @source.setter
     def source(self, value):
         self.story_credit = value
+
+    def _handle_prerequisites(self, changes):
+        if self.signed_as:
+            creator = self.creator.creator
+            signature = CreatorSignature.objects.filter(name=self.signed_as,
+                                                        creator=creator,
+                                                        generic=True,
+                                                        deleted=False)
+            if signature:
+                self.signed_as = ''
+                self.signature = signature.get()
+            else:
+                signature = CreatorSignatureRevision.objects.create(
+                                                     name=self.signed_as,
+                                                     creator=creator,
+                                                     generic=True,
+                                                     changeset=self.changeset)
+                signature.commit_to_display()
+                self.signed_as = ''
+                self.signature = signature.creator_signature
 
     def _pre_save_object(self, changes):
         self.story_credit.story = self.story_revision.story
@@ -5072,12 +5091,10 @@ class StoryRevision(Revision):
                                                       12, 13]:
                     if credit_revision.credit_type.id == 9:
                         credit_revision.credit_name = 'painting'
-                    credit_revision.credit_type = \
-                      CreditType.objects.get(id=2)
+                    credit_revision.credit_type = CreditType.objects.get(id=2)
                     credit_revision.save()
                     credit_revision.id = None
-                    credit_revision.credit_type = \
-                      CreditType.objects.get(id=3)
+                    credit_revision.credit_type = CreditType.objects.get(id=3)
                     credit_revision.save()
                     if cd['credit_type'].id in [8, 9, 11, 13]:
                         credit_revision.id = None
@@ -5094,8 +5111,8 @@ class StoryRevision(Revision):
                         credit_revision.credit_type = \
                             CreditType.objects.get(id=5)
                         credit_revision.save()
-            elif not credit_form.is_valid() and \
-              credit_form not in credits_formset.deleted_forms:
+            elif (not credit_form.is_valid() and
+                  credit_form not in credits_formset.deleted_forms):
                 raise ValueError
         removed_credits = credits_formset.deleted_forms
         if removed_credits:

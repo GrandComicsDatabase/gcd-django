@@ -234,11 +234,6 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['signed_as'] and not cd['is_signed']:
             cd['signed_as'] = ""
 
-        if cd['signed_as'] and cd['signed_as'] == cd['creator'].name:
-            raise forms.ValidationError(
-              ['Name entered as "signed as" is identicial to creator name.']
-            )
-
 
 StoryRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryCreditRevision, form=StoryCreditRevisionForm,
