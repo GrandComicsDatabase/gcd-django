@@ -136,13 +136,15 @@ class CreatorNameDetail(GcdData):
         if hasattr(credit, 'is_signed') and (
           credit.is_signed and not credit.signed_as) and (
           credit.is_signed and not credit.signature) and (
-          credit.is_credited and not credit.credited_as):
+          credit.is_credited and not credit.credited_as) and (
+          credit.is_credited and credit.creator.is_official_name):
             credit_attribute = 'credited, signed'
         elif hasattr(credit, 'is_signed') and (
           credit.is_signed and not credit.signed_as) and (
           credit.is_signed and not credit.signature):
             credit_attribute = 'signed'
-        elif credit.is_credited and not credit.credited_as:
+        elif (credit.is_credited and not credit.credited_as and
+              credit.creator.is_official_name):
             credit_attribute = 'credited'
         else:
             credit_attribute = ''
@@ -158,6 +160,10 @@ class CreatorNameDetail(GcdData):
             if credit_attribute:
                 credit_text += ' (%s)' % credit_attribute
             if as_name:
+                if credit.is_credited and not credit.credited_as:
+                    credit_attribute = 'credited '
+                else:
+                    credit_attribute = ''
                 credit_text += ' (%sas <a href="%s">%s</a>)' % \
                                (credit_attribute,
                                 as_name.get_absolute_url(),
@@ -173,7 +179,8 @@ class CreatorNameDetail(GcdData):
 
         if credit.credited_as and credit.signed_as and \
            (credit.credited_as == credit.signed_as):
-            credit_text += ' (credited, signed as %s)' % esc(credit.credited_as)
+            credit_text += ' (credited, signed as %s)' % \
+                           esc(credit.credited_as)
         else:
             if credit.credited_as:
                 credit_text += ' (credited as %s)' % esc(credit.credited_as)
@@ -191,15 +198,10 @@ class CreatorNameDetail(GcdData):
                 kwargs={'creator_id': self.creator.id})
 
     def __str__(self):
-        if self.creator.birth_date.year:
-            year = '(b. %s)' % self.creator.birth_date.year
-        else:
-            year = ''
         if self.is_official_name:
-            return '%s %s' % (str(self.name), year)
+            return '%s' % (str(self.creator))
         else:
-            return '%s %s - %s' % (str(self.creator), year,
-                                   str(self.name))
+            return '%s - %s' % (str(self.creator), str(self.name))
 
 
 class RelationType(models.Model):
@@ -438,6 +440,7 @@ class CreatorSignature(GcdData):
     def __str__(self):
         return '%s signature %s' % (str(self.creator),
                                     self.name)
+
 
 class CreatorRelation(GcdData):
     """
@@ -838,6 +841,7 @@ class CreatorTable(tables.Table):
         if record.letters:
             role += 'letters (%d); ' % record.letters
         return role[:-2]
+
 
 class FeatureCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):

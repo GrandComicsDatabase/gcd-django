@@ -593,7 +593,7 @@ def update_profile(request, user_id=None):
     indexer.collapse_compare_view = form.cleaned_data['collapse_compare_view']
     indexer.show_wiki_links = form.cleaned_data['show_wiki_links']
     indexer.country = form.cleaned_data['country']
-    indexer.languages = form.cleaned_data['languages']
+    indexer.languages.set(form.cleaned_data['languages'])
     indexer.interests = form.cleaned_data['interests']
     indexer.from_where = form.cleaned_data['from_where']
     indexer.seen_privacy_policy = form.cleaned_data['seen_privacy_policy']
