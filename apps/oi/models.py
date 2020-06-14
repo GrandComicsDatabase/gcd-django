@@ -5132,8 +5132,8 @@ class StoryRevision(Revision):
         for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',
                             'editing'):
             credit = getattr(self, credit_type)
-            if credit and credit != '?' and credit not in ['various',
-                                                           'typeset']:
+            if credit and not (credit.startswith('?') and ';' not in credit)\
+               and credit not in ['various', 'typeset']:
                 return True
         return False
 
