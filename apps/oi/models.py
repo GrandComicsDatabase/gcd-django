@@ -4918,7 +4918,10 @@ class StoryRevision(Revision):
         revision.save()
         for credit in credits:
             StoryCreditRevision.clone(credit, revision.changeset,
-                                      fork=True, story_revision=revision)
+                                      fork=True, story_revision=revision,
+                                      exclude={'is_credited', 'credited_as',
+                                               'is_signed', 'signed_as',
+                                               'signature', 'credit_name'})
         return revision
 
     @classmethod
