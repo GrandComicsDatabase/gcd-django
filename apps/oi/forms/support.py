@@ -332,9 +332,10 @@ SERIES_HELP_TEXTS = {
         'two color, duotone, and black and white. '
         'This may change over the life of the series.',
     'dimensions':
-        'The size of the comic, such as standard Golden Age US'
-        '(or Silver or Modern), A4, A5, tabloid, digest, 8.5in x 11in, '
-        '21cm x 28cm.  This may change over the life of the series.',
+        'The size of the comic, such as standard Golden Age US '
+        '(or Silver or Modern), A4, A5, tabloid, digest, width x height: '
+        '8.5 in. x 11 in., 21 cm x 28 cm. This may change over the life of '
+        'the series.',
     'paper_stock':
         'Type of paper used for the interior pages, such as '
         'newsprint, glossy, bond, Mando, Baxter, etc.  Information '
