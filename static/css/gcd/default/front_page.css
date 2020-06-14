@@ -66,7 +66,7 @@ body {
 #right_column {
     float:left;
     float:right;            /* This overrides the float:left above */
-    width:13em;             /* Width of right column content (right column width minus left and right padding)*/
+    width:14em;             /* Width of right column content (right column width minus left and right padding)*/
     margin-right:3em;       /* Width of right column right-hand padding + left column left and right padding*/
     position:relative;
     left:50%;
@@ -209,7 +209,7 @@ body {
 
 .front_page_right_box {
     clear: right;
-    width: 13em;
+    width: 14em;
     margin-bottom: 1em;
 }
 
