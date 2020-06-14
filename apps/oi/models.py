@@ -3431,6 +3431,7 @@ class SeriesRevision(Revision):
             'imprint': None,
             'has_barcode': True,
             'has_indicia_frequency': False,
+            'has_indicia_printer': False,
             'has_isbn': True,
             'has_issue_title': False,
             'has_volume': False,
