@@ -217,7 +217,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
                                        attrs={'data-html': True,
                                               'style': 'min-width: 60em'},
                                        forward=['creator']),
-      help_text='Select an existing signature for a creator.',
+      help_text='Select an existing signature for the creator.',
       required=False,
     )
 
@@ -276,7 +276,15 @@ class StoryRevisionForm(forms.ModelForm):
                 '<br><br> For sequence types with non-optional fields the '
                 'corresponding no-field is to be checked in case the type '
                 'of credit does not apply.<br>If a credit field is not '
-                'required for a sequence type it can be left unset or blank.'
+                'required for a sequence type it can be left unset or blank.',
+            'reprint_notes':
+                'Textual reprint notes can be used for comic material that '
+                'is not in our database, either because the issue is not '
+                'indexed at all or because it cannot such as newspaper strips.'
+                '<br>For newspaper strips the format is "from &lt;comic strip'
+                '&gt; (&lt;syndicate name&gt;) &lt;date&gt;", example:<br> '
+                'from Calvin and Hobbes daily (Universal Press Syndicate) '
+                '1985-11-18 - 1988-10-01.'
         }
 
     def __init__(self, *args, **kwargs):
