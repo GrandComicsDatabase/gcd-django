@@ -53,9 +53,9 @@
   {% endif %}
             <p>
           <ul style="columns: 2;">
-            <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue Checklist (via credit search for name "{{ creator }}")</a></li>
+            <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue Checklist (via credit search for name "{{ creator.gcd_official_name }}")</a></li>
             <li><a href='{% url "checklist_by_id" creator_id=creator.id %}'>Issue Checklist (via linked credit records)</a></li>
-            <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD (via search for "{{ creator }}")</a></li>
+            <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD (via search for "{{ creator.gcd_official_name }}")</a></li>
 
   {% if creator.whos_who %}
             <li><a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a></li>
