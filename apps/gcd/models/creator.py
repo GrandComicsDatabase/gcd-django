@@ -162,7 +162,7 @@ class CreatorNameDetail(GcdData):
                                (credit_attribute,
                                 as_name.get_absolute_url(),
                                 esc(as_name.name))
-            if credit.signature:
+            if hasattr(credit, 'signature') and credit.signature:
                 credit_text += ' (signed as <a href="%s">%s</a>)' % \
                                (credit.signature.get_absolute_url(),
                                 esc(credit.signature.name))
