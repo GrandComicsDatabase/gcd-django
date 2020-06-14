@@ -218,6 +218,8 @@ def checklist_by_id(request, creator_id, country=None, language=None):
         issues = issues.filter(series__language=language)
 
     context = {
+        'result_disclaimer': 'Linked credits are currently being migrated '
+                             'and are most likely incomplete.',
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': 'Issue Checklist for Creator %s' % (creator)
@@ -977,6 +979,8 @@ def series_creatorlist(request, series_id):
       letters=letters)
 
     context = {
+        'result_disclaimer': 'Linked credits are currently being migrated '
+                             'and are most likely incomplete.',
         'item_name': 'creator',
         'plural_suffix': 's',
         'heading': 'Creators Working on %s' % (series)
@@ -1665,6 +1669,8 @@ def feature_creatorlist(request, feature_id):
       letters=letters)
 
     context = {
+        'result_disclaimer': 'Linked credits are currently being migrated '
+                             'and are most likely incomplete.',
         'item_name': 'creator',
         'plural_suffix': 's',
         'heading': 'Creators Working on Feature %s' % (feature)
