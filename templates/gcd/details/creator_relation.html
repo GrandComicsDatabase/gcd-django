@@ -16,7 +16,7 @@
   <dd> {{ creator_relation.relation_type }}
   <dt> Creator:
   <dd> <a href="{{ creator_relation.to_creator.get_absolute_url }}">{{ creator_relation.to_creator }}</a>
-  {% if creator_relation.creator_name %}
+  {% if creator_relation.creator_name.count %}
     <dt> Using Creator Name{{ creator_relation.creator_name.count|pluralize }}:
     <dd>
     {% for creator_name in creator_relation.creator_name.all %}
@@ -24,7 +24,7 @@
     {% endfor %}
   {% endif %}
   {% if creator_relation.notes %}
-    <dt>Notes
+    <dt>Notes:
     <dd>{{ creator_relation.notes }}
   {% endif %}
   {% with creator_relation.data_source.all as data_sources %}
