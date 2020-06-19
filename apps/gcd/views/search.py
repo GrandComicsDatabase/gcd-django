@@ -1434,28 +1434,28 @@ def search_issues(data, op, stories_q=None):
     if data['indicia_frequency']:
         q_objs.append(Q(**{ '%sindicia_frequency__%s' % (prefix, op): \
                              data['indicia_frequency'] }) &\
-                      Q(**{ '%sseries__has_indicia_frequency' % prefix: True }))
+                      Q(**{'%sseries__has_indicia_frequency' % prefix: True }))
     if data['rating']:
-        q_objs.append(Q(**{ '%srating__%s' % (prefix, op): data['rating'] }) &\
-                             Q(**{ '%sseries__has_rating' % prefix: True }))
+        q_objs.append(Q(**{'%srating__%s' % (prefix, op): data['rating']}) &
+                      Q(**{ '%sseries__has_rating' % prefix: True}))
     if data['issue_notes']:
-        q_objs.append(Q(**{ '%snotes__%s' % (prefix, op): data['issue_notes'] }))
+        q_objs.append(Q(**{'%snotes__%s' % (prefix, op): data['issue_notes']}))
 
     if data['issue_reprinted'] is not None:
-        if data['issue_reprinted'] == True:
-            q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: False }) | \
-                   Q(**{ '%sfrom_issue_reprints__isnull' % prefix: False }))
+        if data['issue_reprinted'] is True:
+            q_objs.append(Q(**{'%sfrom_reprints__isnull' % prefix: False}) |
+                          Q(**{'%sfrom_issue_reprints__isnull' % prefix: False}))
         else:
-            q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
-                   Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
+            q_objs.append(Q(**{'%sto_reprints__isnull' % prefix: False}) |
+                          Q(**{'%sto_issue_reprints__isnull' % prefix: False}))
 
     if 'in_collection' in data and data['in_collection']:
         if data['in_selected_collection']:
             q_objs.append(Q(**{'%scollectionitem__collections__in' % prefix:
-                                data['in_collection']}))
+                               data['in_collection']}))
         else:
             q_objs.append(~Q(**{'%scollectionitem__collections__in' % prefix:
-                               data['in_collection']}))
+                                data['in_collection']}))
 
     try:
         if data['issue_pages'] is not None and data['issue_pages'] != '':
@@ -1463,17 +1463,17 @@ def search_issues(data, op, stories_q=None):
             if range_match:
                 page_start = Decimal(range_match.group('begin'))
                 page_end = Decimal(range_match.group('end'))
-                q_objs.append(Q(**{ '%spage_count__range' % prefix:
-                                    (page_start, page_end) }))
+                q_objs.append(Q(**{'%spage_count__range' % prefix:
+                                   (page_start, page_end)}))
             else:
-                q_objs.append(Q(**{ '%spage_count' % prefix:
-                                    Decimal(data['issue_pages']) }))
+                q_objs.append(Q(**{'%spage_count' % prefix:
+                                   Decimal(data['issue_pages'])}))
     except ValueError:
         raise SearchError("Page count must be a decimal number or a pair of "
-                            "decimal numbers separated by a hyphen.")
+                          "decimal numbers separated by a hyphen.")
     if data['issue_pages_uncertain'] is not None:
-        q_objs.append(Q(**{ '%spage_count_uncertain' % \
-                            prefix: data['issue_pages_uncertain'] }))
+        q_objs.append(Q(**{'%spage_count_uncertain' %
+                           prefix: data['issue_pages_uncertain']}))
 
     # issue_editing is handled in search_stories since it is a credit
     # need to account for that here
@@ -1507,25 +1507,25 @@ def handle_numbers(field, data, prefix):
             # when they *are* numbers because the database thinks
             # they are strings.
             num_range = list(range(int(range_match.group('begin')),
-                              int(range_match.group('end')) + 1))
+                                   int(range_match.group('end')) + 1))
             nums_in.extend(num_range)
         else:
             nums_in.append(esc)
 
     if nums_in:
         if field == 'issues':
-            q_or_only.append(Q(**{ '%snumber__in' % prefix: nums_in }))
+            q_or_only.append(Q(**{'%snumber__in' % prefix: nums_in}))
         else:
-            q_or_only.append(Q(**{ '%svolume__in' % prefix: nums_in }) &\
-                             Q(**{ '%sseries__has_volume' % prefix: True }))
+            q_or_only.append(Q(**{'%svolume__in' % prefix: nums_in}) &
+                             Q(**{'%sseries__has_volume' % prefix: True}))
 
     # add verbatim search when nothing processed (e.g. 100-1) or actual range
     if len(nums_in) != 1:
         if field == 'issues':
-            q_or_only.append(Q(**{ '%snumber' % prefix: data[field] }))
+            q_or_only.append(Q(**{'%snumber' % prefix: data[field]}))
         else:
-            q_or_only.append(Q(**{ '%svolume' % prefix: data[field] }) &\
-                                Q(**{ '%sseries__has_volume' % prefix: True }))
+            q_or_only.append(Q(**{'%svolume' % prefix: data[field]}) &
+                             Q(**{'%sseries__has_volume' % prefix: True}))
 
     return reduce(lambda x, y: x | y, q_or_only)
 
@@ -1550,63 +1550,70 @@ def search_stories(data, op):
                                '%scredits__credit_type__id' % (prefix):
                                CREDIT_TYPES[field]}))
 
-    for field in ('feature', 'title', 'first_line', 'job_number', 'characters',
+    for field in ('title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
         if data[field]:
-            q_and_only.append(Q(**{ '%s%s__%s' % (prefix, field, op):
-                                data[field] }))
+            q_and_only.append(Q(**{'%s%s__%s' % (prefix, field, op):
+                                data[field]}))
+
+    if data['feature']:
+        q_and_only.append(Q(**{'%s%s__%s' % (prefix,
+                                             'feature_object__name', op):
+                          data['feature']}) |
+                          Q(**{'%s%s__%s' % (prefix, 'feature', op):
+                            data['feature']}))
 
     if data['type']:
-        q_and_only.append(Q(**{ '%stype__in' % prefix: data['type'] }))
+        q_and_only.append(Q(**{'%stype__in' % prefix: data['type']}))
 
     if data['genre']:
         for genre in data['genre']:
-            q_and_only.append(Q(**{ '%sgenre__icontains' % prefix: genre }))
+            q_and_only.append(Q(**{'%sgenre__icontains' % prefix: genre}))
 
     if data['story_editing']:
-        q_objs.append(Q(**{ '%sediting__%s' % (prefix, op):
-                            data['story_editing'] }))
+        q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
+                           data['story_editing']}))
 
     if data['story_reprinted'] != '':
         if data['story_reprinted'] == 'from':
-            q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: False }) | \
-                   Q(**{ '%sfrom_issue_reprints__isnull' % prefix: False }))
+            q_objs.append(Q(**{'%sfrom_reprints__isnull' % prefix: False}) |
+                          Q(**{'%sfrom_issue_reprints__isnull' % prefix: False}))
         elif data['story_reprinted'] == 'in':
-            q_objs.append(Q(**{ '%sto_reprints__isnull' % prefix: False }) | \
-                   Q(**{ '%sto_issue_reprints__isnull' % prefix: False }))
+            q_objs.append(Q(**{'%sto_reprints__isnull' % prefix: False}) |
+                          Q(**{'%sto_issue_reprints__isnull' % prefix: False}))
         elif data['story_reprinted'] == 'not':
-            q_objs.append(Q(**{ '%sfrom_reprints__isnull' % prefix: True }) & \
-                   Q(**{ '%sfrom_issue_reprints__isnull' % prefix: True }))
+            q_objs.append(Q(**{'%sfrom_reprints__isnull' % prefix: True}) &
+                          Q(**{'%sfrom_issue_reprints__isnull' % prefix: True}))
     try:
         if data['pages'] is not None and data['pages'] != '':
             range_match = match(PAGE_RANGE_REGEXP, data['pages'])
             if range_match:
                 page_start = Decimal(range_match.group('begin'))
                 page_end = Decimal(range_match.group('end'))
-                q_and_only.append(Q(**{ '%spage_count__range' % prefix:
-                                        (page_start, page_end) }))
+                q_and_only.append(Q(**{'%spage_count__range' % prefix:
+                                       (page_start, page_end)}))
             else:
-                q_and_only.append(Q(**{ '%spage_count' % prefix:
-                                        Decimal(data['pages']) }))
+                q_and_only.append(Q(**{'%spage_count' % prefix:
+                                       Decimal(data['pages'])}))
     except ValueError:
         raise SearchError("Page count must be a decimal number or a pair of "
-                            "decimal numbers separated by a hyphen.")
+                          "decimal numbers separated by a hyphen.")
 
     if data['pages_uncertain'] is not None:
-        q_objs.append(Q(**{ '%spage_count_uncertain' % \
-                            prefix: data['pages_uncertain'] }))
+        q_objs.append(Q(**{'%spage_count_uncertain' %
+                           prefix: data['pages_uncertain']}))
 
     if q_and_only or q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
 
     # since issue_editing is credit use it here to allow correct 'OR' behavior
     if data['issue_editing']:
-        if target == 'sequence': # no prefix in this case
-            q_objs.append(Q(**{ 'issue__editing__%s' % op:
-                                data['issue_editing'] }))
-        else: # cut off 'story__'
-            q_objs.append(Q(**{ '%sediting__%s' % (prefix[:-7], op):
-                                data['issue_editing'] }))
+        if target == 'sequence':  # no prefix in this case
+            q_objs.append(Q(**{'issue__editing__%s' % op:
+                               data['issue_editing']}))
+        else:  # cut off 'story__'
+            q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7], op):
+                               data['issue_editing']}))
 
     return compute_qobj(data, q_and_only, q_objs)
 
@@ -1637,7 +1644,8 @@ def compute_prefix(target, current):
     elif current == 'brand_group':
         if target == 'indicia_publisher':
             raise SearchError('Cannot search for Indicia Publishers by '
-              'Publisher Brand attributes, as they are not directly related')
+                              'Publisher Brand attributes, as they are not '
+                              'directly related')
         if target == 'publisher':
             return 'brandgroup__'
         if target == 'issue':
@@ -1647,7 +1655,8 @@ def compute_prefix(target, current):
     elif current == 'brand_emblem':
         if target == 'indicia_publisher':
             raise SearchError('Cannot search for Indicia Publishers by '
-              'Publisher Brand attributes, as they are not directly related')
+                              'Publisher Brand attributes, as they are not '
+                              'directly related')
         if target == 'publisher':
             return 'brandgroup__brand__'
         if target == 'issue':
@@ -1657,7 +1666,8 @@ def compute_prefix(target, current):
     elif current == 'indicia_publisher':
         if target in ('brand_group', 'brand_emblem'):
             raise SearchError('Cannot search for Publisher Brands by '
-              'Indicia Publisher attributes, as they are not directly related')
+                              'Indicia Publisher attributes, as they are '
+                              'not directly related')
         if target == 'publisher':
             return 'indiciapublisher__'
         if target == 'issue':
@@ -1817,4 +1827,3 @@ def compute_order(data):
             terms.append('sort_code')
 
     return terms
-
