@@ -4897,6 +4897,12 @@ class StoryRevision(Revision):
         return frozenset({('issue', 'series', 'country',),
                           ('issue', 'series', 'language',)})
 
+    def _pre_delete(self, changes):
+        # sigh, some people add story_credits to be deleted stories
+        for revision in self.story_credit_revisions.all():
+            if revision.added:
+                revision.delete()
+
     @classmethod
     def copied_revision(cls, story, changeset, issue):
         """
