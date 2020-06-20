@@ -4528,11 +4528,18 @@ def show_approved(request):
 
 @login_required
 def show_commented(request):
-    comments = ChangesetComment.objects.exclude(text__in=['', 'Editing'])\
-                                       .filter(changeset__migrated=False,
-                                               commenter=request.user)
+    commented = ChangesetComment.objects.exclude(text__in=['', 'Editing'])\
+                                        .filter(changeset__migrated=False,
+                                                commenter=request.user)
 
-    changes = Changeset.objects.filter(comments__in=comments)\
+    deny = ChangesetComment.objects.exclude(text='')\
+                                   .filter(changeset__indexer=request.user,
+                                           commenter=F('changeset__approver'))
+
+    comments = list(commented.values_list('id', flat=True)) + \
+               list(deny.values_list('id', flat=True))
+
+    changes = Changeset.objects.filter(comments__id__in=comments)\
                                .annotate(last_remark=Max('comments__created'))\
                                .distinct().order_by('-last_remark')\
                                .select_related('approver__indexer',
