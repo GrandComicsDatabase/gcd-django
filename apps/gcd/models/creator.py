@@ -233,7 +233,7 @@ class CreatorManager(models.Manager):
 class Creator(GcdData):
     class Meta:
         app_label = 'gcd'
-        ordering = ('gcd_official_name', 'created',)
+        ordering = ('sort_name', 'created',)
         verbose_name_plural = 'Creators'
 
     objects = CreatorManager()
