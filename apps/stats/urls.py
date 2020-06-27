@@ -7,4 +7,6 @@ from apps.stats import views
 
 
 app_name = 'stats'
-urlpatterns = [url(r'^download/', views.download, {}, name='download'),]
+urlpatterns = [url(r'^download/', views.download, {}, name='download'),
+               url(r'^countries/$', views.countries_in_use),
+]
