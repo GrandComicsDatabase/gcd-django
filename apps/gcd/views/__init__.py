@@ -7,6 +7,8 @@ This file contains the front page view, plus utilities for working with
 requests, responses and errors.
 """
 
+from datetime import datetime
+
 from django.conf import settings
 from django.shortcuts import render
 
@@ -15,6 +17,7 @@ from .alpha_pagination import AlphaPaginator
 
 from apps.stddata.models import Language
 from apps.stats.models import CountStats
+from apps.gcd.models import Creator
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -51,10 +54,21 @@ def index(request):
                      'fb_feed'):
         template_vars[template] = '%s/%s.html' % (base_path, template)
 
+    today = datetime.today()
+    day = '%0.2d' % (today).day
+    month = '%0.2d' % (today).month
+    creators = Creator.objects.filter(birth_date__day__lte=day,
+                                      birth_date__month__lte=month)\
+                              .exclude(birth_date__day='')\
+                              .exclude(birth_date__month__lte='')\
+                              .exclude(bio='').order_by('-birth_date__month',
+                                                        '-birth_date__day')
+
     template_vars.update({
         'stats': stats,
         'language': language,
         'stats_for_language': stats_for_language,
+        'creators': creators[:10]
     })
     return render(request, 'gcd/index.html', template_vars)
 
