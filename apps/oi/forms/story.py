@@ -226,6 +226,11 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['credited_as'] and not cd['is_credited']:
             cd['credited_as'] = ""
 
+        if cd['credited_as'] and 'creator' not in cd:
+            raise forms.ValidationError(
+              ['Name entered in "credited as" without selecting creator.']
+            )
+
         if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
             raise forms.ValidationError(
               ['Name entered as "credited as" is identicial to creator name.']
