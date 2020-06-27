@@ -4,8 +4,6 @@
 
 import re
 from urllib.parse import urlencode, quote
-from urllib.request import urlopen
-from urllib.error import HTTPError
 from datetime import date, datetime, time, timedelta
 from calendar import monthrange
 from operator import attrgetter
@@ -16,7 +14,7 @@ from django.conf import settings
 import django.urls as urlresolvers
 from django.shortcuts import get_object_or_404, \
                              render
-from django.http import HttpResponseRedirect, Http404, HttpResponse
+from django.http import HttpResponseRedirect, Http404
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
@@ -27,7 +25,6 @@ from apps.indexer.views import ViewTerminationError
 from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
 
-from apps.indexer.models import Indexer
 from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             IndiciaPublisher, Brand, BrandGroup, Cover,\
                             SeriesBond, Award, Creator, CreatorMembership,\
@@ -218,8 +215,9 @@ def checklist_by_id(request, creator_id, country=None, language=None):
         issues = issues.filter(series__language=language)
 
     context = {
-        'result_disclaimer': 'Linked credits are currently being migrated '
-                             'and are most likely incomplete.',
+        'result_disclaimer': 'Text credits are currently being migrated to '
+                             'links. Therefore not all credits in our '
+                             'database are shown here.',
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': 'Issue Checklist for Creator %s' % (creator)
@@ -979,8 +977,9 @@ def series_creatorlist(request, series_id):
       letters=letters)
 
     context = {
-        'result_disclaimer': 'Linked credits are currently being migrated '
-                             'and are most likely incomplete.',
+        'result_disclaimer': 'Text credits are currently being migrated to '
+                             'links. Therefore not all credits in our '
+                             'database are shown here.',
         'item_name': 'creator',
         'plural_suffix': 's',
         'heading': 'Creators Working on %s' % (series)
@@ -1669,8 +1668,9 @@ def feature_creatorlist(request, feature_id):
       letters=letters)
 
     context = {
-        'result_disclaimer': 'Linked credits are currently being migrated '
-                             'and are most likely incomplete.',
+        'result_disclaimer': 'Text credits are currently being migrated to '
+                             'links. Therefore not all credits in our '
+                             'database are shown here.',
         'item_name': 'creator',
         'plural_suffix': 's',
         'heading': 'Creators Working on Feature %s' % (feature)
@@ -1959,77 +1959,33 @@ def show_issue(request, issue, preview=False):
        })
 
 
-# this should later be moved to admin.py or something like that
-def countries_in_use(request):
-    """
-    Show list of countries with name and flag.
-    Main use is to find missing names and flags.
-    """
+def daily_creators(request):
+    today = datetime.today()
+    day = '%0.2d' % (today).day
+    month = '%0.2d' % (today).month
+    creators_today = Creator.objects.filter(birth_date__day=day,
+                                            birth_date__month=month,
+                                            deleted=False)
+    yesterday = datetime.today() - timedelta(1)
+    day = '%0.2d' % (yesterday).day
+    month = '%0.2d' % (yesterday).month
+    creators_yesterday = Creator.objects.filter(birth_date__day=day,
+                                                birth_date__month=month,
+                                                deleted=False)
+    tomorrow = datetime.today() + timedelta(1)
+    day = '%0.2d' % (tomorrow).day
+    month = '%0.2d' % (tomorrow).month
+    creators_tomorrow = Creator.objects.filter(birth_date__day=day,
+                                               birth_date__month=month,
+                                               deleted=False)
 
-    if request.user.is_authenticated and \
-       request.user.groups.filter(name='admin'):
-        countries_from_series = set(
-                Series.objects.exclude(deleted=True).
-                values_list('country', flat=True))
-        countries_from_indexers = set(
-                Indexer.objects.filter(user__is_active=True).
-                values_list('country', flat=True))
-        countries_from_publishers = set(
-                Publisher.objects.exclude(deleted=True).
-                values_list('country', flat=True))
-        countries_from_creators = set(
-                country for tuple in
-                Creator.objects.exclude(deleted=True).
-                values_list('birth_country', 'death_country')
-                for country in tuple)
-        used_ids = list(countries_from_indexers |
-                        countries_from_series |
-                        countries_from_publishers |
-                        countries_from_creators)
-        used_countries = Country.objects.filter(id__in=used_ids)
-
-        return render(request, 'gcd/admin/countries.html',
-                      {'countries': used_countries})
-    else:
-        return render(request, 'indexer/error.html',
-                      {'error_text':
-                       'You are not allowed to access this page.'})
-
-
-def agenda(request, language):
-    """
-    TODO: Why is this called agenda?  It sounds like a voting app thing but isn't.
-    """
-    try:
-        f = urlopen("https://www.google.com/calendar/embed?src=comics.org_v62prlv9"
-          "dp79hbjt4du2unqmks%%40group.calendar.google.com&showTitle=0&showNav=0&"
-          "showDate=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0&mode=AGENDA"
-          "&height=600&wkst=1&bgcolor=%%23FFFFFF&color=%%238C500B"
-          "&ctz=GMT&hl=%s" % language)
-    except HTTPError:
-        raise Http404
-
-    a = f.read().decode(encoding='UTF-8')
-    # two possibilites here
-    # a) use an absolute url to the calendar, but than not all works,
-    #    i.e. images don't show
-    # b) replace by our own copy of the javascript with some edits,
-    #    used to work, but not currently. If we want to use that again,
-    #    need to replace the google link between js_pos and js_pos_end
-    #    with one pointing to our own edited version, one per language
-    # js_pos = a.find('<script type="text/javascript" src="') + \
-    #         len('<script type="text/javascript" src="')
-    # js_pos_end = a[js_pos:].find('"></script>') + js_pos
-    # a = a[:js_pos] + 'http://www.google.com/calendar/' + a[js_pos:]
-
-    css_text = '<link type="text/css" rel="stylesheet" href="'
-    css_pos = a.find(css_text) + len(css_text)
-    css_pos_end = a[css_pos:].find('">') + css_pos
-    a = a[:css_pos] + settings.STATIC_URL + \
-      'calendar/css/c9ff6efaf72bf95e3e2b53938d3fbacaembedcompiled_fastui.css' \
-      + a[css_pos_end:]
-    javascript_text = '<script type="text/javascript" src="'
-    javascript_pos = a.find(javascript_text) + len(javascript_text)
-    a = a[:javascript_pos] + '//www.google.com' + a[javascript_pos:]
-
-    return HttpResponse(a.encode(encoding='UTF-8'))
+    return render(
+      request,
+      'gcd/bits/daily_creators.html',
+      {'creators_today': creators_today,
+       'creators_yesterday': creators_yesterday,
+       'creators_tomorrow': creators_tomorrow,
+       'today': today,
+       'yesterday': yesterday,
+       'tomorrow': tomorrow
+       })

@@ -7,22 +7,14 @@ This file contains the front page view, plus utilities for working with
 requests, responses and errors.
 """
 
-import hashlib
-from random import random
-
 from django.conf import settings
-import django.urls as urlresolvers
-from django.http import HttpResponseRedirect
-from django.template import RequestContext
 from django.shortcuts import render
-from django.utils.safestring import mark_safe
 
 from .pagination import DiggPaginator
 from .alpha_pagination import AlphaPaginator
 
 from apps.stddata.models import Language
 from apps.stats.models import CountStats
-from apps.indexer.models import Error
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -63,7 +55,6 @@ def index(request):
         'stats': stats,
         'language': language,
         'stats_for_language': stats_for_language,
-        'CALENDAR': settings.CALENDAR,
     })
     return render(request, 'gcd/index.html', template_vars)
 

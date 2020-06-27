@@ -372,18 +372,14 @@ urlpatterns = [
       gcd_views.search.story_by_reprint),
 
     # calendar
-    url(r'^agenda/(?P<language>.+)/$',gcd_views.details.agenda),
-    url(r'^agenda/',gcd_views.details.agenda, {'language' : 'en'}),
     url(r'^calendar/$',
      bv.TemplateView.as_view(template_name='gcd/status/calendar.html')),
+    url(r'daily_creators/$', gcd_views.details.daily_creators),
 
     # GCD comics history award
     url(r'^gcd_history_award/$',
       bv.TemplateView.as_view(template_name='gcd/gcd_history_award.html'),
       name='gcd_history_award'),
-
-    # admin tools
-    url(r'^countries/$', gcd_views.details.countries_in_use),
 
     # redirects of old lasso pages
     url(r'^publisher_details.lasso/$', gcd_views.redirect.publisher),
