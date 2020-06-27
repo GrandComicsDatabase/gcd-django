@@ -62,7 +62,8 @@ def index(request):
                               .exclude(birth_date__day='')\
                               .exclude(birth_date__month__lte='')\
                               .exclude(bio='').order_by('-birth_date__month',
-                                                        '-birth_date__day')
+                                                        '-birth_date__day',
+                                                        'sort_name')
 
     template_vars.update({
         'stats': stats,
