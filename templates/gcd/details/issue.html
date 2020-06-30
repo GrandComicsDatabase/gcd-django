@@ -39,37 +39,42 @@
               <div class="issue_notes">
                 <div class="issue_notes_border">
                   <h3 class="notes_header"> Issue Notes </h3>
-                  <p>
+                  <div class="issue_level_content">
+  {% if issue.notes %}
+    {{ issue.notes|urlizetrunc:75|linebreaksbr }}
+    {% if issue.variant_of or issue.other_variants %}
+    <br>
+    {% endif %}
+  {% endif %}
   {% if issue.variant_of %}
-This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ issue.variant_of.full_name }}</a>.
+    This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ issue.variant_of.full_name }}</a>.
   {% endif %}
   {% if issue.other_variants %}
     {% if issue.variant_of.variant_set.count %}
-There exist further variants.
+There exist further variants:
     {% else %}
-This issue has variants.
+This issue has variants:
     {% endif %}
-                  </p>
+                  <dl class="contents">
                   <ul>
     {% for variant in issue.other_variants %}
                     <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
     {% endfor %}
-                  </ul><p>
+                  </ul>
+                  </dl>
   {% else %}
-    {% if issue.variant_of %}
-                  </p><p>
-    {% endif %}
   {% endif %}
-            {{ issue.notes|urlizetrunc:75|linebreaksbr }}
             {{ issue|show_credit:'keywords' }}
+  {% if issue.active_awards.count %}
                   <dl class="contents">
             {{ issue|show_credit:'show_awards' }}
                   </dl>
+  {% endif %}
   {% if issue.has_reprints %}
                   <dl class="contents">
             {{ issue|show_reprints_for_issue }}
                   </dl>
-  {% endif %}
+  {% endif %}     </div>
                 </div>
               </div> <!-- issue.notes -->
 {% endif %} <!-- issue.notes -->
