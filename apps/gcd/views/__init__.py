@@ -58,7 +58,8 @@ def index(request):
     day = '%0.2d' % (today).day
     month = '%0.2d' % (today).month
     creators = Creator.objects.filter(birth_date__day__lte=day,
-                                      birth_date__month__lte=month)\
+                                      birth_date__month__lte=month,
+                                      deleted=False)\
                               .exclude(birth_date__day='')\
                               .exclude(birth_date__month__lte='')\
                               .exclude(bio='').order_by('-birth_date__month',

@@ -1627,6 +1627,9 @@ def feature_issuelist_by_id(request, feature_id):
                           .select_related('series__publisher')
 
     context = {
+        'result_disclaimer': 'Text credits are currently being migrated to '
+                             'links. Therefore not all issues in our '
+                             'database for the feature are shown here.',
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': 'Issue List for Feature %s' % (feature)
