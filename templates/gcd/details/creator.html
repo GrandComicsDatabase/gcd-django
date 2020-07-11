@@ -211,7 +211,7 @@
       {% if award.award %}
         <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
       {% endif %}
-            <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a> -
+            <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a><br>
             <a href="{{ award.recipient.get_absolute_url }}">{{ award.recipient }}</a>
 	    </li>
     {% endfor %}
@@ -229,7 +229,8 @@
       {% if award.award %}
         <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
       {% endif %}
-            <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a>
+            <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a><br>
+            <a href="{{ award.recipient.get_absolute_url }}">{{ award.recipient }}</a>
 	    </li>
     {% endfor %}
           </ol>
