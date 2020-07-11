@@ -360,6 +360,7 @@ class Creator(GcdData):
         return self.awards.exclude(deleted=True)
 
     def active_awards_for_issue(self):
+        from .issue import Issue
         issues = Issue.objects.filter(story__credits__creator__creator=creator,
                                       awards__isnull=False).distinct()
         content_type = ContentType.objects.filter(model='Issue')
@@ -368,6 +369,7 @@ class Creator(GcdData):
         return awards
 
     def active_awards_for_stories(self):
+        from .story import Story
         stories = Story.objects.filter(credits__creator__creator=creator,
                                        awards__isnull=False).distinct()
         content_type = ContentType.objects.filter(model='Story')
