@@ -359,7 +359,7 @@ class Creator(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
-    def active_awards_for_issue(self):
+    def active_awards_for_issues(self):
         from .issue import Issue
         issues = Issue.objects.filter(story__credits__creator__creator=self,
                                       awards__isnull=False).distinct()
