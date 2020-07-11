@@ -359,6 +359,22 @@ class Creator(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
+    def active_awards_for_issue(self):
+        issues = Issue.objects.filter(story__credits__creator__creator=creator,
+                                      awards__isnull=False).distinct()
+        content_type = ContentType.objects.filter(model='Issue')
+        awards = ReceivedAward.objects.filter(content_type=content_type,
+                                            object_id__in=issues)
+        return awards
+
+    def active_awards_for_stories(self):
+        stories = Story.objects.filter(credits__creator__creator=creator,
+                                       awards__isnull=False).distinct()
+        content_type = ContentType.objects.filter(model='Story')
+        awards = ReceivedAward.objects.filter(content_type=content_type,
+                                              object_id__in=stories)
+        return awards
+
     def active_degrees(self):
         return self.degree_set.exclude(deleted=True)
 

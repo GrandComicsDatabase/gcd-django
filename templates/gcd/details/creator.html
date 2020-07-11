@@ -199,6 +199,40 @@
     {% endfor %}
           </ol>
   {% endif %}
+  {% if creator.active_awards_for_issues %}
+          <hr>
+          <h3>Awards for Issues:</h3>
+          <ol style="columns: 2;">
+    {% for award in creator.active_awards_for_issues %}
+          <li style="page-break-inside: avoid;">
+      {% if award.award_year %}
+        {{ award.award_year }}:
+      {% endif %}
+      {% if award.award %}
+        <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
+      {% endif %}
+            <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a>
+	    </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
+  {% if creator.active_awards_for_stories %}
+          <hr>
+          <h3>Awards for Stories:</h3>
+          <ol style="columns: 2;">
+    {% for award in creator.active_awards_for_stories %}
+          <li style="page-break-inside: avoid;">
+      {% if award.award_year %}
+        {{ award.award_year }}:
+      {% endif %}
+      {% if award.award %}
+        <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
+      {% endif %}
+            <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a>
+	    </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
 
   <!--Creator's Art Influences-->
   {% if creator.active_art_influences or creator.active_influenced_creators %}
