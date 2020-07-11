@@ -361,18 +361,18 @@ class Creator(GcdData):
 
     def active_awards_for_issue(self):
         from .issue import Issue
-        issues = Issue.objects.filter(story__credits__creator__creator=creator,
+        issues = Issue.objects.filter(story__credits__creator__creator=self,
                                       awards__isnull=False).distinct()
-        content_type = ContentType.objects.filter(model='Issue')
+        content_type = ContentType.objects.get(model='Issue')
         awards = ReceivedAward.objects.filter(content_type=content_type,
-                                            object_id__in=issues)
+                                              object_id__in=issues)
         return awards
 
     def active_awards_for_stories(self):
         from .story import Story
-        stories = Story.objects.filter(credits__creator__creator=creator,
+        stories = Story.objects.filter(credits__creator__creator=self,
                                        awards__isnull=False).distinct()
-        content_type = ContentType.objects.filter(model='Story')
+        content_type = ContentType.objects.get(model='Story')
         awards = ReceivedAward.objects.filter(content_type=content_type,
                                               object_id__in=stories)
         return awards
