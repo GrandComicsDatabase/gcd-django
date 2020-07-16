@@ -69,17 +69,17 @@ GCD :: Feature :: {{ feature.name }}
   {% endfor %}
 </table>
 {% endif %}
-{% if feature.active_from_relations.count or feature.active_to_relations.count %}
+{% if feature.from_related_feature.count or feature.to_related_feature.count %}
 <hr>
 <h2> Feature Relations </h2>
 <table id="publisher_detail_listing" class="listing">
-  {% for relation in feature.active_from_relations.all %}
+  {% for relation in feature.from_related_feature.all %}
   <tr>
     <td><a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.reverse_description }}</a>:</td>
     <td>{{ relation.from_feature|absolute_url }}</td>
   </tr>
   {% endfor %}
-  {% for relation in feature.active_to_relations %}
+  {% for relation in feature.to_related_feature.all %}
   <tr>
   <td><a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.description }}</a>:</td>
     <td>{{ relation.to_feature|absolute_url }}</td>

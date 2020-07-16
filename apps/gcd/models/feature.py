@@ -68,12 +68,6 @@ class Feature(GcdData):
     def active_stories(self):
         return self.story_set.filter(deleted=False)
 
-    def active_from_relations(self):
-        return self.from_related_feature.exclude(deleted=True)
-
-    def active_to_relations(self):
-        return self.to_related_feature.exclude(deleted=True)
-
     def display_year_created(self):
         if not self.year_created:
             return '?'
