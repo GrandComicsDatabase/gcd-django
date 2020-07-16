@@ -31,7 +31,7 @@ GCD :: Award :: {{ award.name }}
   <div id="control_container">
     <div id="control_center">
       <dl class="pub_data">
-{% if award.notes %}
+{% if award.notes and page.number == 1 %}
         <dt> Notes:
         <dd> {{ award.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
