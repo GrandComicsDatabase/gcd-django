@@ -598,7 +598,8 @@ def story_by_title(request, title, sort=ORDER_ALPHA):
 
 def story_by_feature(request, feature, sort=ORDER_ALPHA):
     """Looks up story by feature."""
-    q_obj = Q(feature__icontains = feature)
+    q_obj = Q(feature__icontains = feature) | \
+            Q(feature_object__name__icontains = feature)
     return generic_by_name(request, feature, q_obj, sort, credit="feature",
                            selected="feature")
 
