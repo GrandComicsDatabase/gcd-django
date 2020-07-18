@@ -19,6 +19,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
 from django_tables2 import RequestConfig
+from django_tables2.paginators import LazyPaginator
 
 from apps.indexer.views import ViewTerminationError
 
@@ -114,7 +115,8 @@ def generic_sortable_list(request, items, table, template, context):
     else:
         extra_string = ''
 
-    RequestConfig(request, paginate={'per_page': 100,
+    RequestConfig(request, paginate={"paginator_class": LazyPaginator,
+                                     'per_page': 100,
                                      'page': page_number}).configure(table)
     context['table'] = table
     # are using /search/list_header.html in the template

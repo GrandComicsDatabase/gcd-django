@@ -365,12 +365,6 @@ urlpatterns = [
     url(r'^covers_to_replace/with/(?P<starts_with>.+)/$',
      gcd_views.details.covers_to_replace),
 
-    # Reprints
-    url(r'^reprint/name/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
-      gcd_views.search.story_by_reprint),
-    url(r'^reprint/name/(?P<reprints>.+)/$',
-      gcd_views.search.story_by_reprint),
-
     # calendar
     url(r'^calendar/$',
      bv.TemplateView.as_view(template_name='gcd/status/calendar.html')),

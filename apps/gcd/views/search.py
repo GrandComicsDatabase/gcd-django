@@ -34,10 +34,12 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             CreatorNameDetail, SeriesPublicationType, \
                             Award, ReceivedAward
 from apps.gcd.models.issue import INDEXED
+from apps.gcd.models.story import StoryTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
                                   COUNT_RANGE_REGEXP
-from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, IS_NONE
+from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, IS_NONE,\
+                                   generic_sortable_list
 from apps.gcd.views.covers import get_image_tags_per_page
 
 # Should not be importing anything from oi, but we're doing this in several places.
@@ -266,9 +268,21 @@ def generic_by_name(request, name, q_obj, sort,
                                          "sequence_number")
             # build the query_string for the link to the advanced search
             # remove the ones which are not matched in display of results
-            if credit in ['reprint', 'title', 'feature']:
+            if credit in ['title', 'feature']:
                 query_val[credit] = name
                 credit = None
+                template = 'gcd/search/issue_list_sortable.html'
+                things = Story.objects.filter(id__in=things.values_list('id', flat=True))
+
+                table = StoryTable(things, attrs={'class': 'sortable_listing'},
+                                   template_name='gcd/bits/sortable_table.html',
+                                   order_by=('issue'))
+                context = {'item_name': item_name,
+                           'plural_suffix': plural_suffix,
+                           'heading': heading}
+
+                return generic_sortable_list(request, things, table, template, context)
+
             elif credit.startswith('characters'):
                 query_val['characters'] = name
                 # OR-logic only applies to credits, so we cannnot use it
@@ -583,10 +597,6 @@ def story_by_job_number_name(request, number, sort=ORDER_ALPHA):
     return HttpResponseRedirect(
       urlresolvers.reverse(story_by_job_number,
                            kwargs={ 'number': number, 'sort': sort }))
-
-def story_by_reprint(request, reprints, sort=ORDER_ALPHA):
-    q_obj = Q(reprint_notes__icontains = reprints)
-    return generic_by_name(request, reprints, q_obj, sort, credit="reprint")
 
 
 def story_by_title(request, title, sort=ORDER_ALPHA):

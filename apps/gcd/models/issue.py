@@ -496,6 +496,9 @@ class Issue(GcdData):
         else:
             return '%s %s' % (self.series, self.display_number)
 
+##############################################################################
+# Tables with Sorting
+##############################################################################
 
 class IssueColumn(tables.Column):
     def render(self, record):
@@ -511,6 +514,8 @@ class IssueColumn(tables.Column):
 
 class IssueTable(tables.Table):
     issue = IssueColumn(accessor='id', verbose_name='Issue')
+    publication_date = tables.Column(verbose_name='Publication Date')
+    on_sale_date = tables.Column(verbose_name='On-sale Date')
 
     class Meta:
         model = Issue

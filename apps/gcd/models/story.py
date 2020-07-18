@@ -1,10 +1,13 @@
-from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
+from django.db import models
 import django.urls as urlresolvers
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+from django.utils.translation import ungettext
 
 from taggit.managers import TaggableManager
+
+import django_tables2 as tables
 
 from .gcddata import GcdData
 from .award import ReceivedAward
@@ -272,6 +275,35 @@ class Story(GcdData):
     def show_feature_logo(self):
         return self._show_feature_logo(self)
 
+    def show_title(self, use_first_line=False):
+        """
+        Return a properly formatted title.
+        """
+        if self.title == '':
+            if use_first_line and self.first_line:
+                return '["%s"]' % self.first_line
+            else:
+                return '[no title indexed]'
+        if self.title_inferred:
+            return '[%s]' % self.title
+        return self.title
+
+    def show_page_count(self, show_page=False):
+        """
+        Return a properly formatted page count, with "?" as needed.
+        """
+        if self.page_count is None:
+            if self.page_count_uncertain:
+                return '?'
+            return ''
+
+        p = f'{float(self.page_count):.3g}'
+        if self.page_count_uncertain:
+            p = '%s ?' % p
+        if show_page:
+            p = p + ' ' + ungettext('page', 'pages', self.page_count)
+        return p
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_issue',
@@ -291,3 +323,86 @@ class BiblioEntry(Story):
     page_ended = models.IntegerField(null=True)
     abstract = models.TextField()
     doi = models.TextField()
+
+##############################################################################
+# Tables with Sorting
+##############################################################################
+
+
+class StoryColumn(tables.Column):
+    def render(self, record):
+        first_line = '<a href="%s">%s</a>' % (record.get_absolute_url(),
+                                              esc(record.show_title()))
+        second_line = record.show_feature()
+        if second_line:
+            second_line += ' / '
+        second_line += record.type.name
+
+        if record.page_count:
+            second_line += ' / ' + record.show_page_count(True)
+
+        return mark_safe('%s<br>%s' % (first_line,
+                                       second_line))
+
+    def order(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'title',
+                                       direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code',
+                                       direction + 'sequence_number')
+        return (query_set, True)
+
+
+class IssueColumn(tables.Column):
+    def render(self, record):
+        return mark_safe(record.issue.show_series_and_issue_link())
+
+    def order(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+
+class StoryTable(tables.Table):
+    story = StoryColumn(accessor='id', verbose_name='Story')
+    issue = IssueColumn(accessor='issue__id', verbose_name='Issue')
+    publisher = tables.Column(accessor='issue.series.publisher',
+                              verbose_name='Publisher')
+    publication_date = tables.Column(accessor='issue.publication_date',
+                                     verbose_name='Publication Date')
+    on_sale_date = tables.Column(accessor='issue.on_sale_date',
+                                 verbose_name='On-sale Date')
+
+    class Meta:
+        model = Story
+        fields = ('story',)
+        attrs = {'th': {'class': "non_visited"}}
+
+    def order_publication_date(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__key_date',
+                                       direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def order_on_sale_date(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__on_sale_date',
+                                       direction + 'issue__key_date',
+                                       direction + 'issue__series_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def order_publisher(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__series__publisher__name',
+                                       direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def render_publisher(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        display_publisher = "<img %s>" % (show_country_info(value.country))
+        return mark_safe(display_publisher) + absolute_url(value)
