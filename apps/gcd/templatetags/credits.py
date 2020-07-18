@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-import re
 import icu
-from decimal import Decimal, InvalidOperation
 
 from django import template
 from django.conf import settings
@@ -301,7 +299,8 @@ def show_creator_credit(story, credit_type, url=True):
            '<dd class="credit_def"><span class="credit_value">'
            + credit_value + '</span></dd>')
     else:
-       return credit_value
+        return credit_value
+
 
 def __format_keywords(keywords, join_on='; '):
     if type(keywords) == str:
@@ -401,11 +400,7 @@ def show_page_count(story, show_page=False):
 @register.filter
 def format_page_count(page_count):
     if page_count is not None:
-        try:
-            return re.sub(r'\.?0+$', '', str(Decimal(page_count)
-                                             .quantize(Decimal(10)**-3)))
-        except InvalidOperation:
-            return page_count
+        return f'{float(page_count):.3g}'
     else:
         return ''
 
