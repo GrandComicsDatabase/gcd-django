@@ -5,6 +5,7 @@ from haystack.forms import FacetedSearchForm
 
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
 import django.urls as urlresolvers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -410,14 +411,20 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
 # auto-complete objects
 ##############################################################################
 
+def _filter_and_sort(qs, query, field='name'):
+    if query:
+        qs = qs.filter(Q(**{'%s__icontains' % field: query}))
+        qs_match = qs.filter(Q(**{'%s' % field: query}))
+        qs = qs_match.union(qs)
+    return qs
+
 
 class CreatorAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Creator.objects.filter(deleted=False)
 
-        if self.q:
-            qs = qs.filter(gcd_official_name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q, field='gcd_official_name')
 
         return qs
 
@@ -428,8 +435,7 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
         qs = CreatorNameDetail.objects.filter(deleted=False)\
                                       .exclude(type__id__in=[3, 4])
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q)
 
         return qs
 
@@ -440,8 +446,12 @@ class CreatorName4RelationAutocomplete(LoginRequiredMixin,
         qs = CreatorNameDetail.objects.filter(deleted=False,
                                               type__id__in=[5,8])
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        creator_id = self.forwarded.get('to_creator', None)
+
+        if creator_id:
+            qs = qs.filter(creator__creator_names__id=creator_id)
+
+        qs = _filter_and_sort(qs, self.q)
 
         return qs
 
@@ -464,8 +474,7 @@ class CreatorSignatureAutocomplete(LoginRequiredMixin,
         if creator_id:
             qs = qs.filter(creator__creator_names__id=creator_id)
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q)
 
         return qs
 
@@ -480,8 +489,7 @@ class FeatureAutocomplete(LoginRequiredMixin,
         if language:
             qs = qs.filter(language__code__in=[language, 'zxx'])
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q)
 
         return qs
 
@@ -504,8 +512,7 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
         if language:
             qs = qs.filter(feature__language__code__in=[language, 'zxx'])
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q)
 
         return qs
 
@@ -515,7 +522,6 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
     def get_queryset(self):
         qs = IndiciaPrinter.objects.filter(deleted=False)
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q)
 
         return qs

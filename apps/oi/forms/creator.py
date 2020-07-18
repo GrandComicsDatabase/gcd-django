@@ -627,7 +627,8 @@ class CreatorRelationRevisionForm(forms.ModelForm):
       queryset=CreatorNameDetail.objects.filter(type__id=8, deleted=False),
       widget=autocomplete.ModelSelect2Multiple(
         url='creator_name_4_relation_autocomplete',
-        attrs={'style': 'min-width: 60em'}),
+        attrs={'style': 'min-width: 60em'},
+        forward=['to_creator']),
       help_text='For employee or user of house name relations also add the '
                 'involved creator name(s).',
       required=False
