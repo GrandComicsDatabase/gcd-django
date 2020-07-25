@@ -33,7 +33,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CreatorRelation, CreatorSchool, CreatorNameDetail,\
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
-                            Printer, IndiciaPrinter
+                            Printer, IndiciaPrinter, School
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
@@ -441,6 +441,28 @@ def show_award(request, award, preview=False):
     return paginate_response(request,
                              awards,
                              'gcd/details/award.html',
+                             vars)
+
+
+def school(request, school_id):
+    """
+    Display the details page for a School.
+    """
+    school = get_object_or_404(School, id=school_id)
+    return show_school(request, school)
+
+
+def show_school(request, school, preview=False):
+    degrees = school.degree.all().order_by('degree_year')
+    students = school.creator.all().order_by('school_year_began')
+
+    vars = {'school': school,
+            'degrees': degrees,
+            'error_subject': '%s' % school,
+            'preview': preview}
+    return paginate_response(request,
+                             students,
+                             'gcd/details/school.html',
                              vars)
 
 

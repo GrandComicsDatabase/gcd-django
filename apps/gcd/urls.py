@@ -111,6 +111,9 @@ urlpatterns = [
     url(r'^award/name/(?P<award_name>.+)/$',
       gcd_views.search.award_by_name, name='award_by_name'),
 
+    url(r'^school/(?P<school_id>\d+)/$',
+      gcd_views.details.school, name='show_school'),
+
     url(r'^creator/(?P<creator_id>\d+)/$',
       gcd_views.details.creator, name='show_creator'),
     url(r'^creator/name/(?P<creator_name>.+)/sort/(?P<sort>.+)/$',

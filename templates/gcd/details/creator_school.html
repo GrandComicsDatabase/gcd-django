@@ -11,7 +11,7 @@
 {% block content %}
   <dl class="pub_data">
     <dt>School:
-    <dd>{{ creator_school.school.school_name }}
+    <dd><a href="{{ creator_school.school.get_absolute_url }}">{{ creator_school.school }}</a>
     {% if creator_school.school_year_began or creator_school.school_year_began_uncertain %}
       <dt>Year began:
       <dd>{{ creator_school.school_year_began }} {% if creator_school.school_year_began_uncertain %}?{% endif %}

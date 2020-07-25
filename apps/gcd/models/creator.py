@@ -508,6 +508,11 @@ class School(models.Model):
 
     school_name = models.CharField(max_length=200)
 
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_school',
+                kwargs={'school_id': self.id})
+
     def __str__(self):
         return str(self.school_name)
 

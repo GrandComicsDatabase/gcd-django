@@ -11,7 +11,7 @@
 {% block content %}
   <dl class="pub_data">
     <dt>School:
-    <dd>{{ creator_degree.school }}
+    <dd><a href="{{ creator_degree.school.get_absolute_url }}">{{ creator_degree.school }}</a>
     <dt>Degree:
     <dd>{{ creator_degree.degree }}
     <dt>Year:
