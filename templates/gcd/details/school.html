@@ -38,7 +38,7 @@ GCD :: School :: {{ school.name }}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
       <td> <a href="{{ degree.get_absolute_url }}">{{ degree.degree }}</a> </td>
       <td> <a href="{{ degree.creator.get_absolute_url }}">{{ degree.creator }}</a> </td>
-      <td> {{ degree.degree_year }} </td>
+      <td> {{ degree.degree_year|default:"-" }} </td>
     </tr>
     {% endfor %}
   </table>
@@ -46,13 +46,11 @@ GCD :: School :: {{ school.name }}
   {% if page.object_list.count %}
   <table id="publisher_detail_listing" class="listing">
     <tr>
-      <th> Degree </th>
       <th> Creator </th>
       <th> Years </th>
     </tr>
     {% for study in page.object_list %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-      <td> <a href="{{ study.get_absolute_url }}">{{ study.degree }}</a> </td>
       <td> <a href="{{ study.creator.get_absolute_url }}">{{ study.creator }}</a> </td>
       <td> {{ study.display_years }} </td>
     </tr>

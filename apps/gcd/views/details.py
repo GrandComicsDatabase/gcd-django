@@ -453,8 +453,8 @@ def school(request, school_id):
 
 
 def show_school(request, school, preview=False):
-    degrees = school.degree.all().order_by('degree_year')
-    students = school.creator.all().order_by('school_year_began')
+    degrees = school.degree.all()
+    students = school.creator.all()
 
     vars = {'school': school,
             'degrees': degrees,

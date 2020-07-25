@@ -525,7 +525,8 @@ class CreatorSchool(GcdData):
     class Meta:
         db_table = 'gcd_creator_school'
         app_label = 'gcd'
-        ordering = ('school_year_began', 'school_year_ended')
+        ordering = ('creator__sort_name',
+                    'school_year_began', 'school_year_ended')
         verbose_name_plural = 'Creator Schools'
 
     creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
@@ -541,6 +542,27 @@ class CreatorSchool(GcdData):
 
     def has_dependents(self):
         return self.creator.pending_deletion()
+
+    def display_years(self):
+        if not self.school_year_began and not self.school_year_ended:
+            return '?'
+
+        if not self.school_year_began:
+            years = '? - '
+        else:
+            years = '%d%s - ' % (self.school_year_began,
+                                 '?' if self.school_year_began_uncertain
+                                 else '')
+        if not self.school_year_ended:
+            years = '%s %s' % (years,
+                               '?' if self.school_year_ended_uncertain
+                               else 'present')
+        else:
+            years = '%s%d%s' % (years, self.school_year_ended,
+                                '?' if self.school_year_ended_uncertain
+                                else '')
+        return years
+
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
