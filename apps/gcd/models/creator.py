@@ -554,9 +554,7 @@ class CreatorSchool(GcdData):
                                  '?' if self.school_year_began_uncertain
                                  else '')
         if not self.school_year_ended:
-            years = '%s %s' % (years,
-                               '?' if self.school_year_ended_uncertain
-                               else 'present')
+            years = '%s ?' % (years)
         else:
             years = '%s%d%s' % (years, self.school_year_ended,
                                 '?' if self.school_year_ended_uncertain
