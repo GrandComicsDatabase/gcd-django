@@ -3,9 +3,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 import django.urls as urlresolvers
 
-from django.utils.safestring import mark_safe
-from django.utils.html import conditional_escape as esc
-
 from taggit.managers import TaggableManager
 
 from apps.stddata.models import Language
@@ -68,11 +65,19 @@ class Feature(GcdData):
     def active_stories(self):
         return self.story_set.filter(deleted=False)
 
+    def other_translations(self):
+        if self.from_related_feature.filter(relation_type__id=1).count() == 1:
+            source = self.from_related_feature.get(relation_type__id=1)
+            other_translations = source.from_feature.to_related_feature\
+                                 .filter(to_feature__language=self.language)
+            return other_translations.exclude(to_feature=self)
+        return None
+
     def display_year_created(self):
         if not self.year_created:
             return '?'
         else:
-            return '%d%s' % (self.year_created, 
+            return '%d%s' % (self.year_created,
                              '?' if self.year_created_uncertain else '')
 
     def get_absolute_url(self):
@@ -112,8 +117,9 @@ class FeatureLogo(GcdData):
 
     @property
     def logo(self):
-        img = Image.objects.filter(object_id=self.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(self), type__id=6)
+        img = Image.objects.filter(
+          object_id=self.id, deleted=False,
+          content_type=ContentType.objects.get_for_model(self), type__id=6)
         if img:
             return img.get()
         else:
@@ -132,21 +138,20 @@ class FeatureLogo(GcdData):
         if not self.year_began:
             years = '? - '
         else:
-            years = '%d%s - ' % (self.year_began, 
-                              '?' if self.year_began_uncertain else '')
+            years = '%d%s - ' % (self.year_began,
+                                 '?' if self.year_began_uncertain else '')
         if not self.year_ended:
             years = '%s %s' % (years,
                                '?' if self.year_ended_uncertain else 'present')
         else:
-            years = '%s%d%s' % (years, self.year_ended, 
+            years = '%s%d%s' % (years, self.year_ended,
                                 '?' if self.year_ended_uncertain else '')
         return years
-
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_feature_logo',
-            kwargs={'feature_logo_id': self.id } )
+            kwargs={'feature_logo_id': self.id})
 
     def full_name(self):
         return self.__str__()
@@ -179,4 +184,4 @@ class FeatureRelation(GcdLink):
         return '%s >Relation< %s :: %s' % (str(self.from_feature),
                                            str(self.to_feature),
                                            str(self.relation_type)
-                                          )
+                                           )

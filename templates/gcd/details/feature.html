@@ -79,6 +79,14 @@ GCD :: Feature :: {{ feature.name }}
     <td>{{ relation.from_feature|absolute_url }}</td>
   </tr>
   {% endfor %}
+  {% if feature.other_translations %}
+    {% for relation in feature.other_translations %}
+    <tr>
+      <td>other {{ feature.language }} translation:</td>
+      <td>{{ relation.to_feature|absolute_url }}</td>
+    </tr>
+    {% endfor %}
+  {% endif  %}
   {% for relation in feature.to_related_feature.all %}
   <tr>
   <td><a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.description }}</a>:</td>
