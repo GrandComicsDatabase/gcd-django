@@ -687,7 +687,7 @@ class CreatorMembership(GcdData):
     class Meta:
         db_table = 'gcd_creator_membership'
         app_label = 'gcd'
-        ordering = ('membership_type',)
+        ordering = ('membership_type', 'organization_name')
         verbose_name_plural = 'Creator Memberships'
 
     creator = models.ForeignKey(Creator, on_delete=models.CASCADE,
@@ -707,6 +707,24 @@ class CreatorMembership(GcdData):
         return urlresolvers.reverse(
                 'show_creator_membership',
                 kwargs={'creator_membership_id': self.id})
+
+    def display_years(self):
+        if not self.membership_year_began and not self.membership_year_ended:
+            return ''
+
+        if not self.membership_year_began:
+            years = '? - '
+        else:
+            years = '%d%s - ' % (self.membership_year_began,
+                                 '?' if self.membership_year_began_uncertain
+                                 else '')
+        if not self.membership_year_ended:
+            years = '%s ?' % (years)
+        else:
+            years = '%s%d%s' % (years, self.membership_year_ended,
+                                '?' if self.membership_year_ended_uncertain
+                                else '')
+        return years
 
     def has_dependents(self):
         return self.creator.pending_deletion()

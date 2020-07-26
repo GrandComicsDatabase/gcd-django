@@ -14,7 +14,8 @@ from apps.oi.models import CTYPES
 from apps.gcd.templatetags.credits import show_page_count, show_title
 from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
-                                    CreatorDegree, CreatorRelation, Award
+                                    CreatorDegree, CreatorRelation, \
+                                    CreatorSchool, Award
 from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup,\
                             Series, Issue, Cover, Image, Feature, FeatureLogo,\
                             INDEXED, SeriesBond, BOND_TRACKING, \
@@ -330,6 +331,9 @@ def changed_fields(changeset, object):
     elif object_class is CreatorRelation:
         revision = changeset.creatorrelationrevisions\
                             .get(creator_relation=object.id)
+    elif object_class is CreatorSchool:
+        revision = changeset.creatorschoolrevisions\
+                            .get(creator_school=object.id)
     elif object_class in [Cover, Image]:
         return ""
 

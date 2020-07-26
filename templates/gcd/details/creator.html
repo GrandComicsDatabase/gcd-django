@@ -278,15 +278,14 @@
     {% for membership in creator.active_memberships %}
             <li>
               <p><a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
-              <strong>type</strong>: {{ membership.membership_type.type }}
-              <strong>year begin:</strong> {{ membership.membership_year_began|default:'' }}{% if not membership.membership_year_began or membership.membership_year_began_uncertain %} ?{% endif %}
-      {% if membership.membership_year_ended or membership.membership_year_ended_uncertain %}
-              <strong>year ended:</strong> {{ membership.membership_year_ended|default:'' }}
-        {% if membership.membership_year_ended_uncertain %} ?{% endif %}
-      {% endif %}
+              <strong>Type</strong>: {{ membership.membership_type.type }}
+	      {% if membership.display_years %}
+	      <strong>Duration:</strong> {{ membership.display_years }}
+	      {% endif %}
       {% if membership.notes %}
-              <p><strong>Notes: </strong>{{ membership.notes }}</p>
+              <br><strong>Notes: </strong>{{ membership.notes }}
       {% endif %}
+              </p>
             </li>
     {% endfor %}
           </ol>
@@ -299,25 +298,21 @@
           <ol>
     {% for ncw in creator.active_non_comic_works %}
             <li>
-              <p><strong>Publication title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
-              <strong>Work type</strong> : {{ ncw.work_type.type }}</p>
+              <p><strong>Publication Title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
+              ({{ ncw.work_type.type }}) - <strong>Role:</strong> {{ ncw.work_role.role_name }}
+              {% if ncw.display_years %}
+	      - <strong>Year{{ ncw.noncomicworkyears.all|pluralize }}:</strong> {{ ncw.display_years }}
+	      {% endif %}
       {% if ncw.employer_name %}
-              <p><strong>Employer name</strong> : {{ ncw.employer_name }}</p>
+              <br><strong>Employer Name</strong> : {{ ncw.employer_name }}
       {% endif %}
       {% if ncw.work_title %}
-              <p><strong>Work title:</strong> {{ ncw.work_title }}</p>
-      {% endif %}
-              <p><strong>Role:</strong> {{ ncw.work_role.role_name }}
-      {% if ncw.display_years %}
-              <strong>Years:</strong> {{ ncw.display_years }}
-      {% endif %}
-              </p>
-      {% if ncw.work_urls %}
-              <p><strong>Work URLs:</strong> {{ ncw.work_urls|urlize|linebreaksbr }}
+              <br><strong>Work Title:</strong> {{ ncw.work_title }}
       {% endif %}
       {% if ncw.notes %}
-              <p><strong>Notes: </strong>{{ ncw.notes }}</p>
+              <br><strong>Notes: </strong>{{ ncw.notes }}
       {% endif %}
+              </p>
             </li>
     {% endfor %}
           </ol>
