@@ -54,4 +54,9 @@ urlpatterns = [
         select_views.IndiciaPrinterAutocomplete.as_view(),
         name='indicia_printer_autocomplete',
     ),
+        url(
+        r'^autocomplete/school/$',
+        select_views.SchoolAutocomplete.as_view(),
+        name='school_autocomplete',
+    ),
 ]

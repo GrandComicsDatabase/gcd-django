@@ -21,7 +21,7 @@ from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
                            ImageRevision,\
                            _get_creator_sourced_fields, _check_year
 from apps.oi.covers import get_preview_generic_image_tag
-from apps.gcd.models import NameType, CreatorNameDetail, ImageType
+from apps.gcd.models import NameType, CreatorNameDetail, ImageType, School
 from apps.stddata.models import Country
 
 from .custom_layout_object import Formset, FormAsField
@@ -246,6 +246,12 @@ class CreatorSchoolRevisionForm(forms.ModelForm):
         model = CreatorSchoolRevision
         fields = model._base_field_list
 
+    school = forms.ModelChoiceField(
+        queryset=School.objects.all(),
+        widget=autocomplete.ModelSelect2(url='school_autocomplete',
+                                         attrs={'style': 'min-width: 60em'}),
+    )
+
     def __init__(self, *args, **kwargs):
         super(CreatorSchoolRevisionForm, self).__init__(*args, **kwargs)
         ordering = list(self.fields)
@@ -383,6 +389,12 @@ class CreatorDegreeRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorDegreeRevision
         fields = model._base_field_list
+
+    school = forms.ModelChoiceField(
+        queryset=School.objects.all(),
+        widget=autocomplete.ModelSelect2(url='school_autocomplete',
+                                         attrs={'style': 'min-width: 60em'}),
+    )
 
     def __init__(self, *args, **kwargs):
         super(CreatorDegreeRevisionForm, self).__init__(*args, **kwargs)

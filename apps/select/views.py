@@ -16,7 +16,7 @@ from dal import autocomplete
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
-                            Feature, FeatureLogo, IndiciaPrinter
+                            Feature, FeatureLogo, IndiciaPrinter, School
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -475,6 +475,16 @@ class CreatorSignatureAutocomplete(LoginRequiredMixin,
             qs = qs.filter(creator__creator_names__id=creator_id)
 
         qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class SchoolAutocomplete(LoginRequiredMixin,
+                          autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = School.objects.all()
+
+        qs = _filter_and_sort(qs, self.q, field='school_name')
 
         return qs
 
