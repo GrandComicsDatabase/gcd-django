@@ -8079,8 +8079,6 @@ class CreatorNonComicWorkRevision(Revision):
                                 related_name='non_comic_work_revisions')
     work_type = models.ForeignKey('gcd.NonComicWorkType',
                                   on_delete=models.CASCADE,
-                                  null=True,
-                                  blank=True,
                                   related_name='cr_worktype')
     publication_title = models.CharField(max_length=200)
     employer_name = models.CharField(max_length=200, blank=True)
