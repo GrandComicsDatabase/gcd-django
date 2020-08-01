@@ -399,7 +399,7 @@ def show_page_count(story, show_page=False):
 
 @register.filter
 def format_page_count(page_count):
-    if page_count is not None:
+    if page_count is not None and page_count is not '':
         return f'{float(page_count):.3g}'
     else:
         return ''
