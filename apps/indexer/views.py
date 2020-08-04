@@ -7,7 +7,7 @@ The urls for these views are in the top-level urls.py file instead of
 the gcd app's urls.py, which was the start of an effort to split this
 out of the gcd app.
 """
-from __future__ import unicode_literals, absolute_import
+
 
 import re
 import hashlib
@@ -15,15 +15,14 @@ from random import random
 from datetime import date, timedelta
 
 from django.db import IntegrityError
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.core.mail import send_mail
 from django.conf import settings
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import get_template
 from django.contrib.auth.models import User, Group
-from django.contrib.auth.views import login as standard_login
-from django.contrib.auth.views import logout as standard_logout
+from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -77,13 +76,13 @@ def render_error(request, error_text, redirect=True, is_safe=False):
     """
     if redirect:
         if error_text != '':
-            salt = hashlib.sha1(str(random())).hexdigest()[:5]
-            key = hashlib.sha1(salt + error_text.encode('utf-8')).hexdigest()
+            salt = hashlib.sha1(str(random()).encode('utf8')).hexdigest()[:5]
+            key = hashlib.sha1((salt + error_text).encode('utf8')).hexdigest()
             Error.objects.create(error_key=key, is_safe=is_safe,
                                  error_text=error_text,)
             return HttpResponseRedirect(
               urlresolvers.reverse('error') +
-              u'?error_key=' + key)
+              '?error_key=' + key)
 
         else:
             return HttpResponseRedirect(urlresolvers.reverse('error'))
@@ -123,7 +122,7 @@ def login(request, template_name, landing_view='default_profile'):
     If anything goes wrong just let the standard login handle it.
     """
 
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         return HttpResponseRedirect(urlresolvers.reverse(landing_view))
 
     try:
@@ -166,8 +165,8 @@ def login(request, template_name, landing_view='default_profile'):
             post['next'] = urlresolvers.reverse('home')
             request.POST = post
 
-    return standard_login(request, template_name=template_name,
-                          authentication_form=LongUsernameAuthenticationForm)
+    return LoginView.as_view(template_name=template_name,
+                             authentication_form=LongUsernameAuthenticationForm)(request)
 
 
 def logout(request):
@@ -180,9 +179,9 @@ def logout(request):
         next_page = request.POST['next']
         if re.match(urlresolvers.reverse('error'), next_page):
             next_page = '/'
-        return standard_logout(request, next_page=next_page)
+        return LogoutView.as_view(next_page=next_page)(request)
 
-    elif request.user.is_authenticated():
+    elif request.user.is_authenticated:
         return render_error(request,
                             'Please use the logout button to log out.')
     return render_error(request,
@@ -257,8 +256,8 @@ def register(request):
 
     new_user.groups.add(*Group.objects.filter(name='indexer'))
 
-    salt = hashlib.sha1(str(random())).hexdigest()[:5]
-    key = hashlib.sha1(salt + new_user.email).hexdigest()
+    salt = hashlib.sha1(str(random()).encode('utf8')).hexdigest()[:5]
+    key = hashlib.sha1((salt + new_user.email).encode('utf8')).hexdigest()
     expires = date.today() + timedelta(settings.REGISTRATION_EXPIRATION_DELTA)
     indexer = Indexer(is_new=True,
                       max_reservations=settings.RESERVE_MAX_INITIAL,
@@ -280,7 +279,7 @@ def register(request):
     if cd['languages']:
         indexer.languages.add(*cd['languages'])
 
-    email_body = u"""
+    email_body = """
 Hello from the %s!
 
   We've received a request for an account using this email
@@ -362,7 +361,7 @@ def confirm_account(request, key):
         indexer.save()
         Collector.objects.create_collector(indexer.user)
 
-        email_body = u"""
+        email_body = """
 We have a new Indexer!
 
 Name: %s
@@ -451,7 +450,7 @@ def handle_existing_account(request, users):
               timedelta(settings.REGISTRATION_EXPIRATION_DELTA)
             user.indexer.save()
 
-            email_body = u"""
+            email_body = """
 Hello from the %s!
 
   We've received a request for resending the confirmation information
@@ -507,7 +506,7 @@ def profile(request, user_id=None, edit=False):
     if request.method == 'POST':
         return update_profile(request, user_id)
 
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         return HttpResponseRedirect(urlresolvers.reverse('login'))
 
     if user_id is None:
@@ -568,13 +567,13 @@ def update_profile(request, user_id=None):
     confirm = form.cleaned_data['confirm_new_password']
     if (new or confirm) and not old:
         errors.append(
-          u'You must supply your old password in order to change it.')
+          'You must supply your old password in order to change it.')
     elif old and (new or confirm):
         if not request.user.check_password(old):
-            errors.append(u'Old password incorrect, please try again.')
+            errors.append('Old password incorrect, please try again.')
         elif new != confirm:
             errors.append(
-              u'New password and confirm new password do not match.')
+              'New password and confirm new password do not match.')
         else:
             set_password = True
 
@@ -594,7 +593,7 @@ def update_profile(request, user_id=None):
     indexer.collapse_compare_view = form.cleaned_data['collapse_compare_view']
     indexer.show_wiki_links = form.cleaned_data['show_wiki_links']
     indexer.country = form.cleaned_data['country']
-    indexer.languages = form.cleaned_data['languages']
+    indexer.languages.set(form.cleaned_data['languages'])
     indexer.interests = form.cleaned_data['interests']
     indexer.from_where = form.cleaned_data['from_where']
     indexer.seen_privacy_policy = form.cleaned_data['seen_privacy_policy']

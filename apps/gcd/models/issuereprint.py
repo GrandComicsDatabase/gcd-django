@@ -10,8 +10,10 @@ class IssueReprint(models.Model):
         app_label = 'gcd'
         db_table = 'gcd_issue_reprint'
 
-    origin_issue = models.ForeignKey(Issue, related_name='to_issue_reprints')
-    target_issue = models.ForeignKey(Issue, related_name='from_issue_reprints')
+    origin_issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
+                                     related_name='to_issue_reprints')
+    target_issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
+                                     related_name='from_issue_reprints')
     notes = models.TextField(max_length = 255)
 
     # Fields related to change management.
@@ -42,11 +44,11 @@ class IssueReprint(models.Model):
         else:
             direction = 'from'
             issue = self.origin_issue
-        reprint = u'%s <a target="_blank" href="%s">%s</a>' % \
+        reprint = '%s <a target="_blank" href="%s">%s</a>' % \
                     (direction, issue.get_absolute_url(), esc(issue.full_name()))
         if self.notes:
-            reprint = u'%s [%s]' % (reprint, esc(self.notes))
+            reprint = '%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
-    def __unicode__(self):
-        return u'from %s reprint in %s' % (self.origin_issue, self.target_issue)
+    def __str__(self):
+        return 'from %s reprint in %s' % (self.origin_issue, self.target_issue)

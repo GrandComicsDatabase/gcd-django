@@ -2,7 +2,10 @@
 
 from collections import OrderedDict
 from django import forms
+from django.contrib.contenttypes.models import ContentType
+from django.core.files import File
 from django.forms.models import inlineformset_factory
+from django.forms.widgets import HiddenInput
 
 from dal import autocomplete
 
@@ -14,10 +17,11 @@ from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
                            CreatorArtInfluenceRevision, CreatorDegreeRevision,\
                            CreatorNonComicWorkRevision, CreatorSchoolRevision,\
                            CreatorMembershipRevision, CreatorRelationRevision,\
-                           get_creator_field_list,\
+                           CreatorSignatureRevision, get_creator_field_list,\
+                           ImageRevision,\
                            _get_creator_sourced_fields, _check_year
-
-from apps.gcd.models import NameType, CreatorNameDetail
+from apps.oi.covers import get_preview_generic_image_tag
+from apps.gcd.models import NameType, CreatorNameDetail, ImageType, School
 from apps.stddata.models import Country
 
 from .custom_layout_object import Formset, FormAsField
@@ -34,13 +38,13 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       HiddenInputWithHelp)
 
 
-def _generic_data_source_clean(form, cd):
-    data_source_type = cd['_source_type']
-    data_source_description = cd['_source_description']
+def _generic_data_source_clean(form, cd, field=''):
+    data_source_type = cd['%s_source_type' % field]
+    data_source_description = cd['%s_source_description' % field]
     if data_source_type or data_source_description:
         if not data_source_type or not data_source_description:
             form.add_error(
-              '_source_description',
+              '%s_source_description' % field,
               'Source description and source type must both be set.')
 
 
@@ -149,7 +153,7 @@ class CreatorRevisionForm(forms.ModelForm):
         self.helper.label_class = 'col-md-3 create-label'
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         creator_sourced_fields = _get_creator_sourced_fields()
         for field in creator_sourced_fields:
             insert_data_source_fields(field, ordering, self.fields,
@@ -242,9 +246,15 @@ class CreatorSchoolRevisionForm(forms.ModelForm):
         model = CreatorSchoolRevision
         fields = model._base_field_list
 
+    school = forms.ModelChoiceField(
+        queryset=School.objects.all(),
+        widget=autocomplete.ModelSelect2(url='school_autocomplete',
+                                         attrs={'style': 'min-width: 60em'}),
+    )
+
     def __init__(self, *args, **kwargs):
         super(CreatorSchoolRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -255,6 +265,105 @@ class CreatorSchoolRevisionForm(forms.ModelForm):
     def clean(self):
         cd = self.cleaned_data
 
+        if self._errors:
+            raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
+        _generic_data_source_clean(self, cd)
+
+
+def get_creator_signature_revision_form(revision=None, user=None):
+    class RuntimeCreatorSignatureRevisionForm(CreatorSignatureRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeCreatorSignatureRevisionForm,
+                  self).__init__(*args, **kwargs)
+            if revision:
+                init_data_source_fields('', revision, self.fields)
+
+            if revision.image_revision or (revision.source and
+                                           revision.source.signature):
+                self.fields['signature'].help_text = 'Select a file if you want to replace the existing image.'
+
+        if revision.source:
+            signature = forms.ImageField(widget=HiddenInput, required=False)
+            generic = forms.BooleanField(widget=HiddenInput, required=False)
+
+        def save(self, commit=True):
+            instance = super(RuntimeCreatorSignatureRevisionForm,
+                             self).save(commit=commit)
+            if instance.image_revision:
+                instance.image_revision.changeset = revision.changeset
+                instance.image_revision.object_id = instance.id
+                instance.image_revision.content_type = ContentType.objects.get_for_model(instance)
+
+                instance.image_revision.save()
+            return instance
+
+        def clean(self):
+            cd = self.cleaned_data
+
+            if not cd['generic'] and not cd['signature'] and \
+               not revision.image_revision and not revision.source:
+                raise forms.ValidationError('Either mark the signature as '
+                                            'generic or upload an image.')
+            if cd['generic'] and cd['signature']:
+                raise forms.ValidationError('Either mark the signature as '
+                                            'generic or upload an image.')
+            if cd['generic'] and revision.image_revision:
+                raise forms.ValidationError('Signature image exists, cannot '
+                                            'mark the signature as generic.')
+            if self._errors:
+                raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
+            _generic_data_source_clean(self, cd)
+
+        def as_table(self):
+            # if not user or user.indexer.show_wiki_links:
+            #     _set_help_labels(self, CREATOR_DEGREE_HELP_LINKS)
+            return super(CreatorSignatureRevisionForm, self).as_table()
+
+    return RuntimeCreatorSignatureRevisionForm
+
+
+class CreatorSignatureRevisionForm(forms.ModelForm):
+    class Meta:
+        model = CreatorSignatureRevision
+        fields = model._base_field_list
+
+    def __init__(self, *args, **kwargs):
+        super(CreatorSignatureRevisionForm, self).__init__(*args, **kwargs)
+        ordering = list(self.fields)
+        ordering.insert(1, 'signature')
+        insert_data_source_fields('', ordering, self.fields,
+                                  'signature')
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
+
+    signature = forms.ImageField(widget=forms.FileInput, required=False)
+
+    comments = _get_comments_form_field()
+
+    def save(self, commit=True):
+        instance = super(CreatorSignatureRevisionForm, self).save(commit=commit)
+        signature = self.cleaned_data['signature']
+        if signature:
+            if not instance.image_revision:
+                image_revision = ImageRevision(type=ImageType.objects.get(name='CreatorSignature'),
+                                               changeset_id=1)
+                image_revision.save()
+                instance.image_revision = image_revision
+            else:
+                image_revision = instance.image_revision
+            image_revision.image_file.save(str(image_revision.id) + '.jpg',
+                                           content=File(signature))
+        return instance
+
+    def clean(self):
+        cd = self.cleaned_data
+
+        if not cd['generic'] and not cd['signature']:
+            raise forms.ValidationError('Either mark the signature as generic '
+                                        'or upload an image.')
+        if cd['generic'] and cd['signature']:
+            raise forms.ValidationError('Either mark the signature as generic '
+                                        'or upload an image.')
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
         _generic_data_source_clean(self, cd)
@@ -281,9 +390,15 @@ class CreatorDegreeRevisionForm(forms.ModelForm):
         model = CreatorDegreeRevision
         fields = model._base_field_list
 
+    school = forms.ModelChoiceField(
+        queryset=School.objects.all(),
+        widget=autocomplete.ModelSelect2(url='school_autocomplete',
+                                         attrs={'style': 'min-width: 60em'}),
+    )
+
     def __init__(self, *args, **kwargs):
         super(CreatorDegreeRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -323,7 +438,7 @@ class CreatorMembershipRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorMembershipRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -376,7 +491,7 @@ class CreatorArtInfluenceRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorArtInfluenceRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -435,7 +550,7 @@ class CreatorNonComicWorkRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorNonComicWorkRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields, 'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
@@ -503,7 +618,7 @@ class CreatorRelationRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreatorRelationRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields, 'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
@@ -524,7 +639,8 @@ class CreatorRelationRevisionForm(forms.ModelForm):
       queryset=CreatorNameDetail.objects.filter(type__id=8, deleted=False),
       widget=autocomplete.ModelSelect2Multiple(
         url='creator_name_4_relation_autocomplete',
-        attrs={'style': 'min-width: 60em'}),
+        attrs={'style': 'min-width: 60em'},
+        forward=['to_creator']),
       help_text='For employee or user of house name relations also add the '
                 'involved creator name(s).',
       required=False

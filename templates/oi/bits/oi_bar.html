@@ -11,6 +11,7 @@
   <li><a href="{% url "editor_log" %}">Editor Log</a> </li>
   {% endif %}
   <li><a href="{% url "approved" %}">Approved</a> </li>
+  <li><a href="{% url "commented" %}">Commented</a> </li>
   <li><a href="{% url "add" %}">Add New</a> </li>
   {% if perms.indexer.can_mentor %}
   <li><a href="{% url "mentoring" %}">Mentoring</a> </li>

@@ -24,7 +24,7 @@ class Country(models.Model):
         """
         return (self.code,)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -50,8 +50,8 @@ class Currency(models.Model):
     def natural_key(self):
         return (self.code,)
 
-    def __unicode__(self):
-        return unicode(self.code) + u" - " + unicode(self.name)
+    def __str__(self):
+        return str(self.code) + " - " + str(self.name)
 
 
 class Date(models.Model):
@@ -88,7 +88,7 @@ class Date(models.Model):
         self.day_uncertain = day_uncertain or (not day and not empty) \
                                            or (day is not None and '?' in day)
 
-    def __unicode__(self):
+    def __str__(self):
         year = self.year or ''
         if self.year_uncertain and '?' not in year:
             year += '?'
@@ -99,13 +99,13 @@ class Date(models.Model):
         if self.day_uncertain and '?' not in day:
             day += '?'
         if day:
-            return year+u'-'+month+u'-'+day
+            return year+'-'+month+'-'+day
         elif month:
-            return year+u'-'+month
+            return year+'-'+month
         elif year:
             return year
         else:
-            return u''
+            return ''
 
 
 class LanguageManager(models.Manager):
@@ -137,7 +137,7 @@ class Language(models.Model):
         else:
             return self.name
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -150,5 +150,5 @@ class Script(models.Model):
     number = models.PositiveSmallIntegerField(unique=True)
     name = models.CharField(max_length=64)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name

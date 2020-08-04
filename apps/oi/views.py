@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, absolute_import
+
 
 import re
 import sys
 import glob
 import PIL.Image as pyImage
-from urllib import unquote
+from urllib.parse import unquote
 
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.db import transaction, IntegrityError
@@ -30,14 +30,15 @@ from apps.gcd.models import (
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
     CreatorRelation, CreatorSchool, CreatorNameDetail, NameType, SourceType,
-    STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation)
+    STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
+    IndiciaPrinter, CreatorSignature)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
     show_creator_membership, show_received_award, show_creator_art_influence, \
     show_creator_non_comic_work, show_creator_school, show_creator_degree, \
-    show_award
+    show_award, show_printer, show_indicia_printer
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -59,7 +60,9 @@ from apps.oi.models import (
     PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
-    FeatureRelationRevision, process_data_source)
+    FeatureRelationRevision, process_data_source, PrinterRevision,
+    IndiciaPrinterRevision, CreatorSignatureRevision, ChangesetComment,
+    validated_isbn)
 
 from apps.oi.forms import (get_brand_group_revision_form,
                            get_brand_revision_form,
@@ -86,6 +89,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            CreatorRelationRevisionForm,
                            CreatorSchoolRevisionForm,
                            CreatorDegreeRevisionForm,
+                           CreatorSignatureRevisionForm,
                            DateRevisionForm)
 from apps.oi.forms.support import CREATOR_HELP_LINKS
 
@@ -101,6 +105,8 @@ REVISION_CLASSES = {
     'brand_group': BrandGroupRevision,
     'brand': BrandRevision,
     'brand_use': BrandUseRevision,
+    'printer': PrinterRevision,
+    'indicia_printer': IndiciaPrinterRevision,
     'series': SeriesRevision,
     'series_bond': SeriesBondRevision,
     'issue': IssueRevision,
@@ -115,6 +121,7 @@ REVISION_CLASSES = {
     'award': AwardRevision,
     'received_award': ReceivedAwardRevision,
     'creator': CreatorRevision,
+    'creator_signature': CreatorSignatureRevision,
     'creator_art_influence': CreatorArtInfluenceRevision,
     'creator_degree': CreatorDegreeRevision,
     'creator_membership': CreatorMembershipRevision,
@@ -130,6 +137,8 @@ DISPLAY_CLASSES = {
     'brand_group': BrandGroup,
     'brand': Brand,
     'brand_use': BrandUse,
+    'printer': Printer,
+    'indicia_printer': IndiciaPrinter,
     'series': Series,
     'series_bond': SeriesBond,
     'issue': Issue,
@@ -147,6 +156,7 @@ DISPLAY_CLASSES = {
     'award': Award,
     'received_award': ReceivedAward,
     'creator': Creator,
+    'creator_signature': CreatorSignature,
     'creator_art_influence': CreatorArtInfluence,
     'creator_degree': CreatorDegree,
     'creator_membership': CreatorMembership,
@@ -190,15 +200,15 @@ def delete(request, id, model_name):
 
         # These can only be reached if people try to paste in URLs directly,
         # but as we know, some people do that sort of thing.
-        if display_obj.deleted:
+        if getattr(display_obj, 'deleted', False):
             return render_error(
               request,
-              u'Cannot delete "%s" as it is already deleted.' % display_obj,
+              'Cannot delete "%s" as it is already deleted.' % display_obj,
               redirect=False)
         if not display_obj.deletable():
             return render_error(
               request,
-              u'"%s" cannot be deleted.' % display_obj, redirect=False)
+              '"%s" cannot be deleted.' % display_obj, redirect=False)
 
         return oi_render(
           request,
@@ -240,7 +250,7 @@ def reserve(request, id, model_name, delete=False,
         return _cant_get(request)
     display_obj = get_object_or_404(DISPLAY_CLASSES[model_name], id=id)
 
-    if display_obj.deleted:
+    if getattr(display_obj, 'deleted', False):
         if model_name == 'cover':
             return HttpResponseRedirect(urlresolvers.reverse('show_issue',
               kwargs={'issue_id': display_obj.issue.id}))
@@ -270,7 +280,7 @@ def reserve(request, id, model_name, delete=False,
         if changeset is None:
             return render_error(
               request,
-              u'Cannot edit "%s" as it is reserved, or data objects required'
+              'Cannot edit "%s" as it is reserved, or data objects required'
                ' for its editing are reserved.' % display_obj)
 
         if delete:
@@ -425,24 +435,6 @@ def reserve_other_issue(changeset, revision, issue_one):
     return True
 
 
-def extract_creator_names(request):
-    total_creator_names = int(request.POST.get('total_names'))
-    creator_names = []
-    for i in range(1, total_creator_names + 1):
-        if 'name_' + str(i) in request.POST:
-            name_data = {}
-            name_data['id'] = i
-            name_data['name'] = request.POST.get('name_' + str(i))
-            name_data['sort_name'] = request.POST.get('sort_name_' + str(i))
-            name_data['type_id'] = int(request.POST.get('name_type_' + str(i)))
-            name_data['revision_id'] = request.POST.get('name_revision_id_' + str(i))
-            name_data['relation_type_id'] = int(request.POST.get(
-                'relation_type_' + str(i))) if request.POST.get(
-                'relation_type_' + str(i)) else None
-            creator_names.append(name_data)
-    return creator_names
-
-
 @permission_required('indexer.can_reserve')
 def edit_revision(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
@@ -509,11 +501,11 @@ def submit(request, id):
     changeset.submit(notes=comment_text)
     if changeset.approver is not None:
         if comment_text:
-            comment = u'The submission includes the comment:\n"%s"' % \
+            comment = 'The submission includes the comment:\n"%s"' % \
                       comment_text
         else:
             comment = ''
-        email_body = u"""
+        email_body = """
 Hello from the %s!
 
 
@@ -525,8 +517,8 @@ thanks,
 -the %s team
 %s
 """ % (settings.SITE_NAME,
-           unicode(changeset),
-           unicode(changeset.indexer.indexer),
+           str(changeset),
+           str(changeset.indexer.indexer),
            comment,
            settings.SITE_URL.rstrip('/') +
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
@@ -596,7 +588,7 @@ def _save(request, form, revision, changeset=None, model_name=None):
                   'No publisher with id %d.' % publisher_id, changeset)
             if publisher.pending_deletion():
                 return show_error_with_return(request, 'Publisher %s is '
-                  'pending deletion' % unicode(publisher), changeset)
+                  'pending deletion' % str(publisher), changeset)
             if revision.changeset.issuerevisions.count() == 0:
                 revision.series.active_issues()
                 if RevisionLock.objects.filter(
@@ -627,7 +619,8 @@ def _save(request, form, revision, changeset=None, model_name=None):
                                         CTYPES['creator_membership'],
                                         CTYPES['creator_non_comic_work'],
                                         CTYPES['creator_relation'],
-                                        CTYPES['creator_school']]:
+                                        CTYPES['creator_school'],
+                                        CTYPES['creator_signature']]:
                     _save_data_source_revision(form, revision, '')
                     if revision.changeset.change_type == \
                       CTYPES['creator_relation']:
@@ -701,7 +694,7 @@ def retract(request, id):
     """
     if request.method != 'POST':
         return _cant_get(request)
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
 
     if request.user != changeset.indexer:
         return oi_render(request, 'indexer/error.html',
@@ -713,7 +706,7 @@ def retract(request, id):
         send_comment_observer(request, changeset, comment_text)
 
     return HttpResponseRedirect(
-      urlresolvers.reverse('edit', kwargs={'id': changeset.id }))
+      urlresolvers.reverse('edit', kwargs={'id': changeset.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -721,30 +714,31 @@ def confirm_discard(request, id, has_comment=0):
     """
     Indexer has to confirm the discard of a change.
     """
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.indexer:
-        return render_error(request,
+        return render_error(
+          request,
           'Only the author of the changeset can access this page.',
           redirect=False)
 
-    if not changeset.state in states.ACTIVE:
-        return render_error(request,
-          'Only ACTIVE changes can be discarded.')
+    if changeset.state not in states.ACTIVE:
+        return render_error(
+          request, 'Only ACTIVE changes can be discarded.')
 
     if request.method != 'POST':
         return oi_render(request, 'oi/edit/confirm_discard.html',
-                         {'changeset': changeset })
+                         {'changeset': changeset})
 
     if 'discard' in request.POST:
         if has_comment == '1' and changeset.approver:
             comment_text = changeset.comments.latest('created').text
-            comment = u'The discard includes the comment:\n"%s"' % comment_text
+            comment = 'The discard includes the comment:\n"%s"' % comment_text
         else:
             comment = ''
             comment_text = ''
         changeset.discard(discarder=request.user)
         if changeset.approver:
-            email_body = u"""
+            email_body = """
 Hello from the %s!
 
 
@@ -756,13 +750,13 @@ thanks,
 -the %s team
 %s
 """ % (settings.SITE_NAME,
-               unicode(changeset),
-               unicode(changeset.indexer.indexer),
-               comment,
-               settings.SITE_URL.rstrip('/') +
-                 urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
-               settings.SITE_NAME,
-               settings.SITE_URL)
+       str(changeset),
+       str(changeset.indexer.indexer),
+       comment,
+       settings.SITE_URL.rstrip('/') +
+         urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
+       settings.SITE_NAME,
+       settings.SITE_URL)
 
             changeset.approver.email_user('Reviewed GCD change discarded',
               email_body, settings.EMAIL_INDEXING)
@@ -774,7 +768,7 @@ thanks,
         # from where the 'discard' originated, but due to the
         # redirect we don't have this information here.
         return HttpResponseRedirect(urlresolvers.reverse('edit',
-                                    kwargs={'id': changeset.id }))
+                                    kwargs={'id': changeset.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -784,20 +778,20 @@ def discard(request, id):
     """
     if request.method != 'POST':
         return _cant_get(request)
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
 
     if (request.user != changeset.indexer and
         request.user != changeset.approver):
         return oi_render(request, 'indexer/error.html',
                          {'error_text': 'Only the author or the assigned '
-                                        'editor can discard a change.' })
+                                        'editor can discard a change.'})
 
     comment_text = request.POST['comments'].strip()
     if request.user != changeset.indexer and not comment_text:
         return render_error(request,
                             'You must explain why you are rejecting this '
                             'change.  Please press the "back" button and use '
-                            'the comments field for the explanation.' )
+                            'the comments field for the explanation.')
 
     # get a confirmation to avoid unwanted discards
     if request.user == changeset.indexer:
@@ -816,7 +810,7 @@ def discard(request, id):
     changeset.discard(discarder=request.user, notes=comment_text)
 
     if request.user == changeset.approver:
-        email_body = u"""
+        email_body = """
 Hello from the %s!
 
 
@@ -833,14 +827,14 @@ thanks,
 -the %s team
 %s
 """ % (settings.SITE_NAME,
-           unicode(changeset),
-           unicode(changeset.approver.indexer),
-           comment_text,
-           settings.SITE_URL.rstrip('/') +
-             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
-           changeset.approver.email,
-           settings.SITE_NAME,
-           settings.SITE_URL)
+       str(changeset),
+       str(changeset.approver.indexer),
+       comment_text,
+       settings.SITE_URL.rstrip('/') +
+         urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+       changeset.approver.email,
+       settings.SITE_NAME,
+       settings.SITE_URL)
 
         changeset.indexer.email_user('GCD change rejected', email_body,
           settings.EMAIL_INDEXING)
@@ -865,14 +859,14 @@ def assign(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user == changeset.indexer:
         return render_error(request, 'You may not approve your own changes.')
 
     comment_text = request.POST['comments'].strip()
     # TODO: rework error checking strategy.  This is a hack for the most
     # common case but we probably shouldn't be doing this check in the
-    # model layer in the first place.  See tech bug #199.
+    # model layer in the first place.
     try:
         changeset.assign(approver=request.user, notes=comment_text)
     except ViewTerminationError:
@@ -910,7 +904,7 @@ def assign(request, id):
                 pass
 
     if comment_text:
-        email_body = u"""
+        email_body = """
 Hello from the %s!
 
 
@@ -923,8 +917,8 @@ thanks,
 -the %s team
 %s
 """ % (settings.SITE_NAME,
-           unicode(request.user.indexer),
-           unicode(changeset),
+           str(request.user.indexer),
+           str(changeset),
            comment_text,
            settings.SITE_URL.rstrip('/') +
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
@@ -952,7 +946,7 @@ def release(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.approver:
         return oi_render(request, 'indexer/error.html',
           {'error_text': 'A change may only be released by its approver.'})
@@ -960,7 +954,7 @@ def release(request, id):
     comment_text = request.POST['comments'].strip()
     changeset.release(notes=comment_text)
     if comment_text:
-        email_body = u"""
+        email_body = """
 Hello from the %s!
 
 
@@ -973,8 +967,8 @@ thanks,
 -the %s team
 %s
 """ % (settings.SITE_NAME,
-           unicode(request.user.indexer),
-           unicode(changeset),
+           str(request.user.indexer),
+           str(changeset),
            comment_text,
            settings.SITE_URL.rstrip('/') +
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
@@ -1002,7 +996,7 @@ def discuss(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.approver and \
       request.user != changeset.indexer:
         return oi_render(request, 'indexer/error.html',
@@ -1026,13 +1020,13 @@ def discuss(request, id):
         email_comments = '.'
 
     if request.user == changeset.indexer:
-        action_by = 'indexer %s' % unicode(changeset.indexer.indexer)
+        action_by = 'indexer %s' % str(changeset.indexer.indexer)
         start_comment = 'The reviewed'
     else:
-        action_by = 'editor %s' % unicode(changeset.approver.indexer)
+        action_by = 'editor %s' % str(changeset.approver.indexer)
         start_comment = 'Your'
 
-    email_body = u"""
+    email_body = """
 Hello from the %s!
 
 
@@ -1046,7 +1040,7 @@ thanks,
 %s
 """ % (settings.SITE_NAME,
        start_comment,
-       unicode(changeset),
+       str(changeset),
        action_by,
        email_comments,
        settings.SITE_URL.rstrip('/') +
@@ -1091,7 +1085,7 @@ def approve(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.approver:
         return render_error(request,
           'A change may only be approved by its approver.')
@@ -1123,7 +1117,7 @@ and uncheck the "Approval emails" box.
 """ % (settings.SITE_URL.rstrip('/') + urlresolvers.reverse('default_profile'))
 
     if changeset.indexer.indexer.notify_on_approve or comment_text:
-        email_body = u"""
+        email_body = """
 Hello from the %s!
 
 
@@ -1137,8 +1131,8 @@ thanks,
 %s
 %s
 """ % (settings.SITE_NAME,
-       unicode(changeset),
-       unicode(changeset.approver.indexer),
+       str(changeset),
+       str(changeset.approver.indexer),
        email_comments,
        settings.SITE_URL.rstrip('/') +
          urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
@@ -1225,7 +1219,7 @@ thanks,
 
 
 def _send_declined_reservation_email(indexer, issue):
-    email_body = u"""
+    email_body = """
 Hello from the %s!
 
 
@@ -1259,7 +1253,7 @@ def _send_declined_ongoing_email(indexer, series):
         course_of_action = ("As a new user you will gain the ability to hold "
                             "series revisions as your initial changes get "
                             "approved.")
-    email_body = u"""
+    email_body = """
 Hello from the %s!
 
 
@@ -1287,7 +1281,7 @@ def disapprove(request, id):
     if request.method != 'POST':
         return _cant_get(request)
 
-    changeset = get_object_or_404(Changeset, id=id)
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), id=id)
     if request.user != changeset.approver:
         return render_error(request,
           'A change may only be rejected by its approver.')
@@ -1301,7 +1295,7 @@ def disapprove(request, id):
 
     changeset.disapprove(notes=comment_text)
 
-    email_body = u"""
+    email_body = """
 Hello from the %s!
 
 
@@ -1314,8 +1308,8 @@ thanks,
 -the %s team
 %s
 """ % (settings.SITE_NAME,
-       unicode(changeset),
-       unicode(changeset.approver.indexer),
+       str(changeset),
+       str(changeset.approver.indexer),
        comment_text,
        settings.SITE_URL.rstrip('/') +
          urlresolvers.reverse('edit', kwargs={'id': changeset.id }),
@@ -1338,7 +1332,7 @@ thanks,
 
 
 def send_comment_observer(request, changeset, comments):
-    email_body = u"""
+    email_body = """
 Hello from the %s!
 
 
@@ -1351,8 +1345,8 @@ thanks,
 -the %s team
 %s
 """ % (settings.SITE_NAME,
-           unicode(request.user.indexer),
-           unicode(changeset),
+           str(request.user.indexer),
+           str(changeset),
            comments,
            settings.SITE_URL.rstrip('/') +
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
@@ -1387,7 +1381,7 @@ def add_comments(request, id):
                                   old_state=changeset.state,
                                   new_state=changeset.state)
 
-        email_body = u"""
+        email_body = """
 Hello from the %s!
 
 
@@ -1400,8 +1394,8 @@ thanks,
 -the %s team
 %s
 """ % (settings.SITE_NAME,
-           unicode(request.user.indexer),
-           unicode(changeset),
+           str(request.user.indexer),
+           str(changeset),
            comment_text,
            settings.SITE_URL.rstrip('/') +
              urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
@@ -1643,18 +1637,18 @@ def edit_issues_in_bulk(request):
     changeset.save()
     comment = 'Used search terms:\n'
     for search in used_search_terms:
-        comment += u'%s : %s\n' % (search[0], search[1])
-    comment += u'method : %s\n' % method
-    comment += u'behavior : %s\n' % logic
+        comment += '%s : %s\n' % (search[0], search[1])
+    comment += 'method : %s\n' % method
+    comment += 'behavior : %s\n' % logic
     # cannot use urlencode since urlize needs plain text
     # and urlencode would encode non-ASCII characters
     query_string = ''
-    for entry in request.GET.iteritems():
+    for entry in request.GET.items():
         if query_string == '':
-            query_string += u'?%s=%s' % entry
+            query_string += '?%s=%s' % entry
         else:
-            query_string += u'&%s=%s' % entry
-    comment += u'Search results: %s%s%s' % (settings.SITE_URL.rstrip('/'),
+            query_string += '&%s=%s' % entry
+    comment += 'Search results: %s%s%s' % (settings.SITE_URL.rstrip('/'),
                  urlresolvers.reverse('process_advanced_search'),
                  query_string.replace(' ', '+'))
 
@@ -1709,145 +1703,47 @@ def _display_bulk_issue_change_form(request, form,
 
 @permission_required('indexer.can_reserve')
 def add_publisher(request):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-
-    if request.method != 'POST':
-        form = get_publisher_revision_form(user=request.user)()
-        return _display_add_publisher_form(request, form)
-
-    if 'cancel' in request.POST:
-        return HttpResponseRedirect(urlresolvers.reverse('add'))
-
-    form = get_publisher_revision_form(user=request.user)(request.POST)
-    if not form.is_valid():
-        return _display_add_publisher_form(request, form)
-
-    changeset = Changeset(indexer=request.user, state=states.OPEN,
-                          change_type=CTYPES['publisher'])
-    changeset.save()
-    revision = form.save(commit=False)
-    revision.save_added_revision(changeset=changeset)
-    return submit(request, changeset.id)
-
-
-def _display_add_publisher_form(request, form):
-    object_name = 'Publisher'
-    object_url = urlresolvers.reverse('add_publisher')
-
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': object_name,
-        'object_url': object_url,
-        'action_label': 'Submit new',
-        'form': form,
-      })
+    return add_generic(request, 'publisher')
 
 
 @permission_required('indexer.can_reserve')
 def add_indicia_publisher(request, parent_id):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-
-    try:
-        parent = Publisher.objects.get(id=parent_id)
-        if parent.deleted or parent.pending_deletion():
-            return render_error(request, u'Cannot add indicia / colophon '
-              u'publishers since "%s" is deleted or pending deletion.' % parent)
-
-        if request.method != 'POST':
-            form = get_indicia_publisher_revision_form(user=request.user)()
-            return _display_add_indicia_publisher_form(request, parent, form)
-
-        if 'cancel' in request.POST:
-            return HttpResponseRedirect(urlresolvers.reverse(
-              'show_publisher',
-              kwargs={ 'publisher_id': parent_id }))
-
-        form = \
-          get_indicia_publisher_revision_form(user=request.user)(request.POST)
-        if not form.is_valid():
-            return _display_add_indicia_publisher_form(request, parent, form)
-
-        changeset = Changeset(indexer=request.user, state=states.OPEN,
-                              change_type=CTYPES['indicia_publisher'])
-        changeset.save()
-        revision = form.save(commit=False)
-        revision.save_added_revision(changeset=changeset,
-                                     parent=parent)
-        return submit(request, changeset.id)
-
-    except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
-        return render_error(request,
-          'Could not find publisher for id ' + parent_id)
-
-
-def _display_add_indicia_publisher_form(request, parent, form):
-    object_name = 'Indicia / Colophon Publisher'
+    parent = get_object_or_404(Publisher, id=parent_id)
+    if parent.deleted or parent.pending_deletion():
+        return render_error(
+          request,
+          'Cannot add indicia / colophon publishers since '
+          '"%s" is deleted or pending deletion.' % parent)
+    save_kwargs = {'parent': parent}
+    cancel = urlresolvers.reverse('show_publisher',
+                                  kwargs={ 'publisher_id': parent_id })
     object_url = urlresolvers.reverse('add_indicia_publisher',
-                                          kwargs={ 'parent_id': parent.id })
-
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': object_name,
-        'object_url': object_url,
-        'action_label': 'Submit new',
-        'form': form,
-      })
+                                      kwargs={ 'parent_id': parent.id })
+    return add_generic(request, 'indicia_publisher',
+                       object_url=object_url,
+                       object_name = 'Indicia / Colophon Publisher',
+                       cancel=cancel,
+                       save_kwargs=save_kwargs)
 
 
 @permission_required('indexer.can_reserve')
 def add_brand_group(request, parent_id):
-    if not request.user.indexer.can_reserve_another():
-        return render_error(request, REACHED_CHANGE_LIMIT)
-
-    try:
-        parent = Publisher.objects.get(id=parent_id)
-        if parent.deleted or parent.pending_deletion():
-            return render_error(request, u'Cannot add brands '
-              u'since "%s" is deleted or pending deletion.' % parent)
-
-        if request.method != 'POST':
-            form = get_brand_group_revision_form(user=request.user)()
-            return _display_add_brand_group_form(request, parent, form)
-
-        if 'cancel' in request.POST:
-            return HttpResponseRedirect(urlresolvers.reverse(
-              'show_publisher',
-              kwargs={ 'publisher_id': parent_id }))
-
-        form = get_brand_group_revision_form(user=request.user)(request.POST)
-        if not form.is_valid():
-            return _display_add_brand_group_form(request, parent, form)
-
-        changeset = Changeset(indexer=request.user, state=states.OPEN,
-                              change_type=CTYPES['brand_group'])
-        changeset.save()
-        revision = form.save(commit=False)
-        revision.save_added_revision(changeset=changeset,
-                                     parent=parent)
-        return submit(request, changeset.id)
-
-    except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
-        return render_error(request,
-          'Could not find publisher for id ' + parent_id)
-
-
-def _display_add_brand_group_form(request, parent, form):
-    object_name = 'BrandGroup'
+    parent = get_object_or_404(Publisher, id=parent_id)
+    if parent.deleted or parent.pending_deletion():
+        return render_error(
+          request,
+          'Cannot add brands since '
+          '"%s" is deleted or pending deletion.' % parent)
+    save_kwargs = {'parent': parent}
+    cancel = urlresolvers.reverse('show_publisher',
+                                  kwargs={ 'publisher_id': parent_id })
     object_url = urlresolvers.reverse('add_brand_group',
                                       kwargs={ 'parent_id': parent.id })
-
-    return oi_render(
-      request, 'oi/edit/add_frame.html',
-      {
-        'object_name': object_name,
-        'object_url': object_url,
-        'action_label': 'Submit new',
-        'form': form,
-      })
+    return add_generic(request, 'brand_group',
+                       object_url=object_url,
+                       object_name = 'Brand Group',
+                       cancel=cancel,
+                       save_kwargs=save_kwargs)
 
 
 @permission_required('indexer.can_reserve')
@@ -1859,8 +1755,8 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
         try:
             brand_group = BrandGroup.objects.get(id=brand_group_id)
             if brand_group.deleted or brand_group.pending_deletion():
-                return render_error(request, u'Cannot add brands '
-                u'since "%s" is deleted or pending deletion.' % brand_group)
+                return render_error(request, 'Cannot add brands '
+                'since "%s" is deleted or pending deletion.' % brand_group)
         except (BrandGroup.DoesNotExist, BrandGroup.MultipleObjectsReturned):
             return render_error(request,
             'Could not find Brand Group for id ' + brand_group_id)
@@ -1869,8 +1765,8 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
         try:
             publisher = Publisher.objects.get(id=publisher_id)
             if publisher.deleted or publisher.pending_deletion():
-                return render_error(request, u'Cannot add brands '
-                u'since "%s" is deleted or pending deletion.' % publisher)
+                return render_error(request, 'Cannot add brands '
+                'since "%s" is deleted or pending deletion.' % publisher)
         except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
             return render_error(request,
             'Could not find Publisher for id ' + publisher_id)
@@ -1928,13 +1824,13 @@ def _display_add_brand_form(request, form, brand_group=None, publisher=None):
 def add_brand_use(request, brand_id, publisher_id=None):
     brand = get_object_or_404(Brand, id=brand_id, deleted=False)
     if brand.pending_deletion():
-        return render_error(request, u'Cannot add a brand use '
-          u'since "%s" is pending deletion.' % brand)
+        return render_error(request, 'Cannot add a brand use '
+          'since "%s" is pending deletion.' % brand)
     if publisher_id:
         publisher = get_object_or_404(Publisher, id=publisher_id, deleted=False)
         if publisher.pending_deletion():
-            return render_error(request, u'Cannot add a brand use '
-              u'since "%s" is pending deletion.' % publisher)
+            return render_error(request, 'Cannot add a brand use '
+              'since "%s" is pending deletion.' % publisher)
         if request.method != 'POST':
             # we should only get here by a POST
             raise NotImplementedError
@@ -1998,6 +1894,31 @@ def _display_add_brand_use_form(request, form, brand, publisher):
 
 
 @permission_required('indexer.can_reserve')
+def add_printer(request):
+    return add_generic(request, 'printer')
+
+
+@permission_required('indexer.can_reserve')
+def add_indicia_printer(request, parent_id):
+    parent = get_object_or_404(Printer, id=parent_id)
+    if parent.deleted or parent.pending_deletion():
+        return render_error(
+          request,
+          'Cannot add indicia printers since '
+          '"%s" is deleted or pending deletion.' % parent)
+    save_kwargs = {'parent': parent}
+    cancel = urlresolvers.reverse('show_printer',
+                                  kwargs={ 'printer_id': parent_id })
+    object_url = urlresolvers.reverse('add_indicia_printer',
+                                      kwargs={ 'parent_id': parent.id })
+    return add_generic(request, 'indicia_printer',
+                       object_url=object_url,
+                       object_name = 'Indicia Printer',
+                       cancel=cancel,
+                       save_kwargs=save_kwargs)
+
+
+@permission_required('indexer.can_reserve')
 def add_series(request, publisher_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -2006,8 +1927,8 @@ def add_series(request, publisher_id):
     try:
         publisher = Publisher.objects.get(id=publisher_id)
         if publisher.deleted or publisher.pending_deletion():
-            return render_error(request, u'Cannot add series '
-              u'since "%s" is deleted or pending deletion.' % publisher)
+            return render_error(request, 'Cannot add series '
+              'since "%s" is deleted or pending deletion.' % publisher)
 
         if request.method != 'POST':
             initial = {}
@@ -2059,14 +1980,14 @@ def _display_add_series_form(request, publisher, form):
 
 
 def init_added_variant(form_class, initial, issue, revision=False):
-    for key in initial.keys():
+    for key in list(initial):
         if key.startswith('_'):
             initial.pop(key)
     if issue.brand:
         initial['brand'] = issue.brand.id
     if issue.indicia_publisher:
         initial['indicia_publisher'] = issue.indicia_publisher.id
-    initial['variant_name'] = u''
+    initial['variant_name'] = ''
     if revision:
         issue = issue.issue
     if issue.variant_set.filter(deleted=False).count():
@@ -2084,8 +2005,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
 
     series = get_object_or_404(Series, id=series_id)
     if series.deleted or series.pending_deletion():
-        return render_error(request, u'Cannot add an issue '
-          u'since "%s" is deleted or pending deletion.' % series)
+        return render_error(request, 'Cannot add an issue '
+          'since "%s" is deleted or pending deletion.' % series)
 
     form_class = get_revision_form(model_name='issue',
                                    series=series,
@@ -2140,6 +2061,9 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     revision.save_added_revision(changeset=changeset,
                                  series=series,
                                  variant_of=variant_of)
+    if variant_of:
+        return edit(request, changeset.id)
+
     return submit(request, changeset.id)
 
 
@@ -2295,8 +2219,8 @@ def add_issues(request, series_id, method=None):
                                 .filter(state__in=states.ACTIVE)
     series = get_object_or_404(Series, id=series_id)
     if series.deleted or series.pending_deletion():
-        return render_error(request, u'Cannot add issues '
-          u'since "%s" is deleted or pending deletion.' % series)
+        return render_error(request, 'Cannot add issues '
+          'since "%s" is deleted or pending deletion.' % series)
 
     if method is None:
         return oi_render(request, 'oi/edit/add_issues.html',
@@ -2474,11 +2398,15 @@ def _display_bulk_issue_form(request, series, form, method=None):
 
 
 @permission_required('indexer.can_reserve')
-def add_generic(request, model_name):
+def add_generic(request, model_name,
+                object_url='', object_name=None,
+                cancel='', save_kwargs={}):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
     if request.method == 'POST' and 'cancel' in request.POST:
+        if cancel:
+            return HttpResponseRedirect(cancel)
         return HttpResponseRedirect(urlresolvers.reverse('add'))
 
     form = get_revision_form(model_name=model_name,
@@ -2488,11 +2416,13 @@ def add_generic(request, model_name):
                               change_type=CTYPES[model_name])
         changeset.save()
         revision = form.save(commit=False)
-        revision.save_added_revision(changeset=changeset)
+        revision.save_added_revision(changeset=changeset, **save_kwargs)
         return submit(request, changeset.id)
     else:
-        object_name = DISPLAY_CLASSES[model_name].__name__
-        object_url = urlresolvers.reverse('add_%s' % model_name)
+        if not object_name:
+            object_name = DISPLAY_CLASSES[model_name].__name__
+        if not object_url:
+            object_url = urlresolvers.reverse('add_%s' % model_name)
 
         return oi_render(
           request, 'oi/edit/add_frame.html',
@@ -2516,8 +2446,8 @@ def add_feature_logo(request, feature_id):
     feature = get_object_or_404(Feature, id=feature_id, deleted=False)
 
     if feature.pending_deletion():
-        return render_error(request, u'Cannot add a feature logo '
-          u'since "%s" is pending deletion.' % feature)
+        return render_error(request, 'Cannot add a feature logo '
+          'since "%s" is pending deletion.' % feature)
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -2559,9 +2489,9 @@ def add_feature_relation(request, feature_id):
     feature = get_object_or_404(Feature, id=feature_id, deleted=False)
 
     if feature.pending_deletion():
-        return render_error(request, u'Cannot add Relation for '
-                                     u'feature "%s" since the record is '
-                                     u'pending deletion.' % feature)
+        return render_error(request, 'Cannot add Relation for '
+                                     'feature "%s" since the record is '
+                                     'pending deletion.' % feature)
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -2758,6 +2688,40 @@ def _get_initial_add_story_data(request, issue_revision, seq):
     return initial
 
 
+@permission_required('indexer.can_reserve')
+def copy_story_revision(request, issue_revision_id, changeset_id):
+    changeset = get_object_or_404(Changeset, id=changeset_id)
+    if request.user != changeset.indexer:
+        raise ViewTerminationError(
+          render_error(request,
+                       'Only the reservation holder may add stories.',
+                       redirect=False))
+    issue_revision = changeset.issuerevisions.get()
+    if issue_revision.id != int(issue_revision_id):
+        raise ViewTerminationError(render_error(
+                                   request,
+                                   'Error in accessing this routine.',
+                                   redirect=False))
+    try:
+        sequence_number = int(request.GET['copied_sequence_number'])
+    except ValueError:
+        raise ViewTerminationError(render_error(
+                                   request,
+                                   "Sequence number must be a number.",
+                                   redirect=False))
+    try:
+        story_revision = changeset.storyrevisions.get(
+          sequence_number=sequence_number)
+    except StoryRevision.DoesNotExist:
+        raise ViewTerminationError(render_error(
+                                   request,
+                                   "Sequence with this number does not exist.",
+                                   redirect=False))
+    StoryRevision.clone_revision(story_revision, changeset,
+                                 issue_revision=issue_revision)
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'edit', kwargs={'id': changeset.id}))
+
 ##############################################################################
 # Series Bond Editing
 ##############################################################################
@@ -2891,7 +2855,7 @@ def add_series_bond(request, id):
 
 def parse_reprint(reprints):
     """ parse a reprint entry for exactly our standard """
-    reprint_direction_from = ["from", "da", "di", "de", "uit", u"från", "aus"]
+    reprint_direction_from = ["from", "da", "di", "de", "uit", "från", "aus"]
     reprint_direction_to = ["in", "i"]
     from_to = reprints.split(' ')[0].lower()
     if from_to in reprint_direction_from + reprint_direction_to:
@@ -3011,7 +2975,7 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
     revision_lock = _get_revision_lock(display_obj, changeset)
     if not revision_lock:
         return render_error(request,
-          u'Cannot edit "%s" as it is already reserved.' % display_obj)
+          'Cannot edit "%s" as it is already reserved.' % display_obj)
 
     revision = ReprintRevision.objects.clone_revision(display_obj,
                                                       changeset=changeset)
@@ -3889,7 +3853,7 @@ def move_cover(request, id, cover_id=None):
     revision_lock = _get_revision_lock(cover, changeset)
     if not revision_lock:
         return render_error(request,
-            u'Cannot move the cover as it is already reserved.')
+            'Cannot move the cover as it is already reserved.')
 
     # create cover revision
     revision = CoverRevision.objects.clone_revision(cover, changeset=changeset)
@@ -4003,8 +3967,8 @@ def ongoing(request, user_id=None):
 
     series = get_object_or_404(Series, id=request.POST['series'])
     if series.deleted or series.pending_deletion():
-        return render_error(request, u'Cannot reserve issues '
-          u'since "%s" is deleted or pending deletion.' % series)
+        return render_error(request, 'Cannot reserve issues '
+          'since "%s" is deleted or pending deletion.' % series)
 
     # TODO no need for the form, since different workflow as originally intended
     form = OngoingReservationForm()
@@ -4017,7 +3981,7 @@ def ongoing(request, user_id=None):
             return HttpResponseRedirect(urlresolvers.reverse(
               'show_series', kwargs={ 'series_id': reservation.series.id }))
         else:
-            return render_error(request, u'Something went wrong while reserving'
+            return render_error(request, 'Something went wrong while reserving'
               ' the series. Please contact us if this error persists.')
 
 
@@ -4078,7 +4042,7 @@ def _process_reorder_form(request, parent, sort_field, child_name, child_class):
             return -1
         return 0
 
-    reorder_list.sort(_compare_sort_input)
+    reorder_list.sort(key=lambda b: reorder_map[b])
 
     # Use in_bulk to ensure the specific issue order
     child_map = child_class.objects.in_bulk(reorder_list)
@@ -4299,7 +4263,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
 
 
 @permission_required('indexer.can_reserve')
-def show_queue(request, queue_name, state):
+def show_queue(request, queue_name):
     kwargs = {}
     if 'editing' == queue_name:
         kwargs['indexer'] = request.user
@@ -4315,6 +4279,8 @@ def show_queue(request, queue_name, state):
         return show_cover_queue(request)
     elif 'approved' == queue_name:
         return show_approved(request)
+    elif 'commented' == queue_name:
+        return show_commented(request)
     elif 'editor_log' == queue_name:
         return show_editor_log(request)
 
@@ -4329,24 +4295,36 @@ def show_queue(request, queue_name, state):
     creator_non_comic_works = changes.filter(change_type=CTYPES['creator_non_comic_work'])
     creator_relations = changes.filter(change_type=CTYPES['creator_relation'])
     creator_schools = changes.filter(change_type=CTYPES['creator_school'])
+    creator_signatures = changes.filter(change_type=CTYPES['creator_signature'])
     creator_degres = changes.filter(change_type=CTYPES['creator_degree'])
-    publishers = changes.filter(change_type=CTYPES['publisher'])
+    publishers = changes.filter(change_type=CTYPES['publisher']) \
+                        .prefetch_related('publisherrevisions__previous_revision',
+                                          'publisherrevisions__country')
     indicia_publishers = changes.filter(change_type=CTYPES['indicia_publisher'])
     brand_groups = changes.filter(change_type=CTYPES['brand_group'])
     brands = changes.filter(change_type=CTYPES['brand'])
     brand_uses = changes.filter(change_type=CTYPES['brand_use'])
+    printers = changes.filter(change_type=CTYPES['printer']) \
+                      .prefetch_related('printerrevisions__previous_revision',
+                                        'printerrevisions__country')
+    indicia_printers = changes.filter(change_type=CTYPES['indicia_printer'])
     series = changes.filter(change_type=CTYPES['series'])\
                     .prefetch_related('seriesrevisions__series')
     series_bonds = changes.filter(change_type=CTYPES['series_bond'])
-    issue_adds = changes.filter(change_type=CTYPES['issue_add'])
+    issue_adds = changes.filter(change_type=CTYPES['issue_add']) \
+                        .prefetch_related('issuerevisions__issue',
+                                          'issuerevisions__series')
     issues = changes.filter(change_type__in=[CTYPES['issue'],
                                              CTYPES['variant_add'],
                                              CTYPES['two_issues']])\
                     .prefetch_related('issuerevisions__issue',
-                                      'issuerevisions__series')
+                                      'issuerevisions__variant_of',
+                                      'issuerevisions__series',
+                                      'issuerevisions__previous_revision')
     issue_bulks = changes.filter(change_type=CTYPES['issue_bulk'])
     covers = changes.filter(change_type=CTYPES['cover'])\
-                    .prefetch_related('coverrevisions__issue__series')
+                    .prefetch_related('coverrevisions__previous_revision',
+                                      'coverrevisions__cover')
     features = changes.filter(change_type=CTYPES['feature'])
     feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
     feature_relations = changes.filter(change_type=CTYPES['feature_relation'])
@@ -4379,6 +4357,13 @@ def show_queue(request, queue_name, state):
             'changesets': creators.order_by('modified', 'id') \
                 .annotate(
                 country=Max('creatorrevisions__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Signatures',
+            'object_type': 'creator_signature',
+            'changesets': creator_signatures.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatorsignaturerevisions__creator__birth_country__id'))
           },
           {
             'object_name': 'Memberships',
@@ -4452,6 +4437,18 @@ def show_queue(request, queue_name, state):
             'object_type': 'brand_uses',
             'changesets': brand_uses.order_by('modified', 'id')\
               .annotate(country=Max('branduserevisions__publisher__country__id')),
+          },
+          {
+            'object_name': 'Printers',
+            'object_type': 'printer',
+            'changesets': printers.order_by('modified', 'id')\
+              .annotate(country=Max('printerrevisions__country__id')),
+          },
+          {
+            'object_name': 'Indicia Printers',
+            'object_type': 'indicia_printer',
+            'changesets': indicia_printers.order_by('modified', 'id')\
+              .annotate(country=Max('indiciaprinterrevisions__country__id')),
           },
           {
             'object_name': 'Series',
@@ -4530,6 +4527,33 @@ def show_approved(request):
 
 
 @login_required
+def show_commented(request):
+    commented = ChangesetComment.objects.exclude(text__in=['', 'Editing'])\
+                                        .filter(changeset__migrated=False,
+                                                commenter=request.user)
+
+    deny = ChangesetComment.objects.exclude(text='')\
+                                   .filter(changeset__indexer=request.user,
+                                           commenter=F('changeset__approver'))
+
+    comments = list(commented.values_list('id', flat=True)) + \
+               list(deny.values_list('id', flat=True))
+
+    changes = Changeset.objects.filter(comments__id__in=comments)\
+                               .annotate(last_remark=Max('comments__created'))\
+                               .distinct().order_by('-last_remark')\
+                               .select_related('approver__indexer',
+                                               'indexer__indexer')
+
+    return paginate_response(
+      request,
+      changes,
+      'oi/queues/commented.html',
+      {'CTYPES': CTYPES, 'EDITING': True},
+      per_page=50)
+
+
+@login_required
 def show_editor_log(request):
     changed_states = set(states.CLOSED+states.ACTIVE)
     changed_states.remove(states.REVIEWING)
@@ -4591,7 +4615,12 @@ def compare(request, id):
 
     revision.compare_changes()
 
-    if changeset.change_type == CTYPES['issue_add']:
+    if model_name == 'creator_signature':
+        if changeset.imagerevisions.exists():
+            return image_compare(request, changeset,
+                                 changeset.imagerevisions.get(), revision)
+    if changeset.change_type == CTYPES['issue_add'] \
+       and changeset.issuerevisions.count() > 1:
         template = 'oi/edit/compare_issue_skeletons.html'
     elif changeset.change_type == CTYPES['issue_bulk']:
         template = 'oi/edit/compare_bulk_issue.html'
@@ -4656,7 +4685,8 @@ def compare(request, id):
                                    CTYPES['creator_degree'],
                                    CTYPES['creator_non_comic_work'],
                                    CTYPES['creator_relation'],
-                                   CTYPES['creator_school']]:
+                                   CTYPES['creator_school'],
+                                   CTYPES['creator_signature']]:
         sourced_fields = {'': 'notes'}
         
     for revision_before in revisions_before:
@@ -4784,8 +4814,8 @@ def cover_compare(request, changeset, revision):
             kwargs['pending_covers'] = pending_covers
         kwargs['pending_variant_adds'] = Changeset.objects\
           .filter(issuerevisions__variant_of=revision.issue,
-                  #state__in=states.ACTIVE,
-                  state__in=[states.PENDING,states.REVIEWING],
+                  # state__in=states.ACTIVE,
+                  state__in=[states.PENDING, states.REVIEWING],
                   change_type__in=[CTYPES['issue_add'],
                                    CTYPES['variant_add']])
         # TODO This doesn't include the case of a variant with a
@@ -4793,17 +4823,17 @@ def cover_compare(request, changeset, revision):
         kwargs['variants_without_covers'] = revision.issue.variant_set\
                                                     .filter(cover=None)
 
-        if revision.deleted == False:
-            kwargs['cover_width'] = get_cover_width(revision.base_dir() + \
-                                          str(revision.id) + '*')
+        if revision.deleted is False:
+            kwargs['cover_width'] = get_cover_width(revision.base_dir() +
+                                                    str(revision.id) + '*')
     else:
         if revision.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, we have width 400
             kwargs['cover_width'] = 400
-        elif revision.deleted == False:
+        elif revision.deleted is False:
             if revision.changeset.state == states.DISCARDED:
-                kwargs['cover_width'] = get_cover_width(revision.base_dir() + \
-                                              str(revision.id) + '*')
+                kwargs['cover_width'] = get_cover_width(revision.base_dir() +
+                                                        str(revision.id) + '*')
             else:
                 kwargs['cover_width'] = get_cover_width("%s/uploads/%d_%s*" % (
                   revision.cover.base_dir(),
@@ -4816,7 +4846,7 @@ def cover_compare(request, changeset, revision):
 
 
 @login_required
-def image_compare(request, changeset, revision):
+def image_compare(request, changeset, revision, extra_revision=None):
     '''
     Compare page for images.
     - show uploaded image
@@ -4824,23 +4854,34 @@ def image_compare(request, changeset, revision):
     '''
     image_tag = get_preview_generic_image_tag(revision, "uploaded image")
     kwargs = {'changeset': changeset,
-            'revision': revision,
-            'image_tag' : image_tag,
-            'states': states,
-            'settings': settings}
+              'revision': revision,
+              'extra_revision': extra_revision,
+              'image_tag': image_tag,
+              'states': states,
+              'settings': settings}
+    if extra_revision:
+        kwargs['prev_rev'] = extra_revision.previous()
+        kwargs['post_rev'] = extra_revision.posterior()
+        kwargs['field_list'] = extra_revision.field_list()
+        if changeset.change_type == CTYPES['creator_signature']:
+            sourced_fields = {'': 'notes'}
+            kwargs['sourced_fields'] = sourced_fields
+            kwargs['source_fields'] = ['source_description', 'source_type']
 
-    if changeset.state != states.APPROVED and revision.type.unique:
-        if Image.objects.filter(content_type=\
-                ContentType.objects.get_for_model(revision.object),
-            object_id=revision.object.id, type=revision.type, deleted=False).count():
-                kwargs['double_upload'] = u'%s has an %s. Additional images ' \
-                'cannot be uploaded, only replacements are possible.' \
-                % (revision.object, revision.type.description)
+    if changeset.state != states.APPROVED and revision.type.unique \
+       and not extra_revision:
+        if Image.objects.filter(
+          content_type=ContentType.objects.get_for_model(revision.object),
+          object_id=revision.object.id, type=revision.type, deleted=False)\
+          .count():
+            kwargs['double_upload'] = '%s has an %s. Additional images ' \
+              'cannot be uploaded, only replacements are possible.' \
+              % (revision.object, revision.type.description)
 
     if revision.is_replacement:
         replaced_image = revision.previous()
         kwargs['replaced_image'] = replaced_image
-        kwargs['replaced_image_tag'] = get_preview_generic_image_tag( \
+        kwargs['replaced_image_tag'] = get_preview_generic_image_tag(
                                         replaced_image, "replaced image")
         if changeset.state != states.APPROVED:
             kwargs['replaced_image_marked'] = revision.image.marked
@@ -4856,10 +4897,10 @@ def image_compare(request, changeset, revision):
 @login_required
 def preview(request, id, model_name):
     revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
-    template = 'gcd/details/%s.html' % model_name
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
-                      'brand', 'series', 'issue', 'award', 'creator',
+                      'brand', 'printer', 'indicia_printer', 'series',
+                      'issue', 'award', 'creator',
                       'received_award', 'creator_art_influence',
                       'creator_degree', 'creator_membership',
                       'creator_non_comic_work', 'creator_school']:
@@ -4874,7 +4915,7 @@ def preview(request, id, model_name):
                             getattr(revision.source, field))
             else:
                 model_object = PreviewBrand()
-            model_object._group  = revision.group
+            model_object._group = revision.group
         elif model_name == 'issue':
             # TODO add and use PreviewIssue.init
             if revision.source:
@@ -4888,6 +4929,7 @@ def preview(request, id, model_name):
             model_object.series = revision.series
             model_object.revision = revision
             model_object.on_sale_date = on_sale_date_as_string(revision)
+            model_object.valid_isbn = validated_isbn(revision.isbn)
             # on preview show all story types
             request.GET = request.GET.copy()
             request.GET['issue_detail'] = 2
@@ -4926,14 +4968,14 @@ def preview(request, id, model_name):
         # keywords are a TextField for the revision, but a M2M-relation
         # for the model, overwrite for preview.
         # TODO should all have keywords ?
-        if not model_name in ['award', 'creator', 'received_award',
+        if model_name not in ['award', 'creator', 'received_award',
                               'creator_art_influence', 'creator_degree',
                               'creator_membership', 'creator_non_comic_work',
                               'creator_school']:
             model_object.keywords = revision.keywords
         return globals()['show_%s' % (model_name)](request, model_object, True)
     return render_error(request,
-      u'No preview for "%s" revisions.' % model_name)
+                        'No preview for "%s" revisions.' % model_name)
 
 ##############################################################################
 # Mentoring
@@ -4995,9 +5037,9 @@ def add_creator_award(request, creator_id):
     creator = get_object_or_404(Creator, id=creator_id, deleted=False)
 
     if creator.pending_deletion():
-        return render_error(request, u'Cannot add Award for '
-                                     u'creator "%s" since the record is '
-                                     u'pending deletion.' % creator)
+        return render_error(request, 'Cannot add Award for '
+                                     'creator "%s" since the record is '
+                                     'pending deletion.' % creator)
 
     if request.method == 'GET':
         award_form = ReceivedAwardRevisionForm()
@@ -5013,7 +5055,7 @@ def add_creator_award(request, creator_id):
         )
         if award_form.is_valid():
             changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                    change_type=CTYPES['received_award'])
+                                  change_type=CTYPES['received_award'])
             changeset.save()
             revision = award_form.save(commit=False)
             revision.save_added_revision(changeset=changeset,
@@ -5041,14 +5083,14 @@ def add_received_award(request, award_id, model_name, id):
     award = get_object_or_404(Award, id=award_id)
 
     if award.pending_deletion():
-        return render_error(request, u'Cannot add to Award "%s" since the '
-                                     u'record is pending deletion.' % award)
+        return render_error(request, 'Cannot add to Award "%s" since the '
+                                     'record is pending deletion.' % award)
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('show_award',
-          kwargs={ 'id': data['award_id'] }))
+                                    kwargs={'award_id': award_id}))
 
-    form = get_received_award_revision_form(user=request.user)(request.POST 
+    form = get_received_award_revision_form(user=request.user)(request.POST
                                                                or None)
 
     if model_name == 'story':
@@ -5062,12 +5104,12 @@ def add_received_award(request, award_id, model_name, id):
 
     if form.is_valid():
         changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                change_type=CTYPES['received_award'])
+                              change_type=CTYPES['received_award'])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset,
-                                      recipient=selected_object,
-                                      award=award)
+                                     recipient=selected_object,
+                                     award=award)
         revision.save()
 
         process_data_source(form, '', changeset,
@@ -5079,15 +5121,17 @@ def add_received_award(request, award_id, model_name, id):
                                                       model_name.capitalize(),
                                                       selected_object)
 
-    return oi_render(request, 'oi/edit/add_frame.html',
-        {'action_label': 'Submit new received award',
-         'form': form,
-         'extra_adding_info': extra_adding_info,
-         'object_url': urlresolvers.reverse('add_received_award',
-                                            kwargs={'award_id': award.id,
-                                                    'model_name': model_name,
-                                                    'id': selected_object.id}),
-        })
+    return oi_render(
+      request,
+      'oi/edit/add_frame.html',
+      {'action_label': 'Submit new received award',
+       'form': form,
+       'extra_adding_info': extra_adding_info,
+       'object_url': urlresolvers.reverse('add_received_award',
+                                          kwargs={'award_id': award.id,
+                                                  'model_name': model_name,
+                                                  'id': selected_object.id}),
+       })
 
 
 @permission_required('indexer.can_reserve')
@@ -5095,13 +5139,15 @@ def process_award_recipient(request, data, object_type, selected_id):
     if request.method != 'POST':
         return _cant_get(request)
     if 'cancel' in request.POST:
-        return HttpResponseRedirect(urlresolvers.reverse('show_award',
-          kwargs={ 'id': data['award_id'] }))
+        return HttpResponseRedirect(
+          urlresolvers.reverse('show_award',
+                               kwargs={'id': data['award_id']}))
 
-    return HttpResponseRedirect(urlresolvers.reverse('add_received_award',
-                                            kwargs={'award_id': data['award_id'],
-                                                    'model_name': object_type,
-                                                    'id': selected_id}))
+    return HttpResponseRedirect(
+      urlresolvers.reverse('add_received_award',
+                           kwargs={'award_id': data['award_id'],
+                                   'model_name': object_type,
+                                   'id': selected_id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -5119,11 +5165,12 @@ def select_award_recipient(request, award_id):
             'heading': mark_safe('<h2>%s</h2>' % heading),
             'target': 'a story, issue, or series',
             'return': process_award_recipient,
-            'cancel': HttpResponseRedirect(urlresolvers.reverse('show_award',
-                        kwargs={'award_id': award_id}))}
+            'cancel': HttpResponseRedirect(
+              urlresolvers.reverse('show_award',
+                                   kwargs={'award_id': award_id}))}
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
-          kwargs={'select_key': select_key}))
+                                kwargs={'select_key': select_key}))
 
 
 @permission_required('indexer.can_reserve')
@@ -5134,7 +5181,8 @@ def add_creator(request):
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(reverse('add'))
 
-    creator_form = get_creator_revision_form(user=request.user)(request.POST or None)
+    creator_form = get_creator_revision_form(user=request.user)(request.POST
+                                                                or None)
     form_class = get_date_revision_form(user=request.user,
                                         date_help_links=CREATOR_HELP_LINKS)
     birth_date_form = form_class(request.POST or None, prefix='birth_date')
@@ -5143,7 +5191,7 @@ def add_creator(request):
     creator_names_formset = CreatorRevisionFormSet(request.POST or None)
 
     if not creator_form.is_valid() or not creator_names_formset.is_valid()\
-      or not birth_date_form.is_valid() or not death_date_form.is_valid():
+       or not birth_date_form.is_valid() or not death_date_form.is_valid():
         birth_date_form.fields['date'].label = 'Birth date'
         death_date_form.fields['date'].label = 'Death date'
 
@@ -5177,6 +5225,54 @@ def add_creator(request):
 
 
 @permission_required('indexer.can_reserve')
+def add_creator_signature(request, creator_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    creator = get_object_or_404(Creator, id=creator_id, deleted=False)
+
+    if creator.pending_deletion():
+        return render_error(request, 'Cannot add a Signature for '
+                                     'creator "%s" since the record is '
+                                     'pending deletion.' % creator)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+            'show_creator', kwargs={'creator_id': creator_id}))
+
+    signature_form = CreatorSignatureRevisionForm(request.POST or None,
+                                                  request.FILES or None)
+
+    if signature_form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['creator_signature'])
+        changeset.save()
+
+        revision = signature_form.save(commit=False)
+        revision.save_added_revision(changeset=changeset, creator=creator)
+        revision.save()
+        if revision.image_revision:
+            revision.image_revision.changeset = changeset
+            revision.image_revision.object_id = revision.id
+            revision.image_revision.content_type = ContentType\
+                                   .objects.get_for_model(revision)
+            revision.image_revision.save()
+
+        process_data_source(signature_form, '', changeset,
+                            sourced_revision=revision)
+        return submit(request, changeset.id)
+
+    context = {'form': signature_form,
+               'object_name': 'Signature of a Creator',
+               'object_url': urlresolvers.reverse('add_creator_signature',
+                                                  kwargs={'creator_id':
+                                                          creator_id}),
+               'action_label': 'Submit new',
+               'settings': settings}
+    return oi_render(request, 'oi/edit/add_frame.html', context)
+
+
+@permission_required('indexer.can_reserve')
 def add_creator_relation(request, creator_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
@@ -5184,9 +5280,9 @@ def add_creator_relation(request, creator_id):
     creator = get_object_or_404(Creator, id=creator_id, deleted=False)
 
     if creator.pending_deletion():
-        return render_error(request, u'Cannot add Relation for '
-                                     u'creator "%s" since the record is '
-                                     u'pending deletion.' % creator)
+        return render_error(request, 'Cannot add Relation for '
+                                     'creator "%s" since the record is '
+                                     'pending deletion.' % creator)
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -5216,7 +5312,8 @@ def add_creator_relation(request, creator_id):
     context = {'form': relation_form,
                'object_name': 'Relation with Creator',
                'object_url': urlresolvers.reverse('add_creator_relation',
-                                                  kwargs={'creator_id': creator_id}),
+                                                  kwargs={'creator_id':
+                                                          creator_id}),
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
@@ -5226,13 +5323,13 @@ def add_creator_relation(request, creator_id):
 def add_creator_school(request, creator_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
-    
+
     creator = get_object_or_404(Creator, id=creator_id, deleted=False)
 
     if creator.pending_deletion():
-        return render_error(request, u'Cannot add School for '
-                                     u'creator "%s" since the record is '
-                                     u'pending deletion.' % creator)
+        return render_error(request, 'Cannot add School for '
+                                     'creator "%s" since the record is '
+                                     'pending deletion.' % creator)
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -5242,7 +5339,7 @@ def add_creator_school(request, creator_id):
 
     if school_form.is_valid():
         changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                change_type=CTYPES['creator_school'])
+                              change_type=CTYPES['creator_school'])
         changeset.save()
 
         revision = school_form.save(commit=False)
@@ -5257,7 +5354,8 @@ def add_creator_school(request, creator_id):
     context = {'form': school_form,
                'object_name': 'School of a Creator',
                'object_url': urlresolvers.reverse('add_creator_school',
-                                                  kwargs={'creator_id': creator_id}),
+                                                  kwargs={'creator_id':
+                                                          creator_id}),
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
@@ -5267,13 +5365,13 @@ def add_creator_school(request, creator_id):
 def add_creator_degree(request, creator_id):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
-    
+
     creator = get_object_or_404(Creator, id=creator_id, deleted=False)
 
     if creator.pending_deletion():
-        return render_error(request, u'Cannot add School Degree for '
-                                     u'creator "%s" since the record is '
-                                     u'pending deletion.' % creator)
+        return render_error(request, 'Cannot add School Degree for '
+                                     'creator "%s" since the record is '
+                                     'pending deletion.' % creator)
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -5298,7 +5396,8 @@ def add_creator_degree(request, creator_id):
     context = {'form': degree_form,
                'object_name': 'School Degree of a Creator',
                'object_url': urlresolvers.reverse('add_creator_degree',
-                                                  kwargs={'creator_id': creator_id}),
+                                                  kwargs={'creator_id':
+                                                          creator_id}),
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
@@ -5312,9 +5411,9 @@ def add_creator_membership(request, creator_id):
     creator = get_object_or_404(Creator, id=creator_id, deleted=False)
 
     if creator.pending_deletion():
-        return render_error(request, u'Cannot add Membership '
-                                        u'creators since "%s" is deleted or '
-                                        u'pending deletion.' % creator)
+        return render_error(request, 'Cannot add Membership '
+                                     'creators since "%s" is deleted or '
+                                     'pending deletion.' % creator)
 
     if request.method == 'GET':
         membership_form = CreatorMembershipRevisionForm()
@@ -5330,7 +5429,7 @@ def add_creator_membership(request, creator_id):
         )
         if membership_form.is_valid():
             changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                    change_type=CTYPES['creator_membership'])
+                                  change_type=CTYPES['creator_membership'])
             changeset.save()
 
             revision = membership_form.save(commit=False)
@@ -5343,11 +5442,11 @@ def add_creator_membership(request, creator_id):
 
             return submit(request, changeset.id)
 
-
     context = {'form': membership_form,
                'object_name': 'Membership of a Creator',
                'object_url': urlresolvers.reverse('add_creator_membership',
-                                                  kwargs={'creator_id': creator_id}),
+                                                  kwargs={'creator_id':
+                                                          creator_id}),
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
@@ -5361,9 +5460,9 @@ def add_creator_art_influence(request, creator_id):
     creator = get_object_or_404(Creator, id=creator_id, deleted=False)
 
     if creator.pending_deletion():
-        return render_error(request, u'Cannot add Art Influence for '
-                                     u'creator "%s" since the record is '
-                                     u'pending deletion.' % creator)
+        return render_error(request, 'Cannot add Art Influence for '
+                                     'creator "%s" since the record is '
+                                     'pending deletion.' % creator)
 
     if request.method == 'GET':
         artinfluence_form = CreatorArtInfluenceRevisionForm()
@@ -5379,8 +5478,7 @@ def add_creator_art_influence(request, creator_id):
         )
         if artinfluence_form.is_valid():
             changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                    change_type=CTYPES[
-                                        'creator_art_influence'])
+                                  change_type=CTYPES['creator_art_influence'])
             changeset.save()
 
             revision = artinfluence_form.save(commit=False)
@@ -5395,7 +5493,8 @@ def add_creator_art_influence(request, creator_id):
     context = {'form': artinfluence_form,
                'object_name': 'Art Influence of a Creator',
                'object_url': urlresolvers.reverse('add_creator_art_influence',
-                                                  kwargs={'creator_id': creator_id}),
+                                                  kwargs={'creator_id':
+                                                          creator_id}),
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
@@ -5410,9 +5509,9 @@ def add_creator_non_comic_work(request, creator_id):
 
     creator = Creator.objects.get(id=creator_id)
     if creator.deleted or creator.pending_deletion():
-        return render_error(request, u'Cannot add NonComicWork '
-                                        u'creators since "%s" is deleted or '
-                                        u'pending deletion.' % creator)
+        return render_error(request, 'Cannot add NonComicWork '
+                                     'creators since "%s" is deleted or '
+                                     'pending deletion.' % creator)
 
     if request.method == 'GET':
         noncomicwork_form = CreatorNonComicWorkRevisionForm()
@@ -5429,8 +5528,7 @@ def add_creator_non_comic_work(request, creator_id):
         )
         if noncomicwork_form.is_valid():
             changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                    change_type=CTYPES[
-                                        'creator_non_comic_work'])
+                                  change_type=CTYPES['creator_non_comic_work'])
             changeset.save()
 
             revision = noncomicwork_form.save(commit=False)
@@ -5445,7 +5543,26 @@ def add_creator_non_comic_work(request, creator_id):
     context = {'form': noncomicwork_form,
                'object_name': 'Non Comic Work of a Creator',
                'object_url': urlresolvers.reverse('add_creator_non_comic_work',
-                                                  kwargs={'creator_id': creator_id}),
+                                                  kwargs={'creator_id':
+                                                          creator_id}),
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
+
+
+@permission_required('indexer.can_reserve')
+def migrate_story_revision(request, id):
+    story = get_object_or_404(StoryRevision, id=id)
+    if request.user != story.changeset.indexer:
+        return render_error(
+          request, 'Only the reservation holder may migrate stories.')
+
+    if request.method != 'POST':
+        return _cant_get(request)
+
+    if story.old_credits():
+        story.migrate_credits()
+
+    return HttpResponseRedirect(
+      urlresolvers.reverse('edit_revision', kwargs={'model_name': 'story',
+                                                    'id': story.id}))

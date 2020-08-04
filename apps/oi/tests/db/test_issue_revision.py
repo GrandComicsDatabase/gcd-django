@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import mock
 import pytest
@@ -33,7 +33,7 @@ UPDATE_ALL = 'apps.stats.models.CountStats.objects.update_all_counts'
 def test_create_add_revision(any_added_issue_rev, issue_add_values,
                              any_adding_changeset):
     rev = any_added_issue_rev
-    for k, v in issue_add_values.iteritems():
+    for k, v in issue_add_values.items():
         assert getattr(rev, k) == v
 
     assert rev.issue is None
@@ -50,7 +50,7 @@ def test_create_add_revision(any_added_issue_rev, issue_add_values,
 def test_create_add_variant_revision(any_added_variant_rev, variant_add_values,
                                      any_variant_adding_changeset):
     rev = any_added_variant_rev
-    for k, v in variant_add_values.iteritems():
+    for k, v in variant_add_values.items():
         assert getattr(rev, k) == v
 
     assert rev.issue is None
@@ -126,7 +126,7 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
     assert rev.source is rev.issue
 
     on_sale_revision_fields = ('year_on_sale', 'month_on_sale', 'day_on_sale')
-    for k, v in issue_add_values.iteritems():
+    for k, v in issue_add_values.items():
         if k == 'keywords':
             kws = [k for k in rev.issue.keywords.names()]
             kws.sort()
@@ -152,7 +152,7 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
     assert rev.issue.brand.issue_count == old_brand_issue_count + 1
     assert {
         group.pk: group.issue_count for group in rev.issue.brand.group.all()
-    } == {k: v + 1 for k, v in old_brand_group_counts.iteritems()}
+    } == {k: v + 1 for k, v in old_brand_group_counts.items()}
     assert rev.issue.indicia_publisher.issue_count == \
         old_ind_pub_issue_count + 1
 
@@ -184,7 +184,7 @@ def test_commit_variant_added_revision(any_added_variant_rev,
     assert rev.issue is not None
     assert rev.source is rev.issue
 
-    for k, v in variant_add_values.iteritems():
+    for k, v in variant_add_values.items():
         if k == 'keywords':
             kws = [k for k in rev.issue.keywords.names()]
             kws.sort()
@@ -209,7 +209,7 @@ def test_create_edit_revision(any_added_issue, issue_add_values,
     rev = IssueRevision.clone(data_object=any_added_issue,
                               changeset=any_editing_changeset)
 
-    for k, v in issue_add_values.iteritems():
+    for k, v in issue_add_values.items():
         assert getattr(rev, k) == v
 
     assert rev.issue is any_added_issue
@@ -224,7 +224,7 @@ def test_create_variant_edit_revision(any_added_variant, variant_add_values,
     rev = IssueRevision.clone(data_object=any_added_variant,
                               changeset=any_editing_changeset)
 
-    for k, v in variant_add_values.iteritems():
+    for k, v in variant_add_values.items():
         assert getattr(rev, k) == v
 
     assert rev.issue is any_added_variant
@@ -271,7 +271,7 @@ def test_delete_issue(any_added_issue, any_deleting_changeset,
     assert rev.issue.brand.issue_count == old_brand_issue_count - 1
     assert {
         group.pk: group.issue_count for group in rev.issue.brand.group.all()
-    } == {k: v - 1 for k, v in old_brand_group_counts.iteritems()}
+    } == {k: v - 1 for k, v in old_brand_group_counts.items()}
     assert rev.issue.indicia_publisher.issue_count == \
         old_ind_pub_issue_count - 1
 

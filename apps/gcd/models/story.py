@@ -1,14 +1,17 @@
-from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core import urlresolvers
+from django.db import models
+import django.urls as urlresolvers
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+from django.utils.translation import ungettext
 
 from taggit.managers import TaggableManager
 
+import django_tables2 as tables
+
 from .gcddata import GcdData
 from .award import ReceivedAward
-from .creator import CreatorNameDetail
+from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
 
 STORY_TYPES = {
@@ -37,8 +40,8 @@ OLD_TYPES = {
     'biography (nonfictional)'
 }
 
-# core sequence types: (photo, text) story, cover (incl. reprint)
-CORE_TYPES = [6, 7, 13, 19, 21]
+# core sequence types: cartoon, (photo, text) story, cover (incl. reprint)
+CORE_TYPES = [5, 6, 7, 13, 19, 21]
 # ad sequence types: ad, promo
 AD_TYPES = [2, 16, 26, 28]
 # non-optional sequences: story, cover (incl. reprint)
@@ -47,17 +50,17 @@ NON_OPTIONAL_TYPES = [6, 7, 19]
 
 def show_feature(story):
     first = True
-    features = u''
+    features = ''
     for feature in story.feature_object.all():
         if first:
             first = False
         else:
-            features += u'; '
-        features += u'<a href="%s">%s</a>' % (feature.get_absolute_url(),
-                                              esc(feature.name))
+            features += '; '
+        features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
+                                             esc(feature.name))
     if story.feature:
         if features:
-            features += u'; %s' % esc(story.feature)
+            features += '; %s' % esc(story.feature)
         else:
             features = esc(story.feature)
     return mark_safe(features)
@@ -65,16 +68,16 @@ def show_feature(story):
 
 def show_feature_as_text(story):
     first = True
-    features = u''
+    features = ''
     for feature in story.feature_object.all():
         if first:
             first = False
         else:
-            features += u'; '
-        features += u'%s' % feature.name
+            features += '; '
+        features += '%s' % feature.name
     if story.feature:
         if features:
-            features += u'; %s' % story.feature
+            features += '; %s' % story.feature
         else:
             features = story.feature
     return features
@@ -89,7 +92,7 @@ class CreditType(models.Model):
     name = models.CharField(max_length=50, db_index=True, unique=True)
     sort_code = models.IntegerField(unique=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -98,12 +101,16 @@ class StoryCredit(GcdData):
         app_label = 'gcd'
         db_table = 'gcd_story_credit'
 
-    creator = models.ForeignKey(CreatorNameDetail)
-    credit_type = models.ForeignKey(CreditType)
-    story = models.ForeignKey('Story', related_name='credits')
+    creator = models.ForeignKey(CreatorNameDetail, on_delete=models.CASCADE)
+    credit_type = models.ForeignKey(CreditType, on_delete=models.CASCADE)
+    story = models.ForeignKey('Story', on_delete=models.CASCADE,
+                              related_name='credits')
 
     is_credited = models.BooleanField(default=False, db_index=True)
     is_signed = models.BooleanField(default=False, db_index=True)
+    signature = models.ForeignKey(CreatorSignature, on_delete=models.CASCADE,
+                                  related_name='credits', db_index=True,
+                                  null=True)
 
     uncertain = models.BooleanField(default=False, db_index=True)
 
@@ -113,8 +120,8 @@ class StoryCredit(GcdData):
     # record for a wider range of creative work types, or how it is credited
     credit_name = models.CharField(max_length=255)
 
-    def __unicode__(self):
-        return u"%s: %s (%s)" % (self.story, self.creator, self.credit_type)
+    def __str__(self):
+        return "%s: %s (%s)" % (self.story, self.creator, self.credit_type)
 
 
 class StoryTypeManager(models.Manager):
@@ -136,7 +143,7 @@ class StoryType(models.Model):
     def natural_key(self):
         return (self.name,)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -152,7 +159,7 @@ class Story(GcdData):
     feature = models.CharField(max_length=255)
     feature_object = models.ManyToManyField(Feature)
     feature_logo = models.ManyToManyField(FeatureLogo)
-    type = models.ForeignKey(StoryType)
+    type = models.ForeignKey(StoryType, on_delete=models.CASCADE)
     sequence_number = models.IntegerField()
 
     page_count = models.DecimalField(max_digits=10, decimal_places=3,
@@ -184,7 +191,7 @@ class Story(GcdData):
     awards = GenericRelation(ReceivedAward)
 
     # Fields from issue.
-    issue = models.ForeignKey('Issue')
+    issue = models.ForeignKey('Issue', on_delete=models.CASCADE)
 
     _update_stats = True
 
@@ -218,6 +225,7 @@ class Story(GcdData):
         """
         return self.job_number or \
                self.genre or \
+               self.feature_object.values('genre') or \
                self.characters or \
                self.first_line or \
                self.synopsis or \
@@ -261,18 +269,47 @@ class Story(GcdData):
         return show_feature_as_text(self)
 
     def _show_feature_logo(self, story):
-        return u"; ".join(story.feature_logo.all().values_list('name',
+        return "; ".join(story.feature_logo.all().values_list('name',
                                                               flat=True))
 
     def show_feature_logo(self):
         return self._show_feature_logo(self)
+
+    def show_title(self, use_first_line=False):
+        """
+        Return a properly formatted title.
+        """
+        if self.title == '':
+            if use_first_line and self.first_line:
+                return '["%s"]' % self.first_line
+            else:
+                return '[no title indexed]'
+        if self.title_inferred:
+            return '[%s]' % self.title
+        return self.title
+
+    def show_page_count(self, show_page=False):
+        """
+        Return a properly formatted page count, with "?" as needed.
+        """
+        if self.page_count is None:
+            if self.page_count_uncertain:
+                return '?'
+            return ''
+
+        p = f'{float(self.page_count):.3g}'
+        if self.page_count_uncertain:
+            p = '%s ?' % p
+        if show_page:
+            p = p + ' ' + ungettext('page', 'pages', self.page_count)
+        return p
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_issue',
             kwargs={'issue_id': self.issue_id}) + "#%d" % self.id
 
-    def __unicode__(self):
+    def __str__(self):
         from apps.gcd.templatetags.display import show_story_short
         return show_story_short(self, no_number=True, markup=False)
 
@@ -286,3 +323,86 @@ class BiblioEntry(Story):
     page_ended = models.IntegerField(null=True)
     abstract = models.TextField()
     doi = models.TextField()
+
+##############################################################################
+# Tables with Sorting
+##############################################################################
+
+
+class StoryColumn(tables.Column):
+    def render(self, record):
+        first_line = '<a href="%s">%s</a>' % (record.get_absolute_url(),
+                                              esc(record.show_title()))
+        second_line = record.show_feature()
+        if second_line:
+            second_line += ' / '
+        second_line += record.type.name
+
+        if record.page_count:
+            second_line += ' / ' + record.show_page_count(True)
+
+        return mark_safe('%s<br>%s' % (first_line,
+                                       second_line))
+
+    def order(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'title',
+                                       direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code',
+                                       direction + 'sequence_number')
+        return (query_set, True)
+
+
+class IssueColumn(tables.Column):
+    def render(self, record):
+        return mark_safe(record.issue.show_series_and_issue_link())
+
+    def order(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+
+class StoryTable(tables.Table):
+    story = StoryColumn(accessor='id', verbose_name='Story')
+    issue = IssueColumn(accessor='issue__id', verbose_name='Issue')
+    publisher = tables.Column(accessor='issue.series.publisher',
+                              verbose_name='Publisher')
+    publication_date = tables.Column(accessor='issue.publication_date',
+                                     verbose_name='Publication Date')
+    on_sale_date = tables.Column(accessor='issue.on_sale_date',
+                                 verbose_name='On-sale Date')
+
+    class Meta:
+        model = Story
+        fields = ('story',)
+        attrs = {'th': {'class': "non_visited"}}
+
+    def order_publication_date(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__key_date',
+                                       direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def order_on_sale_date(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__on_sale_date',
+                                       direction + 'issue__key_date',
+                                       direction + 'issue__series_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def order_publisher(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__series__publisher__name',
+                                       direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def render_publisher(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        display_publisher = "<img %s>" % (show_country_info(value.country))
+        return mark_safe(display_publisher) + absolute_url(value)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
@@ -16,7 +16,9 @@ from .publisher import (get_publisher_revision_form,
                         get_indicia_publisher_revision_form,
                         get_brand_group_revision_form,
                         get_brand_revision_form,
-                        get_brand_use_revision_form)
+                        get_brand_use_revision_form,
+                        get_printer_revision_form,
+                        get_indicia_printer_revision_form)
 from .series import get_series_revision_form, get_series_bond_revision_form
 from .issue import (    # noqa
     get_issue_revision_form, get_bulk_issue_revision_form)
@@ -38,10 +40,11 @@ from .creator import (    # noqa
     CreatorMembershipRevisionForm, CreatorRevisionFormSet,
     CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm,
     CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
+    CreatorSignatureRevisionForm,
     get_creator_art_influence_revision_form,
     get_creator_membership_revision_form, get_creator_revision_form,
     get_creator_non_comic_work_revision_form,
-    get_creator_relation_revision_form,
+    get_creator_relation_revision_form, get_creator_signature_revision_form,
     get_creator_school_revision_form, get_creator_degree_revision_form)
 from .support import (add_data_source_fields, init_data_source_fields,
                       _set_help_labels)
@@ -71,6 +74,18 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'brand_use':
         return get_brand_use_revision_form(**kwargs)
+
+    if model_name == 'printer':
+        source = None
+        if revision is not None:
+            source = revision.source
+        return get_printer_revision_form(source=source, **kwargs)
+
+    if model_name == 'indicia_printer':
+        source = None
+        if revision is not None:
+            source = revision.source
+        return get_indicia_printer_revision_form(source=source, **kwargs)
 
     if model_name == 'series':
         if revision is None:
@@ -131,6 +146,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'creator_school':
         return get_creator_school_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_signature':
+        return get_creator_signature_revision_form(revision, **kwargs)
 
     if model_name == 'creator_degree':
         return get_creator_degree_revision_form(revision, **kwargs)

@@ -45,12 +45,12 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.template.context_processors.static',
                 'django.contrib.messages.context_processors.messages',
-                'django_mobile.context_processors.flavour',
+#                'django_mobile.context_processors.flavour',
                 'apps.gcd.context_processors.gcd',
             ],
             'loaders': [
                 # insert your TEMPLATE_LOADERS here
-                'django_mobile.loader.Loader',
+#                'django_mobile.loader.Loader',
                 'django.template.loaders.filesystem.Loader',
                 'django.template.loaders.app_directories.Loader',
             ],
@@ -112,7 +112,7 @@ DATABASES = {
 }
 
 # middleware settings, LocalMiddleware is for internationalisation
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
    'django.middleware.csrf.CsrfViewMiddleware',
    'django.middleware.clickjacking.XFrameOptionsMiddleware',
    'django.contrib.sessions.middleware.SessionMiddleware',
@@ -151,7 +151,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_mobile',
+#    'django_mobile',
     'django_tables2',
     'apps.indexer',
     'apps.gcd',
@@ -256,6 +256,10 @@ HAYSTACK_CONNECTIONS = {
         'INCLUDE_SPELLING': True,
     },
 }
+
+# This processes the updates inline, and shouldn't be used in production.
+# Comment out on a dev-setup with running ElasticSearch / Haystack
+# HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 # assumingly this needs elasticstack
 ELASTICSEARCH_INDEX_SETTINGS = {

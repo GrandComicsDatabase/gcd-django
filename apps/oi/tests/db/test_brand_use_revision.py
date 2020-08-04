@@ -12,7 +12,7 @@ def test_create_add_revision(any_added_brand_use_rev,
                              any_adding_changeset):
     rev = any_added_brand_use_rev
 
-    for k, v in brand_use_add_values.iteritems():
+    for k, v in brand_use_add_values.items():
         assert getattr(rev, k) == v
     assert rev.brand_use is None
 
@@ -36,7 +36,7 @@ def test_commit_added_revision(any_added_brand_use_rev,
     assert rev.brand_use is not None
     assert rev.source is rev.brand_use
 
-    for k, v in brand_use_add_values.iteritems():
+    for k, v in brand_use_add_values.items():
         assert getattr(rev.brand_use, k) == v
 
 
@@ -47,7 +47,7 @@ def test_create_edit_revision(any_added_brand_use, brand_use_add_values,
         data_object=any_added_brand_use,
         changeset=any_editing_changeset)
 
-    for k, v in brand_use_add_values.iteritems():
+    for k, v in brand_use_add_values.items():
         assert getattr(rev, k) == v
     assert rev.brand_use is any_added_brand_use
 

@@ -10,13 +10,10 @@
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default.css" %}">
-</link>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/series.css" %}">
-</link>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/status.css" %}">
-</link>
 {% endblock %}
 
 {% block view_body %}
@@ -92,10 +89,11 @@
   {% endif %}
             <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
             <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+            <li><a href='{% url "series_creatorlist" series_id=series.id %}'>Creator Checklist (via linked story records)</a></li>
+	  </ul>
 {% endif %}
-          </ul>
-<div style="columns: 2; margin-bottom: 1em">
 {% if brand_counts.no_brand != series.active_issues.count %}
+          <div style="  columns: 2; margin-bottom: 1em">
           <div class="series_detail_header">Publisher's Brands:</div>
           <ul style="page-break-inside: avoid;" class="series_detail_info">
   {% for brand in brands %}
@@ -111,6 +109,8 @@
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }}</a>)
   {% endif %}
           </ul>
+{% else %}
+          <div style="margin-bottom: 1em">
 {% endif %}
 {% if series.active_issues.count %}
           <div style="page-break-inside: avoid;">

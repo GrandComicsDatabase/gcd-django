@@ -45,7 +45,7 @@ class LastUpdatedNode(template.Node):
             try:
                 self.language_code = self.language_in_context.resolve(context)
             except: # render in templates should fail silently
-                return u''
+                return ''
 
         recents = RecentIndexedIssue.objects.select_related(
           'language', 'issue__series__publisher').order_by('-created')
@@ -54,10 +54,10 @@ class LastUpdatedNode(template.Node):
         else:
             recents = recents.filter(language__isnull=True)
 
-        return_string = u'<ul>'
+        return_string = '<ul>'
         for recent in recents:
             i = recent.issue
-            return_string += u'<li><a href="%s">%s</a> (%s)</li>' % \
+            return_string += '<li><a href="%s">%s</a> (%s)</li>' % \
                              (i.get_absolute_url(), esc(i.short_name()),
                               esc(i.series.publisher.name))
 

@@ -1,5 +1,5 @@
 {% load crispy_forms_tags %}
-{% load staticfiles %}
+{% load static %}
 {{ formset.management_form|crispy }}
 {{ formset.non_form_errors }}
     {% for form in formset.forms %}

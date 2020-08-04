@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import mock
 import pytest
@@ -227,7 +227,7 @@ def test_pre_commit_check_too_many_afters(pre_commit_rev):
         pre_commit_rev._pre_commit_check()
 
     assert ("Only one IssueRevision per series within a changeset can have "
-            "'after' set.") in unicode(excinfo.value)
+            "'after' set.") in str(excinfo.value)
 
 
 def test_pre_commit_check_after_not_first(pre_commit_rev):
@@ -250,7 +250,7 @@ def test_pre_commit_check_after_not_first(pre_commit_rev):
         pre_commit_rev._pre_commit_check()
 
     assert ("The IssueRevision that specifies an 'after' must have "
-            "the lowest revision_sort_code.") in unicode(excinfo.value)
+            "the lowest revision_sort_code.") in str(excinfo.value)
 
 
 @pytest.yield_fixture
@@ -498,7 +498,7 @@ def test_handle_prerequisites_exit_infinite_loop(
         # Deletes work last to first, so rev3 is a prereq of rev2.
         rev2._handle_prerequisites({})
 
-    assert "did not reduce" in unicode(excinfo.value)
+    assert "did not reduce" in str(excinfo.value)
 
     # As a delete, we should not have messed with sort_codes.
     assert not sort_mock.called

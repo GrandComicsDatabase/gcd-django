@@ -98,12 +98,21 @@ urlpatterns = [
       gcd_views.search.indicia_publisher_by_name,
       name='indicia_publisher_by_name'),
 
+    # Printer
+    url(r'^printer/(?P<printer_id>\d+)/$',
+      gcd_views.details.printer, name='show_printer'),
+    url(r'^indicia_printer/(?P<indicia_printer_id>\d+)/$',
+      gcd_views.details.indicia_printer, name='show_indicia_printer'),
+
     url(r'^award/(?P<award_id>\d+)/$',
       gcd_views.details.award, name='show_award'),
     url(r'^award/name/(?P<award_name>.+)/sort/(?P<sort>.+)/$',
       gcd_views.search.award_by_name, name='award_by_name'),
     url(r'^award/name/(?P<award_name>.+)/$',
       gcd_views.search.award_by_name, name='award_by_name'),
+
+    url(r'^school/(?P<school_id>\d+)/$',
+      gcd_views.details.school, name='show_school'),
 
     url(r'^creator/(?P<creator_id>\d+)/$',
       gcd_views.details.creator, name='show_creator'),
@@ -157,6 +166,8 @@ urlpatterns = [
       gcd_views.details.creator_school, name='show_creator_school'),
     url(r'^creator_degree/(?P<creator_degree_id>\d+)/$',
       gcd_views.details.creator_degree, name='show_creator_degree'),
+    url(r'^creator_signature/(?P<creator_signature_id>\d+)/$',
+      gcd_views.details.creator_signature, name='show_creator_signature'),
 
     url(r'^imprint/(?P<imprint_id>\d+)/$', gcd_views.details.imprint,
       name='show_imprint'),
@@ -173,6 +184,9 @@ urlpatterns = [
       gcd_views.details.series_details,
       {'by_date': True },
       name='series_timeline'),
+    url(r'^series/(?P<series_id>\d+)/details/creator_list/$',
+      gcd_views.details.series_creatorlist, name='series_creatorlist'),
+
     # Series and Issue
     url(r'^series/name/(?P<series_name>.+)/issue/(?P<issue_nr>.+)/$',
       gcd_views.search.series_and_issue),
@@ -221,10 +235,16 @@ urlpatterns = [
       gcd_views.details.issue_images, name='issue_images'),
 
     # Feature
+    url(r'^feature/(?P<feature_id>\d+)/issue_list/$',
+      gcd_views.details.feature_issuelist_by_id, name='feature_issuelist_by_id'),
+    url(r'^feature/(?P<feature_id>\d+)/creator_list/$',
+      gcd_views.details.feature_creatorlist, name='feature_creatorlist'),
     url(r'^feature/(?P<feature_id>\d+)/$',
       gcd_views.details.feature, name='show_feature'),
     url(r'^feature_logo/(?P<feature_logo_id>\d+)/$',
       gcd_views.details.feature_logo, name='show_feature_logo'),
+    url(r'^feature_relation/(?P<feature_relation_id>\d+)/$',
+      gcd_views.details.feature_relation, name='show_feature_relation'),
 
     # Attribute searches
     url(r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
@@ -284,9 +304,13 @@ urlpatterns = [
       gcd_views.details.checklist_by_name, name='checklist_by_name'),
     url(r'^checklist/name/(?P<creator>.+)/$',
       gcd_views.details.checklist_by_name, name='checklist_by_name'),
-    url(r'^checklist/(?P<creator_id>.+)/country/(?P<country>.+)/$',
+    url(r'^checklist/(?P<creator_name_id>\d+)/feature/(?P<feature_id>\d+)/$',
+      gcd_views.details.creator_name_checklist, name='creator_name_checklist'),
+    url(r'^checklist/(?P<creator_name_id>\d+)/series/(?P<series_id>\d+)/$',
+      gcd_views.details.creator_name_checklist, name='creator_name_checklist'),
+    url(r'^checklist/(?P<creator_id>\d+)/country/(?P<country>.+)/$',
       gcd_views.details.checklist_by_id, name='checklist_by_id'),
-    url(r'^checklist/(?P<creator_id>.+)/language/(?P<language>.+)/$',
+    url(r'^checklist/(?P<creator_id>\d+)/language/(?P<language>.+)/$',
       gcd_views.details.checklist_by_id, name='checklist_by_id'),
     url(r'^checklist/(?P<creator_id>\d+)/$',
       gcd_views.details.checklist_by_id, name='checklist_by_id'),
@@ -326,6 +350,10 @@ urlpatterns = [
       gcd_views.details.on_sale_weekly, name='on_sale_this_week'),
     url(r'^on_sale_weekly/(?P<year>\d{4})/week/(?P<week>\d{1,2})/$',
       gcd_views.details.on_sale_weekly, name='on_sale_weekly'),
+    url(r'^on_sale_monthly/$',
+      gcd_views.details.on_sale_monthly, name='on_sale_this_month'),
+    url(r'^on_sale_monthly/(?P<year>\d{4})/month/(?P<month>\d{1,2})/$',
+      gcd_views.details.on_sale_monthly, name='on_sale_monthly'),
 
     url(r'^international_stats_language/$',
       gcd_views.details.int_stats_language,
@@ -340,25 +368,15 @@ urlpatterns = [
     url(r'^covers_to_replace/with/(?P<starts_with>.+)/$',
      gcd_views.details.covers_to_replace),
 
-    # Reprints
-    url(r'^reprint/name/(?P<reprints>.+)/sort/(?P<sort>.+)/$',
-      gcd_views.search.story_by_reprint),
-    url(r'^reprint/name/(?P<reprints>.+)/$',
-      gcd_views.search.story_by_reprint),
-
     # calendar
-    url(r'^agenda/(?P<language>.+)/$',gcd_views.details.agenda),
-    url(r'^agenda/',gcd_views.details.agenda, {'language' : 'en'}),
     url(r'^calendar/$',
      bv.TemplateView.as_view(template_name='gcd/status/calendar.html')),
+    url(r'daily_creators/$', gcd_views.details.daily_creators),
 
     # GCD comics history award
     url(r'^gcd_history_award/$',
       bv.TemplateView.as_view(template_name='gcd/gcd_history_award.html'),
       name='gcd_history_award'),
-
-    # admin tools
-    url(r'^countries/$', gcd_views.details.countries_in_use),
 
     # redirects of old lasso pages
     url(r'^publisher_details.lasso/$', gcd_views.redirect.publisher),

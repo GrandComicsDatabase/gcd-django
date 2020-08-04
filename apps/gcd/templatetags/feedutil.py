@@ -69,7 +69,7 @@ def pull_feed(feed_url, posts_to_show=None, cache_expires=None):
               args={'fields': 'full_picture, link, message, application,'
                               ' created_time',
                     'limit': 4*posts_to_show})
-            entries = json_posts.items()[1][1]
+            entries = list(json_posts.items())[1][1]
             if posts_to_show > 0 and len(entries) > posts_to_show:
                 entries = entries[:4*posts_to_show]
             posts = [{

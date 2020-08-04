@@ -1,10 +1,7 @@
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core import urlresolvers
-
-from django.utils.safestring import mark_safe
-from django.utils.html import conditional_escape as esc
+import django.urls as urlresolvers
 
 from taggit.managers import TaggableManager
 
@@ -24,7 +21,7 @@ class FeatureRelationType(models.Model):
     description = models.CharField(max_length=255)
     reverse_description = models.CharField(max_length=255)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -36,7 +33,7 @@ class FeatureType(models.Model):
 
     name = models.CharField(max_length=255, db_index=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -49,8 +46,8 @@ class Feature(GcdData):
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
     genre = models.CharField(max_length=255)
-    language = models.ForeignKey(Language)
-    feature_type = models.ForeignKey(FeatureType)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
     year_created = models.IntegerField(db_index=True, null=True)
     year_created_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
@@ -58,7 +55,9 @@ class Feature(GcdData):
 
     def has_dependents(self):
         return bool(self.active_logos().exists()) or \
-               bool(self.active_stories().exists())
+               bool(self.active_stories().exists()) or \
+               bool(self.from_related_feature.all().exists()) or \
+               bool(self.to_related_feature.all().exists())
 
     def active_logos(self):
         return self.featurelogo_set.filter(deleted=False)
@@ -66,11 +65,19 @@ class Feature(GcdData):
     def active_stories(self):
         return self.story_set.filter(deleted=False)
 
+    def other_translations(self):
+        if self.from_related_feature.filter(relation_type__id=1).count() == 1:
+            source = self.from_related_feature.get(relation_type__id=1)
+            other_translations = source.from_feature.to_related_feature\
+                                 .filter(to_feature__language=self.language)
+            return other_translations.exclude(to_feature=self)
+        return None
+
     def display_year_created(self):
         if not self.year_created:
             return '?'
         else:
-            return '%d%s' % (self.year_created, 
+            return '%d%s' % (self.year_created,
                              '?' if self.year_created_uncertain else '')
 
     def get_absolute_url(self):
@@ -78,10 +85,10 @@ class Feature(GcdData):
                 'show_feature',
                 kwargs={'feature_id': self.id})
 
-    def __unicode__(self):
-        base_name = unicode('%s (%s)' % (self.name, self.language.name))
+    def __str__(self):
+        base_name = str('%s (%s)' % (self.name, self.language.name))
         if self.feature_type.id != 1:
-            base_name += u' [%s]' % self.feature_type.name[0]
+            base_name += ' [%s]' % self.feature_type.name[0]
         return base_name
 
 
@@ -110,8 +117,9 @@ class FeatureLogo(GcdData):
 
     @property
     def logo(self):
-        img = Image.objects.filter(object_id=self.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(self), type__id=6)
+        img = Image.objects.filter(
+          object_id=self.id, deleted=False,
+          content_type=ContentType.objects.get_for_model(self), type__id=6)
         if img:
             return img.get()
         else:
@@ -130,27 +138,26 @@ class FeatureLogo(GcdData):
         if not self.year_began:
             years = '? - '
         else:
-            years = '%d%s - ' % (self.year_began, 
-                              '?' if self.year_began_uncertain else '')
+            years = '%d%s - ' % (self.year_began,
+                                 '?' if self.year_began_uncertain else '')
         if not self.year_ended:
             years = '%s %s' % (years,
                                '?' if self.year_ended_uncertain else 'present')
         else:
-            years = '%s%d%s' % (years, self.year_ended, 
+            years = '%s%d%s' % (years, self.year_ended,
                                 '?' if self.year_ended_uncertain else '')
         return years
-
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_feature_logo',
-            kwargs={'feature_logo_id': self.id } )
+            kwargs={'feature_logo_id': self.id})
 
     def full_name(self):
-        return self.__unicode__()
+        return self.__str__()
 
-    def __unicode__(self):
-        return unicode(self.name)
+    def __str__(self):
+        return str(self.name)
 
 
 class FeatureRelation(GcdLink):
@@ -164,16 +171,17 @@ class FeatureRelation(GcdLink):
         ordering = ('to_feature', 'relation_type', 'from_feature')
         verbose_name_plural = 'Feature Relations'
 
-    to_feature = models.ForeignKey(Feature,
+    to_feature = models.ForeignKey(Feature, on_delete=models.CASCADE,
                                    related_name='from_related_feature')
-    from_feature = models.ForeignKey(Feature,
+    from_feature = models.ForeignKey(Feature, on_delete=models.CASCADE,
                                      related_name='to_related_feature')
     relation_type = models.ForeignKey(FeatureRelationType,
+                                      on_delete=models.CASCADE,
                                       related_name='relation_type')
     notes = models.TextField()
 
-    def __unicode__(self):
-        return '%s >Relation< %s :: %s' % (unicode(self.from_feature),
-                                           unicode(self.to_feature),
-                                           unicode(self.relation_type)
-                                          )
+    def __str__(self):
+        return '%s >Relation< %s :: %s' % (str(self.from_feature),
+                                           str(self.to_feature),
+                                           str(self.relation_type)
+                                           )

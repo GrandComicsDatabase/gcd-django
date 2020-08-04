@@ -1,50 +1,40 @@
-{% extends "gcd/base_view.html" %}
-{% load staticfiles %}
-{% load i18n %}
+{% extends "gcd/base_content.html" %}
 {% load editing %}
-
+{% load i18n %}
 
 {% block title %}
   GCD :: Feature Logo :: {{ feature_logo }}
-{% endblock %}
+{% endblock title %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-    href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
-
-{% block view_body %}
-
+{% block content_header %}
 <h1 class="item_id">
   <div class="left">
     {{ feature_logo }}
   </div>
 </h1>
- <div class="control_body">
-  <div id="control_container">
-    <div id="control_center">
-      <dl class="pub_data">
-        <dt> Feature:
-        <dd>
-        {% for feature in feature_logo.feature.all %}
-          <a href="{{ feature.get_absolute_url }}">{{ feature }}</a> ({{ feature.language.name }})
-          {% if not forloop.last %}; {% endif %}
-        {%  endfor %}
-        <dt> Years: 
-        <dd> {{ feature_logo.display_years }}
-        {% if feature_logo.notes %}
-        <dt>Notes:
-        <dd>{{ feature_logo.notes }}
-        {% endif %}
-      </dl>
+{% endblock content_header %}
+
+{% block content %}
+<dl class="pub_data">
+  <dt> Feature:
+  <dd>
+  {% for feature in feature_logo.feature.all %}
+    <a href="{{ feature.get_absolute_url }}">{{ feature }}</a>
+    {% if not forloop.last %}; {% endif %}
+  {%  endfor %}
+  <dt> Years:
+  <dd> {{ feature_logo.display_years }}
+  {% if feature_logo.notes %}
+  <dt>Notes:
+  <dd>{{ feature_logo.notes }}
+  {% endif %}
+</dl>
 {% if feature_logo.logo %}
-<img src="{{ feature_logo.logo.scaled_image.url }}">
+  <img src="{{ feature_logo.logo.scaled_image.url }}">
 {% endif %}
-    </div> <!-- control_center -->
-  {% if not preview  %}
-    <div id="control_rail">
-      <div class="edit_box">
-        <div class="edit_header">Editing</div>
+{% endblock content %}
+
+{% block edit_box %}
   {% if not preview %}
     {% with feature_logo as object %}
     {% with 'feature_logo' as object_class %}
@@ -78,20 +68,13 @@
       </form>
       {% endif %}
     {% endif %}
-
   {% endif %} <!-- not preview -->
-      </div> <!-- edit_box -->
-      <div id="change_history" class="edit_footer">
+{% endblock edit_box %}
+
+{% block change_history %}
   {% if preview %}
         <a href="{% url "change_history" model_name='feature_logo' id=feature_logo.source.id %}">View Change History</a>
   {% else %}
         <a href="{% url "change_history" model_name='feature_logo' id=feature_logo.id %}">View Change History</a>
   {% endif %}
-      </div>
-        </div> <!-- control_rail -->
-{% endif %}
-  </div> <!-- control_container -->
-</div> <!-- control_body -->
-
-
-{% endblock %}
+{% endblock change_history %}

@@ -18,11 +18,14 @@
 
 {% block view_body %}
 
-  {% with position='top' link_direction='bottom' hide_info=True %}
+  {% with position='top' link_direction='bottom' hide_info=True query_string=extra_string %}
     {% include "gcd/search/list_header.html" %}
   {% endwith %}
-<div style="clear: both;"></div>
 
+<div style="clear: both;"></div>
+  <p>
+    {{ result_disclaimer }}
+  </p>
 {% render_table table %}
 
 <div class="right">
@@ -31,7 +34,7 @@
   {% endif %}
 </div>
 
-  {% with position='bottom' link_direction='top' %}
+  {% with position='bottom' link_direction='top' query_string=extra_string %}
     {% include "gcd/search/list_header.html" %}
   {% endwith %}
 {% endblock %}

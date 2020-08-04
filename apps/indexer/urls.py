@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, absolute_import
+
 
 from django.conf.urls import url
 from django.contrib.auth import views as auth_views
@@ -54,22 +54,22 @@ urlpatterns = [
         account_views.unmentor,
         name='unmentor'),
     url(r'^accounts/forgot/$',
-        auth_views.password_reset,
-        {'post_reset_redirect': 'done',
+        auth_views.PasswordResetView.as_view(),
+        {'success_url': 'done',
          'template_name': 'indexer/password_reset_form.html',
          'email_template_name': 'indexer/password_reset_email.html'},
         name='forgot_password'),
-    url(r'^accounts/forgot/done/$', auth_views.password_reset_done,
+    url(r'^accounts/forgot/done/$', auth_views.PasswordResetDoneView.as_view(),
         {'template_name': 'indexer/password_reset_done.html'},
         name='done'),
     url(r'^accounts/reset/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
-        auth_views.password_reset_confirm,
+        auth_views.PasswordResetConfirmView.as_view(),
         {'template_name': 'indexer/password_reset_confirm.html',
          'set_password_form': PasswordResetForm,
          'post_reset_redirect': '/accounts/reset/done'},
         name='password_reset_confirm'),
     url(r'^accounts/reset/done/$',
-        auth_views.password_reset_complete,
+        auth_views.PasswordResetCompleteView.as_view(),
         {'template_name': 'indexer/password_reset_complete.html'}),
     url(r'^accounts/contact/(?P<user_id>\d+)/$',
         account_views.CustomContactFormView.as_view(

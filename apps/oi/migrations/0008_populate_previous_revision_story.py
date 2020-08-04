@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # based on http://reviews.comics.org/r/1492/
-from __future__ import unicode_literals
+
 
 from django.db import migrations
 from apps.oi import states

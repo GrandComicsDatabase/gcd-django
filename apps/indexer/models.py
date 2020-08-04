@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, absolute_import
+
 
 from django.conf import settings
 from django.db import models
@@ -35,9 +35,10 @@ class Indexer(models.Model):
             ('on_board', 'Is on the Board of Directors'),
         )
 
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
-    country = models.ForeignKey(Country, related_name='indexers')
+    country = models.ForeignKey(Country, related_name='indexers',
+                                on_delete=models.CASCADE)
     languages = models.ManyToManyField(Language, related_name='indexers',
                                        db_table='gcd_indexer_languages')
     interests = models.TextField(null=True, blank=True)
@@ -49,7 +50,7 @@ class Indexer(models.Model):
     max_ongoing = models.IntegerField(default=0)
 
     mentor = models.ForeignKey(User, related_name='mentees', null=True,
-                               blank=True)
+                               on_delete=models.CASCADE, blank=True)
     is_new = models.BooleanField(default=False, db_index=True)
     is_banned = models.BooleanField(default=False, db_index=True)
     deceased = models.BooleanField(default=False, db_index=True)
@@ -135,15 +136,15 @@ class Indexer(models.Model):
     def get_absolute_url(self):
         return self.user.get_absolute_url()
 
-    def __unicode__(self):
+    def __str__(self):
         if self.user.first_name and self.user.last_name:
-            full_name = u'%s %s' % (self.user.first_name, self.user.last_name)
+            full_name = '%s %s' % (self.user.first_name, self.user.last_name)
         elif self.user.first_name:
             full_name = self.user.first_name
         else:
             full_name = self.user.last_name
         if self.deceased:
-            full_name = full_name + u' (R.I.P.)'
+            full_name = full_name + ' (R.I.P.)'
 
         return full_name
 
@@ -152,7 +153,8 @@ class ImpGrant(models.Model):
     class Meta:
         db_table = 'indexer_imp_grant'
 
-    indexer = models.ForeignKey(Indexer, related_name='imp_grant_set')
+    indexer = models.ForeignKey(Indexer, on_delete=models.CASCADE,
+                                related_name='imp_grant_set')
     imps = models.IntegerField()
     grant_type = models.CharField(max_length=50)
     notes = models.TextField()
@@ -171,5 +173,5 @@ class Error(models.Model):
 
     is_safe = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.error_text

@@ -1,6 +1,6 @@
 from django.db import models
 
-from storyversion import StoryVersion
+from .storyversion import StoryVersion
 
 class CreatorRole(models.Model):
     class Meta:

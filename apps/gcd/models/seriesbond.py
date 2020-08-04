@@ -17,7 +17,7 @@ class SeriesBondType(models.Model):
     description = models.TextField()
     notes = models.TextField(blank=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.description
 
 class SeriesBond(models.Model):
@@ -25,13 +25,17 @@ class SeriesBond(models.Model):
         app_label = 'gcd'
         db_table = 'gcd_series_bond'
 
-    origin = models.ForeignKey('Series', related_name='to_series_bond')
-    target = models.ForeignKey('Series', related_name='from_series_bond')
-    origin_issue = models.ForeignKey('Issue', null=True,
+    origin = models.ForeignKey('Series', on_delete=models.CASCADE,
+                               related_name='to_series_bond')
+    target = models.ForeignKey('Series', on_delete=models.CASCADE,
+                               related_name='from_series_bond')
+    origin_issue = models.ForeignKey('Issue', on_delete=models.CASCADE,
+                                     null=True,
                                      related_name='to_series_issue_bond')
-    target_issue = models.ForeignKey('Issue', null=True,
+    target_issue = models.ForeignKey('Issue', on_delete=models.CASCADE,
+                                     null=True,
                                      related_name='from_series_issue_bond')
-    bond_type = models.ForeignKey(SeriesBondType)
+    bond_type = models.ForeignKey(SeriesBondType, on_delete=models.CASCADE)
     # we don't use modelforms to edit seriesbonds, no blank=True needed
     notes = models.TextField(max_length=255)
 
@@ -47,15 +51,15 @@ class SeriesBond(models.Model):
     def deletable(self):
         return True
 
-    def __unicode__(self):
+    def __str__(self):
         if self.origin_issue:
-            object_string = u'%s' % self.origin_issue
+            object_string = '%s' % self.origin_issue
         else:
-            object_string = u'%s' % self.origin
+            object_string = '%s' % self.origin
         if self.target_issue:
-            object_string += u' continues at %s' % self.target_issue
+            object_string += ' continues at %s' % self.target_issue
         else:
-            object_string += u' continues at %s' % self.target
+            object_string += ' continues at %s' % self.target
         return object_string
 
 @total_ordering

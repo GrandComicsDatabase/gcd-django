@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
 from django.db import models
-from django.core import urlresolvers
+import django.urls as urlresolvers
 
 from .issue import Issue
 
@@ -23,7 +23,7 @@ class Cover(models.Model):
         )
 
     # Cover belongs to an issue
-    issue = models.ForeignKey(Issue)
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
 
     # Fields directly related to cover images
     marked = models.BooleanField(default=False)
@@ -83,5 +83,5 @@ class Cover(models.Model):
     def deletable(self):
         return self.revisions.filter(changeset__state__in=states.ACTIVE).count() == 0
 
-    def __unicode__(self):
-        return u'%s %s cover' % (self.issue.series, self.issue.display_number)
+    def __str__(self):
+        return '%s %s cover' % (self.issue.series, self.issue.display_number)

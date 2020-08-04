@@ -14,7 +14,8 @@ from apps.oi.models import CTYPES
 from apps.gcd.templatetags.credits import show_page_count, show_title
 from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
-                                    CreatorDegree, CreatorRelation, Award
+                                    CreatorDegree, CreatorRelation, \
+                                    CreatorSchool, Award
 from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup,\
                             Series, Issue, Cover, Image, Feature, FeatureLogo,\
                             INDEXED, SeriesBond, BOND_TRACKING, \
@@ -39,10 +40,10 @@ STATE_CSS_NAME = {
 def absolute_url(item, additional=''):
     if item is not None and hasattr(item, 'get_absolute_url'):
         if additional:
-            return mark_safe(u'<a href="%s" %s>%s</a>' %
+            return mark_safe('<a href="%s" %s>%s</a>' %
                              (item.get_absolute_url(), additional, esc(item)))
         else:
-            return mark_safe(u'<a href="%s">%s</a>' %
+            return mark_safe('<a href="%s">%s</a>' %
                              (item.get_absolute_url(), esc(item)))
     return ''
 
@@ -56,34 +57,34 @@ def cover_image_tag(cover, size_alt_text):
 @register.filter
 def show_story_short(story, no_number=False, markup=True):
     if no_number:
-        story_line = u''
+        story_line = ''
     else:
-        story_line = u'%s.' % story.sequence_number
+        story_line = '%s.' % story.sequence_number
 
     if story.title or story.first_line:
         title = show_title(story, True)
     else:
         if markup:
-            title = '<span class="no_data">no title</span>'
+            title = mark_safe('<span class="no_data">no title</span>')
         else:
             title = 'no title'
     if story.has_feature():
         if markup:
-            story_line = u'%s %s (%s)' % (esc(story_line), title,
-                                          esc(story.show_feature()))
+            story_line = '%s %s (%s)' % (esc(story_line), esc(title),
+                                         esc(story.show_feature()))
         else:
-            story_line = u'%s %s (%s)' % (esc(story_line), title,
-                                          esc(story.show_feature_as_text()))
+            story_line = '%s %s (%s)' % (story_line, title,
+                                         story.show_feature_as_text())
     else:
         if markup:
-            story_line = u'%s %s (%s)' % (
+            story_line = '%s %s (%s)' % (
               esc(story_line),
               title,
               '<span class="no_data">no feature</span>')
         else:
-            story_line = u'%s %s (no feature)' % (esc(story_line), title)
+            story_line = '%s %s (no feature)' % (esc(story_line), title)
 
-    story_line = u'%s %s' % (story_line, story.type)
+    story_line = '%s %s' % (story_line, story.type)
     page_count = show_page_count(story)
     if page_count:
         story_line += ', %sp' % page_count
@@ -92,17 +93,20 @@ def show_story_short(story, no_number=False, markup=True):
             story_line += '<span class="no_data"> no page count</span>'
         else:
             story_line += 'no page count'
-    return mark_safe(story_line)
+    if markup:
+        return mark_safe(story_line)
+    else:
+        return story_line
 
 
 @register.filter
 def show_volume(issue):
     if issue.no_volume:
-        return u''
+        return ''
     if issue.volume == '':
-        return u'?'
+        return '?'
     if issue.volume_not_printed:
-        return u'[%s]' % issue.volume
+        return '[%s]' % issue.volume
     return issue.volume
 
 
@@ -171,7 +175,7 @@ def show_issue(issue):
 
 @register.filter
 def show_series_tracking(series):
-    tracking_line = u""
+    tracking_line = ""
     if not series.has_series_bonds():
         return mark_safe(tracking_line)
 
@@ -189,16 +193,16 @@ def show_series_tracking(series):
 
     for srbond in srbonds:
         if series == srbond.bond.target:
-            near_issue_preposition = u"with"
-            far_issue_preposition = u"from"
-            far_preposition = u"from"
+            near_issue_preposition = "with"
+            far_issue_preposition = "from"
+            far_preposition = "from"
         elif series == srbond.bond.origin:
-            near_issue_preposition = u"after"
-            far_issue_preposition = u"with"
-            far_preposition = u"in"
+            near_issue_preposition = "after"
+            far_issue_preposition = "with"
+            far_preposition = "in"
             if srbond.bond.bond_type.id in MERGE_TRACKING:
-                far_issue_preposition = u"into"
-                far_preposition = u"into"
+                far_issue_preposition = "into"
+                far_preposition = "into"
         else:
             # Wait, why are we here?  Should we assert on this?
             continue
@@ -234,14 +238,14 @@ def show_series_tracking(series):
 def show_indicia_pub(issue):
     if issue.indicia_publisher is None:
         if issue.indicia_pub_not_printed:
-            ip_url = u'[none printed]'
+            ip_url = '[none printed]'
         else:
-            ip_url = u'?'
+            ip_url = '?'
     else:
-        ip_url = u'<a href=\"%s\">%s</a>' % \
+        ip_url = '<a href=\"%s\">%s</a>' % \
           (issue.indicia_publisher.get_absolute_url(), issue.indicia_publisher)
         if issue.indicia_pub_not_printed:
-            ip_url += u' [not printed on item]'
+            ip_url += ' [not printed on item]'
     return mark_safe(ip_url)
 
 
@@ -267,17 +271,17 @@ def index_status_css(issue):
 @register.filter
 def show_revision_type(cover):
     if cover.deleted:
-        return u'[DELETED]'
+        return '[DELETED]'
     if cover.cover:
         if cover.cover.marked:
-            return u'[REPLACEMENT]'
+            return '[REPLACEMENT]'
         else:
-            return u'[SUGGESTED REPLACEMENT]'
+            return '[SUGGESTED REPLACEMENT]'
     if cover.changeset.issuerevisions.count():
-        return u'[VARIANT]'
+        return '[VARIANT]'
     if cover.issue.has_covers():
-        return u'[ADDITIONAL]'
-    return u'[ADDED]'
+        return '[ADDITIONAL]'
+    return '[ADDED]'
 
 
 @register.filter
@@ -327,6 +331,9 @@ def changed_fields(changeset, object):
     elif object_class is CreatorRelation:
         revision = changeset.creatorrelationrevisions\
                             .get(creator_relation=object.id)
+    elif object_class is CreatorSchool:
+        revision = changeset.creatorschoolrevisions\
+                            .get(creator_school=object.id)
     elif object_class in [Cover, Image]:
         return ""
 
@@ -334,10 +341,10 @@ def changed_fields(changeset, object):
     if revision.added:
         # Only list the initial add of the object.
         # Otherwise too many fields to list.
-        changed_list = [u'%s added' % title(revision.source_name
-                                                    .replace('_', ' '))]
+        changed_list = ['%s added' % title(revision.source_name
+                                                   .replace('_', ' '))]
     elif revision.deleted:
-        changed_list = [u'%s deleted' %
+        changed_list = ['%s deleted' %
                         title(revision.source_name.replace('_', ' '))]
     else:
         revision.compare_changes()
@@ -353,32 +360,33 @@ def changed_story_list(changeset):
     get a bulleted list of changes at the sequence level
     """
     if changeset.issuerevisions.count() and \
-       changeset.change_type != CTYPES['issue_bulk']:
+       changeset.change_type not in [CTYPES['series'],
+                                     CTYPES['issue_bulk']]:
         # only relevant for single issue changesets
         story_revisions = changeset.storyrevisions.all()\
                                    .order_by('sequence_number')
     else:
-        return u''
+        return ''
 
-    output = u''
+    output = ''
     if story_revisions.count() > 0:
         for story_revision in story_revisions:
             story_changed_list = []
             if story_revision.added:
-                story_changed_list = [u'Sequence added']
+                story_changed_list = ['Sequence added']
             elif story_revision.deleted:
-                story_changed_list = [u'Sequence deleted']
+                story_changed_list = ['Sequence deleted']
             else:
                 story_revision.compare_changes()
                 for field in story_revision._field_list():
                     if story_revision.changed[field]:
                         story_changed_list.append(field_name(field))
             if story_changed_list:
-                output += u'<li>Sequence %s : %s' % \
+                output += '<li>Sequence %s : %s' % \
                           (story_revision.sequence_number,
                            ", ".join(story_changed_list))
-        if output != u'':
-            output = u'<ul>%s</ul>' % output
+        if output != '':
+            output = '<ul>%s</ul>' % output
     return mark_safe(output)
 
 
@@ -399,17 +407,17 @@ def field_name(field):
     translate field name into more human friendly name
     """
     if field in ['is_current', 'is_surrogate']:
-        return u'%s?' % title(field.replace(u'is_', u''))
+        return '%s?' % title(field.replace('is_', ''))
     elif field in ['url', 'isbn']:
         return field.upper()
     elif field == 'after':
-        return u'Add Issue After'
+        return 'Add Issue After'
     elif field == 'indicia_pub_not_printed':
-        return u'Indicia Publisher Not Printed'
+        return 'Indicia Publisher Not Printed'
     elif field == 'title_inferred':
-        return u'Unofficial Title?'
+        return 'Unofficial Title?'
     elif field == 'cr_creator_names':
-        return u'Creator Names'
+        return 'Creator Names'
     else:
         return title(field.replace('_', ' '))
 
@@ -474,6 +482,7 @@ def short_pub_type(publication_type):
         return '[' + publication_type.name[0] + ']'
     else:
         return ''
+
 
 @register.filter
 def pre_process_relation(relation, creator):

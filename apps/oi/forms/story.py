@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django import forms
 from django.conf import settings
@@ -18,8 +18,9 @@ from apps.oi.models import (
     StoryCreditRevision)
 
 
-from apps.gcd.models import CreatorNameDetail, StoryType, Feature, CreditType,\
-                            FeatureLogo, STORY_TYPES, NON_OPTIONAL_TYPES,\
+from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
+                            Feature, FeatureLogo, \
+                            STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
 
@@ -48,18 +49,18 @@ class ReprintRevisionForm(forms.ModelForm):
 
 
 def _genre_choices(language=None, additional_genres=None):
-    fantasy_id = GENRES['en'].index(u'fantasy')
+    fantasy_id = GENRES['en'].index('fantasy')
     if language and language.code != 'en' and language.code in GENRES:
         choices = [[g, g + ' / ' + h]
                    for g, h in zip(GENRES['en'], GENRES[language.code])]
         choices[fantasy_id] = [
-            u'fantasy',
-            (u'fantasy-supernatural / %s' %
+            'fantasy',
+            ('fantasy-supernatural / %s' %
              GENRES[language.code][fantasy_id])
         ]
     else:
         choices = [[g, g] for g in GENRES['en']]
-        choices[fantasy_id] = [u'fantasy', u'fantasy-supernatural']
+        choices[fantasy_id] = ['fantasy', 'fantasy-supernatural']
     if additional_genres:
         additional_genres.reverse()
         for genre in additional_genres:
@@ -88,7 +89,10 @@ def get_story_revision_form(revision=None, user=None,
             issue = revision.issue
         else:
             # stories for variants in variant-add next to issue have issue
-            issue = revision.my_issue_revision.other_issue_revision.issue
+            if getattr(revision.my_issue_revision, 'other_issue_revision'):
+                issue = revision.my_issue_revision.other_issue_revision.issue
+            else:
+                issue = revision.my_issue_revision.variant_of
         series = issue.series
         if revision.genre:
             genres = revision.genre.split(';')
@@ -161,7 +165,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCreditRevision
         fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
-                  'is_signed', 'signed_as', 'uncertain', 'credit_name']
+                  'is_signed', 'signature', 'signed_as', 'uncertain',
+                  'credit_name']
         help_texts = {
             'credit_type':
                 'Selecting multi-credit entries such as "pencil and inks", or'
@@ -179,14 +184,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'Enter a name if the credited name is unusual and '
                 'therefore not a creator name record.',
             'is_signed':
-                'Check in case the creator did sign. If the signed name '
-                'is not the selected creator name, enter the name from the '
-                'signature in the unfolded signed as field.',
+                'Check in case the creator did sign.',
             'signed_as':
-                'Enter a name if the signed name is unusual, short hand, an '
-                'abbreviation, etc., and therefore not a creator name record. '
-                'For example, initials "S. G." alone do not result in a pen '
-                'name, but can be put here.',
+                'If the signature is not available enter a transcription here,'
+                ' a generic textual signature will be created on approval. If '
+                ' you want to record an image of the signature, you first have'
+                ' to upload it in a separate change.',
         }
         labels = {'credit_name': 'Credit description'}
 
@@ -196,8 +199,6 @@ class StoryCreditRevisionForm(forms.ModelForm):
         self.helper.form_tag = True
         self.helper.layout = Layout(*(f for f in self.fields))
         if self.instance.id:
-            self.fields['credit_type'].queryset = CreditType.objects\
-                                                            .filter(id__lt=7)
             self.fields['credit_type'].empty_label = None
             self.fields['credit_type'].help_text = ''
 
@@ -210,12 +211,25 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 ' database.'
     )
 
+    signature = forms.ModelChoiceField(
+      queryset=CreatorSignature.objects.all(),
+      widget=autocomplete.ModelSelect2(url='creator_signature_autocomplete',
+                                       attrs={'data-html': True,
+                                              'style': 'min-width: 60em'},
+                                       forward=['creator']),
+      help_text='Select an existing signature for the creator.',
+      required=False,
+    )
+
     def clean(self):
         cd = self.cleaned_data
         if cd['credited_as'] and not cd['is_credited']:
+            cd['credited_as'] = ""
+
+        if cd['credited_as'] and 'creator' not in cd:
             raise forms.ValidationError(
-              ['Is credited needs to be selected when entering a name as '
-               'credited.'])
+              ['Name entered in "credited as" without selecting creator.']
+            )
 
         if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
             raise forms.ValidationError(
@@ -223,14 +237,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
             )
 
         if cd['signed_as'] and not cd['is_signed']:
-            raise forms.ValidationError(
-              ['Is signed needs to be selected when entering a name as '
-               'signed.'])
-
-        if cd['signed_as'] and cd['signed_as'] == cd['creator'].name:
-            raise forms.ValidationError(
-              ['Name entered as "signed as" is identicial to creator name.']
-            )
+            cd['signed_as'] = ""
 
 
 StoryRevisionFormSet = inlineformset_factory(
@@ -239,9 +246,9 @@ StoryRevisionFormSet = inlineformset_factory(
 
 
 class BaseField(Field):
-    def render(self, form, form_style, context, template_pack=None):
+    def render(self, form, form_style, context, renderer=None,
+               template_pack=None):
         fields = ''
-
         for field in self.fields:
             fields += render_field(field, form, form_style, context,
                                    template_pack=template_pack)
@@ -252,6 +259,14 @@ class StoryRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryRevision
         fields = get_story_field_list()
+        sequence_type_list = ['script', 'pencils', 'inks', 'colors',
+                              'letters', 'editing']
+        sequence_type_list.reverse()
+        for seq_type in sequence_type_list:
+            fields.pop(fields.index('no_%s' % seq_type))
+            fields.insert(fields.index('page_count_uncertain')+1,
+                          'no_%s' % seq_type)
+
         fields.insert(fields.index('script'), 'creator_help')
         widgets = {
             'feature': forms.TextInput(attrs={'class': 'wide'}),
@@ -262,9 +277,19 @@ class StoryRevisionForm(forms.ModelForm):
                 'depicted in the content, such as "Phantom Zone", '
                 '"red kryptonite", "Vietnam". or "time travel".  Multiple '
                 'entries are to be separated by semi-colons.',
-            'job_number':
-                '<br>If a creator cannot be found in the creator box, '
-                'the corresponding credit field can also be used.'
+            'page_count_uncertain':
+                '<br><br> For sequence types with non-optional fields the '
+                'corresponding no-field is to be checked in case the type '
+                'of credit does not apply.<br>If a credit field is not '
+                'required for a sequence type it can be left unset or blank.',
+            'reprint_notes':
+                'Textual reprint notes can be used for comic material that '
+                'is not in our database, either because the issue is not '
+                'indexed at all or because it cannot such as newspaper strips.'
+                '<br>For newspaper strips the format is "from &lt;comic strip'
+                '&gt; (&lt;syndicate name&gt;) &lt;date&gt;", example:<br> '
+                'from Calvin and Hobbes daily (Universal Press Syndicate) '
+                '1985-11-18 - 1988-10-01.'
         }
 
     def __init__(self, *args, **kwargs):
@@ -308,7 +333,6 @@ class StoryRevisionForm(forms.ModelForm):
 
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3)
-    page_count_uncertain = forms.BooleanField(required=False)
 
     feature_object = forms.ModelMultipleChoiceField(
       queryset=Feature.objects.all(),
@@ -339,15 +363,12 @@ class StoryRevisionForm(forms.ModelForm):
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='For non-optional fields the corresponding no-field is to be'
-                  ' ticked.<br><br>'
-                  ''
-                  'Enter the relevant creator credits in the following '
-                  'fields, where multiple credits are separated by '
+        help_text='For creators so far not in the database and special credit '
+                  'entries you can enter the relevant creator credits in the '
+                  'following fields, where multiple credits are separated by '
                   'semi-colons. Notes are in () and aliases in []. If the '
                   'credit applies to a sequence type, but the creator is '
-                  'unknown enter a question mark. If a field is not required '
-                  'for a sequence type it can be left blank.',
+                  'unknown enter a question mark.',
         label='')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
@@ -404,7 +425,9 @@ class StoryRevisionForm(forms.ModelForm):
         required=False,
         help_text='Check this box if there is no separate editor for this '
                   'sequence. This is common when there is an editor for the '
-                  'whole issue.')
+                  'whole issue.<br><br>'
+                  'If a creator cannot be found in the creator box, '
+                  'the corresponding credit field can also be used.')
     synopsis = forms.CharField(
         widget=forms.Textarea(attrs={'style': 'height: 9em'}),
         required=False,
@@ -460,7 +483,7 @@ class StoryRevisionForm(forms.ModelForm):
                 genres = genres[:-2]
             cd['genre'] = genres
         else:
-            cd['genre'] = u''
+            cd['genre'] = ''
 
         if cd['title_inferred'] and cd['title'] == "":
             raise forms.ValidationError(

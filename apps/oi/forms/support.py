@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import re
 import six
@@ -287,13 +287,23 @@ CREATOR_RELATION_HELP_TEXTS = {
 
 PUBLISHER_HELP_TEXTS = {
     'year_began':
-        'The first year in which the publisher was active.',
+        'The first year in which the publisher was active with comics.',
     'year_ended':
-        'The last year in which the publisher was active. '
+        'The last year in which the publisher was active with comics. '
         'Leave blank if the publisher is still active.',
     'year_began_uncertain':
         'Check if you are not certain of the beginning year.',
     'year_ended_uncertain':
+        'Check if you are not certain of the ending year, or if you '
+        'are not certain whether the publisher is still active.',
+    'year_overall_began':
+        'The first year in which the publisher was active.',
+    'year_overall_ended':
+        'The last year in which the publisher was active. '
+        'Leave blank if the publisher is still active.',
+    'year_overall_began_uncertain':
+        'Check if you are not certain of the beginning year.',
+    'year_overall_ended_uncertain':
         'Check if you are not certain of the ending year, or if you '
         'are not certain whether the publisher is still active.',
     'notes':
@@ -322,9 +332,10 @@ SERIES_HELP_TEXTS = {
         'two color, duotone, and black and white. '
         'This may change over the life of the series.',
     'dimensions':
-        'The size of the comic, such as standard Golden Age U.S.'
-        '(or Silver or Modern), A4, A5, tabloid, digest, 8.5" x 11", '
-        '21cm x 28cm.  This may change over the life of the series.',
+        'The size of the comic, such as standard Golden Age US '
+        '(or Silver or Modern), A4, A5, tabloid, digest, width x height: '
+        '8.5 in. x 11 in., 21 cm x 28 cm. This may change over the life of '
+        'the series.',
     'paper_stock':
         'Type of paper used for the interior pages, such as '
         'newsprint, glossy, bond, Mando, Baxter, etc.  Information '
@@ -362,6 +373,8 @@ SERIES_HELP_TEXTS = {
         "Barcodes are present for issues of this series.",
     'has_indicia_frequency':
         "Indicia frequencies are present for issues of this series.",
+    'has_indicia_printer':
+        "Indicia printers are present for issues of this series.",
     'has_isbn':
         "ISBNs are present for issues of this series.",
     'has_issue_title':
@@ -454,7 +467,8 @@ ISSUE_HELP_TEXTS = {
     'no_indicia_frequency':
         'Check this box if there is no publication frequency printed '
         'on the comic.',
-
+    'no_indicia_printer':
+        'Check this box if there is no printer given in the issue.',
     'price':
         'Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
         '"2.99 CAD" for $2.99 Canadian.  Use a format like '
@@ -522,7 +536,7 @@ ISSUE_HELP_TEXTS = {
 
 VARIANT_NAME_HELP_TEXT = (
     'Name of this variant. Examples are: "Cover A" (if listed as such in '
-    'the issue), "2nd printing", "newsstand", "direct", or the name of '
+    'the issue), "Second Printing", "Newsstand", "Direct", or the name of '
     'the artist if different from the base issue.')
 
 BIBLIOGRAPHIC_ENTRY_HELP_TEXT = {
@@ -541,7 +555,7 @@ def _set_help_labels(self, help_links):
                 label = self.fields[field].label
             self.fields[field].label = mark_safe(
                 label +
-                u' <a href="%s%s" target=_blank>[?]</a>' %
+                ' <a href="%s%s" target=_blank>[?]</a>' %
                 (DOC_URL, help_links[field]))
 
 
@@ -588,7 +602,7 @@ class HiddenInputWithHelp(forms.TextInput):
         # form fields.
         return False
 
-    def render(self, name, value, *args, **kwargs):
+    def render(self, name, value, renderer=None, *args, **kwargs):
         return mark_safe(super(HiddenInputWithHelp, self).render(name, value,
                                                                  self.attrs))
 
@@ -648,7 +662,7 @@ def insert_data_source_fields(field_name, ordering, fields, insert_after):
 
 
 class PageCountInput(TextInput):
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, renderer=None, attrs=None):
         value = format_page_count(value)
         return super(PageCountInput, self).render(name, value, attrs)
 
@@ -675,15 +689,15 @@ class ForeignKeyField(forms.IntegerField):
 
 
 class KeywordsWidget(forms.TextInput):
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, renderer=None, attrs=None):
         if value is not None and not isinstance(value, six.string_types):
-            value = u'; '.join([
+            value = '; '.join([
                 o.tag.name for o in value.select_related("tag")])
         return super(KeywordsWidget, self).render(name, value, attrs)
 
 
 class KeywordsField(forms.CharField):
-    _SPLIT_RE = re.compile(ur'\s*;\s*')
+    _SPLIT_RE = re.compile(r'\s*;\s*')
     _NOT_ALLOWED = ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']
 
     widget = KeywordsWidget

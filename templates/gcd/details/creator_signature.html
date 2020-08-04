@@ -1,0 +1,45 @@
+{% extends "gcd/base_content.html" %}
+
+{% block title %}
+  GCD :: Creator Signature :: {{ creator_signature.name }}
+{% endblock %}
+
+{% block content_header %}
+  {% with first_object=creator_signature.creator %}
+    {% include "gcd/bits/generic_header.html" %}
+  {% endwith %}
+{% endblock content_header %}
+
+{% block content %}
+  <dl class="pub_data">
+        <dt> Signature Name:
+        <dd> {{ creator_signature.name }}
+        {% if creator_signature.signature %}
+        <dt> Signature:
+        <dd><img src="{{ creator_signature.signature.scaled_image.url }}">
+        {% endif %}
+        {% if creator_signature.notes %}
+        <dt>Notes
+        <dd>{{ creator_signature.notes }}
+        {% endif %}
+        {% with creator_signature.data_source.all as data_sources %}
+        {% include "gcd/bits/show_sources.html" %}
+        {% endwith %}
+      </dl>
+{% endblock content %}
+
+{% block edit_box %}
+  {% if not preview %}
+    {% with creator_signature as object %}
+    {% with 'creator_signature' as object_class %}
+    {% with 'creator_signature' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+  {% endif %} <!-- not preview -->
+{% endblock edit_box %}
+
+{% block change_history %}
+  <a href="{% url "change_history" model_name='creator_signature' id=creator_signature.id %}">View Change History</a>
+{% endblock change_history %}

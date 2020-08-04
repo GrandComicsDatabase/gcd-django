@@ -35,6 +35,11 @@ urlpatterns = [
         name='creator_name_4_relation_autocomplete',
     ),
     url(
+        r'^autocomplete/creator_signature/$',
+        select_views.CreatorSignatureAutocomplete.as_view(),
+        name='creator_signature_autocomplete',
+    ),
+    url(
         r'^autocomplete/feature/$',
         select_views.FeatureAutocomplete.as_view(),
         name='feature_autocomplete',
@@ -43,5 +48,15 @@ urlpatterns = [
         r'^autocomplete/feature_logo/$',
         select_views.FeatureLogoAutocomplete.as_view(),
         name='feature_logo_autocomplete',
+    ),
+    url(
+        r'^autocomplete/indicia_printer/$',
+        select_views.IndiciaPrinterAutocomplete.as_view(),
+        name='indicia_printer_autocomplete',
+    ),
+        url(
+        r'^autocomplete/school/$',
+        select_views.SchoolAutocomplete.as_view(),
+        name='school_autocomplete',
     ),
 ]

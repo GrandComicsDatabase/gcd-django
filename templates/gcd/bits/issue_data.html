@@ -48,10 +48,15 @@
             <dt>Barcode</dt>
             <dd id="barcode">{{ issue.barcode|show_barcode|default:"?" }}</dd>
 {% endif %}
+{% if not issue.no_indicia_printer and issue.series.has_indicia_printer and issue.active_printers.count %}
+            <dt>Printer</dt>
+            <dd id="printer">{{ issue.show_printer }}</dd>
+{% endif %}
       </dl>
 <dl>
-{{ issue|show_credit:"editing" }}
+{{ issue|show_creator_credit:"editing" }}
 </dl>
+{% if issue.series.is_singleton %}
 {% with issue.series as s %}
   {% if s.format or s.color or s.dimensions or s.paper_stock or s.binding or s.publishing_format %}
       <dl class="issue_format">
@@ -82,3 +87,4 @@
       </dl>
   {% endif %}
 {% endwith %}
+{% endif %}

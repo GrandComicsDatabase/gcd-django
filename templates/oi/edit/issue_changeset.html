@@ -23,14 +23,13 @@
       </form>
     </td>
   </tr>
-  {% if issue_revision.changeset.change_type != CTYPES.issue_add  %}
-    {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
+  {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
   <tr>
     <td colspan="2" align="left">
       One cannot add another story to this variant since it has a cover sequence. On the issue display page the <br>sequences from the <a href="{% url "show_issue" issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence.
     </td>
   </tr>
-    {% else %}
+  {% else %}
   <tr>
   <form class="changeset" method="GET"
         action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
@@ -44,14 +43,13 @@
       <input type="submit" id="copy_story" name="copy" value="Copy story">
       </div>
       <div class="right">
-      sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
+      &nbsp;sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
       <input type="text" size="4" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
       </div>
     {% endif %}
     </td>
   </form>
   </tr>
-    {% endif %}
   {% endif %}
   {% if issue_revision.source and issue_revision.story_set.count > 1 %}
   <tr>
@@ -190,6 +188,13 @@
                value="Move To Other Issue">
       </form>
         {% endif %}
+        {% if story.old_credits %}
+      <form class="story_button" method="POST"
+            action="{% url "migrate_story_revision" id=story.id %}">
+        {% csrf_token %}
+        <input type="submit" value="Migrate">
+      </form>
+        {% endif %}
       {% else %}
       <form class="story_button" method="POST"
             action="{% url "toggle_delete_story_revision" id=story.id %}">
@@ -202,6 +207,25 @@
     {% endfor %}
 </table>
   {% endfor %}
+
+  {% if changeset.issuerevisions.count == 1 and not changeset.issuerevisions.get.variant_of %}
+    {% with issue_revision=changeset.issuerevisions.get %}
+<table class="story_list">
+  <form class="changeset" method="GET"
+      action="{% url "copy_story_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+    <td colspan="2" align="left">
+      <div class="left">
+      <input type="submit" id="copy_story_revision" name="copy_story_revision" value="Copy sequence">
+      </div>
+      <div class="right">
+      &nbsp;number of sequence to copy
+      <input type="text" size="4" id="copied_sequence_number" name="copied_sequence_number" value="">
+      </div>
+    </td>
+  </form>
+</table>
+    {% endwith %}
+  {% endif %}
 {% endif %} <!-- changeset.storyrevisions.count -->
 
 {% with changeset.issuerevisions.all.0 as issue_revision %}
@@ -237,7 +261,7 @@
   </tr>
   <tr>
     <td class="import_info">
-      <a class="new_window" href="http://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information<span>opens in a new window</span></a> about the file format for imports.
+      <a class="new_window" href="https://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information<span>opens in a new window</span></a> about the file format for imports.
     </td>
     <td>
     </td>

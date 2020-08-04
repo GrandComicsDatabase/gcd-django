@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from decimal import Decimal
 
 from django.db import models
-from django.core import urlresolvers
-from django.db.models import Sum, F, Subquery
+import django.urls as urlresolvers
+from django.db.models import Sum, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 from django.utils.safestring import mark_safe
@@ -16,9 +16,10 @@ import django_tables2 as tables
 from taggit.managers import TaggableManager
 
 from .gcddata import GcdData
-from .publisher import IndiciaPublisher, Brand
+from .publisher import IndiciaPublisher, Brand, IndiciaPrinter
 from .image import Image
-from .story import StoryType, STORY_TYPES
+from .story import StoryType, STORY_TYPES, CreditType
+from .creator import CreatorNameDetail
 from .award import ReceivedAward
 
 INDEXED = {
@@ -31,18 +32,41 @@ INDEXED = {
 
 def issue_descriptor(issue):
     if issue.number == '[nn]' and issue.series.is_singleton:
-        return u''
+        return ''
     if issue.title and issue.series.has_issue_title:
-        title = u' - ' + issue.title
+        title = ' - ' + issue.title
     else:
-        title = u''
+        title = ''
     if issue.display_volume_with_number:
         if issue.volume_not_printed:
-            volume = u'[v%s]' % issue.volume
+            volume = '[v%s]' % issue.volume
         else:
-            volume = u'v%s' % issue.volume
-        return u'%s#%s%s' % (volume, issue.number, title)
+            volume = 'v%s' % issue.volume
+        return '%s#%s%s' % (volume, issue.number, title)
     return issue.number + title
+
+
+class IssueCredit(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_issue_credit'
+
+    creator = models.ForeignKey(CreatorNameDetail, on_delete=models.CASCADE)
+    credit_type = models.ForeignKey(CreditType, on_delete=models.CASCADE)
+    issue = models.ForeignKey('Issue', on_delete=models.CASCADE,
+                              related_name='credits')
+
+    is_credited = models.BooleanField(default=False, db_index=True)
+
+    uncertain = models.BooleanField(default=False, db_index=True)
+
+    credited_as = models.CharField(max_length=255)
+
+    # record for a wider range of work types, or how it is credited
+    credit_name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return "%s: %s (%s)" % (self.issue, self.creator, self.credit_type)
 
 
 class Issue(GcdData):
@@ -63,7 +87,7 @@ class Issue(GcdData):
     isbn = models.CharField(max_length=32, db_index=True)
     no_isbn = models.BooleanField(default=False, db_index=True)
     valid_isbn = models.CharField(max_length=13, db_index=True)
-    variant_of = models.ForeignKey('self', null=True,
+    variant_of = models.ForeignKey('self', on_delete=models.CASCADE, null=True,
                                    related_name='variant_set')
     variant_name = models.CharField(max_length=255)
     barcode = models.CharField(max_length=38, db_index=True)
@@ -93,11 +117,14 @@ class Issue(GcdData):
     keywords = TaggableManager()
 
     # Series and publisher links
-    series = models.ForeignKey('Series')
-    indicia_publisher = models.ForeignKey(IndiciaPublisher, null=True)
+    series = models.ForeignKey('Series', on_delete=models.CASCADE)
+    indicia_publisher = models.ForeignKey(IndiciaPublisher,
+                                          on_delete=models.CASCADE, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
-    brand = models.ForeignKey(Brand, null=True)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True)
     no_brand = models.BooleanField(default=False, db_index=True)
+    indicia_printer = models.ManyToManyField(IndiciaPrinter)
+    no_indicia_printer = models.BooleanField(default=False)
     image_resources = GenericRelation(Image)
 
     awards = GenericRelation(ReceivedAward)
@@ -130,6 +157,10 @@ class Issue(GcdData):
         else:
             return None
 
+    @property
+    def active_credits(self):
+        return self.credits.exclude(deleted=True)
+
     def active_stories(self):
         return self.story_set.exclude(deleted=True)
 
@@ -142,6 +173,9 @@ class Issue(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
+    def active_printers(self):
+        return self.indicia_printer.all()
+
     def shown_stories(self):
         """ returns cover sequence and story sequences """
         if self.variant_of:
@@ -152,7 +186,7 @@ class Issue(GcdData):
                                    .order_by('sequence_number')
                                    .select_related('type', 'migration_status'))
         if self.series.is_comics_publication:
-            if (len(stories) > 0):
+            if (len(stories) > 0) and stories[0].type.id==6:
                 cover_story = stories.pop(0)
                 if self.variant_of:
                     # can have only one sequence, the variant cover
@@ -194,6 +228,17 @@ class Issue(GcdData):
     def shown_covers(self):
         return self.active_covers(), self.variant_covers()
 
+    def show_printer(self):
+        first = True
+        printers = ''
+        for printer in self.active_printers():
+            if first:
+                first = False
+            else:
+                printers += '; '
+            printers += '<a href="%s">%s</a>' % (printer.get_absolute_url(),
+                                                 esc(printer.name))
+        return mark_safe(printers)
 
     def has_content(self):
         """
@@ -301,7 +346,7 @@ class Issue(GcdData):
 
         if not self.variant_of:
             is_indexed = INDEXED['skeleton']
-            if self.page_count > 0:
+            if Decimal(self.page_count or 0) > 0:
                 total_count = self.active_stories()\
                               .aggregate(Sum('page_count'))['page_count__sum']
                 if (total_count > 0 and
@@ -394,25 +439,25 @@ class Issue(GcdData):
     def display_full_descriptor(self):
         number = self.full_descriptor
         if number:
-            return u'#' + number
+            return '#' + number
         else:
-            return u''
+            return ''
 
     @property
     def display_number(self):
         number = self.issue_descriptor
         if number:
-            return u'#' + number
+            return '#' + number
         else:
-            return u''
+            return ''
 
     def full_name(self, variant_name=True):
         if variant_name and self.variant_name:
-            return u'%s %s [%s]' % (self.series.full_name(),
-                                    self.display_number,
-                                    self.variant_name)
+            return '%s %s [%s]' % (self.series.full_name(),
+                                   self.display_number,
+                                   self.variant_name)
         else:
-            return u'%s %s' % (self.series.full_name(), self.display_number)
+            return '%s %s' % (self.series.full_name(), self.display_number)
 
     def full_name_with_link(self, publisher=False):
         name_link = self.series.full_name_with_link(publisher)
@@ -438,19 +483,22 @@ class Issue(GcdData):
 
     def short_name(self):
         if self.variant_name:
-            return u'%s %s [%s]' % (self.series.name,
-                                    self.display_number,
-                                    self.variant_name)
+            return '%s %s [%s]' % (self.series.name,
+                                   self.display_number,
+                                   self.variant_name)
         else:
-            return u'%s %s' % (self.series.name, self.display_number)
+            return '%s %s' % (self.series.name, self.display_number)
 
-    def __unicode__(self):
+    def __str__(self):
         if self.variant_name:
-            return u'%s %s [%s]' % (self.series, self.display_number,
-                                    self.variant_name)
+            return '%s %s [%s]' % (self.series, self.display_number,
+                                   self.variant_name)
         else:
-            return u'%s %s' % (self.series, self.display_number)
+            return '%s %s' % (self.series, self.display_number)
 
+##############################################################################
+# Tables with Sorting
+##############################################################################
 
 class IssueColumn(tables.Column):
     def render(self, record):
@@ -466,19 +514,13 @@ class IssueColumn(tables.Column):
 
 class IssueTable(tables.Table):
     issue = IssueColumn(accessor='id', verbose_name='Issue')
-    publisher = tables.Column(accessor='series.publisher',
-                              verbose_name='Publisher',
-                              orderable=False)
+    publication_date = tables.Column(verbose_name='Publication Date')
+    on_sale_date = tables.Column(verbose_name='On-sale Date')
 
     class Meta:
         model = Issue
-        fields = ('publisher', 'issue', 'publication_date', 'on_sale_date')
+        fields = ('issue', 'publication_date', 'on_sale_date')
         attrs = {'th': {'class': "non_visited"}}
-    def render_publisher(self, value):
-        from apps.gcd.templatetags.display import absolute_url
-        from apps.gcd.templatetags.credits import show_country_info
-        display_publisher = "<img %s>" % (show_country_info(value.country))
-        return mark_safe(display_publisher) + absolute_url(value)
 
     def order_publication_date(self, query_set, is_descending):
         query_set = query_set.annotate(series_name=F('series__sort_name'))
@@ -496,3 +538,98 @@ class IssueTable(tables.Table):
                                        direction + 'series_name',
                                        direction + 'sort_code')
         return (query_set, True)
+
+
+class IssuePublisherTable(IssueTable):
+    publisher = tables.Column(accessor='series.publisher',
+                              verbose_name='Publisher')
+
+    class Meta:
+        model = Issue
+        fields = ('publisher', 'issue', 'publication_date', 'on_sale_date')
+        attrs = {'th': {'class': "non_visited"}}
+
+    def order_publisher(self, query_set, is_descending):
+        query_set = query_set.annotate(publisher_name=F('series__publisher__name'))
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'publisher_name',
+                                       direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
+    def render_publisher(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        display_publisher = "<img %s>" % (show_country_info(value.country))
+        return mark_safe(display_publisher) + absolute_url(value)
+
+
+class IndiciaPublisherIssueTable(IssueTable):
+    brand = tables.Column(accessor='brand',
+                          verbose_name='Brand')
+
+    class Meta:
+        model = Issue
+        fields = ('issue', 'publication_date', 'on_sale_date', 'brand')
+        attrs = {'th': {'class': "non_visited"}}
+
+    def order_brand(self, query_set, is_descending):
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'brand__name',
+                                       direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
+    def render_brand(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        return absolute_url(value)
+
+
+class BrandEmblemIssueTable(IssueTable):
+    indicia_publisher = tables.Column(accessor='indicia_publisher',
+                                      verbose_name='Indicia Publisher',
+                                      empty_values=())
+
+    class Meta:
+        model = Issue
+        fields = ('issue', 'publication_date', 'on_sale_date',
+                  'indicia_publisher')
+        attrs = {'th': {'class': "non_visited"}}
+
+    def order_indicia_publisher(self, query_set, is_descending):
+        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'indicia_publisher',
+                                       direction + 'series_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
+    def render_indicia_publisher(self, record):
+        from apps.gcd.templatetags.display import absolute_url,\
+                                                  show_indicia_pub
+        from apps.gcd.templatetags.credits import get_country_flag
+        return_val = show_indicia_pub(record)
+        if record.series.publisher.id not in record.brand.group_parents():
+            return_val += " (%s%s)" % (get_country_flag(record.series.publisher
+                                                                     .country),
+                                       absolute_url(record.series.publisher))
+        return mark_safe(return_val)
+
+
+class BrandGroupIssueTable(BrandEmblemIssueTable):
+    def __init__(self, *args, **kwargs):
+        self.brand = kwargs.pop('brand')
+        super(BrandEmblemIssueTable, self).__init__(*args, **kwargs)
+
+    def render_indicia_publisher(self, record):
+        from apps.gcd.templatetags.display import absolute_url,\
+                                                  show_indicia_pub
+        from apps.gcd.templatetags.credits import get_country_flag
+        return_val = show_indicia_pub(record)
+        if record.series.publisher != self.brand.parent:
+            return_val += " (%s%s)" % (get_country_flag(record.series.publisher
+                                                                     .country),
+                                       absolute_url(record.series.publisher))
+        return mark_safe(return_val)

@@ -1,4 +1,4 @@
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.conf.urls import url
 from django.conf import settings
 

@@ -1,7 +1,7 @@
 from django.db import models
 
-from basestory import BaseStory
-from character import Character
+from .basestory import BaseStory
+from .character import Character
 
 class Feature(models.Model):
     class Meta:

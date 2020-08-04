@@ -1,5 +1,5 @@
 {% extends "oi/base_view.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% load credits %}
 {% load editing %}
@@ -15,9 +15,12 @@
       href="{% static "css/oi/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/oi/default/edit.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default/widgets.css" %}">
 {% endblock %}
 
 {% block view_body %}
+{% include "oi/bits/jquery.html" %}
 {% include "oi/bits/multi_selector.html" %}
 <h1>
 {{ changeset|header_link }}
@@ -34,7 +37,7 @@
   This change has been submitted for approval, but is not yet under review.
   {% ifequal changeset.indexer user %}
     {% if changeset.editable %}
-  <form action="{% url "process" id=changeset.id %}" method="POST">
+  <form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     <input type="submit" name="retract" value="Retract change and edit further" />
     <label for="comments">Comments</label>

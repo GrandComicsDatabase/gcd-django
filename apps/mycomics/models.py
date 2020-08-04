@@ -2,7 +2,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.safestring import mark_safe
-from django.core import urlresolvers
+import django.urls as urlresolvers
 
 from model_utils import Choices
 
@@ -49,19 +49,27 @@ class CollectorManager(models.Manager):
 
 class Collector(models.Model):
     """Class representing a collector side of the user."""
-    user = models.OneToOneField(User)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
-    grade_system = models.ForeignKey('ConditionGradeScale', related_name='+')
+    grade_system = models.ForeignKey('ConditionGradeScale',
+                                     on_delete=models.CASCADE,
+                                     related_name='+')
 
     #defaults
-    default_have_collection = models.ForeignKey('Collection', related_name='+',
+    default_have_collection = models.ForeignKey('Collection',
+                                                on_delete=models.CASCADE,
+                                                related_name='+',
                                                 null=True)
-    default_want_collection = models.ForeignKey('Collection', related_name='+',
+    default_want_collection = models.ForeignKey('Collection',
+                                                on_delete=models.CASCADE,
+                                                related_name='+',
                                                 null=True)
-    default_language = models.ForeignKey(Language, related_name='+')
+    default_language = models.ForeignKey(Language, on_delete=models.CASCADE,
+                                         related_name='+')
 
-    default_currency = models.ForeignKey(Currency, related_name='+',
-                                           null=True, blank=True)
+    default_currency = models.ForeignKey(Currency, on_delete=models.CASCADE,
+                                         related_name='+',
+                                         null=True, blank=True)
 
     objects = CollectorManager()
 
@@ -81,7 +89,8 @@ class Collector(models.Model):
 class Collection(models.Model):
     """Class for keeping info about particular collections together with
     configuration of item fields used in each collection."""
-    collector = models.ForeignKey(Collector, related_name='collections')
+    collector = models.ForeignKey(Collector, on_delete=models.CASCADE,
+                                  related_name='collections')
 
     name = models.CharField(blank=False, max_length=255, db_index=True)
     description = models.TextField(blank=True)
@@ -127,8 +136,8 @@ class Collection(models.Model):
         return urlresolvers.reverse('view_collection',
                                     kwargs={'collection_id':self.id})
 
-    def __unicode__(self):
-        return unicode(self.name)
+    def __str__(self):
+        return str(self.name)
 
 
 class Subscription(models.Model):
@@ -138,20 +147,21 @@ class Subscription(models.Model):
     class Meta:
         db_table = 'mycomics_subscription'
 
-    collection = models.ForeignKey(Collection, related_name="subscriptions")
-    series = models.ForeignKey(Series)
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE,
+                                   related_name="subscriptions")
+    series = models.ForeignKey(Series, on_delete=models.CASCADE)
     last_pulled = models.DateTimeField()
 
 
 class Location(models.Model):
     """Class for keeping information about locations of user's collection's
     items."""
-    user = models.ForeignKey(Collector)
+    user = models.ForeignKey(Collector, on_delete=models.CASCADE)
     name = models.CharField(blank=True, max_length=255)
     description = models.TextField(blank=True)
 
-    def __unicode__(self):
-        return unicode(self.name)
+    def __str__(self):
+        return str(self.name)
 
 
 class PurchaseLocation(models.Model):
@@ -159,12 +169,12 @@ class PurchaseLocation(models.Model):
     theirs collection's items."""
     class Meta:
         db_table='mycomics_purchase_location'
-    user = models.ForeignKey(Collector)
+    user = models.ForeignKey(Collector, on_delete=models.CASCADE)
     name = models.CharField(blank=True, max_length=255)
     description = models.TextField(blank=True)
 
-    def __unicode__(self):
-        return unicode(self.name)
+    def __str__(self):
+        return str(self.name)
 
 
 class CollectionItem(models.Model):
@@ -185,24 +195,28 @@ class CollectionItem(models.Model):
 
     collections = models.ManyToManyField(Collection, related_name="items",
                                 db_table="mycomics_collection_item_collections")
-    issue = models.ForeignKey(Issue)
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
 
-    location = models.ForeignKey(Location, null=True, blank=True,
+    location = models.ForeignKey(Location,
+                                 null=True, blank=True,
                                  related_name="items",
                                  on_delete=models.SET_NULL)
-    purchase_location = models.ForeignKey(PurchaseLocation, null=True,
-                                          blank=True, related_name="items",
+    purchase_location = models.ForeignKey(PurchaseLocation,
+                                          null=True, blank=True,
+                                          related_name="items",
                                           on_delete=models.SET_NULL)
 
     notes = models.TextField(blank=True)
     keywords = TaggableManager(blank=True)
 
-    grade = models.ForeignKey('ConditionGrade', related_name='+', null=True,
-                              blank=True)
+    grade = models.ForeignKey('ConditionGrade', on_delete=models.CASCADE,
+                              related_name='+', null=True, blank=True)
 
-    acquisition_date = models.ForeignKey(Date, related_name='+', null=True,
-                                         blank=True)
-    sell_date = models.ForeignKey(Date, related_name='+', null=True, blank=True)
+    acquisition_date = models.ForeignKey(Date, on_delete=models.CASCADE,
+                                         related_name='+',
+                                         null=True, blank=True)
+    sell_date = models.ForeignKey(Date, on_delete=models.CASCADE,
+                                  related_name='+', null=True, blank=True)
 
     own = models.NullBooleanField(default=None, verbose_name="ownership")
     was_read = models.NullBooleanField(default=None)
@@ -212,15 +226,19 @@ class CollectionItem(models.Model):
     #price fields
     price_paid = models.DecimalField(max_digits=10, decimal_places=2,
                                      blank=True, null=True)
-    price_paid_currency = models.ForeignKey(Currency, related_name='+',
+    price_paid_currency = models.ForeignKey(Currency, on_delete=models.CASCADE,
+                                            related_name='+',
                                             null=True, blank=True)
     market_value = models.DecimalField(max_digits=10, decimal_places=2,
                                        blank=True, null=True)
-    market_value_currency = models.ForeignKey(Currency, related_name='+',
+    market_value_currency = models.ForeignKey(Currency,
+                                              on_delete=models.CASCADE,
+                                              related_name='+',
                                               null=True, blank=True)
     sell_price = models.DecimalField(max_digits=10, decimal_places=2,
                                      blank=True, null=True)
-    sell_price_currency = models.ForeignKey(Currency, related_name='+',
+    sell_price_currency = models.ForeignKey(Currency, on_delete=models.CASCADE,
+                                            related_name='+',
                                             null=True, blank=True)
     rating = models.IntegerField(choices=RATINGS, blank=True, null=True)
     is_digital = models.BooleanField(default=False)
@@ -243,8 +261,8 @@ class ConditionGradeScale(models.Model):
     name=models.CharField(blank=False,max_length=255)
     description=models.CharField(max_length=2000, blank=True)
 
-    def __unicode__(self):
-        return unicode(self.name)
+    def __str__(self):
+        return str(self.name)
 
 
 class ConditionGrade(models.Model):
@@ -252,8 +270,8 @@ class ConditionGrade(models.Model):
     class Meta:
         db_table='mycomics_condition_grade'
 
-    scale=models.ForeignKey(ConditionGradeScale, related_name='grades',
-                            null=False)
+    scale=models.ForeignKey(ConditionGradeScale, on_delete=models.CASCADE,
+                            related_name='grades', null=False)
     code=models.CharField(blank=False, max_length=20)
     name=models.CharField(blank=False, max_length=255)
     value=models.FloatField(blank=False)
@@ -261,6 +279,6 @@ class ConditionGrade(models.Model):
     def __cmp__(self, other):
         return self.value.__cmp__(other.value)
 
-    def __unicode__(self):
-        return u"%s - %s" % (self.code, self.name)
+    def __str__(self):
+        return "%s - %s" % (self.code, self.name)
 

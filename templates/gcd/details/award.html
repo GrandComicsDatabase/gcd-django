@@ -1,4 +1,4 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/base_content.html" %}
 
 {% load staticfiles %}
 {% load i18n %}
@@ -9,13 +9,7 @@
 GCD :: Award :: {{ award.name }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
-
-{% block view_body %}
-
+{% block content_header %}
 <h1 class="item_id">
   <div class="left">
     <a href="{{ award.get_absolute_url }}">{{ award }}</a>
@@ -26,28 +20,38 @@ GCD :: Award :: {{ award.name }}
   {% include "gcd/bits/pagination_bar.html" %}
   </div>
 </div>
+{% endblock content_header %}
 
-<div class="control_body">
-  <div id="control_container">
-    <div id="control_center">
-      <dl class="pub_data">
-{% if award.notes %}
-        <dt> Notes:
-        <dd> {{ award.notes|urlizetrunc:75|linebreaksbr }}
-{% endif %}
-      </dl>
-    </div>
-  </div>
+{% block content %}
+<dl class="pub_data">
+  {% if award.notes and page.number == 1 %}
+  <dt> Notes:
+  <dd> {{ award.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+</dl>
+{% endblock content %}
 
-{% if not preview or award.source %}
-  <div id="control_rail">
-    <div class="edit_box">
-  {% if MYCOMICS %}
-      <div class="edit_header">
-        <div>my.comics.org</div>
-      </div>
-  {% else %}
-      <div class="edit_header">Editing</div>
+{% block listing %}
+  {% if page.object_list.count %}
+  <table id="publisher_detail_listing" class="listing">
+    <tr>
+      <th> Name </th>
+      <th> Recipient </th>
+      <th> Year Awarded </th>
+    </tr>
+    {% for awarded in page.object_list %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td> <a href="{{ awarded.get_absolute_url }}">{{ awarded.display_name }}</a> </td>
+      <td> <a href="{{ awarded.recipient.get_absolute_url }}">{{ awarded.recipient }}</a> </td>
+      <td> {{ awarded.display_year }} </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endblock listing %}
+
+{% block edit_box %}
+  {% if not preview or award.source %}
      {% if not preview %}
        {% with object=award object_class='award' object_name='Award' %}
          {% include "gcd/bits/status_banner.html" %}
@@ -59,40 +63,21 @@ GCD :: Award :: {{ award.name }}
           <input name="select_award_recipient" type="submit" value="Add Award"/>
       </form>
       {% endif %}
-    </div>
-  {% endif %} <!-- MYCOMICS -->
-    <div id="change_history" class="edit_footer">
+  {% endif %}
+{% endblock edit_box %}
+
+{% block change_history %}
   {% if preview %}
       <a href="{% url "change_history" model_name='award' id=award.source.id %}">View Change History</a>
   {% else %}
       <a href="{% url "change_history" model_name='award' id=award.id %}">View Change History</a>
   {% endif %}
-    </div>
-  </div>
-{% endif %}
-</div>
+{% endblock change_history %}
 
-{% if page.object_list.count %}
-<table id="publisher_detail_listing" class="listing">
-  <tr>
-    <th> Name </th>
-    <th> Recipient </th>
-    <th> Year Awarded </th>
-  </tr>
-  {% for awarded in page.object_list %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> <a href="{{ awarded.get_absolute_url }}">{{ awarded.display_name }}</a> </td>
-    <td> <a href="{{ awarded.recipient.get_absolute_url }}">{{ awarded.recipient }}</a> </td>
-    <td> {{ awarded.display_year }} </td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
-
+{% block content_footer %}
 <div class="item_id">
   <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
   </div>
 </div>
-
-{% endblock %}
+{% endblock content_footer %}

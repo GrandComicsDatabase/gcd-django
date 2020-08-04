@@ -1,7 +1,7 @@
 from django.db import models
 
-from country import Country
-from language import Language
+from .country import Country
+from .language import Language
 #from publisher import Publisher
 
 class Series(models.Model):
@@ -38,6 +38,6 @@ class Series(models.Model):
     def get_absolute_url(self):
         return "/gcd/series/%i/" % self.id
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 

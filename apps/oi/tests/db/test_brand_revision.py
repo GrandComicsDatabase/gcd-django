@@ -12,7 +12,7 @@ def test_create_add_revision(any_added_brand_rev, brand_add_values,
                              any_adding_changeset, keywords):
     rev = any_added_brand_rev
 
-    for k, v in brand_add_values.iteritems():
+    for k, v in brand_add_values.items():
         assert getattr(rev, k) == v
     groups = list(rev.group.order_by('id'))
     assert groups == [any_added_brand_group1]
@@ -40,7 +40,7 @@ def test_commit_added_revision(any_added_brand_rev, brand_add_values,
     assert rev.brand is not None
     assert rev.source is rev.brand
 
-    for k, v in brand_add_values.iteritems():
+    for k, v in brand_add_values.items():
         if k == 'keywords':
             pub_kws = [k for k in rev.brand.keywords.names()]
             pub_kws.sort()
@@ -60,7 +60,7 @@ def test_create_edit_revision(any_added_brand, brand_add_values,
         data_object=any_added_brand,
         changeset=any_editing_changeset)
 
-    for k, v in brand_add_values.iteritems():
+    for k, v in brand_add_values.items():
         assert getattr(rev, k) == v
     assert rev.brand is any_added_brand
     groups = list(rev.group.order_by('id'))

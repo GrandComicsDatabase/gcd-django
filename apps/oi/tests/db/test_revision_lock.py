@@ -53,4 +53,4 @@ def test_unique_together_configured_correctly(lockables):
     with pytest.raises(db.IntegrityError) as excinfo:
         bad_lock = RevisionLock(locked_object=pub1)
         bad_lock.save()
-    assert u'Duplicate entry' in unicode(excinfo.value)
+    assert 'Duplicate entry' in str(excinfo.value)

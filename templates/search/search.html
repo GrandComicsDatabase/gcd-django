@@ -1,5 +1,5 @@
 {% extends "gcd/base_view.html" %}
-{% load staticfiles %}
+{% load static %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -21,6 +21,7 @@
             <option value="brand group" {% if 'facet_model_name_exact:brand group' in form.selected_facets %}selected{% endif %}> Publisher Brand Group </option>
             <option value="brand emblem" {% if 'facet_model_name_exact:brand emblem' in form.selected_facets %}selected{% endif %}> Publisher Brand Emblem </option>
             <option value="indicia publisher" {% if 'facet_model_name_exact:indicia publisher' in form.selected_facets %}selected{% endif %}> Indicia Publisher </option>
+            <option value="printer" {% if 'facet_model_name_exact:printer' in form.selected_facets %}selected{% endif %}> Printer </option>
             <option value="creator" {% if 'facet_model_name_exact:creator' in form.selected_facets %}selected{% endif %}> Creator </option>
             <option value="creator membership" {% if 'facet_model_name_exact:creator membership' in form.selected_facets %}selected{% endif %}> Creator Membership</option>
             <option value="creator art influence" {% if 'facet_model_name_exact:creator art influence' in form.selected_facets %}selected{% endif %}> Creator Art Influence</option>
@@ -204,7 +205,10 @@
                 :
                   <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
-
+            {% if result.model_name == 'printer' %}
+                <td>[PRINTER]</td>
+                <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
             {% if result.model_name == 'award' %}
                 <td>[AWARD]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
@@ -212,7 +216,7 @@
 
             {% if result.model_name == 'creator' %}
                 <td>[CREATOR]</td>
-                <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.gcd_official_name }}</a></td>
+                <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatormembership' %}
                 <td>[CREATOR MEMBERSHIP]</td>

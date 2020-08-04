@@ -1,5 +1,5 @@
 {% extends "oi/base_view.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block title %}
 GCD :: Add Data Objects
@@ -14,9 +14,14 @@ GCD :: Add Data Objects
 
 {% block view_body %}
 
-<form action="{% url "add_publisher" %}" method="GET">
-<input type="submit" value="Add Publisher"></input>
-</form>
+<a href="{% url "add_publisher" %}">
+<button type="button">Add Publisher</button>
+</a>
+<p>
+<a href="{% url "add_printer" %}">
+<button type="button">Add Printer</button>
+</a>
+</p>
 <p>
 <a href="{% url "add_feature" %}">
 <button type="button">Add Feature</button>

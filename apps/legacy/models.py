@@ -16,8 +16,10 @@ class IndexCredit(models.Model):
     class Admin:
         pass
 
-    indexer = models.ForeignKey(Indexer, related_name='index_credit_set')
-    series = models.ForeignKey(Series, related_name='index_credit_set')
+    indexer = models.ForeignKey(Indexer, on_delete=models.CASCADE,
+                                related_name='index_credit_set')
+    series = models.ForeignKey(Series, on_delete=models.CASCADE,
+                               related_name='index_credit_set')
     run = models.CharField(max_length=255, null=True)
     notes = models.TextField(null=True)
 
@@ -32,8 +34,10 @@ class Reservation(models.Model):
     class Admin:
         pass
 
-    indexer = models.ForeignKey(Indexer, related_name='reservation_set')
-    issue = models.ForeignKey(Issue, related_name='reservation_set')
+    indexer = models.ForeignKey(Indexer, on_delete=models.CASCADE,
+                                related_name='reservation_set')
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
+                              related_name='reservation_set')
     status = models.IntegerField(db_index=True)
 
     expires = models.DateField(null=True, blank=True)
@@ -48,7 +52,8 @@ class MigrationStoryStatus(models.Model):
     class Meta:
         db_table = 'legacy_migration_story_status'
 
-    story = models.OneToOneField(Story, related_name='migration_status')
+    story = models.OneToOneField(Story, on_delete=models.CASCADE,
+                                 related_name='migration_status')
     reprint_needs_inspection = models.BooleanField(default=False, db_index=True)
     reprint_confirmed = models.BooleanField(default=False, db_index=True)
 

@@ -4,19 +4,18 @@ import re
 import tempfile
 import os
 import csv
-import codecs
-import cStringIO
-from codecs import EncodedFile, BOM_UTF16
+import chardet
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
 from django.shortcuts import get_object_or_404
 
 from apps.indexer.views import render_error
+from apps.gcd.templatetags.credits import show_creator_credit
 from apps.gcd.views.details import KEY_DATE_REGEXP
 from apps.gcd.models import StoryType, Issue
 from apps.gcd.models.support import GENRES
@@ -78,122 +77,6 @@ SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
                    'synopsis', 'notes', 'keywords', 'first_line']
 
 
-# from http://docs.python.org/library/csv.html
-class UTF8Recoder:
-    """
-    Iterator that reads an encoded stream and reencodes the input to UTF-8
-    """
-    def __init__(self, f, encoding):
-        self.reader = codecs.getreader(encoding)(f)
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        return self.reader.next().encode("utf-8")
-
-
-class UnicodeReader:
-    """
-    A CSV reader which will iterate over lines in the CSV file "f",
-    which is encoded in the given encoding.
-    """
-
-    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
-        f = UTF8Recoder(f, encoding)
-        self.reader = csv.reader(f, dialect=dialect, **kwds)
-
-    def next(self):
-        row = next(self.reader)
-        return [unicode(s, "utf-8") for s in row]
-
-    def __iter__(self):
-        return self
-
-
-class UnicodeWriter:
-    """
-    A CSV writer which will write rows to CSV file "f",
-    which is encoded in the given encoding.
-    """
-
-    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
-        # Redirect output to a queue
-        self.queue = cStringIO.StringIO()
-        self.writer = csv.writer(self.queue, dialect=dialect, **kwds)
-        self.stream = f
-        self.encoder = codecs.getincrementalencoder(encoding)()
-
-    def writerow(self, row):
-        self.writer.writerow([s.encode("utf-8") for s in row])
-        # Fetch UTF-8 output from the queue ...
-        data = self.queue.getvalue()
-        data = data.decode("utf-8")
-        # ... and reencode it into the target encoding
-        data = self.encoder.encode(data)
-        # write to the target stream
-        self.stream.write(data)
-        # empty queue
-        self.queue.truncate(0)
-
-    def writerows(self, rows):
-        for row in rows:
-            self.writerow(row)
-
-
-# based on http://www.smontanaro.net/python/decodeh.py
-def decode_heuristically(s, enc=None, denc=sys.getdefaultencoding()):
-    """
-    Try interpreting s using several possible encodings.
-    The return value is a two-element tuple.  The first element is either an
-    ASCII string or a Unicode object.  The second element is True if the
-    decoder was not successfully.
-    """
-    if isinstance(s, unicode):
-        return s, False, None
-    try:
-        x = unicode(s, "ascii")
-        # if it's ascii, we're done
-        return s, False, "ascii"
-    except UnicodeError:
-        encodings = ["utf-8", "iso-8859-1", "cp1252", "iso-8859-15"]
-        # if the default encoding is not ascii it's a good thing to try
-        if denc != "ascii":
-            encodings.insert(0, denc)
-        # always try any caller-provided encoding first
-        if enc:
-            encodings.insert(0, enc)
-        for enc in encodings:
-
-            # Most of the characters between 0x80 and 0x9F are displayable
-            # in cp1252 but are control characters in iso-8859-1.  Skip
-            # iso-8859-1 if they are found, even though the unicode() call
-            # might well succeed.
-
-            if (enc in ("iso-8859-15", "iso-8859-1") and
-                    re.search(r"[\x80-\x9f]", s) is not None):
-                continue
-
-            # Characters in the given range are more likely to be
-            # symbols used in iso-8859-15, so even though unicode()
-            # may accept such strings with those encodings, skip them.
-
-            if (enc in ("iso-8859-1", "cp1252") and
-                    re.search(r"[\xa4\xa6\xa8\xb4\xb8\xbc-\xbe]", s)
-                    is not None):
-                continue
-
-            try:
-                x = unicode(s, enc)
-            except UnicodeError:
-                pass
-            else:
-                if x.encode(enc) == s:
-                    return x, False, enc
-
-        return s, True, None
-
-
 def _handle_import_error(request, changeset, error_text):
     response = render_error(
         request,
@@ -224,34 +107,16 @@ def _process_file(request, changeset, is_issue, use_csv=False):
     for chunk in request.FILES['flatfile'].chunks():
         os.write(tmpfile_handle, chunk)
     os.close(tmpfile_handle)
-    tmpfile = open(tmpfile_name, 'U')
+    tmpfile = open(tmpfile_name, 'rb')
     request.tmpfile = tmpfile
     request.tmpfile_name = tmpfile_name
-
-    # TODO use chardet
-
-    # check if file starts with byte order mark
-    if tmpfile.read(2) == BOM_UTF16:
-        enc = 'utf-16'
-        # use EncodedFile from codecs to get transparent encoding translation
-        upload = EncodedFile(tmpfile, enc)
-    # otherwise just do as usual
-    else:
-        upload = tmpfile
-        # charset was None in my local tests, not sure if actually useful here
-        enc = request.FILES['flatfile'].charset
-    tmpfile.seek(0)
+    encoding = chardet.detect(tmpfile.read())['encoding']
+    tmpfile = open(tmpfile_name, encoding=encoding)
 
     if use_csv:
-        dummy, failure, enc = decode_heuristically(tmpfile.read(), enc=enc)
-        if failure:
-            error_text = 'Uploaded file has unknown file encoding.'
-            return _handle_import_error(request, changeset, error_text)
-        tmpfile.seek(0)
-        if enc:
-            upload = UnicodeReader(tmpfile, encoding=enc)
-        else:
-            upload = UnicodeReader(tmpfile)
+        upload = csv.reader(tmpfile)
+    else:
+        upload = tmpfile
     lines = []
     empty_line = False
     # process the file into a list of lines and check for length
@@ -260,19 +125,13 @@ def _process_file(request, changeset, is_issue, use_csv=False):
         if use_csv:
             split_line = line
         else:
-            decoded_line, failure, ignore = decode_heuristically(line, enc=enc)
-            if failure:
-                error_text = 'line %s has unknown file encoding.' % line
-                error_text = unicode(error_text, errors='replace')
-                return _handle_import_error(request, changeset, error_text)
-
-            split_line = decoded_line.strip('\n').split('\t')
+            split_line = line.strip('\n').split('\t')
 
         # if is_issue is set, the first line should be issue line
         if is_issue and not lines:
             # check number of fields
             line_length = len(split_line)
-            if line_length not in range(MIN_ISSUE_FIELDS, MAX_ISSUE_FIELDS+1):
+            if line_length not in list(range(MIN_ISSUE_FIELDS, MAX_ISSUE_FIELDS+1)):
                 error_text = 'issue line %s has %d fields, it must have at '\
                              'least %d and not more than %d.' \
                   % (split_line, line_length, MIN_ISSUE_FIELDS,
@@ -294,8 +153,8 @@ def _process_file(request, changeset, is_issue, use_csv=False):
 
             # check number of fields
             line_length = len(split_line)
-            if line_length not in range(MIN_SEQUENCE_FIELDS,
-                                        MAX_SEQUENCE_FIELDS+1):
+            if line_length not in list(range(MIN_SEQUENCE_FIELDS,
+                                        MAX_SEQUENCE_FIELDS+1)):
                 error_text = 'sequence line %s has %d fields, it must have '\
                              'at least %d and not more than %d.' \
                   % (split_line, line_length, MIN_SEQUENCE_FIELDS,
@@ -409,10 +268,10 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         editing, no_editing = _check_for_none(fields[STORY_EDITING])
         genres = fields[GENRE].strip()
         if genres:
-            filtered_genres = u''
+            filtered_genres = ''
             for genre in genres.split(';'):
                 if genre.strip() in GENRES['en']:
-                    filtered_genres += u';' + genre
+                    filtered_genres += ';' + genre
             genre = filtered_genres[1:]
         else:
             genre = genres
@@ -640,11 +499,11 @@ def generate_reprint_link(reprints, direction):
                 issue = reprint.target_issue
             else:
                 issue = reprint.target.issue
-        reprint_note += u'%s %s' % (direction, issue.full_name())
+        reprint_note += '%s %s' % (direction, issue.full_name())
         if reprint.notes:
-            reprint_note = u'%s [%s]' % (reprint_note, reprint.notes)
+            reprint_note = '%s [%s]' % (reprint_note, reprint.notes)
         if issue.publication_date:
-            reprint_note += u" (" + issue.publication_date + ")"
+            reprint_note += " (" + issue.publication_date + ")"
         reprint_note += '; '
     return reprint_note
 
@@ -661,12 +520,12 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     else:
         issue = get_object_or_404(Issue, id=issue_id)
     series = issue.series
-    filename = unicode(issue).replace(' ', '_').encode('utf-8')
+    filename = str(issue).replace(' ', '_')
     if use_csv:
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="%s.csv"' % \
                                           filename
-        writer = UnicodeWriter(response)
+        writer = csv.writer(response)
     export_data = []
     for field_name in ISSUE_FIELDS:
         if field_name == 'brand' and not issue.brand and not issue.no_brand:
@@ -685,7 +544,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
           and getattr(issue, 'no_%s' % field_name):
             export_data.append('None')
         else:
-            export_data.append(unicode(getattr(issue, field_name)))
+            export_data.append(str(getattr(issue, field_name)))
     reprint = ''
     from_reprints = list(issue.from_reprints.select_related().all())
     from_reprints.extend(list(issue.from_issue_reprints.select_related()
@@ -699,7 +558,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     reprint += generate_reprint_link(to_reprints, 'in')
     if reprint != '':
         reprint = reprint[:-2]
-    export_data.append(unicode(reprint))
+    export_data.append(str(reprint))
     # keywords were added after reprint_links on issue level, so they come
     # later in the export
     # TODO check after refactor if this can be changed
@@ -716,11 +575,14 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
         export_data = []
         for field_name in SEQUENCE_FIELDS:
             if field_name in ['script', 'pencils', 'inks', 'colors',
-                              'letters', 'editing'] and \
-                             getattr(sequence, 'no_%s' % field_name):
-                export_data.append('None')
+                              'letters', 'editing']:
+                credit = show_creator_credit(sequence, field_name, url=False)
+                if credit:
+                    export_data.append(credit)
+                else:
+                    export_data.append('None')
             elif field_name == 'title' and sequence.title_inferred:
-                export_data.append(u'[%s]' % sequence.title)
+                export_data.append('[%s]' % sequence.title)
             elif field_name == 'reprint_notes':
                 reprint = ''
                 from_reprints = list(sequence.from_reprints.select_related()
@@ -744,7 +606,7 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                         reprint = reprint[:-2]
                 else:
                     reprint = sequence.reprint_notes
-                export_data.append(unicode(reprint))
+                export_data.append(str(reprint))
             elif field_name == 'keywords':
                 # TODO check after refactor if this can be changed
                 if revision:
@@ -752,13 +614,13 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                 else:
                     export_data.append(get_keywords(sequence))
             else:
-                export_data.append(unicode(getattr(sequence, field_name)))
+                export_data.append(str(getattr(sequence, field_name)))
         if use_csv:
             writer.writerow(export_data)
         else:
             export += '\t'.join(export_data) + '\r\n'
     if not use_csv:
-        response = HttpResponse(export,
+        response = HttpResponse(export.encode(encoding='UTF-8'),
                                 content_type='text/tab-separated-values')
         response['Content-Disposition'] = 'attachment; filename="%s.tsv"' % \
                                           filename

@@ -5,7 +5,7 @@ from datetime import datetime
 from django.conf import settings
 from django.db import models
 from django.db.models import Q, Count
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.core.mail import send_mail, send_mass_mail
 from django.contrib.auth.models import User, Group, Permission
 
@@ -69,12 +69,12 @@ class MailingList(models.Model):
     class Meta:
         db_table = 'voting_mailing_list'
     address = models.EmailField()
-    def __unicode__(self):
+    def __str__(self):
         return self.address
 
 class Agenda(models.Model):
     name = models.CharField(max_length=255)
-    permission = models.ForeignKey(Permission,
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE,
       limit_choices_to={'codename__in': ('can_vote', 'on_board')})
 
     uses_tokens = models.BooleanField(default=False)
@@ -89,17 +89,19 @@ class Agenda(models.Model):
     def get_absolute_url(self):
         return urlresolvers.reverse('agenda', kwargs={'id': self.id})
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class AgendaItem(models.Model):
     class Meta:
         db_table = 'voting_agenda_item'
     name = models.CharField(max_length=255)
-    agenda = models.ForeignKey(Agenda, related_name='items')
+    agenda = models.ForeignKey(Agenda, on_delete=models.CASCADE,
+                               related_name='items')
     notes = models.TextField(null=True, blank=True)
-    owner = models.ForeignKey(User, null=True, blank=True,
-                                    related_name='agenda_items')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE,
+                             null=True, blank=True,
+                             related_name='agenda_items')
 
     # NULL=pending, 1=open, 0=closed
     # See also the open, pending and closed properties.
@@ -123,7 +125,7 @@ class AgendaItem(models.Model):
     def closed(self):
         return self.state is False
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 def agenda_item_pre_save(sender, **kwargs):
@@ -143,7 +145,7 @@ def agenda_item_pre_save(sender, **kwargs):
         if item.notes:
             notes = item.notes
         else:
-            notes = u''
+            notes = ''
 
         for list_config in item.agenda.agenda_mailing_lists.all():
             if list_config.on_agenda_item_open and newly_opened:
@@ -170,10 +172,13 @@ models.signals.pre_save.connect(agenda_item_pre_save, sender=AgendaItem)
 class AgendaMailingList(models.Model):
     class Meta:
         db_table = 'voting_agenda_mailing_list'
-    agenda = models.ForeignKey(Agenda, related_name='agenda_mailing_lists')
-    mailing_list = models.ForeignKey(MailingList, null=True, blank=True,
+    agenda = models.ForeignKey(Agenda, on_delete=models.CASCADE,
+                               related_name='agenda_mailing_lists')
+    mailing_list = models.ForeignKey(MailingList, on_delete=models.CASCADE,
+                                     null=True, blank=True,
                                      related_name='agenda_mailing_lists')
-    group = models.ForeignKey(Group, null=True, blank=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                              null=True, blank=True)
     on_agenda_item_add = models.BooleanField(default=False)
     on_agenda_item_open = models.BooleanField(default=False)
     on_vote_open = models.BooleanField(default=False)
@@ -224,7 +229,7 @@ class VoteType(models.Model):
     def natural_key(self):
         return (self.name,)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class Topic(models.Model):
@@ -235,14 +240,18 @@ class Topic(models.Model):
     text = models.TextField(null=True, blank=True)
     agenda_items = models.ManyToManyField(AgendaItem, related_name='topics',
       limit_choices_to={'state': True})
-    agenda = models.ForeignKey(Agenda, related_name='topics')
-    vote_type = models.ForeignKey(VoteType, related_name='topics',
+    agenda = models.ForeignKey(Agenda, on_delete=models.CASCADE,
+                               related_name='topics')
+    vote_type = models.ForeignKey(VoteType, on_delete=models.CASCADE,
+      related_name='topics',
       help_text='Pass / Fail types will automatically create their own Options '
                 'if none are specified directly.  For other types, add Options '
                 'below.')
-    author = models.ForeignKey(User, related_name='topics')
-    second = models.ForeignKey(User, null=True, blank=True,
-                                     related_name='seconded_topics')
+    author = models.ForeignKey(User, on_delete=models.CASCADE,
+                               related_name='topics')
+    second = models.ForeignKey(User, on_delete=models.CASCADE,
+                               null=True, blank=True,
+                               related_name='seconded_topics')
 
     open = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True, db_index=True, editable=False)
@@ -323,7 +332,7 @@ class Topic(models.Model):
         receipts = self.receipts.filter(voter=user)
         return votes.count() > 0 or receipts.count() > 0
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 def topic_pre_save(sender, **kwargs):
@@ -334,8 +343,9 @@ def topic_pre_save(sender, **kwargs):
     if kwargs['raw'] != True:
         topic = kwargs['instance']
         if topic.agenda.uses_tokens and topic.token is None:
-            salt = hashlib.sha1(str(random())).hexdigest()[:5]
-            topic.token = hashlib.sha1(salt + topic.name).hexdigest()
+            salt = hashlib.sha1(str(random()).encode('utf8')).hexdigest()[:5]
+            topic.token = hashlib.sha1(
+                (salt + topic.name).encode('utf8')).hexdigest()
 
         if topic.id is not None:
             old_topic = Topic.objects.get(pk=topic.id)
@@ -398,7 +408,8 @@ class Option(models.Model):
     ballot_position = models.IntegerField(null=True, blank=True,
       help_text='Optional whole number used to arrange the options in an '
                 'order other than alphabetical by name.')
-    topic = models.ForeignKey('Topic', null=True, related_name='options')
+    topic = models.ForeignKey('Topic', on_delete=models.CASCADE,
+                              null=True, related_name='options')
     voters = models.ManyToManyField(User, through='Vote',
                                           related_name='voted_options')
     result = models.NullBooleanField(blank=True)
@@ -406,34 +417,40 @@ class Option(models.Model):
     def rank(self, user):
         return self.votes.get(voter=user).rank
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 class Receipt(models.Model):
     """
     Tracks which users have voted for a given topic when there is a secret ballot.
     """
-    topic = models.ForeignKey(Topic, related_name='receipts')
-    voter = models.ForeignKey(User, related_name='receipts')
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE,
+                              related_name='receipts')
+    voter = models.ForeignKey(User, on_delete=models.CASCADE,
+                              related_name='receipts')
     vote_key = models.CharField(max_length=64)
 
 class Vote(models.Model):
     # voter is NULL when the vote is secret.
-    voter = models.ForeignKey(User, null=True, related_name='votes')
-    option = models.ForeignKey(Option, related_name='votes')
+    voter = models.ForeignKey(User, on_delete=models.CASCADE,
+                              null=True, related_name='votes')
+    option = models.ForeignKey(Option, on_delete=models.CASCADE,
+                               related_name='votes')
     rank = models.IntegerField(null=True)
     created = models.DateTimeField(auto_now_add=True, editable=False)
     updated = models.DateTimeField(null=True, auto_now=True, editable=False)
 
-    def __unicode__(self):
-        string = u'%s: %s' % (self.voter.indexer, self.option)
+    def __str__(self):
+        string = '%s: %s' % (self.voter.indexer, self.option)
         if self.rank is not None:
             return string + (' %d' % self.rank)
         return string
 
 class ExpectedVoter(models.Model):
-    voter = models.ForeignKey(User, related_name='voting_expectations')
-    agenda = models.ForeignKey(Agenda, related_name='expected_voters')
+    voter = models.ForeignKey(User, on_delete=models.CASCADE,
+                              related_name='voting_expectations')
+    agenda = models.ForeignKey(Agenda, on_delete=models.CASCADE,
+                               related_name='expected_voters')
     tenure_began = models.DateTimeField()
     tenure_ended = models.DateTimeField(null=True, blank=True)
 
@@ -442,7 +459,7 @@ class ExpectedVoter(models.Model):
         ordering = ('tenure_began', 'tenure_ended',
                     'voter__last_name', 'voter__first_name')
 
-    def __unicode__(self):
+    def __str__(self):
         uni = '%s (%s - ' % (self.voter_name(), self.tenure_began)
         if self.tenure_ended is None:
             return uni + 'present)'

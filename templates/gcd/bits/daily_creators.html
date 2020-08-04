@@ -1,0 +1,29 @@
+{% load display %}
+{% load compress %}
+{% load static %}
+{% compress css inline %}
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default.css" %}"/>
+{% endcompress %}
+
+<base target="_parent">
+
+<div style="font-size: 0.9em;">
+
+  <p><b>{{ yesterday|date:"l, jS F" }}</b></p>
+  {% for creator in creators_yesterday %}
+    {{ creator|absolute_url }}<br>
+  {% endfor %}
+
+
+  <a name="today"></a>
+  <p><b>{{ today|date:"l, jS F" }}</b></p>
+  {% for creator in creators_today %}
+    {{ creator|absolute_url }}<br>
+  {% endfor %}
+
+  <p><b>{{ tomorrow|date:"l, jS F" }}</b></p>
+  {% for creator in creators_tomorrow %}
+    {{ creator|absolute_url }}<br>
+  {% endfor %}
+</div>

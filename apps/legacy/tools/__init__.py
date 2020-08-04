@@ -12,7 +12,7 @@ def migrate_reserve(display, label, comment=''):
     if is_locked(display) == None:
         changeset=_do_reserve(ANON_USER, display, label)
         if changeset == None:
-            raise ValueError, display
+            raise ValueError(display)
         changeset.state=states.OPEN
         changeset.save()
         comment = changeset.comments.create(commenter=ANON_USER,
@@ -20,7 +20,7 @@ def migrate_reserve(display, label, comment=''):
           old_state=states.UNRESERVED, new_state=states.OPEN)
         return changeset
     else:
-        print "%s %s is reserved" % (label.capitalize(), display)
+        print("%s %s is reserved" % (label.capitalize(), display))
         return None
 
 def do_auto_approve(liste, comment):
@@ -34,5 +34,5 @@ def do_auto_approve(liste, comment):
                 change.approver = ANON_USER
                 change.state = states.REVIEWING
                 change.approve(notes='Automatically approved %s.' % comment)
-                print "change is auto-approved:", change
+                print("change is auto-approved:", change)
 

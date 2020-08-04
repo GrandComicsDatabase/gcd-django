@@ -31,7 +31,7 @@ class FormAsField(LayoutObject):
         if template:
             self.template = template
 
-    def render(self, form, form_style, context, **kwargs):
+    def render(self, form, form_style, context, renderer=None, **kwargs):
         form = context.get(self.form_context_name)
         helper = context.get(self.helper_context_name)
         # closes form prematurely if this isn't explicitly stated
@@ -68,7 +68,7 @@ class Formset(LayoutObject):
         if template:
             self.template = template
 
-    def render(self, form, form_style, context, **kwargs):
+    def render(self, form, form_style, context, renderer=None, **kwargs):
         formset = context.get(self.formset_context_name)
         helper = context.get(self.helper_context_name)
         # closes form prematurely if this isn't explicitly stated

@@ -3,7 +3,7 @@
 {% load humanize %}
 {% load i18n %}
 {% load compress %}
-{% load staticfiles %}
+{% load static %}
 
 <html>
 <head>
@@ -113,10 +113,8 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
           </div>
         </div>
         <!-- Left Column end -->
-{% if CALENDAR %}
-        <span id="calendarTitle" style="font-size:medium"><a href="/calendar/">Comics Calendar</a></span>
-        <iframe src="/agenda/{{ language.code }}/" style=" border-width:0 " width="100%" height="400" frameborder="0" scrolling="no"></iframe>
-{% endif %}
+<h3>Creators Calendar</h3>
+<iframe src="/daily_creators/#today" style=" border-width:0 " width="100%" height="600" frameborder="0"></iframe>
 {% if USE_TEMPLATESADMIN and ADVERTISING and not BETA %}
   {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
 {% endif %}
@@ -136,6 +134,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
               <li><a class="no_visited" href="{% url "covers_today" %}">{% trans "Today's covers" %}</a>
               <li><a class="no_visited" href="{% url "changes_today" %}">{% trans "Today's changes" %}</a>
               <li><a class="no_visited" href="{% url "on_sale_this_week" %}">{% trans "On-sale this week" %}</a>
+              <li><a class="no_visited" href="{% url "on_sale_this_month" %}">{% trans "On-sale this month" %}</a>
               <li>{% trans "International statistics" %}
               <ul style="margin-left:1em">
               <li><a class="no_visited" href="{% url "international_stats_language" %}">{% trans "by Language" %}</a>

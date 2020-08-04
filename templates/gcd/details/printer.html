@@ -1,0 +1,124 @@
+{% extends "gcd/base_view.html" %}
+
+{% load staticfiles %}
+{% load i18n %}
+{% load credits %}
+
+{% block title %}
+  GCD :: Printer :: {{ printer.name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% with printer as publisher %}
+  {% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+      <div class="pub_data">
+{% if printer.year_overall_began or printer.year_overall_ended %}
+        <dl style="columns:2; margin-bottom: -1em" class="pub_data">
+          {% if printer.year_overall_began %}
+            <dt>Printing Began:</dt><dd>{{ printer.year_overall_began }}</dd>
+            <dt>Comics Printing Began:</dt><dd>{{ printer.year_began }}</dd>
+          {% endif %}
+          {% if printer.year_overall_ended %}
+            <dt> Printing Ended:</dt><dd>{{ printer.year_overall_ended }}</dd>
+            <dt> Comics Printing Ended:</dt><dd>{{ printer.year_ended }}</dd>
+          {% endif %}
+        </dl>
+{% endif %}
+        <dl class="pub_data">
+          <dt> Country:
+          <dd> {{ printer.country.name }}
+{% if printer.indicia_printer_count %}
+          <dt> Indicia Printers:
+          <dd> {{ printer.indicia_printer_count }}
+{% endif %}
+          <p>
+{% if printer.url or printer.notes or printer.has_keywords %}
+        </dl>
+        <dl style="margin-top: -0.5em" class="pub_data">
+  {% if printer.url %}
+          <dt> Web Site:
+          <dd> <a href="{{ printer.url }}">{{ printer.url }}</a>
+  {% endif %}
+  {% if printer.notes %}
+          <dt> Notes:
+          <dd> {{ printer.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {{ printer|show_credit:'keywords' }}
+{% endif %}
+        </dl>
+      </div> <!-- pub_data -->
+    </div> <!-- control_center -->
+
+{% if not preview or printer.source %}
+    <div id="control_rail">
+      <div class="edit_box">
+  {% if MYCOMICS %}
+        <div class="edit_header">
+          <div>my.comics.org</div>
+        </div>
+  {% else %}
+        <div class="edit_header">Editing</div>
+    {% if not preview %}
+      {% with printer as object %}
+      {% with 'printer' as object_class %}
+      {% with 'Printer' as object_name %}
+        {% include "gcd/bits/status_banner.html" %}
+      {% endwith %}
+      {% endwith %}
+      {% endwith %}
+      {% if user.is_authenticated and not printer.pending_deletion %}
+        <form method="GET"
+              action="{% url "add_indicia_printer" parent_id=printer.id %}">
+          <input id="add" name="add" type="submit" value="Add indicia printer" />
+        </form>
+      {% endif %} <!-- logged in -->
+    {% endif %} <!-- not preview -->
+  {% endif %}
+      </div> <!-- edit_box -->
+      <div id="change_history" class="edit_footer">
+  {% if preview %}
+        <a href="{% url "change_history" model_name='printer' id=printer.source.id %}">View Change History</a>
+  {% else %}
+        <a href="{% url "change_history" model_name='printer' id=printer.id %}">View Change History</a>
+  {% endif %}
+      </div>
+    </div> <!-- control_rail -->
+{% endif %}
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+
+<hr>
+<h3>Indicia Printers:</h3>
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Indicia Printer </th>
+    <th> Year Began</th>
+    <th> Year Ended</th>
+  </tr>
+{% for indicia_printer in indicia_printers %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ indicia_printer.get_absolute_url }}">{{ indicia_printer.name }}</a> </td>
+    <td> {{ indicia_printer.year_began|default:"" }} </td>
+    <td> {{ indicia_printer.year_ended|default:"" }} </td>
+  </tr>
+{% endfor %}
+</table>
+
+{% with 1 as paginate_only %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+
+{% endblock %}

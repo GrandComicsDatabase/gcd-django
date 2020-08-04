@@ -1,8 +1,8 @@
 from django.db import models
 
-from series import Series
-from issue import Issue
-from basestory import BaseStory
+from .series import Series
+from .issue import Issue
+from .basestory import BaseStory
 
 class StoryVersion(models.Model):
     class Meta:
@@ -34,6 +34,6 @@ class StoryVersion(models.Model):
                             db_column = 'storycode', null = False)
 
 
-    def __unicode__(self):
+    def __str__(self):
         return self.id
 

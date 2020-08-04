@@ -42,6 +42,7 @@ label {
     margin-right: 1em;
     text-align: right;
     color: black;
+    font-weight: normal;
 }
 
 .selector select.filtered

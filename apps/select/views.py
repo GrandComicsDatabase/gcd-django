@@ -5,7 +5,8 @@ from haystack.forms import FacetedSearchForm
 
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core import urlresolvers
+from django.db.models import Q
+import django.urls as urlresolvers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
@@ -14,7 +15,8 @@ from django.utils.html import format_html
 from dal import autocomplete
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
-                            Creator, CreatorNameDetail, Feature, FeatureLogo
+                            Creator, CreatorNameDetail, CreatorSignature, \
+                            Feature, FeatureLogo, IndiciaPrinter, School
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -41,11 +43,12 @@ def _cant_get_key(request):
 
 def store_select_data(request, select_key, data):
     if not select_key:
-        salt = hashlib.sha1(str(random())).hexdigest()[:5]
-        select_key = hashlib.sha1(salt + unicode(request.user)).hexdigest()
+        salt = hashlib.sha1(str(random()).encode('utf8')).hexdigest()[:5]
+        select_key = hashlib.sha1(
+            (salt + str(request.user)).encode('utf8')).hexdigest()
     for item in data:
         request.session['%s_%s' % (select_key, item)] = data[item]
-    request.session['%s_items' % select_key] = data.keys()
+    request.session['%s_items' % select_key] = list(data)
     return select_key
 
 
@@ -408,14 +411,20 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
 # auto-complete objects
 ##############################################################################
 
+def _filter_and_sort(qs, query, field='name'):
+    if query:
+        qs = qs.filter(Q(**{'%s__icontains' % field: query}))
+        qs_match = qs.filter(Q(**{'%s' % field: query}))
+        qs = qs_match.union(qs)
+    return qs
+
 
 class CreatorAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Creator.objects.filter(deleted=False)
 
-        if self.q:
-            qs = qs.filter(gcd_official_name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q, field='gcd_official_name')
 
         return qs
 
@@ -426,8 +435,7 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
         qs = CreatorNameDetail.objects.filter(deleted=False)\
                                       .exclude(type__id__in=[3, 4])
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q)
 
         return qs
 
@@ -438,8 +446,45 @@ class CreatorName4RelationAutocomplete(LoginRequiredMixin,
         qs = CreatorNameDetail.objects.filter(deleted=False,
                                               type__id__in=[5,8])
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        creator_id = self.forwarded.get('to_creator', None)
+
+        if creator_id:
+            qs = qs.filter(creator__creator_names__id=creator_id)
+
+        qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class CreatorSignatureAutocomplete(LoginRequiredMixin,
+                                   autocomplete.Select2QuerySetView):
+    def get_result_label(self, creator_signature):
+        if creator_signature.signature:
+            return format_html(
+              '%s <img src="%s">' % (creator_signature.name,
+                                     creator_signature.signature.icon.url))
+        else:
+            return format_html('%s [generic]' % creator_signature.name)
+
+    def get_queryset(self):
+        qs = CreatorSignature.objects.filter(deleted=False)
+
+        creator_id = self.forwarded.get('creator', None)
+
+        if creator_id:
+            qs = qs.filter(creator__creator_names__id=creator_id)
+
+        qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class SchoolAutocomplete(LoginRequiredMixin,
+                          autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = School.objects.all()
+
+        qs = _filter_and_sort(qs, self.q, field='school_name')
 
         return qs
 
@@ -452,10 +497,9 @@ class FeatureAutocomplete(LoginRequiredMixin,
         language = self.forwarded.get('language_code', None)
 
         if language:
-            qs = qs.filter(language__code=language)
+            qs = qs.filter(language__code__in=[language, 'zxx'])
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q)
 
         return qs
 
@@ -464,9 +508,11 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
     def get_result_label(self, feature_logo):
         if feature_logo.logo:
-            return format_html(u'%s <img src="%s">' % (feature_logo.name, feature_logo.logo.icon.url))
+            return format_html(
+              '%s <img src="%s">' % (feature_logo.name,
+                                     feature_logo.logo.icon.url))
         else:
-            return format_html(u'%s' % feature_logo.name)
+            return format_html('%s' % feature_logo.name)
 
     def get_queryset(self):
         qs = FeatureLogo.objects.filter(deleted=False)
@@ -474,9 +520,18 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
         language = self.forwarded.get('language_code', None)
 
         if language:
-            qs = qs.filter(feature__language__code=language)
+            qs = qs.filter(feature__language__code__in=[language, 'zxx'])
 
-        if self.q:
-            qs = qs.filter(name__icontains=self.q)
+        qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class IndiciaPrinterAutocomplete(LoginRequiredMixin,
+                                 autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = IndiciaPrinter.objects.filter(deleted=False)
+
+        qs = _filter_and_sort(qs, self.q)
 
         return qs

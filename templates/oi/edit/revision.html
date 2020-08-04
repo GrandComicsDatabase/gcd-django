@@ -27,6 +27,9 @@
 {% endblock %}
 
 {% block view_body %}
+{% include "oi/bits/jquery.html" %}
+{{ credits_formset.media }}
+{{ form.media }}
 {% include "oi/bits/multi_selector.html" %}
 <h1>
 {{ changeset|header_link }}
@@ -36,7 +39,7 @@
 <form action="{% url "process_revision" model_name=revision.source_name id=revision.id %}" method="POST">
   {% csrf_token %}
   <table class="editing">
-  {% if revision.source_name == 'story' %}
+  {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
     {% crispy form %}
   {% else %}
     {{ form.as_table }}
@@ -55,8 +58,6 @@
 {% endblock %}
 
 {% block footer %}
-  {{ form.media }}
-  {{ credits_formset.media }}
   {% if revision.source_name in 'issue story' %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}

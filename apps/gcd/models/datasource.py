@@ -15,8 +15,8 @@ class SourceType(models.Model):
 
     type = models.CharField(max_length=50)
 
-    def __unicode__(self):
-        return unicode(self.type)
+    def __str__(self):
+        return str(self.type)
 
 
 class DataSource(GcdData):
@@ -30,12 +30,12 @@ class DataSource(GcdData):
         ordering = ('source_description',)
         verbose_name_plural = 'Creator Data Source'
 
-    source_type = models.ForeignKey(SourceType)
+    source_type = models.ForeignKey(SourceType, on_delete=models.CASCADE)
     source_description = models.TextField()
     field = models.CharField(max_length=256)
 
-    def __unicode__(self):
-        return '%s - %s' % (unicode(self.field),
-                            unicode(self.source_type.type))
+    def __str__(self):
+        return '%s - %s' % (str(self.field),
+                            str(self.source_type.type))
 
 

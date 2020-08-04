@@ -12,8 +12,10 @@ class ReprintToIssue(models.Model):
         app_label = 'gcd'
         db_table = 'gcd_reprint_to_issue'
 
-    origin = models.ForeignKey(Story, related_name='to_issue_reprints')
-    target_issue = models.ForeignKey(Issue, related_name='from_reprints')
+    origin = models.ForeignKey(Story, on_delete=models.CASCADE,
+                               related_name='to_issue_reprints')
+    target_issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
+                                     related_name='from_reprints')
     notes = models.TextField(max_length=255)
 
     # Fields related to change management.
@@ -39,18 +41,18 @@ class ReprintToIssue(models.Model):
 
     def get_compare_string(self, base_issue):
         if self.target_issue == base_issue:
-            reprint = u'from %s <i>sequence</i> <a target="_blank" href="%s#%d">%s</a>' % \
+            reprint = 'from %s <i>sequence</i> <a target="_blank" href="%s#%d">%s</a>' % \
                         (self.origin.issue.get_absolute_url(), 
                          esc(self.origin.issue.full_name()),
                          self.origin.id, esc(self.origin))
         else:
-            reprint = u'in <a target="_blank" href="%s">%s</a>' % \
+            reprint = 'in <a target="_blank" href="%s">%s</a>' % \
                         (self.target_issue.get_absolute_url(),
                          esc(self.target_issue.full_name()))
         if self.notes:
-            reprint = u'%s [%s]' % (reprint, esc(self.notes))
+            reprint = '%s [%s]' % (reprint, esc(self.notes))
         return mark_safe(reprint)
 
-    def __unicode__(self):
-        return u'%s of %s reprinted in %s' % (self.origin, self.origin.issue,
+    def __str__(self):
+        return '%s of %s reprinted in %s' % (self.origin, self.origin.issue,
                                               self.target_issue)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.conf.urls import url
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -46,6 +46,8 @@ urlpatterns = [
      oi_views.add_creator_relation, name='add_creator_relation'),
     url(r'^creator/(?P<creator_id>\d+)/school/add/$',
      oi_views.add_creator_school, name='add_creator_school'),
+    url(r'^creator/(?P<creator_id>\d+)/signature/add/$',
+     oi_views.add_creator_signature, name='add_creator_signature'),
     url(r'^creator/(?P<creator_id>\d+)/degree/add/$',
      oi_views.add_creator_degree, name='add_creator_degree'),
 
@@ -71,6 +73,14 @@ urlpatterns = [
     url(r'^brand_use/add/brand/(?P<brand_id>\d+)/publisher/(?P<publisher_id>\d+)/$',
         oi_views.add_brand_use,
         name='add_brand_use'),
+
+    # Printer URLs
+    url(r'^printer/add/$',
+        oi_views.add_printer,
+        name='add_printer'),
+    url(r'^indicia_printer/add/parent/(?P<parent_id>\d+)/$',
+        oi_views.add_indicia_printer,
+        name='add_indicia_printer'),
 
     # Series URLs
     url(r'^series/add/publisher/(?P<publisher_id>\d+)/$',
@@ -137,6 +147,9 @@ urlpatterns = [
     url(r'^issue/revision/(?P<issue_revision_id>\d+)/add_story/(?P<changeset_id>\d+)$',
         oi_views.add_story,
         name='add_story'),
+    url(r'^issue/revision/(?P<issue_revision_id>\d+)/copy_story_revision/(?P<changeset_id>\d+)$',
+        oi_views.copy_story_revision,
+        name='copy_story_revision'),
     url(r'^issue/(?P<issue_id>\d+)/import_stories/(?P<changeset_id>\d+)/$',
         oi_import.import_sequences_from_file,
         name='import_stories'),
@@ -159,8 +172,12 @@ urlpatterns = [
     url(r'^story/revision/(?P<id>\d+)/delete/$',
         oi_views.toggle_delete_story_revision,
         name='toggle_delete_story_revision'),
-    url(r'^story/revision/(?P<id>\d+)/move/$', oi_views.move_story_revision,
+    url(r'^story/revision/(?P<id>\d+)/move/$',
+        oi_views.move_story_revision,
         name='move_story_revision'),
+    url(r'^story/revision/(?P<id>\d+)/migrate/$',
+        oi_views.migrate_story_revision,
+        name='migrate_story_revision'),
 
     # Feature URLs
     url(r'^feature/add/$',
@@ -305,22 +322,25 @@ urlpatterns = [
 
     # queue URLs
     url(r'^queues/editing/$', oi_views.show_queue,
-       {'queue_name': 'editing', 'state': states.OPEN },
+       {'queue_name': 'editing',},
         name='editing'),
     url(r'^queues/pending/$', oi_views.show_queue,
-       {'queue_name': 'pending', 'state': states.PENDING },
+       {'queue_name': 'pending',},
         name='pending'),
     url(r'^queues/reviews/$', oi_views.show_queue,
-       {'queue_name': 'reviews', 'state': states.REVIEWING },
+       {'queue_name': 'reviews',},
         name='reviewing'),
     url(r'^queues/editor_log/$', oi_views.show_queue,
-       {'queue_name': 'editor_log', 'state': states.APPROVED },
+       {'queue_name': 'editor_log',},
         name='editor_log'),
     url(r'^queues/approved/$', oi_views.show_queue,
-       {'queue_name': 'approved', 'state': states.APPROVED },
+       {'queue_name': 'approved',},
         name='approved'),
+    url(r'^queues/commented/$', oi_views.show_queue,
+       {'queue_name': 'commented',},
+        name='commented'),
     url(r'^queues/covers_pending/$', oi_views.show_queue,
-       {'queue_name': 'covers', 'state': states.PENDING },
+       {'queue_name': 'covers',},
         name='pending_covers'),
 
     url(r'^coordinator/clear_publisher_series',

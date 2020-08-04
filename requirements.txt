@@ -1,48 +1,35 @@
-# not fully sure if we actually use it
-#beautifulsoup4==4.6.0
-Django<2.0
-MySQL-python==1.2.5
-Pillow<4.4
-PyICU<2.0
-PyYAML<3.13
-# pytz is django requirement, not ours
-# pytz==2016.6.1
-# not ours
-# argparse==1.2.1
-django-autocomplete-light<3.3
-diff-match-patch==20121119
-django-appconf==1.0.2
-django-bootstrap3<9.2
-django-compressor<2.3
-django-contact-form<1.7
-django-crispy-forms==1.7.2
-django-haystack==2.8.1
+Django<3.0
+mysqlclient<1.5
+Pillow<6.3
+PyICU<2.5
+PyYAML<5.2
+django-autocomplete-light<3.4
+diff-match-patch==20181111
+django-appconf<1.1
+django-bootstrap3<11.2
+django-compressor<2.4
+django-contact-form<1.8
+django-crispy-forms<1.9
+django-haystack<2.9
 django-imagekit<4.1
-django-queryset-csv==1.0.0
-django-recaptcha<1.5
-django-tables2<1.22
+django-queryset-csv<1.1
+django-recaptcha<2.1
+django-tables2<2.3
 git+git://github.com/GrandComicsDatabase/django-mobile.git@django111
+django-model-utils<3.3
 git+git://github.com/GrandComicsDatabase/django-taggit.git@django111
-git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@gcd-production
-elasticsearch<2.0
-elasticstack<0.6
-facebook-sdk==2.0
-# do we need feedparser
-# feedparser==5.2.1
-# seems like requirement for haystack, but maybe not ?
-# python-dateutil==2.2
-python-graph-core==1.8.2
-python-memcached==1.59
-python-stdnum<1.10
-python-vote-core==20120423.0
-requests==2.20.1
-simplejson==3.4.0
-# still needed ?
-# versiontools==1.9.1
-wsgiref==0.1.2
+git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@python3
+elasticsearch<3.0
+#elasticstack<0.6
+facebook-sdk<3.2
+python-graph-core<1.9
+python-memcached<1.60
+python-stdnum<1.13
+python3-vote-core==20170329.0
+requests<2.23
+simplejson<3.18
 
 # These packages are used in development and testing.
-RBTools
 flake8
 mock
 pytest
@@ -50,11 +37,14 @@ pytest-django
 ipython
 
 # These packages are primarily used in production for performance reasons.
-# By default their use is not enabled.  If you enable them, you may need
-# to install other (non-Python-package) software do perform further
-# configuration.  They are included here to ensure that we catch library
-# version dependency interactions.
-rq<0.11
-django-rq<1.1
-redis<2.11
+# By default they are installed, but their use is not enabled.
+# If you enable them through settings_local.py, you will need to install
+# the Debian package redis-server in addition to the other software
+# needed to use elasticsearch.
+#
+# Note that django-rq 2.2 requires django>=2.0, so it is pinned
+# to a lower version.
+redis<3.4
+rq<1.2
+django-rq<2.2.0
 git+git://github.com/mandx/haystack-rqueue.git

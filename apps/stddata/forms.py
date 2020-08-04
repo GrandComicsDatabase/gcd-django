@@ -18,7 +18,7 @@ class DateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(DateForm, self).__init__(*args, **kwargs)
         if self.instance:
-            self.initial['date'] = unicode(self.instance)
+            self.initial['date'] = str(self.instance)
 
     def clean_date(self):
         date = self.cleaned_data['date']

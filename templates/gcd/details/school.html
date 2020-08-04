@@ -1,0 +1,82 @@
+{% extends "gcd/base_content.html" %}
+
+{% load staticfiles %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: School :: {{ school.name }}
+{% endblock %}
+
+{% block content_header %}
+<h1 class="item_id">
+  <div class="left">
+    {{ school }}
+  </div>
+</h1>
+{% endblock content_header %}
+
+{% block content %}
+<dl class="pub_data">
+  {% if school.notes %}
+  <dt> Notes:
+  <dd> {{ school.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+</dl>
+{% endblock content %}
+
+{% block listing %}
+  {% if degrees.count %}
+  <table id="publisher_detail_listing" class="listing">
+    <tr>
+      <th> Degree </th>
+      <th> Creator </th>
+      <th> Year Received </th>
+    </tr>
+    {% for degree in degrees %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td> <a href="{{ degree.get_absolute_url }}">{{ degree.degree }}</a> </td>
+      <td> <a href="{{ degree.creator.get_absolute_url }}">{{ degree.creator }}</a> </td>
+      <td> {{ degree.degree_year|default:"-" }} </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+  {% if page.object_list.count %}
+  <table id="publisher_detail_listing" class="listing">
+    <tr>
+      <th> Creator </th>
+      <th> Years </th>
+    </tr>
+    {% for study in page.object_list %}
+    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+      <td> <a href="{{ study.creator.get_absolute_url }}">{{ study.creator }}</a> </td>
+      <td> {{ study.display_years }} </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endblock listing %}
+
+{% block edit_box %}
+  {% comment %}
+  {% if not preview or school.source %}
+     {% if not preview %}
+       {% with object=school object_class='school' object_name='School' %}
+         {% include "gcd/bits/status_banner.html" %}
+       {% endwith %}
+     {% endif %}
+  {% endif %}
+  {% endcomment %}
+{% endblock edit_box %}
+
+{% block change_history %}
+  {% comment %}
+  {% if preview %}
+      <a href="{% url "change_history" model_name='school' id=school.source.id %}">View Change History</a>
+  {% else %}
+      <a href="{% url "change_history" model_name='school' id=school.id %}">View Change History</a>
+  {% endif %}
+  {% endcomment %}
+{% endblock change_history %}
