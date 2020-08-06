@@ -15,6 +15,7 @@
 {{ object.editing|safe }}
 {{ object|search_creator_credit:"story_editing" }}
 {{ object.genre }}
+{{ object.job_number|safe }}
 {{ object.characters|safe }}
 {{ object.synopsis|safe }}
 {{ object.notes|safe }}
@@ -22,3 +23,4 @@
 {{ object.issue.series.publisher.name|safe }}
 {{ object.issue.series.name|safe }} {{ object.issue.display_number }}
 {{ object.issue.publication_date|safe }}
+{{ object.type }}
