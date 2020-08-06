@@ -1569,6 +1569,8 @@ def edit_issues_in_bulk(request):
     fields.remove('barcode')
     fields.remove('title')
     fields.remove('keywords')
+    fields.remove('indicia_printer')
+    fields.remove('no_indicia_printer')
 
     # look at values for the issue fields
     # if only one it gives the initial value
