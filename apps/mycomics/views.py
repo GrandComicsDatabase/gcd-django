@@ -73,12 +73,12 @@ def collections_list(request):
 
 def view_collection(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
-    if request.user.is_authenticated() and \
+    if request.user.is_authenticated and \
        collection.collector == request.user.collector:
         collection_list = request.user.collector.ordered_collections()
     elif collection.public is True:
         collection_list = Collection.objects.none()
-    elif not request.user.is_authenticated():
+    elif not request.user.is_authenticated:
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     else:
         raise PermissionDenied
@@ -318,12 +318,12 @@ def move_item(request, item_id, collection_id):
 def view_item(request, item_id, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     collector = collection.collector
-    if request.user.is_authenticated() and \
+    if request.user.is_authenticated and \
        collector == request.user.collector:
         item = get_item_for_collector(item_id, request.user.collector)
     elif collection.public is True:
         item = get_item_for_collector(item_id, collector)
-    elif not request.user.is_authenticated():
+    elif not request.user.is_authenticated:
         return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     else:
         raise PermissionDenied
@@ -332,7 +332,7 @@ def view_item(request, item_id, collection_id):
 
     sell_date_form = None
     acquisition_date_form = None
-    if request.user.is_authenticated() and \
+    if request.user.is_authenticated and \
        collector == request.user.collector:
         initial = {}
         if collector.default_currency:
