@@ -50,9 +50,10 @@ For details, please read the following Board Resolutions:
 <p>
 Currently, the dump is only available as a MySQL dump that includes table
 creation and data insert statements, but does not include a database creation
-statement.  We also offer a dump using the mysqldump utility's PostgreSQL
-compatibility mode.  This is not guaranteed to work perfectly with PostgreSQL but
-should at least be easier to import.
+statement.  <br> We used to offer a dump using the mysqldump utility's PostgreSQL
+compatibility mode, but that needed further post-processing and manual modifying
+of data types. Have a look at http://pgloader.io for migration from a MySQL database
+to a PostgreSQL.
 <p>
 Additional formats are under investigation, with no estimated time
 of delivery.  Any such estimates will be posted here when they are available,
@@ -98,7 +99,6 @@ Data last updated:
     </label>
   </p>
   <input type="submit" name="mysqldump" value="Download MySQL Dump">
-  <input type="submit" name="postgres" value="Download PostgreSQL-compatible Dump">
 </form>
 {% endblock %}
 

@@ -71,7 +71,7 @@ def download(request):
     # Use a list of tuples because we want the MySQL dump (our primary format)
     # to be first.
     timestamps = []
-    for dump_info in (('MySQL', m_path), ('PostgreSQL-compatible', p_path)):
+    for dump_info in (('MySQL', m_path), ):
         try:
             timestamps.append(
                 (dump_info[0],
