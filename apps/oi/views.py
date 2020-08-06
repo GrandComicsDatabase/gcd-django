@@ -5565,6 +5565,9 @@ def migrate_story_revision(request, id):
     if story.old_credits():
         story.migrate_credits()
 
+    if story.feature:
+        story.migrate_feature()
+
     return HttpResponseRedirect(
       urlresolvers.reverse('edit_revision', kwargs={'model_name': 'story',
                                                     'id': story.id}))
