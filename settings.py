@@ -166,7 +166,7 @@ INSTALLED_APPS = (
     'taggit',
     'imagekit',
     'haystack',
-    'elasticstack',
+#    'elasticstack',
     'bootstrap3',
     'contact_form',
     'captcha',
@@ -433,6 +433,6 @@ except ImportError:
 GCD_OFFICIAL_NAME_FIELDNAME = 'GCD Official'
 
 if READ_ONLY or NO_OI:
-    MIDDLEWARE_CLASSES += \
+    MIDDLEWARE += \
       ('apps.middleware.read_only.ReadOnlyMiddleware',)
 
