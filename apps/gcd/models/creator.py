@@ -177,7 +177,7 @@ class CreatorNameDetail(GcdData):
             if as_name:
                 credit_text += ' [as %s]' % esc(as_name.name)
 
-        if credit.credited_as and credit.signed_as and \
+        if credit.credited_as and getattr(credit, 'signed_as', None) and \
            (credit.credited_as == credit.signed_as):
             credit_text += ' (credited, signed as %s)' % \
                            esc(credit.credited_as)
