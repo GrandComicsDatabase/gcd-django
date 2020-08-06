@@ -5200,6 +5200,26 @@ class StoryRevision(Revision):
                 setattr(self, credit_type, old_credits)
                 self.save()
 
+    def migrate_feature(self):
+        if self.feature:
+            features = self.feature.split(';')
+            old_features = ''
+            for feature in features:
+                feature = feature.strip()
+                save_feature = feature
+                feature_object = Feature.objects.filter(
+                  name=feature, deleted=False,
+                  language=self.issue.series.language)
+                if feature_object.count() == 1:
+                    self.feature_object.add(feature_object.get())
+                else:
+                    if old_features:
+                        old_features += '; ' + save_feature
+                    else:
+                        old_features = save_feature
+            setattr(self, 'feature', old_features)
+            self.save()
+
     def deletable(self):
         if self.changeset.reprintrevisions \
                          .filter(origin_story=self.story).count() \
