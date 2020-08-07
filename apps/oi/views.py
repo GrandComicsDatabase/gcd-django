@@ -4622,7 +4622,8 @@ def compare(request, id):
             return image_compare(request, changeset,
                                  changeset.imagerevisions.get(), revision)
     if changeset.change_type == CTYPES['issue_add'] \
-       and changeset.issuerevisions.count() > 1:
+       and not (changeset.issuerevisions.count() == 1 and
+                changeset.issuerevisions.get().variant_of is not None):
         template = 'oi/edit/compare_issue_skeletons.html'
     elif changeset.change_type == CTYPES['issue_bulk']:
         template = 'oi/edit/compare_bulk_issue.html'
