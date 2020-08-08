@@ -64,7 +64,7 @@ This issue has variants:
                   </dl>
   {% else %}
   {% endif %}
-            {{ issue|show_credit:'keywords' }}
+            <div>{{ issue|show_credit:'keywords' }}</div>
   {% if issue.active_awards.count %}
                   <dl class="contents">
             {{ issue|show_credit:'show_awards' }}
