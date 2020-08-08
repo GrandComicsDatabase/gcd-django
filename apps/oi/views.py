@@ -75,6 +75,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_publisher_revision_form,
                            get_revision_form,
                            get_series_revision_form,
+                           IssueRevisionFormSet,
                            get_story_revision_form,
                            StoryRevisionFormSet,
                            get_feature_logo_revision_form,
@@ -2005,6 +2006,16 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
+    if 'cancel' in request.POST:
+        if variant_of:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'show_issue',
+              kwargs={ 'issue_id': variant_of.id }))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'show_series',
+              kwargs={ 'series_id': series_id }))
+
     series = get_object_or_404(Series, id=series_id)
     if series.deleted or series.pending_deletion():
         return render_error(request, 'Cannot add an issue '
@@ -2016,6 +2027,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                    variant_of=variant_of,
                                    user=request.user,
                                    edit_with_base=edit_with_base)
+    credits_formset = IssueRevisionFormSet(request.POST or None)
 
     if request.method != 'POST':
         if variant_of:
@@ -2027,23 +2039,14 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
             if reversed_issues.count():
                 initial['after'] = reversed_issues[0].id
             form = form_class(initial=initial)
-        return _display_add_issue_form(request, series, form, variant_of,
-                                       variant_cover)
+        return _display_add_issue_form(request, series, form, credits_formset,
+                                       variant_of, variant_cover)
 
-    if 'cancel' in request.POST:
-        if variant_of:
-            return HttpResponseRedirect(urlresolvers.reverse(
-              'show_issue',
-              kwargs={ 'issue_id': variant_of.id }))
-        else:
-            return HttpResponseRedirect(urlresolvers.reverse(
-              'show_series',
-              kwargs={ 'series_id': series_id }))
 
     form = form_class(request.POST)
-    if not form.is_valid():
-        return _display_add_issue_form(request, series, form, variant_of,
-                                       variant_cover)
+    if not form.is_valid() or not credits_formset.is_valid():
+        return _display_add_issue_form(request, series, form, credits_formset,
+                                       variant_of, variant_cover)
 
     if variant_of and edit_with_base:
         kwargs = {'variant_of': variant_of,
@@ -2063,6 +2066,9 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     revision.save_added_revision(changeset=changeset,
                                  series=series,
                                  variant_of=variant_of)
+    extra_forms = {'credits_formset': credits_formset, }
+    revision.process_extra_forms(request, extra_forms)
+
     if variant_of:
         return edit(request, changeset.id)
 
@@ -2154,7 +2160,8 @@ def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
                          variant_cover=cover)
 
 
-def _display_add_issue_form(request, series, form, variant_of, variant_cover,
+def _display_add_issue_form(request, series, form, credits_formset,
+                            variant_of, variant_cover,
                             issue_revision=None):
     action_label = 'Submit new'
     alternative_action = None
@@ -2203,6 +2210,7 @@ def _display_add_issue_form(request, series, form, variant_of, variant_cover,
         'extra_adding_info': extra_adding_info,
         'action_label': action_label,
         'form': form,
+        'credits_formset': credits_formset,
         'alternative_action': alternative_action,
         'alternative_label': alternative_label,
       })
