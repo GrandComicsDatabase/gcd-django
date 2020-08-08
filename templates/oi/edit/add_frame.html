@@ -33,7 +33,7 @@ Adding {{ object_name }}
 <form action="{{ object_url }}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
   <table class="editing">
-  {% if object_name == 'Story' or object_name == 'Creator' or object_name == 'Issue' %}
+  {% if object_name == 'Story' or object_name == 'Creator' or object_name == 'Issue' or object_name == 'Variant Issue' %}
     {% crispy form %}
   {% else %}
     {{ form.as_table }}
