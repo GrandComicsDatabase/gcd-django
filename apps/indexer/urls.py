@@ -64,13 +64,12 @@ urlpatterns = [
     url(r'^accounts/reset/(?P<uidb64>[0-9A-Za-z]+)-(?P<token>.+)/$',
         auth_views.PasswordResetConfirmView.as_view(
             template_name='indexer/password_reset_confirm.html',
-            form_class=PasswordResetForm,
-            success_url='reset_done'),
+            form_class=PasswordResetForm),
         name='password_reset_confirm'),
     url(r'^accounts/reset/done/$',
         auth_views.PasswordResetCompleteView.as_view(
             template_name='indexer/password_reset_complete.html'),
-        name='reset_done'),
+        name='password_reset_complete'),
     url(r'^accounts/contact/(?P<user_id>\d+)/$',
         account_views.CustomContactFormView.as_view(
             form_class=UserContactForm,
