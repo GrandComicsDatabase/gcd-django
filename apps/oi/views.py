@@ -2097,7 +2097,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
         form = init_added_variant(form_class, initial, issue_revision,
                                   revision=True)
         return _display_add_issue_form(request, series, form, None, None,
-                                       issue_revision=issue_revision)
+                                       None, issue_revision=issue_revision)
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -2107,7 +2107,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     form = form_class(request.POST)
     if not form.is_valid():
         return _display_add_issue_form(request, series, form, None, None,
-                                       issue_revision=issue_revision)
+                                       None, issue_revision=issue_revision)
 
     variant_revision = form.save(commit=False)
     variant_revision.save_added_revision(changeset=changeset,
