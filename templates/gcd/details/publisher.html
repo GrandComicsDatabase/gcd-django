@@ -118,11 +118,7 @@
 {% endblock edit_box %}
 
 {% block change_history %}
-  {% if preview %}
-        <a href="{% url "change_history" model_name='publisher' id=publisher.source.id %}">View Change History</a>
-  {% else %}
-        <a href="{% url "change_history" model_name='publisher' id=publisher.id %}">View Change History</a>
-  {% endif %}
+  <a href="{% url "change_history" model_name='publisher' id=publisher.id %}">View Change History</a>
 {% endblock change_history %}
 
 {% block listing %}
