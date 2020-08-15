@@ -104,6 +104,17 @@ def field_value(revision, field):
                 return mark_safe('<img src="' + value.emblem.icon.url + '"> '
                                  + absolute_url(value))
         return absolute_url(value)
+    elif field in ['feature_object', 'feature_logo']:
+        first = True
+        features = ''
+        for feature in value.all():
+            if first:
+                first = False
+            else:
+                features += '; '
+            features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
+                                                 esc(feature.name))
+        return mark_safe(features)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
                    'characters', 'synopsis']:
         return linebreaksbr(value)
