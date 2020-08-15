@@ -505,7 +505,8 @@ class StoryRevisionForm(forms.ModelForm):
                         raise forms.ValidationError(
                           ['Select the correct feature for a letters page.'])
                 elif feature.feature_type.id == 3:
-                    if not cd['type'].id == STORY_TYPES['ad']:
+                    if not cd['type'].id in [STORY_TYPES['ad'],
+                                             STORY_TYPES['comics-form ad']]:
                         raise forms.ValidationError(
                           ['Incorrect feature for this sequence.'])
                 elif feature.feature_type.id == 2:

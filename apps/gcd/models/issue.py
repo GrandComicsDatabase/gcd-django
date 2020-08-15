@@ -349,6 +349,8 @@ class Issue(GcdData):
             if Decimal(self.page_count or 0) > 0:
                 total_count = self.active_stories()\
                               .aggregate(Sum('page_count'))['page_count__sum']
+                if total_count is None:
+                    total_count = 0
                 if (total_count > 0 and
                         total_count >= Decimal('0.4') * self.page_count):
                     is_indexed = INDEXED['full']

@@ -4448,6 +4448,7 @@ class IssueRevision(Revision):
             'on_sale_date_uncertain': False,
             'indicia_frequency': '',
             'no_indicia_frequency': False,
+            'indicia_printer': None,
             'no_indicia_printer': False,
             'series': None,
             'indicia_publisher': None,
@@ -5151,8 +5152,8 @@ class StoryRevision(Revision):
                 credits = getattr(self, credit_type).split(';')
                 old_credits = ''
                 for credit in credits:
-                    save_credit = credit
                     credit = credit.strip()
+                    save_credit = credit
                     if credit.strip()[-1] == '?':
                         credit = credit[:-1]
                         uncertain = True
@@ -5208,7 +5209,7 @@ class StoryRevision(Revision):
                 feature = feature.strip()
                 save_feature = feature
                 feature_object = Feature.objects.filter(
-                  name=feature, deleted=False,
+                  name=feature, deleted=False, feature_type__id=1,
                   language=self.issue.series.language)
                 if feature_object.count() == 1:
                     self.feature_object.add(feature_object.get())
@@ -5549,6 +5550,10 @@ class StoryRevision(Revision):
         else:
             return to_reprints
 
+    @property
+    def to_reprints(self):
+        return self.to_reprints_oi(preview=True)
+
     def to_issue_reprints_oi(self, preview=False):
         if self.story is None:
             return self.origin_reprint_revisions\
@@ -5579,6 +5584,10 @@ class StoryRevision(Revision):
             return new_revisions | old_revisions
         else:
             return to_issue_reprints
+
+    @property
+    def to_issue_reprints(self):
+        return self.to_issue_reprints_oi(preview=True)
 
     def has_reprint_revisions(self):
         if self.story is None:
@@ -6515,7 +6524,7 @@ class ImageRevisionManager(RevisionManager):
 
 
 def _clear_image_cache(cached_image):
-    cached_image.storage.delete(cached_image)
+    cached_image.storage.delete(cached_image.path)
     cached_image.cachefile_backend.set_state(cached_image,
                                              CacheFileState.DOES_NOT_EXIST)
 

@@ -23,6 +23,7 @@ STORY_TYPES = {
     'blank': 24,
     'preview': 26,
     'about comics': 27,
+    'comics-form ad': 28,
 }
 
 CREDIT_TYPES = {
