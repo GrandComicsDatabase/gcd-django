@@ -15,6 +15,9 @@
 
 {% block view_body %}
 
+{% include "oi/bits/jquery.html" %}
+<script type='text/javascript'
+         src='{% static "admin/js/jquery.init.js" %}'></script>
 {% include "oi/bits/multi_selector.html" %}
 {% comment %}
 TODO for some reason without this second time of jquery.min.js the
