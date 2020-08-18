@@ -352,6 +352,9 @@ class Changeset(models.Model):
                         self.storycreditrevisions.all(),
                         self.coverrevisions.all(),
                         self.reprintrevisions.all())
+            elif self.issuerevisions.all().count() == 1:
+                return (self.issuerevisions.all(),
+                        self.issuecreditrevisions.all())
             else:
                 return (self.issuerevisions.all().select_related('issue',
                                                                  'series'),)
