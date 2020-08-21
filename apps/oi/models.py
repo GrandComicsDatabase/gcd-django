@@ -5156,6 +5156,8 @@ class StoryRevision(Revision):
                 old_credits = ''
                 for credit in credits:
                     credit = credit.strip()
+                    if credit == 'Typeset':
+                        credit = 'typeset'
                     save_credit = credit
                     if credit.strip()[-1] == '?':
                         credit = credit[:-1]
