@@ -1960,6 +1960,7 @@ class Revision(models.Model):
         old_stats = {} if self.added else self.source.stat_counts()
 
         if self.deleted:
+            deleted_source = self.source
             self._pre_delete(changes)
             self._reset_values()
         else:
@@ -2001,9 +2002,11 @@ class Revision(models.Model):
 
         self._post_save_object(changes)
         if self.deleted:
-            self.source.delete()
-        new_stats = self.source.stat_counts()
-        self._adjust_stats(changes, old_stats, new_stats)
+            deleted_source.delete()
+        # some source objects get deleted, but these do not have stats
+        if self.source:
+            new_stats = self.source.stat_counts()
+            self._adjust_stats(changes, old_stats, new_stats)
         self._handle_dependents(changes)
 
     # #####################################################################
