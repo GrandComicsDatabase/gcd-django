@@ -415,7 +415,8 @@ def _filter_and_sort(qs, query, field='name'):
     if query:
         qs = qs.filter(Q(**{'%s__icontains' % field: query}))
         qs_match = qs.filter(Q(**{'%s' % field: query}))
-        qs = qs_match.union(qs)
+        if qs_match:
+            qs = qs_match.union(qs)
     return qs
 
 
