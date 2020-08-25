@@ -5176,7 +5176,7 @@ class StoryRevision(Revision):
                         if note == 'credited':
                             is_credited = True
                             note = ''
-                        if note == 'signed':
+                        if note in ['signed', 'signert', 'signiert']:
                             is_signed = True
                             note = ''
                         if note == 'painted':
