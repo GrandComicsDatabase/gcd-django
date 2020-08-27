@@ -5173,7 +5173,7 @@ class StoryRevision(Revision):
                         note = credit[credit.find('(')+1:].strip()
                         note = note.strip(' )')
                         credit = credit[:credit.find('(')-1]
-                        if note == 'credited':
+                        if note in ['credited', 'kreditert']:
                             is_credited = True
                             note = ''
                         if note in ['signed', 'signert', 'signiert']:
