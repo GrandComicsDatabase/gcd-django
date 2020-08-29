@@ -5105,26 +5105,30 @@ class StoryRevision(Revision):
                     credit_revision.save_added_revision(
                       changeset=self.changeset, story_revision=self)
                 if credit_revision.credit_type.id in [7, 8, 9, 10, 11,
-                                                      12, 13]:
+                                                      12, 13, 14]:
                     if credit_revision.credit_type.id == 9:
                         credit_revision.credit_name = 'painting'
                     credit_revision.credit_type = CreditType.objects.get(id=2)
                     credit_revision.save()
                     credit_revision.id = None
+                    credit_revision.previous_revision = None
                     credit_revision.credit_type = CreditType.objects.get(id=3)
                     credit_revision.save()
                     if cd['credit_type'].id in [8, 9, 11, 13]:
                         credit_revision.id = None
+                        credit_revision.previous_revision = None
                         credit_revision.credit_type = \
                           CreditType.objects.get(id=4)
                         credit_revision.save()
                     if cd['credit_type'].id in [10, 11, 12, 13]:
                         credit_revision.id = None
+                        credit_revision.previous_revision = None
                         credit_revision.credit_type = \
                           CreditType.objects.get(id=1)
                         credit_revision.save()
-                    if cd['credit_type'].id in [12, 13]:
+                    if cd['credit_type'].id in [12, 13, 14]:
                         credit_revision.id = None
+                        credit_revision.previous_revision = None
                         credit_revision.credit_type = \
                             CreditType.objects.get(id=5)
                         credit_revision.save()

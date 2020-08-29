@@ -551,12 +551,14 @@ class StoryRevisionForm(forms.ModelForm):
                                                                   '12', '13']:
                         seq_type_found = True
                     elif seq_type in ['pencils', 'inks'] and \
-                      credit_type in ['7', '8', '9', '10', '11', '12', '13']:
+                      credit_type in ['7', '8', '9', '10',
+                                      '11', '12', '13', '14']:
                         seq_type_found = True
                     elif seq_type == 'colors' and credit_type in ['8', '9',
                                                                   '11', '13']:
                         seq_type_found = True
-                    elif seq_type == 'letters' and credit_type in ['12', '13']:
+                    elif seq_type == 'letters' and credit_type in ['12', '13',
+                                                                   '14']:
                         seq_type_found = True
 
             if cd['type'].id in NON_OPTIONAL_TYPES:
