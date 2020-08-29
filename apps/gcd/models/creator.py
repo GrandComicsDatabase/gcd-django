@@ -450,6 +450,12 @@ class CreatorSignature(GcdData):
 
     signature = property(_signature)
 
+    def has_dependents(self):
+        if self.credits.filter(deleted=False).exists():
+            return True
+        if self.storycreditrevision_set.active_set().exists():
+            return True
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_creator_signature',
