@@ -12,7 +12,7 @@ django-contact-form<1.8
 django-crispy-forms<1.9
 django-haystack<2.9
 django-imagekit<4.1
-django-queryset-csv<1.1
+django-queryset-csv<1.2
 django-recaptcha<2.1
 django-tables2<2.3
 git+git://github.com/GrandComicsDatabase/django-mobile.git@django111

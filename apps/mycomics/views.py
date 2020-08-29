@@ -140,7 +140,7 @@ def export_collection(request, collection_id):
     """
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
-    filename = str(collection).replace(' ', '_').encode('utf-8')
+    filename = str(collection).replace(' ', '_')
 
     export_data = ["issue__series__name", "issue__series__publisher__name",
                    "issue"]
