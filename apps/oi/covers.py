@@ -52,7 +52,7 @@ def get_preview_generic_image_tag(revision, alt_text):
         return get_generic_image_tag(revision.image, esc(alt_text))
     else:
         last_revision = ImageRevision.objects.filter(image=revision.image,
-          changeset__change_type=CTYPES['image'],
+          changeset__change_type=revision.changeset.change_type,
           changeset__state=states.APPROVED).order_by('-created')[0]
         if revision==last_revision:
             # Current cover is the one from this revision, show it.

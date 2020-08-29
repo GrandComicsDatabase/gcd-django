@@ -455,6 +455,9 @@ class CreatorSignature(GcdData):
                 'show_creator_signature',
                 kwargs={'creator_signature_id': self.id})
 
+    def full_name(self):
+        return str(self)
+
     def __str__(self):
         return '%s signature %s' % (str(self.creator),
                                     self.name)
