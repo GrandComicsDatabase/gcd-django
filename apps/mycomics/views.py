@@ -147,7 +147,7 @@ def export_collection(request, collection_id):
                    "issue"]
     field_header_map = {"issue__series__name": "series",
                         "issue__series__publisher__name": "publisher",
-                        "issue__series__year_began": "series year"
+                        "issue__series__year_began": "series year",
                         "notes": "description",
                         "id": "tags"}
     if collection.condition_used:
