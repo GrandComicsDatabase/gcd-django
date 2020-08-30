@@ -143,9 +143,11 @@ def export_collection(request, collection_id):
     filename = str(collection).replace(' ', '_')
 
     export_data = ["issue__series__name", "issue__series__publisher__name",
+                   "issue__series__year_began",
                    "issue"]
     field_header_map = {"issue__series__name": "series",
                         "issue__series__publisher__name": "publisher",
+                        "issue__series__year_began": "series year"
                         "notes": "description",
                         "id": "tags"}
     if collection.condition_used:
