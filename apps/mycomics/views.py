@@ -30,6 +30,7 @@ from apps.select.views import store_select_data
 from apps.mycomics.forms import CollectionForm, CollectionItemForm, \
                                 CollectionSelectForm, CollectorForm, \
                                 LocationForm, PurchaseLocationForm
+from apps.stddata.models import Date
 from apps.stddata.forms import DateForm
 from apps.mycomics.models import Collection, CollectionItem, Subscription, \
                                  Location, PurchaseLocation
@@ -150,6 +151,16 @@ def export_collection(request, collection_id):
                         "issue__series__year_began": "series year",
                         "notes": "description",
                         "id": "tags"}
+    field_serializer_map = {'issue':
+                              (lambda x:
+                               "%s" % Issue.objects.get(id=x).full_descriptor),
+                            'id':
+                              (lambda x:
+                               "%s" % show_keywords_comma(CollectionItem.objects.get(id=x))),
+                            "acquisition_date":
+                              (lambda x: "%s" % Date.objects.get(id=x)),
+                            "sell_date":
+                              (lambda x: "%s" % Date.objects.get(id=x)),}
     if collection.condition_used:
         export_data.append("grade")
     if collection.acquisition_date_used:
@@ -186,10 +197,7 @@ def export_collection(request, collection_id):
     return render_to_csv_response(
       items.values(*export_data),
       append_datestamp=True,
-      field_serializer_map={
-        'issue': (lambda x: "%s" % Issue.objects.get(id=x).full_descriptor),
-        'id': (lambda x:
-               "%s" % show_keywords_comma(CollectionItem.objects.get(id=x)))},
+      field_serializer_map=field_serializer_map,
       field_header_map=field_header_map,
       filename=filename)
 
