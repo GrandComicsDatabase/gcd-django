@@ -145,12 +145,15 @@ def show_credit(story, credit):
         return formatted_credit
     elif credit == 'genre':
         genres = story.genre.lower()
-        for genre in story.feature_object.values_list('genre', flat=True):
-            if genre not in genres:
-                if genres == '':
-                    genres = genre
-                else:
-                    genres += '; %s' % genre
+        for feature_genre in story.feature_object.values_list('genre',
+                                                              flat=True):
+            for genre in feature_genre.split(';'):
+                genre = genre.strip()
+                if genre not in genres:
+                    if genres == '':
+                        genres = genre
+                    else:
+                        genres += '; %s' % genre
         if genres and getattr(story, 'issue', None):
             language = story.issue.series.language.code
             if language == 'en' and story.issue.series.country.code != 'us':
@@ -400,7 +403,7 @@ def show_page_count(story, show_page=False):
 @register.filter
 def format_page_count(page_count):
     if page_count is not None and page_count is not '':
-        return f'{float(page_count):.3g}'
+        return f'{float(page_count):.10g}'
     else:
         return ''
 
