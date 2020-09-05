@@ -2091,13 +2091,15 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
                                    publisher=issue_revision.series.publisher,
                                    variant_of=issue_revision.issue,
                                    user=request.user)
+    credits_formset = IssueRevisionFormSet(request.POST or None)
 
     if request.method != 'POST':
         initial = dict(issue_revision.__dict__)
         form = init_added_variant(form_class, initial, issue_revision,
                                   revision=True)
-        return _display_add_issue_form(request, series, form, None, None,
-                                       None, issue_revision=issue_revision)
+        return _display_add_issue_form(request, series, form, credits_formset,
+                                       None, None,
+                                       issue_revision=issue_revision)
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
