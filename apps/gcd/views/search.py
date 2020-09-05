@@ -1597,7 +1597,11 @@ def search_stories(data, op):
 
     if data['story_editing']:
         q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
-                           data['story_editing']}))
+                           data['story_editing']}) |
+                      Q(**{'%scredits__creator__name__%s' % (prefix, op):
+                               data['story_editing'],
+                           '%scredits__credit_type__id' % (prefix):
+                               CREDIT_TYPES['editing']}))
 
     if data['story_reprinted'] != '':
         if data['story_reprinted'] == 'from':
@@ -1637,10 +1641,18 @@ def search_stories(data, op):
     if data['issue_editing']:
         if target == 'sequence':  # no prefix in this case
             q_objs.append(Q(**{'issue__editing__%s' % op:
-                               data['issue_editing']}))
+                               data['issue_editing']}) |
+                          Q(**{'issue__credits__creator__name__%s' % op:
+                                   data['issue_editing'],
+                               'issue__credits__credit_type__id':
+                                   CREDIT_TYPES['editing']}))
         else:  # cut off 'story__'
             q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7], op):
-                               data['issue_editing']}))
+                               data['issue_editing']}) |
+                          Q(**{'%scredits__creator__name__%s' % (prefix[:-7], op):
+                                   data['issue_editing'],
+                               '%scredits__credit_type__id' % (prefix[:-7]):
+                                   CREDIT_TYPES['editing']}))
 
     return compute_qobj(data, q_and_only, q_objs)
 
