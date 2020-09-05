@@ -253,7 +253,7 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             if return_val == ['']:
                 return_val = [val.name for val in features]
             else:
-                return_val.extend([val.name for val in credits])
+                return_val.extend([val.name for val in features])
         if return_val == ['']:
             return None
         else:

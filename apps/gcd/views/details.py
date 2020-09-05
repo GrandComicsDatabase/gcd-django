@@ -794,7 +794,7 @@ def printer(request, printer_id):
 
 def show_printer(request, printer, preview=False):
     if preview:
-        if printer.printer:
+        if hasattr(printer, 'printer'):
             indicia_printers = printer.printer.active_indicia_printers()
         else:
             indicia_printers = None

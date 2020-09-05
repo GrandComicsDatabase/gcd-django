@@ -5112,23 +5112,27 @@ class StoryRevision(Revision):
                     credit_revision.save()
                     credit_revision.id = None
                     credit_revision.previous_revision = None
+                    credit_revision.source = None
                     credit_revision.credit_type = CreditType.objects.get(id=3)
                     credit_revision.save()
                     if cd['credit_type'].id in [8, 9, 11, 13]:
                         credit_revision.id = None
                         credit_revision.previous_revision = None
+                        credit_revision.source = None
                         credit_revision.credit_type = \
                           CreditType.objects.get(id=4)
                         credit_revision.save()
                     if cd['credit_type'].id in [10, 11, 12, 13]:
                         credit_revision.id = None
                         credit_revision.previous_revision = None
+                        credit_revision.source = None
                         credit_revision.credit_type = \
                           CreditType.objects.get(id=1)
                         credit_revision.save()
                     if cd['credit_type'].id in [12, 13, 14]:
                         credit_revision.id = None
                         credit_revision.previous_revision = None
+                        credit_revision.source = None
                         credit_revision.credit_type = \
                             CreditType.objects.get(id=5)
                         credit_revision.save()

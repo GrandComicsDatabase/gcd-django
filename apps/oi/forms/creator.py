@@ -640,7 +640,7 @@ class CreatorRelationRevisionForm(forms.ModelForm):
       widget=autocomplete.ModelSelect2Multiple(
         url='creator_name_4_relation_autocomplete',
         attrs={'style': 'min-width: 60em'},
-        forward=['to_creator']),
+        forward=['from_creator']),
       help_text='For employee or user of house name relations also add the '
                 'involved creator name(s).',
       required=False
