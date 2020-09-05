@@ -663,7 +663,10 @@ def insert_data_source_fields(field_name, ordering, fields, insert_after):
 
 class PageCountInput(TextInput):
     def render(self, name, value, renderer=None, attrs=None):
-        value = format_page_count(value)
+        try:
+            value = format_page_count(value)
+        except ValueError:
+            pass
         return super(PageCountInput, self).render(name, value, attrs)
 
 
