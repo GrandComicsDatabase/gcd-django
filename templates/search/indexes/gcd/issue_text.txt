@@ -9,5 +9,6 @@
 {{ object.variant_name|safe }}
 {{ object.indicia_frequency|safe }}
 {{ object.editing|safe }}
+{{ object|search_creator_credit:"editing" }}
 {{ object.notes|safe }}
 {{ object|show_keywords }}
