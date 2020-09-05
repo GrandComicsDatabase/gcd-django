@@ -506,6 +506,9 @@ class IssueColumn(tables.Column):
     def render(self, record):
         return mark_safe(record.show_series_and_issue_link())
 
+    def value(self, record):
+        return str(record)
+
     def order(self, query_set, is_descending):
         query_set = query_set.annotate(series_name=F('series__sort_name'))
         direction = '-' if is_descending else ''
@@ -566,6 +569,8 @@ class IssuePublisherTable(IssueTable):
         display_publisher = "<img %s>" % (show_country_info(value.country))
         return mark_safe(display_publisher) + absolute_url(value)
 
+    def value_publisher(self, value):
+        return str(value)
 
 class IndiciaPublisherIssueTable(IssueTable):
     brand = tables.Column(accessor='brand',

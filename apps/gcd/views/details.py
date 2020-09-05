@@ -105,6 +105,7 @@ def get_gcd_object(model, object_id, model_name=None):
                                          'id': object_id})))
     return object
 
+from django_tables2.export.export import TableExport
 
 def generic_sortable_list(request, items, table, template, context):
     paginator = ResponsePaginator(items, per_page=100, vars=context)
@@ -118,9 +119,15 @@ def generic_sortable_list(request, items, table, template, context):
     RequestConfig(request, paginate={"paginator_class": LazyPaginator,
                                      'per_page': 100,
                                      'page': page_number}).configure(table)
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table)
+        return exporter.response("table.{}".format(export_format))
+
     context['table'] = table
     # are using /search/list_header.html in the template
     context['extra_string'] = extra_string
+
     return render(request, template, context)
 
 
@@ -207,8 +214,9 @@ def checklist_by_id(request, creator_id, country=None, language=None):
 
     issues = Issue.objects.filter(story__credits__creator__in=creator_names,
                                   story__type__id__in=CORE_TYPES,
-                                  story__credits__deleted=False).distinct()\
-                          .select_related('series__publisher')
+                                  story__credits__deleted=False,
+                                  story__credits__credit_type__id__lt=6)\
+                          .distinct().select_related('series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
@@ -217,7 +225,9 @@ def checklist_by_id(request, creator_id, country=None, language=None):
         issues = issues.filter(series__language=language)
 
     context = {
-        'result_disclaimer': 'Text credits are currently being migrated to '
+        'result_disclaimer': 'In the checklist results for stories, covers, '
+                             'and cartoons are shown. '
+                             'Text credits are currently being migrated to '
                              'links. Therefore not all credits in our '
                              'database are shown here.',
         'item_name': 'issue',

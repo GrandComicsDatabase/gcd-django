@@ -890,6 +890,9 @@ class CreatorTable(tables.Table):
         from apps.gcd.templatetags.display import absolute_url
         return absolute_url(record.creator)
 
+    def value_name(self, record):
+        return str(record.creator)
+
     def render_credits_count(self, record):
         url = urlresolvers.reverse(
                 'creator_name_checklist',
@@ -897,6 +900,9 @@ class CreatorTable(tables.Table):
                         '%s_id' % self.resolve_name:
                         getattr(self, self.resolve_name).id})
         return mark_safe('<a href="%s">%s</a>' % (url, record.credits_count))
+
+    def value_credits_count(self, record):
+        return record.credits_count
 
     def render_role(self, record):
         role = ''
