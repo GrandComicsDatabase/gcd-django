@@ -30,7 +30,13 @@
         <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}</dd>
 {% if not issue.no_brand %}
         <dt> {% trans "Brand" %}</dt>
-        <dd id="issue_brand"> {{ issue.brand|absolute_url|default:"?" }}</dd>
+        <dd id="issue_brand">
+          {% if issue.brand.emblem %}
+            {{ issue.brand|absolute_url:issue.brand.emblem|default:"?" }}
+          {% else %}
+            {{ issue.brand|absolute_url|default:"?" }}
+          {% endif %}
+        </dd>
 {% endif %}
 {% if not issue.no_isbn and issue.series.has_isbn %}
         <dt>ISBN</dt>

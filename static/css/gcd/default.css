@@ -945,3 +945,21 @@ form#comments textarea {
 	max-width: 150px;
 	max-height: 150px;
 }
+
+.popup {
+    position: relative;
+}
+
+.popup .image_popup {
+    position: absolute;
+    visibility:hidden;
+    opacity: 0;
+}
+
+.popup:hover .image_popup {
+    visibility:visible;
+    left:105%;
+    z-index:1;
+    opacity: 1;
+    transition: opacity .6s;
+}

@@ -24,8 +24,8 @@ Reviewing :: {{ revision }}
 {{ changeset|header_link }}
 </h1>
 <p>
-This change adds to {{ revision.series|absolute_url:'target="_blank"' }}
-published by {{ revision.series.publisher|absolute_url:'target="_blank"' }}
+This change adds to {{ revision.series|absolute_url }}
+published by {{ revision.series.publisher|absolute_url }}
 after issue
 <span class="comparison_highlight">{{ changeset.ordered_issue_revisions.0.after }}</span>
 {% if changeset.issuerevisions.count > 1 %}

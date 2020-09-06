@@ -169,9 +169,11 @@ class CreatorNameDetail(GcdData):
             if credit_attribute:
                 credit_text += ' (%s)' % credit_attribute
             if hasattr(credit, 'signature') and credit.signature:
-                credit_text += ' (signed as <a href="%s">%s</a>)' % \
-                               (credit.signature.get_absolute_url(),
-                                esc(credit.signature.name))
+                from apps.gcd.templatetags.display import absolute_url
+                credit_text += ' (signed as %s)' % \
+                               absolute_url(credit.signature,
+                                            credit.signature.signature,
+                                            esc(credit.signature.name))
         else:
             credit_text = esc(name)
             if as_name:
@@ -569,7 +571,6 @@ class CreatorSchool(GcdData):
                                 '?' if self.school_year_ended_uncertain
                                 else '')
         return years
-
 
     def get_absolute_url(self):
         return urlresolvers.reverse(

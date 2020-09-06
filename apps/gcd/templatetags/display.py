@@ -37,14 +37,18 @@ STATE_CSS_NAME = {
 
 
 @register.filter
-def absolute_url(item, additional=''):
+def absolute_url(item, popup=None, descriptor=''):
     if item is not None and hasattr(item, 'get_absolute_url'):
-        if additional:
-            return mark_safe('<a href="%s" %s>%s</a>' %
-                             (item.get_absolute_url(), additional, esc(item)))
+        if descriptor == '':
+            descriptor = esc(item)
+        if popup:
+            image_link = '<span class="image_popup"><img src="%s"></span>' \
+                         % popup.thumbnail.url
+            return mark_safe('<a href="%s" class="popup">%s%s</a>' %
+                             (item.get_absolute_url(), image_link, descriptor))
         else:
             return mark_safe('<a href="%s">%s</a>' %
-                             (item.get_absolute_url(), esc(item)))
+                             (item.get_absolute_url(), descriptor))
     return ''
 
 
