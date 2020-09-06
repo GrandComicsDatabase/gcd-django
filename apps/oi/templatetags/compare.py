@@ -138,6 +138,13 @@ def field_value(revision, field):
         if brand_groups:
             brand_groups = brand_groups[:-2]
         return mark_safe(brand_groups)
+    elif field == 'indicia_printer':
+        printers = ''
+        for printer in value.all():
+            printers += absolute_url(printer) + '; '
+        if printers:
+            printers = printers[:-2]
+        return mark_safe(printers)
     elif field in ['no_editing', 'no_script', 'no_pencils', 'no_inks',
                    'no_colors', 'no_letters']:
         return yesno(value, 'X, ')
