@@ -33,6 +33,7 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_DEGREE_HELP_LINKS, CREATOR_MEMBERSHIP_HELP_LINKS,
                       CREATOR_NONCOMICWORK_HELP_LINKS,
                       CREATOR_RELATION_HELP_LINKS, CREATOR_SCHOOL_HELP_LINKS,
+                      CREATOR_SIGNATURE_HELP_TEXTS,
                       _set_help_labels, _get_comments_form_field,
                       init_data_source_fields, insert_data_source_fields,
                       HiddenInputWithHelp)
@@ -326,6 +327,7 @@ class CreatorSignatureRevisionForm(forms.ModelForm):
     class Meta:
         model = CreatorSignatureRevision
         fields = model._base_field_list
+        help_texts = CREATOR_SIGNATURE_HELP_TEXTS
 
     def __init__(self, *args, **kwargs):
         super(CreatorSignatureRevisionForm, self).__init__(*args, **kwargs)

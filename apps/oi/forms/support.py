@@ -285,6 +285,13 @@ CREATOR_RELATION_HELP_TEXTS = {
         "'Creator A' has the chosen relation with 'Creator B'"
 }
 
+CREATOR_SIGNATURE_HELP_TEXTS = {
+    'name': "The text of the signature with an optional description of the "
+            "visual of the associated scan.",
+    'generic': "A generic signature is used to record the text of a signature "
+               "without being specific of the individual visual form."
+}
+
 PUBLISHER_HELP_TEXTS = {
     'year_began':
         'The first year in which the publisher was active with comics.',
