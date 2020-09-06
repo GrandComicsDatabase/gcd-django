@@ -1,4 +1,5 @@
 {% load editing %}
+{% load display %}
 
 <table class="comments">
 <tr>
@@ -13,7 +14,7 @@
 </tr>
 {% for comment in comments.all %}
 <tr>
-  <td> {{ comment.commenter.indexer }} </td>
+  <td> {{ comment.commenter.indexer|absolute_url }} </td>
   <td class="comment_text"> {{ comment.text|urlizetrunc:75|linebreaksbr }} </td>
   {% if not no_links %}
   <td class="comment_revision"> 
