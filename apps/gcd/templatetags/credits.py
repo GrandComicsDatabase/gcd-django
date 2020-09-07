@@ -649,7 +649,6 @@ def show_reprints(story):
         sel = False
     else:
         sel = True
-    print (type(story), type(story) != Story)
     from_reprints = list(
       story.from_reprints
            .select_related('origin__issue__series__publisher' if sel else None).all())
