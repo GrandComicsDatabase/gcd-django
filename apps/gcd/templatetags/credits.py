@@ -9,7 +9,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
 from apps.stddata.models import Country, Language
-from apps.gcd.models.story import AD_TYPES
+from apps.gcd.models.story import AD_TYPES, Story
 from apps.gcd.models.support import GENRES
 from apps.gcd.models import STORY_TYPES, CREDIT_TYPES
 
@@ -645,12 +645,14 @@ def follow_reprint_link(reprint, direction, level=0):
 @register.filter
 def show_reprints(story):
     """ Filter for our reprint line on the story level."""
-
-    reprint = ""
-
+    if type(story) != Story:
+        sel = False
+    else:
+        sel = True
+    print (type(story), type(story) != Story)
     from_reprints = list(
       story.from_reprints
-           .select_related('origin__issue__series__publisher').all())
+           .select_related('origin__issue__series__publisher' if sel else None).all())
     from_reprints.extend(list(
       story.from_issue_reprints
            .select_related('origin_issue__series__publisher').all()))
@@ -663,7 +665,7 @@ def show_reprints(story):
         no_promo = False
     to_reprints = list(
       story.to_reprints
-           .select_related('target__issue__series__publisher').all())
+           .select_related('target__issue__series__publisher' if sel else None).all())
     to_reprints.extend(list(
       story.to_issue_reprints
            .select_related('target_issue__series__publisher').all()))
