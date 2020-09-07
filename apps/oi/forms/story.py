@@ -23,6 +23,7 @@ from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
                             STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
+from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 
 from .custom_layout_object import Formset
 from .support import (
@@ -233,7 +234,15 @@ class StoryCreditRevisionForm(forms.ModelForm):
 
         if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
             raise forms.ValidationError(
-              ['Name entered as "credited as" is identicial to creator name.']
+              ['Name entered as "credited as" is identicial to the creator '
+               'name.']
+            )
+
+        if cd['credited_as'] and cd['credited_as'] in \
+           cd['creator'].creator.active_names().values_list('name', flat=True):
+            raise forms.ValidationError(
+              ['Name entered as "credited as" is identicial to a different '
+               'name of the selected creator.']
             )
 
         if cd['signed_as'] and not cd['is_signed']:
@@ -493,6 +502,15 @@ class StoryRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
                 ['Do not use [] around unofficial story titles, check the '
                  'unofficial checkbox instead.'])
+
+        if (cd['feature'] or cd['feature_object'] or cd['feature_logo']) and \
+          cd['type'].id in NO_FEATURE_TYPES:
+            raise forms.ValidationError(
+                ['The sequence type cannot have a feature.'])
+
+        if cd['genre'] and cd['type'].id in NO_GENRE_TYPES:
+            raise forms.ValidationError(
+                ['The sequence type cannot have a genre.'])
 
         if cd['feature'] and (cd['feature_object'] or cd['feature_logo']):
             raise forms.ValidationError(
