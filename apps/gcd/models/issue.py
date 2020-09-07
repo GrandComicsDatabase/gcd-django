@@ -184,7 +184,8 @@ class Issue(GcdData):
             stories_from = self
         stories = list(stories_from.active_stories()
                                    .order_by('sequence_number')
-                                   .select_related('type', 'migration_status'))
+                                   .select_related('type', 'migration_status')
+                                   .prefetch_related('feature_object'))
         if self.series.is_comics_publication:
             if (len(stories) > 0) and stories[0].type.id==6:
                 cover_story = stories.pop(0)

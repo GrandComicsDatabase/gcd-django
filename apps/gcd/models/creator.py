@@ -125,7 +125,7 @@ class CreatorNameDetail(GcdData):
         else:
             name = self.creator.gcd_official_name
             as_name = self
-            if self.type and self.type.id == NAME_TYPES['studio'] \
+            if self.type and self.type_id == NAME_TYPES['studio'] \
                and self.creator_relation.count():
                 co_name = self.creator_relation.get().to_creator
 

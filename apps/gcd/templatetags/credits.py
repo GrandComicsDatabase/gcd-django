@@ -11,7 +11,7 @@ from django.utils.html import conditional_escape as esc
 from apps.stddata.models import Country, Language
 from apps.gcd.models.story import AD_TYPES
 from apps.gcd.models.support import GENRES
-from apps.gcd.models import STORY_TYPES
+from apps.gcd.models import STORY_TYPES, CREDIT_TYPES
 
 register = template.Library()
 
@@ -145,9 +145,8 @@ def show_credit(story, credit):
         return formatted_credit
     elif credit == 'genre':
         genres = story.genre.lower()
-        for feature_genre in story.feature_object.values_list('genre',
-                                                              flat=True):
-            for genre in feature_genre.split(';'):
+        for feature in story.feature_object.all():
+            for genre in feature.genre.split(';'):
                 genre = genre.strip()
                 if genre not in genres:
                     if genres == '':
@@ -161,7 +160,8 @@ def show_credit(story, credit):
                 genres = genres.replace('sports', 'sport')
                 genres = genres.replace('math & science', 'maths & science')
             if language == 'en' or story.issue.series.language.code not in GENRES:
-                display_genre = genres.replace('fantasy', 'fantasy-supernatural')
+                display_genre = genres.replace('fantasy',
+                                               'fantasy-supernatural')
             else:
                 display_genre = ''
                 for genre in genres.split(';'):
@@ -260,7 +260,8 @@ def __format_credit(story, credit):
 
 @register.filter
 def search_creator_credit(story, credit_type):
-    credits = story.active_credits.filter(credit_type__name=credit_type)
+    credits = story.active_credits.filter(
+              credit_type_id=CREDIT_TYPES[credit_type])
     if not credits:
         return ''
     credit_value = '%s' % credits[0].creator.display_credit(credits[0],
@@ -276,9 +277,24 @@ def search_creator_credit(story, credit_type):
 
 @register.filter
 def show_creator_credit(story, credit_type, url=True):
-    credits = story.active_credits.filter(credit_type__name=credit_type)
+    credits = story.active_credits.filter(
+              credit_type_id=CREDIT_TYPES[credit_type])
     old_credit_field = getattr(story, credit_type)
-    if not credits:
+    seen = False
+    credit_value = ''
+    for credit in credits:
+        if credit.credit_type_id == CREDIT_TYPES[credit_type]:
+            if seen:
+                credit_value = '%s; %s' % (credit_value,
+                                           credit.creator
+                                                 .display_credit(credit,
+                                                                 url=url))
+            else:
+                credit_value = '%s' % (credit.creator.display_credit(credit,
+                                                                     url=url))
+                seen = True
+
+    if not seen:
         if not old_credit_field:
             return ''
         else:
@@ -286,12 +302,6 @@ def show_creator_credit(story, credit_type, url=True):
                 return show_credit(story, credit_type)
             else:
                 return old_credit_field
-    credit_value = '%s' % credits[0].creator.display_credit(credits[0],
-                                                            url=url)
-    for credit in credits[1:]:
-        credit_value = '%s; %s' % (credit_value,
-                                   credit.creator.display_credit(credit,
-                                                                 url=url))
     if old_credit_field:
         credit_value = '%s; %s' % (credit_value, old_credit_field)
 
@@ -402,7 +412,7 @@ def show_page_count(story, show_page=False):
 
 @register.filter
 def format_page_count(page_count):
-    if page_count is not None and page_count is not '':
+    if page_count is not None and page_count != '':
         return f'{float(page_count):.10g}'
     else:
         return ''
@@ -595,10 +605,12 @@ def follow_reprint_link(reprint, direction, level=0):
         return ''
     reprint_note = ''
     if direction == 'from':
-        further_reprints = list(reprint.origin.from_reprints.select_related()
-                                .all())
-        further_reprints.extend(list(reprint.origin.from_issue_reprints
-                                            .select_related().all()))
+        further_reprints = list(
+          reprint.origin.from_reprints
+                 .select_related('origin__issue__series__publisher').all())
+        further_reprints.extend(list(
+          reprint.origin.from_issue_reprints
+                 .select_related('origin_issue__series__publisher').all()))
         further_reprints = sorted(further_reprints,
                                   key=lambda a: a.origin_sort)
         reprint_note += generate_reprint_notes(from_reprints=further_reprints,
@@ -609,10 +621,12 @@ def follow_reprint_link(reprint, direction, level=0):
                 if string.lower().startswith('from '):
                     reprint_note += '<li> ' + esc(string) + ' </li>'
     else:
-        further_reprints = list(reprint.target.to_reprints.select_related()
-                                                          .all())
-        further_reprints.extend(list(reprint.target.to_issue_reprints
-                                            .select_related().all()))
+        further_reprints = list(
+          reprint.target.to_reprints
+                 .select_related('target__issue__series__publisher').all())
+        further_reprints.extend(list(
+          reprint.target.to_issue_reprints
+                 .select_related('target_issue__series__publisher').all()))
         further_reprints = sorted(further_reprints,
                                   key=lambda a: a.target_sort)
         reprint_note += generate_reprint_notes(to_reprints=further_reprints,
@@ -634,9 +648,12 @@ def show_reprints(story):
 
     reprint = ""
 
-    from_reprints = list(story.from_reprints.select_related().all())
-    from_reprints.extend(list(story.from_issue_reprints.select_related()
-                                                       .all()))
+    from_reprints = list(
+      story.from_reprints
+           .select_related('origin__issue__series__publisher').all())
+    from_reprints.extend(list(
+      story.from_issue_reprints
+           .select_related('origin_issue__series__publisher').all()))
     from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
@@ -644,8 +661,12 @@ def show_reprints(story):
         no_promo = True
     else:
         no_promo = False
-    to_reprints = list(story.to_reprints.select_related().all())
-    to_reprints.extend(list(story.to_issue_reprints.select_related().all()))
+    to_reprints = list(
+      story.to_reprints
+           .select_related('target__issue__series__publisher').all())
+    to_reprints.extend(list(
+      story.to_issue_reprints
+           .select_related('target_issue__series__publisher').all()))
     to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
     reprint += generate_reprint_notes(to_reprints=to_reprints,
                                       no_promo=no_promo)

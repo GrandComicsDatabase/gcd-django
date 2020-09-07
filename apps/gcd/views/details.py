@@ -1962,7 +1962,8 @@ def show_issue(request, issue, preview=False):
         for i in res:
             oi_indexers.append(i.indexer)
 
-    res = IssueRevision.objects.filter(issue=issue)
+    res = IssueRevision.objects.filter(issue=issue)\
+                               .select_related('changeset__indexer__indexer')
     res = res.filter(changeset__state=states.APPROVED)\
              .exclude(changeset__indexer__username=settings.ANON_USER_NAME)
     for i in res:

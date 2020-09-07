@@ -27,12 +27,12 @@ STORY_TYPES = {
 }
 
 CREDIT_TYPES = {
-    'script': '1',
-    'pencils': '2',
-    'inks': '3',
-    'colors': '4',
-    'letters': '5',
-    'editing': '6',
+    'script': 1,
+    'pencils': 2,
+    'inks': 3,
+    'colors': 4,
+    'letters': 5,
+    'editing': 6,
 }
 
 OLD_TYPES = {
@@ -47,6 +47,9 @@ CORE_TYPES = [5, 6, 7, 13, 19, 21]
 AD_TYPES = [2, 16, 26, 28]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
+# sequences types that cannot have a feature or genre
+NO_FEATURE_TYPES = [8, 22, 24, 25]
+NO_GENRE_TYPES = [8, 22, 24, 25]
 
 
 def show_feature(story):
@@ -198,7 +201,11 @@ class Story(GcdData):
 
     @property
     def active_credits(self):
-        return self.credits.exclude(deleted=True)
+        if not hasattr(self, '_active_credits'):
+            self._active_credits = self.credits.exclude(deleted=True)\
+                                       .select_related('creator__creator',
+                                                       'creator__type')
+        return self._active_credits
 
     def stat_counts(self):
         if self.deleted:
@@ -226,11 +233,11 @@ class Story(GcdData):
         """
         return self.job_number or \
                self.genre or \
-               self.feature_object.values('genre') or \
                self.characters or \
                self.first_line or \
                self.synopsis or \
                self.has_keywords() or \
+               self.feature_object.values('genre') or \
                self.has_reprints() or \
                self.feature_logo.count() or \
                self.active_awards().count()

@@ -563,7 +563,7 @@ class StoryRevisionForm(forms.ModelForm):
                 if not form_deleted:
                     credit_type = \
                       self.data['story_credit_revisions-%d-credit_type' % i]
-                    if credit_type == CREDIT_TYPES[seq_type]:
+                    if credit_type == str(CREDIT_TYPES[seq_type]):
                         seq_type_found = True
                     elif seq_type == 'script' and credit_type in ['10', '11',
                                                                   '12', '13']:
