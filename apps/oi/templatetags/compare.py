@@ -112,8 +112,11 @@ def field_value(revision, field):
                 first = False
             else:
                 features += '; '
-            features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
-                                                 esc(feature.name))
+            if field == 'feature_object':
+                features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
+                                                     esc(feature.name))
+            else:
+                features += absolute_url(feature, feature.logo)
         return mark_safe(features)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
                    'characters', 'synopsis']:

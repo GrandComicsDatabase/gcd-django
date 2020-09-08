@@ -277,8 +277,16 @@ class Story(GcdData):
         return show_feature_as_text(self)
 
     def _show_feature_logo(self, story):
-        return "; ".join(story.feature_logo.all().values_list('name',
-                                                              flat=True))
+        from apps.gcd.templatetags.display import absolute_url
+        first = True
+        features = ''
+        for feature in story.feature_logo.all():
+            if first:
+                first = False
+            else:
+                features += '; '
+            features += absolute_url(feature, feature.logo)
+        return mark_safe(features)
 
     def show_feature_logo(self):
         return self._show_feature_logo(self)
