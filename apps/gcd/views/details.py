@@ -66,6 +66,13 @@ COVERS_PER_GALLERY_PAGE = 50
 IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
 
+ISSUE_CHECKLIST_DISCLAIMER = 'In the checklist results for stories, covers, '\
+                             'and cartoons are shown. '
+MIGRATE_DISCLAIMER = 'Text credits are currently being migrated to '\
+                     'links. Therefore not all credits in our '\
+                     'database are shown here.'
+
+
 # For ad purposes, we need to be able to identify adult cover images,
 # right now we do it by publisher.
 PUB_WITH_ADULT_IMAGES = [
@@ -225,11 +232,7 @@ def checklist_by_id(request, creator_id, country=None, language=None):
         issues = issues.filter(series__language=language)
 
     context = {
-        'result_disclaimer': 'In the checklist results for stories, covers, '
-                             'and cartoons are shown. '
-                             'Text credits are currently being migrated to '
-                             'links. Therefore not all credits in our '
-                             'database are shown here.',
+        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': 'Issue Checklist for Creator %s' % (creator)
@@ -1011,9 +1014,7 @@ def series_creatorlist(request, series_id):
       letters=letters)
 
     context = {
-        'result_disclaimer': 'Text credits are currently being migrated to '
-                             'links. Therefore not all credits in our '
-                             'database are shown here.',
+        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
         'item_name': 'creator',
         'plural_suffix': 's',
         'heading': 'Creators Working on %s' % (series)
@@ -1656,15 +1657,20 @@ def show_feature(request, feature, preview=False):
 def feature_issuelist_by_id(request, feature_id):
     feature = get_gcd_object(Feature, feature_id)
 
-    issues = Issue.objects.filter(story__feature_object=feature,
-                                  story__type__id__in=CORE_TYPES,
-                                  story__deleted=False).distinct()\
-                          .select_related('series__publisher')
+    if feature.feature_type.id == 1:
+        issues = Issue.objects.filter(story__feature_object=feature,
+                                      story__type__id__in=CORE_TYPES,
+                                      story__deleted=False).distinct()\
+                              .select_related('series__publisher')
+        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    else:
+        issues = Issue.objects.filter(story__feature_object=feature,
+                                      story__deleted=False).distinct()\
+                              .select_related('series__publisher')
+        result_disclaimer = MIGRATE_DISCLAIMER
 
     context = {
-        'result_disclaimer': 'Text credits are currently being migrated to '
-                             'links. Therefore not all issues in our '
-                             'database for the feature are shown here.',
+        'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': 'Issue List for Feature %s' % (feature)
@@ -1680,10 +1686,17 @@ def feature_creatorlist(request, feature_id):
     feature = get_gcd_object(Feature, feature_id)
 
     creators = CreatorNameDetail.objects.all()
-    creators = creators.filter(
-      storycredit__story__feature_object__id=feature_id,
-      storycredit__story__type__id__in=CORE_TYPES,
-      storycredit__deleted=False).distinct().select_related('creator')
+    if feature.feature_type.id == 1:
+        creators = creators.filter(
+          storycredit__story__feature_object__id=feature_id,
+          storycredit__story__type__id__in=CORE_TYPES,
+          storycredit__deleted=False).distinct().select_related('creator')
+        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    else:
+        creators = creators.filter(
+          storycredit__story__feature_object__id=feature_id,
+          storycredit__deleted=False).distinct().select_related('creator')
+        result_disclaimer = MIGRATE_DISCLAIMER
 
     creators = creators.annotate(
       first_credit=Min('storycredit__story__issue__key_date'))
@@ -1706,9 +1719,7 @@ def feature_creatorlist(request, feature_id):
       letters=letters)
 
     context = {
-        'result_disclaimer': 'Text credits are currently being migrated to '
-                             'links. Therefore not all credits in our '
-                             'database are shown here.',
+        'result_disclaimer': result_disclaimer,
         'item_name': 'creator',
         'plural_suffix': 's',
         'heading': 'Creators Working on Feature %s' % (feature)
