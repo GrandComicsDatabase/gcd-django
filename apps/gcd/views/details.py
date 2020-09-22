@@ -1725,7 +1725,9 @@ def feature_logo(request, feature_logo_id):
     """
     Display the details page for a Feature.
     """
-    feature_logo = get_gcd_object(FeatureLogo, object_id=feature_logo_id)
+    feature_logo = get_gcd_object(FeatureLogo,
+                                  object_id=feature_logo_id,
+                                  model_name='feature_logo')
     return show_feature_logo(request, feature_logo)
 
 
