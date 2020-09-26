@@ -55,6 +55,8 @@
           <ul style="columns: 2;">
             <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue Checklist (via credit search for name "{{ creator.gcd_official_name }}")</a></li>
             <li><a href='{% url "checklist_by_id" creator_id=creator.id %}'>Issue Checklist (via linked credit records)</a></li>
+	    <li><a href='{% url "creator_series" creator_id=creator.id %}'>Series List (via linked credit records)</a></li>
+	    <li><a href='{% url "creator_sequences" creator_id=creator.id %}'>Sequences List (via linked credit records)</a></li>
             <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD (via search for "{{ creator.gcd_official_name }}")</a></li>
 
   {% if creator.whos_who %}
