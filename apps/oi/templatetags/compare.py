@@ -57,6 +57,7 @@ def check_changed(changed, field):
 def field_value(revision, field):
     value = getattr(revision, field)
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
+        value = esc(value)
         if type(revision).__name__ == 'IssueRevision':
             credits = revision.issue_credit_revisions.filter(
                 credit_type__id=CREDIT_TYPES[field],
