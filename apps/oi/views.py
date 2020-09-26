@@ -2066,6 +2066,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     revision.save_added_revision(changeset=changeset,
                                  series=series,
                                  variant_of=variant_of)
+    form.save_m2m()
     extra_forms = {'credits_formset': credits_formset, }
     revision.process_extra_forms(request, extra_forms)
 
