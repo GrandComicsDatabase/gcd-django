@@ -33,14 +33,14 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CreatorRelation, CreatorSchool, CreatorNameDetail,\
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
-                            Printer, IndiciaPrinter, School
+                            Printer, IndiciaPrinter, School, Story
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
                                   IndiciaPublisherIssueTable,\
                                   IssuePublisherTable
-from apps.gcd.models.series import SeriesTable
-from apps.gcd.models.story import CORE_TYPES, AD_TYPES
+from apps.gcd.models.series import SeriesTable, CreatorSeriesTable
+from apps.gcd.models.story import CORE_TYPES, AD_TYPES, StoryTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
                            ResponsePaginator
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -215,7 +215,96 @@ def show_creator(request, creator, preview=False):
     return render(request, 'gcd/details/creator.html', vars)
 
 
-def checklist_by_id(request, creator_id, country=None, language=None):
+def creator_sequences(request, creator_id, series_id=None,
+                      country=None, language=None):
+    creator = get_gcd_object(Creator, creator_id)
+    creator_names = creator.creator_names.filter(deleted=False)
+
+    stories = Story.objects.filter(credits__creator__in=creator_names,
+                                   credits__deleted=False).distinct()\
+                           .select_related('issue__series__publisher')
+    if country:
+        country = get_object_or_404(Country, code=country)
+        stories = stories.filter(issue__series__country=country)
+    if language:
+        language = get_object_or_404(Language, code=language)
+        stories = stories.filter(issue__series__language=language)
+    if series_id:
+        series = get_gcd_object(Series, series_id)
+        stories = stories.filter(issue__series__id=series_id)
+        heading = 'Sequences for Creator %s in Series %s' % (creator,
+                                                             series)
+    else:
+        heading = 'Sequences for Creator %s' % (creator)
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'sequence',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('issue'))
+    return generic_sortable_list(request, stories, table, template, context)
+
+
+def creator_issues(request, creator_id, series_id,
+                   country=None, language=None):
+    return checklist_by_id(request, creator_id, series_id=series_id,
+                    country=country, language=language)
+
+def creator_series(request, creator_id, country=None, language=None):
+    creator = get_gcd_object(Creator, creator_id)
+    names = creator.creator_names.filter(deleted=False)
+
+    series = Series.objects.filter(issue__story__credits__creator__in=names,
+                                   issue__story__type__id__in=CORE_TYPES,
+                                   issue__story__credits__deleted=False,
+                                   issue__story__credits__credit_type__id__lt=6)\
+                           .distinct()
+    if country:
+        country = get_object_or_404(Country, code=country)
+        series = series.filter(country=country)
+    if language:
+        language = get_object_or_404(Language, code=language)
+        series = series.filter(language=language)
+
+    series = series.annotate(issue_credits_count=Count('issue', distinct=True))
+    script = Count('issue',
+                   filter=Q(issue__story__credits__credit_type__id=1), distinct=True)
+    pencils = Count('issue',
+                    filter=Q(issue__story__credits__credit_type__id=2), distinct=True)
+    inks = Count('issue',
+                 filter=Q(issue__story__credits__credit_type__id=3), distinct=True)
+    colors = Count('issue',
+                   filter=Q(issue__story__credits__credit_type__id=4), distinct=True)
+    letters = Count('issue',
+                    filter=Q(issue__story__credits__credit_type__id=5), distinct=True)
+    series = series.annotate(
+      script=script,
+      pencils=pencils,
+      inks=inks,
+      colors=colors,
+      letters=letters)
+
+    context = {
+        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'item_name': 'series',
+        'plural_suffix': '',
+        'heading': 'Series for Creator %s' % (creator)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CreatorSeriesTable(series, attrs={'class': 'sortable_listing'},
+                               creator=creator,
+                               template_name='gcd/bits/sortable_table.html',
+                        order_by=('feature'))
+    return generic_sortable_list(request, series, table, template, context)
+
+
+def checklist_by_id(request, creator_id, series_id=None,
+                    country=None, language=None):
     creator = get_gcd_object(Creator, creator_id)
     creator_names = creator.creator_names.filter(deleted=False)
 
@@ -230,12 +319,19 @@ def checklist_by_id(request, creator_id, country=None, language=None):
     if language:
         language = get_object_or_404(Language, code=language)
         issues = issues.filter(series__language=language)
+    if series_id:
+        series = get_gcd_object(Series, series_id)
+        issues = issues.filter(series__id=series_id)
+        heading = 'Issues for Creator %s in Series %s' % (creator,
+                                                          series)
+    else:
+        heading = 'Issue Checklist for Creator %s' % (creator)
 
     context = {
         'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'Issue Checklist for Creator %s' % (creator)
+        'heading': heading
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},

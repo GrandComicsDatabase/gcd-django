@@ -502,3 +502,63 @@ class SeriesTable(tables.Table):
     def render_issue_count(self, record):
         return '%d issues (%d indexed)' % (record.issue_count,
                                            record.issue_indexed_count)
+
+class CreatorSeriesTable(SeriesTable):
+    credits_count = tables.Column(accessor='issue_credits_count',
+                                  verbose_name='Issues')
+    covers = None
+    published = None
+    issue_count = None
+    role = tables.Column(accessor='script', orderable=False)
+
+    def __init__(self, *args, **kwargs):
+        self.creator = kwargs.pop('creator')
+        self.resolve_name = 'creator'
+        super(SeriesTable, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Series
+        fields = ('name', 'year', 'publisher')
+
+    def order_credits_count(self, QuerySet, is_descending):
+        if is_descending:
+            QuerySet = QuerySet.order_by('-issue_credits_count', 'sort_name',
+                                         'year_began')
+        else:
+            QuerySet = QuerySet.order_by('issue_credits_count', 'sort_name',
+                                         'year_began')
+        return (QuerySet, True)
+
+    def render_credits_count(self, record):
+        url = urlresolvers.reverse(
+                'creator_series_issues',
+                kwargs={'series_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url, record.issue_credits_count))
+
+    def value_credits_count(self, record):
+        return record.issue_credits_count
+
+    def render_publisher(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        display_publisher = "<img %s>" % (show_country_info(value.country))
+        return mark_safe(display_publisher) + absolute_url(value)
+
+    def value_publisher(self, value):
+        return str(value)
+
+    def render_role(self, record):
+        role = ''
+        if record.script:
+            role = 'script (%d); ' % record.script
+        if record.pencils:
+            role += 'pencils (%d); ' % record.pencils
+        if record.inks:
+            role += 'inks (%d); ' % record.inks
+        if record.colors:
+            role += 'colors (%d); ' % record.colors
+        if record.letters:
+            role += 'letters (%d); ' % record.letters
+        return role[:-2]
