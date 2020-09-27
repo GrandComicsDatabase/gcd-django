@@ -358,7 +358,7 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=FeatureLogo.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
                           url='feature_logo_autocomplete',
-                          forward=['language_code'],
+                          forward=['language_code', 'type'],
                           attrs={'data-html': True,
                                  'style': 'min-width: 60em'}),
       required=False,

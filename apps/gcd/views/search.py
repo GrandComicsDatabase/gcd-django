@@ -713,7 +713,7 @@ def search(request):
     """
 
     # redirect if url starts with '/search/' but the rest is of no use
-    if 'type' not in request.GET:
+    if 'search_type' not in request.GET:
         return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
 
     if 'query' not in request.GET or not request.GET['query'] or \
@@ -729,10 +729,10 @@ def search(request):
     else:
         sort = ORDER_ALPHA
 
-    if request.GET['type'].find("haystack") >= 0:
+    if request.GET['search_type'].find("haystack") >= 0:
         quoted_query = urlquote(request.GET['query'])
 
-    if request.GET['type'] == "mycomics_haystack":
+    if request.GET['search_type'] == "mycomics_haystack":
         if sort == ORDER_CHRONO:
             return HttpResponseRedirect(
               urlresolvers.reverse("mycomics_search") + "?q=%s&sort=year" %
@@ -741,7 +741,7 @@ def search(request):
             return HttpResponseRedirect(
               urlresolvers.reverse("mycomics_search") + "?q=%s" % quoted_query)
 
-    if request.GET['type'] == "haystack":
+    if request.GET['search_type'] == "haystack":
         if sort == ORDER_CHRONO:
             return HttpResponseRedirect(
               urlresolvers.reverse("haystack_search") + "?q=%s&sort=year" %
@@ -750,14 +750,14 @@ def search(request):
             return HttpResponseRedirect(
               urlresolvers.reverse("haystack_search") + "?q=%s" % quoted_query)
 
-    if request.GET['type'] == "haystack_issue":
+    if request.GET['search_type'] == "haystack_issue":
         return HttpResponseRedirect(urlresolvers.reverse("haystack_search") +
                                     '?q="%s"&search_object=issue&sort=%s' %
                                     (quoted_query, sort))
 
     # TODO: Redesign this- the current setup is a quick hack to adjust
     # a design that was elegant when it was written, but things have changed.
-    object_type = str(request.GET['type'])
+    object_type = str(request.GET['search_type'])
     param_type = object_type
     view_type = object_type
 
