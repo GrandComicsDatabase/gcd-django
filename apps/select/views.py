@@ -497,9 +497,19 @@ class FeatureAutocomplete(LoginRequiredMixin,
         qs = Feature.objects.filter(deleted=False)
 
         language = self.forwarded.get('language_code', None)
+        type = self.forwarded.get('type', None)
 
         if language:
             qs = qs.filter(language__code__in=[language, 'zxx'])
+
+        if type:
+            type = int(type)
+            if type == STORY_TYPES['letters_page']:
+                qs = qs.filter(feature_type__id=2)
+            else:
+                qs = qs.exclude(feature_type__id=2)
+            if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
+                qs = qs.exclude(feature_type__id=3)
 
         qs = _filter_and_sort(qs, self.q)
 

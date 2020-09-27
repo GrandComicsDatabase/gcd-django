@@ -347,7 +347,7 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=Feature.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
                           url='feature_autocomplete',
-                          forward=['language_code'],
+                          forward=['language_code', 'type'],
                           attrs={'style': 'min-width: 60em'}),
       required=False,
       help_text='Only features for the series language can be selected. '
