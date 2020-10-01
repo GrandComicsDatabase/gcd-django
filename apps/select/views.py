@@ -508,6 +508,10 @@ class FeatureAutocomplete(LoginRequiredMixin,
                 qs = qs.filter(feature_type__id=2)
             else:
                 qs = qs.exclude(feature_type__id=2)
+            if type == STORY_TYPES['in-house column']:
+                qs = qs.filter(feature_type__id=4)
+            else:
+                qs = qs.exclude(feature_type__id=4)
             if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
                 qs = qs.exclude(feature_type__id=3)
 

@@ -1,9 +1,16 @@
 - model: gcd.featuretype
   pk: 1
-  fields: {name: story}
+  fields:
+    name: story
 - model: gcd.featuretype
   pk: 2
-  fields: {name: letter column}
+  fields:
+    name: letter column
 - model: gcd.featuretype
   pk: 3
-  fields: {name: ad}
+  fields:
+    name: ad
+- model: gcd.featuretype
+  pk: 4
+  fields:
+    name: in-house column

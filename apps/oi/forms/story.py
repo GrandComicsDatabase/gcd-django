@@ -522,12 +522,17 @@ class StoryRevisionForm(forms.ModelForm):
                     if not feature.feature_type.id == 2:
                         raise forms.ValidationError(
                           ['Select the correct feature for a letters page.'])
+                elif cd['type'].id == STORY_TYPES['in-house column']:
+                    if not feature.feature_type.id == 4:
+                        raise forms.ValidationError(
+                          ['Select the correct feature for an in-house '
+                           'column.'])
                 elif feature.feature_type.id == 3:
                     if not cd['type'].id in [STORY_TYPES['ad'],
                                              STORY_TYPES['comics-form ad']]:
                         raise forms.ValidationError(
                           ['Incorrect feature for this sequence.'])
-                elif feature.feature_type.id == 2:
+                elif feature.feature_type.id in [2,4]:
                     raise forms.ValidationError(
                       ['Incorrect feature for this sequence.'])
 
@@ -542,11 +547,18 @@ class StoryRevisionForm(forms.ModelForm):
                         raise forms.ValidationError(
                           ['Select the correct feature logo for a '
                            'letters page.'])
+                if cd['type'].id == STORY_TYPES['in-house column']:
+                    if not feature_logo.feature.filter(feature_type__id=4)\
+                                               .count():
+                        raise forms.ValidationError(
+                          ['Select the correct feature logo for an '
+                           'in-house column.'])
                 elif feature_logo.feature.filter(feature_type__id=3).count():
                     if not cd['type'].id == STORY_TYPES['ad']:
                         raise forms.ValidationError(
                           ['Incorrect feature logo for this sequence.'])
-                elif feature_logo.feature.filter(feature_type_id=2).count():
+                elif feature_logo.feature.filter(feature_type_id__in=[2,4])\
+                                         .count():
                     raise forms.ValidationError(
                       ['Incorrect feature logo for this sequence.'])
 

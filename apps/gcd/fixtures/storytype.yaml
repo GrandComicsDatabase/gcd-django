@@ -1,81 +1,145 @@
 - model: gcd.storytype
   pk: 1
-  fields: {name: activity, sort_code: 15}
+  fields:
+    name: activity
+    sort_code: 24
 - model: gcd.storytype
   pk: 2
-  fields: {name: advertisement, sort_code: 9}
+  fields:
+    name: advertisement
+    sort_code: 21
 - model: gcd.storytype
   pk: 3
-  fields: {name: (backcovers) *do not use* / *please fix*, sort_code: 35}
+  fields:
+    name: (backcovers) *do not use* / *please fix*
+    sort_code: 500
 - model: gcd.storytype
   pk: 4
-  fields: {name: biography (nonfictional), sort_code: 17}
+  fields:
+    name: biography (nonfictional)
+    sort_code: 502
 - model: gcd.storytype
   pk: 5
-  fields: {name: cartoon, sort_code: 7}
+  fields:
+    name: cartoon
+    sort_code: 7
 - model: gcd.storytype
   pk: 6
-  fields: {name: cover, sort_code: 5}
+  fields:
+    name: cover
+    sort_code: 5
 - model: gcd.storytype
   pk: 7
-  fields: {name: cover reprint (on interior page), sort_code: 6}
+  fields:
+    name: cover reprint (on interior page)
+    sort_code: 6
 - model: gcd.storytype
   pk: 8
-  fields: {name: 'credits, title page', sort_code: 25}
+  fields:
+    name: credits, title page
+    sort_code: 43
 - model: gcd.storytype
   pk: 9
-  fields: {name: filler, sort_code: 33}
+  fields:
+    name: filler
+    sort_code: 47
 - model: gcd.storytype
   pk: 10
-  fields: {name: 'foreword, introduction, preface, afterword', sort_code: 23}
+  fields:
+    name: foreword, introduction, preface, afterword
+    sort_code: 42
 - model: gcd.storytype
   pk: 11
-  fields: {name: insert or dust jacket, sort_code: 31}
+  fields:
+    name: insert or dust jacket
+    sort_code: 46
 - model: gcd.storytype
   pk: 12
-  fields: {name: letters page, sort_code: 29}
+  fields:
+    name: letters page
+    sort_code: 45
 - model: gcd.storytype
   pk: 13
-  fields: {name: photo story, sort_code: 4}
+  fields:
+    name: photo story
+    sort_code: 4
 - model: gcd.storytype
   pk: 14
-  fields: {name: illustration, sort_code: 8}
+  fields:
+    name: illustration
+    sort_code: 8
 - model: gcd.storytype
   pk: 15
-  fields: {name: character profile, sort_code: 19}
+  fields:
+    name: character profile
+    sort_code: 40
 - model: gcd.storytype
   pk: 16
-  fields: {name: promo (ad from the publisher), sort_code: 10}
+  fields:
+    name: promo (ad from the publisher)
+    sort_code: 22
 - model: gcd.storytype
   pk: 17
-  fields: {name: public service announcement, sort_code: 13}
+  fields:
+    name: public service announcement
+    sort_code: 29
 - model: gcd.storytype
   pk: 18
-  fields: {name: recap, sort_code: 27}
+  fields:
+    name: recap
+    sort_code: 44
 - model: gcd.storytype
   pk: 19
-  fields: {name: comic story, sort_code: 1}
+  fields:
+    name: comic story
+    sort_code: 1
 - model: gcd.storytype
   pk: 20
-  fields: {name: text article, sort_code: 3}
+  fields:
+    name: text article
+    sort_code: 3
 - model: gcd.storytype
   pk: 21
-  fields: {name: text story, sort_code: 2}
+  fields:
+    name: text story
+    sort_code: 2
 - model: gcd.storytype
   pk: 22
-  fields: {name: statement of ownership, sort_code: 21}
+  fields:
+    name: statement of ownership
+    sort_code: 41
 - model: gcd.storytype
   pk: 23
-  fields: {name: (unknown), sort_code: 100}
+  fields:
+    name: (unknown)
+    sort_code: 501
 - model: gcd.storytype
   pk: 24
-  fields: {name: blank page(s), sort_code: 235}
+  fields:
+    name: blank page(s)
+    sort_code: 235
 - model: gcd.storytype
   pk: 25
-  fields: {name: table of contents, sort_code: 165}
+  fields:
+    name: table of contents
+    sort_code: 165
 - model: gcd.storytype
   pk: 26
-  fields: {name: preview (from the publisher), sort_code: 11}
+  fields:
+    name: preview (from the publisher)
+    sort_code: 23
 - model: gcd.storytype
   pk: 27
-  fields: {name: about comics, sort_code: 60}
+  fields:
+    name: about comics
+    sort_code: 60
+- model: gcd.storytype
+  pk: 28
+  fields:
+    name: comics-form advertising
+    sort_code: 20
+- model: gcd.storytype
+  pk: 29
+  fields:
+    name: in-house column
+    sort_code: 25

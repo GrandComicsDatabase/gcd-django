@@ -24,6 +24,7 @@ STORY_TYPES = {
     'preview': 26,
     'about comics': 27,
     'comics-form ad': 28,
+    'in-house column': 29
 }
 
 CREDIT_TYPES = {
@@ -43,8 +44,8 @@ OLD_TYPES = {
 
 # core sequence types: cartoon, (photo, text) story, cover (incl. reprint)
 CORE_TYPES = [5, 6, 7, 13, 19, 21]
-# ad sequence types: ad, promo
-AD_TYPES = [2, 16, 26, 28]
+# ad sequence types: ad, promo, in-house column
+AD_TYPES = [2, 16, 26, 28, 29]
 # non-optional sequences: story, cover (incl. reprint)
 NON_OPTIONAL_TYPES = [6, 7, 19]
 # sequences types that cannot have a feature or genre
