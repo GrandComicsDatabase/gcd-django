@@ -547,7 +547,7 @@ class StoryRevisionForm(forms.ModelForm):
                         raise forms.ValidationError(
                           ['Select the correct feature logo for a '
                            'letters page.'])
-                if cd['type'].id == STORY_TYPES['in-house column']:
+                elif cd['type'].id == STORY_TYPES['in-house column']:
                     if not feature_logo.feature.filter(feature_type__id=4)\
                                                .count():
                         raise forms.ValidationError(
