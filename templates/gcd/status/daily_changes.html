@@ -30,7 +30,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 {% if creators %}
 <table class="listing">
   <tr>
-    <th> Creator </th>
+    <th> Creator ({{ creators.count }}) </th>
     <th> Change History </th>
   </tr>
   {% for creator in creators %}
@@ -47,7 +47,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 {% if publishers %}
 <table class="listing">
   <tr>
-    <th colspan="2"> Publisher </th>
+    <th colspan="2"> Publisher ({{ publishers.count }}) </th>
     <th> #&nbsp;Brands </th>
     <th> #&nbsp;Indicia Publishers </th>
     <th> #&nbsp;Series </th>
@@ -85,7 +85,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 {% if brand_groups %}
 <table class="listing">
   <tr>
-    <th> Brand Group </th>
+    <th> Brand Group  ({{ brand_groups.count }}) </th>
     <th colspan="2"> Parent </th>
     <th> #&nbsp;Issues </th>
     <th> Year Began</th>
@@ -111,7 +111,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 {% if brands %}
 <table class="listing">
   <tr>
-    <th> Brand </th>
+    <th> Brand  ({{ brands.count }}) </th>
     <th> Group </th>
     <th> #&nbsp;Issues </th>
     <th> Year Began</th>
@@ -141,7 +141,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 {% if indicia_publishers %}
 <table class="listing">
   <tr>
-    <th> Indicia Publisher </th>
+    <th> Indicia Publisher  ({{ indicia_publishers.count }}) </th>
     <th colspan="2"> Parent </th>
     <th> #&nbsp;Issues </th>
     <th> Year Began </th>
@@ -169,7 +169,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 {% if series %}
 <table class="listing">
   <tr>
-    <th> Series </th>
+    <th> Series  ({{ series.count }}) </th>
     <th colspan="2"> Publisher </th>
     <th> Year </th>
     <th> #&nbsp;Issues </th>
@@ -229,7 +229,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 {% if issues %}
 <table class="listing">
   <tr>
-    <th> Issue </th>
+    <th> Issue ({{ issues.count }}) </th>
     <th colspan="2"> Publisher </th>
     <th> Date </th>
     <th> Change History </th>
