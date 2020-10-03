@@ -441,7 +441,10 @@ class Vote(models.Model):
     updated = models.DateTimeField(null=True, auto_now=True, editable=False)
 
     def __str__(self):
-        string = '%s: %s' % (self.voter.indexer, self.option)
+        if self.voter:
+            string = '%s: %s' % (self.voter.indexer, self.option)
+        else:
+            string = '%s' % (self.option)
         if self.rank is not None:
             return string + (' %d' % self.rank)
         return string
