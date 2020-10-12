@@ -1,58 +1,82 @@
 [
-    {
-        "pk": 2,
-        "model": "gcd.nametype",
-        "fields": {
-            "type": "Changed"
-        }
-    },
-    {
-        "pk": 3,
-        "model": "gcd.nametype",
-        "fields": {
-            "type": "Family"
-        }
-    },
-    {
-        "pk": 1,
-        "model": "gcd.nametype",
-        "fields": {
-            "type": "GCD Official"
-        }
-    },
-    {
-        "pk": 4,
-        "model": "gcd.nametype",
-        "fields": {
-            "type": "Given (birth)"
-        }
-    },
-    {
-        "pk": 5,
-        "model": "gcd.nametype",
-        "fields": {
-            "type": "House"
-        }
-    },
-    {
-        "pk": 6,
-        "model": "gcd.nametype",
-        "fields": {
-            "type": "Other Language"
-        }
-    },
-    {
-        "pk": 7,
-        "model": "gcd.nametype",
-        "fields": {
-            "type": "Pen"
-        }
-    },
-    {
-        "pk": 8,
-        "model": "gcd.nametype",
-        "fields": {
-            "type": "Shop"
-        }
+{
+    "model": "gcd.nametype",
+    "pk": 1,
+    "fields": {
+        "description": "",
+        "type": "GCD Official (type is deprecated)"
     }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 2,
+    "fields": {
+        "description": "",
+        "type": "Changed Name"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 3,
+    "fields": {
+        "description": "",
+        "type": "Family"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 4,
+    "fields": {
+        "description": "",
+        "type": "Given (birth)"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 6,
+    "fields": {
+        "description": "",
+        "type": "Other Language"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 7,
+    "fields": {
+        "description": "",
+        "type": "Pen Name"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 8,
+    "fields": {
+        "description": "",
+        "type": "Studio Name"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 9,
+    "fields": {
+        "description": "Native Language",
+        "type": "Native Language"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 10,
+    "fields": {
+        "description": "",
+        "type": "Name at Birth"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 11,
+    "fields": {
+        "description": "",
+        "type": "Common Alternative Name"
+    }
+}
 ]
