@@ -489,7 +489,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_name(self, obj):
         return [(creator_name.name) for creator_name in
-                obj.creator_names.all()]
+                obj.active_names()]
 
     def prepare_year(self, obj):
         if obj.birth_date.year and '?' not in obj.birth_date.year:
