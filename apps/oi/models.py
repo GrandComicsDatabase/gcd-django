@@ -2872,7 +2872,7 @@ class PrinterRevision(PublisherRevisionBase):
     def _create_dependent_revisions(self, delete=False):
         if delete:
             for indicia_printer in self.printer\
-                                       .active_indicia_printer():
+                                       .active_indicia_printers():
                 # indicia_printer is deletable if printer is deletable
                 indicia_printers_lock = _get_revision_lock(
                                         indicia_printer,
