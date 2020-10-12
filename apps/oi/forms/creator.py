@@ -83,6 +83,13 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
                   ' "is_credited" cannot be changed, nor can the creator name'\
                   ' be removed.'
 
+    def clean(self):
+        cd = self.cleaned_data
+        if (not cd['type'] or cd['type'].id not in [2, 10, 11]) and \
+           (cd['family_name'] or cd['given_name']):
+            raise forms.ValidationError(
+              "Family or given name can only be entered for 'name at birth', "
+              "'changed name', or 'common alternate name'.")
 
 class CustomInlineFormSet(forms.BaseInlineFormSet):
     def _should_delete_form(self, form):
