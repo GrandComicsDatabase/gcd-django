@@ -15,6 +15,7 @@ from django.utils.html import conditional_escape as esc
 from django.utils.html import mark_safe
 
 from djqscsv import render_to_csv_response
+import csv
 
 from apps.indexer.views import render_error, ErrorWithMessage
 from apps.gcd.models import Issue, Series
@@ -622,7 +623,7 @@ def select_from_on_sale_weekly(request, year=None, week=None):
 
 
 def file_len(fname):
-    with open(fname) as f:
+    with open(fname, 'rb') as f:
         for i, l in enumerate(f):
             pass
     return i + 1
