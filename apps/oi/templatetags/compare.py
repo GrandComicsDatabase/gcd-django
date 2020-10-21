@@ -265,14 +265,31 @@ def diff_list(prev_rev, revision, field):
         diff_match_patch().diff_cleanupSemantic(diff)
         new_diff = []
         splitted_link = False
+        splitted_signature_link = False
         for di in diff:
-            if splitted_link:
-                di = (di[0], ' <a href="/creator/' + di[1])
-                if di[0] == 1:
+            if splitted_link or splitted_signature_link:
+                if di[1].find('/">') >= 0 and di[0] != 0:
+                    pos = di[1].find('/">') + len('/">')
+                    if di[0] == 1:
+                        di = (2, di[1][:pos] + "<span class='added'>"
+                              + di[1][pos:])
+                        splitted_link = False
+                        splitted_signature_link = False
+                    else:
+                        di = (-2, di[1][:pos] + "<span class='deleted'>"
+                              + di[1][pos:])
+                elif di[1].find('/">') >= 0 and di[0] == 0:
                     splitted_link = False
-            if di[1].endswith(' <a href="/creator/'):
-                di = (di[0], di[1][:-len(' <a href="/creator/')])
+                    splitted_signature_link = False
+                else:
+                    di = (3 * di[0], di[1])
+            if di[1].find('<a href="/creator/') >= 0 and \
+               di[1].find('/">', di[1].rfind('<a href="/creator/')) < 0:
                 splitted_link = True
+            elif di[1].find('<a href="/creator_signature/') >= 0 and \
+              di[1].rfind('/">',
+                          di[1].rfind('<a href="/creator_signature/')) < 0:
+                splitted_signature_link = True
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
@@ -300,12 +317,20 @@ def show_diff(diff_list, change):
                 compare_string += esc(i[1])
             elif i[0] == -1:
                 compare_string += span_tag % ("deleted", esc(i[1]))
+            elif i[0] == -2:
+                compare_string += esc(i[1]) + "</span>"
+            elif i[0] == -3:
+                compare_string += esc(i[1])
     else:
         for i in diff_list:
             if i[0] == 0:
                 compare_string += esc(i[1])
             elif i[0] == 1:
                 compare_string += span_tag % ("added", esc(i[1]))
+            elif i[0] == 2:
+                compare_string += esc(i[1]) + "</span>"
+            elif i[0] == 3:
+                compare_string += esc(i[1])
     return mark_safe(compare_string)
 
 
