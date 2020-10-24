@@ -281,8 +281,13 @@ def search_creator_credit(story, credit_type):
 
 
 def __credit_value(story, credit_type, url):
-    credits = story.active_credits.filter(
-              credit_type_id=CREDIT_TYPES[credit_type])
+    # for results from elasticsearch
+    if '_object' in story.__dict__:
+        credits = story.object.active_credits.filter(
+                  credit_type_id=CREDIT_TYPES[credit_type])
+    else:
+        credits = story.active_credits.filter(
+                  credit_type_id=CREDIT_TYPES[credit_type])
     credit_value = ''
     for credit in credits:
         if credit.credit_type_id == CREDIT_TYPES[credit_type]:
