@@ -159,7 +159,8 @@ def show_credit(story, credit):
                 genres = genres.replace('humor', 'humour')
                 genres = genres.replace('sports', 'sport')
                 genres = genres.replace('math & science', 'maths & science')
-            if language == 'en' or story.issue.series.language.code not in GENRES:
+            if language == 'en' or story.issue.series.language.code \
+                           not in GENRES:
                 display_genre = genres.replace('fantasy',
                                                'fantasy-supernatural')
             else:
@@ -167,7 +168,8 @@ def show_credit(story, credit):
                 for genre in genres.split(';'):
                     genre = genre.strip()
                     if genre in GENRES['en']:
-                        translation = GENRES[language][GENRES['en'].index(genre)]
+                        translation = GENRES[language][
+                                             GENRES['en'].index(genre)]
                     else:
                         translation = ''
                     if translation:
@@ -212,7 +214,10 @@ def __credit_visible(value):
 
 
 def __format_credit(story, credit):
-    credit_value = getattr(story, credit)
+    if credit in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
+        credit_value = __credit_value(story, credit, url=True)
+    else:
+        credit_value = getattr(story, credit)
     if not __credit_visible(credit_value):
         return ''
 
@@ -275,16 +280,13 @@ def search_creator_credit(story, credit_type):
     return mark_safe(credit_value)
 
 
-@register.filter
-def show_creator_credit(story, credit_type, url=True):
+def __credit_value(story, credit_type, url):
     credits = story.active_credits.filter(
               credit_type_id=CREDIT_TYPES[credit_type])
-    old_credit_field = getattr(story, credit_type)
-    seen = False
     credit_value = ''
     for credit in credits:
         if credit.credit_type_id == CREDIT_TYPES[credit_type]:
-            if seen:
+            if credit_value:
                 credit_value = '%s; %s' % (credit_value,
                                            credit.creator
                                                  .display_credit(credit,
@@ -292,20 +294,19 @@ def show_creator_credit(story, credit_type, url=True):
             else:
                 credit_value = '%s' % (credit.creator.display_credit(credit,
                                                                      url=url))
-                seen = True
-
-    if not seen:
-        if not old_credit_field:
-            return ''
-        else:
-            if url:
-                return show_credit(story, credit_type)
-            else:
-                return old_credit_field
+    old_credit_field = getattr(story, credit_type)
     if old_credit_field:
-        credit_value = '%s; %s' % (credit_value, old_credit_field)
+        if credit_value:
+            credit_value = '%s; %s' % (credit_value, esc(old_credit_field))
+        else:
+            credit_value = esc(old_credit_field)
+    return mark_safe(credit_value)
 
-    if url:
+
+@register.filter
+def show_creator_credit(story, credit_type, url=True):
+    credit_value = __credit_value(story, credit_type, url)
+    if credit_value and url:
         return mark_safe(
            '<dt class="credit_tag"><span class="credit_label">'
            + credit_type.capitalize() + '</span></dt>' +
@@ -651,7 +652,8 @@ def show_reprints(story):
         sel = True
     from_reprints = list(
       story.from_reprints
-           .select_related('origin__issue__series__publisher' if sel else None).all())
+           .select_related('origin__issue__series__publisher' if sel
+                           else None).all())
     from_reprints.extend(list(
       story.from_issue_reprints
            .select_related('origin_issue__series__publisher').all()))
@@ -664,7 +666,8 @@ def show_reprints(story):
         no_promo = False
     to_reprints = list(
       story.to_reprints
-           .select_related('target__issue__series__publisher' if sel else None).all())
+           .select_related('target__issue__series__publisher' if sel
+                           else None).all())
     to_reprints.extend(list(
       story.to_issue_reprints
            .select_related('target_issue__series__publisher').all()))
