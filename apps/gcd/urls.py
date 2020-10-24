@@ -247,6 +247,8 @@ urlpatterns = [
       gcd_views.details.feature_issuelist_by_id, name='feature_issuelist_by_id'),
     url(r'^feature/(?P<feature_id>\d+)/creator_list/$',
       gcd_views.details.feature_creatorlist, name='feature_creatorlist'),
+    url(r'^feature/(?P<feature_id>\d+)/sequences/$',
+      gcd_views.details.feature_sequences, name='feature_sequences'),
     url(r'^feature/(?P<feature_id>\d+)/$',
       gcd_views.details.feature, name='show_feature'),
     url(r'^feature_logo/(?P<feature_logo_id>\d+)/$',

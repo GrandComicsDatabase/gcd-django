@@ -1751,6 +1751,29 @@ def show_feature(request, feature, preview=False):
                              vars)
 
 
+def feature_sequences(request, feature_id, country=None):
+    feature = get_gcd_object(Feature, feature_id)
+    stories = Story.objects.filter(feature_object=feature,
+                                   deleted=False).distinct()\
+                           .select_related('issue__series__publisher')
+    if country:
+        country = get_object_or_404(Country, code=country)
+        stories = stories.filter(issue__series__country=country)
+    heading = 'Sequences for Feature %s' % (feature)
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'sequence',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('issue'))
+    return generic_sortable_list(request, stories, table, template, context)
+
+
 def feature_issuelist_by_id(request, feature_id):
     feature = get_gcd_object(Feature, feature_id)
 

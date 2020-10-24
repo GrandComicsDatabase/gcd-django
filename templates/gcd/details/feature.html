@@ -41,6 +41,7 @@ GCD :: Feature :: {{ feature.name }}
       <ul style="columns: 2;">
 	<li><a href='{% url "feature_creatorlist" feature_id=feature.id %}'>Creator Checklist (via linked story records)</a></li>
         <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue Checklist (via linked story records)</a></li>
+        <li><a href='{% url "feature_sequences" feature_id=feature.id %}'>Sequences List (via linked story records)</a></li>
       </ul>
 {% endblock content %}
 
