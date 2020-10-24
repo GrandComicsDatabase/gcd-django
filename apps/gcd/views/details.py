@@ -272,6 +272,7 @@ def creator_series(request, creator_id, country=None, language=None):
         series = series.filter(language=language)
 
     series = series.annotate(issue_credits_count=Count('issue', distinct=True))
+    series = series.annotate(first_credit=Min('issue__key_date'))
     script = Count('issue',
                    filter=Q(issue__story__credits__credit_type__id=1), distinct=True)
     pencils = Count('issue',

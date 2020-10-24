@@ -503,11 +503,15 @@ class SeriesTable(tables.Table):
         return '%d issues (%d indexed)' % (record.issue_count,
                                            record.issue_indexed_count)
 
+    def value_name(self, value):
+        return str(value)
+
 class CreatorSeriesTable(SeriesTable):
     credits_count = tables.Column(accessor='issue_credits_count',
                                   verbose_name='Issues')
     covers = None
     published = None
+    first_credit = tables.Column(verbose_name='First Credit')
     issue_count = None
     role = tables.Column(accessor='script', orderable=False)
 
@@ -518,7 +522,7 @@ class CreatorSeriesTable(SeriesTable):
 
     class Meta:
         model = Series
-        fields = ('name', 'year', 'publisher')
+        fields = ('name', 'year', 'publisher', 'first_credit')
 
     def order_credits_count(self, QuerySet, is_descending):
         if is_descending:
@@ -528,6 +532,9 @@ class CreatorSeriesTable(SeriesTable):
             QuerySet = QuerySet.order_by('issue_credits_count', 'sort_name',
                                          'year_began')
         return (QuerySet, True)
+
+    def render_first_credit(self, value):
+        return value[:4]
 
     def render_credits_count(self, record):
         url = urlresolvers.reverse(
