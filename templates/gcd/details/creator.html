@@ -102,7 +102,8 @@
           <ol>
     {% endif %}
     {% for creator_name in other_names %}
-            <li style="page-break-inside: avoid;">{{ creator_name.name }}
+            <li style="page-break-inside: avoid;">
+              <a href="{% url 'creator_name_sequences' creator_id=creator_name.id %}">{{ creator_name.name }}</a>
               <strong>Type</strong>: {{ creator_name.type }}<br>
       {% if creator_name.given_name %}
               <strong>Given name</strong>: {{ creator_name.given_name }}

@@ -216,9 +216,18 @@ def show_creator(request, creator, preview=False):
 
 
 def creator_sequences(request, creator_id, series_id=None,
-                      country=None, language=None):
-    creator = get_gcd_object(Creator, creator_id)
-    creator_names = creator.creator_names.filter(deleted=False)
+                      country=None, language=None,
+                      creator_name=False, signature=False):
+    if creator_name:
+        creator = get_gcd_object(CreatorNameDetail, creator_id)
+        creator_names = CreatorNameDetail.objects.filter(id=creator_id)
+    elif signature:
+        signature = get_gcd_object(CreatorSignature, creator_id)
+        creator = signature.creator
+        creator_names = creator.creator_names.filter(deleted=False)
+    else:
+        creator = get_gcd_object(Creator, creator_id)
+        creator_names = creator.creator_names.filter(deleted=False)
 
     stories = Story.objects.filter(credits__creator__in=creator_names,
                                    credits__deleted=False).distinct()\
@@ -234,6 +243,13 @@ def creator_sequences(request, creator_id, series_id=None,
         stories = stories.filter(issue__series__id=series_id)
         heading = 'Sequences for Creator %s in Series %s' % (creator,
                                                              series)
+    elif creator_name:
+        heading = 'Sequences for Name %s of Creator %s' % (creator,
+                                                           creator.creator)
+    elif signature:
+        stories = stories.filter(credits__signature=signature)
+        heading = 'Sequences for Signature %s of Creator %s' % (signature,
+                                                                creator)
     else:
         heading = 'Sequences for Creator %s' % (creator)
 

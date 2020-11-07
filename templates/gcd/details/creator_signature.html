@@ -18,6 +18,9 @@
         <dt> Signature:
         <dd><img src="{{ creator_signature.signature.scaled_image.url }}">
         {% endif %}
+          <ul style="columns: 2;">
+            <li><a href='{% url "creator_signature_sequences" creator_id=creator_signature.id %}'>Sequences List (via linked credit records)</a></li>
+          </ul>
         {% if creator_signature.notes %}
         <dt>Notes
         <dd>{{ creator_signature.notes }}

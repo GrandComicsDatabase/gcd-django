@@ -130,6 +130,9 @@ urlpatterns = [
     url(r'^creator/name/(?P<creator_name>.+)/$',
       gcd_views.search.creator_by_name,
       name='creator_by_name'),
+    url(r'^creator_name/(?P<creator_id>\d+)/sequences/$',
+        gcd_views.details.creator_sequences, {'creator_name': True },
+        name='creator_name_sequences'),
 
     url(r'^creator_membership/(?P<creator_membership_id>\d+)/$',
       gcd_views.details.creator_membership, name='show_creator_membership'),
@@ -174,8 +177,12 @@ urlpatterns = [
       gcd_views.details.creator_school, name='show_creator_school'),
     url(r'^creator_degree/(?P<creator_degree_id>\d+)/$',
       gcd_views.details.creator_degree, name='show_creator_degree'),
+
     url(r'^creator_signature/(?P<creator_signature_id>\d+)/$',
       gcd_views.details.creator_signature, name='show_creator_signature'),
+    url(r'^creator_signature/(?P<creator_id>\d+)/sequences/$',
+        gcd_views.details.creator_sequences, {'signature': True},
+        name='creator_signature_sequences'),
 
     url(r'^imprint/(?P<imprint_id>\d+)/$', gcd_views.details.imprint,
       name='show_imprint'),
