@@ -85,7 +85,7 @@
           <hr>
           <h3>Name:</h3>
           <ol>
-            {{ gcd_name.name }}
+            <a href="{% url 'creator_name_sequences' creator_id=gcd_name.id %}">{{ gcd_name.name }}</a>
             <strong>Type</strong>: {{ gcd_name.type }}<br>
   {% if gcd_name.given_name %}
             <strong>Given name</strong>: {{ gcd_name.given_name }}
