@@ -45,6 +45,10 @@
           <dd> {{ printer.indicia_printer_count }}
 {% endif %}
           <p>
+	  <ul style="columns: 2;">
+          <li><a href='{% url "printer_issues" printer_id=printer.id %}'>Issue List</a></li>
+          </ul>
+
 {% if printer.url or printer.notes or printer.has_keywords %}
         </dl>
         <dl style="margin-top: -0.5em" class="pub_data">

@@ -101,8 +101,12 @@ urlpatterns = [
     # Printer
     url(r'^printer/(?P<printer_id>\d+)/$',
       gcd_views.details.printer, name='show_printer'),
+    url(r'^printer/(?P<printer_id>\d+)/issues/$',
+      gcd_views.details.printer_issues, name='printer_issues'),
     url(r'^indicia_printer/(?P<indicia_printer_id>\d+)/$',
       gcd_views.details.indicia_printer, name='show_indicia_printer'),
+    url(r'^indicia_printer/(?P<indicia_printer_id>\d+)/issues/$',
+        gcd_views.details.indicia_printer_issues, name='indicia_printer_issues'),
 
     url(r'^award/(?P<award_id>\d+)/$',
       gcd_views.details.award, name='show_award'),
@@ -250,7 +254,7 @@ urlpatterns = [
       gcd_views.details.issue_images, name='issue_images'),
 
     # Feature
-    url(r'^feature/(?P<feature_id>\d+)/issue_list/$',
+    url(r'^feature/(?P<feature_id>\d+)/issues/$',
       gcd_views.details.feature_issuelist_by_id, name='feature_issuelist_by_id'),
     url(r'^feature/(?P<feature_id>\d+)/creator_list/$',
       gcd_views.details.feature_creatorlist, name='feature_creatorlist'),

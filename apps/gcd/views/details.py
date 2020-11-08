@@ -924,6 +924,25 @@ def show_printer(request, printer, preview=False):
     return render(request, 'gcd/details/printer.html', vars)
 
 
+def printer_issues(request, printer_id):
+    printer = get_gcd_object(Printer, printer_id)
+
+    issues = Issue.objects.filter(indicia_printer__parent=printer,
+                                  deleted=False).distinct()\
+                          .select_related('series__publisher')
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for Printer %s' % (printer)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
 def indicia_printer(request, indicia_printer_id):
     """
     Display the details page for an Indicia Printer.
@@ -937,6 +956,25 @@ def show_indicia_printer(request, indicia_printer, preview=False):
                'error_subject': '%s' % indicia_printer,
                'preview': preview}
     return render(request, 'gcd/details/indicia_printer.html', context)
+
+
+def indicia_printer_issues(request, indicia_printer_id):
+    indicia_printer = get_gcd_object(IndiciaPrinter, indicia_printer_id)
+
+    issues = Issue.objects.filter(indicia_printer=indicia_printer,
+                                  deleted=False).distinct()\
+                          .select_related('series__publisher')
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for Indicia Printer %s' % (indicia_printer)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
 
 
 def series(request, series_id):
