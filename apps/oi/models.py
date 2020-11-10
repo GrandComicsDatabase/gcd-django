@@ -4929,6 +4929,7 @@ class StoryRevision(Revision):
             revision.first_line = ''
             credits = credits.exclude(credit_type_id=CREDIT_TYPES['letters'])
             revision.feature_object.clear()
+            revision.feature_logo.clear()
         revision.save()
         for credit in credits:
             StoryCreditRevision.clone(credit, revision.changeset,
