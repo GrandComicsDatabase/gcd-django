@@ -2,7 +2,7 @@
 from django.db import models
 from functools import total_ordering
 
-BOND_TRACKING = {1, 2, 3, 4, 5, 6}
+BOND_TRACKING = {1, 2, 3, 4, 5, 6, 7}
 SUBNUMBER_TRACKING = 4
 MERGE_TRACKING = {5, 6}
 
