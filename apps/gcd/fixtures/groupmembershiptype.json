@@ -1,0 +1,23 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.groupmembershiptype",
+        "fields": {
+            "type": "formal"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.groupmembershiptype",
+        "fields": {
+            "type": "associated"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.groupmembershiptype",
+        "fields": {
+            "type": "uncertain"
+        }
+    }
+]

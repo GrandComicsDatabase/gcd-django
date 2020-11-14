@@ -267,6 +267,12 @@ urlpatterns = [
     url(r'^feature_relation/(?P<feature_relation_id>\d+)/$',
       gcd_views.details.feature_relation, name='show_feature_relation'),
 
+    # Character
+    url(r'^character/(?P<character_id>\d+)/$',
+      gcd_views.details.character, name='show_character'),
+    url(r'^group/(?P<group_id>\d+)/$',
+      gcd_views.details.group, name='show_group'),
+
     # Attribute searches
     url(r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
       gcd_views.search.character_by_name, name='character_by_name'),

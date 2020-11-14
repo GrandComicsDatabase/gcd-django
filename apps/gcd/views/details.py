@@ -33,7 +33,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CreatorRelation, CreatorSchool, CreatorNameDetail,\
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
-                            Printer, IndiciaPrinter, School, Story
+                            Printer, IndiciaPrinter, School, Story, Character, Group
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
@@ -1934,6 +1934,36 @@ def show_feature_relation(request, feature_relation, preview=False):
             'error_subject': feature_relation,
             'preview': preview}
     return render(request, 'gcd/details/feature_relation.html', vars)
+
+
+def character(request, character_id):
+    """
+    Display the details page for a Character.
+    """
+    character = get_gcd_object(Character, character_id)
+    return show_character(request, character)
+
+
+def show_character(request, character, preview=False):
+    vars = {'character': character,
+            'error_subject': '%s' % character,
+            'preview': preview}
+    return render(request, 'gcd/details/character.html', vars)
+
+
+def group(request, group_id):
+    """
+    Display the details page for a Group.
+    """
+    group = get_gcd_object(Group, group_id)
+    return show_group(request, group)
+
+
+def show_group(request, group, preview=False):
+    vars = {'group': group,
+            'error_subject': '%s' % group,
+            'preview': preview}
+    return render(request, 'gcd/details/group.html', vars)
 
 
 def cover(request, issue_id, size):

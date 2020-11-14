@@ -1,0 +1,107 @@
+{% extends "gcd/base_content.html" %}
+
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Character :: {{ character.name }}
+{% endblock %}
+
+{% block content_header %}
+<h1 class="item_id">
+  <div class="left">
+    {{ character.name }}
+  </div>
+</h1>
+<div class="item_id">
+  <div class="flex_left">
+    {{ character.language }}
+  </div>
+</div>
+{% endblock content_header %}
+
+{% block content %}
+      <dl class="pub_data">
+{% if character.year_first_published %}
+        <p><strong>First published in:</strong> {{ character.display_year_first_published }}</p>
+{% endif %}
+{% if character.description %}
+        <dt> Description:
+        <dd> {{ character.description|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+{% if character.notes %}
+        <dt> Notes:
+        <dd> {{ character.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+<p>{{ character|show_credit:'keywords' }}</P>
+      </dl>
+
+  {% if character.active_relations %}
+        <hr>
+        <h3>Relations:</h3>
+        {% if character.active_relations.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for relation in character.active_relations %}
+      {% with relation_info=relation|pre_process_relation:character %}
+        <li style="page-break-inside: avoid;">
+          {{ relation_info.1 }} - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
+        {% if relation.notes %}
+          <br><strong>Notes: </strong>{{ relation.notes }}
+        {% endif %}
+        </li>
+      {% endwith %}
+    {% endfor %}
+          </ol>
+  {% endif %}
+
+  {% if character.active_memberships %}
+        <hr>
+        <h3>Group Memberships:</h3>
+        {% if character.active_memberships.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for membership in character.active_memberships %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group }}</a> ({{ membership.membership_type }})
+        {{ membership.display_years }}
+        {% if membership.notes %}
+          <br><strong>Notes: </strong>{{ membership.notes }}
+        {% endif %}
+        </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
+
+{% endblock content %}
+
+{% block edit_box %}
+ {% if not preview %}
+   {% with object=character object_class='character' object_name='Character' %}
+     {% include "gcd/bits/status_banner.html" %}
+   {% endwith %}
+ {% endif %}
+ {% if request.user.is_authenticated %}
+  <form method="GET"
+        action="{% url "add_character_relation" character_id=character.id %}">
+      <input name="add_character_relation" type="submit" value="Add Relation"/>
+  </form>
+  <form method="GET"
+        action="{% url "add_group_membership" character_id=character.id %}">
+      <input name="add_group_membership" type="submit" value="Add Group Membership"/>
+  </form>
+  {% endif %}
+{% endblock edit_box %}
+
+{% block change_history %}
+  {% if preview %}
+    <a href="{% url "change_history" model_name='character' id=character.source.id %}">View Change History</a>
+  {% else %}
+    <a href="{% url "change_history" model_name='character' id=character.id %}">View Change History</a>
+  {% endif %}
+{% endblock change_history %}

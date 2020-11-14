@@ -1,0 +1,42 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.characterrelationtype",
+        "fields": {
+            "type": "republished as",
+            "reverse_type": "originally published as"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.characterrelationtype",
+        "fields": {
+            "type": "alias of",
+            "reverse_type": "secret identity of"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.characterrelationtype",
+        "fields": {
+            "type": "alternate universe version of",
+            "reverse_type": "alternate universe version of"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.characterrelationtype",
+        "fields": {
+            "type": "identity also held by",
+            "reverse_type": "identity also held by"
+        }
+    },
+    {
+        "pk": 5,
+        "model": "gcd.characterrelationtype",
+        "fields": {
+            "type": "younger version of",
+            "reverse_type": "older version of"
+        }
+    }
+]

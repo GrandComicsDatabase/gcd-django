@@ -31,7 +31,8 @@ from apps.gcd.models import (
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
     CreatorRelation, CreatorSchool, CreatorNameDetail, NameType, SourceType,
     STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
-    IndiciaPrinter, CreatorSignature)
+    IndiciaPrinter, CreatorSignature, Character, CharacterRelation, Group,
+    GroupMembership)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
@@ -56,7 +57,8 @@ from apps.oi.models import (
     CreatorNameDetailRevision, CreatorMembershipRevision, ReceivedAwardRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision, FeatureRevision,
     CreatorSchoolRevision, CreatorDegreeRevision, FeatureLogoRevision,
-    CreatorRelationRevision, PreviewBrand, PreviewIssue, PreviewStory,
+    CreatorRelationRevision, CharacterRevision, CharacterRelationRevision,
+    GroupRevision, GroupMembershipRevision, PreviewBrand, PreviewIssue, PreviewStory,
     PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
@@ -85,6 +87,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            CreatorRevisionFormSet,
                            CreatorArtInfluenceRevisionForm,
                            CreatorMembershipRevisionForm,
+                           GroupMembershipRevisionForm,
                            ReceivedAwardRevisionForm,
                            CreatorNonComicWorkRevisionForm,
                            CreatorRelationRevisionForm,
@@ -116,6 +119,10 @@ REVISION_CLASSES = {
     'feature': FeatureRevision,
     'feature_logo': FeatureLogoRevision,
     'feature_relation': FeatureRelationRevision,
+    'character': CharacterRevision,
+    'character_relation': CharacterRelationRevision,
+    'group': GroupRevision,
+    'group_membership': GroupMembershipRevision,
     'cover': CoverRevision,
     'reprint': ReprintRevision,
     'image': ImageRevision,
@@ -148,6 +155,10 @@ DISPLAY_CLASSES = {
     'feature': Feature,
     'feature_logo': FeatureLogo,
     'feature_relation': FeatureRelation,
+    'character': Character,
+    'character_relation': CharacterRelation,
+    'group': Group,
+    'group_membership': GroupMembership,
     'cover': Cover,
     'reprint': Reprint,
     'reprint_to_issue': ReprintToIssue,
@@ -2413,7 +2424,7 @@ def _display_bulk_issue_form(request, series, form, method=None):
 @permission_required('indexer.can_reserve')
 def add_generic(request, model_name,
                 object_url='', object_name=None,
-                cancel='', save_kwargs={}):
+                initial={}, cancel='', save_kwargs={}):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
@@ -2423,7 +2434,8 @@ def add_generic(request, model_name,
         return HttpResponseRedirect(urlresolvers.reverse('add'))
 
     form = get_revision_form(model_name=model_name,
-                             user=request.user)(request.POST or None)
+                             user=request.user)(request.POST or None,
+                                                initial=initial)
     if form.is_valid():
         changeset = Changeset(indexer=request.user, state=states.OPEN,
                               change_type=CTYPES[model_name])
@@ -2534,6 +2546,87 @@ def add_feature_relation(request, feature_id):
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
+
+
+def add_character(request):
+    return add_generic(request, 'character')
+
+
+def add_group(request):
+    return add_generic(request, 'group')
+
+
+@permission_required('indexer.can_reserve')
+def add_character_relation(request, character_id):
+    character = get_object_or_404(Character, id=character_id, deleted=False)
+
+    if character.pending_deletion():
+        return render_error(request, 'Cannot add Relation for '
+                                     'character "%s" since the record is '
+                                     'pending deletion.' % character)
+
+    initial = {}
+    initial['from_character'] = character_id
+
+    cancel = urlresolvers.reverse('show_character',
+                                  kwargs={'character_id': character_id})
+    object_url = urlresolvers.reverse('add_character_relation',
+                                       kwargs={'character_id': character_id})
+    return add_generic(request,
+                       'character_relation',
+                       initial=initial,
+                       object_url=object_url,
+                       object_name='Relation with Character',
+                       cancel=cancel)
+
+
+@permission_required('indexer.can_reserve')
+def add_group_membership(request, character_id):
+    character = get_object_or_404(Character, id=character_id, deleted=False)
+
+    if character.pending_deletion():
+        return render_error(request, 'Cannot add Group Membership '
+                                     'since character"%s" is deleted or '
+                                     'pending deletion.' % character)
+
+    initial = {}
+    initial['character'] = Character.objects.get(id=character.id,
+                                                 deleted=False).id
+
+    cancel = urlresolvers.reverse('show_character',
+                                  kwargs={'character_id': character_id})
+    object_url = urlresolvers.reverse('add_group_membership',
+                                      kwargs={'character_id': character_id})
+    return add_generic(request,
+                       'group_membership',
+                       initial=initial,
+                       object_url=object_url,
+                       object_name = 'Group Membership for a Character',
+                       cancel=cancel)
+
+
+@permission_required('indexer.can_reserve')
+def add_group_member(request, group_id):
+    group = get_object_or_404(Group, id=group_id, deleted=False)
+
+    if group.pending_deletion():
+        return render_error(request, 'Cannot add Members '
+                                     'since group "%s" is deleted or '
+                                     'pending deletion.' % groupcharacter)
+
+    initial = {}
+    initial['group'] = Group.objects.get(id=group.id, deleted=False).id
+
+    cancel = urlresolvers.reverse('show_group',
+                                  kwargs={'group_id': group_id})
+    object_url = urlresolvers.reverse('add_group_member',
+                                      kwargs={'group_id': group_id})
+    return add_generic(request,
+                       'group_membership',
+                       initial=initial,
+                       object_url=object_url,
+                       object_name = 'a Member to a Group',
+                       cancel=cancel)
 
 
 @permission_required('indexer.can_reserve')
@@ -4341,6 +4434,10 @@ def show_queue(request, queue_name):
     features = changes.filter(change_type=CTYPES['feature'])
     feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
     feature_relations = changes.filter(change_type=CTYPES['feature_relation'])
+    characters = changes.filter(change_type=CTYPES['character'])
+    character_relations = changes.filter(change_type=CTYPES['character_relation'])
+    groups = changes.filter(change_type=CTYPES['group'])
+    group_memberships = changes.filter(change_type=CTYPES['group_membership'])
     images = changes.filter(change_type=CTYPES['image'])
     countries = dict(Country.objects.values_list('id', 'code'))
     country_names = dict(Country.objects.values_list('id', 'name'))
@@ -4487,8 +4584,28 @@ def show_queue(request, queue_name):
           },
           {
             'object_name': 'Feature Relations',
-            'object_type': 'feature_relations',
+            'object_type': 'feature_relation',
             'changesets': feature_relations.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Characters',
+            'object_type': 'character',
+            'changesets': characters.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Character Relations',
+            'object_type': 'character_relation',
+            'changesets': character_relations.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Groups',
+            'object_type': 'group',
+            'changesets': groups.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Group Memberships',
+            'object_type': 'group_membership',
+            'changesets': group_memberships.order_by('modified', 'id')
           },
           {
             'object_name': 'Issue Skeletons',
@@ -4702,7 +4819,11 @@ def compare(request, id):
                                    CTYPES['creator_school'],
                                    CTYPES['creator_signature']]:
         sourced_fields = {'': 'notes'}
-        
+    elif changeset.change_type == CTYPES['character']:
+        character_name_revisions = changeset.characternamedetailrevisions.all()
+        for character_name_revision in character_name_revisions:
+            revisions_after.append(character_name_revision)
+
     for revision_before in revisions_before:
         revision_before.compare_changes()
     for revision_after in revisions_after:

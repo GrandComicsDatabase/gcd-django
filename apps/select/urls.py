@@ -50,6 +50,16 @@ urlpatterns = [
         name='feature_logo_autocomplete',
     ),
     url(
+        r'^autocomplete/character/$',
+        select_views.CharacterAutocomplete.as_view(),
+        name='character_autocomplete',
+    ),
+    url(
+        r'^autocomplete/group/$',
+        select_views.GroupAutocomplete.as_view(),
+        name='group_autocomplete',
+    ),
+    url(
         r'^autocomplete/indicia_printer/$',
         select_views.IndiciaPrinterAutocomplete.as_view(),
         name='indicia_printer_autocomplete',

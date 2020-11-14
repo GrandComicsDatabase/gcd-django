@@ -187,6 +187,18 @@ urlpatterns = [
     url(r'^feature/(?P<feature_id>\d+)/relation/add/$',
      oi_views.add_feature_relation, name='add_feature_relation'),
 
+    # Character URLs
+    url(r'^character/add/$',
+    oi_views.add_character, name='add_character'),
+    url(r'^group/add/$',
+    oi_views.add_group, name='add_group'),
+    url(r'^character/(?P<character_id>\d+)/membership/add/$',
+     oi_views.add_group_membership, name='add_group_membership'),
+    url(r'^character/(?P<character_id>\d+)/relation/add/$',
+     oi_views.add_character_relation, name='add_character_relation'),
+    url(r'^group/(?P<group_id>\d+)/members/add/$',
+    oi_views.add_group_member, name='add_group_member'),
+
     # Image URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$',
         oi_covers.upload_image,

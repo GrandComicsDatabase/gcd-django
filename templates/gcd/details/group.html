@@ -1,0 +1,82 @@
+{% extends "gcd/base_content.html" %}
+
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Group :: {{ group.name }}
+{% endblock %}
+
+{% block content_header %}
+<h1 class="item_id">
+  <div class="left">
+    {{ group.name }}
+  </div>
+</h1>
+<div class="item_id">
+  <div class="flex_left">
+    {{ group.language }}
+  </div>
+</div>
+{% endblock content_header %}
+
+{% block content %}
+      <dl class="pub_data">
+{% if group.year_first_published %}
+        <p><strong>First published in:</strong> {{ group.display_year_first_published }}</p>
+{% endif %}
+{% if group.description %}
+        <dt> Description:
+        <dd> {{ group.description|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+{% if group.notes %}
+        <dt> Notes:
+        <dd> {{ group.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+<p>{{ group|show_credit:'keywords' }}</P>
+      </dl>
+
+  {% if group.active_members %}
+        <hr>
+        <h3>Group Members:</h3>
+        {% if group.active_members.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for member in group.active_members %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character }}</a> ({{ member.membership_type }})
+        {{ member.display_years }}
+        {% if member.notes %}
+          <br><strong>Notes: </strong>{{ member.notes }}
+        {% endif %}
+        </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
+
+{% endblock content %}
+
+{% block edit_box %}
+ {% if not preview %}
+   {% with object=group object_class='group' object_name='Group' %}
+     {% include "gcd/bits/status_banner.html" %}
+   {% endwith %}
+ {% endif %}
+ {% if request.user.is_authenticated %}
+  <form method="GET"
+        action="{% url "add_group_member" group_id=group.id %}">
+      <input name="add_group_member" type="submit" value="Add Group Member"/>
+  </form>
+  {% endif %}
+{% endblock edit_box %}
+
+{% block change_history %}
+  {% if preview %}
+    <a href="{% url "change_history" model_name='group' id=group.source.id %}">View Change History</a>
+  {% else %}
+    <a href="{% url "change_history" model_name='group' id=group.id %}">View Change History</a>
+  {% endif %}
+{% endblock change_history %}

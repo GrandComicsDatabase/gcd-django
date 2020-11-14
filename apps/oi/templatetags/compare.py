@@ -93,7 +93,7 @@ def field_value(revision, field):
         return yesno(value, 'Yes,No') + res_holder_display
     elif field in ['publisher', 'indicia_publisher', 'series',
                    'origin_issue', 'target_issue', 'award',
-                   'from_feature', 'to_feature']:
+                   'from_feature', 'to_feature', 'character']:
         return absolute_url(value)
     elif field in ['origin', 'target']:
         return value.full_name_with_link()
@@ -136,12 +136,15 @@ def field_value(revision, field):
     elif field in ['indicia_pub_not_printed']:
         return yesno(value, 'Not Printed,Printed')
     elif field == 'group':
-        brand_groups = ''
-        for brand in value.all():
-            brand_groups += absolute_url(brand) + '; '
-        if brand_groups:
-            brand_groups = brand_groups[:-2]
-        return mark_safe(brand_groups)
+        if revision.source_name == 'brand':
+            brand_groups = ''
+            for brand in value.all():
+                brand_groups += absolute_url(brand) + '; '
+            if brand_groups:
+                brand_groups = brand_groups[:-2]
+            return mark_safe(brand_groups)
+        else:
+            return absolute_url(value)
     elif field == 'indicia_printer':
         printers = ''
         for printer in value.all():

@@ -2,7 +2,7 @@
 <form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
   <table class="editing">
-  {% if changeset.change_type == CTYPES.creator %}
+  {% if form.helper %}
     {% crispy form %}
   {% else %}
     {{ form.as_table }}

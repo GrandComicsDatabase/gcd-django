@@ -28,6 +28,10 @@ from .story import (get_story_revision_form, get_biblio_revision_form,
 from .feature import (get_feature_revision_form,
                       get_feature_logo_revision_form,
                       get_feature_relation_revision_form)
+from .character import (get_character_revision_form, get_group_revision_form,
+                        get_group_membership_revision_form,
+                        get_character_relation_revision_form,
+                        GroupMembershipRevisionForm)
 from .image import (get_cover_revision_form,
                     UploadScanForm,
                     UploadVariantScanForm,
@@ -114,6 +118,18 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'feature_relation':
         return get_feature_relation_revision_form(revision, **kwargs)
+
+    if model_name == 'character':
+        return get_character_revision_form(revision, **kwargs)
+
+    if model_name == 'character_relation':
+        return get_character_relation_revision_form(revision, **kwargs)
+
+    if model_name == 'group':
+        return get_group_revision_form(revision, **kwargs)
+
+    if model_name == 'group_membership':
+        return get_group_membership_revision_form(revision, **kwargs)
 
     if model_name == 'biblio_entry':
         return get_biblio_revision_form(revision, **kwargs)

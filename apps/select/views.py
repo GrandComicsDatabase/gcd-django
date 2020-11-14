@@ -17,7 +17,7 @@ from dal import autocomplete
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
-                            STORY_TYPES
+                            Character, Group, STORY_TYPES
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -549,6 +549,36 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
                 qs = qs.exclude(feature__feature_type__id=2)
             if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
                 qs = qs.exclude(feature__feature_type__id=3)
+
+        qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class CharacterAutocomplete(LoginRequiredMixin,
+                            autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Character.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+
+        if language:
+            qs = qs.filter(language__code__in=[language, 'zxx'])
+
+        qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class GroupAutocomplete(LoginRequiredMixin,
+                        autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Group.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+
+        if language:
+            qs = qs.filter(language__code__in=[language, 'zxx'])
 
         qs = _filter_and_sort(qs, self.q)
 
