@@ -3,7 +3,8 @@ from haystack import indexes
 from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
-    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature, Printer
+    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature, Printer,\
+    Character, Group
 
 from apps.oi.models import on_sale_date_fields
 
@@ -301,6 +302,58 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_facet_model_name(self, obj):
         return "feature"
+
+
+class CharacterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/character_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
+    year = indexes.IntegerField()
+    language = indexes.CharField(model_attr='language__code',
+                                 faceted=True, indexed=False)
+
+    def prepare_year(self, obj):
+        if obj.year_first_published:
+            return obj.year_first_published
+        else:
+            return 9999
+
+    def get_model(self):
+        return Character
+
+    def prepare_facet_model_name(self, obj):
+        return "character"
+
+
+class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/group_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
+    year = indexes.IntegerField()
+    language = indexes.CharField(model_attr='language__code',
+                                 faceted=True, indexed=False)
+
+    def prepare_year(self, obj):
+        if obj.year_first_published:
+            return obj.year_first_published
+        else:
+            return 9999
+
+    def get_model(self):
+        return Group
+
+    def prepare_facet_model_name(self, obj):
+        return "group"
 
 
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):

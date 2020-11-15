@@ -185,6 +185,14 @@
                 <td>[FEATURE]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
+            {% if result.model_name == 'character' %}
+                <td>[CHARACTER]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'group' %}
+                <td>[GROUP]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+            {% endif %}
             {% if result.model_name == 'publisher' %}
                 <td>[PUBLISHER]</td>
                 <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
