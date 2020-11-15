@@ -59,7 +59,7 @@ class CharacterGroupBase(GcdData):
     sort_name = models.CharField(max_length=255, db_index=True, default='')
     disambiguation = models.CharField(max_length=255, db_index=True)
 
-    year_first_published = models.IntegerField(db_index=True)
+    year_first_published = models.IntegerField(db_index=True, null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
     description = models.TextField()
@@ -104,7 +104,9 @@ class Character(CharacterGroupBase):
                self.to_related_character.all()
 
     def active_memberships(self):
-        return self.memberships.all()
+        return self.memberships.all().order_by('year_joined',
+                                               'group__sort_name')
+
 
     # def stat_counts(self):
     #     """
@@ -163,7 +165,8 @@ class Group(CharacterGroupBase):
         verbose_name_plural = 'Groups'
 
     def active_members(self):
-        return self.members.all()
+        return self.members.all().order_by('year_joined',
+                                           'character__sort_name')
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
