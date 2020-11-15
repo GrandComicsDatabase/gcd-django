@@ -6093,7 +6093,8 @@ class CharacterGroupRevisionBase(Revision):
     sort_name = models.CharField(max_length=255, default='')
     disambiguation = models.CharField(max_length=255, db_index=True, blank=True)
 
-    year_first_published = models.IntegerField(db_index=True)
+    year_first_published = models.IntegerField(db_index=True, null=True,
+                                               blank=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
     description = models.TextField(blank=True)
@@ -6273,7 +6274,7 @@ class CharacterNameDetailRevision(Revision):
         self.character_revision = character_revision
 
     def _post_create_for_add(self, changes):
-        self.creator = self.character_revision.creator
+        self.character = self.character_revision.character
 
     def __str__(self):
         return '%s - %s' % (
