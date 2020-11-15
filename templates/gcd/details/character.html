@@ -36,6 +36,20 @@ GCD :: Character :: {{ character.name }}
 {% endif %}
 <p>{{ character|show_credit:'keywords' }}</P>
       </dl>
+  {% if character.active_names %}
+          <h3>Additional Names:</h3>
+    {% if  character.active_names.count > 1 %}
+          <ol style="columns: 2;">
+    {% else %}
+          <ol>
+    {% endif %}
+    {% for name in character.active_names %}
+            <li style="page-break-inside: avoid;">
+              {{ name.name }}
+            </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
 
   {% if character.active_relations %}
         <hr>
