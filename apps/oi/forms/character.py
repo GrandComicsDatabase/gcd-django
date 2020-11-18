@@ -19,7 +19,8 @@ from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
                             GroupMembershipRevision, remove_leading_article)
 
 from .support import (_set_help_labels, _clean_keywords,
-                      _get_comments_form_field, HiddenInputWithHelp)
+                      _get_comments_form_field, HiddenInputWithHelp,
+                      GENERIC_ERROR_MESSAGE)
 
 class CharacterNameDetailRevisionForm(forms.ModelForm):
     class Meta:

@@ -2590,8 +2590,8 @@ def add_group_membership(request, character_id):
                                      'pending deletion.' % character)
 
     initial = {}
-    initial['character'] = Character.objects.get(id=character.id,
-                                                 deleted=False).id
+    initial['character'] = character.id
+    initial['language_code'] = character.language.code
 
     cancel = urlresolvers.reverse('show_character',
                                   kwargs={'character_id': character_id})
@@ -2615,8 +2615,8 @@ def add_group_member(request, group_id):
                                      'pending deletion.' % groupcharacter)
 
     initial = {}
-    initial['group'] = Group.objects.get(id=group.id, deleted=False).id
-
+    initial['group'] = group_id
+    initial['language_code'] = group.language.code
     cancel = urlresolvers.reverse('show_group',
                                   kwargs={'group_id': group_id})
     object_url = urlresolvers.reverse('add_group_member',
