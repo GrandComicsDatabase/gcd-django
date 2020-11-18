@@ -121,7 +121,15 @@ class GroupRevisionForm(CharacterRevisionForm):
 
 
 def get_group_membership_revision_form(revision=None, user=None):
+    if revision is not None:
+        code = revision.character.language.code
+    else:
+        code = None
+
     class RuntimeGroupMembershipRevisionForm(GroupMembershipRevisionForm):
+        language_code = forms.CharField(widget=forms.HiddenInput,
+                                        initial=code)
+
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
             #     _set_help_labels(self, CREATOR_MEMBERSHIP_HELP_LINKS)
@@ -141,12 +149,14 @@ class GroupMembershipRevisionForm(forms.ModelForm):
     character = forms.ModelChoiceField(
         queryset=Character.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='character_autocomplete',
+                                         forward=['language_code'],
                                          attrs={'style': 'min-width: 45em'}),
     )
 
     group = forms.ModelChoiceField(
         queryset=Group.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='group_autocomplete',
+                                         forward=['language_code'],
                                          attrs={'style': 'min-width: 45em'}),
     )
 
