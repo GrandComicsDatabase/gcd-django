@@ -514,6 +514,8 @@ class IssueColumn(tables.Column):
         query_set = query_set.annotate(series_name=F('series__sort_name'))
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'series_name',
+                                       'series__year',
+                                       'series__id',
                                        direction + 'sort_code')
         return (query_set, True)
 
@@ -626,7 +628,7 @@ class BrandEmblemIssueTable(IssueTable):
         return mark_safe(return_val)
 
 
-class BrandGroupIssueTable(BrandEmblemIssueTable):
+class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
     def __init__(self, *args, **kwargs):
         self.brand = kwargs.pop('brand')
         super(BrandEmblemIssueTable, self).__init__(*args, **kwargs)
@@ -640,4 +642,12 @@ class BrandGroupIssueTable(BrandEmblemIssueTable):
             return_val += " (%s%s)" % (get_country_flag(record.series.publisher
                                                                      .country),
                                        absolute_url(record.series.publisher))
+        return mark_safe(return_val)
+
+
+class PublisherIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
+    def render_indicia_publisher(self, record):
+        from apps.gcd.templatetags.display import absolute_url,\
+                                                  show_indicia_pub
+        return_val = show_indicia_pub(record)
         return mark_safe(return_val)

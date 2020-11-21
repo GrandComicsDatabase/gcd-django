@@ -38,7 +38,7 @@ from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
                                   IndiciaPublisherIssueTable,\
-                                  IssuePublisherTable
+                                  IssuePublisherTable, PublisherIssueTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable
 from apps.gcd.models.story import CORE_TYPES, AD_TYPES, StoryTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
@@ -637,6 +637,23 @@ def show_publisher(request, publisher, preview=False):
     return render(request, 'gcd/details/publisher.html', vars)
 
 
+def show_publisher_issues(request, publisher_id):
+    publisher = get_gcd_object(Publisher, publisher_id)
+    issues = Issue.objects.filter(series__publisher=publisher,
+                                  deleted=False).order_by(
+      'series__sort_name', 'sort_code').prefetch_related('series', 'brand',
+                                                         'indicia_publisher')
+    context = {'object': publisher,
+               'description': 'showing all issues'
+               }
+
+    table = PublisherIssueTable(
+      issues, attrs={'class': 'sortable_listing'},
+      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    return generic_sortable_list(request, issues, table,
+                                 'gcd/bits/generic_list.html', context)
+
+
 def publisher_monthly_covers(request,
                              publisher_id,
                              year=None,
@@ -752,7 +769,7 @@ def brand_group(request, brand_group_id):
 
 def show_brand_group(request, brand_group, preview=False):
     brand_issues = brand_group.active_issues().order_by(
-      'series__sort_name', 'sort_code').prefetch_related('series',
+      'series__sort_name', 'sort_code').prefetch_related('series', 'brand',
                                                          'indicia_publisher')
 
     brand_emblems = brand_group.active_emblems()

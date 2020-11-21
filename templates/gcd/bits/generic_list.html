@@ -1,0 +1,40 @@
+{% extends "gcd/base_view.html" %}
+
+{% load staticfiles %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+{% load editing %}
+{% load django_tables2 %}
+
+{% block title %}
+GCD
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+<h1 class="item_id">
+  <div class="left">
+    <a href="{{ object.get_absolute_url }}">{{ object }}</a>
+  </div>
+</h1>
+
+  <div class="item_id">
+  <div class="flex_left">{{ description }}</div>
+  <div class="flex_right">{% include "gcd/bits/pagination_bar.html" %}</div>
+  </div>
+
+<div style="clear: both;"></div>
+{% render_table table %}
+
+  <div id="item_id_footer" class="item_id">
+  <div class="flex_right">{% include "gcd/bits/pagination_bar.html" %}</div>
+  </div>
+{% endblock %}
+

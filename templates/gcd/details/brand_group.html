@@ -95,6 +95,7 @@ GCD :: Brand Group :: {{ brand.name }}
   </div> <!-- control_container -->
 </div> <!-- control_body -->
 
+{% if page.number == 1 %}
 <hr>
 <h3>Used brand emblems:</h3>
 <table id="publisher_detail_listing" class="listing">
@@ -117,6 +118,7 @@ GCD :: Brand Group :: {{ brand.name }}
   </tr>
 {% endfor %}
 </table>
+{% endif %}
 
 <div style="clear: both;"></div>
 {% render_table table %}
