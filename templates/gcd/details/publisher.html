@@ -63,12 +63,12 @@
 {% endif %}
           <p>
           <dt> Total Number of Series:
-          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode }}">{{ publisher.series_count }}</a>
+          <dd> {{ publisher.series_count }}
           <dt> Total Number of Issues:
-          <dd> <a href="/search/advanced/process/?target=issue&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode }}">{{ publisher.issue_count }}</a>
+          <dd> <a href="{{ publisher.get_absolute_url }}issues/">{{ publisher.issue_count }}</a>
 {% if not publisher.year_ended %}
           <dt> Number of Current Series:
-          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode  }}&is_current=on">{{ current.count }}</a>
+          <dd> <a href="{{ publisher.get_absolute_url }}current_series/">{{ current.count }}</a>
 {% endif %}
           <dt> Show Covers by Month:
           <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>

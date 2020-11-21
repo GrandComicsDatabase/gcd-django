@@ -654,6 +654,21 @@ def show_publisher_issues(request, publisher_id):
                                  'gcd/bits/generic_list.html', context)
 
 
+def show_publisher_current_series(request, publisher_id):
+    publisher = get_gcd_object(Publisher, publisher_id)
+    current_series = publisher.active_series().filter(deleted=False,
+                                                      is_current=True)
+
+    context = {'object': publisher,
+               'description': 'showing current series'
+               }
+    table = SeriesTable(current_series, attrs={'class': 'sortable_listing'},
+                        template_name='gcd/bits/sortable_table.html',
+                        order_by=('name'))
+    return generic_sortable_list(request, current_series, table,
+                                 'gcd/bits/generic_list.html', context)
+
+
 def publisher_monthly_covers(request,
                              publisher_id,
                              year=None,

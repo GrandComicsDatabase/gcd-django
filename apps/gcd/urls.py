@@ -55,6 +55,8 @@ urlpatterns = [
       gcd_views.details.brand_uses),
     url(r'^publisher/(?P<publisher_id>\d+)/issues/$',
       gcd_views.details.show_publisher_issues),
+    url(r'^publisher/(?P<publisher_id>\d+)/current_series/$',
+      gcd_views.details.show_publisher_current_series),
     url(r'^publisher/(?P<publisher_id>\d+)/monthly_covers_on_sale/$',
       gcd_views.details.publisher_monthly_covers,
       {'use_on_sale': True }, name='publisher_monthly_covers_on_sale'),
