@@ -1210,6 +1210,35 @@ def series_creatorlist(request, series_id):
     return generic_sortable_list(request, creators, table, template, context)
 
 
+def keyword(request, keyword, model_name='story'):
+    """
+    Display the objects associated to a keyword.
+    """
+    from apps.oi.views import DISPLAY_CLASSES
+    if model_name not in ['story', 'issue']:
+        return render(
+            request, 'indexer/error.html',
+            {'error_text':
+                 'There are no keyword-lists for these objects.'})
+
+    objs = DISPLAY_CLASSES[model_name].objects.filter(keywords__name=keyword)
+    if model_name == 'story':
+        table = StoryTable(objs, attrs={'class': 'sortable_listing'},
+                            template_name='gcd/bits/sortable_table.html',
+                            order_by=('name'))
+        description = 'showing %d stories for keyword' % objs.count()
+    elif model_name == 'issue':
+        table = IssuePublisherTable(objs, attrs={'class': 'sortable_listing'},
+                                    template_name='gcd/bits/sortable_table.html',
+                                    order_by=('name'))
+        description = 'showing %d issues for keyword' % objs.count()
+    context = {'object': keyword,
+               'description': description
+               }
+    return generic_sortable_list(request, objs, table,
+                                 'gcd/bits/generic_list.html', context)
+
+
 def change_history(request, model_name, id):
     """
     Displays the change history of the given object of the type

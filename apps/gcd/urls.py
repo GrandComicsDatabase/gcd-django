@@ -277,6 +277,12 @@ urlpatterns = [
     url(r'^group/(?P<group_id>\d+)/$',
       gcd_views.details.group, name='show_group'),
 
+    # Keywords
+    url(r'^keyword/(?P<keyword>.+)/(?P<model_name>.+)/$',
+      gcd_views.details.keyword, name='show_keyword'),
+    url(r'^keyword/(?P<keyword>.+)/$',
+      gcd_views.details.keyword, name='show_keyword'),
+
     # Attribute searches
     url(r'^character/name/(?P<character_name>.+)/sort/(?P<sort>.+)/$',
       gcd_views.search.character_by_name, name='character_by_name'),

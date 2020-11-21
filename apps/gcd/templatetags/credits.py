@@ -7,6 +7,7 @@ from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+import django.urls as urlresolvers
 
 from apps.stddata.models import Country, Language
 from apps.gcd.models.story import AD_TYPES, Story
@@ -240,7 +241,8 @@ def __format_credit(story, credit):
             credit_value += '<li>' + esc(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
-        credit_value = __format_keywords(story.keywords)
+        credit_value = __format_keywords(story.keywords,
+                                         model_name=story._meta.model_name)
         if credit_value == '':
             return ''
     elif credit == 'feature_logo':
@@ -321,13 +323,18 @@ def show_creator_credit(story, credit_type, url=True):
         return credit_value
 
 
-def __format_keywords(keywords, join_on='; '):
+def __format_keywords(keywords, join_on='; ', model_name='story'):
     if type(keywords) == str:
         credit_value = keywords
     else:
-        credit_value = esc(
-            join_on.join(str(i) for i in keywords.all().order_by('name')))
-    return credit_value
+        keyword_list = list()
+        for i in keywords.all().order_by('name'):
+            keyword_list.append('<a href="%s%s/">%s</a>' % (
+                                urlresolvers.reverse('show_keyword',
+                                                     kwargs={'keyword': i}),
+                                esc(model_name), esc(i)))
+        credit_value = join_on.join(str(i) for i in keyword_list)
+    return mark_safe(credit_value)
 
 
 @register.filter
