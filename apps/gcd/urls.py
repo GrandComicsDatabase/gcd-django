@@ -408,7 +408,10 @@ urlpatterns = [
     # calendar
     url(r'^calendar/$',
      bv.TemplateView.as_view(template_name='gcd/status/calendar.html')),
-    url(r'daily_creators/$', gcd_views.details.daily_creators),
+    url(r'daily_creators/offset/(?P<offset>[-+]?\d{1,3})/$',
+      gcd_views.details.daily_creators),
+    url(r'daily_creators/$', gcd_views.details.daily_creators,
+     name='daily_creators'),
 
     # GCD comics history award
     url(r'^gcd_history_award/$',

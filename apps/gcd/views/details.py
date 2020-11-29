@@ -2277,8 +2277,22 @@ def show_issue(request, issue, preview=False):
        })
 
 
-def daily_creators(request):
+def daily_creators(request, offset=0):
     today = datetime.today()
+    if offset:
+        fetched_day = datetime.today() + timedelta(int(offset))
+        day = '%0.2d' % (fetched_day).day
+        month = '%0.2d' % (fetched_day).month
+        creators = Creator.objects.filter(birth_date__day=day,
+                                          birth_date__month=month,
+                                          deleted=False)
+        return render(
+          request,
+          'gcd/bits/_daily_creators.html',
+          {'creators': creators,
+           'day': fetched_day,
+           })
+
     day = '%0.2d' % (today).day
     month = '%0.2d' % (today).month
     creators_today = Creator.objects.filter(birth_date__day=day,
