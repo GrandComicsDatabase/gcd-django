@@ -5,16 +5,19 @@
   <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default.css" %}"/>
 {% endcompress %}
+{% compress js %}
+<script type="text/javascript"
+        src="{% static "js/infinite_scroll.js" %}"></script>
+{% endcompress %}
 
 <base target="_parent">
 
 <div style="font-size: 0.9em;">
 
-  <p><b>{{ yesterday|date:"l, jS F" }}</b></p>
-  {% for creator in creators_yesterday %}
-    {{ creator|absolute_url }}<br>
-  {% endfor %}
-
+  <div id="top-sentinel">...</div>
+  <div id="top-scroll-element">
+    {% include "gcd/bits/_daily_creators.html" with creators=creators_yesterday day=yesterday %}
+  </div>
 
   <a name="today"></a>
   <p><b>{{ today|date:"l, jS F" }}</b></p>
@@ -22,8 +25,27 @@
     {{ creator|absolute_url }}<br>
   {% endfor %}
 
-  <p><b>{{ tomorrow|date:"l, jS F" }}</b></p>
-  {% for creator in creators_tomorrow %}
-    {{ creator|absolute_url }}<br>
-  {% endfor %}
+  <div id="bottom-scroll-element">
+    {% include "gcd/bits/_daily_creators.html" with creators=creators_tomorrow day=tomorrow %}
+  </div>
+  <div id="bottom-sentinel">...</div>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    let sentinel = document.querySelector("#bottom-sentinel");
+    let scrollElement = document.querySelector("#bottom-scroll-element");
+    let baseUrl = "{% url 'daily_creators' %}";
+    let addUrl = "offset/";
+    let direction = 1;
+    attachInfiniteScroll(sentinel, scrollElement, baseUrl, addUrl, direction);
+  })
+  document.addEventListener("DOMContentLoaded", () => {
+    let sentinel = document.querySelector("#top-sentinel");
+    let scrollElement = document.querySelector("#top-scroll-element");
+    let baseUrl = "{% url 'daily_creators' %}";
+    let addUrl = "offset/";
+    let direction = -1;
+    attachInfiniteScroll(sentinel, scrollElement, baseUrl, addUrl, direction);
+  })
+</script>
