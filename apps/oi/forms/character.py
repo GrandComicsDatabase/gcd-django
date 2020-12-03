@@ -20,7 +20,7 @@ from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
 
 from .support import (_set_help_labels, _clean_keywords,
                       _get_comments_form_field, HiddenInputWithHelp,
-                      GENERIC_ERROR_MESSAGE)
+                      GENERIC_ERROR_MESSAGE, BaseForm, ModifiedPagedownWidget)
 
 class CharacterNameDetailRevisionForm(forms.ModelForm):
     class Meta:
@@ -61,7 +61,7 @@ class BaseField(Field):
         return fields
 
 
-class CharacterRevisionForm(forms.ModelForm):
+class CharacterRevisionForm(BaseForm):
     class Meta:
         model = CharacterRevision
         fields = model._base_field_list
@@ -91,8 +91,6 @@ class CharacterRevisionForm(forms.ModelForm):
                            for field in fields[3:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
 
-    comments = _get_comments_form_field()
-
     additional_names_help  = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
@@ -100,9 +98,6 @@ class CharacterRevisionForm(forms.ModelForm):
                   "(for example a common name vs. a formal full name, "
                   "or a maiden vs. a married name).",
         label='')
-
-    def clean_keywords(self):
-        return _clean_keywords(self.cleaned_data)
 
 
 def get_group_revision_form(revision=None, user=None):

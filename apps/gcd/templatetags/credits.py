@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 import icu
 
+import markdown as md
+
 from django import template
 from django.conf import settings
+from django.template.defaultfilters import stringfilter
 from django.utils.translation import ugettext as _
 from django.utils.translation import ungettext
 from django.utils.safestring import mark_safe
@@ -321,6 +324,12 @@ def show_creator_credit(story, credit_type, url=True):
            + credit_value + '</span></dd>')
     else:
         return credit_value
+
+
+@register.filter()
+@stringfilter
+def markdown(value):
+    return mark_safe(md.markdown(value))
 
 
 def __format_keywords(keywords, join_on='; ', model_name='story'):

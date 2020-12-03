@@ -32,7 +32,7 @@ GCD :: Character :: {{ character.name }}
 {% endif %}
 {% if character.notes %}
         <dt> Notes:
-        <dd> {{ character.notes|urlizetrunc:75|linebreaksbr }}
+        <dd> {{ character.notes|markdown }}
 {% endif %}
 <p>{{ character|show_credit:'keywords' }}</P>
       </dl>

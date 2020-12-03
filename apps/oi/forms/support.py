@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-
 import re
 import six
+from pagedown.widgets import PagedownWidget
 
 from django.conf import settings
 from django import forms
@@ -741,3 +741,19 @@ class BrandEmblemSelect(forms.Select):
                 option_dict['url'] = brand.emblem.icon.url
                 option_dict['image_width'] = brand.emblem.icon.width
         return option_dict
+
+
+class ModifiedPagedownWidget(PagedownWidget):
+    class Media:
+        css = {
+            'all': ('css/oi/default/pagedown.css',)
+        }
+
+
+class BaseForm(forms.ModelForm):
+    notes = forms.CharField(widget=ModifiedPagedownWidget(), required=False)
+
+    comments = _get_comments_form_field()
+
+    def clean_keywords(self):
+        return _clean_keywords(self.cleaned_data)

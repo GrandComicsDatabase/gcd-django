@@ -170,7 +170,8 @@ INSTALLED_APPS = (
     'bootstrap3',
     'contact_form',
     'captcha',
-    'crispy_forms'
+    'crispy_forms',
+    'pagedown.apps.PagedownConfig'
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
