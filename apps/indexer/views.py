@@ -531,6 +531,8 @@ def profile(request, user_id=None, edit=False):
               'seen_privacy_policy': profile_user.indexer.seen_privacy_policy,
               'opt_in_email': profile_user.indexer.opt_in_email,
               'issue_detail': profile_user.indexer.issue_detail,
+              'no_show_sequences':
+              [seq.id for seq in profile_user.indexer.no_show_sequences.all()],
               'notify_on_approve': profile_user.indexer.notify_on_approve,
               'collapse_compare_view':
               profile_user.indexer.collapse_compare_view,
@@ -599,6 +601,7 @@ def update_profile(request, user_id=None):
     indexer.seen_privacy_policy = form.cleaned_data['seen_privacy_policy']
     indexer.opt_in_email = form.cleaned_data['opt_in_email']
     indexer.issue_detail = form.cleaned_data['issue_detail']
+    indexer.no_show_sequences.set(form.cleaned_data['no_show_sequences'])
     indexer.save()
 
     return HttpResponseRedirect(

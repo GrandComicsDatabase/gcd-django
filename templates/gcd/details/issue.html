@@ -139,7 +139,9 @@ This issue has variants:
       </div> <!-- cover -->
       <div id="story_data">
 {% for story in stories %}
+  {% if not not_shown_types or not request.user.indexer or story.type not in request.user.indexer.no_show_sequences.all %}
   {% include "gcd/details/single_story.html" %}
+  {% endif %}
 {% endfor %}
       </div>
     </div> <!-- control_center -->
@@ -281,7 +283,7 @@ This issue has variants:
         <li class="{% cycle 'odd' 'even' %}">
         {{ forloop.counter }}.
         <span class="toc_story_title">
-        <a name="toc_{{ story.id }}" href="#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
+        <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}?show_all{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
         <span class="toc_story_feature">{{ story.show_feature}}</span>
 {% endfor %}
       </ol>

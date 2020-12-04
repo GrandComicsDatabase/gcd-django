@@ -8,6 +8,7 @@ from django.core.mail import EmailMessage
 from django.template.loader import get_template
 
 from apps.stddata.models import Country, Language
+from apps.gcd.models import StoryType
 
 # TODO: Should not be importing from OI.  Reconsider app split.
 from apps.oi import states
@@ -41,6 +42,8 @@ class Indexer(models.Model):
                                 on_delete=models.CASCADE)
     languages = models.ManyToManyField(Language, related_name='indexers',
                                        db_table='gcd_indexer_languages')
+    no_show_sequences = models.ManyToManyField(StoryType, related_name='indexers',
+                                               db_table='gcd_indexer_no_show_sequences')
     interests = models.TextField(null=True, blank=True)
     opt_in_email = models.BooleanField(default=False, db_index=True)
     from_where = models.TextField(blank=True)

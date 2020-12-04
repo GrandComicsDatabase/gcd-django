@@ -11,7 +11,8 @@ from .publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, \
 from .series import Series, SeriesPublicationType
 from .issue import Issue, IssueCredit, INDEXED
 from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
-                   STORY_TYPES, OLD_TYPES, NON_OPTIONAL_TYPES, CREDIT_TYPES
+                   STORY_TYPES, OLD_TYPES, NON_OPTIONAL_TYPES, CREDIT_TYPES,\
+                   DEPRECATED_TYPES
 from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
                       FeatureRelationType)
 from .character import (Character, CharacterNameDetail, CharacterRelationType,

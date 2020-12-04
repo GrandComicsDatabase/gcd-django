@@ -51,7 +51,7 @@ NON_OPTIONAL_TYPES = [6, 7, 19]
 # sequences types that cannot have a feature or genre
 NO_FEATURE_TYPES = [8, 22, 24, 25]
 NO_GENRE_TYPES = [8, 22, 24, 25]
-
+DEPRECATED_TYPES = [3, 4, 23]
 
 def show_feature(story):
     first = True
@@ -377,7 +377,8 @@ class IssueColumn(tables.Column):
     def order(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue__series__sort_name',
-                                       direction + 'issue__sort_code')
+                                       direction + 'issue__sort_code',
+                                       'sequence_number')
         return (query_set, True)
 
 

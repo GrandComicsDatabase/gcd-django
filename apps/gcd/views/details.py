@@ -2184,7 +2184,9 @@ def show_issue(request, issue, preview=False):
     alt_text = 'Cover Thumbnail for %s' % issue.full_name()
     zoom_level = ZOOM_MEDIUM
 
-    if 'issue_detail' in request.GET:
+    if 'show_all' in request.GET:
+        issue_detail = 2
+    elif 'issue_detail' in request.GET:
         try:
             issue_detail = int(request.GET['issue_detail'])
         except ValueError:

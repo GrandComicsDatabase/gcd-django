@@ -18,6 +18,7 @@ from contact_form.forms import ContactForm
 
 from apps.stddata.models import Country, Language
 from apps.legacy.models import Reservation, IndexCredit
+from apps.gcd.models import StoryType, DEPRECATED_TYPES
 
 MIN_PASSWORD_LENGTH = 6
 MAX_PASSWORD_LENGTH = 20
@@ -77,6 +78,12 @@ class AccountForm(forms.Form):
                  'language(s) to use when contacting you.  Hold down your '
                  'Control (ctrl) key to select multiple languages (Command '
                  'key for some systems).'))
+
+    no_show_sequences = forms.ModelMultipleChoiceField(
+      queryset=StoryType.objects.exclude(id__in=DEPRECATED_TYPES).order_by('name'),
+      required=False,
+      widget=forms.SelectMultiple(attrs={'size': '6'}),
+    )
 
     interests = forms.CharField(
       widget=forms.Textarea, required=False,
