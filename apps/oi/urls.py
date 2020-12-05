@@ -181,23 +181,25 @@ urlpatterns = [
 
     # Feature URLs
     url(r'^feature/add/$',
-     oi_views.add_feature, name='add_feature'),
+      oi_views.add_feature, name='add_feature'),
     url(r'^feature/(?P<feature_id>\d+)/logo/add/$',
-     oi_views.add_feature_logo, name='add_feature_logo'),
+      oi_views.add_feature_logo, name='add_feature_logo'),
     url(r'^feature/(?P<feature_id>\d+)/relation/add/$',
-     oi_views.add_feature_relation, name='add_feature_relation'),
+      oi_views.add_feature_relation, name='add_feature_relation'),
 
     # Character URLs
     url(r'^character/add/$',
-    oi_views.add_character, name='add_character'),
+      oi_views.add_character, name='add_character'),
     url(r'^group/add/$',
-    oi_views.add_group, name='add_group'),
+      oi_views.add_group, name='add_group'),
     url(r'^character/(?P<character_id>\d+)/membership/add/$',
-     oi_views.add_group_membership, name='add_group_membership'),
+      oi_views.add_group_membership, name='add_group_membership'),
     url(r'^character/(?P<character_id>\d+)/relation/add/$',
-     oi_views.add_character_relation, name='add_character_relation'),
+      oi_views.add_character_relation, name='add_character_relation'),
     url(r'^group/(?P<group_id>\d+)/members/add/$',
-    oi_views.add_group_member, name='add_group_member'),
+      oi_views.add_group_member, name='add_group_member'),
+    url(r'^group/(?P<group_id>\d+)/relation/add/$',
+      oi_views.add_group_relation, name='add_group_relation'),
 
     # Image URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$',

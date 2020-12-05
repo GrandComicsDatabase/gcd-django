@@ -87,7 +87,7 @@ class CharacterGroupBase(GcdData):
             year = '(p. %s)' % self.year_first_published
         else:
             year = ''
-        return '%s %s' % (str(self.name), year)
+        return '%s %s (%s)' % (str(self.name), year, self.language.name)
 
 
 class Character(CharacterGroupBase):
@@ -164,6 +164,10 @@ class Group(CharacterGroupBase):
         ordering = ('sort_name', 'created',)
         verbose_name_plural = 'Groups'
 
+    def active_relations(self):
+        return self.from_related_group.all() | \
+               self.to_related_group.all()
+
     def active_members(self):
         return self.members.all().order_by('year_joined',
                                            'character__sort_name')
@@ -172,6 +176,57 @@ class Group(CharacterGroupBase):
         return urlresolvers.reverse(
                 'show_group',
                 kwargs={'group_id': self.id})
+
+
+class GroupRelationType(models.Model):
+    """
+    The type of relation between two groups.
+    """
+
+    class Meta:
+        db_table = 'gcd_group_relation_type'
+        app_label = 'gcd'
+        ordering = ('type',)
+        verbose_name_plural = 'Group Relation Types'
+
+    type = models.CharField(max_length=50)
+    reverse_type = models.CharField(max_length=50)
+
+    def __str__(self):
+        return str(self.type)
+
+
+class GroupRelation(GcdLink):
+    """
+    Relations between group to relate any group to any other group.
+    """
+
+    class Meta:
+        db_table = 'gcd_group_relation'
+        app_label = 'gcd'
+        ordering = ('to_group', 'relation_type', 'from_group')
+        verbose_name_plural = 'Group Relations'
+
+    to_group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                                     related_name='from_related_group')
+    from_group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                                       related_name='to_related_group')
+    relation_type = models.ForeignKey(GroupRelationType,
+                                      on_delete=models.CASCADE,
+                                      related_name='relation_type')
+    notes = models.TextField()
+
+    def pre_process_relation(self, group):
+        if self.from_group == group:
+            return [self.to_group, self.relation_type.type]
+        if self.to_group == group:
+            return [self.from_group, self.relation_type.reverse_type]
+
+    def __str__(self):
+        return '%s >Relation< %s :: %s' % (str(self.from_group),
+                                           str(self.to_group),
+                                           str(self.relation_type)
+                                           )
 
 
 class GroupMembershipType(models.Model):

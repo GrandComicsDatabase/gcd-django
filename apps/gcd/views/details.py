@@ -33,7 +33,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CreatorRelation, CreatorSchool, CreatorNameDetail,\
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
-                            Printer, IndiciaPrinter, School, Story, Character, Group
+                            Printer, IndiciaPrinter, School, Story, Character, Group, \
+                            CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
@@ -102,7 +103,7 @@ def _publisher_image_content(publisher_id):
 
 def get_gcd_object(model, object_id, model_name=None):
     object = get_object_or_404(model, id=object_id)
-    if object.deleted:
+    if hasattr(object, 'deleted') and object.deleted:
         if not model_name:
             model_name = model._meta.model_name
         raise ViewTerminationError(
@@ -1252,7 +1253,8 @@ def change_history(request, model_name, id):
                           'creator_art_influence', 'creator_non_comic_work',
                           'creator_relation', 'creator_school',
                           'creator_signature', 'feature', 'feature_logo',
-                          'character', 'group']:
+                          'character', 'group', 'character_relation',
+                          'group_relation', 'group_membership']:
         if not (model_name == 'imprint' and
            get_object_or_404(Publisher, id=id).deleted):
             return render(
@@ -2013,6 +2015,20 @@ def show_character(request, character, preview=False):
     return render(request, 'gcd/details/character.html', vars)
 
 
+def character_relation(request, character_relation_id):
+    character_relation = get_gcd_object(CharacterRelation,
+                                        character_relation_id,
+                                        model_name='character_relation')
+    return show_character_relation(request, character_relation)
+
+
+def show_character_relation(request, character_relation, preview=False):
+    vars = {'character_relation': character_relation,
+            'error_subject': character_relation,
+            'preview': preview}
+    return render(request, 'gcd/details/character_relation.html', vars)
+
+
 def group(request, group_id):
     """
     Display the details page for a Group.
@@ -2026,6 +2042,34 @@ def show_group(request, group, preview=False):
             'error_subject': '%s' % group,
             'preview': preview}
     return render(request, 'gcd/details/group.html', vars)
+
+
+def group_relation(request, group_relation_id):
+    group_relation = get_gcd_object(GroupRelation,
+                                    group_relation_id,
+                                    model_name='group_relation')
+    return show_group_relation(request, group_relation)
+
+
+def show_group_relation(request, group_relation, preview=False):
+    vars = {'group_relation': group_relation,
+            'error_subject': group_relation,
+            'preview': preview}
+    return render(request, 'gcd/details/group_relation.html', vars)
+
+
+def group_membership(request, group_membership_id):
+    group_membership = get_gcd_object(GroupMembership,
+                                      group_membership_id,
+                                      model_name='group_membership')
+    return show_group_membership(request, group_membership)
+
+
+def show_group_membership(request, group_membership, preview=False):
+    vars = {'group_membership': group_membership,
+            'error_subject': group_membership,
+            'preview': preview}
+    return render(request, 'gcd/details/group_membership.html', vars)
 
 
 def cover(request, issue_id, size):

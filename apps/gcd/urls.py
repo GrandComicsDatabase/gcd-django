@@ -274,8 +274,14 @@ urlpatterns = [
     # Character
     url(r'^character/(?P<character_id>\d+)/$',
       gcd_views.details.character, name='show_character'),
+    url(r'^character_relation/(?P<character_relation_id>\d+)/$',
+      gcd_views.details.character_relation, name='show_character_relation'),
     url(r'^group/(?P<group_id>\d+)/$',
       gcd_views.details.group, name='show_group'),
+    url(r'^group_relation/(?P<group_relation_id>\d+)/$',
+      gcd_views.details.group_relation, name='show_group_relation'),
+    url(r'^group_membership/(?P<group_membership_id>\d+)/$',
+      gcd_views.details.group_membership, name='show_group_membership'),
 
     # Keywords
     url(r'^keyword/(?P<keyword>.+)/(?P<model_name>.+)/$',

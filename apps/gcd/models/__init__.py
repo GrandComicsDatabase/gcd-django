@@ -16,8 +16,8 @@ from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
 from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
                       FeatureRelationType)
 from .character import (Character, CharacterNameDetail, CharacterRelationType,
-                        CharacterRelation, Group, GroupMembership,
-                        GroupMembershipType)
+                        CharacterRelation, Group, GroupRelation,
+                        GroupMembership, GroupMembershipType)
 from .cover import Cover
 from .issuereprint import IssueReprint
 from .reprint import Reprint

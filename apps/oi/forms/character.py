@@ -16,7 +16,8 @@ from .custom_layout_object import Formset
 
 from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
                             CharacterRelationRevision, GroupRevision,
-                            GroupMembershipRevision, remove_leading_article)
+                            GroupMembershipRevision, GroupRelationRevision,
+                            remove_leading_article)
 
 from .support import (_set_help_labels, _clean_keywords,
                       _get_comments_form_field, HiddenInputWithHelp,
@@ -160,6 +161,7 @@ class GroupMembershipRevisionForm(forms.ModelForm):
         if self._errors:
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
+
 def get_character_relation_revision_form(revision=None, user=None):
     class RuntimeCharacterRelationRevisionForm(CharacterRelationRevisionForm):
         def as_table(self):
@@ -189,6 +191,40 @@ class CharacterRelationRevisionForm(forms.ModelForm):
         widget=autocomplete.ModelSelect2(url='character_autocomplete',
                                          attrs={'style': 'min-width: 45em'}),
         label = 'Character B'
+    )
+
+    comments = _get_comments_form_field()
+
+
+def get_group_relation_revision_form(revision=None, user=None):
+    class RuntimeGroupRelationRevisionForm(GroupRelationRevisionForm):
+        def as_table(self):
+            # if not user or user.indexer.show_wiki_links:
+                # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
+            return super(GroupRelationRevisionForm, self).as_table()
+
+    return RuntimeGroupRelationRevisionForm
+
+
+class GroupRelationRevisionForm(forms.ModelForm):
+    class Meta:
+        model = GroupRelationRevision
+        fields = model._base_field_list
+        # help_texts = FEATURE_RELATION_HELP_TEXTS
+        labels = {'relation_type': 'Relation',}
+
+    from_group = forms.ModelChoiceField(
+        queryset=Group.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='group_autocomplete',
+                                         attrs={'style': 'min-width: 45em'}),
+        label = 'Group A'
+    )
+
+    to_group = forms.ModelChoiceField(
+        queryset=Group.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='group_autocomplete',
+                                         attrs={'style': 'min-width: 45em'}),
+        label = 'Group B'
     )
 
     comments = _get_comments_form_field()

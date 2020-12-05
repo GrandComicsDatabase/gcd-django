@@ -31,6 +31,7 @@ from .feature import (get_feature_revision_form,
 from .character import (get_character_revision_form, get_group_revision_form,
                         get_group_membership_revision_form,
                         get_character_relation_revision_form,
+                        get_group_relation_revision_form,
                         GroupMembershipRevisionForm)
 from .image import (get_cover_revision_form,
                     UploadScanForm,
@@ -127,6 +128,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'group':
         return get_group_revision_form(revision, **kwargs)
+
+    if model_name == 'group_relation':
+        return get_group_relation_revision_form(revision, **kwargs)
 
     if model_name == 'group_membership':
         return get_group_membership_revision_form(revision, **kwargs)

@@ -38,7 +38,8 @@ from apps.gcd.models import (
     BiblioEntry, Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     FeatureLogo, FeatureRelation, Character, CharacterRelation,
-    CharacterNameDetail, Group, GroupMembership, ImageType, Printer, IndiciaPrinter,
+    CharacterNameDetail, Group, GroupRelation, GroupMembership, ImageType,
+    Printer, IndiciaPrinter,
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
     CreatorNameDetail, CreatorNonComicWork, CreatorSchool, CreatorRelation,
     CreatorSignature, NonComicWorkYear, Award, ReceivedAward, DataSource,
@@ -94,6 +95,7 @@ CTYPES = {
     'group': 32,
     'group_membership': 33,
     'character_relation': 34,
+    'group_relation': 35,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -110,6 +112,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['character'],
                            CTYPES['character_relation'],
                            CTYPES['group'],
+                           CTYPES['group_relation'],
                            CTYPES['group_membership'],
                            CTYPES['cover'],
                            CTYPES['reprint'],
@@ -391,6 +394,9 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['group']:
             return (self.grouprevisions.all(),)
+
+        if self.change_type == CTYPES['group_relation']:
+            return (self.grouprelationrevisions.all(),)
 
         if self.change_type == CTYPES['group_membership']:
             return (self.groupmembershiprevisions.all(),)
@@ -1119,7 +1125,7 @@ class RevisionManager(models.Manager):
             revisions__changeset__state__in=states.ACTIVE).distinct()
 
     # H. TODO deprecated
-    def clone_revision(self, instance, instance_class,
+    def _clone_revision(self, instance, instance_class,
                        changeset, check=True, **kwargs):
         """
         Given an existing instance, create a new revision based on it.
@@ -2389,18 +2395,10 @@ class PublisherRevisionBase(Revision):
         return 0
 
 
-class PublisherRevisionManager(RevisionManager):
-
-    def clone_revision(self, publisher, changeset):
-        return PublisherRevision.clone(publisher, changeset)
-
-
 class PublisherRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_publisher_revision'
         ordering = ['-created', '-id']
-
-    objects = PublisherRevisionManager()
 
     publisher = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
                                   null=True, related_name='revisions')
@@ -2492,18 +2490,10 @@ class PublisherRevision(PublisherRevisionBase):
         return PublisherRevisionBase._imps_for(self, field_name)
 
 
-class IndiciaPublisherRevisionManager(RevisionManager):
-
-    def clone_revision(self, indicia_publisher, changeset):
-        return IndiciaPublisherRevision.clone(indicia_publisher, changeset)
-
-
 class IndiciaPublisherRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_indicia_publisher_revision'
         ordering = ['-created', '-id']
-
-    objects = IndiciaPublisherRevisionManager()
 
     indicia_publisher = models.ForeignKey('gcd.IndiciaPublisher',
                                           on_delete=models.CASCADE, null=True,
@@ -2572,18 +2562,10 @@ class IndiciaPublisherRevision(PublisherRevisionBase):
                                     self.country.code.upper())
 
 
-class BrandGroupRevisionManager(RevisionManager):
-
-    def clone_revision(self, brand_group, changeset):
-        return BrandGroupRevision.clone(brand_group, changeset)
-
-
 class BrandGroupRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_brand_group_revision'
         ordering = ['-created', '-id']
-
-    objects = BrandGroupRevisionManager()
 
     brand_group = models.ForeignKey('gcd.BrandGroup', on_delete=models.CASCADE,
                                     null=True, related_name='revisions')
@@ -2651,17 +2633,10 @@ class BrandGroupRevision(PublisherRevisionBase):
         return '%s: %s (%s)' % (self.parent.name, self.name, self.year_began)
 
 
-class BrandRevisionManager(RevisionManager):
-    def clone_revision(self, brand, changeset):
-        return BrandRevision.clone(brand, changeset)
-
-
 class BrandRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_brand_revision'
         ordering = ['-created', '-id']
-
-    objects = BrandRevisionManager()
 
     brand = models.ForeignKey('gcd.Brand', on_delete=models.CASCADE,
                               null=True, related_name='revisions')
@@ -2758,12 +2733,6 @@ class PreviewBrand(Brand):
         return self._group.all()
 
 
-class BrandUseRevisionManager(RevisionManager):
-
-    def clone_revision(self, brand_use, changeset):
-        return BrandUseRevision.clone(brand_use, changeset)
-
-
 def get_brand_use_field_list():
     return ['year_began', 'year_began_uncertain',
             'year_ended', 'year_ended_uncertain', 'notes']
@@ -2773,8 +2742,6 @@ class BrandUseRevision(Revision):
     class Meta:
         db_table = 'oi_brand_use_revision'
         ordering = ['-created', '-id']
-
-    objects = BrandUseRevisionManager()
 
     brand_use = models.ForeignKey('gcd.BrandUse', on_delete=models.CASCADE,
                                   null=True, related_name='revisions')
@@ -2859,18 +2826,10 @@ class BrandUseRevision(Revision):
                                   self.year_began)
 
 
-class PrinterRevisionManager(RevisionManager):
-
-    def clone_revision(self, printer, changeset):
-        return PrinterRevision.clone(printer, changeset)
-
-
 class PrinterRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_printer_revision'
         ordering = ['-created', '-id']
-
-    objects = PrinterRevisionManager()
 
     printer = models.ForeignKey('gcd.Printer', on_delete=models.CASCADE,
                                 null=True, related_name='revisions')
@@ -2937,18 +2896,10 @@ class PrinterRevision(PublisherRevisionBase):
         return PublisherRevisionBase._imps_for(self, field_name)
 
 
-class IndiciaPrinterRevisionManager(RevisionManager):
-
-    def clone_revision(self, indicia_printer, changeset):
-        return IndiciaPrinterRevision.clone(indicia_printer, changeset)
-
-
 class IndiciaPrinterRevision(PublisherRevisionBase):
     class Meta:
         db_table = 'oi_indicia_printer_revision'
         ordering = ['-created', '-id']
-
-    objects = IndiciaPrinterRevisionManager()
 
     indicia_printer = models.ForeignKey('gcd.IndiciaPrinter',
                                         on_delete=models.CASCADE, null=True,
@@ -3024,7 +2975,7 @@ class CoverRevisionManager(RevisionManager):
 
         This new revision will be where the replacement is stored.
         """
-        return RevisionManager.clone_revision(self,
+        return RevisionManager._clone_revision(self,
                                               instance=cover,
                                               instance_class=Cover,
                                               changeset=changeset)
@@ -3222,11 +3173,6 @@ class CoverRevision(Revision):
         return str(self.issue)
 
 
-class SeriesRevisionManager(RevisionManager):
-    def clone_revision(self, series, changeset):
-        return SeriesRevision.clone(series, changeset)
-
-
 def get_series_field_list():
     return ['name', 'leading_article', 'imprint', 'format', 'color',
             'dimensions', 'paper_stock', 'binding', 'publishing_format',
@@ -3243,8 +3189,6 @@ class SeriesRevision(Revision):
     class Meta:
         db_table = 'oi_series_revision'
         ordering = ['-created', '-id']
-
-    objects = SeriesRevisionManager()
 
     series = models.ForeignKey(Series, on_delete=models.CASCADE,
                                null=True, related_name='revisions')
@@ -3488,10 +3432,10 @@ class SeriesBondRevisionManager(RevisionManager):
 
         This new revision will be where the edits are made.
         """
-        return RevisionManager.clone_revision(self,
-                                              instance=series_bond,
-                                              instance_class=SeriesBond,
-                                              changeset=changeset)
+        return RevisionManager._clone_revision(self,
+                                               instance=series_bond,
+                                               instance_class=SeriesBond,
+                                               changeset=changeset)
 
     def _do_create_revision(self, series_bond, changeset):
         """
@@ -3623,11 +3567,6 @@ class SeriesBondRevision(Revision):
         return object_string
 
 
-class IssueRevisionManager(RevisionManager):
-    def clone_revision(self, issue, changeset):
-        return IssueRevision.clone(issue, changeset)
-
-
 def get_issue_field_list():
     return ['number', 'title', 'no_title', 'volume',
             'no_volume', 'volume_not_printed', 'display_volume_with_number',
@@ -3718,8 +3657,6 @@ class IssueRevision(Revision):
     class Meta:
         db_table = 'oi_issue_revision'
         ordering = ['-created', '-id']
-
-    objects = IssueRevisionManager()
 
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE,
                               null=True, related_name='revisions')
@@ -4856,17 +4793,10 @@ class StoryCreditRevision(Revision):
         return 0
 
 
-class StoryRevisionManager(RevisionManager):
-    def clone_revision(self, story, changeset):
-        return StoryRevision.clone(story, changeset)
-
-
 class StoryRevision(Revision):
     class Meta:
         db_table = 'oi_story_revision'
         ordering = ['-created', '-id']
-
-    objects = StoryRevisionManager()
 
     story = models.ForeignKey(Story, on_delete=models.CASCADE, null=True,
                               related_name='revisions')
@@ -5796,17 +5726,10 @@ class BiblioEntryRevision(StoryRevision):
         return super(StoryRevision, self).compare_changes()
 
 
-class FeatureRevisionManager(RevisionManager):
-    def clone_revision(self, feature, changeset):
-        return FeatureRevision.clone(feature, changeset)
-
-
 class FeatureRevision(Revision):
     class Meta:
         db_table = 'oi_feature_revision'
         ordering = ['-created', '-id']
-
-    objects = FeatureRevisionManager()
 
     feature = models.ForeignKey(Feature, on_delete=models.CASCADE, null=True,
                                 related_name='revisions')
@@ -5891,17 +5814,10 @@ class FeatureRevision(Revision):
                                 self.language.code.upper())
 
 
-class FeatureLogoRevisionManager(RevisionManager):
-    def clone_revision(self, feature_logo, changeset):
-        return FeatureLogoRevision.clone(feature_logo, changeset)
-
-
 class FeatureLogoRevision(Revision):
     class Meta:
         db_table = 'oi_feature_logo_revision'
         ordering = ['-created', '-id']
-
-    objects = FeatureLogoRevisionManager()
 
     feature = models.ManyToManyField(Feature, related_name='logo_revisions')
     feature_logo = models.ForeignKey(FeatureLogo, on_delete=models.CASCADE,
@@ -5984,11 +5900,6 @@ class FeatureLogoRevision(Revision):
         return '%s (%s)' % (self.name, self.year_began)
 
 
-class FeatureRelationRevisionManager(RevisionManager):
-    def clone_revision(self, feature_relation, changeset):
-        return FeatureRelationRevision.clone(feature_relation, changeset)
-
-
 class FeatureRelationRevision(Revision):
     """
     Relations between features.
@@ -5999,7 +5910,6 @@ class FeatureRelationRevision(Revision):
         ordering = ('to_feature', 'relation_type', 'from_feature')
         verbose_name_plural = 'Feature Relation Revisions'
 
-    objects = FeatureRelationRevisionManager()
     feature_relation = models.ForeignKey('gcd.FeatureRelation',
                                          on_delete=models.CASCADE,
                                          null=True,
@@ -6080,11 +5990,6 @@ class FeatureRelationRevision(Revision):
                                )
 
 
-class CharacterRevisionManager(RevisionManager):
-    def clone_revision(self, character, changeset):
-        return CharacterRevision.clone(character, changeset)
-
-
 class CharacterGroupRevisionBase(Revision):
     class Meta:
         abstract = True
@@ -6151,8 +6056,6 @@ class CharacterRevision(CharacterGroupRevisionBase):
         db_table = 'oi_character_revision'
         ordering = ['created', '-id']
 
-    objects = CharacterRevisionManager()
-
     character = models.ForeignKey('gcd.Character',
                                   on_delete=models.CASCADE,
                                   null=True,
@@ -6176,11 +6079,10 @@ class CharacterRevision(CharacterGroupRevisionBase):
                                            changeset=self.changeset)
             if name_lock is None:
                 raise IntegrityError("needed Name lock not possible")
-            character_name = CharacterNameDetailRevision.objects\
-                           .clone_revision(name_detail, self.changeset,
-                                           self)  # noqa: E127
-            character_name.save_added_revision(
-                changeset=self.changeset, character_revision=self)
+            character_name = CharacterNameDetailRevision.clone(name_detail,
+                                                               self.changeset)
+            character_name.save_added_revision(changeset=self.changeset,
+                                               character_revision=self)
 
             if delete:
                 character_name.deleted = True
@@ -6188,7 +6090,7 @@ class CharacterRevision(CharacterGroupRevisionBase):
 
     def extra_forms(self, request):
         from apps.oi.forms.character import CharacterRevisionFormSet
-        from apps.oi.forms.support import CREATOR_HELP_LINKS
+        # from apps.oi.forms.support import CREATOR_HELP_LINKS
 
         character_names_formset = CharacterRevisionFormSet(
           request.POST or None, instance=self,
@@ -6304,42 +6206,6 @@ class CharacterNameDetailRevision(Revision):
         return 0
 
 
-class CharacterRelationRevisionManager(RevisionManager):
-    def clone_revision(self, character_relation, changeset):
-        """
-        Given an existing CharacterRelation instance, create a new revision based
-        on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=character_relation,
-                                              instance_class=CharacterRelation,
-                                              changeset=changeset,
-                                              )
-
-    # def _do_create_revision(self, character_relation, changeset, **ignore):
-    #     """
-    #     Helper delegate to do the class-specific work of clone_revision.
-    #     """
-    #     revision = CharacterRelationRevision(
-    #         # revision-specific fields:
-    #         character_relation=character_relation,
-    #         changeset=changeset,
-    #         # copied fields:
-    #         to_character=character_relation.to_character,
-    #         from_character=character_relation.from_character,
-    #         relation_type=character_relation.relation_type,
-    #         notes=character_relation.notes
-    #     )
-    #     revision.save()
-    #     if character_relation.character_name.count():
-    #         revision.character_name.add(*list(character_relation.
-    #                                         character_name.all().
-    #                                         values_list('id', flat=True)))
-    #     return revision
-
-
 class CharacterRelationRevision(Revision):
     """
     Relations between characters.
@@ -6350,7 +6216,6 @@ class CharacterRelationRevision(Revision):
         ordering = ('to_character', 'relation_type', 'from_character')
         verbose_name_plural = 'Character Relation Revisions'
 
-    objects = CharacterRelationRevisionManager()
     character_relation = models.ForeignKey('gcd.CharacterRelation',
                                            on_delete=models.CASCADE,
                                            null=True,
@@ -6364,6 +6229,17 @@ class CharacterRelationRevision(Revision):
     from_character = models.ForeignKey('gcd.Character', on_delete=models.CASCADE,
                                        related_name='from_character_revisions')
     notes = models.TextField(blank=True)
+
+    source_name = 'character_relation'
+    source_class = CharacterRelation
+
+    @property
+    def source(self):
+        return self.character_relation
+
+    @source.setter
+    def source(self, value):
+        self.character_relation = value
 
     _base_field_list = ['from_character', 'relation_type', 'to_character',
                         'notes']
@@ -6380,12 +6256,6 @@ class CharacterRelationRevision(Revision):
             'notes': ''
         }
 
-    def _get_source(self):
-        return self.character_relation
-
-    def _get_source_name(self):
-        return 'character_relation'
-
     def _imps_for(self, field_name):
         return 1
 
@@ -6395,6 +6265,9 @@ class CharacterRelationRevision(Revision):
         if character_relation is None:
             character_relation = CharacterRelation()
         elif self.deleted:
+            for revision in character_relation.revisions.all():
+                setattr(revision, "character_relation_id", None)
+                revision.save()
             character_relation.delete()
             return
 
@@ -6415,17 +6288,10 @@ class CharacterRelationRevision(Revision):
                                )
 
 
-class GroupRevisionManager(RevisionManager):
-    def clone_revision(self, group, changeset):
-        return GroupRevision.clone(group, changeset)
-
-
 class GroupRevision(CharacterGroupRevisionBase):
     class Meta:
         db_table = 'oi_group_revision'
         ordering = ['created', '-id']
-
-    objects = GroupRevisionManager()
 
     group = models.ForeignKey('gcd.Group',
                               on_delete=models.CASCADE,
@@ -6449,9 +6315,86 @@ class GroupRevision(CharacterGroupRevisionBase):
         return self.group.get_absolute_url()
 
 
-class GroupMembershipRevisionManager(RevisionManager):
-    def clone_revision(self, group_membership, changeset):
-        return GroupMembershipRevision.clone(group_membership, changeset)
+class GroupRelationRevision(Revision):
+    """
+    Relations between groups.
+    """
+
+    class Meta:
+        db_table = 'oi_group_relation_revision'
+        ordering = ('to_group', 'relation_type', 'from_group')
+        verbose_name_plural = 'Group Relation Revisions'
+
+    group_relation = models.ForeignKey('gcd.GroupRelation',
+                                           on_delete=models.CASCADE,
+                                           null=True,
+                                           related_name='revisions')
+
+    to_group = models.ForeignKey('gcd.Group', on_delete=models.CASCADE,
+                                     related_name='to_group_revisions')
+    relation_type = models.ForeignKey('gcd.GroupRelationType',
+                                      on_delete=models.CASCADE,
+                                      related_name='revisions')
+    from_group = models.ForeignKey('gcd.Group', on_delete=models.CASCADE,
+                                       related_name='from_group_revisions')
+    notes = models.TextField(blank=True)
+
+    source_name = 'group_relation'
+    source_class = GroupRelation
+
+    @property
+    def source(self):
+        return self.group_relation
+
+    @source.setter
+    def source(self, value):
+        self.group_relation = value
+
+    _base_field_list = ['from_group', 'relation_type', 'to_group',
+                        'notes']
+
+    def _field_list(self):
+        field_list = self._base_field_list
+        return field_list
+
+    def _get_blank_values(self):
+        return {
+            'from_group': None,
+            'to_group': None,
+            'relation_type': None,
+            'notes': ''
+        }
+
+    def _imps_for(self, field_name):
+        return 1
+
+    def commit_to_display(self):
+        group_relation = self.group_relation
+
+        if group_relation is None:
+            group_relation = GroupRelation()
+        elif self.deleted:
+            for revision in group_relation.revisions.all():
+                setattr(revision, "group_relation_id", None)
+                revision.save()
+            group_relation.delete()
+            return
+
+        group_relation.to_group = self.to_group
+        group_relation.from_group = self.from_group
+        group_relation.relation_type = self.relation_type
+        group_relation.notes = self.notes
+        group_relation.save()
+
+        if self.group_relation is None:
+            self.group_relation = group_relation
+            self.save()
+
+    def __str__(self):
+        return '%s >%s< %s' % (str(self.from_group),
+                               str(self.relation_type),
+                               str(self.to_group)
+                               )
 
 
 class GroupMembershipRevision(Revision):
@@ -6464,7 +6407,6 @@ class GroupMembershipRevision(Revision):
         ordering = ['created', '-id']
         verbose_name_plural = 'Character Group Membership Revisions'
 
-    objects = GroupMembershipRevisionManager()
     group_membership = models.ForeignKey('gcd.GroupMembership',
                                          on_delete=models.CASCADE,
                                          null=True,
@@ -6557,10 +6499,10 @@ class ReprintRevisionManager(RevisionManager):
 
         This new revision will be where the edits are made.
         """
-        return RevisionManager.clone_revision(self,
-                                              instance=reprint,
-                                              instance_class=type(reprint),
-                                              changeset=changeset)
+        return RevisionManager._clone_revision(self,
+                                               instance=reprint,
+                                               instance_class=type(reprint),
+                                               changeset=changeset)
 
     def _do_create_revision(self, reprint, changeset):
         """
@@ -7011,10 +6953,10 @@ class ImageRevisionManager(RevisionManager):
 
         This new revision will be where the replacement is stored.
         """
-        return RevisionManager.clone_revision(self,
-                                              instance=image,
-                                              instance_class=Image,
-                                              changeset=changeset)
+        return RevisionManager._clone_revision(self,
+                                               instance=image,
+                                               instance_class=Image,
+                                               changeset=changeset)
 
     def _do_create_revision(self, image, changeset, **ignore):
         """
@@ -7140,11 +7082,6 @@ class ImageRevision(Revision):
         return str(self.source)
 
 
-class AwardRevisionManager(RevisionManager):
-    def clone_revision(self, award, changeset):
-        return AwardRevision.clone(award, changeset)
-
-
 class AwardRevision(Revision):
     """
     record the different comic awards
@@ -7155,7 +7092,6 @@ class AwardRevision(Revision):
         ordering = ['created', '-id']
         verbose_name_plural = 'Award Revisions'
 
-    objects = AwardRevisionManager()
     award = models.ForeignKey('gcd.Award', on_delete=models.CASCADE,
                               null=True, related_name='revisions')
     name = models.CharField(max_length=200)
@@ -7202,18 +7138,12 @@ class AwardRevision(Revision):
         return 0
 
 
-class ReceivedAwardRevisionManager(RevisionManager):
-    def clone_revision(self, received_award, changeset):
-        return ReceivedAwardRevision.clone(received_award, changeset)
-
-
 class ReceivedAwardRevision(Revision):
     class Meta:
         db_table = 'oi_received_award_revision'
         ordering = ['created', '-id']
         verbose_name_plural = 'Received Award Revisions'
 
-    objects = ReceivedAwardRevisionManager()
     received_award = models.ForeignKey('gcd.ReceivedAward',
                                        on_delete=models.CASCADE,
                                        null=True,
@@ -7328,7 +7258,7 @@ class DataSourceRevisionManager(RevisionManager):
 
         This new revision will be where the replacement is stored.
         """
-        return RevisionManager.clone_revision(
+        return RevisionManager._clone_revision(
                 self,
                 instance=data_source,
                 instance_class=DataSource,
@@ -7474,17 +7404,10 @@ def get_creator_field_list():
             ]
 
 
-class CreatorRevisionManager(RevisionManager):
-    def clone_revision(self, creator, changeset):
-        return CreatorRevision.clone(creator, changeset)
-
-
 class CreatorRevision(Revision):
     class Meta:
         db_table = 'oi_creator_revision'
         ordering = ['created', '-id']
-
-    objects = CreatorRevisionManager()
 
     creator = models.ForeignKey('gcd.Creator',
                                 on_delete=models.CASCADE,
@@ -7555,11 +7478,10 @@ class CreatorRevision(Revision):
                                            changeset=self.changeset)
             if name_lock is None:
                 raise IntegrityError("needed Name lock not possible")
-            creator_name = CreatorNameDetailRevision.objects\
-                           .clone_revision(name_detail, self.changeset,
-                                           self)  # noqa: E127
-            creator_name.save_added_revision(
-                changeset=self.changeset, creator_revision=self)
+            creator_name = CreatorNameDetailRevision.clone(name_detail,
+                                                           self.changeset)
+            creator_name.save_added_revision(changeset=self.changeset,
+                                             creator_revision=self)
 
             if delete:
                 creator_name.deleted = True
@@ -7854,42 +7776,6 @@ class PreviewCreator(Creator):
           content_type=ContentType.objects.get_for_model(self.revision))
 
 
-class CreatorRelationRevisionManager(RevisionManager):
-    def clone_revision(self, creator_relation, changeset):
-        """
-        Given an existing CreatorRelation instance, create a new revision based
-        on it.
-
-        This new revision will be where the replacement is stored.
-        """
-        return RevisionManager.clone_revision(self,
-                                              instance=creator_relation,
-                                              instance_class=CreatorRelation,
-                                              changeset=changeset,
-                                              )
-
-    def _do_create_revision(self, creator_relation, changeset, **ignore):
-        """
-        Helper delegate to do the class-specific work of clone_revision.
-        """
-        revision = CreatorRelationRevision(
-            # revision-specific fields:
-            creator_relation=creator_relation,
-            changeset=changeset,
-            # copied fields:
-            to_creator=creator_relation.to_creator,
-            from_creator=creator_relation.from_creator,
-            relation_type=creator_relation.relation_type,
-            notes=creator_relation.notes
-        )
-        revision.save()
-        if creator_relation.creator_name.count():
-            revision.creator_name.add(*list(creator_relation.
-                                            creator_name.all().
-                                            values_list('id', flat=True)))
-        return revision
-
-
 class CreatorRelationRevision(Revision):
     """
     Relations between creators to relate any GCD Official name to any other
@@ -7901,7 +7787,6 @@ class CreatorRelationRevision(Revision):
         ordering = ('to_creator', 'relation_type', 'from_creator')
         verbose_name_plural = 'Creator Relation Revisions'
 
-    objects = CreatorRelationRevisionManager()
     creator_relation = models.ForeignKey('gcd.CreatorRelation',
                                          on_delete=models.CASCADE,
                                          null=True,
@@ -7918,6 +7803,17 @@ class CreatorRelationRevision(Revision):
                           'gcd.CreatorNameDetail', blank=True,
                           related_name='creator_relation_revisions')
     notes = models.TextField(blank=True)
+
+    source_name = 'creator_relation'
+    source_class = CreatorRelation
+
+    @property
+    def source(self):
+        return self.creator_relation
+
+    @source.setter
+    def source(self, value):
+        self.creator_relation = value
 
     _base_field_list = ['from_creator', 'relation_type', 'to_creator',
                         'creator_name', 'notes']
@@ -7979,11 +7875,6 @@ class CreatorRelationRevision(Revision):
                                )
 
 
-class CreatorNameDetailRevisionManager(RevisionManager):
-    def clone_revision(self, creator_name_detail, changeset, creator_revision):
-        return CreatorNameDetailRevision.clone(creator_name_detail, changeset)
-
-
 class CreatorNameDetailRevision(Revision):
     """
     record of the creator's name
@@ -7994,7 +7885,6 @@ class CreatorNameDetailRevision(Revision):
         ordering = ['sort_name', '-creator__birth_date__year', 'type__id']
         verbose_name_plural = 'Creator Name Detail Revisions'
 
-    objects = CreatorNameDetailRevisionManager()
     creator_name_detail = models.ForeignKey('gcd.CreatorNameDetail',
                                             on_delete=models.CASCADE,
                                             null=True,
@@ -8069,11 +7959,6 @@ class CreatorNameDetailRevision(Revision):
         return 0
 
 
-class CreatorSignatureRevisionManager(RevisionManager):
-    def clone_revision(self, creator_signature, changeset):
-        return CreatorSignatureRevision.clone(creator_signature, changeset)
-
-
 class CreatorSignatureRevision(Revision):
     """
     record of a creator's signature
@@ -8085,7 +7970,6 @@ class CreatorSignatureRevision(Revision):
                     '-creator__birth_date__year']
         verbose_name_plural = 'Creator Signature Revisions'
 
-    objects = CreatorSignatureRevisionManager()
     creator_signature = models.ForeignKey('gcd.CreatorSignature',
                                           on_delete=models.CASCADE,
                                           null=True,
@@ -8155,11 +8039,6 @@ class CreatorSignatureRevision(Revision):
         return 0
 
 
-class CreatorSchoolRevisionManager(RevisionManager):
-    def clone_revision(self, creator_school, changeset):
-        return CreatorSchoolRevision.clone(creator_school, changeset)
-
-
 class CreatorSchoolRevision(Revision):
     """
     record the schools creators attended
@@ -8170,7 +8049,6 @@ class CreatorSchoolRevision(Revision):
         ordering = ['created', '-id']
         verbose_name_plural = 'Creator School Revisions'
 
-    objects = CreatorSchoolRevisionManager()
     creator_school = models.ForeignKey('gcd.CreatorSchool',
                                        on_delete=models.CASCADE,
                                        null=True,
@@ -8264,11 +8142,6 @@ class PreviewCreatorSchool(CreatorSchool):
           content_type=ContentType.objects.get_for_model(self.revision))
 
 
-class CreatorDegreeRevisionManager(RevisionManager):
-    def clone_revision(self, creator_degree, changeset):
-        return CreatorDegreeRevision.clone(creator_degree, changeset)
-
-
 class CreatorDegreeRevision(Revision):
     """
     record the degrees creators received
@@ -8279,7 +8152,6 @@ class CreatorDegreeRevision(Revision):
         ordering = ['created', '-id']
         verbose_name_plural = 'Creator Degree Revisions'
 
-    objects = CreatorDegreeRevisionManager()
     creator_degree = models.ForeignKey('gcd.CreatorDegree',
                                        on_delete=models.CASCADE,
                                        null=True,
@@ -8365,11 +8237,6 @@ class PreviewCreatorDegree(CreatorDegree):
           content_type=ContentType.objects.get_for_model(self.revision))
 
 
-class CreatorMembershipRevisionManager(RevisionManager):
-    def clone_revision(self, creator_membership, changeset):
-        return CreatorMembershipRevision.clone(creator_membership, changeset)
-
-
 class CreatorMembershipRevision(Revision):
     """
     record the membership of creator
@@ -8380,7 +8247,6 @@ class CreatorMembershipRevision(Revision):
         ordering = ['created', '-id']
         verbose_name_plural = 'Creator Membership Revisions'
 
-    objects = CreatorMembershipRevisionManager()
     creator_membership = models.ForeignKey('gcd.CreatorMembership',
                                            on_delete=models.CASCADE,
                                            null=True,
@@ -8484,12 +8350,6 @@ class PreviewCreatorMembership(CreatorMembership):
           content_type=ContentType.objects.get_for_model(self.revision))
 
 
-class CreatorArtInfluenceRevisionManager(RevisionManager):
-    def clone_revision(self, creator_art_influence, changeset):
-        return CreatorArtInfluenceRevision.clone(creator_art_influence,
-                                                 changeset)
-
-
 class CreatorArtInfluenceRevision(Revision):
     """
     record the art influences of creator
@@ -8500,7 +8360,6 @@ class CreatorArtInfluenceRevision(Revision):
         ordering = ['created', '-id']
         verbose_name_plural = 'Creator Art Influence Revisions'
 
-    objects = CreatorArtInfluenceRevisionManager()
     creator_art_influence = models.ForeignKey('gcd.CreatorArtInfluence',
                                               on_delete=models.CASCADE,
                                               null=True,
@@ -8594,12 +8453,6 @@ class MultiURLValidator(URLValidator):
                                           'one per line.')
 
 
-class CreatorNonComicWorkRevisionManager(RevisionManager):
-    def clone_revision(self, creator_non_comic_work, changeset):
-        return CreatorNonComicWorkRevision.clone(creator_non_comic_work,
-                                                 changeset)
-
-
 class CreatorNonComicWorkRevision(Revision):
     """
     record the non comic work of creator
@@ -8610,7 +8463,6 @@ class CreatorNonComicWorkRevision(Revision):
         ordering = ['created', '-id']
         verbose_name_plural = 'Creator NonComicWork Revisions'
 
-    objects = CreatorNonComicWorkRevisionManager()
     creator_non_comic_work = models.ForeignKey('gcd.CreatorNonComicWork',
                                                on_delete=models.CASCADE,
                                                null=True,

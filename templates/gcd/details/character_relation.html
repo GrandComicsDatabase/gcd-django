@@ -1,0 +1,55 @@
+{% extends "gcd/base_content.html" %}
+
+{% block title %}
+  GCD :: Character Relation :: {{ character_relation.from_character }} - {{ character_relation.to_character }}
+{% endblock %}
+
+{% block content_header %}
+<h1 class="item_id">
+  <div class="left">
+    <a href="{{ character_relation.from_character.get_absolute_url }}">{{ character_relation.from_character }}</a> : <a href="{{ character_relation.to_character.get_absolute_url }}">{{ character_relation.to_character }}</a>
+  </div>
+</h1>
+{% endblock content_header %}
+
+{% block content %}
+<dl class="pub_data">
+  <dt> Character:
+  <dd> <a href="{{ character_relation.from_character.get_absolute_url }}">{{ character_relation.from_character }}</a>
+  <dt> Relation:
+  <dd> {{ character_relation.relation_type }}
+  <dt> Character:
+  <dd> <a href="{{ character_relation.to_character.get_absolute_url }}">{{ character_relation.to_character }}</a>
+  {% if character_relation.character_name.count %}
+    <dt> Using Character Name{{ character_relation.character_name.count|pluralize }}:
+    <dd>
+    {% for character_name in character_relation.character_name.all %}
+      {{ character_name.name }}{% if not forloop.last %};{%  endif %}
+    {% endfor %}
+  {% endif %}
+  {% if character_relation.notes %}
+    <dt>Notes:
+    <dd>{{ character_relation.notes }}
+  {% endif %}
+</dl>
+{% endblock content %}
+
+{% block edit_box %}
+  {% if not preview %}
+    {% with character_relation as object %}
+    {% with 'character_relation' as object_class %}
+    {% with 'character_relation' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+  {% endif %} <!-- not preview -->
+{% endblock edit_box %}
+
+{% block change_history %}
+  {% if preview %}
+    <a href="{% url "change_history" model_name='character_relation' id=character_relation.source.id %}">View Change History</a>
+  {% else %}
+    <a href="{% url "change_history" model_name='character_relation' id=character_relation.id %}">View Change History</a>
+  {% endif %}
+{% endblock change_history %}

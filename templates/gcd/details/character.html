@@ -62,7 +62,7 @@ GCD :: Character :: {{ character.name }}
     {% for relation in character.active_relations %}
       {% with relation_info=relation|pre_process_relation:character %}
         <li style="page-break-inside: avoid;">
-          {{ relation_info.1 }} - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
+          <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
         {% if relation.notes %}
           <br><strong>Notes: </strong>{{ relation.notes }}
         {% endif %}
@@ -82,7 +82,7 @@ GCD :: Character :: {{ character.name }}
         {% endif %}
     {% for membership in character.active_memberships %}
         <li style="page-break-inside: avoid;">
-          <a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group }}</a> ({{ membership.membership_type }})
+		<a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group }}</a> (<a href="{% url 'show_group_membership' group_membership_id=membership.id %}">{{ membership.membership_type }}</a>)
         {{ membership.display_years }}
         {% if membership.notes %}
           <br><strong>Notes: </strong>{{ membership.notes }}

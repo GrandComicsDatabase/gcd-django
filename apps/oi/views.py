@@ -29,10 +29,10 @@ from apps.gcd.models import (
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
-    CreatorRelation, CreatorSchool, CreatorNameDetail, NameType, SourceType,
+    CreatorRelation, CreatorSchool, CreatorNameDetail,
     STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
     IndiciaPrinter, CreatorSignature, Character, CharacterRelation, Group,
-    GroupMembership)
+    GroupRelation, GroupMembership)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
@@ -51,14 +51,17 @@ from apps.oi.models import (
     Changeset, BrandGroupRevision, BrandRevision, BrandUseRevision,
     CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
-    StoryRevision, OngoingReservation, RevisionLock, _get_revision_lock,
-    _free_revision_lock, CTYPES, get_issue_field_list, set_series_first_last,
-    BiblioEntryRevision, DataSourceRevision, AwardRevision, CreatorRevision,
-    CreatorNameDetailRevision, CreatorMembershipRevision, ReceivedAwardRevision,
-    CreatorArtInfluenceRevision, CreatorNonComicWorkRevision, FeatureRevision,
-    CreatorSchoolRevision, CreatorDegreeRevision, FeatureLogoRevision,
-    CreatorRelationRevision, CharacterRevision, CharacterRelationRevision,
-    GroupRevision, GroupMembershipRevision, PreviewBrand, PreviewIssue, PreviewStory,
+    StoryRevision, BiblioEntryRevision, OngoingReservation, RevisionLock,
+    _get_revision_lock, _free_revision_lock, CTYPES,
+    get_issue_field_list, set_series_first_last,
+    AwardRevision, ReceivedAwardRevision,
+    CreatorRevision, CreatorNameDetailRevision, CreatorMembershipRevision,
+    CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
+    CreatorSchoolRevision, CreatorDegreeRevision, CreatorRelationRevision,
+    FeatureRevision, FeatureLogoRevision,
+    CharacterRevision, CharacterRelationRevision, GroupRevision,
+    GroupRelationRevision, GroupMembershipRevision,
+    PreviewBrand, PreviewIssue, PreviewStory,
     PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
@@ -122,6 +125,7 @@ REVISION_CLASSES = {
     'character': CharacterRevision,
     'character_relation': CharacterRelationRevision,
     'group': GroupRevision,
+    'group_relation': GroupRelationRevision,
     'group_membership': GroupMembershipRevision,
     'cover': CoverRevision,
     'reprint': ReprintRevision,
@@ -158,6 +162,7 @@ DISPLAY_CLASSES = {
     'character': Character,
     'character_relation': CharacterRelation,
     'group': Group,
+    'group_relation': GroupRelation,
     'group_membership': GroupMembership,
     'cover': Cover,
     'reprint': Reprint,
@@ -366,8 +371,13 @@ def _do_reserve(indexer, display_obj, model_name, delete=False,
     revision_lock.changeset = changeset
     revision_lock.save()
 
-    revision = REVISION_CLASSES[model_name].objects.clone_revision(
-      display_obj, changeset=changeset)
+    # TODO clone_revision is deprecated
+    if hasattr(REVISION_CLASSES[model_name].objects, 'clone_revision'):
+        revision = REVISION_CLASSES[model_name].objects.clone_revision(
+          display_obj, changeset=changeset)
+    else:
+        revision = REVISION_CLASSES[model_name].clone(display_obj,
+                                                      changeset=changeset)
 
     if delete:
         revision.deleted = True
@@ -1675,9 +1685,7 @@ def edit_issues_in_bulk(request):
     for issue in items:
         revision_lock = _get_revision_lock(issue, changeset)
         if revision_lock:
-            revision = IssueRevision.objects.clone_revision(
-                                             issue,
-                                             changeset=changeset)
+            revision = IssueRevision.clone(issue, changeset=changeset)
             for field in initial:
                 if field in ['brand', 'indicia_publisher'] and \
                    cd[field] is not None:
@@ -2552,10 +2560,6 @@ def add_character(request):
     return add_generic(request, 'character')
 
 
-def add_group(request):
-    return add_generic(request, 'group')
-
-
 @permission_required('indexer.can_reserve')
 def add_character_relation(request, character_id):
     character = get_object_or_404(Character, id=character_id, deleted=False)
@@ -2574,6 +2578,34 @@ def add_character_relation(request, character_id):
                                        kwargs={'character_id': character_id})
     return add_generic(request,
                        'character_relation',
+                       initial=initial,
+                       object_url=object_url,
+                       object_name='Relation with Character',
+                       cancel=cancel)
+
+
+def add_group(request):
+    return add_generic(request, 'group')
+
+
+@permission_required('indexer.can_reserve')
+def add_group_relation(request, group_id):
+    group = get_object_or_404(Group, id=group_id, deleted=False)
+
+    if group.pending_deletion():
+        return render_error(request, 'Cannot add Relation for '
+                                     'group "%s" since the record is '
+                                     'pending deletion.' % group)
+
+    initial = {}
+    initial['from_group'] = group_id
+
+    cancel = urlresolvers.reverse('show_group',
+                                  kwargs={'group_id': group_id})
+    object_url = urlresolvers.reverse('add_group_relation',
+                                       kwargs={'group_id': group_id})
+    return add_generic(request,
+                       'group_relation',
                        initial=initial,
                        object_url=object_url,
                        object_name='Relation with Character',
@@ -4437,6 +4469,7 @@ def show_queue(request, queue_name):
     characters = changes.filter(change_type=CTYPES['character'])
     character_relations = changes.filter(change_type=CTYPES['character_relation'])
     groups = changes.filter(change_type=CTYPES['group'])
+    group_relations = changes.filter(change_type=CTYPES['group_relation'])
     group_memberships = changes.filter(change_type=CTYPES['group_membership'])
     images = changes.filter(change_type=CTYPES['image'])
     countries = dict(Country.objects.values_list('id', 'code'))
@@ -4601,6 +4634,11 @@ def show_queue(request, queue_name):
             'object_name': 'Groups',
             'object_type': 'group',
             'changesets': groups.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Group Relations',
+            'object_type': 'group_relation',
+            'changesets': group_relations.order_by('modified', 'id')
           },
           {
             'object_name': 'Group Memberships',

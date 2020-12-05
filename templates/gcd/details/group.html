@@ -37,6 +37,27 @@ GCD :: Group :: {{ group.name }}
 <p>{{ group|show_credit:'keywords' }}</P>
       </dl>
 
+  {% if group.active_relations %}
+        <hr>
+        <h3>Relations:</h3>
+        {% if group.active_relations.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for relation in group.active_relations %}
+      {% with relation_info=relation|pre_process_relation:group %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_group_relation' group_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_group' group_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
+        {% if relation.notes %}
+          <br><strong>Notes: </strong>{{ relation.notes }}
+        {% endif %}
+        </li>
+      {% endwith %}
+    {% endfor %}
+          </ol>
+  {% endif %}
+
   {% if group.active_members %}
         <hr>
         <h3>Group Members:</h3>
@@ -47,7 +68,7 @@ GCD :: Group :: {{ group.name }}
         {% endif %}
     {% for member in group.active_members %}
         <li style="page-break-inside: avoid;">
-          <a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character }}</a> ({{ member.membership_type }})
+		<a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character }}</a> (<a href="{% url 'show_group_membership' group_membership_id=member.id %}">{{ member.membership_type }}</a>)
         {{ member.display_years }}
         {% if member.notes %}
           <br><strong>Notes: </strong>{{ member.notes }}
@@ -66,6 +87,10 @@ GCD :: Group :: {{ group.name }}
    {% endwith %}
  {% endif %}
  {% if request.user.is_authenticated %}
+  <form method="GET"
+        action="{% url "add_group_relation" group_id=group.id %}">
+      <input name="add_group_relation" type="submit" value="Add Relation"/>
+  </form>
   <form method="GET"
         action="{% url "add_group_member" group_id=group.id %}">
       <input name="add_group_member" type="submit" value="Add Group Member"/>
