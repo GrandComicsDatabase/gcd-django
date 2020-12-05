@@ -5960,28 +5960,11 @@ class FeatureRelationRevision(Revision):
     def _imps_for(self, field_name):
         return 1
 
-    # TODO general code ?
-    def commit_to_display(self):
-        feature_relation = self.feature_relation
-
-        if feature_relation is None:
-            feature_relation = FeatureRelation()
-        elif self.deleted:
-            for revision in feature_relation.revisions.all():
-                setattr(revision, "feature_relation_id", None)
-                revision.save()
-            feature_relation.delete()
-            return
-
-        feature_relation.to_feature = self.to_feature
-        feature_relation.from_feature = self.from_feature
-        feature_relation.relation_type = self.relation_type
-        feature_relation.notes = self.notes
-        feature_relation.save()
-
-        if self.feature_relation is None:
-            self.feature_relation = feature_relation
-            self.save()
+    def _pre_delete(self, changes):
+        for revision in self.source.revisions.all():
+            setattr(revision, 'feature_relation_id', None)
+            revision.save()
+        self.feature_relation_id = None
 
     def __str__(self):
         return '%s >%s< %s' % (str(self.from_feature),
@@ -6241,6 +6224,12 @@ class CharacterRelationRevision(Revision):
     def source(self, value):
         self.character_relation = value
 
+    def _pre_delete(self, changes):
+        for revision in self.source.revisions.all():
+            setattr(revision, 'character_relation_id', None)
+            revision.save()
+        self.character_relation_id = None
+
     _base_field_list = ['from_character', 'relation_type', 'to_character',
                         'notes']
 
@@ -6258,28 +6247,6 @@ class CharacterRelationRevision(Revision):
 
     def _imps_for(self, field_name):
         return 1
-
-    def commit_to_display(self):
-        character_relation = self.character_relation
-
-        if character_relation is None:
-            character_relation = CharacterRelation()
-        elif self.deleted:
-            for revision in character_relation.revisions.all():
-                setattr(revision, "character_relation_id", None)
-                revision.save()
-            character_relation.delete()
-            return
-
-        character_relation.to_character = self.to_character
-        character_relation.from_character = self.from_character
-        character_relation.relation_type = self.relation_type
-        character_relation.notes = self.notes
-        character_relation.save()
-
-        if self.character_relation is None:
-            self.character_relation = character_relation
-            self.save()
 
     def __str__(self):
         return '%s >%s< %s' % (str(self.from_character),
@@ -6350,6 +6317,12 @@ class GroupRelationRevision(Revision):
     def source(self, value):
         self.group_relation = value
 
+    def _pre_delete(self, changes):
+        for revision in self.source.revisions.all():
+            setattr(revision, 'group_relation_id', None)
+            revision.save()
+        self.group_relation_id = None
+
     _base_field_list = ['from_group', 'relation_type', 'to_group',
                         'notes']
 
@@ -6367,28 +6340,6 @@ class GroupRelationRevision(Revision):
 
     def _imps_for(self, field_name):
         return 1
-
-    def commit_to_display(self):
-        group_relation = self.group_relation
-
-        if group_relation is None:
-            group_relation = GroupRelation()
-        elif self.deleted:
-            for revision in group_relation.revisions.all():
-                setattr(revision, "group_relation_id", None)
-                revision.save()
-            group_relation.delete()
-            return
-
-        group_relation.to_group = self.to_group
-        group_relation.from_group = self.from_group
-        group_relation.relation_type = self.relation_type
-        group_relation.notes = self.notes
-        group_relation.save()
-
-        if self.group_relation is None:
-            self.group_relation = group_relation
-            self.save()
 
     def __str__(self):
         return '%s >%s< %s' % (str(self.from_group),
@@ -6434,6 +6385,12 @@ class GroupMembershipRevision(Revision):
     @source.setter
     def source(self, value):
         self.group_membership = value
+
+    def _pre_delete(self, changes):
+        for revision in self.source.revisions.all():
+            setattr(revision, 'group_membership_id', None)
+            revision.save()
+        self.group_membership_id = None
 
     def get_absolute_url(self):
         if self.group_membership is None:
