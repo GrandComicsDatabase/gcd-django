@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files import File
 from django.forms.models import inlineformset_factory
 from django.forms.widgets import HiddenInput
+from django.db import IntegrityError
 
 from dal import autocomplete
 
@@ -18,11 +19,11 @@ from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
                            CreatorNonComicWorkRevision, CreatorSchoolRevision,\
                            CreatorMembershipRevision, CreatorRelationRevision,\
                            CreatorSignatureRevision, get_creator_field_list,\
-                           ImageRevision,\
+                           ImageRevision, _get_revision_lock,\
                            _get_creator_sourced_fields, _check_year
-from apps.oi.covers import get_preview_generic_image_tag
 from apps.gcd.models import NameType, CreatorNameDetail, ImageType, School
 from apps.stddata.models import Country
+from apps.oi import states
 
 from .custom_layout_object import Formset, FormAsField
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
@@ -90,6 +91,7 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               "Family or given name can only be entered for 'name at birth', "
               "'changed name', or 'common alternate name'.")
+
 
 class CustomInlineFormSet(forms.BaseInlineFormSet):
     def _should_delete_form(self, form):
@@ -288,10 +290,13 @@ def get_creator_signature_revision_form(revision=None, user=None):
 
             if revision.image_revision or (revision.source and
                                            revision.source.signature):
-                self.fields['signature'].help_text = 'Select a file if you want to replace the existing image.'
+                self.fields['signature'].help_text = \
+                  'Select a file if you want to replace the existing image.'
 
         if revision.source:
-            signature = forms.ImageField(widget=HiddenInput, required=False)
+            if revision.source.generic:
+                signature = forms.ImageField(widget=HiddenInput,
+                                             required=False)
             generic = forms.BooleanField(widget=HiddenInput, required=False)
 
         def save(self, commit=True):
@@ -300,9 +305,23 @@ def get_creator_signature_revision_form(revision=None, user=None):
             if instance.image_revision:
                 instance.image_revision.changeset = revision.changeset
                 instance.image_revision.object_id = instance.id
-                instance.image_revision.content_type = ContentType.objects.get_for_model(instance)
+                content_type = ContentType.objects.get_for_model(instance)
+                instance.image_revision.content_type = content_type
+
+                if revision.source:
+                    image = revision.creator_signature.signature
+                    img_lock = _get_revision_lock(image,
+                                                  changeset=revision.changeset)
+                    if img_lock is None:
+                        raise IntegrityError("needed Image lock not possible")
+                    previous = image.revisions.filter(
+                                     changeset__state=states.APPROVED).last()
+                    instance.image_revision.previous_revision = previous
+                    instance.image_revision.is_replacement = True
+                    instance.image_revision.image = image
 
                 instance.image_revision.save()
+
             return instance
 
         def clean(self):
@@ -350,11 +369,13 @@ class CreatorSignatureRevisionForm(forms.ModelForm):
     comments = _get_comments_form_field()
 
     def save(self, commit=True):
-        instance = super(CreatorSignatureRevisionForm, self).save(commit=commit)
+        instance = super(CreatorSignatureRevisionForm, self).save(
+                                                             commit=commit)
         signature = self.cleaned_data['signature']
         if signature:
             if not instance.image_revision:
-                image_revision = ImageRevision(type=ImageType.objects.get(name='CreatorSignature'),
+                image_revision = ImageRevision(type=ImageType.objects.get(
+                                                    name='CreatorSignature'),
                                                changeset_id=1)
                 image_revision.save()
                 instance.image_revision = image_revision
