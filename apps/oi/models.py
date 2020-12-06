@@ -7294,6 +7294,11 @@ class DataSourceRevision(Revision):
 
         if data_source is None:
             data_source = DataSource(field=self.field)
+        elif self.deleted:
+            source_object = self.sourced_revision.source
+            source_object.data_source.remove(data_source)
+            data_source.delete()
+            return
         data_source.source_type = self.source_type
         data_source.source_description = self.source_description
         data_source.save()
@@ -7316,9 +7321,18 @@ def process_data_source(creator_form, field_name, changeset=None,
                                           '%s_source_description' % field_name)
 
     if revision:
+        # existing revision, data removed
+        if not data_source and not data_source_description:
+            if revision.source:
+                revision.deleted = True
+            else:
+                revision.delete()
+                return
         # existing revision, only update data
-        revision.source_type = data_source
-        revision.source_description = data_source_description
+        else:
+            revision.source_type = data_source
+            revision.source_description = data_source_description
+            revision.deleted = False
         revision.save()
     elif data_source or data_source_description:
         # new revision, create and set meta data

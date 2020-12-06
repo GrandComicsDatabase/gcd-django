@@ -643,10 +643,11 @@ def init_data_source_fields(field_name, revision, fields):
     if data_source_revision:
         # TODO we want to be able to support more than one revision
         data_source_revision = data_source_revision[0]
-        fields['%s_source_description' % field_name].initial = \
-                                    data_source_revision.source_description
-        fields['%s_source_type' % field_name].initial = \
-                                    data_source_revision.source_type
+        if not data_source_revision.deleted:
+            fields['%s_source_description' % field_name].initial = \
+                                        data_source_revision.source_description
+            fields['%s_source_type' % field_name].initial = \
+                                        data_source_revision.source_type
 
 
 def add_data_source_fields(form, field_name):
