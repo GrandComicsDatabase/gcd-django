@@ -444,6 +444,9 @@ class CoversColumn(tables.Column):
     def render(self, record):
         return record.cover_status_info()
 
+    def value(self, record):
+        return record.scan_count
+
 
 class PublishedColumn(tables.Column):
     def render(self, record):
@@ -506,6 +509,7 @@ class SeriesTable(tables.Table):
     def value_name(self, value):
         return str(value)
 
+
 class CreatorSeriesTable(SeriesTable):
     credits_count = tables.Column(accessor='issue_credits_count',
                                   verbose_name='Issues')
@@ -542,7 +546,8 @@ class CreatorSeriesTable(SeriesTable):
                 kwargs={'series_id': record.id,
                         '%s_id' % self.resolve_name:
                         getattr(self, self.resolve_name).id})
-        return mark_safe('<a href="%s">%s</a>' % (url, record.issue_credits_count))
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_credits_count))
 
     def value_credits_count(self, record):
         return record.issue_credits_count

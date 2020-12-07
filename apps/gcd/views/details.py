@@ -604,12 +604,12 @@ def publisher(request, publisher_id):
 def show_publisher(request, publisher, preview=False):
     publisher_series = publisher.active_series()
 
-    vars = {'publisher': publisher,
-            'current': publisher.series_set.filter(deleted=False,
-                                                   is_current=True),
-            'error_subject': publisher,
-            'preview': preview}
-    paginator = ResponsePaginator(publisher_series, per_page=100, vars=vars,
+    context = {'publisher': publisher,
+               'current': publisher.series_set.filter(deleted=False,
+                                                      is_current=True),
+               'error_subject': publisher,
+               'preview': preview}
+    paginator = ResponsePaginator(publisher_series, per_page=100, vars=context,
                                   alpha=True)
     page_number = paginator.paginate(request).number
     # doing select_related above looks like a more costly query for
@@ -632,10 +632,11 @@ def show_publisher(request, publisher, preview=False):
                         order_by=('name'))
     RequestConfig(request, paginate={'per_page': 100,
                                      'page': page_number}).configure(table)
-    vars['table'] = table
-    vars['extra_string'] = extra_string
+    context['table'] = table
+    context['extra_string'] = extra_string
 
-    return render(request, 'gcd/details/publisher.html', vars)
+    return generic_sortable_list(request, publisher_series, table,
+                                 'gcd/details/publisher.html', context)
 
 
 def show_publisher_issues(request, publisher_id):
