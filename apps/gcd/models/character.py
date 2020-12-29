@@ -67,7 +67,7 @@ class CharacterGroupBase(GcdData):
     keywords = TaggableManager()
 
     def has_dependents(self):
-        if self.active_relations():
+        if self.active_relations().exists():
             return True
         return False
 
@@ -106,7 +106,7 @@ class Character(CharacterGroupBase):
                                                'group__sort_name')
 
     def has_dependents(self):
-        if self.active_memberships():
+        if self.active_memberships().exists():
             return True
         return super(Character, self).has_dependents()
 
@@ -175,7 +175,7 @@ class Group(CharacterGroupBase):
                                            'character__sort_name')
 
     def has_dependents(self):
-        if self.active_members():
+        if self.active_members().exists():
             return True
         return super(Character, self).has_dependents()
 
