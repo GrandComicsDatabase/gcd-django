@@ -135,7 +135,7 @@ class CharacterRelation(GcdLink):
     class Meta:
         db_table = 'gcd_character_relation'
         app_label = 'gcd'
-        ordering = ('to_character', 'relation_type', 'from_character')
+        ordering = ('relation_type', 'to_character', 'from_character')
         verbose_name_plural = 'Character Relations'
 
     to_character = models.ForeignKey(Character, on_delete=models.CASCADE,
@@ -211,7 +211,7 @@ class GroupRelation(GcdLink):
     class Meta:
         db_table = 'gcd_group_relation'
         app_label = 'gcd'
-        ordering = ('to_group', 'relation_type', 'from_group')
+        ordering = ('relation_type', 'to_group', 'from_group')
         verbose_name_plural = 'Group Relations'
 
     to_group = models.ForeignKey(Group, on_delete=models.CASCADE,
