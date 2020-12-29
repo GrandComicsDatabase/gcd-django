@@ -67,11 +67,9 @@ class CharacterGroupBase(GcdData):
     keywords = TaggableManager()
 
     def has_dependents(self):
+        if self.active_relations():
+            return True
         return False
-
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
 
     _update_stats = True
 
@@ -107,6 +105,10 @@ class Character(CharacterGroupBase):
         return self.memberships.all().order_by('year_joined',
                                                'group__sort_name')
 
+    def has_dependents(self):
+        if self.active_memberships():
+            return True
+        return super(Character, self).has_dependents()
 
     # def stat_counts(self):
     #     """
@@ -171,6 +173,11 @@ class Group(CharacterGroupBase):
     def active_members(self):
         return self.members.all().order_by('year_joined',
                                            'character__sort_name')
+
+    def has_dependents(self):
+        if self.active_members():
+            return True
+        return super(Character, self).has_dependents()
 
     def get_absolute_url(self):
         return urlresolvers.reverse(

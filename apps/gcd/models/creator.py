@@ -343,10 +343,6 @@ class Creator(GcdData):
 
         return False
 
-    def pending_deletion(self):
-        return self.revisions.filter(changeset__state__in=states.ACTIVE,
-                                     deleted=True).count() == 1
-
     def active_names(self):
         return self.creator_names.exclude(deleted=True)
 
