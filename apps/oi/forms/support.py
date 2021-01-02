@@ -232,6 +232,7 @@ SERIES_HELP_LINKS = {
     'has_isbn': 'ISBN',
     'has_issue_title': 'Issue_Title',
     'has_rating': "Publisher's_Age_Guidelines",
+    'has_about_comics': 'About_Comics',
     'has_volume': 'Volume',
     'comments': 'Comments'
 }
