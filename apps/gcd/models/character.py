@@ -177,7 +177,7 @@ class Group(CharacterGroupBase):
     def has_dependents(self):
         if self.active_members().exists():
             return True
-        return super(Character, self).has_dependents()
+        return super(Group, self).has_dependents()
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
