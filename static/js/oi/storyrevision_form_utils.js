@@ -19,13 +19,22 @@ $(document).on('change', 'input[type=checkbox]', function () {
         match = id.match(/story_credit_revisions-(\d+)-(is_signed|is_credited)/)
 
     if (match) {
-	var inputRow = $('#id_story_credit_revisions-' + match[1] +
+    var inputRow = $('#id_story_credit_revisions-' + match[1] +
 		(match[2] == 'is_signed'? '-signed_as': '-credited_as'))
                 .parent().parent();
         if ($(this).is(':checked')) {
             inputRow.show()
         } else {
             inputRow.hide()
+        }
+        if (match[2] == 'is_signed') {
+        var inputRow = $('#id_story_credit_revisions-' + match[1] + '-signature')
+                    .parent().parent();
+            if ($(this).is(':checked')) {
+                inputRow.show()
+            } else {
+                inputRow.hide()
+            }
         }
     }
 })
