@@ -533,6 +533,8 @@ def profile(request, user_id=None, edit=False):
               'issue_detail': profile_user.indexer.issue_detail,
               'no_show_sequences':
               [seq.id for seq in profile_user.indexer.no_show_sequences.all()],
+              'cover_letterer_creator_only':
+              profile_user.indexer.cover_letterer_creator_only,
               'notify_on_approve': profile_user.indexer.notify_on_approve,
               'collapse_compare_view':
               profile_user.indexer.collapse_compare_view,
@@ -602,6 +604,7 @@ def update_profile(request, user_id=None):
     indexer.opt_in_email = form.cleaned_data['opt_in_email']
     indexer.issue_detail = form.cleaned_data['issue_detail']
     indexer.no_show_sequences.set(form.cleaned_data['no_show_sequences'])
+    indexer.cover_letterer_creator_only = form.cleaned_data['cover_letterer_creator_only']
     indexer.save()
 
     return HttpResponseRedirect(

@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gcd', '0033_character_characternamedetail_characterrelation_characterrelationtype_group_groupmembership_groupmem'),
+        ('gcd', '0033_add_characters'),
         ('stddata', '0003_script'),
         ('oi', '0031_housekeeping'),
     ]

@@ -326,6 +326,14 @@ def show_creator_credit(story, credit_type, url=True):
         return credit_value
 
 
+@register.filter
+def show_cover_letterer_credit(story):
+    if (story.letters == 'typeset' or story.letters == '?') and not\
+      story.active_credits.filter(credit_type_id=CREDIT_TYPES['letters']):
+        return ''
+    return show_creator_credit(story, 'letters')
+
+
 @register.filter()
 @stringfilter
 def markdown(value):

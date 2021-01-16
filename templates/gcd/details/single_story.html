@@ -48,7 +48,11 @@
           {{ story|show_creator_credit:"pencils" }}
           {{ story|show_creator_credit:"inks" }}
           {{ story|show_creator_credit:"colors" }}
-          {{ story|show_creator_credit:"letters" }}
+	  {% if is_cover and not preview and user.is_authenticated and user.indexer.cover_letterer_creator_only %}
+            {{ story|show_cover_letterer_credit }}
+	  {% else %}
+            {{ story|show_creator_credit:"letters" }}
+	  {% endif %}
           {{ story|show_creator_credit:"editing" }}
       </dl>
         {% endif %}

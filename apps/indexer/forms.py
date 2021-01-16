@@ -83,7 +83,16 @@ class AccountForm(forms.Form):
       queryset=StoryType.objects.exclude(id__in=DEPRECATED_TYPES).order_by('name'),
       required=False,
       widget=forms.SelectMultiple(attrs={'size': '6'}),
+      help_text=('Select sequence types that initially should not be shown in'
+                 ' the list of sequences on the issue page. These still show '
+                 'in the Table of Contents and can be accessed by click on '
+                 'their entry there.'),
     )
+
+    cover_letterer_creator_only = forms.BooleanField(
+      label="Cover letterer display", initial=False, required=False,
+      help_text=('If checked, only cover letterer credits indicating a'
+                 ' creator will be shown.'))
 
     interests = forms.CharField(
       widget=forms.Textarea, required=False,

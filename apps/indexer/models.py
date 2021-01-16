@@ -42,8 +42,6 @@ class Indexer(models.Model):
                                 on_delete=models.CASCADE)
     languages = models.ManyToManyField(Language, related_name='indexers',
                                        db_table='gcd_indexer_languages')
-    no_show_sequences = models.ManyToManyField(StoryType, related_name='indexers',
-                                               db_table='gcd_indexer_no_show_sequences')
     interests = models.TextField(null=True, blank=True)
     opt_in_email = models.BooleanField(default=False, db_index=True)
     from_where = models.TextField(blank=True)
@@ -66,6 +64,10 @@ class Indexer(models.Model):
     imps = models.IntegerField(default=0)
     # display options
     issue_detail = models.IntegerField(default=1)
+    no_show_sequences = models.ManyToManyField(
+      StoryType, related_name='indexers',
+      db_table='gcd_indexer_no_show_sequences')
+    cover_letterer_creator_only = models.BooleanField(default=False)
     # editing options
     notify_on_approve = models.BooleanField(db_index=True, default=True)
     collapse_compare_view = models.BooleanField(db_index=True, default=False)
