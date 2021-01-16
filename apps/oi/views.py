@@ -4490,11 +4490,6 @@ def show_queue(request, queue_name):
             'changesets': awards.order_by('modified', 'id')
           },
           {
-            'object_name': 'Received Awards',
-            'object_type': 'received_award',
-            'changesets': received_awards.order_by('modified', 'id')
-          },
-          {
             'object_name': 'Creators',
             'object_type': 'creator',
             'changesets': creators.order_by('modified', 'id') \
@@ -4507,49 +4502,6 @@ def show_queue(request, queue_name):
             'changesets': creator_signatures.order_by('modified', 'id') \
                 .annotate(country=Max(
                 'creatorsignaturerevisions__creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Memberships',
-            'object_type': 'creator_membership',
-            'changesets': creator_memberships.order_by('modified', 'id') \
-                .annotate(country=Max(
-                'creatormembershiprevisions__creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Art Influences',
-            'object_type': 'creator_art_influence',
-            'changesets': creator_art_influences.order_by('modified',
-                                                          'id') \
-                .annotate(country=Max(
-                'creatorartinfluencerevisions__creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Non Comic Works',
-            'object_type': 'creator_non_comic_work',
-            'changesets': creator_non_comic_works.order_by('modified', 'id') \
-                .annotate(country=Max(
-                'creatornoncomicworkrevisions__creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Creator Relations',
-            'object_type': 'creator_relation',
-            'changesets': creator_relations.order_by('modified', 'id') \
-                .annotate(country=Max(
-                'creatorrelationrevisions__from_creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Creator Schools',
-            'object_type': 'creator_school',
-            'changesets': creator_schools.order_by('modified', 'id') \
-                .annotate(country=Max(
-                'creatorschoolrevisions__creator__birth_country__id'))
-          },
-          {
-            'object_name': 'Creator Degrees',
-            'object_type': 'creator_degree',
-            'changesets': creator_degres.order_by('modified', 'id') \
-                .annotate(country=Max(
-                'creatordegreerevisions__creator__birth_country__id'))
           },
           {
             'object_name': 'Publishers',
@@ -4600,12 +4552,6 @@ def show_queue(request, queue_name):
               .annotate(country=Max('seriesrevisions__country__id')),
           },
           {
-            'object_name': 'Series Bonds',
-            'object_type': 'series_bond',
-            'changesets': series_bonds.order_by('modified', 'id')\
-              .annotate(country=Max('seriesbondrevisions__origin__country__id')),
-          },
-          {
             'object_name': 'Features',
             'object_type': 'feature',
             'changesets': features.order_by('modified', 'id')
@@ -4616,29 +4562,14 @@ def show_queue(request, queue_name):
             'changesets': feature_logos.order_by('modified', 'id')
           },
           {
-            'object_name': 'Feature Relations',
-            'object_type': 'feature_relation',
-            'changesets': feature_relations.order_by('modified', 'id')
-          },
-          {
             'object_name': 'Characters',
             'object_type': 'character',
             'changesets': characters.order_by('modified', 'id')
           },
           {
-            'object_name': 'Character Relations',
-            'object_type': 'character_relation',
-            'changesets': character_relations.order_by('modified', 'id')
-          },
-          {
             'object_name': 'Groups',
             'object_type': 'group',
             'changesets': groups.order_by('modified', 'id')
-          },
-          {
-            'object_name': 'Group Relations',
-            'object_type': 'group_relation',
-            'changesets': group_relations.order_by('modified', 'id')
           },
           {
             'object_name': 'Group Memberships',
@@ -4662,6 +4593,75 @@ def show_queue(request, queue_name):
             'object_type': 'issue',
             'changesets': issues.order_by('state', 'modified', 'id')\
               .annotate(country=Max('issuerevisions__series__country__id')),
+          },
+          {
+            'object_name': 'Received Awards',
+            'object_type': 'received_award',
+            'changesets': received_awards.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Creator Art Influences',
+            'object_type': 'creator_art_influence',
+            'changesets': creator_art_influences.order_by('modified',
+                                                          'id') \
+                .annotate(country=Max(
+                'creatorartinfluencerevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Degrees',
+            'object_type': 'creator_degree',
+            'changesets': creator_degres.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatordegreerevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Memberships',
+            'object_type': 'creator_membership',
+            'changesets': creator_memberships.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatormembershiprevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Non Comic Works',
+            'object_type': 'creator_non_comic_work',
+            'changesets': creator_non_comic_works.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatornoncomicworkrevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Relations',
+            'object_type': 'creator_relation',
+            'changesets': creator_relations.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatorrelationrevisions__from_creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Creator Schools',
+            'object_type': 'creator_school',
+            'changesets': creator_schools.order_by('modified', 'id') \
+                .annotate(country=Max(
+                'creatorschoolrevisions__creator__birth_country__id'))
+          },
+          {
+            'object_name': 'Series Bonds',
+            'object_type': 'series_bond',
+            'changesets': series_bonds.order_by('modified', 'id')\
+              .annotate(country=Max('seriesbondrevisions__origin__country__id')),
+          },
+          {
+            'object_name': 'Feature Relations',
+            'object_type': 'feature_relation',
+            'changesets': feature_relations.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Character Relations',
+            'object_type': 'character_relation',
+            'changesets': character_relations.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Group Relations',
+            'object_type': 'group_relation',
+            'changesets': group_relations.order_by('modified', 'id')
           },
           {
             'object_name': 'Covers',
