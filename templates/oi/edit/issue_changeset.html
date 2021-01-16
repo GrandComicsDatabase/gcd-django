@@ -189,10 +189,10 @@
       </form>
         {% endif %}
         {% if story.old_credits %}
-      <form class="story_button" method="POST"
+      <form class="story_button" method="POST" style="color: red" 
             action="{% url "migrate_story_revision" id=story.id %}">
         {% csrf_token %}
-        <input type="submit" value="Migrate">
+        <input type="submit" value="Migrate" style="color: red">
       </form>
         {% endif %}
       {% else %}
