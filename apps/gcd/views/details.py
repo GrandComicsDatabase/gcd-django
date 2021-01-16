@@ -135,6 +135,8 @@ def generic_sortable_list(request, items, table, template, context):
     context['table'] = table
     # are using /search/list_header.html in the template
     context['extra_string'] = extra_string
+    context['start'] = (page_number-1)*100 +1
+    context['end'] = page_number* 100
 
     return render(request, template, context)
 

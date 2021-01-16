@@ -5,7 +5,6 @@ from taggit.managers import TaggableManager
 
 from .gcddata import GcdData, GcdLink
 from apps.stddata.models import Language
-from apps.oi import states
 
 
 class CharacterNameDetail(GcdData):
@@ -22,7 +21,7 @@ class CharacterNameDetail(GcdData):
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True, default='')
     character = models.ForeignKey('Character', on_delete=models.CASCADE,
-                                related_name='character_names')
+                                  related_name='character_names')
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -85,7 +84,11 @@ class CharacterGroupBase(GcdData):
             year = '(p. %s)' % self.year_first_published
         else:
             year = ''
-        return '%s %s (%s)' % (str(self.name), year, self.language.name)
+        if self.disambiguation:
+            name = '%s [%s]' % (self.name, self.disambiguation)
+        else:
+            name = self.name
+        return '%s %s (%s)' % (name, year, self.language.name)
 
 
 class Character(CharacterGroupBase):
@@ -123,7 +126,6 @@ class Character(CharacterGroupBase):
         return urlresolvers.reverse(
                 'show_character',
                 kwargs={'character_id': self.id})
-
 
 
 class CharacterRelation(GcdLink):
@@ -215,9 +217,9 @@ class GroupRelation(GcdLink):
         verbose_name_plural = 'Group Relations'
 
     to_group = models.ForeignKey(Group, on_delete=models.CASCADE,
-                                     related_name='from_related_group')
+                                 related_name='from_related_group')
     from_group = models.ForeignKey(Group, on_delete=models.CASCADE,
-                                       related_name='to_related_group')
+                                   related_name='to_related_group')
     relation_type = models.ForeignKey(GroupRelationType,
                                       on_delete=models.CASCADE,
                                       related_name='relation_type')
@@ -281,10 +283,10 @@ class GroupMembership(GcdLink):
             years = '? - '
         else:
             years = '%d%s - ' % (self.year_joined,
-                             '?' if self.year_joined_uncertain else '')
+                                 '?' if self.year_joined_uncertain else '')
         if self.year_left:
             years += '%d%s' % (self.year_left,
-                             '?' if self.year_left_uncertain else '')
+                               '?' if self.year_left_uncertain else '')
         else:
             years += 'present'
         return years

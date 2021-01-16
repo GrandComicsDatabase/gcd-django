@@ -23,6 +23,9 @@ GCD :: Group :: {{ group.name }}
 
 {% block content %}
       <dl class="pub_data">
+{% if group.disambiguation %}
+        <p><strong>Disambiguation:</strong> {{ group.disambiguation }}</p>
+{% endif %}
 {% if group.year_first_published %}
         <p><strong>First published in:</strong> {{ group.display_year_first_published }}</p>
 {% endif %}

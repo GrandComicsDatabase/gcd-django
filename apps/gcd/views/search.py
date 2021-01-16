@@ -4,7 +4,7 @@ View methods related to displaying search and search results pages.
 """
 
 from re import match, split, sub
-from urllib.parse import urlencode
+from urllib.parse import urlencode, parse_qsl
 from decimal import Decimal
 from haystack.backends import SQ
 from stdnum import isbn as stdisbn
@@ -1059,6 +1059,34 @@ def process_advanced(request, export_csv=False):
             item = items.order_by()[select]
             return HttpResponseRedirect(item.get_absolute_url())
 
+    heading = target.title() + ' Search Results'
+    # Store the URL minus the page setting so that we can use
+    # it to build the URLs for the links to other pages.
+    get_copy = request.GET.copy()
+    get_copy.pop('page', None)
+    query_string = get_copy.urlencode()
+    display_target, method, logic, used_search_terms = used_search(get_copy)
+    query_string = urlencode(parse_qsl(query_string))
+
+    if target == 'sequence':
+        table = StoryTable(items, attrs={'class': 'sortable_listing'},
+                           template_name='gcd/bits/sortable_table.html',
+                           order_by=('issue__series__sort_name',
+                                     'issue__sort_code', 'sequence_number'))
+        context = {'object': target,
+                   'heading': heading,
+                   'item_name': 'sequence',
+                   'item_count': items.count(),
+                   'plural_suffix': 's',
+                   'query_string': query_string,
+                   'used_search_terms': used_search_terms,
+                   'target': 'Stories',
+                   'method': method,
+                   'logic': logic
+                   }
+        return generic_sortable_list(request, items, table,
+                                     'gcd/search/generic_list.html', context)
+
     item_name = target
     plural_suffix = 's'
     if item_name == 'sequence':
@@ -1069,25 +1097,18 @@ def process_advanced(request, export_csv=False):
     elif item_name == 'series':
         plural_suffix = ''
 
-    # Store the URL minus the page setting so that we can use
-    # it to build the URLs for the links to other pages.
-    get_copy = request.GET.copy()
-    get_copy.pop('page', None)
-
     context = {
         'advanced_search': True,
         'item_name': item_name,
         'plural_suffix': plural_suffix,
-        'heading': target.title() + ' Search Results',
-        'query_string': get_copy.urlencode(),
+        'heading': heading,
+        'query_string': query_string,
     }
 
     template = 'gcd/search/%s_list.html' % \
                ('content' if target == 'sequence' else item_name)
 
-    search_values = request.GET.copy()
-    target, method, logic, used_search_terms = used_search(search_values)
-    context['target'] = target
+    context['target'] = display_target
     context['method'] = method
     context['logic'] = logic
     context['used_search_terms'] = used_search_terms
