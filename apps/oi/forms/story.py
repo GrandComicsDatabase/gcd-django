@@ -372,12 +372,15 @@ class StoryRevisionForm(forms.ModelForm):
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='For creators so far not in the database and special credit '
-                  'entries you can enter the relevant creator credits in the '
-                  'following fields, where multiple credits are separated by '
-                  'semi-colons. Notes are in () and aliases in []. If the '
-                  'credit applies to a sequence type, but the creator is '
-                  'unknown enter a question mark.',
+        help_text='Text credits can be used for creators so far not in the'
+                  ' database and special credit entries. You can enter the '
+                  'relevant creator credits in the following fields, where '
+                  'multiple credits are separated by semi-colons. Notes are '
+                  'in () and aliases in []. If the credit applies to a '
+                  'sequence type, but the creator is unknown enter a question '
+                  'mark.<p>Existing text credits should be migrated, either '
+                  'using the migrate button on the issue change overview page'
+                  ' or by editing on this page.',
         label='')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
