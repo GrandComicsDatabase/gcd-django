@@ -24,7 +24,7 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision,\
-                           get_issue_field_list
+                           PublisherCodeNumberRevision, get_issue_field_list
 from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType,\
                             CreatorNameDetail, IndiciaPrinter
 
@@ -470,6 +470,26 @@ IssueRevisionFormSet = inlineformset_factory(
     can_delete=True, extra=1)
 
 
+class PublisherCodeNumberRevisionForm(forms.ModelForm):
+    class Meta:
+        model = PublisherCodeNumberRevision
+        fields = ['number', 'number_type']
+
+    def __init__(self, *args, **kwargs):
+        super(PublisherCodeNumberRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+        if self.instance.id:
+            self.fields['number_type'].empty_label = None
+
+
+PublisherCodeNumberFormSet = inlineformset_factory(
+    IssueRevision, PublisherCodeNumberRevision,
+    form=PublisherCodeNumberRevisionForm,
+    can_delete=True, extra=1)
+
+
 class BaseField(Field):
     def render(self, form, form_style, context, template_pack=None):
         fields = ''
@@ -523,6 +543,7 @@ class IssueRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credit_start:]])
+        field_list.append(Formset('code_number_formset'))
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = ISSUE_HELP_LINKS
 

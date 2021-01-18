@@ -46,6 +46,33 @@ def issue_descriptor(issue):
     return issue.number + title
 
 
+class CodeNumberType(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_code_number_type'
+        ordering = ['name']
+
+    name = models.CharField(max_length=50, db_index=True, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class PublisherCodeNumber(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_issue_code_number'
+
+    number = models.CharField(max_length=50, db_index=True)
+    number_type = models.ForeignKey(CodeNumberType, on_delete=models.CASCADE)
+    issue = models.ForeignKey('Issue', on_delete=models.CASCADE,
+                              related_name='code_number')
+
+    def __str__(self):
+        return "%s: %s (%s)" % (self.issue, self.number,
+                                self.number_type)
+
+
 class IssueCredit(GcdData):
     class Meta:
         app_label = 'gcd'
@@ -175,6 +202,9 @@ class Issue(GcdData):
 
     def active_printers(self):
         return self.indicia_printer.all()
+
+    def active_code_numbers(self):
+        return self.code_number.all()
 
     def shown_stories(self):
         """ returns cover sequence and story sequences """

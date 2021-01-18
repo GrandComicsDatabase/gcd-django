@@ -1,0 +1,23 @@
+[
+{
+  "model": "gcd.codenumbertype",
+  "pk": 1,
+  "fields": {
+    "name": "Mass Market Paperback Catalog Number"
+  }
+},
+{
+  "model": "gcd.codenumbertype",
+  "pk": 2,
+  "fields": {
+    "name": "Dell Eight-Digit Code"
+  }
+},
+{
+  "model": "gcd.codenumbertype",
+  "pk": 3,
+  "fields": {
+    "name": "Carlsen Code"
+  }
+}
+]

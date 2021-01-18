@@ -34,7 +34,8 @@ from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
-    SeriesBond, Cover, Image, Issue, IssueCredit, Story, StoryCredit, Feature,
+    SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
+    CodeNumberType, Story, StoryCredit, Feature,
     BiblioEntry, Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     FeatureLogo, FeatureRelation, Character, CharacterRelation,
@@ -353,7 +354,8 @@ class Changeset(models.Model):
                     self.storyrevisions.all(),
                     self.storycreditrevisions.all(),
                     self.coverrevisions.all(),
-                    self.reprintrevisions.all())
+                    self.reprintrevisions.all(),
+                    self.publishercodenumberrevisions.all())
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
             if self.issuerevisions.all().count() == 1 and \
@@ -3580,6 +3582,65 @@ def get_issue_field_list():
             'notes', 'keywords']
 
 
+class PublisherCodeNumberRevision(Revision):
+    class Meta:
+        db_table = 'oi_issue_code_number_revision'
+
+    publisher_code_number = models.ForeignKey(PublisherCodeNumber,
+                                              on_delete=models.CASCADE,
+                                              null=True,
+                                              related_name='revisions')
+
+    number = models.CharField(max_length=50, db_index=True)
+    number_type = models.ForeignKey(CodeNumberType, on_delete=models.CASCADE)
+    issue_revision = models.ForeignKey(
+      'IssueRevision', on_delete=models.CASCADE,
+      related_name='publisher_code_number_revisions')
+
+    source_name = 'publisher_code_number'
+    source_class = PublisherCodeNumber
+
+    @property
+    def source(self):
+        return self.publisher_code_number
+
+    @source.setter
+    def source(self, value):
+        self.publisher_code_number = value
+
+    def _pre_save_object(self, changes):
+        self.publisher_code_number.issue = self.issue_revision.issue
+
+    def _do_complete_added_revision(self, issue_revision):
+        self.issue_revision = issue_revision
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        self.issue_revision = kwargs['issue_revision']
+
+    def __str__(self):
+        return "%s: %s (%s)" % (self.issue_revision, self.number,
+                                self.number_type)
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    _base_field_list = ['number', 'number_type']
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'number': '',
+            'number_type': None,
+            'issue': None,
+        }
+
+    def _imps_for(self, field_name):
+        return 1
+
+
 class IssueCreditRevision(Revision):
     class Meta:
         db_table = 'oi_issue_credit_revision'
@@ -4075,6 +4136,17 @@ class IssueRevision(Revision):
                 if delete:
                     credit_revision.deleted = story_revision.deleted
                     credit_revision.save()
+        for code_number in self.issue.active_code_numbers():
+            code_number_lock = _get_revision_lock(code_number,
+                                                  changeset=self.changeset)
+            if code_number_lock is None:
+                raise IntegrityError("needed Code Number lock not possible")
+            code_number_revision = PublisherCodeNumberRevision.clone(
+                code_number, self.changeset, issue_revision=self)
+            if delete:
+                code_number_revision.deleted = self.deleted
+                code_number_revision.save()
+
         if delete:
             for cover in self.issue.active_covers():
                 # cover can be reserved, so this can fail
@@ -4097,12 +4169,18 @@ class IssueRevision(Revision):
             story.save()
 
     def extra_forms(self, request):
-        from apps.oi.forms.issue import IssueRevisionFormSet
+        from apps.oi.forms.issue import IssueRevisionFormSet, \
+            PublisherCodeNumberFormSet
         credits_formset = IssueRevisionFormSet(
           request.POST or None,
           instance=self,
           queryset=self.issue_credit_revisions.filter(deleted=False))
-        return {'credits_formset': credits_formset, }
+        code_number_formset = PublisherCodeNumberFormSet(
+          request.POST or None,
+          instance=self,
+          queryset=self.publisher_code_number_revisions.filter(deleted=False))
+        return {'credits_formset': credits_formset,
+                'code_number_formset': code_number_formset}
 
     def process_extra_forms(self, request, extra_forms):
         credits_formset = extra_forms['credits_formset']
@@ -4127,6 +4205,29 @@ class IssueRevision(Revision):
                         removed_credit.cleaned_data['id'].save()
                     else:
                         removed_credit.cleaned_data['id'].delete()
+
+        code_number_formset = extra_forms['code_number_formset']
+        for code_number_form in code_number_formset:
+            if code_number_form.is_valid() and code_number_form.cleaned_data:
+                cd = code_number_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    code_number_form.save()
+                else:
+                    credit_revision = code_number_form.save(commit=False)
+                    credit_revision.save_added_revision(
+                      changeset=self.changeset, issue_revision=self)
+            elif (not code_number_form.is_valid() and
+                  code_number_form not in code_number_formset.deleted_forms):
+                raise ValueError
+        removed_code_numbers = code_number_formset.deleted_forms
+        if removed_code_numbers:
+            for removed_code_number in removed_code_numbers:
+                if removed_code_number.cleaned_data['id']:
+                    if removed_code_number.cleaned_data['id'].publisher_code_number:
+                        removed_code_number.cleaned_data['id'].deleted = True
+                        removed_code_number.cleaned_data['id'].save()
+                    else:
+                        removed_code_number.cleaned_data['id'].delete()
 
     def get_absolute_url(self):
         if self.issue is None:
@@ -5079,8 +5180,7 @@ class StoryRevision(Revision):
                         credit_revision.id = None
                         credit_revision.previous_revision = None
                         credit_revision.source = None
-                        credit_revision.credit_type = \
-                          CreditType.objects.get(id=1)
+                        credit_revision.credit_type = CreditType.objects.get(id=1)
                         credit_revision.save()
                     if cd['credit_type'].id in [12, 13, 14]:
                         credit_revision.id = None
@@ -5106,7 +5206,7 @@ class StoryRevision(Revision):
         for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',
                             'editing'):
             credit = getattr(self, credit_type)
-            if credit and not (credit.startswith('?') and ';' not in credit)\
+            if credit and not credit.startswith('?')\
                and credit not in ['various', 'typeset']:
                 return True
         return False
@@ -5129,19 +5229,38 @@ class StoryRevision(Revision):
                     else:
                         uncertain = False
                     is_credited = False
+                    credited_as = ''
+                    signed_as = ''
                     is_signed = False
                     if credit.find('(') > 1:
                         note = credit[credit.find('(')+1:].strip()
-                        note = note.strip(' )')
+                        end_note = note.find(')')
+                        remainder_note = note[end_note+1:].strip()
+                        note = note[:end_note].strip()
                         credit = credit[:credit.find('(')-1]
                         if note in ['credited', 'kreditert']:
                             is_credited = True
                             note = ''
+                            if remainder_note:
+                                if remainder_note.find('as '):
+                                    credited_as = remainder_note[
+                                                  remainder_note.find('as ')+3:
+                                                  remainder_note.find(']')]
                         if note in ['signed', 'signert', 'signiert']:
                             is_signed = True
                             note = ''
+                            if remainder_note:
+                                if remainder_note.find('as '):
+                                    signed_as = remainder_note[
+                                                remainder_note.find('as ') + 3:
+                                                remainder_note.find(']')]
                         if note == 'painted':
                             note = 'painting'
+                        if note == 'signed, credited' or \
+                           note == 'credited, signed':
+                            is_signed = True
+                            is_credited = True
+                            note = ''
                     else:
                         note = ''
                     if credit.find('[') > 1:
@@ -5161,7 +5280,9 @@ class StoryRevision(Revision):
                           creator=creator,
                           credit_type_id=CREDIT_TYPES[credit_type],
                           is_credited=is_credited,
+                          credited_as=credited_as,
                           is_signed=is_signed,
+                          signed_as=signed_as,
                           uncertain=uncertain,
                           credit_name=note)
                         credit_revision.save()

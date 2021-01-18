@@ -9,7 +9,8 @@ the traditional models.py and views.py files.
 from .publisher import Publisher, IndiciaPublisher, Brand, BrandGroup, \
                        BrandUse, Printer, IndiciaPrinter
 from .series import Series, SeriesPublicationType
-from .issue import Issue, IssueCredit, INDEXED
+from .issue import Issue, IssueCredit, CodeNumberType, PublisherCodeNumber, \
+                   INDEXED
 from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
                    STORY_TYPES, OLD_TYPES, NON_OPTIONAL_TYPES, CREDIT_TYPES,\
                    DEPRECATED_TYPES
