@@ -94,7 +94,7 @@ def field_value(revision, field):
     elif field in ['publisher', 'indicia_publisher', 'series',
                    'origin_issue', 'target_issue', 'award',
                    'from_feature', 'to_feature', 'character',
-                   'from_group', 'to_group']:
+                   'from_group', 'to_group', 'from_character', 'to_character']:
         return absolute_url(value)
     elif field in ['origin', 'target']:
         return value.full_name_with_link()
