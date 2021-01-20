@@ -5212,9 +5212,12 @@ class StoryRevision(Revision):
         for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',
                             'editing'):
             credit = getattr(self, credit_type)
-            if credit and not credit.startswith('?')\
-               and credit not in ['various', 'typeset']:
-                return True
+            if credit:
+                for s in credit.split(";"):
+                    stripped = s.strip()
+                    if not stripped.startswith('?') \
+                      and stripped not in ['various', 'typeset']:
+                        return True
         return False
 
     def migrate_credits(self):
