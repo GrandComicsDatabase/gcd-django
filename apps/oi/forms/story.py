@@ -248,6 +248,9 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['signed_as'] and not cd['is_signed']:
             cd['signed_as'] = ""
 
+        if cd['signature']  and not cd['is_signed']:
+            cd['signature'] = None
+
 
 StoryRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryCreditRevision, form=StoryCreditRevisionForm,
