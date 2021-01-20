@@ -30,11 +30,18 @@ After approval the <span class="comparison_highlight">approver needs to check th
 {% if revision.comments.count %}
 {% with revision.comments as comments %}
 {% with 1 as no_links %}
-  {% include 'oi/bits/comments.html' %}
+  {% include 'oi/bits/comments.html' %
 {% endwith %}
 {% endwith %}
 {% endif %}
 
+{% if revision.code_number_revisions %}
+{% for code_number_revision in revision.code_number_revisions %}
+  {% with code_number_revision as story_revision %}
+  {% include 'oi/bits/compare_story.html' %}
+  {% endwith %}
+{% endfor %}
+{% endif %}
 <hr>
   {% if not revision.series.is_comics_publication %}
 <div>The individual issues of this series are each less than 50% comics.</div>

@@ -1128,7 +1128,7 @@ class RevisionManager(models.Manager):
 
     # H. TODO deprecated
     def _clone_revision(self, instance, instance_class,
-                       changeset, check=True, **kwargs):
+                        changeset, check=True, **kwargs):
         """
         Given an existing instance, create a new revision based on it.
 
@@ -2978,9 +2978,9 @@ class CoverRevisionManager(RevisionManager):
         This new revision will be where the replacement is stored.
         """
         return RevisionManager._clone_revision(self,
-                                              instance=cover,
-                                              instance_class=Cover,
-                                              changeset=changeset)
+                                               instance=cover,
+                                               instance_class=Cover,
+                                               changeset=changeset)
 
     def _do_create_revision(self, cover, changeset, **ignore):
         """
@@ -3591,7 +3591,8 @@ class PublisherCodeNumberRevision(Revision):
                                               null=True,
                                               related_name='revisions')
 
-    number = models.CharField(max_length=50, db_index=True)
+    number = models.CharField(max_length=50, db_index=True,
+      help_text='structured publisher code number, from cover or indicia')
     number_type = models.ForeignKey(CodeNumberType, on_delete=models.CASCADE)
     issue_revision = models.ForeignKey(
       'IssueRevision', on_delete=models.CASCADE,
@@ -4223,7 +4224,8 @@ class IssueRevision(Revision):
         if removed_code_numbers:
             for removed_code_number in removed_code_numbers:
                 if removed_code_number.cleaned_data['id']:
-                    if removed_code_number.cleaned_data['id'].publisher_code_number:
+                    if removed_code_number.cleaned_data['id']\
+                                          .publisher_code_number:
                         removed_code_number.cleaned_data['id'].deleted = True
                         removed_code_number.cleaned_data['id'].save()
                     else:
@@ -4450,6 +4452,10 @@ class IssueRevision(Revision):
 
     def ordered_story_revisions(self):
         return self._story_revisions().order_by('sequence_number')
+
+    def code_number_revisions(self):
+        return self.changeset.publishercodenumberrevisions.filter(
+          issue_revision=self)
 
     def next_sequence_number(self):
         stories = self._story_revisions()
@@ -5254,13 +5260,17 @@ class StoryRevision(Revision):
                                     signed_as = remainder_note[
                                                 remainder_note.find('as ') + 3:
                                                 remainder_note.find(']')]
-                        if note == 'painted':
+                        elif note == 'painted':
                             note = 'painting'
-                        if note == 'signed, credited' or \
-                           note == 'credited, signed':
+                        elif note == 'signed, credited' or \
+                          note == 'credited, signed':
                             is_signed = True
                             is_credited = True
                             note = ''
+                        elif note == 'signed, painted' or \
+                          note == 'painted, signed':
+                            is_signed = True
+                            note = 'painting'
                     else:
                         note = ''
                     if credit.find('[') > 1:
@@ -6100,13 +6110,16 @@ class CharacterGroupRevisionBase(Revision):
 
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, default='')
-    disambiguation = models.CharField(max_length=255, db_index=True, blank=True)
+    disambiguation = models.CharField(
+      max_length=255, db_index=True, blank=True,
+      help_text='if needed add a short phrase for disambiguation')
 
     year_first_published = models.IntegerField(db_index=True, null=True,
                                                blank=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True,
+      help_text='concise description, including background and premise')
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
 

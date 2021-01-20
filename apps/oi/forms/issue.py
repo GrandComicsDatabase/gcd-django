@@ -542,8 +542,11 @@ class IssueRevisionForm(forms.ModelForm):
         field_list.append(Formset('credits_formset'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[credit_start:]])
+                           for field in fields[credit_start:-4]])
         field_list.append(Formset('code_number_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[-4:]])
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = ISSUE_HELP_LINKS
 
