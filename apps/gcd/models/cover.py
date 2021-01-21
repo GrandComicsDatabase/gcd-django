@@ -102,5 +102,5 @@ class CoverIssuePublisherTable(IssuePublisherTable):
         from apps.gcd.views.covers import get_image_tag
         cover_tag = ''
         for cover in value:
-            cover_tag += get_image_tag(cover, '', 1)
+            cover_tag += '<a href="%s">%s</a>' % (cover.get_absolute_url(), get_image_tag(cover, '', 1))
         return mark_safe(cover_tag)
