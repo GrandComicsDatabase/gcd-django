@@ -69,8 +69,9 @@ IS_EMPTY = '[IS_EMPTY]'
 IS_NONE = '[IS_NONE]'
 
 ISSUE_CHECKLIST_DISCLAIMER = 'In the checklist results for stories, covers, '\
-                             'and cartoons are shown. '
-MIGRATE_DISCLAIMER = 'Text credits are currently being migrated to '\
+                             'and cartoons are shown.'
+COVER_CHECKLIST_DISCLAIMER = 'In the checklist results for covers are shown.'
+MIGRATE_DISCLAIMER = ' Text credits are currently being migrated to '\
                      'links. Therefore not all credits in our '\
                      'database are shown here.'
 
@@ -380,14 +381,14 @@ def cover_checklist_by_id(request, creator_id, series_id=None,
     if series_id:
         series = get_gcd_object(Series, series_id)
         issues = issues.filter(series__id=series_id)
-        heading = 'Issues for Creator %s in Series %s' % (creator,
-                                                          series)
+        heading = 'Covers from Creator %s in Series %s' % (creator,
+                                                           series)
     else:
-        heading = 'Issue Checklist for Creator %s' % (creator)
+        heading = 'Cover Checklist for Creator %s' % (creator)
 
     context = {
-        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
-        'item_name': 'issue',
+        'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'item_name': 'cover',
         'plural_suffix': 's',
         'heading': heading
     }
