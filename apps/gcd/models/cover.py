@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
 from django.db import models
+from django.utils.safestring import mark_safe
 import django.urls as urlresolvers
 
-from .issue import Issue
+import django_tables2 as tables
+
+from .issue import Issue, IssuePublisherTable
 
 # TODO: should not be importing oi app into gcd app, dependency should be
 # the other way around.  Probably.
@@ -85,3 +88,19 @@ class Cover(models.Model):
 
     def __str__(self):
         return '%s %s cover' % (self.issue.series, self.issue.display_number)
+
+class CoverIssuePublisherTable(IssuePublisherTable):
+    cover = tables.Column(accessor='active_covers',
+                          verbose_name='Cover', orderable=False)
+
+    class Meta:
+        model = Issue
+        fields = ('cover', 'publisher', 'issue', 'publication_date', 'on_sale_date')
+        attrs = {'th': {'class': "non_visited"}}
+
+    def render_cover(self, value):
+        from apps.gcd.views.covers import get_image_tag
+        cover_tag = ''
+        for cover in value:
+            cover_tag += get_image_tag(cover, '', 1)
+        return mark_safe(cover_tag)

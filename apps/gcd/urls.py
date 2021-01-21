@@ -357,6 +357,12 @@ urlpatterns = [
       gcd_views.details.checklist_by_id, name='checklist_by_id'),
     url(r'^checklist/(?P<creator_id>\d+)/$',
       gcd_views.details.checklist_by_id, name='checklist_by_id'),
+   url(r'^cover_checklist/(?P<creator_id>\d+)/country/(?P<country>.+)/$',
+      gcd_views.details.cover_checklist_by_id, name='cover_checklist_by_id'),
+    url(r'^cover_checklist/(?P<creator_id>\d+)/language/(?P<language>.+)/$',
+      gcd_views.details.cover_checklist_by_id, name='cover_checklist_by_id'),
+    url(r'^cover_checklist/(?P<creator_id>\d+)/$',
+      gcd_views.details.cover_checklist_by_id, name='cover_checklist_by_id'),
 
     # Note that Jobs don't have 'name' in the path, but otherwise work the same.
     url(r'^job_number/name/(?P<number>.+)/sort/(?P<sort>.+)/$',

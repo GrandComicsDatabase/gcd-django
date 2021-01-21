@@ -47,7 +47,8 @@ from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
                                   get_image_tags_per_page
-from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
+from apps.gcd.models.cover import CoverIssuePublisherTable, \
+                                  ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.gcd.forms import get_generic_select_form
 from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
@@ -355,6 +356,43 @@ def checklist_by_id(request, creator_id, series_id=None,
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
+                                template_name='gcd/bits/sortable_table.html',
+                                order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def cover_checklist_by_id(request, creator_id, series_id=None,
+                          country=None, language=None):
+    creator = get_gcd_object(Creator, creator_id)
+    creator_names = creator.creator_names.filter(deleted=False)
+
+    issues = Issue.objects.filter(story__credits__creator__in=creator_names,
+                                  story__type__id=6,
+                                  story__credits__deleted=False,
+                                  story__credits__credit_type__id__lt=6)\
+                          .distinct().select_related('series__publisher')
+    if country:
+        country = get_object_or_404(Country, code=country)
+        issues = issues.filter(series__country=country)
+    if language:
+        language = get_object_or_404(Language, code=language)
+        issues = issues.filter(series__language=language)
+    if series_id:
+        series = get_gcd_object(Series, series_id)
+        issues = issues.filter(series__id=series_id)
+        heading = 'Issues for Creator %s in Series %s' % (creator,
+                                                          series)
+    else:
+        heading = 'Issue Checklist for Creator %s' % (creator)
+
+    context = {
+        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CoverIssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
                                 template_name='gcd/bits/sortable_table.html',
                                 order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)

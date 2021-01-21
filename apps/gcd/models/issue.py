@@ -605,6 +605,7 @@ class IssuePublisherTable(IssueTable):
     def value_publisher(self, value):
         return str(value)
 
+
 class IndiciaPublisherIssueTable(IssueTable):
     brand = tables.Column(accessor='brand',
                           verbose_name='Brand')
