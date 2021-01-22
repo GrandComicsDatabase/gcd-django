@@ -461,8 +461,10 @@ class Issue(GcdData):
     def full_descriptor(self):
         if self.variant_name:
             return "%s [%s]" % (self.issue_descriptor, self.variant_name)
-        else:
-            return self.issue_descriptor
+        if self.active_code_numbers().filter(number_type__id=1):
+            return "%s [%s]" % (self.issue_descriptor,
+              self.active_code_numbers().get(number_type__id=1).number)
+        return self.issue_descriptor
 
     @property
     def issue_descriptor(self):
