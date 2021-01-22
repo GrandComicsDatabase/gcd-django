@@ -75,15 +75,6 @@ This issue has variants:
             {{ issue|show_reprints_for_issue }}
                   </dl>
   {% endif %}
-  {% if issue.active_code_numbers.count %}
-                  <dl class="contents">
-                  <ul>
-    {% for code_number in issue.active_code_numbers %}
-      <li>{{ code_number.number_type }}: {{ code_number.number }} </li>
-    {% endfor %}
-                  </ul>
-                  </dl>
-  {% endif %}
                   </div>
                 </div>
               </div> <!-- issue.notes -->
