@@ -462,7 +462,7 @@ class Issue(GcdData):
         if self.variant_name:
             return "%s [%s]" % (self.issue_descriptor, self.variant_name)
         if self.active_code_numbers().filter(number_type__id=1):
-            return "%s [%s]" % (self.issue_descriptor,
+            return "%s (%s)" % (self.issue_descriptor,
               self.active_code_numbers().get(number_type__id=1).number)
         return self.issue_descriptor
 
@@ -491,8 +491,12 @@ class Issue(GcdData):
             return '%s %s [%s]' % (self.series.full_name(),
                                    self.display_number,
                                    self.variant_name)
-        else:
-            return '%s %s' % (self.series.full_name(), self.display_number)
+        if self.active_code_numbers().filter(number_type__id=1):
+            return "%s %s (%s)" % (
+              self.series.full_name(),
+              self.display_number,
+              self.active_code_numbers().get(number_type__id=1).number)
+        return '%s %s' % (self.series.full_name(), self.display_number)
 
     def full_name_with_link(self, publisher=False):
         name_link = self.series.full_name_with_link(publisher)
