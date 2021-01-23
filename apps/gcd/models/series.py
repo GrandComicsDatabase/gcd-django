@@ -331,6 +331,17 @@ class Series(GcdData):
         return self.active_base_issues()\
                    .exclude(is_indexed=INDEXED['skeleton']).count()
 
+    @cached_property
+    def issues_to_migrate(self):
+        stories = Story.objects.exclude(script__in=['', '?'],
+                                        pencils__in=['', '?'],
+                                        inks__in=['', '?'],
+                                        colors__in=['', '?'])\
+                               .filter(issue__series__id=self.id)
+        issues = self.active_issues().filter(id__in=set(stories.values_list(
+                                                        'issue', flat=True)))
+        return issues
+
     def _date_uncertain(self, flag):
         return ' ?' if flag else ''
 
@@ -404,7 +415,8 @@ class Series(GcdData):
 
     def full_name_with_link(self, publisher=False):
         if publisher:
-            name_link = '<a href="%s">%s</a> (<a href="%s">%s</a>, %s%s series)' \
+            name_link = '<a href="%s">%s</a> (<a href="%s">%s</a>,' \
+                        ' %s%s series)' \
               % (self.get_absolute_url(), esc(self.name),
                  self.publisher.get_absolute_url(), self.publisher,
                  self.year_began,

@@ -209,6 +209,9 @@ urlpatterns = [
       name='series_timeline'),
     url(r'^series/(?P<series_id>\d+)/details/creator_list/$',
       gcd_views.details.series_creatorlist, name='series_creatorlist'),
+    url(r'^series/(?P<series_id>\d+)/issues_to_migrate/$',
+      gcd_views.details.series_issues_to_migrate,
+      name='series_migrate'),
 
     # Series and Issue
     url(r'^series/name/(?P<series_name>.+)/issue/(?P<issue_nr>.+)/$',

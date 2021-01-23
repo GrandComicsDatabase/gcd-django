@@ -1253,6 +1253,21 @@ def series_creatorlist(request, series_id):
     return generic_sortable_list(request, creators, table, template, context)
 
 
+def series_issues_to_migrate(request, series_id):
+    series = get_gcd_object(Series, series_id)
+    issues = series.issues_to_migrate
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issues with Text Credits to Migrate for %s' % (series)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
+                               template_name='gcd/bits/sortable_table.html')
+    return generic_sortable_list(request, issues, table, template, context)
+
+
 def keyword(request, keyword, model_name='story'):
     """
     Display the objects associated to a keyword.
