@@ -90,7 +90,7 @@
             <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
             <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
             <li><a href='{% url "series_creatorlist" series_id=series.id %}'>Creator Checklist (via linked story records)</a></li>
-            {% if series.issues_to_migrate.count %}<li><a href='{% url "series_migrate" series_id=series.id %}'>{{ series.issues_to_migrate.count }} issues</a> with text credits to migrate.</li>{% endif %}
+            {% if series.issues_to_migrate.count %}<li>Approximately <a href='{% url "series_migrate" series_id=series.id %}'>{{ series.issues_to_migrate.count }} issues</a> with text credits to migrate.</li>{% endif %}
 	  </ul>
 {% endif %}
 {% if brand_counts.no_brand != series.active_issues.count %}

@@ -550,7 +550,7 @@ class IssueColumn(tables.Column):
         query_set = query_set.annotate(series_name=F('series__sort_name'))
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'series_name',
-                                       'series__year',
+                                       'series__year_began',
                                        'series__id',
                                        direction + 'sort_code')
         return (query_set, True)

@@ -20,6 +20,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from django_tables2 import RequestConfig
 from django_tables2.paginators import LazyPaginator
+from django_tables2.export.export import TableExport
 
 from apps.indexer.views import ViewTerminationError
 
@@ -33,7 +34,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CreatorRelation, CreatorSchool, CreatorNameDetail,\
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
-                            Printer, IndiciaPrinter, School, Story, Character, Group, \
+                            Printer, IndiciaPrinter, School, Story, \
+                            Character, Group, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
@@ -115,7 +117,6 @@ def get_gcd_object(model, object_id, model_name=None):
                                          'id': object_id})))
     return object
 
-from django_tables2.export.export import TableExport
 
 def generic_sortable_list(request, items, table, template, context):
     paginator = ResponsePaginator(items, per_page=100, vars=context)
@@ -137,8 +138,8 @@ def generic_sortable_list(request, items, table, template, context):
     context['table'] = table
     # are using /search/list_header.html in the template
     context['extra_string'] = extra_string
-    context['start'] = (page_number-1)*100 +1
-    context['end'] = page_number* 100
+    context['start'] = (page_number-1)*100 + 1
+    context['end'] = page_number*100
 
     return render(request, template, context)
 
@@ -274,17 +275,18 @@ def creator_sequences(request, creator_id, series_id=None,
 def creator_issues(request, creator_id, series_id,
                    country=None, language=None):
     return checklist_by_id(request, creator_id, series_id=series_id,
-                    country=country, language=language)
+                           country=country, language=language)
+
 
 def creator_series(request, creator_id, country=None, language=None):
     creator = get_gcd_object(Creator, creator_id)
     names = creator.creator_names.filter(deleted=False)
 
-    series = Series.objects.filter(issue__story__credits__creator__in=names,
-                                   issue__story__type__id__in=CORE_TYPES,
-                                   issue__story__credits__deleted=False,
-                                   issue__story__credits__credit_type__id__lt=6)\
-                           .distinct()
+    series = Series.objects.filter(
+      issue__story__credits__creator__in=names,
+      issue__story__type__id__in=CORE_TYPES,
+      issue__story__credits__deleted=False,
+      issue__story__credits__credit_type__id__lt=6).distinct()
     if country:
         country = get_object_or_404(Country, code=country)
         series = series.filter(country=country)
@@ -295,15 +297,20 @@ def creator_series(request, creator_id, country=None, language=None):
     series = series.annotate(issue_credits_count=Count('issue', distinct=True))
     series = series.annotate(first_credit=Min('issue__key_date'))
     script = Count('issue',
-                   filter=Q(issue__story__credits__credit_type__id=1), distinct=True)
+                   filter=Q(issue__story__credits__credit_type__id=1),
+                   distinct=True)
     pencils = Count('issue',
-                    filter=Q(issue__story__credits__credit_type__id=2), distinct=True)
+                    filter=Q(issue__story__credits__credit_type__id=2),
+                    distinct=True)
     inks = Count('issue',
-                 filter=Q(issue__story__credits__credit_type__id=3), distinct=True)
+                 filter=Q(issue__story__credits__credit_type__id=3),
+                 distinct=True)
     colors = Count('issue',
-                   filter=Q(issue__story__credits__credit_type__id=4), distinct=True)
+                   filter=Q(issue__story__credits__credit_type__id=4),
+                   distinct=True)
     letters = Count('issue',
-                    filter=Q(issue__story__credits__credit_type__id=5), distinct=True)
+                    filter=Q(issue__story__credits__credit_type__id=5),
+                    distinct=True)
     series = series.annotate(
       script=script,
       pencils=pencils,
@@ -321,7 +328,7 @@ def creator_series(request, creator_id, country=None, language=None):
     table = CreatorSeriesTable(series, attrs={'class': 'sortable_listing'},
                                creator=creator,
                                template_name='gcd/bits/sortable_table.html',
-                        order_by=('feature'))
+                               order_by=('feature'))
     return generic_sortable_list(request, series, table, template, context)
 
 
@@ -393,9 +400,10 @@ def cover_checklist_by_id(request, creator_id, series_id=None,
         'heading': heading
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = CoverIssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
-                                template_name='gcd/bits/sortable_table.html',
-                                order_by=('publication_date'))
+    table = CoverIssuePublisherTable(issues,
+                                     attrs={'class': 'sortable_listing'},
+                                     template_name='gcd/bits/sortable_table.html',
+                                     order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -414,13 +422,20 @@ def checklist_by_name(request, creator, country=None, language=None):
         q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
                             '%stype__id__in' % (prefix): CORE_TYPES})
     issues = Issue.objects.filter(q_objs_text).distinct()\
-                          .annotate(series__name=F('series__name'))
+                          .annotate(series__name=F('series__name'))\
+                          .annotate(series__year_began=
+                                    F('series__year_began'))\
+                          .annotate(series__id=F('series__id'))
+
     creator = CreatorNameDetail.objects.filter(name__iexact=creator)
     if creator:
         q_objs_credits = Q(**{'%scredits__creator__in' % (prefix): creator,
                               '%stype__id__in' % (prefix): CORE_TYPES})
         items2 = Issue.objects.filter(q_objs_credits).distinct()\
-                              .annotate(series__name=F('series__name'))
+                              .annotate(series__name=F('series__name')) \
+                              .annotate(series__year_began=
+                                        F('series__year_began')) \
+                              .annotate(series__id=F('series__id'))
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
@@ -1264,7 +1279,7 @@ def series_issues_to_migrate(request, series_id):
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                               template_name='gcd/bits/sortable_table.html')
+                       template_name='gcd/bits/sortable_table.html')
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -1277,13 +1292,13 @@ def keyword(request, keyword, model_name='story'):
         return render(
             request, 'indexer/error.html',
             {'error_text':
-                 'There are no keyword-lists for these objects.'})
+             'There are no keyword-lists for these objects.'})
 
     objs = DISPLAY_CLASSES[model_name].objects.filter(keywords__name=keyword)
     if model_name == 'story':
         table = StoryTable(objs, attrs={'class': 'sortable_listing'},
-                            template_name='gcd/bits/sortable_table.html',
-                            order_by=('name'))
+                           template_name='gcd/bits/sortable_table.html',
+                           order_by=('name'))
         description = 'showing %d stories for keyword' % objs.count()
     elif model_name == 'issue':
         table = IssuePublisherTable(objs, attrs={'class': 'sortable_listing'},
@@ -1714,13 +1729,13 @@ def do_on_sale_weekly(request, year=None, week=None):
     # we need this to filter out incomplete on-sale dates
     if monday.month != sunday.month:
         endday = monday.replace(day=monthrange(monday.year, monday.month)[1])
-        issues_on_sale = \
-          Issue.objects.filter(on_sale_date__gte=monday.isoformat(),
-                               on_sale_date__lte=endday.isoformat())
+        issues_on_sale = Issue.objects.filter(
+          on_sale_date__gte=monday.isoformat(),
+          on_sale_date__lte=endday.isoformat())
         startday = sunday.replace(day=1)
-        issues_on_sale = issues_on_sale | \
-          Issue.objects.filter(on_sale_date__gte=startday.isoformat(),
-                               on_sale_date__lte=sunday.isoformat())
+        issues_on_sale = issues_on_sale | Issue.objects.filter(
+          on_sale_date__gte=startday.isoformat(),
+          on_sale_date__lte=sunday.isoformat())
 
     else:
         issues_on_sale = Issue.objects\
