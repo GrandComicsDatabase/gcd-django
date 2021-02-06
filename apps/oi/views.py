@@ -81,6 +81,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_revision_form,
                            get_series_revision_form,
                            IssueRevisionFormSet,
+                           PublisherCodeNumberFormSet,
                            get_story_revision_form,
                            StoryRevisionFormSet,
                            get_feature_logo_revision_form,
@@ -2050,6 +2051,11 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                    user=request.user,
                                    edit_with_base=edit_with_base)
     credits_formset = IssueRevisionFormSet(request.POST or None)
+    if series.has_publisher_code_number:
+        code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
+    else:
+        code_number_formset = None
+
 
     if request.method != 'POST':
         if variant_of:
@@ -2069,12 +2075,14 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
             if reversed_issues.count():
                 initial['after'] = reversed_issues[0].id
             form = form_class(initial=initial)
-        return _display_add_issue_form(request, series, form, credits_formset,
+        return _display_add_issue_form(request, series, form,
+                                       credits_formset, code_number_formset,
                                        variant_of, variant_cover)
 
     form = form_class(request.POST)
     if not form.is_valid() or not credits_formset.is_valid():
-        return _display_add_issue_form(request, series, form, credits_formset,
+        return _display_add_issue_form(request, series, form,
+                                       credits_formset, code_number_formset,
                                        variant_of, variant_cover)
 
     if variant_of and edit_with_base:
@@ -2096,7 +2104,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                  series=series,
                                  variant_of=variant_of)
     form.save_m2m()
-    extra_forms = {'credits_formset': credits_formset, }
+    extra_forms = {'credits_formset': credits_formset,
+                   'code_number_formset': code_number_formset,}
     revision.process_extra_forms(request, extra_forms)
 
     if variant_of:
@@ -2122,6 +2131,10 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
                                    variant_of=issue_revision.issue,
                                    user=request.user)
     credits_formset = IssueRevisionFormSet(request.POST or None)
+    if series.has_publisher_code_number:
+        code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
+    else:
+        code_number_formset = None
     if request.method != 'POST':
         initial = dict(issue_revision.__dict__)
         if issue_revision.series.has_indicia_printer:
@@ -2134,7 +2147,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
               extra=credits.count() + 1)(initial=credits.values(
                                          *credits[0]._field_list()))
         return _display_add_issue_form(request, series, form, credits_formset,
-                                       None, None,
+                                       code_number_formset, None, None,
                                        issue_revision=issue_revision)
 
     if 'cancel' in request.POST:
@@ -2144,8 +2157,9 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
 
     form = form_class(request.POST)
     if not form.is_valid():
-        return _display_add_issue_form(request, series, form, None, None,
-                                       None, issue_revision=issue_revision)
+        return _display_add_issue_form(request, series, form, credits_formset,
+                                       code_number_formset, None, None,
+                                       issue_revision=issue_revision)
 
     variant_revision = form.save(commit=False)
     variant_revision.save_added_revision(changeset=changeset,
@@ -2199,7 +2213,7 @@ def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
 
 
 def _display_add_issue_form(request, series, form, credits_formset,
-                            variant_of, variant_cover,
+                            code_number_formset, variant_of, variant_cover,
                             issue_revision=None):
     action_label = 'Submit new'
     alternative_action = None
@@ -2249,6 +2263,7 @@ def _display_add_issue_form(request, series, form, credits_formset,
         'action_label': action_label,
         'form': form,
         'credits_formset': credits_formset,
+        'code_number_formset': code_number_formset,
         'alternative_action': alternative_action,
         'alternative_label': alternative_label,
       })
