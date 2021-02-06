@@ -3,10 +3,10 @@
 This file last updated: *Aug 2020*
 
 This is the current implementation of the Grand Comics Database, hosted at
-http://www.comics.org/ (production) and http://beta.comics.org/ (public beta
+https://www.comics.org/ (production) and https://beta.comics.org/ (public beta
 for new features).
 
-See the [Technical section on docs.comics.org](http://docs.comics.org/wiki/Main_Page#Technical_Details)
+See the [Technical section on docs.comics.org](https://docs.comics.org/wiki/Main_Page#Technical_Details)
 and the [Wiki](https://github.com/GrandComicsDatabase/gcd-django/wiki) for more detailed information about how we work and what has been done to date.
 This file just covers the essentials of branches and code reviews.
 
@@ -26,7 +26,7 @@ necessarily up to date.  As of Aug 2019 they should work.
 ## Workflow
 
 Our primary collaboration space is the
-[gcd-tech](http://groups.google.com/group/gcd-tech/) mailing list.
+[gcd-tech](https://groups.google.com/group/gcd-tech/) mailing list.
 We use the GitHub code review system for discussing code changes.
 
 Pull requests are welcome, but you might want to poke the mailing list if
@@ -40,7 +40,7 @@ This is (generally) the production deployment.  For the most part, work
 should not be done here directly.
 
 Contact: gcd-tech-team
-via [gcd-tech](http://groups.google.com/group/gcd-tech/)
+via [gcd-tech](https://groups.google.com/group/gcd-tech/)
 
 ### `beta`
 
@@ -50,7 +50,7 @@ Special-purpose development branches are based from `beta` unless otherwise
 noted.
 
 Contact: gcd-tech-team
-via [gcd-tech](http://groups.google.com/group/gcd-tech/)
+via [gcd-tech](https://groups.google.com/group/gcd-tech/)
 
 ### `experimental`
 
@@ -60,7 +60,7 @@ several stages.
 There will probably be some modernization and code clean-up along the way.
 
 Contact: [handrews](https://github.com/handrews)
-via [gcd-tech](http://groups.google.com/group/gcd-tech/)
+via [gcd-tech](https://groups.google.com/group/gcd-tech/)
 
 ### api_experimental
 
@@ -70,7 +70,7 @@ the REST API.  It is not yet determined how often this branch will merge
 to `beta`.
 
 Contact: gcd-tech-team
-via [gcd-tech](http://groups.google.com/group/gcd-tech/)
+via [gcd-tech](https://groups.google.com/group/gcd-tech/)
 
 ## History of the Code
 
@@ -87,7 +87,7 @@ Bugs and feature requests are currently recorded in GitHub's issue tracking syst
 used an instance of Bugzilla but all bugs/requests from that system have been moved to GitHub. 
 
 If you are unfamiliar with the code, please contact the
-[gcd-tech](http://groups.google.com/group/gcd-tech/) list before starting
+[gcd-tech](https://groups.google.com/group/gcd-tech/) list before starting
 to submit fixes.
 
 
