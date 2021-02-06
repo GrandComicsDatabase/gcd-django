@@ -4212,29 +4212,30 @@ class IssueRevision(Revision):
                     else:
                         removed_credit.cleaned_data['id'].delete()
 
-        code_number_formset = extra_forms['code_number_formset']
-        for code_number_form in code_number_formset:
-            if code_number_form.is_valid() and code_number_form.cleaned_data:
-                cd = code_number_form.cleaned_data
-                if 'id' in cd and cd['id']:
-                    code_number_form.save()
-                else:
-                    credit_revision = code_number_form.save(commit=False)
-                    credit_revision.save_added_revision(
-                      changeset=self.changeset, issue_revision=self)
-            elif (not code_number_form.is_valid() and
-                  code_number_form not in code_number_formset.deleted_forms):
-                raise ValueError
-        removed_code_numbers = code_number_formset.deleted_forms
-        if removed_code_numbers:
-            for removed_code_number in removed_code_numbers:
-                if removed_code_number.cleaned_data['id']:
-                    if removed_code_number.cleaned_data['id']\
-                                          .publisher_code_number:
-                        removed_code_number.cleaned_data['id'].deleted = True
-                        removed_code_number.cleaned_data['id'].save()
+        if self.series.has_publisher_code_number:
+            code_number_formset = extra_forms['code_number_formset']
+            for code_number_form in code_number_formset:
+                if code_number_form.is_valid() and code_number_form.cleaned_data:
+                    cd = code_number_form.cleaned_data
+                    if 'id' in cd and cd['id']:
+                        code_number_form.save()
                     else:
-                        removed_code_number.cleaned_data['id'].delete()
+                        credit_revision = code_number_form.save(commit=False)
+                        credit_revision.save_added_revision(
+                          changeset=self.changeset, issue_revision=self)
+                elif (not code_number_form.is_valid() and
+                      code_number_form not in code_number_formset.deleted_forms):
+                    raise ValueError
+            removed_code_numbers = code_number_formset.deleted_forms
+            if removed_code_numbers:
+                for removed_code_number in removed_code_numbers:
+                    if removed_code_number.cleaned_data['id']:
+                        if removed_code_number.cleaned_data['id']\
+                                              .publisher_code_number:
+                            removed_code_number.cleaned_data['id'].deleted = True
+                            removed_code_number.cleaned_data['id'].save()
+                        else:
+                            removed_code_number.cleaned_data['id'].delete()
 
     def get_absolute_url(self):
         if self.issue is None:

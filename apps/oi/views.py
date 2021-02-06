@@ -29,7 +29,7 @@ from apps.gcd.models import (
     IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
-    CreatorRelation, CreatorSchool, CreatorNameDetail,
+    CreatorRelation, CreatorSchool, CreatorNameDetail, CreditType,
     STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
     IndiciaPrinter, CreatorSignature, Character, CharacterRelation, Group,
     GroupRelation, GroupMembership)
@@ -86,6 +86,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_feature_logo_revision_form,
                            get_feature_relation_revision_form,
                            get_date_revision_form,
+                           get_issue_revision_form_set_extra,
                            OngoingReservationForm,
                            CreatorRevisionFormSet,
                            CreatorArtInfluenceRevisionForm,
@@ -577,7 +578,8 @@ def _save_data_source_revision(form, revision, field):
 def _extra_forms_valid(request, extra_forms):
     is_valid = True
     for form in extra_forms:
-        is_valid = is_valid and extra_forms[form].is_valid()
+        if extra_forms[form]: # some forms are sometimes None
+            is_valid = is_valid and extra_forms[form].is_valid()
     return is_valid
 
 
@@ -1738,9 +1740,9 @@ def add_indicia_publisher(request, parent_id):
           '"%s" is deleted or pending deletion.' % parent)
     save_kwargs = {'parent': parent}
     cancel = urlresolvers.reverse('show_publisher',
-                                  kwargs={ 'publisher_id': parent_id })
+                                  kwargs={'publisher_id': parent_id})
     object_url = urlresolvers.reverse('add_indicia_publisher',
-                                      kwargs={ 'parent_id': parent.id })
+                                      kwargs={'parent_id': parent.id})
     return add_generic(request, 'indicia_publisher',
                        object_url=object_url,
                        object_name = 'Indicia / Colophon Publisher',
@@ -1758,9 +1760,9 @@ def add_brand_group(request, parent_id):
           '"%s" is deleted or pending deletion.' % parent)
     save_kwargs = {'parent': parent}
     cancel = urlresolvers.reverse('show_publisher',
-                                  kwargs={ 'publisher_id': parent_id })
+                                  kwargs={'publisher_id': parent_id})
     object_url = urlresolvers.reverse('add_brand_group',
-                                      kwargs={ 'parent_id': parent.id })
+                                      kwargs={'parent_id': parent.id})
     return add_generic(request, 'brand_group',
                        object_url=object_url,
                        object_name = 'Brand Group',
@@ -1790,10 +1792,10 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
                 return render_error(request, 'Cannot add brands '
                 'since "%s" is deleted or pending deletion.' % publisher)
         except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
-            return render_error(request,
-            'Could not find Publisher for id ' + publisher_id)
+            return render_error(
+              request, 'Could not find Publisher for id ' + publisher_id)
         brand_group = None
-            
+
     if request.method != 'POST':
         form = get_brand_revision_form(user=request.user, publisher=publisher,
                                        brand_group=brand_group)()
@@ -1827,10 +1829,11 @@ def _display_add_brand_form(request, form, brand_group=None, publisher=None):
     object_name = 'Brand Emblem'
     if brand_group:
         object_url = urlresolvers.reverse('add_brand_via_group',
-                                        kwargs={ 'brand_group_id': brand_group.id })
+                                          kwargs={'brand_group_id':
+                                                  brand_group.id})
     else:
         object_url = urlresolvers.reverse('add_brand_via_publisher',
-                                        kwargs={ 'publisher_id': publisher.id })
+                                          kwargs={'publisher_id': publisher.id})
 
     return oi_render(
       request, 'oi/edit/add_frame.html',
@@ -2051,7 +2054,15 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     if request.method != 'POST':
         if variant_of:
             initial = dict(variant_of.__dict__)
+            if variant_of.series.has_indicia_printer:
+                initial['indicia_printer'] = variant_of.active_printers()
             form = init_added_variant(form_class, initial, variant_of)
+            credits = variant_of.active_credits.exclude(deleted=True)
+            if credits:
+                credits_formset = get_issue_revision_form_set_extra(
+                  extra=credits.count()+1)(initial=credits.values(
+                                           *credits[0].revisions.first()
+                                           ._field_list()))
         else:
             initial = {}
             reversed_issues = series.active_issues().order_by('-sort_code')
@@ -2060,7 +2071,6 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
             form = form_class(initial=initial)
         return _display_add_issue_form(request, series, form, credits_formset,
                                        variant_of, variant_cover)
-
 
     form = form_class(request.POST)
     if not form.is_valid() or not credits_formset.is_valid():
@@ -2112,11 +2122,17 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
                                    variant_of=issue_revision.issue,
                                    user=request.user)
     credits_formset = IssueRevisionFormSet(request.POST or None)
-
     if request.method != 'POST':
         initial = dict(issue_revision.__dict__)
+        if issue_revision.series.has_indicia_printer:
+            initial['indicia_printer'] = issue_revision.indicia_printer.all()
         form = init_added_variant(form_class, initial, issue_revision,
                                   revision=True)
+        credits = issue_revision.issue_credit_revisions.exclude(deleted=True)
+        if credits:
+            credits_formset = get_issue_revision_form_set_extra(
+              extra=credits.count() + 1)(initial=credits.values(
+                                         *credits[0]._field_list()))
         return _display_add_issue_form(request, series, form, credits_formset,
                                        None, None,
                                        issue_revision=issue_revision)
@@ -4467,7 +4483,8 @@ def show_queue(request, queue_name):
     feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
     feature_relations = changes.filter(change_type=CTYPES['feature_relation'])
     characters = changes.filter(change_type=CTYPES['character'])
-    character_relations = changes.filter(change_type=CTYPES['character_relation'])
+    character_relations = changes.filter(
+      change_type=CTYPES['character_relation'])
     groups = changes.filter(change_type=CTYPES['group'])
     group_relations = changes.filter(change_type=CTYPES['group_relation'])
     group_memberships = changes.filter(change_type=CTYPES['group_membership'])
@@ -4492,64 +4509,73 @@ def show_queue(request, queue_name):
           {
             'object_name': 'Creators',
             'object_type': 'creator',
-            'changesets': creators.order_by('modified', 'id') \
-                .annotate(
-                country=Max('creatorrevisions__birth_country__id'))
+            'changesets': creators.order_by('modified', 'id')
+                                  .annotate(
+              country=Max('creatorrevisions__birth_country__id'))
           },
           {
             'object_name': 'Creator Signatures',
             'object_type': 'creator_signature',
-            'changesets': creator_signatures.order_by('modified', 'id') \
-                .annotate(country=Max(
+            'changesets': creator_signatures.order_by('modified', 'id')
+                                            .annotate(
+              country=Max(
                 'creatorsignaturerevisions__creator__birth_country__id'))
           },
           {
             'object_name': 'Publishers',
             'object_type': 'publisher',
-            'changesets': publishers.order_by('modified', 'id')\
-              .annotate(country=Max('publisherrevisions__country__id')),
+            'changesets': publishers.order_by('modified', 'id')
+                                    .annotate(
+              country=Max('publisherrevisions__country__id')),
           },
           {
             'object_name': 'Indicia / Colophon Publishers',
             'object_type': 'indicia_publisher',
-            'changesets': indicia_publishers.order_by('modified', 'id')\
-              .annotate(country=Max('indiciapublisherrevisions__country__id')),
+            'changesets': indicia_publishers.order_by('modified', 'id')
+                                            .annotate(
+              country=Max('indiciapublisherrevisions__country__id')),
           },
           {
             'object_name': 'Brand Groups',
             'object_type': 'brand_groups',
-            'changesets': brand_groups.order_by('modified', 'id')\
-              .annotate(country=Max('brandgrouprevisions__parent__country__id')),
+            'changesets': brand_groups.order_by('modified', 'id')
+                                      .annotate(
+              country=Max('brandgrouprevisions__parent__country__id')),
           },
           {
             'object_name': 'Brand Emblems',
             'object_type': 'brands',
-            'changesets': brands.order_by('modified', 'id')\
-              .annotate(country=Max('brandrevisions__group__parent__country__id')),
+            'changesets': brands.order_by('modified', 'id')
+                                .annotate(
+              country=Max('brandrevisions__group__parent__country__id')),
           },
           {
             'object_name': 'Brand Uses',
             'object_type': 'brand_uses',
-            'changesets': brand_uses.order_by('modified', 'id')\
-              .annotate(country=Max('branduserevisions__publisher__country__id')),
+            'changesets': brand_uses.order_by('modified', 'id')
+                                    .annotate(
+              country=Max('branduserevisions__publisher__country__id')),
           },
           {
             'object_name': 'Printers',
             'object_type': 'printer',
-            'changesets': printers.order_by('modified', 'id')\
-              .annotate(country=Max('printerrevisions__country__id')),
+            'changesets': printers.order_by('modified', 'id')
+                                  .annotate(
+              country=Max('printerrevisions__country__id')),
           },
           {
             'object_name': 'Indicia Printers',
             'object_type': 'indicia_printer',
-            'changesets': indicia_printers.order_by('modified', 'id')\
-              .annotate(country=Max('indiciaprinterrevisions__country__id')),
+            'changesets': indicia_printers.order_by('modified', 'id')
+                                          .annotate(
+              country=Max('indiciaprinterrevisions__country__id')),
           },
           {
             'object_name': 'Series',
             'object_type': 'series',
-            'changesets': series.order_by('modified', 'id')\
-              .annotate(country=Max('seriesrevisions__country__id')),
+            'changesets': series.order_by('modified', 'id')
+                                .annotate(country=Max(
+                                          'seriesrevisions__country__id')),
           },
           {
             'object_name': 'Features',
@@ -4579,20 +4605,23 @@ def show_queue(request, queue_name):
           {
             'object_name': 'Issue Skeletons',
             'object_type': 'issue',
-            'changesets': issue_adds.order_by('modified', 'id')\
-              .annotate(country=Max('issuerevisions__series__country__id')),
+            'changesets': issue_adds.order_by('modified', 'id')
+                                    .annotate(
+              country=Max('issuerevisions__series__country__id')),
           },
           {
             'object_name': 'Issue Bulk Changes',
             'object_type': 'issue',
-            'changesets': issue_bulks.order_by('state', 'modified', 'id')\
-              .annotate(country=Max('issuerevisions__series__country__id')),
+            'changesets': issue_bulks.order_by('state', 'modified', 'id')
+                                     .annotate(
+              country=Max('issuerevisions__series__country__id')),
           },
           {
             'object_name': 'Issues',
             'object_type': 'issue',
-            'changesets': issues.order_by('state', 'modified', 'id')\
-              .annotate(country=Max('issuerevisions__series__country__id')),
+            'changesets': issues.order_by('state', 'modified', 'id')
+                                .annotate(
+              country=Max('issuerevisions__series__country__id')),
           },
           {
             'object_name': 'Received Awards',
@@ -4603,50 +4632,57 @@ def show_queue(request, queue_name):
             'object_name': 'Creator Art Influences',
             'object_type': 'creator_art_influence',
             'changesets': creator_art_influences.order_by('modified',
-                                                          'id') \
-                .annotate(country=Max(
+                                                          'id')
+                                                .annotate(
+              country=Max(
                 'creatorartinfluencerevisions__creator__birth_country__id'))
           },
           {
             'object_name': 'Creator Degrees',
             'object_type': 'creator_degree',
-            'changesets': creator_degres.order_by('modified', 'id') \
-                .annotate(country=Max(
+            'changesets': creator_degres.order_by('modified', 'id')
+                                        .annotate(
+              country=Max(
                 'creatordegreerevisions__creator__birth_country__id'))
           },
           {
             'object_name': 'Creator Memberships',
             'object_type': 'creator_membership',
-            'changesets': creator_memberships.order_by('modified', 'id') \
-                .annotate(country=Max(
+            'changesets': creator_memberships.order_by('modified', 'id')
+                                             .annotate(
+              country=Max(
                 'creatormembershiprevisions__creator__birth_country__id'))
           },
           {
             'object_name': 'Creator Non Comic Works',
             'object_type': 'creator_non_comic_work',
-            'changesets': creator_non_comic_works.order_by('modified', 'id') \
-                .annotate(country=Max(
+            'changesets': creator_non_comic_works.order_by('modified', 'id')
+                                                 .annotate(
+              country=Max(
                 'creatornoncomicworkrevisions__creator__birth_country__id'))
           },
           {
             'object_name': 'Creator Relations',
             'object_type': 'creator_relation',
-            'changesets': creator_relations.order_by('modified', 'id') \
-                .annotate(country=Max(
+            'changesets': creator_relations.order_by('modified', 'id')
+                                           .annotate(
+              country=Max(
                 'creatorrelationrevisions__from_creator__birth_country__id'))
           },
           {
             'object_name': 'Creator Schools',
             'object_type': 'creator_school',
-            'changesets': creator_schools.order_by('modified', 'id') \
-                .annotate(country=Max(
+            'changesets': creator_schools.order_by('modified', 'id')
+                                         .annotate(
+              country=Max(
                 'creatorschoolrevisions__creator__birth_country__id'))
           },
           {
             'object_name': 'Series Bonds',
             'object_type': 'series_bond',
-            'changesets': series_bonds.order_by('modified', 'id')\
-              .annotate(country=Max('seriesbondrevisions__origin__country__id')),
+            'changesets': series_bonds.order_by('modified', 'id')
+                                      .annotate(
+              country=Max('seriesbondrevisions__origin__country__id')),
           },
           {
             'object_name': 'Feature Relations',
@@ -4666,8 +4702,9 @@ def show_queue(request, queue_name):
           {
             'object_name': 'Covers',
             'object_type': 'cover',
-            'changesets': covers.order_by('state', 'modified', 'id')\
-              .annotate(country=Max('coverrevisions__issue__series__country__id')),
+            'changesets': covers.order_by('state', 'modified', 'id')
+                                .annotate(
+              country=Max('coverrevisions__issue__series__country__id')),
           },
           {
             'object_name': 'Images',
@@ -4677,7 +4714,8 @@ def show_queue(request, queue_name):
         ],
       }
     )
-    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    response['Cache-Control'] = "no-cache, no-store, max-age=0," \
+                                " must-revalidate"
     return response
 
 
@@ -4726,10 +4764,10 @@ def show_editor_log(request):
     changed_states = set(states.CLOSED+states.ACTIVE)
     changed_states.remove(states.REVIEWING)
     changes = Changeset.objects.order_by('-modified')\
-                .filter(comments__old_state=states.REVIEWING,
-                        comments__new_state__in=changed_states,
-                        comments__commenter=request.user)\
-                .exclude(indexer=request.user).distinct()
+                       .filter(comments__old_state=states.REVIEWING,
+                               comments__new_state__in=changed_states,
+                               comments__commenter=request.user)\
+                       .exclude(indexer=request.user).distinct()
     return paginate_response(
       request,
       changes,
@@ -4752,14 +4790,14 @@ def show_cover_queue(request):
       request,
       covers,
       'oi/queues/covers.html',
-      {'table_width' : table_width, 'EDITING': True},
+      {'table_width': table_width, 'EDITING': True},
       per_page=50,
       callback_key='tags',
       callback=get_preview_image_tags_per_page)
 
 
 def compare(request, id):
-    changeset = get_object_or_404(Changeset.objects\
+    changeset = get_object_or_404(Changeset.objects
                                   .prefetch_related('comments__commenter'),
                                   id=id)
 
@@ -4808,11 +4846,11 @@ def compare(request, id):
         if not revision.imprint and \
           (prev_rev is None or prev_rev.imprint is None):
             field_list.remove('imprint')
-        if not revision.format and \
-          (prev_rev is None or not prev_rev.format):
+        if not revision.format and (prev_rev is None
+                                    or not prev_rev.format):
             field_list.remove('format')
-        if not (revision.publication_notes or prev_rev and \
-          prev_rev.publication_notes):
+        if not (revision.publication_notes or prev_rev and
+                prev_rev.publication_notes):
             field_list.remove('publication_notes')
     elif model_name in ['indicia_publisher']:
         field_list.remove('parent')
@@ -4843,9 +4881,6 @@ def compare(request, id):
         creator_name_revisions = changeset.creatornamedetailrevisions.all()
         for creator_name_revision in creator_name_revisions:
             revisions_before.append(creator_name_revision)
-            #if creator_name_revision.cr_to_name.count():
-                #revisions_before.append(creator_name_revision\
-                                        #.cr_to_name.get())
     elif changeset.change_type == CTYPES['creator_membership']:
         sourced_fields = {'': 'membership_year_ended_uncertain'}
     elif changeset.change_type == CTYPES['received_award']:
@@ -4874,16 +4909,18 @@ def compare(request, id):
                           'revisions_after': revisions_after,
                           'prev_rev': prev_rev,
                           'post_rev': post_rev,
-                          'changeset_type' : model_name.replace('_',' '),
+                          'changeset_type': model_name.replace('_', ' '),
                           'model_name': model_name,
                           'states': states,
                           'field_list': field_list,
                           'sourced_fields': sourced_fields,
                           'group_sourced_fields': group_sourced_fields,
-                          'source_fields': ['source_description', 'source_type'],
+                          'source_fields': ['source_description',
+                                            'source_type'],
                           'CTYPES': CTYPES},
-                        )
-    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+                         )
+    response['Cache-Control'] = "no-cache, no-store, max-age=0," \
+                                " must-revalidate"
     return response
 
 
@@ -4908,20 +4945,20 @@ def cover_compare(request, changeset, revision):
     - for replacement show former cover
     - for other active uploads show other existing and active covers
     '''
-    if revision.deleted or revision.cover and revision.cover.deleted==True:
+    if revision.deleted or revision.cover and revision.cover.deleted is True:
         cover_tag = get_image_tag(revision.cover, "deleted cover", ZOOM_LARGE)
     else:
         cover_tag = get_preview_image_tag(revision, "uploaded cover",
                                           ZOOM_LARGE, request=request)
     kwargs = {'changeset': changeset,
               'revision': revision,
-              'cover_tag' : cover_tag,
+              'cover_tag': cover_tag,
               'table_width': 5,
               'states': states,
               'settings': settings}
     if revision.is_wraparound:
-        kwargs['cover_front_tag'] = get_preview_image_tag(revision, "uploaded cover",
-                                                ZOOM_MEDIUM, request=request)
+        kwargs['cover_front_tag'] = get_preview_image_tag(
+          revision, "uploaded cover", ZOOM_MEDIUM, request=request)
     if revision.is_replacement:
         # change this to use cover.previous() once we are using
         # cover.reserved = True for cover replacements and
@@ -4931,16 +4968,17 @@ def cover_compare(request, changeset, revision):
         # replacement b) is submitted and approved
         # replacement a) is submitted and approved
         # then the order would be wrong
-        old_cover = CoverRevision.objects.filter(cover=revision.cover,
-                      created__lt=revision.created,
-                      changeset__change_type=CTYPES['cover'],
-                      changeset__state=states.APPROVED).order_by('-created')[0]
+        old_cover = CoverRevision.objects.filter(
+          cover=revision.cover,
+          created__lt=revision.created,
+          changeset__change_type=CTYPES['cover'],
+          changeset__state=states.APPROVED).order_by('-created')[0]
         kwargs['old_cover'] = old_cover
-        kwargs['old_cover_tag'] = get_preview_image_tag(old_cover, "replaced cover",
-                                              ZOOM_LARGE, request=request)
+        kwargs['old_cover_tag'] = get_preview_image_tag(
+          old_cover, "replaced cover", ZOOM_LARGE, request=request)
         if old_cover.is_wraparound:
-            kwargs['old_cover_front_tag'] = get_preview_image_tag(old_cover,
-                                    "replaced cover", ZOOM_MEDIUM, request=request)
+            kwargs['old_cover_front_tag'] = get_preview_image_tag(
+              old_cover, "replaced cover", ZOOM_MEDIUM, request=request)
 
         if old_cover.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, we have width 400
@@ -4952,22 +4990,25 @@ def cover_compare(request, changeset, revision):
               old_cover.changeset.created.strftime('%Y%m%d_%H%M%S')))
 
     if revision.deleted:
-        kwargs['old_cover'] = CoverRevision.objects.filter(cover=revision.cover,
-                      created__lt=revision.created,
-                      changeset__state=states.APPROVED).order_by('-created')[0]
+        kwargs['old_cover'] = CoverRevision.objects.filter(
+          cover=revision.cover, created__lt=revision.created,
+          changeset__state=states.APPROVED).order_by('-created')[0]
 
     if revision.changeset.state in states.ACTIVE:
         if revision.issue.has_covers() or revision.issue.variant_covers() or \
-          (revision.issue.variant_of and revision.issue.variant_of.has_covers()):
-            # no issuesrevision, so no variant upload, but covers exist for issue
+          (revision.issue.variant_of and
+           revision.issue.variant_of.has_covers()):
+            # no issuerevision, so no variant upload,
+            # but covers exist for issue
             if revision.issue.has_covers() and not \
               revision.changeset.issuerevisions.count():
                 kwargs['additional'] = True
             current_covers = []
             current_cover_set = revision.issue.active_covers() \
-              | revision.issue.variant_covers()
+                                | revision.issue.variant_covers()
             if revision.is_replacement or revision.deleted:
-                current_cover_set = current_cover_set.exclude(id=revision.cover.id)
+                current_cover_set = current_cover_set.exclude(
+                  id=revision.cover.id)
             for cover in current_cover_set:
                 current_covers.append([cover, get_image_tag(cover,
                                        "current cover", ZOOM_MEDIUM)])
@@ -4987,7 +5028,6 @@ def cover_compare(request, changeset, revision):
             kwargs['pending_covers'] = pending_covers
         kwargs['pending_variant_adds'] = Changeset.objects\
           .filter(issuerevisions__variant_of=revision.issue,
-                  # state__in=states.ACTIVE,
                   state__in=[states.PENDING, states.REVIEWING],
                   change_type__in=[CTYPES['issue_add'],
                                    CTYPES['variant_add']])
@@ -5014,7 +5054,8 @@ def cover_compare(request, changeset, revision):
                   revision.changeset.created.strftime('%Y%m%d_%H%M%S')))
 
     response = oi_render(request, 'oi/edit/compare_cover.html', kwargs)
-    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    response['Cache-Control'] = "no-cache, no-store, max-age=0," \
+                                " must-revalidate"
     return response
 
 
@@ -5063,7 +5104,8 @@ def image_compare(request, changeset, revision, extra_revision=None):
             kwargs['replaced_image_file'] = replaced_image.image_file
 
     response = oi_render(request, 'oi/edit/compare_image.html', kwargs)
-    response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
+    response['Cache-Control'] = "no-cache, no-store, max-age=0," \
+                                " must-revalidate"
     return response
 
 

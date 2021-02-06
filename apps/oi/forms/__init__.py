@@ -22,7 +22,7 @@ from .publisher import (get_publisher_revision_form,
 from .series import get_series_revision_form, get_series_bond_revision_form
 from .issue import (    # noqa
     get_issue_revision_form, get_bulk_issue_revision_form,
-    IssueRevisionFormSet)
+    IssueRevisionFormSet, get_issue_revision_form_set_extra)
 from .story import (get_story_revision_form, get_biblio_revision_form,
                     get_reprint_revision_form, StoryRevisionFormSet)
 from .feature import (get_feature_revision_form,

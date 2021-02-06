@@ -469,6 +469,14 @@ IssueRevisionFormSet = inlineformset_factory(
     IssueRevision, IssueCreditRevision, form=IssueCreditRevisionForm,
     can_delete=True, extra=1)
 
+# not sure why we need this, the docs say that extra would be on top
+# of the number of forms initialized, but that doesn't work, or is
+# meant differently
+def get_issue_revision_form_set_extra(extra=1):
+    return inlineformset_factory(
+        IssueRevision, IssueCreditRevision, form=IssueCreditRevisionForm,
+        can_delete=True, extra=extra)
+
 
 class PublisherCodeNumberRevisionForm(forms.ModelForm):
     class Meta:
