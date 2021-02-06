@@ -422,20 +422,21 @@ def checklist_by_name(request, creator, country=None, language=None):
         q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
                             '%stype__id__in' % (prefix): CORE_TYPES})
     issues = Issue.objects.filter(q_objs_text).distinct()\
-                          .annotate(series__name=F('series__name'))\
-                          .annotate(series__year_began=
-                                    F('series__year_began'))\
-                          .annotate(series__id=F('series__id'))
+                          .annotate(series__name=F('series__name'))
+    if 'sort' in request.GET and request.GET['sort'] == 'issue':
+        issues = issues.annotate(series__year_began=F('series__year_began'))\
+                       .annotate(series__id=F('series__id'))
 
     creator = CreatorNameDetail.objects.filter(name__iexact=creator)
     if creator:
         q_objs_credits = Q(**{'%scredits__creator__in' % (prefix): creator,
                               '%stype__id__in' % (prefix): CORE_TYPES})
         items2 = Issue.objects.filter(q_objs_credits).distinct()\
-                              .annotate(series__name=F('series__name')) \
-                              .annotate(series__year_began=
-                                        F('series__year_began')) \
-                              .annotate(series__id=F('series__id'))
+                              .annotate(series__name=F('series__name')) #\
+        if 'sort' in request.GET and request.GET['sort'] == 'issue':
+            items2 = items2.annotate(
+              series__year_began=F('series__year_began')).annotate(
+              series__id=F('series__id'))
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
