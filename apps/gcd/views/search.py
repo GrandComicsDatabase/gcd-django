@@ -1589,12 +1589,15 @@ def search_stories(data, op):
 
     for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
         if data[field]:
-            q_objs.append(Q(**{'%s%s__%s' % (prefix, field, op):
-                               data[field]}) |
-                          Q(**{'%scredits__creator__name__%s' % (prefix, op):
-                               data[field],
-                               '%scredits__credit_type__id' % (prefix):
-                               CREDIT_TYPES[field]}))
+            q_objs.append(
+              Q(**{'%s%s__%s' % (prefix, field, op): data[field]}) |
+              Q(**{'%scredits__creator__name__%s' % (prefix, op): data[field],
+                   '%scredits__credit_type__id' % (prefix):
+                   CREDIT_TYPES[field]}) |
+              Q(**{'%scredits__creator__creator__gcd_official_name__%s' %
+                   (prefix, op): data[field],
+                   '%scredits__credit_type__id' % (prefix):
+                   CREDIT_TYPES[field]}))
 
     for field in ('title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
@@ -1620,7 +1623,7 @@ def search_stories(data, op):
         q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
                            data['story_editing']}) |
                       Q(**{'%scredits__creator__name__%s' % (prefix, op):
-                               data['story_editing'],
+                           data['story_editing'],
                            '%scredits__credit_type__id' % (prefix):
                                CREDIT_TYPES['editing']}))
 
@@ -1664,14 +1667,15 @@ def search_stories(data, op):
             q_objs.append(Q(**{'issue__editing__%s' % op:
                                data['issue_editing']}) |
                           Q(**{'issue__credits__creator__name__%s' % op:
-                                   data['issue_editing'],
+                               data['issue_editing'],
                                'issue__credits__credit_type__id':
                                    CREDIT_TYPES['editing']}))
         else:  # cut off 'story__'
             q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7], op):
                                data['issue_editing']}) |
-                          Q(**{'%scredits__creator__name__%s' % (prefix[:-7], op):
-                                   data['issue_editing'],
+                          Q(**{'%scredits__creator__name__%s' % (prefix[:-7],
+                                                                 op):
+                               data['issue_editing'],
                                '%scredits__credit_type__id' % (prefix[:-7]):
                                    CREDIT_TYPES['editing']}))
 
