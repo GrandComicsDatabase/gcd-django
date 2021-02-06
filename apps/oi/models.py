@@ -3183,8 +3183,8 @@ def get_series_field_list():
             'is_current', 'country', 'language', 'has_barcode',
             'has_indicia_frequency', 'has_indicia_printer', 'has_isbn',
             'has_issue_title', 'has_volume', 'has_rating',
-            'is_comics_publication', 'has_about_comics', 'tracking_notes',
-            'notes', 'keywords']
+            'has_publisher_code_number', 'is_comics_publication',
+            'has_about_comics', 'tracking_notes', 'notes', 'keywords']
 
 
 class SeriesRevision(Revision):
@@ -3236,6 +3236,7 @@ class SeriesRevision(Revision):
     has_volume = models.BooleanField(default=False)
     has_rating = models.BooleanField(default=False)
     has_about_comics = models.BooleanField(default=False)
+    has_publisher_code_number = models.BooleanField(default=False)
 
     is_comics_publication = models.BooleanField(default=False)
     is_singleton = models.BooleanField(default=False)
@@ -3410,6 +3411,7 @@ class SeriesRevision(Revision):
             'has_issue_title': False,
             'has_volume': False,
             'has_rating': False,
+            'has_publisher_code_number': False,
             'has_about_comics': False,
             'is_comics_publication': True,
         }
@@ -4176,10 +4178,13 @@ class IssueRevision(Revision):
           request.POST or None,
           instance=self,
           queryset=self.issue_credit_revisions.filter(deleted=False))
-        code_number_formset = PublisherCodeNumberFormSet(
-          request.POST or None,
-          instance=self,
-          queryset=self.publisher_code_number_revisions.filter(deleted=False))
+        if self.series.has_publisher_code_number:
+            code_number_formset = PublisherCodeNumberFormSet(
+              request.POST or None,
+              instance=self,
+              queryset=self.publisher_code_number_revisions.filter(deleted=False))
+        else:
+            code_number_formset = None
         return {'credits_formset': credits_formset,
                 'code_number_formset': code_number_formset}
 

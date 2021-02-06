@@ -92,6 +92,7 @@ class Series(GcdData):
     has_volume = models.BooleanField(default=False)
     has_rating = models.BooleanField(default=False)
     has_about_comics = models.BooleanField(default=False)
+    has_publisher_code_number = models.BooleanField(default=False)
 
     is_comics_publication = models.BooleanField(default=False)
     is_singleton = models.BooleanField(default=False)

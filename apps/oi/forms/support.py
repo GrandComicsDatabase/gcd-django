@@ -394,6 +394,9 @@ SERIES_HELP_TEXTS = {
         "series.",
     'is_comics_publication':
         "Publications in this series are mostly comics publications.",
+    'has_publisher_code_number':
+        "Publisher code numbers from the approved number list are present "
+        "for issues of this series.",
     'has_about_comics':
         "Issues in this series can contain sequences about comics.",
     'is_singleton':
