@@ -94,6 +94,9 @@
   {% if gcd_name.family_name %}
             <strong>Family name</strong>: {{ gcd_name.family_name }}
   {% endif %}
+  {% if creator.disambiguation %}
+            <br><strong>Disambiguation:</strong> {{ creator.disambiguation }}
+  {% endif %}
           </ol>
   {% if other_names %}
           <h3>Other Names:</h3>

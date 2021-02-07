@@ -7531,6 +7531,8 @@ class CreatorRevision(Revision):
                                 related_name='revisions')
 
     gcd_official_name = models.CharField(max_length=255, db_index=True)
+    disambiguation = models.CharField(max_length=255, default='',
+                                      db_index=True)
 
     # TODO change from null=True
     birth_date = models.ForeignKey(Date, on_delete=models.CASCADE,
