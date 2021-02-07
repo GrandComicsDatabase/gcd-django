@@ -33,8 +33,9 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             CreatorArtInfluence, CreatorNonComicWork, \
                             CreatorNameDetail, SeriesPublicationType, \
                             Award, ReceivedAward
-from apps.gcd.models.issue import INDEXED
+from apps.gcd.models.issue import INDEXED, IssuePublisherTable
 from apps.gcd.models.story import StoryTable
+from apps.gcd.models.series import SeriesPublisherTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
                                   COUNT_RANGE_REGEXP
@@ -1081,6 +1082,39 @@ def process_advanced(request, export_csv=False):
                    'query_string': query_string,
                    'used_search_terms': used_search_terms,
                    'target': 'Stories',
+                   'method': method,
+                   'logic': logic
+                   }
+        return generic_sortable_list(request, items, table,
+                                     'gcd/search/generic_list.html', context)
+    if target == 'issue':
+        table = IssuePublisherTable(items, attrs={'class': 'sortable_listing'},
+                           template_name='gcd/bits/sortable_table.html',)
+        context = {'object': target,
+                   'heading': heading,
+                   'item_name': 'issue',
+                   'item_count': items.count(),
+                   'plural_suffix': 's',
+                   'query_string': query_string,
+                   'used_search_terms': used_search_terms,
+                   'target': 'Issues',
+                   'method': method,
+                   'logic': logic
+                   }
+        return generic_sortable_list(request, items, table,
+                                     'gcd/search/generic_list.html', context)
+
+    if target == 'series':
+        table = SeriesPublisherTable(items, attrs={'class': 'sortable_listing'},
+                            template_name='gcd/bits/sortable_table.html',)
+        context = {'object': target,
+                   'heading': heading,
+                   'item_name': 'series',
+                   'item_count': items.count(),
+                   'plural_suffix': '',
+                   'query_string': query_string,
+                   'used_search_terms': used_search_terms,
+                   'target': 'Series',
                    'method': method,
                    'logic': logic
                    }

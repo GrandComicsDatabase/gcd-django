@@ -239,7 +239,7 @@ SERIES_HELP_LINKS = {
 
 CREATOR_HELP_TEXTS = {
     'disambiguation':
-        'If needed add a short phrase for disambiguation of very similar '
+        'If needed a short phrase for disambiguation of very similar '
         'creator names can be added.',
     'bio':
         "A short biography (1-4 paragraphs) noting highlights of the career "

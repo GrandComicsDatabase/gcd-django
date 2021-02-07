@@ -523,6 +523,32 @@ class SeriesTable(tables.Table):
         return str(value)
 
 
+class SeriesPublisherTable(SeriesTable):
+    publisher = tables.Column(accessor='publisher',
+                              verbose_name='Publisher')
+
+    class Meta:
+        model = Series
+        fields = ('publisher', 'name', 'year', 'issue_count', 'covers', 'published')
+
+    def order_publisher(self, query_set, is_descending):
+        query_set = query_set.annotate(publisher_name=F('publisher__name'))
+        query_set = query_set.annotate(series_name=F('sort_name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'publisher_name',
+                                       direction + 'series_name')
+        return (query_set, True)
+
+    def render_publisher(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        display_publisher = "<img %s>" % (show_country_info(value.country))
+        return mark_safe(display_publisher) + absolute_url(value)
+
+    def value_publisher(self, value):
+        return str(value)
+
+
 class CreatorSeriesTable(SeriesTable):
     credits_count = tables.Column(accessor='issue_credits_count',
                                   verbose_name='Issues')
