@@ -7510,7 +7510,8 @@ def _get_creator_sourced_fields():
 
 
 def get_creator_field_list():
-    return ['birth_date', 'birth_country', 'birth_country_uncertain',
+    return ['disambiguation',
+            'birth_date', 'birth_country', 'birth_country_uncertain',
             'birth_province', 'birth_province_uncertain',
             'birth_city', 'birth_city_uncertain',
             'death_date', 'death_country', 'death_country_uncertain',
@@ -7816,6 +7817,7 @@ class CreatorRevision(Revision):
         return {
             'gcd_official_name': '',
             'cr_creator_names': '',
+            'disambiguation': '',
             'birth_date': '',
             'death_date': '',
             'whos_who': '',

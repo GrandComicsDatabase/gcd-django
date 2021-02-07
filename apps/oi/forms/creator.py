@@ -178,11 +178,14 @@ class CreatorRevisionForm(forms.ModelForm):
         field_list = [BaseField(Field('creator_help',
                                       template='oi/bits/uni_field.html'))]
         field_list.append(Formset('creator_names_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[:1]])
         field_list.append(FormAsField('birth_date_form'))
         death_start = fields.index('death_country')
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[:death_start]])
+                           for field in fields[1:death_start]])
         field_list.append(FormAsField('death_date_form'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
