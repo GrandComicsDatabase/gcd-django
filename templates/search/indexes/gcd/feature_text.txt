@@ -4,3 +4,4 @@
 {% for feature_logo in object.active_logos %}
     {{ feature_logo.name|safe }}
 {% endfor %}
+{{ object|show_keywords|safe }}
