@@ -334,11 +334,12 @@ class Series(GcdData):
 
     @cached_property
     def issues_to_migrate(self):
-        stories = Story.objects.exclude(script__in=['', '?'],
-                                        pencils__in=['', '?'],
-                                        inks__in=['', '?'],
-                                        colors__in=['', '?'])\
-                               .filter(issue__series__id=self.id)
+        stories = Story.objects.exclude(Q(script='') | Q(script__startswith='?'),
+                                        Q(pencils='') | Q(pencils__startswith='?'),
+                                        Q(inks='') | Q(inks__startswith='?'),
+                                        Q(colors='') | Q(colors__startswith='?'),
+                                        feature='') \
+                                        .filter(issue__series__id=self.id)
         issues = self.active_issues().filter(id__in=set(stories.values_list(
                                                         'issue', flat=True)))
         return issues
