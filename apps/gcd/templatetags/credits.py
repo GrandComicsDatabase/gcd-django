@@ -635,9 +635,12 @@ def follow_reprint_link(reprint, direction, level=0):
         return ''
     reprint_note = ''
     if direction == 'from':
-        further_reprints = list(
-          reprint.origin.from_reprints
-                 .select_related('origin__issue__series__publisher').all())
+        if type(reprint.origin) == Story:
+            further_reprints = list(
+              reprint.origin.from_reprints
+                     .select_related('origin__issue__series__publisher').all())
+        else:
+            further_reprints = list(reprint.origin.from_reprints.all())
         further_reprints.extend(list(
           reprint.origin.from_issue_reprints
                  .select_related('origin_issue__series__publisher').all()))
@@ -651,9 +654,12 @@ def follow_reprint_link(reprint, direction, level=0):
                 if string.lower().startswith('from '):
                     reprint_note += '<li> ' + esc(string) + ' </li>'
     else:
-        further_reprints = list(
-          reprint.target.to_reprints
-                 .select_related('target__issue__series__publisher').all())
+        if type(reprint.target) == Story:
+            further_reprints = list(
+              reprint.target.to_reprints
+                     .select_related('target__issue__series__publisher').all())
+        else:
+            further_reprints = list(reprint.target.to_reprints.all())
         further_reprints.extend(list(
           reprint.target.to_issue_reprints
                  .select_related('target_issue__series__publisher').all()))
