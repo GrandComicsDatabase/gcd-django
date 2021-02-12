@@ -375,8 +375,8 @@ def vote(request):
         # they voted a particular way by sending us back those two values,
         # and repair or change a vote.
         vote_ids = ', '.join(option_params)
-        salt = hashlib.sha1(str(random())).hexdigest()[:5]
-        key = hashlib.sha1(salt + vote_ids).hexdigest()
+        salt = hashlib.sha1(str(random()).encode('ASCII')).hexdigest()[:5]
+        key = hashlib.sha1((salt + vote_ids).encode('ASCII')).hexdigest()
 
         receipt = Receipt(voter=request.user,
                           topic=option.topic,
@@ -391,9 +391,9 @@ def vote(request):
         # Use unbuffered appends because we don't want concurrent writes to get
         # spliced due to buffering.
         path = os.path.join(settings.VOTING_DIR, 'vote_record_%d' % topic.id)
-        voting_record = open(path, 'a', 0)
-        voting_record.write('%d | %s | %s | %s\n' %
-                            (request.user.id, salt, vote_ids, key))
+        voting_record = open(path, 'ab', 0)
+        voting_record.write(('%d | %s | %s | %s\n' %
+                            (request.user.id, salt, vote_ids, key)).encode('ASCII'))
         voting_record.close()
 
         vote_values = "\n".join([str(o) for o in options])
