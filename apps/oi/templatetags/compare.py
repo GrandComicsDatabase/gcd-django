@@ -297,7 +297,7 @@ def diff_list(prev_rev, revision, field):
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
-                 'characters', 'synopsis', 'title',
+                 'characters', 'synopsis', 'title', 'first_line',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name',
                  'price', 'indicia_frequency', 'variant_name',
