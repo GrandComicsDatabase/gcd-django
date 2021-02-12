@@ -3667,7 +3667,7 @@ class IssueCreditRevision(Revision):
     credited_as = models.CharField(max_length=255, blank=True)
 
     # record for a wider range of work types, or how it is credited
-    credit_name = models.CharField(max_length=255, blank=True)
+    credit_name = models.CharField(max_length=255)
 
     source_name = 'issue_credit'
     source_class = IssueCredit
