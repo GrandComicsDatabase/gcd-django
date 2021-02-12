@@ -77,7 +77,7 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
                 self.fields['name'].help_text = \
                     'Creator names with existing credits cannot be removed.'
             if self.instance.creator_name_detail.storycredit_set.filter(
-               is_credited=True, credit_name='').count():
+               is_credited=True, credited_as='', deleted=False).count():
                 self.fields['name'].widget.attrs['readonly'] = 'true'
                 self.fields['name'].help_text = \
                   'The name of a creator name with existing credits marked as'\
