@@ -200,10 +200,14 @@ class CreatorNameDetail(GcdData):
                 kwargs={'creator_id': self.creator.id})
 
     def __str__(self):
-        if self.is_official_name:
-            return '%s' % (str(self.creator))
+        if self.creator.disambiguation:
+            extra = ' [%s]' % self.creator.disambiguation
         else:
-            return '%s - %s' % (str(self.creator), str(self.name))
+            extra = ''
+        if self.is_official_name:
+            return '%s%s' % (str(self.creator), extra)
+        else:
+            return '%s%s - %s' % (str(self.creator), extra, str(self.name))
 
 
 class RelationType(models.Model):
