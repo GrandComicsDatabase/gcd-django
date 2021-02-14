@@ -39,6 +39,15 @@ GCD
 <div id="search_reminder">
   Refine your query using an <a href="{% url 'advanced_search' %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>.
 </div>
+  {% if bulk_edit %}
+<div id="bulk_change_info">
+    {% if page.paginator.num_pages == 1 %}
+  &nbsp;Use this search result for a <a href="{{ bulk_edit }}?{{ query_string }}">bulk change</a>.
+    {% else %}
+  &nbsp;Note that for a bulk change the number of {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }} cannot be larger than 100.
+    {% endif %}
+</div>
+  {% endif %}
 
 <div style="clear: both;"></div>
 {% render_table table %}

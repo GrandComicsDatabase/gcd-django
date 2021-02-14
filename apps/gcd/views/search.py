@@ -1099,6 +1099,8 @@ def process_advanced(request, export_csv=False):
                    'method': method,
                    'logic': logic
                    }
+        if request.user.is_authenticated and not settings.MYCOMICS:
+            context['bulk_edit'] = urlresolvers.reverse('edit_issues_in_bulk')
         return generic_sortable_list(request, items, table,
                                      'gcd/search/generic_list.html', context)
 
