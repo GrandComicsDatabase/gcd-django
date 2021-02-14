@@ -14,12 +14,9 @@ GCD :: Add Data Objects
 
 {% block view_body %}
 
-<a href="{% url "add_publisher" %}">
-<button type="button">Add Publisher</button>
-</a>
 <p>
-<a href="{% url "add_printer" %}">
-<button type="button">Add Printer</button>
+<a href="{% url "add_award" %}">
+<button type="button">Add Award</button>
 </a>
 </p>
 <p>
@@ -28,8 +25,8 @@ GCD :: Add Data Objects
 </a>
 </p>
 <p>
-<a href="{% url "add_group" %}">
-<button type="button">Add Group</button>
+<a href="{% url "add_creator" %}">
+<button type="button">Add Creator</button>
 </a>
 </p>
 <p>
@@ -38,13 +35,18 @@ GCD :: Add Data Objects
 </a>
 </p>
 <p>
-<a href="{% url "add_creator" %}">
-<button type="button">Add Creator</button>
+<a href="{% url "add_group" %}">
+<button type="button">Add Group</button>
 </a>
 </p>
 <p>
-<a href="{% url "add_award" %}">
-<button type="button">Add Award</button>
+<a href="{% url "add_printer" %}">
+<button type="button">Add Printer</button>
+</a>
+</p>
+<p>
+<a href="{% url "add_publisher" %}">
+<button type="button">Add Publisher</button>
 </a>
 </p>
 <p>
