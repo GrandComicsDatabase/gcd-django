@@ -1077,7 +1077,6 @@ def process_advanced(request, export_csv=False):
         context = {'object': target,
                    'heading': heading,
                    'item_name': 'sequence',
-                   'item_count': items.count(),
                    'plural_suffix': 's',
                    'query_string': query_string,
                    'used_search_terms': used_search_terms,
@@ -1093,7 +1092,6 @@ def process_advanced(request, export_csv=False):
         context = {'object': target,
                    'heading': heading,
                    'item_name': 'issue',
-                   'item_count': items.count(),
                    'plural_suffix': 's',
                    'query_string': query_string,
                    'used_search_terms': used_search_terms,
@@ -1110,7 +1108,6 @@ def process_advanced(request, export_csv=False):
         context = {'object': target,
                    'heading': heading,
                    'item_name': 'series',
-                   'item_count': items.count(),
                    'plural_suffix': '',
                    'query_string': query_string,
                    'used_search_terms': used_search_terms,
@@ -1623,15 +1620,16 @@ def search_stories(data, op):
 
     for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
         if data[field]:
+            creator_q_obj = Q(**{'name__%s' % (op): data[field]}) | \
+                            Q(**{'creator__gcd_official_name__%s' % (op):
+                                 data[field]})
+            creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
+                                             .values_list('id', flat=True))
             q_objs.append(
               Q(**{'%s%s__%s' % (prefix, field, op): data[field]}) |
-              Q(**{'%scredits__creator__name__%s' % (prefix, op): data[field],
-                   '%scredits__credit_type__id' % (prefix):
-                   CREDIT_TYPES[field]}) |
-              Q(**{'%scredits__creator__creator__gcd_official_name__%s' %
-                   (prefix, op): data[field],
-                   '%scredits__credit_type__id' % (prefix):
-                   CREDIT_TYPES[field]}))
+              Q(**{'%scredits__creator__id__in' % (prefix): creators,
+                   '%scredits__credit_type__id' % (prefix): CREDIT_TYPES[field]})
+            )
 
     for field in ('title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
