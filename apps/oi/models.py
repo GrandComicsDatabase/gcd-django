@@ -5254,23 +5254,28 @@ class StoryRevision(Revision):
                         end_note = note.find(')')
                         remainder_note = note[end_note+1:].strip()
                         note = note[:end_note].strip()
+                        save_credit = credit
                         credit = credit[:credit.find('(')-1]
                         if note in ['credited', 'kreditert']:
                             is_credited = True
                             note = ''
                             if remainder_note:
-                                if remainder_note.find('as '):
+                                if remainder_note.find('as ') > 1:
                                     credited_as = remainder_note[
                                                   remainder_note.find('as ')+3:
                                                   remainder_note.find(']')]
-                        if note in ['signed', 'signert', 'signiert']:
+                                else:
+                                    note = remainder_note
+                        elif note in ['signed', 'signert', 'signiert']:
                             is_signed = True
                             note = ''
                             if remainder_note:
-                                if remainder_note.find('as '):
+                                if remainder_note.find('as ') > 1:
                                     signed_as = remainder_note[
                                                 remainder_note.find('as ') + 3:
                                                 remainder_note.find(']')]
+                                else:
+                                    note = remainder_note
                         elif note == 'painted':
                             note = 'painting'
                         elif note == 'signed, credited' or \
@@ -5282,6 +5287,8 @@ class StoryRevision(Revision):
                           note == 'painted, signed':
                             is_signed = True
                             note = 'painting'
+                        else:
+                            note = save_credit[save_credit.find('(') + 1:].strip()
                     else:
                         note = ''
                     if credit.find('[') > 1:
