@@ -5305,6 +5305,8 @@ class StoryRevision(Revision):
                                .in_script:
                                 creator = creator.creator.active_names().get(
                                                   is_official_name=True)
+                        if note and note[0] == '(' and note[-1] == ')':
+                            note = note[1:-1]
                         credit_revision = StoryCreditRevision(
                           changeset=self.changeset,
                           story_revision_id=self.id,
