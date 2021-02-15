@@ -5288,7 +5288,7 @@ class StoryRevision(Revision):
                             is_signed = True
                             note = 'painting'
                         else:
-                            note = save_credit[save_credit.find('(') + 1:].strip()
+                            note = save_credit[save_credit.find('('):].strip()
                     else:
                         note = ''
                     if credit.find('[') > 1:
@@ -5300,8 +5300,11 @@ class StoryRevision(Revision):
                     if creator.count() == 1:
                         creator = creator.get()
                         if uncertain and not creator.is_official_name:
-                            creator = creator.creator.active_names().get(
-                                                      is_official_name=True)
+                            if creator.in_script == creator.creator\
+                               .active_names().get(is_official_name=True)\
+                               .in_script:
+                                creator = creator.creator.active_names().get(
+                                                  is_official_name=True)
                         credit_revision = StoryCreditRevision(
                           changeset=self.changeset,
                           story_revision_id=self.id,
