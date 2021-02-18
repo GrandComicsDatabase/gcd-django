@@ -324,7 +324,10 @@ PUBLISHER_HELP_TEXTS = {
         'Significant objects, locations, or themes (NOT characters) depicted '
         'in the content, such as "Phantom Zone", "red kryptonite", "Vietnam". '
         'or "time travel".  Multiple entries are to be separated by '
-        'semi-colons.',
+        'semi-colons. Enter non-proper noun keywords in the plural, e.g. '
+        '"automobiles; beaches". But, sciences, philosophies, activities '
+        'etc. should be in the singular, e.g. "communism; physics; '
+        'photography; surfing".',
     'url':
         'The official web site of the publisher.  Must include "http://" or '
         '"https://", for example "https://www.example.com" not '
