@@ -170,6 +170,9 @@ msgstr ""
 msgid "publishers"
 msgstr ""
 
+msgid "creators"
+msgstr ""
+
 msgid "brands"
 msgstr ""
 
@@ -190,3 +193,12 @@ msgstr ""
 
 msgid "stories"
 msgstr ""
+
++#: templates/gcd/index.html:136
++msgid "On-sale this week"
++msgstr ""
++
++#: templates/gcd/index.html:137
++msgid "On-sale this month"
++msgstr ""
+

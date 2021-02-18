@@ -507,6 +507,9 @@ msgstr ""
 msgid "publishers"
 msgstr "Verlagsgruppen"
 
+msgid "creators"
+msgstr ""
+
 msgid "brands"
 msgstr "Verlagslogo"
 
@@ -530,6 +533,14 @@ msgstr "Titelbilder"
 
 msgid "stories"
 msgstr "Geschichten"
+
+#: templates/gcd/index.html:136
+msgid "On-sale this week"
+msgstr ""
+
+#: templates/gcd/index.html:137
+msgid "On-sale this month"
+msgstr ""
 
 #~ msgid "German"
 #~ msgstr "Deutsch"
