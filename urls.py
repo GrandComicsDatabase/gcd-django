@@ -113,5 +113,8 @@ else:
 if 'django_rq' in settings.INSTALLED_APPS:
     urlpatterns += [path('django-rq/', include('django_rq.urls'))]
 
+if 'rosetta' in settings.INSTALLED_APPS:
+    urlpatterns += [path('rosetta/', include('rosetta.urls'))]
+
 # This only has any effect when DEBUG is True.
 urlpatterns += staticfiles_urlpatterns()

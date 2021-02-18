@@ -128,6 +128,10 @@ MIDDLEWARE = (
 LANGUAGES = (
   ('de', 'German'),
   ('en', 'English'),
+  ('nl', 'Dutch'),
+  ('pt', 'Portuguese'),
+  ('it', 'Italian'),
+  ('sv', 'Swedish')
 )
 
 # The router where all our site URLs is defined.
@@ -171,7 +175,8 @@ INSTALLED_APPS = (
     'contact_form',
     'captcha',
     'crispy_forms',
-    'pagedown.apps.PagedownConfig'
+    'pagedown.apps.PagedownConfig',
+    'rosetta'
 )
 
 # Used to provide a seed in secret-key hashing algorithms.

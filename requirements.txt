@@ -16,6 +16,7 @@ django-markdownx<3.1
 django-pagedown<2.2
 django-queryset-csv<1.2
 django-recaptcha<2.1
+django-rosetta
 django-tables2<2.3
 git+git://github.com/GrandComicsDatabase/django-mobile.git@django111
 django-model-utils<3.3
