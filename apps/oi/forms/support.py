@@ -643,7 +643,7 @@ def _clean_keywords(cleaned_data):
             raise forms.ValidationError(
                 'The following characters are not allowed in a keyword: '
                 '"< > { } : / \ | @ ,". Also a linebreak is not allowed.')
-        if '' in keywords.split(';'):
+        if keywords and '' in keywords.split(';'):
             raise forms.ValidationError(
                 'An extra ";" needs to removed.')
     return keywords
