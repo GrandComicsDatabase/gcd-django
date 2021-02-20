@@ -24,28 +24,28 @@ def _brand_group_name(issue):
         for group in issue.brand.group.all():
             groups += group.name + ', '
         return groups[:-2]
-    return u''
+    return ''
 
 
 # Map moderately human-friendly field names to functions producing the data
 # from an issue record.
 ISSUE_FIELDS = {
-    'series name': lambda i: i.series.name or u'',
+    'series name': lambda i: i.series.name or '',
     'issue number': lambda i: i.number,
     'volume': lambda i: i.volume,
     'no volume': lambda i: i.no_volume,
     'display number': lambda i: i.display_number,
-    'variant name': lambda i: i.variant_name if i.variant_name else u'',
-    'price': lambda i: i.price or u'',
-    'issue page count': lambda i: i.page_count if i.page_count else u'',
+    'variant name': lambda i: i.variant_name if i.variant_name else '',
+    'price': lambda i: i.price or '',
+    'issue page count': lambda i: i.page_count if i.page_count else '',
     'issue page count uncertain': lambda i: i.page_count_uncertain,
-    'publication date': lambda i: i.publication_date or u'',
-    'key date': lambda i: i.key_date or u'',
+    'publication date': lambda i: i.publication_date or '',
+    'key date': lambda i: i.key_date or '',
     'publisher name': lambda i: i.series.publisher.name,
-    'brand name': lambda i: i.brand.name if i.brand else u'',
+    'brand name': lambda i: i.brand.name if i.brand else '',
     'brand group names': _brand_group_name,
     'indicia publisher name': lambda i: i.indicia_publisher.name if \
-                                        i.indicia_publisher else u'',
+                                        i.indicia_publisher else '',
     'format': lambda i: i.series.format,
     'language code': lambda i: i.series.language.code,
     'series country code': lambda i: i.series.country.code,
@@ -107,9 +107,9 @@ def _fix_value(value):
     so ensure that both are flagged as None.  Supply consistent quotes for
     everything else.
     """
-    if value is None or value == u'':
+    if value is None or value == '':
         return None
-    return u'"' + value + u'"'
+    return '"' + value + '"'
 
 
 def _dump_table(dumpfile, objects, max, fields, get_id):
@@ -125,11 +125,11 @@ def _dump_table(dumpfile, objects, max, fields, get_id):
                      (start, end, max))
         try:
             for object in objects.filter(id__range=(start, end)).iterator():
-                for name, func in fields.items():
-                    value = unicode(func(object)).replace(u'"', u'""')
+                for name, func in list(fields.items()):
+                    value = str(func(object)).replace('"', '""')
                     value = _fix_value(value)
                     if value is not None:
-                        record = u'"%d"\t"%s"\t%s\n' % (get_id(object),
+                        record = '"%d"\t"%s"\t%s\n' % (get_id(object),
                                                         name, value)
                         dumpfile.write(record.encode('utf-8'))
         except IndexError:
@@ -155,16 +155,17 @@ def main(*args):
 
     logging.basicConfig(level=logging.NOTSET,
                         stream=sys.stdout,
-                        format='%(asctime)s %(levelname)s: %(message)s')
+                        format='%(asctime)s %(levelname)s: %(message)s',
+                        force=True)
 
     if len(args) != 1:
         logging.error("Usage:  name-value.py <output-file>")
-        sys.exit(-1)
+        # sys.exit(-1)
 
     filename = args[0]
     try:
-        dumpfile = open(filename, 'w')
-    except (IOError, OSError), e:
+        dumpfile = open(filename, 'wb')
+    except (IOError, OSError) as e:
         logging.error("Error opening output file '%s': %s" % (filename,
                                                               e.strerror))
         sys.exit(-1)
