@@ -5290,6 +5290,12 @@ class StoryRevision(Revision):
                         credit = credit.strip().strip(']')
                     creator = CreatorNameDetail.objects.filter(name=credit,
                                                                deleted=False)
+
+                    if creator.count() > 1:
+                        # Database query cannot filter down to accent level (i.e. e versus é), so we try in code
+                        # If we still end up with > 1 then theres probably genuinely two different creators
+                        creator = [c for c in creator if c.name == credit]
+
                     if creator.count() == 1:
                         creator = creator.get()
                         if uncertain and not creator.is_official_name:
