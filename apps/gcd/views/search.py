@@ -1060,6 +1060,16 @@ def process_advanced(request, export_csv=False):
             item = items.order_by()[select]
             return HttpResponseRedirect(item.get_absolute_url())
 
+    if export_csv:
+        fields = [f.name for f in items.model._meta.get_fields()
+                  if f.auto_created is False]
+        fields = [f for f in fields if f not in {'created', 'modified',
+                                                 'deleted', 'keywords',
+                                                 'tagged_items'}]
+        fields.insert(0, 'id')
+        return render_to_csv_response(items.values(*fields),
+                                      append_datestamp=True)
+
     heading = target.title() + ' Search Results'
     # Store the URL minus the page setting so that we can use
     # it to build the URLs for the links to other pages.
@@ -1145,16 +1155,6 @@ def process_advanced(request, export_csv=False):
     context['method'] = method
     context['logic'] = logic
     context['used_search_terms'] = used_search_terms
-
-    if export_csv:
-        fields = [f.name for f in items.model._meta.get_fields()
-                  if f.auto_created is False]
-        fields = [f for f in fields if f not in {'created', 'modified',
-                                                 'deleted', 'keywords',
-                                                 'tagged_items'}]
-        fields.insert(0, 'id')
-        return render_to_csv_response(items.values(*fields),
-                                      append_datestamp=True)
 
     if item_name in ['cover', 'issue_cover']:
         context['table_width'] = COVER_TABLE_WIDTH
