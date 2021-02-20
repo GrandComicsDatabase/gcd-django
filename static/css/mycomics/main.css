@@ -16,11 +16,36 @@
     height: 50px;
     width: 113px;
 }
+.navbar-mycomics {
+    background-color: #a9302a;
+    border-color: #8e2823;
+    color: #ffffff;
+}
+
+.navbar-mycomics .navbar-nav > li > a {
+    color:#fff;
+}
+
+.navbar-mycomics .navbar-nav > .active > a {
+    color: #eee;
+    background-color:transparent;
+}
+
+.navbar-mycomics .navbar-nav > li > a:hover,
+.navbar-mycomics .navbar-nav > li > a:focus,
+.navbar-mycomics .navbar-nav > .active > a:hover,
+.navbar-mycomics .navbar-nav > .active > a:focus,
+.navbar-mycomics .navbar-nav > .open >a {
+    text-decoration: none;
+    background-color: #a9302a;
+    color: #ddd;
+}
 .middle-header {
     padding-left: 10px;
 }
 .navbar {
     padding-right: 10px;
+
 }
 .clear {
     clear: both;
