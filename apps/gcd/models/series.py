@@ -134,7 +134,8 @@ class Series(GcdData):
         #      all variants ?
         # return ((not self.is_singleton and self.active_issues().exists()) or
         return (self.active_issues().exists() or
-                self.issue_revisions.active_set().exists())
+                self.issue_revisions.active_set().exists() or
+                self.has_series_bonds())
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
