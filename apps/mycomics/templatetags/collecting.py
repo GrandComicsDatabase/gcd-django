@@ -1,14 +1,12 @@
 from django.utils.safestring import mark_safe
-from django.utils.html import conditional_escape as esc
 
 from django import template
 from django.template.defaultfilters import pluralize
 from apps.gcd.views.covers import get_image_tags_per_issue
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM
 
-from apps.gcd.models import Issue
-
 register = template.Library()
+
 
 @register.filter
 def subscribed(series, user):
@@ -17,15 +15,17 @@ def subscribed(series, user):
 
 @register.filter
 def show_have_want(issue, user):
-    have_count = issue.collectionitem_set.filter(own=True,
-                    collections__collector__user=user).distinct().count()
-    want_count = issue.collectionitem_set.filter(own=False,
-                    collections__collector__user=user).distinct().count()
+    have_count = issue.collectionitem_set.filter(
+      own=True,
+      collections__collector__user=user).distinct().count()
+    want_count = issue.collectionitem_set.filter(
+      own=False,
+      collections__collector__user=user).distinct().count()
 
     if have_count:
         text = 'I own {} cop{} of this comic.'.format(have_count,
-                                                       pluralize(have_count,
-                                                                 "y,ies"))
+                                                      pluralize(have_count,
+                                                                "y,ies"))
     else:
         text = ''
 
@@ -78,6 +78,13 @@ def collection_status(issue, user):
         return "collection_status_several"
     if items[0].own:
         return "collection_status_own"
-    if items[0].own == False:
+    if items[0].own is False:
         return "collection_status_want"
     return "collection_status_collected"
+
+
+@register.filter
+def issue_in_collection(series, collection):
+    items = series.active_issues()\
+                  .filter(collectionitem__collections__id=collection.id)
+    return items.count()

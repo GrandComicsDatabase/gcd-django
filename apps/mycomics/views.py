@@ -20,7 +20,6 @@ import csv
 from apps.indexer.views import render_error, ErrorWithMessage
 from apps.gcd.models import Issue, Series
 from apps.gcd.views import ResponsePaginator, paginate_response
-from apps.gcd.views.alpha_pagination import AlphaPaginator
 from apps.gcd.views.details import do_on_sale_weekly
 from apps.gcd.templatetags.credits import show_keywords_comma
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
@@ -39,6 +38,7 @@ from django.utils.translation import ugettext as _
 
 INDEX_TEMPLATE = 'mycomics/index.html'
 COLLECTION_TEMPLATE = 'mycomics/collection.html'
+COLLECTION_SERIES_TEMPLATE = 'mycomics/collection_series.html'
 COLLECTION_LIST_TEMPLATE = 'mycomics/collections.html'
 COLLECTION_FORM_TEMPLATE = 'mycomics/collection_form.html'
 COLLECTION_ITEM_TEMPLATE = 'mycomics/collection_item.html'
@@ -86,12 +86,43 @@ def view_collection(request, collection_id):
         raise PermissionDenied
 
     items = collection.items.all().select_related('issue__series')
+    base_url = urlresolvers.reverse('view_collection',
+                                    kwargs={'collection_id': collection_id})
     vars = {'collection': collection,
-            'collection_list': collection_list}
+            'collection_list': collection_list,
+            'base_url': base_url}
     paginator = ResponsePaginator(items, vars=vars, per_page=DEFAULT_PER_PAGE,
                                   alpha=True)
-    page = paginator.paginate(request)
+    paginator.paginate(request)
     return render(request, COLLECTION_TEMPLATE, vars)
+
+
+def view_collection_series(request, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+    if request.user.is_authenticated and \
+       collection.collector == request.user.collector:
+        collection_list = request.user.collector.ordered_collections()
+    elif collection.public is True:
+        collection_list = Collection.objects.none()
+    elif not request.user.is_authenticated:
+        return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+    else:
+        raise PermissionDenied
+
+    items = collection.items.all().select_related('issue__series')
+    series_ids = items.values_list('issue__series__id', flat=True)\
+                      .order_by('issue__series__id')\
+                      .distinct()
+    series_list = Series.objects.filter(id__in=series_ids)
+    base_url = urlresolvers.reverse('view_collection_series',
+                                    kwargs={'collection_id': collection_id})
+    vars = {'collection': collection,
+            'collection_list': collection_list,
+            'base_url': base_url}
+    paginator = ResponsePaginator(series_list, vars=vars,
+                                  per_page=DEFAULT_PER_PAGE, alpha=True)
+    paginator.paginate(request)
+    return render(request, COLLECTION_SERIES_TEMPLATE, vars)
 
 
 @login_required
@@ -153,15 +184,16 @@ def export_collection(request, collection_id):
                         "notes": "description",
                         "id": "tags"}
     field_serializer_map = {'issue':
-                              (lambda x:
-                               "%s" % Issue.objects.get(id=x).full_descriptor),
+                            (lambda x:
+                             "%s" % Issue.objects.get(id=x).full_descriptor),
                             'id':
-                              (lambda x:
-                               "%s" % show_keywords_comma(CollectionItem.objects.get(id=x))),
+                            (lambda x:
+                             "%s" % show_keywords_comma(CollectionItem
+                                                        .objects.get(id=x))),
                             "acquisition_date":
-                              (lambda x: "%s" % Date.objects.get(id=x)),
+                            (lambda x: "%s" % Date.objects.get(id=x)),
                             "sell_date":
-                              (lambda x: "%s" % Date.objects.get(id=x)),}
+                            (lambda x: "%s" % Date.objects.get(id=x)), }
     if collection.condition_used:
         export_data.append("grade")
     if collection.acquisition_date_used:
@@ -225,9 +257,9 @@ def check_item_is_not_in_collection(request, item, collection):
 def get_collection_for_owner(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
     if collection.collector.user != request.user:
-        return None, render_error(request,
-            'Only the owner of a collection can add issues to it.',
-            redirect=False)
+        return None, render_error(
+          request, 'Only the owner of a collection can add issues to it.',
+          redirect=False)
     return collection, None
 
 
@@ -272,7 +304,7 @@ def delete_item(request, item_id, collection_id):
                   'collection_id': item.collections.all()[0].id}))
 
     return HttpResponseRedirect(urlresolvers.reverse('view_collection',
-                                  kwargs={'collection_id': collection_id}) +
+                                kwargs={'collection_id': collection_id}) +
                                 "?page=%d" % (position / DEFAULT_PER_PAGE + 1))
 
 
@@ -361,10 +393,10 @@ def view_item(request, item_id, collection_id):
             sell_date_form.fields['date'].label = _('Sell date')
         if item.collections.filter(acquisition_date_used=True).exists():
             acquisition_date_form = DateForm(instance=item.acquisition_date,
-                                            prefix='acquisition_date')
+                                             prefix='acquisition_date')
             acquisition_date_form.fields['date'].label = _('Acquisition date')
-        collection_form = CollectionSelectForm(collector,
-                            excluded_collections=item.collections.all())
+        collection_form = CollectionSelectForm(
+          collector, excluded_collections=item.collections.all())
         other_collections = item.collections.exclude(id=collection.id)
     else:
         item_form = None
@@ -521,8 +553,8 @@ def add_single_issue_to_collection(request, issue_id):
     if not request.POST:
         raise ErrorWithMessage("No collection was selected.")
     issue = get_object_or_404(Issue, id=issue_id)
-    collection, error_return = get_collection_for_owner(request,
-                   collection_id=int(request.POST['collection_id']))
+    collection, error_return = get_collection_for_owner(
+      request, collection_id=int(request.POST['collection_id']))
     if not collection:
         return error_return
     collected = create_collection_item(issue, collection)
@@ -549,9 +581,10 @@ def add_selected_issues_to_collection(request, data):
     post_process_selection = data.get('post_process_selection', None)
     if 'confirm_selection' in request.POST:
         collection_id = int(request.POST['collection_id'])
-        return add_issues_to_collection(request,
-          collection_id, issues, urlresolvers.reverse('view_collection',
-                                 kwargs={'collection_id': collection_id}),
+        return add_issues_to_collection(
+          request, collection_id, issues,
+          urlresolvers.reverse('view_collection',
+                               kwargs={'collection_id': collection_id}),
           post_process_selection=post_process_selection)
     else:
         if 'collection_list' in data:
@@ -597,8 +630,8 @@ def select_issues_from_preselection(request, issues, cancel,
                'not_found': not_found
                }
     return paginate_response(request, issues,
-                            'gcd/search/issue_list.html', context,
-                            per_page=issues.count())
+                             'gcd/search/issue_list.html', context,
+                             per_page=issues.count())
 
 
 def select_from_on_sale_weekly(request, year=None, week=None):
@@ -642,7 +675,8 @@ def import_items(request):
         if number_of_lines > 501:
             messages.error(request, _('More than 500 lines. Please split'
                                       ' the import file into smaller chunks.'))
-            return HttpResponseRedirect(urlresolvers.reverse('collections_list'))
+            return HttpResponseRedirect(urlresolvers.reverse(
+                                        'collections_list'))
         rawdata = open(tmpfile_name, 'rb').read()
         result = chardet.detect(rawdata)
         encoding = result['encoding']
@@ -655,7 +689,7 @@ def import_items(request):
         if line[0] == 'Title' and line[1] == 'Issue Number':
             comicbookdb = True
             publisher_col = -1
-            for i in range(2,len(line)):
+            for i in range(2, len(line)):
                 if line[i] == 'Publisher':
                     publisher_col = i
             if publisher_col < 0:
@@ -671,7 +705,6 @@ def import_items(request):
             if comicbookdb:
                 if line[0][-1] == ')' and line[0][-6] == '(':
                     series = line[0][:-6].strip()
-                    year_began = int(line[0][-5:-1])
                 else:
                     raise ErrorWithMessage("Cannot find '(year)')")
                 try:
@@ -794,22 +827,22 @@ def post_process_subscription(item):
 
 @login_required
 def subscriptions_collection(request, collection_id):
-    collection, error_return = get_collection_for_owner(request,
-                               collection_id=collection_id)
+    collection, error_return = get_collection_for_owner(
+      request, collection_id=collection_id)
     if not collection:
         return error_return
     subscriptions = collection.subscriptions.order_by('series__sort_name')
     return render(request, COLLECTION_SUBSCRIPTIONS_TEMPLATE,
                   {'collection': collection,
                    'subscriptions': subscriptions,
-                   'collection_list': request.user.collector.
-                                              ordered_collections()})
+                   'collection_list': request.user.collector
+                                             .ordered_collections()})
 
 
 @login_required
 def subscribed_into_collection(request, collection_id):
-    collection, error_return = get_collection_for_owner(request,
-                               collection_id=collection_id)
+    collection, error_return = get_collection_for_owner(
+      request, collection_id=collection_id)
     if not collection:
         return error_return
     issues = Issue.objects.none()
@@ -821,7 +854,8 @@ def subscribed_into_collection(request, collection_id):
       urlresolvers.reverse('subscriptions_collection',
                            kwargs={'collection_id': collection_id}))
     if issues:
-        return select_issues_from_preselection(request, issues, return_url,
+        return select_issues_from_preselection(
+          request, issues, return_url,
           post_process_selection=post_process_subscription,
           collection_list=[collection])
     else:
@@ -833,8 +867,8 @@ def subscribed_into_collection(request, collection_id):
 def subscribe_series(request, series_id):
     series = get_object_or_404(Series, id=series_id)
     collection_id = int(request.POST['collection_id'])
-    collection, error_return = get_collection_for_owner(request,
-                               collection_id=collection_id)
+    collection, error_return = get_collection_for_owner(
+      request, collection_id=collection_id)
     if not collection:
         return error_return
     subscription = Subscription.objects.filter(series=series,
@@ -845,9 +879,9 @@ def subscribe_series(request, series_id):
                              'collection %s.' % (esc(series),
                                                  esc(collection)))))
     elif series.is_current:
-        subscription = Subscription.objects.create(series=series,
-                                            collection=collection,
-                                            last_pulled=datetime.today())
+        Subscription.objects.create(series=series,
+                                    collection=collection,
+                                    last_pulled=datetime.today())
         messages.success(
           request, mark_safe(_('Series %s is now subscribed for the '
                              'collection %s.' % (esc(series),
@@ -910,8 +944,8 @@ def mycomics_settings(request):
     else:
         settings_form = CollectorForm(request.user.collector)
 
-    location_form = LocationForm(instance=Location(user=
-                                                   request.user.collector))
+    location_form = LocationForm(
+      instance=Location(user=request.user.collector))
     purchase_location_form = PurchaseLocationForm(
         instance=PurchaseLocation(user=request.user.collector))
     locations = Location.objects.filter(user=request.user.collector)
