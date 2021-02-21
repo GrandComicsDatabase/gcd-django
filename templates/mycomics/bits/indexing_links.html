@@ -1,0 +1,13 @@
+{% load i18n %}
+
+{% if request.user.collector == collection.collector %}
+  <div class="btn-group pull-right">
+    <a href="{{ unindexed_issues_url }}">
+      <button type="button" class="btn btn-primary">{% trans "Unindexed Issues" %}
+    </button></a>
+    <a href="{{ needed_covers_url }}">
+      <button type="button" class="btn btn-primary">{% trans "Needed Covers" %}
+    </button></a>
+  </div>
+{% endif %}
+

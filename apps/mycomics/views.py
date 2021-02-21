@@ -88,9 +88,21 @@ def view_collection(request, collection_id):
     items = collection.items.all().select_related('issue__series')
     base_url = urlresolvers.reverse('view_collection',
                                     kwargs={'collection_id': collection_id})
+    needed_covers_url = urlresolvers.reverse("process_advanced_search") + \
+                        "?target=issue&method=iexact&logic=False" \
+                        "&cover_needed=on&in_collection=%s" \
+                        "&in_selected_collection=on" \
+                        "&order1=series&order2=date" % collection_id
+    unindexed_issues_url = urlresolvers.reverse("process_advanced_search") + \
+                           "?target=issue&method=iexact&logic=False" \
+                           "&is_indexed=False&in_collection=%s" \
+                           "&in_selected_collection=on" \
+                           "&order1=series&order2=date" % collection_id
     vars = {'collection': collection,
             'collection_list': collection_list,
-            'base_url': base_url}
+            'base_url': base_url,
+            'needed_covers_url': needed_covers_url,
+            'unindexed_issues_url': unindexed_issues_url}
     paginator = ResponsePaginator(items, vars=vars, per_page=DEFAULT_PER_PAGE,
                                   alpha=True)
     paginator.paginate(request)
@@ -116,9 +128,21 @@ def view_collection_series(request, collection_id):
     series_list = Series.objects.filter(id__in=series_ids)
     base_url = urlresolvers.reverse('view_collection_series',
                                     kwargs={'collection_id': collection_id})
+    needed_covers_url = urlresolvers.reverse("process_advanced_search") + \
+                        "?target=issue&method=iexact&logic=False" \
+                        "&cover_needed=on&in_collection=%s" \
+                        "&in_selected_collection=on" \
+                        "&order1=series&order2=date" % collection_id
+    unindexed_issues_url = urlresolvers.reverse("process_advanced_search") + \
+                           "?target=issue&method=iexact&logic=False" \
+                           "&is_indexed=False&in_collection=%s" \
+                           "&in_selected_collection=on" \
+                           "&order1=series&order2=date" % collection_id
     vars = {'collection': collection,
             'collection_list': collection_list,
-            'base_url': base_url}
+            'base_url': base_url,
+            'needed_covers_url': needed_covers_url,
+            'unindexed_issues_url': unindexed_issues_url}
     paginator = ResponsePaginator(series_list, vars=vars,
                                   per_page=DEFAULT_PER_PAGE, alpha=True)
     paginator.paginate(request)
