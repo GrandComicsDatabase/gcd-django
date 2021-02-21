@@ -14,13 +14,15 @@ from django.conf import settings
 import django.urls as urlresolvers
 from django.shortcuts import get_object_or_404, \
                              render
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
 from django_tables2 import RequestConfig
 from django_tables2.paginators import LazyPaginator
 from django_tables2.export.export import TableExport
+
+from djqscsv import render_to_csv_response
 
 from apps.indexer.views import ViewTerminationError
 
@@ -134,6 +136,19 @@ def generic_sortable_list(request, items, table, template, context):
     if TableExport.is_valid_format(export_format):
         exporter = TableExport(export_format, table)
         return exporter.response("table.{}".format(export_format))
+    if export_format and export_format in ['db_csv', 'db_json']:
+        fields = [f.name for f in items.model._meta.get_fields()
+                  if f.auto_created is False]
+        fields = [f for f in fields if f not in {'created', 'modified',
+                                                 'deleted', 'keywords',
+                                                 'tagged_items'}]
+        fields.insert(0, 'id')
+        if export_format == 'db_csv':
+            return render_to_csv_response(items.values(*fields),
+                                          append_datestamp=True)
+        if export_format == 'db_json':
+            data = list(items.values(*fields))
+            return JsonResponse(data, safe=False)
 
     context['table'] = table
     # are using /search/list_header.html in the template

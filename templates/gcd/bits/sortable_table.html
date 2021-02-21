@@ -63,5 +63,6 @@
     {% endblock table.tfoot %}
 </table>
 {% endblock table %}
-<p>Download the table as <a href="{% export_url "csv" %}"><code>.csv</code></a> or <a href="{% export_url "json" %}"><code>.json</code></a>.</p>
+<p>Download the shown data as <a href="{% export_url "csv" %}"><code>.csv</code></a> or <a href="{% export_url "json" %}"><code>.json</code></a>.<br>
+Download the raw database fields for the shown objects as <a href="{% export_url "db_csv" %}"><code>.csv</code></a> or <a href="{% export_url "db_json" %}"><code>.json</code></a>. Technical note, this download does include only the IDs of foreign keys and contains no many-to-many relationships.  </p>
 </div>
