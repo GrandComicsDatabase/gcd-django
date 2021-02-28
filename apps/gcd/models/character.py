@@ -155,6 +155,11 @@ class CharacterRelation(GcdLink):
         if self.to_character == character:
             return [self.from_character, self.relation_type.reverse_type]
 
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_character_relation',
+                kwargs={'character_relation_id': self.id})
+
     def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_character),
                                            str(self.to_character),
@@ -231,6 +236,11 @@ class GroupRelation(GcdLink):
         if self.to_group == group:
             return [self.from_group, self.relation_type.reverse_type]
 
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_group_relation',
+                kwargs={'group_relation_id': self.id})
+
     def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_group),
                                            str(self.to_group),
@@ -290,6 +300,11 @@ class GroupMembership(GcdLink):
         else:
             years += 'present'
         return years
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_group_membership',
+                kwargs={'group_membership_id': self.id})
 
     def __str__(self):
         return '%s is %s member of %s' % (str(self.character),
