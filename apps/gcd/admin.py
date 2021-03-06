@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import (MembershipType, NameType, NonComicWorkRole, CreditType,
                      NonComicWorkType, RelationType, School, SeriesBondType,
                      SourceType, FeatureType, FeatureRelationType, StoryType,
-                     Degree, CodeNumberType)
+                     Degree, CodeNumberType, CharacterRelationType)
 
 class StoryTypeAdmin(admin.ModelAdmin):
     list_display = ('sort_code', 'name')
@@ -34,3 +34,4 @@ admin.site.register(NonComicWorkType)
 admin.site.register(NonComicWorkRole)
 admin.site.register(School)
 admin.site.register(Degree)
+admin.site.register(CharacterRelationType)
