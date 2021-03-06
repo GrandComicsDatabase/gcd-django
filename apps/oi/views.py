@@ -2033,15 +2033,16 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
         if variant_of:
             return HttpResponseRedirect(urlresolvers.reverse(
               'show_issue',
-              kwargs={ 'issue_id': variant_of.id }))
+              kwargs={'issue_id': variant_of.id}))
         else:
             return HttpResponseRedirect(urlresolvers.reverse(
               'show_series',
-              kwargs={ 'series_id': series_id }))
+              kwargs={'series_id': series_id}))
 
     series = get_object_or_404(Series, id=series_id)
     if series.deleted or series.pending_deletion():
-        return render_error(request, 'Cannot add an issue '
+        return render_error(
+          request, 'Cannot add an issue '
           'since "%s" is deleted or pending deletion.' % series)
 
     form_class = get_revision_form(model_name='issue',
@@ -2055,7 +2056,6 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
         code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
     else:
         code_number_formset = None
-
 
     if request.method != 'POST':
         if variant_of:
@@ -2086,7 +2086,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                        variant_of, variant_cover)
 
     if variant_of and edit_with_base:
-        kwargs = {'variant_of': variant_of,
+        kwargs = {'request': request,
+                  'variant_of': variant_of,
                   'issuerevision': form.save(commit=False)}
         if variant_cover:
             return reserve(request, variant_cover.id, 'cover',
@@ -2105,7 +2106,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                  variant_of=variant_of)
     form.save_m2m()
     extra_forms = {'credits_formset': credits_formset,
-                   'code_number_formset': code_number_formset,}
+                   'code_number_formset': code_number_formset}
     revision.process_extra_forms(request, extra_forms)
 
     if variant_of:
@@ -2117,11 +2118,11 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
 def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
-        return render_error(request,
-          'Only the reservation holder may add variants.')
+        return render_error(
+          request, 'Only the reservation holder may add variants.')
     if changeset.change_type in [CTYPES['variant_add'], CTYPES['two_issues']]:
-        return render_error(request,
-          'You cannot add a variant to this changeset.')
+        return render_error(
+          request, 'You cannot add a variant to this changeset.')
     issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
     series = issue_revision.series
 
@@ -2135,6 +2136,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
         code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
     else:
         code_number_formset = None
+
     if request.method != 'POST':
         initial = dict(issue_revision.__dict__)
         if issue_revision.series.has_indicia_printer:
@@ -2153,7 +2155,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
           'edit',
-          kwargs={ 'id': changeset_id }))
+          kwargs={'id': changeset_id}))
 
     form = form_class(request.POST)
     if not form.is_valid():
@@ -2165,15 +2167,20 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     variant_revision.save_added_revision(changeset=changeset,
                                          series=issue_revision.series,
                                          variant_of=issue_revision.issue)
-    changeset.change_type=CTYPES['variant_add']
+    form.save_m2m()
+    extra_forms = {'credits_formset': credits_formset,
+                   'code_number_formset': code_number_formset}
+    variant_revision.process_extra_forms(request, extra_forms)
+    changeset.change_type = CTYPES['variant_add']
     changeset.save()
 
     return HttpResponseRedirect(urlresolvers.reverse(
       'edit',
-      kwargs={ 'id': changeset_id }))
+      kwargs={'id': changeset_id}))
 
 
-def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
+def add_variant_issuerevision(changeset, revision, variant_of, issuerevision,
+                              request):
     if changeset.change_type == CTYPES['cover']:
         # via create variant for cover
         issue = revision.issue
@@ -2183,13 +2190,22 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision):
                            changeset=changeset):
             return False
 
-    changeset.change_type=CTYPES['variant_add']
+    changeset.change_type = CTYPES['variant_add']
     changeset.save()
 
     # save issue revision for the new variant record
     issuerevision.save_added_revision(changeset=changeset,
                                       series=variant_of.series,
                                       variant_of=variant_of)
+    credits_formset = IssueRevisionFormSet(request.POST or None)
+    if variant_of.series.has_publisher_code_number:
+        code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
+    else:
+        code_number_formset = None
+    extra_forms = {'credits_formset': credits_formset,
+                   'code_number_formset': code_number_formset}
+    issuerevision.process_extra_forms(request, extra_forms)
+
     return True
 
 
@@ -2198,15 +2214,15 @@ def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
         if cover.issue.id != int(issue_id):
-            return render_error(request,
-                'Selected cover does not correspond to selected issue.')
+            return render_error(
+              request, 'Selected cover does not correspond to selected issue.')
     else:
         cover = None
     issue = get_object_or_404(Issue, id=issue_id)
 
     if 'edit_with_base' in request.POST or edit_with_base:
         return add_issue(request, issue.series.id, variant_of=issue,
-                        variant_cover=cover, edit_with_base=True)
+                         variant_cover=cover, edit_with_base=True)
     else:
         return add_issue(request, issue.series.id, variant_of=issue,
                          variant_cover=cover)
@@ -2282,13 +2298,14 @@ def add_issues(request, series_id, method=None):
                                 .filter(state__in=states.ACTIVE)
     series = get_object_or_404(Series, id=series_id)
     if series.deleted or series.pending_deletion():
-        return render_error(request, 'Cannot add issues '
+        return render_error(
+          request, 'Cannot add issues '
           'since "%s" is deleted or pending deletion.' % series)
 
     if method is None:
         return oi_render(request, 'oi/edit/add_issues.html',
-                         { 'series': series,
-                           'issue_adds' : issue_adds })
+                         {'series': series,
+                          'issue_adds': issue_adds})
 
     form_class = get_bulk_issue_revision_form(series=series, method=method,
                                               user=request.user)
@@ -2304,7 +2321,7 @@ def add_issues(request, series_id, method=None):
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
           'show_series',
-          kwargs={ 'series_id': series_id }))
+          kwargs={'series_id': series_id}))
 
     form = form_class(request.POST)
     if not form.is_valid():
@@ -2322,8 +2339,8 @@ def add_issues(request, series_id, method=None):
     elif method == 'year_volume':
         new_issues = _build_per_year_volume_issues(series, form, changeset)
     else:
-        return render_error(request,
-          'Unknown method for generating issues: %s' % method)
+        return render_error(
+          request, 'Unknown method for generating issues: %s' % method)
 
     # "after" for the rest of the issues gets set when they are all
     # committed to display.
@@ -2340,7 +2357,9 @@ def _build_whole_numbered_issues(series, form, changeset):
     first_number = cd['first_number']
     increment = 0
     for number in range(first_number, first_number + cd['number_of_issues']):
-        issue_revisions.append(_build_issue(form, revision_sort_code=increment,
+        issue_revisions.append(_build_issue(
+          form,
+          revision_sort_code=increment,
           number=number,
           volume=cd['volume'],
           no_volume=cd['no_volume'],
@@ -2362,7 +2381,9 @@ def _build_per_volume_issues(series, form, changeset):
             current_number = per_volume
         elif increment > 0 and current_number == 1:
             current_volume += 1
-        issue_revisions.append(_build_issue(form, revision_sort_code=increment,
+        issue_revisions.append(_build_issue(
+          form,
+          revision_sort_code=increment,
           number=current_number,
           volume=current_volume,
           no_volume=False,
@@ -2382,8 +2403,10 @@ def _build_per_year_issues(series, form, changeset):
         if current_number == 0:
             current_number = per_year
         elif increment > 0 and current_number == 1:
-            current_year +=1
-        issue_revisions.append(_build_issue(form, revision_sort_code=increment,
+            current_year += 1
+        issue_revisions.append(_build_issue(
+          form,
+          revision_sort_code=increment,
           number='%d/%d' % (current_number, current_year),
           volume=cd['volume'],
           no_volume=cd['no_volume'],
@@ -2404,9 +2427,11 @@ def _build_per_year_volume_issues(series, form, changeset):
         if current_number == 0:
             current_number = per_cycle
         elif increment > 0 and current_number == 1:
-            current_year +=1
-            current_volume +=1
-        issue_revisions.append(_build_issue(form, revision_sort_code=increment,
+            current_year += 1
+            current_volume += 1
+        issue_revisions.append(_build_issue(
+          form,
+          revision_sort_code=increment,
           number='%d/%d' % (current_number, current_year),
           volume=current_volume,
           no_volume=False,
@@ -2510,17 +2535,18 @@ def add_feature_logo(request, feature_id):
     feature = get_object_or_404(Feature, id=feature_id, deleted=False)
 
     if feature.pending_deletion():
-        return render_error(request, 'Cannot add a feature logo '
-          'since "%s" is pending deletion.' % feature)
+        return render_error(
+          request,
+          'Cannot add a feature logo since "%s" is pending deletion.'
+          % feature)
 
     if request.method == 'POST' and 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
-          'show_feature', kwargs={ 'feature_id': feature_id }))
+          'show_feature', kwargs={'feature_id': feature_id}))
 
     initial = {'feature': feature}
-    form = get_feature_logo_revision_form(user=request.user)\
-                                         (request.POST or None,
-                                          initial=initial)
+    form = get_feature_logo_revision_form(
+      user=request.user)(request.POST or None, initial=initial)
 
     if form.is_valid():
         changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -2533,7 +2559,7 @@ def add_feature_logo(request, feature_id):
 
     object_name = 'Feature Logo'
     object_url = urlresolvers.reverse('add_feature_logo',
-                                      kwargs={ 'feature_id': feature.id })
+                                      kwargs={'feature_id': feature.id})
 
     return oi_render(
       request, 'oi/edit/add_frame.html',
@@ -2563,9 +2589,8 @@ def add_feature_relation(request, feature_id):
 
     initial = {}
     initial['from_feature'] = feature
-    relation_form = get_feature_relation_revision_form(user=request.user)\
-                                                      (request.POST or None,
-                                                       initial=initial)
+    relation_form = get_feature_relation_revision_form(
+      user=request.user)(request.POST or None, initial=initial)
 
     if relation_form.is_valid():
         changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -2581,7 +2606,8 @@ def add_feature_relation(request, feature_id):
     context = {'form': relation_form,
                'object_name': 'Relation with Feature',
                'object_url': urlresolvers.reverse('add_feature_relation',
-                                                  kwargs={'feature_id': feature_id}),
+                                                  kwargs={'feature_id':
+                                                          feature_id}),
                'action_label': 'Submit new',
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
@@ -2606,7 +2632,7 @@ def add_character_relation(request, character_id):
     cancel = urlresolvers.reverse('show_character',
                                   kwargs={'character_id': character_id})
     object_url = urlresolvers.reverse('add_character_relation',
-                                       kwargs={'character_id': character_id})
+                                      kwargs={'character_id': character_id})
     return add_generic(request,
                        'character_relation',
                        initial=initial,
@@ -2634,7 +2660,7 @@ def add_group_relation(request, group_id):
     cancel = urlresolvers.reverse('show_group',
                                   kwargs={'group_id': group_id})
     object_url = urlresolvers.reverse('add_group_relation',
-                                       kwargs={'group_id': group_id})
+                                      kwargs={'group_id': group_id})
     return add_generic(request,
                        'group_relation',
                        initial=initial,
@@ -2664,7 +2690,7 @@ def add_group_membership(request, character_id):
                        'group_membership',
                        initial=initial,
                        object_url=object_url,
-                       object_name = 'Group Membership for a Character',
+                       object_name='Group Membership for a Character',
                        cancel=cancel)
 
 
@@ -2675,7 +2701,7 @@ def add_group_member(request, group_id):
     if group.pending_deletion():
         return render_error(request, 'Cannot add Members '
                                      'since group "%s" is deleted or '
-                                     'pending deletion.' % groupcharacter)
+                                     'pending deletion.' % group)
 
     initial = {}
     initial['group'] = group_id
@@ -2688,7 +2714,7 @@ def add_group_member(request, group_id):
                        'group_membership',
                        initial=initial,
                        object_url=object_url,
-                       object_name = 'a Member to a Group',
+                       object_name='a Member to a Group',
                        cancel=cancel)
 
 
@@ -2696,8 +2722,8 @@ def add_group_member(request, group_id):
 def add_story(request, issue_revision_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
-        return render_error(request,
-          'Only the reservation holder may add stories.')
+        return render_error(
+          request, 'Only the reservation holder may add stories.')
     # check if this is a request to add a copy of a sequence
     if 'copy' in request.GET:
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
@@ -2719,10 +2745,11 @@ def add_story(request, issue_revision_id, changeset_id):
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
         issue = issue_revision.issue
         if issue_revision.variant_of and \
-          issue_revision.active_stories().count():
-            return render_error(request,
-                  'You cannot add more than one story to a variant issue.',
-                  redirect=False)
+           issue_revision.active_stories().count():
+            return render_error(
+              request,
+              'You cannot add more than one story to a variant issue.',
+              redirect=False)
 
         initial = {}
         if request.method != 'POST':
@@ -2730,16 +2757,17 @@ def add_story(request, issue_revision_id, changeset_id):
             if 'added_sequence_number' in request.GET:
                 seq = request.GET['added_sequence_number']
             if seq == '':
-                return render_error(request,
+                return render_error(
+                  request,
                   'You must supply a sequence number for the new story.',
                   redirect=False)
             else:
                 initial = _get_initial_add_story_data(request, issue_revision,
                                                       seq)
-        form = get_story_revision_form(user=request.user,
-                                       issue_revision=issue_revision)\
-                                      (request.POST or None,
-                                       initial=initial)
+        form = get_story_revision_form(
+          user=request.user,
+          issue_revision=issue_revision)(request.POST or None,
+                                         initial=initial)
         credits_formset = StoryRevisionFormSet(request.POST or None)
 
         if not form.is_valid() or not credits_formset.is_valid():
@@ -2792,24 +2820,25 @@ def add_story(request, issue_revision_id, changeset_id):
                                                 get(language=language))
 
         if revision.source_class == Story \
-          and revision.type.id == STORY_TYPES['about comics']:
-            biblio_revision = BiblioEntryRevision(storyrevision_ptr=
-                                                  revision)
+           and revision.type.id == STORY_TYPES['about comics']:
+            biblio_revision = BiblioEntryRevision(
+              storyrevision_ptr=revision)
             biblio_revision.__dict__.update(revision.__dict__)
             biblio_revision.save()
             return HttpResponseRedirect(
               urlresolvers.reverse('edit_revision',
-                                    kwargs={'model_name': 'biblio_entry',
-                                            'id': biblio_revision.id }))
+                                   kwargs={'model_name': 'biblio_entry',
+                                           'id': biblio_revision.id}))
 
         return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': changeset.id }))
+                                    kwargs={'id': changeset.id}))
 
     except ViewTerminationError as vte:
         return vte.response
 
     except (IssueRevision.DoesNotExist, IssueRevision.MultipleObjectsReturned):
-        return render_error(request,
+        return render_error(
+          request,
           'Could not find issue revision for id ' + issue_revision_id)
 
 
@@ -2822,7 +2851,8 @@ def _get_initial_add_story_data(request, issue_revision, seq):
         seq_num = int(seq)
         if issue_revision.story_set.filter(sequence_number=seq_num)\
                                    .count():
-            raise ViewTerminationError(render_error(request,
+            raise ViewTerminationError(render_error(
+              request,
               "New stories must be added with a sequence number that "
               "is not already in use.  You may use a decimal number "
               "to insert a sequence between two existing sequences, "
@@ -2833,7 +2863,8 @@ def _get_initial_add_story_data(request, issue_revision, seq):
         try:
             float_num = float(seq)
         except ValueError:
-            raise ViewTerminationError(render_error(request,
+            raise ViewTerminationError(render_error(
+              request,
               "Sequence number must be a number.", redirect=False))
 
         # Now convert to the next int above the float.  If this
@@ -2845,7 +2876,7 @@ def _get_initial_add_story_data(request, issue_revision, seq):
             float_num += 1
         seq_num = int(float_num)
 
-    initial = {'no_editing' : True }
+    initial = {'no_editing': True}
     if seq_num == 0 and issue_revision.series.is_comics_publication:
         # Do not default other sequences, because if we do we
         # will get a lot of people leaving the default values
@@ -2900,17 +2931,15 @@ def copy_story_revision(request, issue_revision_id, changeset_id):
 def edit_series_bonds(request, series_id):
     series = get_object_or_404(Series, id=series_id)
     return oi_render(request, 'oi/edit/list_series_bonds.html',
-      {
-        'series': series,
-      })
+                     {'series': series, })
 
 
 @permission_required('indexer.can_reserve')
 def save_selected_series_bond(request, data, object_type, selected_id):
     if request.method != 'POST':
         return _cant_get(request)
-    series_bond_revision = get_object_or_404(SeriesBondRevision,
-                           id=data['series_bond_revision_id'])
+    series_bond_revision = get_object_or_404(
+      SeriesBondRevision, id=data['series_bond_revision_id'])
     if object_type == 'series':
         series = get_object_or_404(Series, id=selected_id)
         if data['which_side'] == 'origin':
@@ -2928,8 +2957,8 @@ def save_selected_series_bond(request, data, object_type, selected_id):
             series_bond_revision.target = issue.series
             series_bond_revision.target_issue = issue
     series_bond_revision.save()
-    return HttpResponseRedirect(urlresolvers.reverse('edit',
-        kwargs={'id': series_bond_revision.changeset.id}))
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'edit', kwargs={'id': series_bond_revision.changeset.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -2956,14 +2985,14 @@ def edit_series_bond(request, id):
         series_bond_revision.origin = series
         series_bond_revision.origin_issue = issue
         series_bond_revision.save()
-        return HttpResponseRedirect(urlresolvers.reverse('edit',
-            kwargs={'id': series_bond_revision.changeset.id}))
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit', kwargs={'id': series_bond_revision.changeset.id}))
     else:
         raise NotImplementedError
     initial = {'series': series.name,
-            'publisher': series.publisher,
-            'year': series.year_began,
-            'number': number}
+               'publisher': series.publisher,
+               'year': series.year_began,
+               'number': number}
     data = {'series_bond_revision_id': id,
             'initial': initial,
             'series': True,
