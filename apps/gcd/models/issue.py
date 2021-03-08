@@ -217,7 +217,7 @@ class Issue(GcdData):
                                    .select_related('type', 'migration_status')
                                    .prefetch_related('feature_object'))
         if self.series.is_comics_publication:
-            if (len(stories) > 0) and stories[0].type.id==6:
+            if (len(stories) > 0) and stories[0].type.id == 6:
                 cover_story = stories.pop(0)
                 if self.variant_of:
                     # can have only one sequence, the variant cover
@@ -276,11 +276,11 @@ class Issue(GcdData):
         Simplifies UI checks for conditionals.  Content fields
         """
         return self.notes or \
-               self.variant_of or \
-               self.other_variants() or \
-               self.has_keywords() or \
-               self.has_reprints() or \
-               self.active_awards().count()
+            self.variant_of or \
+            self.other_variants() or \
+            self.has_keywords() or \
+            self.has_reprints() or \
+            self.active_awards().count()
 
     def has_covers(self):
         return self.can_have_cover() and self.active_covers().exists()
@@ -463,7 +463,8 @@ class Issue(GcdData):
             return "%s [%s]" % (self.issue_descriptor, self.variant_name)
         if self.active_code_numbers().filter(number_type__id=1):
             return "%s (%s)" % (self.issue_descriptor,
-              self.active_code_numbers().get(number_type__id=1).number)
+                                self.active_code_numbers()
+                                .get(number_type__id=1).number)
         return self.issue_descriptor
 
     @property
@@ -539,6 +540,7 @@ class Issue(GcdData):
 # Tables with Sorting
 ##############################################################################
 
+
 class IssueColumn(tables.Column):
     def render(self, record):
         return mark_safe(record.show_series_and_issue_link())
@@ -594,7 +596,8 @@ class IssuePublisherTable(IssueTable):
         attrs = {'th': {'class': "non_visited"}}
 
     def order_publisher(self, query_set, is_descending):
-        query_set = query_set.annotate(publisher_name=F('series__publisher__name'))
+        query_set = query_set.annotate(
+          publisher_name=F('series__publisher__name'))
         query_set = query_set.annotate(series_name=F('series__sort_name'))
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'publisher_name',
@@ -633,6 +636,9 @@ class IndiciaPublisherIssueTable(IssueTable):
         from apps.gcd.templatetags.display import absolute_url
         return absolute_url(value)
 
+    def value_brand(self, value):
+        return str(value)
+
 
 class BrandEmblemIssueTable(IssueTable):
     indicia_publisher = tables.Column(accessor='indicia_publisher',
@@ -664,6 +670,9 @@ class BrandEmblemIssueTable(IssueTable):
                                        absolute_url(record.series.publisher))
         return mark_safe(return_val)
 
+    def value_indicia_publisher(self, value):
+        return str(value)
+
 
 class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
     def __init__(self, *args, **kwargs):
@@ -681,10 +690,15 @@ class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
                                        absolute_url(record.series.publisher))
         return mark_safe(return_val)
 
+    def value_indicia_publisher(self, value):
+        return str(value)
+
 
 class PublisherIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
     def render_indicia_publisher(self, record):
-        from apps.gcd.templatetags.display import absolute_url,\
-                                                  show_indicia_pub
+        from apps.gcd.templatetags.display import show_indicia_pub
         return_val = show_indicia_pub(record)
         return mark_safe(return_val)
+
+    def value_indicia_publisher(self, value):
+        return str(value)

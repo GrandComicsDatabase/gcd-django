@@ -53,6 +53,7 @@ NO_FEATURE_TYPES = [8, 22, 24, 25]
 NO_GENRE_TYPES = [8, 22, 24, 25]
 DEPRECATED_TYPES = [3, 4, 23]
 
+
 def show_feature(story):
     first = True
     features = ''
@@ -221,27 +222,27 @@ class Story(GcdData):
         Simplifies UI checks for conditionals.  Credit fields.
         """
         return self.script or \
-               self.pencils or \
-               self.inks or \
-               self.colors or \
-               self.letters or \
-               self.editing or \
-               self.active_credits.exists()
+            self.pencils or \
+            self.inks or \
+            self.colors or \
+            self.letters or \
+            self.editing or \
+            self.active_credits.exists()
 
     def has_content(self):
         """
         Simplifies UI checks for conditionals.  Content fields
         """
         return self.job_number or \
-               self.genre or \
-               self.characters or \
-               self.first_line or \
-               self.synopsis or \
-               self.has_keywords() or \
-               self.feature_object.values('genre') or \
-               self.has_reprints() or \
-               self.feature_logo.count() or \
-               self.active_awards().count()
+            self.genre or \
+            self.characters or \
+            self.first_line or \
+            self.synopsis or \
+            self.has_keywords() or \
+            self.feature_object.values('genre') or \
+            self.has_reprints() or \
+            self.feature_logo.count() or \
+            self.active_awards().count()
 
     def has_feature(self):
         """
@@ -369,6 +370,9 @@ class StoryColumn(tables.Column):
                                        direction + 'sequence_number')
         return (query_set, True)
 
+    def value(self, record):
+        return str(record)
+
 
 class IssueColumn(tables.Column):
     def render(self, record):
@@ -380,6 +384,9 @@ class IssueColumn(tables.Column):
                                        direction + 'issue__sort_code',
                                        'sequence_number')
         return (query_set, True)
+
+    def value(self, record):
+        return str(record.issue)
 
 
 class StoryTable(tables.Table):
@@ -414,7 +421,8 @@ class StoryTable(tables.Table):
 
     def order_publisher(self, query_set, is_descending):
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'issue__series__publisher__name',
+        query_set = query_set.order_by(direction +
+                                       'issue__series__publisher__name',
                                        direction + 'issue__series__sort_name',
                                        direction + 'issue__sort_code')
         return (query_set, True)
@@ -424,3 +432,6 @@ class StoryTable(tables.Table):
         from apps.gcd.templatetags.credits import show_country_info
         display_publisher = "<img %s>" % (show_country_info(value.country))
         return mark_safe(display_publisher) + absolute_url(value)
+
+    def value_publisher(self, value):
+        return str(value)
