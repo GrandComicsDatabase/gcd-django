@@ -125,7 +125,10 @@ class CreatorNameDetail(GcdData):
         else:
             name = self.creator.gcd_official_name
             if credit.is_credited \
-              or (self.type and self.type_id == NAME_TYPES['studio']):
+              or (self.type and self.type_id == NAME_TYPES['studio']) \
+              or (self.in_script !=
+                  self.creator.creator_names.get(
+                      is_official_name=True).in_script):
                 as_name = self
             if self.type and self.type_id == NAME_TYPES['studio'] \
                and self.creator_relation.count():
