@@ -124,7 +124,7 @@ class CreatorNameDetail(GcdData):
             name = self.name
         else:
             name = self.creator.gcd_official_name
-            if (hasattr(credit, 'is_credited') and credit.is_credited) \
+            if credit.is_credited \
               or (self.type and self.type_id == NAME_TYPES['studio']):
                 as_name = self
             if self.type and self.type_id == NAME_TYPES['studio'] \
