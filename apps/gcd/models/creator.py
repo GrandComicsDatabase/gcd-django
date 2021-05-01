@@ -124,7 +124,9 @@ class CreatorNameDetail(GcdData):
             name = self.name
         else:
             name = self.creator.gcd_official_name
-            as_name = self
+            if (hasattr(credit, 'is_credited') and credit.is_credited) \
+              or (self.type and self.type_id == NAME_TYPES['studio']):
+                as_name = self
             if self.type and self.type_id == NAME_TYPES['studio'] \
                and self.creator_relation.count():
                 co_name = self.creator_relation.get().to_creator
@@ -156,7 +158,7 @@ class CreatorNameDetail(GcdData):
             if co_name:
                 credit_text += ' of <a href="%s">%s</a>' % \
                                (co_name.get_absolute_url(),
-                                esc(co_name))
+                                esc(co_name.gcd_official_name))
             if as_name:
                 if credit.is_credited and not credit.credited_as:
                     attribute = 'credited '

@@ -367,7 +367,7 @@ class Series(GcdData):
                                     self._date_uncertain(
                                       self.year_began_uncertain))
             if self.is_current:
-                date += 'Present'
+                date += 'present'
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
