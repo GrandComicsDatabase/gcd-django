@@ -4871,8 +4871,10 @@ class StoryCreditRevision(Revision):
                                                         deleted=False)\
                                                 .exclude(type__id__in=[3, 4])
             if creator_name.count() == 1:
-                self.credited_as = ''
-                self.creator = creator_name.get()
+                # database does not care about accents, etc., but python does
+                if self.credited_as == creator_name.name:
+                    self.credited_as = ''
+                    self.creator = creator_name.get()
 
     def _pre_save_object(self, changes):
         self.story_credit.story = self.story_revision.story
