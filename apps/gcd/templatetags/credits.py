@@ -244,8 +244,13 @@ def __format_credit(story, credit):
             credit_value += '<li>' + esc(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
-        credit_value = __format_keywords(story.keywords,
-                                         model_name=story._meta.model_name)
+        model_name = story._meta.model_name
+        if model_name == 'issue' and story.series.is_singleton:
+            keywords = story.keywords.all() | story.series.keywords.all()
+        else:
+            keywords = story.keywords
+        credit_value = __format_keywords(keywords,
+                                         model_name=model_name)
         if credit_value == '':
             return ''
     elif credit == 'feature_logo':

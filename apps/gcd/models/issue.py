@@ -271,6 +271,11 @@ class Issue(GcdData):
                                                  esc(printer.name))
         return mark_safe(printers)
 
+    def has_keywords(self):
+        if self.series.is_singleton:
+            return self.keywords.exists() or self.series.has_keywords()
+        return self.keywords.exists()
+
     def has_content(self):
         """
         Simplifies UI checks for conditionals.  Content fields
