@@ -117,9 +117,10 @@ class CreatorNameDetail(GcdData):
     in_script = models.ForeignKey(Script, on_delete=models.CASCADE,
                                   default=Script.LATIN_PK)
 
-    def display_credit(self, credit, url=True):
+    def display_credit(self, credit, url=True, compare=False):
         co_name = ''
         as_name = ''
+        compare_info = False
         if self.is_official_name:
             name = self.name
         else:
@@ -130,6 +131,9 @@ class CreatorNameDetail(GcdData):
                   self.creator.creator_names.get(
                       is_official_name=True).in_script):
                 as_name = self
+            elif compare:
+                as_name = self
+                compare_info = True
             if self.type and self.type_id == NAME_TYPES['studio'] \
                and self.creator_relation.count():
                 co_name = self.creator_relation.get().to_creator
@@ -171,6 +175,9 @@ class CreatorNameDetail(GcdData):
                                (attribute,
                                 as_name.get_absolute_url(),
                                 esc(as_name.name))
+                if compare_info:
+                    credit_text += ' Note: Non-official name selected without '\
+                                   'credited-flag.'
             if credit_attribute:
                 credit_text += ' (%s)' % credit_attribute
             if hasattr(credit, 'signature') and credit.signature:

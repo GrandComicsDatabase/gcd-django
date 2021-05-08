@@ -178,9 +178,11 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'Enter here additional specifications for the credit, for '
                 'example "finishes", "flats", or "pages 1-3".',
             'is_credited':
-                'Check in case the creator is credited. If the credited name '
-                'is not the selected creator name, enter the credited name'
-                ' in the unfolded credited as field.',
+                'Check in case the creator is credited with the selected name.'
+                ' If the credited name is not among the available names for'
+                ' the creator, either enter the credited name in the unfolded'
+                ' "credited as" field or first add that name to the creator'
+                ' record in a separate change.',
             'credited_as':
                 'Enter a name if the credited name is unusual and '
                 'therefore not a creator name record.',
@@ -236,13 +238,6 @@ class StoryCreditRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Name entered as "credited as" is identicial to the creator '
                'name.']
-            )
-
-        if cd['credited_as'] and cd['credited_as'] in \
-           cd['creator'].creator.active_names().values_list('name', flat=True):
-            raise forms.ValidationError(
-              ['Name entered as "credited as" is identicial to a different '
-               'name of the selected creator.']
             )
 
         if cd['signed_as'] and not cd['is_signed']:
