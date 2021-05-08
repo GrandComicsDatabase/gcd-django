@@ -4872,7 +4872,7 @@ class StoryCreditRevision(Revision):
                                                 .exclude(type__id__in=[3, 4])
             if creator_name.count() == 1:
                 # database does not care about accents, etc., but python does
-                if self.credited_as == creator_name.name:
+                if self.credited_as == creator_name.get().name:
                     self.credited_as = ''
                     self.creator = creator_name.get()
 
