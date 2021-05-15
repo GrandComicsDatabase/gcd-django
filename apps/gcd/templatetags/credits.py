@@ -351,10 +351,13 @@ def __format_keywords(keywords, join_on='; ', model_name='story'):
     else:
         keyword_list = list()
         for i in keywords.all().order_by('name'):
-            keyword_list.append('<a href="%s%s/">%s</a>' % (
-                                urlresolvers.reverse('show_keyword',
-                                                     kwargs={'keyword': i}),
-                                esc(model_name), esc(i)))
+            if model_name in ['story', 'issue']:
+                keyword_list.append('<a href="%s%s/">%s</a>' % (
+                                    urlresolvers.reverse('show_keyword',
+                                                         kwargs={'keyword': i}),
+                                    esc(model_name), esc(i)))
+            else:
+                keyword_list.append(esc(i))
         credit_value = join_on.join(str(i) for i in keyword_list)
     return mark_safe(credit_value)
 
