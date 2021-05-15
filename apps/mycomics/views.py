@@ -445,7 +445,7 @@ def view_item(request, item_id, collection_id):
                                            id__gte=item.id).reverse()
 
     if item_before:
-        page = item_before.count() / DEFAULT_PER_PAGE + 1
+        page = int(item_before.count() / DEFAULT_PER_PAGE + 1)
         item_before = item_before[0]
     else:
         page = 1
