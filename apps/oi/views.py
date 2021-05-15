@@ -1013,7 +1013,6 @@ thanks,
             return HttpResponseRedirect(urlresolvers.reverse('pending'))
 
 
-@permission_required('indexer.can_approve')
 def discuss(request, id):
     """
     Move a change into the discussion state and go back to your queue.
