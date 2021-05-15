@@ -2,3 +2,6 @@
 {{ object.name|safe }}
 {{ object.notes|safe }}
 {{ object|show_keywords|safe }}
+{% for name in object.active_names %}
+{{ name.name }}
+{% endfor %}
