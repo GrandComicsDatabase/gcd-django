@@ -170,7 +170,6 @@ INSTALLED_APPS = (
     'taggit',
     'imagekit',
     'haystack',
-#    'elasticstack',
     'bootstrap3',
     'contact_form',
     'captcha',
@@ -254,9 +253,12 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 #################################################################################
 # Haystack and search
 #################################################################################
+# we use a copy of ConfigurableElasticBackend from elasticstack, to be
+# able to work with elasticsearch2. Will need to redo all this at some
+# point and move away from haystack.
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': 'elasticstack.backends.ConfigurableElasticSearchEngine',
+        'ENGINE': 'apps.gcd.elastic_backend_configurable.ConfigurableElasticSearchEngine',
         'URL': 'http://127.0.0.1:9200/',
         'INDEX_NAME': 'haystack',
         'INCLUDE_SPELLING': True,
