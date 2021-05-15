@@ -121,8 +121,6 @@ This issue has variants:
             <div class="issue_cover_links">
               <div class="left">
 {% if issue.has_covers %}
-              View: <a href="{{ issue.get_absolute_url }}cover/4">Large</a>
-              <br>
   {% if not preview %}
               <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url "edit_covers" issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a>
               <br>

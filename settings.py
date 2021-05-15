@@ -329,7 +329,7 @@ NO_OI = False
 ###
 # General GCD site settings
 
-FRONT_PAGE_LANGUAGES = ('en', 'de', 'nl', 'sv')
+FRONT_PAGE_LANGUAGES = ('en', 'de', 'it', 'nl', 'sv')
 
 DEFAULT_FROM_EMAIL = 'GCD Contact <contact@comics.org>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
