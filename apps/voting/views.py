@@ -363,7 +363,7 @@ def vote(request):
             if option.id in ranks:
                 rank = ranks[option.id]
             if not rank:
-                rank = max(ranks.values()) + 1
+                rank = max(v for v in ranks.values() if v is not None) + 1
         else:
             rank = None
         vote = Vote(option=option, voter=voter, rank=rank)
