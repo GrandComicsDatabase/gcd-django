@@ -79,7 +79,8 @@ def field_value(revision, field):
                  'year_began_uncertain', 'year_overall_began_uncertain',
                  'year_ended_uncertain', 'year_overall_ended_uncertain',
                  'on_sale_date_uncertain', 'is_comics_publication',
-                 'no_indicia_printer']:
+                 'no_indicia_printer', 'has_indicia_printer',
+                 'has_about_comics' 'has_publisher_code_number']:
         return yesno(value, 'Yes,No')
     elif field in ['is_current']:
         res_holder_display = ''
