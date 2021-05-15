@@ -30,6 +30,7 @@ python-stdnum<1.13
 python3-vote-core==20170329.0
 requests<2.23
 simplejson<3.18
+tablib<3.1
 
 # These packages are used in development and testing.
 flake8
