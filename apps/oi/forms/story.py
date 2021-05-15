@@ -178,14 +178,14 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'Enter here additional specifications for the credit, for '
                 'example "finishes", "flats", or "pages 1-3".',
             'is_credited':
-                'Check in case the creator is credited with the selected name.'
-                ' If the credited name is not among the available names for'
-                ' the creator, either enter the credited name in the unfolded'
-                ' "credited as" field or first add that name to the creator'
-                ' record in a separate change.',
+                'Check in case the creator is credited. The credited name '
+                'shall correspond to the selected name. You can also enter '
+                'the credited name in the unfolded "credited as" field.',
             'credited_as':
-                'Enter a name if the credited name is unusual and '
-                'therefore not a creator name record.',
+                'You can enter here the credited name. If the entered text '
+                'matches an existing name for the selected creator a database '
+                'link will be generated on approval. '
+                'Unusual or one-off credited names do not get a name record.',
             'is_signed':
                 'Check in case the creator did sign.',
             'signed_as':
