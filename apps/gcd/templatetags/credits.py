@@ -280,12 +280,12 @@ def search_creator_credit(story, credit_type):
     if not credits:
         return ''
     credit_value = '%s' % credits[0].creator.display_credit(credits[0],
-                                                            url=False)
+                                                            search=True)
 
     for credit in credits[1:]:
         credit_value = '%s; %s' % (credit_value,
                                    credit.creator.display_credit(credit,
-                                                                 url=False))
+                                                                 search=True))
 
     return mark_safe(credit_value)
 
