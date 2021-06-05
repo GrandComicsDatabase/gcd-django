@@ -4852,7 +4852,12 @@ class StoryCreditRevision(Revision):
                                                         creator=creator,
                                                         generic=True,
                                                         deleted=False)
-            if signature:
+            if signature.count() > 1:
+                for sig in signature:
+                    if sig.name == self.signed_as:
+                        signature = signature.filter(id=sig.id)
+                        break
+            if signature == 1:
                 self.signed_as = ''
                 self.signature = signature.get()
             else:
