@@ -13,7 +13,6 @@ from .award import ReceivedAward
 from .datasource import DataSource
 from .image import Image
 from apps.stddata.models import Country, Date, Script
-from apps.oi import states
 
 MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
@@ -120,17 +119,17 @@ class CreatorNameDetail(GcdData):
     def display_credit(self, credit, url=True, compare=False, search=False):
         co_name = ''
         as_name = ''
+        compare_info = ''
         if search:
             url = False
         if self.is_official_name:
             name = self.name
         else:
             name = self.creator.gcd_official_name
-            if credit.is_credited \
-              or (self.type and self.type_id == NAME_TYPES['studio']) \
-              or (self.in_script !=
-                  self.creator.creator_names.get(
-                      is_official_name=True).in_script):
+            if (credit.is_credited and not credit.credited_as) \
+               or (self.type and self.type_id == NAME_TYPES['studio']) \
+               or (self.in_script != self.creator.creator_names.get(
+                                          is_official_name=True).in_script):
                 as_name = self
             elif compare or search:
                 # for compare and search use uncredited non-official-name
@@ -172,13 +171,13 @@ class CreatorNameDetail(GcdData):
                     attribute = 'credited '
                 else:
                     attribute = ''
+                    if compare:
+                        compare_info = '<br> Note: Non-official name '\
+                                       'selected without credited-flag.'
                 credit_text += ' (%sas <a href="%s">%s</a>)' % \
                                (attribute,
                                 as_name.get_absolute_url(),
                                 esc(as_name.name))
-                if compare:
-                    credit_text += ' Note: Non-official name selected without '\
-                                   'credited-flag.'
             if credit_attribute:
                 credit_text += ' (%s)' % credit_attribute
             if hasattr(credit, 'signature') and credit.signature:
@@ -204,6 +203,9 @@ class CreatorNameDetail(GcdData):
 
         if credit.credit_name:
             credit_text += ' (%s)' % esc(credit.credit_name)
+
+        if compare_info:
+            credit_text += compare_info
 
         return mark_safe(credit_text)
 
