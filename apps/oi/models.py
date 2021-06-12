@@ -4857,7 +4857,7 @@ class StoryCreditRevision(Revision):
                     if sig.name == self.signed_as:
                         signature = signature.filter(id=sig.id)
                         break
-            if signature == 1:
+            if signature.count() == 1:
                 self.signed_as = ''
                 self.signature = signature.get()
             else:
