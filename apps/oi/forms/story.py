@@ -213,7 +213,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'Check in case the creator did sign.',
             'signed_as':
                 'If the signature is not available you can enter a '
-                'transcription of the text of the signture here, without any '
+                'transcription of the text of the signature here, without any '
                 'description of the visual, added years, etc. On approval'
                 ' a generic textual signature will be auto-created. If '
                 ' you want to record the visuals of the signature, you first '
