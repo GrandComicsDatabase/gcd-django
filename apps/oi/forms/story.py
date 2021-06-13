@@ -19,7 +19,7 @@ from apps.oi.models import (
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
-                            Feature, FeatureLogo, Character, \
+                            Feature, FeatureLogo, \
                             STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
@@ -160,29 +160,6 @@ def get_story_revision_form(revision=None, user=None,
                       ['Sequence type not allowed for this issue or series.'])
             return type
     return RuntimeStoryRevisionForm
-
-
-class CharacterRevisionForm(forms.Form):
-    class Meta:
-        fields = ['character', 'related_character']
-
-    def __init__(self, *args, **kwargs):
-        super(CharacterForm, self).__init__(*args, **kwargs)
-        self.helper = FormHelper()
-        self.helper.form_tag = True
-        self.helper.layout = Layout(*(f for f in self.fields))
-
-    character = forms.ModelChoiceField(
-      queryset=Character.objects.all(),
-      widget=autocomplete.ModelSelect2(url='character_autocomplete',
-                                       attrs={'style': 'min-width: 60em'}),
-      required=True,
-    )
-
-
-# CharacterRevisionFormSet = inlineformset_factory(
-#     StoryRevision, None, form=CharacterRevisionForm,
-#     can_delete=True, extra=1)
 
 
 class StoryCreditRevisionForm(forms.ModelForm):
@@ -471,43 +448,6 @@ class StoryRevisionForm(forms.ModelForm):
         help_text='A brief description of the contents. No text under '
                   'copyright, such as solicitation or other promotional text, '
                   'may be used without clear permission and credit.')
-    character_direct = forms.ModelChoiceField(
-      queryset=Character.objects.all(),
-      widget=autocomplete.ModelSelect2(url='character_autocomplete',
-                                       attrs={'data-html': True,
-                                              'style': 'min-width: 60em'},
-                                       forward=['language_code']),
-      required=False,
-      help_text='NOTHING IS SAVED.'
-    )
-    rel_character_direct = forms.ModelChoiceField(
-      queryset=Character.objects.all(),
-      widget=autocomplete.ModelSelect2(url='related_character_autocomplete',
-                                       attrs={'data-html': True,
-                                              'style': 'min-width: 60em'},
-                                       forward=['character_direct', 'language_code']),
-      required=False,
-      help_text='Select the alias/secret identity associated to the character'
-    )
-    character_deep = forms.ModelChoiceField(
-      queryset=Character.objects.all(),
-      widget=autocomplete.ModelSelect2(url='character_autocomplete',
-                                       attrs={'data-html': True,
-                                              'style': 'min-width: 60em'},
-                                       forward=['language_code']),
-      required=False,
-      help_text='NOTHING IS SAVED.'
-    )
-    rel_character_deep = forms.ModelChoiceField(
-      queryset=Character.objects.all(),
-      widget=autocomplete.ModelSelect2(url='deep_related_character_autocomplete',
-                                       attrs={'data-html': True,
-                                              'style': 'min-width: 60em'},
-                                       forward=['character_deep', 'language_code']),
-      required=False,
-      help_text='Select the alias/secret identity associated to the character, '
-                'where for archetropes we also list those from the (direct) incarnations.'
-    )
     comments = _get_comments_form_field()
 
     def clean_keywords(self):
