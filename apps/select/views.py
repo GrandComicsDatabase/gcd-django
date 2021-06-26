@@ -528,7 +528,10 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
               '%s <img src="%s">' % (feature_logo.name,
                                      feature_logo.logo.icon.url))
         else:
-            return format_html('%s' % feature_logo.name)
+            if feature_logo.generic:
+                return format_html('%s [generic]' % feature_logo.name)
+            else:
+                return format_html('%s' % feature_logo.name)
 
     def get_queryset(self):
         qs = FeatureLogo.objects.filter(deleted=False)

@@ -17,6 +17,9 @@
         {% if creator_signature.signature %}
         <dt> Signature:
         <dd><img src="{{ creator_signature.signature.scaled_image.url }}">
+        {% else %}
+        <dt> Signature:
+        <dd> generic
         {% endif %}
           <ul style="columns: 2;">
             <li><a href='{% url "creator_signature_sequences" creator_id=creator_signature.id %}'>Sequences List (via linked credit records)</a></li>

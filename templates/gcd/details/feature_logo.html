@@ -28,10 +28,14 @@
   <dt>Notes:
   <dd>{{ feature_logo.notes }}
   {% endif %}
-</dl>
+<dt>Feature Logo:</dt>
 {% if feature_logo.logo %}
-  <img src="{{ feature_logo.logo.scaled_image.url }}">
+<dd><img src="{{ feature_logo.logo.scaled_image.url }}"></dd>
 {% endif %}
+{% if feature_logo.generic %}
+generic
+{% endif %}
+</dl>
 {% endblock content %}
 
 {% block edit_box %}
@@ -61,7 +65,7 @@
         {% endif %}
       {% endif %}
     {% else %}
-        {% if user.is_authenticated %}
+        {% if user.is_authenticated and not feature_logo.generic %}
       <form method="GET"
         action="{% url "upload_image" model_name='feature_logo' id=feature_logo.id image_type='FeatureLogo' %}">
         <input type="submit" value="{% trans 'Add Feature Logo Scan' %}">

@@ -246,6 +246,7 @@ class BrandRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandRevision
         fields = _get_publisher_fields(middle=('group',))
+        fields.insert(fields.index('group'), 'generic')
 
     name = forms.CharField(
         widget=forms.TextInput(attrs={'autofocus': ''}),
@@ -279,6 +280,12 @@ class BrandRevisionForm(forms.ModelForm):
         help_text='The official web site of the brand.  Leave blank if the '
                   'publisher does not have a specific web site for the brand.')
 
+    generic = forms.BooleanField(
+        required=False,
+        help_text="A generic brand emblem is used to record the name of a "
+                  "brand as printed on the issue, without being specific "
+                  "about a visual appearance of the brand name."
+    )
     comments = _get_comments_form_field()
 
     def clean_keywords(self):

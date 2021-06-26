@@ -283,7 +283,7 @@ class Brand(BasePublisher):
     group = models.ManyToManyField(BrandGroup, blank=True,
                                    db_table='gcd_brand_emblem_group')
     issue_count = models.IntegerField(default=0)
-
+    generic = models.BooleanField(default=False)
     image_resources = GenericRelation(Image)
 
     @property
@@ -321,6 +321,11 @@ class Brand(BasePublisher):
         return urlresolvers.reverse(
             'show_brand',
             kwargs={'brand_id': self.id } )
+
+    def __str__(self):
+        if self.generic:
+            return "%s [generic]" % self.name
+        return self.name
 
 
 class BrandUse(GcdLink):

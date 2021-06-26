@@ -55,10 +55,14 @@ GCD :: Brand Emblem :: {{ brand.name }}
         <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
+      <dt>Brand Emblem:</dt>
+      {% if brand.emblem and not FAKE_IMAGES %}
+      <dd><img src="{{ brand.emblem.scaled_image.url }}"></dd>
+      {% endif %}
+      {% if brand.generic %}
+      <dd>generic</dd>
+      {% endif %}
       </dl>
-{% if brand.emblem and not FAKE_IMAGES %}
-<img src="{{ brand.emblem.scaled_image.url }}">
-{% endif %}
     </div> <!-- control_center -->
 
 {% if not preview or brand.source %}
@@ -96,7 +100,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
           {% endif %}
         {% endif %}
       {% else %}
-          {% if user.is_authenticated %}
+          {% if user.is_authenticated and not brand.generic %}
         <form method="GET"
           action="{% url "upload_image" model_name='brand' id=brand.id image_type='BrandScan' %}">
           <input type="submit" value="{% trans 'Add Brand Image' %}">

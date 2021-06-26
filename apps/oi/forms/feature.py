@@ -108,7 +108,12 @@ class FeatureLogoRevisionForm(forms.ModelForm):
         queryset=Feature.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2Multiple(url='feature_autocomplete')
     )
-
+    generic = forms.BooleanField(
+        required=False,
+        help_text="A generic feature logo is used to record the printed name "
+                  "of a feature as presented on the story, without recording "
+                  "a specific visual appearance of the name."
+    )
     comments = _get_comments_form_field()
 
     def clean_feature(self):

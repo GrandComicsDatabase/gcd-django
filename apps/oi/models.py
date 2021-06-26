@@ -2650,6 +2650,7 @@ class BrandRevision(PublisherRevisionBase):
                                related_name='brand_revisions')
     group = models.ManyToManyField('gcd.BrandGroup', blank=False,
                                    related_name='brand_revisions')
+    generic = models.BooleanField(default=False)
 
     source_name = 'brand'
     source_class = Brand
@@ -2710,16 +2711,18 @@ class BrandRevision(PublisherRevisionBase):
         fields.extend(PublisherRevisionBase._field_list(self))
         fields.append('parent')
         fields.insert(fields.index('url'), 'group')
+        fields.insert(fields.index('year_began'), 'generic')
         return fields
 
     def _get_blank_values(self):
         blank_values = PublisherRevisionBase._get_blank_values(self)
         blank_values['parent'] = None
         blank_values['group'] = True
+        blank_values['generic'] = False
         return blank_values
 
     def _imps_for(self, field_name):
-        if field_name == 'group':
+        if field_name in ['group', 'generic']:
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
 
@@ -5995,6 +5998,7 @@ class FeatureLogoRevision(Revision):
 
     name = models.CharField(max_length=255)
     leading_article = models.BooleanField(default=False)
+    generic = models.BooleanField(default=False)
     year_began = models.IntegerField(db_index=True, null=True, blank=True)
     year_ended = models.IntegerField(null=True, blank=True)
     year_began_uncertain = models.BooleanField(default=False)
@@ -6034,8 +6038,8 @@ class FeatureLogoRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'leading_article', 'feature', 'year_began',
-                        'year_began_uncertain', 'year_ended',
+    _base_field_list = ['name', 'leading_article', 'feature', 'generic',
+                        'year_began', 'year_began_uncertain', 'year_ended',
                         'year_ended_uncertain', 'notes']
 
     def _field_list(self):
@@ -6046,6 +6050,7 @@ class FeatureLogoRevision(Revision):
             'feature': None,
             'name': '',
             'leading_article': False,
+            'generic': False,
             'year_began': None,
             'year_ended': None,
             'year_began_uncertain': False,

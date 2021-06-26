@@ -107,6 +107,7 @@ class FeatureLogo(GcdData):
                                      db_table='gcd_feature_logo_2_feature')
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
+    generic = models.BooleanField(default=False)
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
     year_began_uncertain = models.BooleanField(default=False)
