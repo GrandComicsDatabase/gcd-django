@@ -246,7 +246,7 @@ class BrandRevisionForm(forms.ModelForm):
     class Meta:
         model = BrandRevision
         fields = _get_publisher_fields(middle=('group',))
-        fields.insert(fields.index('group'), 'generic')
+        fields.insert(fields.index('year_began'), 'generic')
 
     name = forms.CharField(
         widget=forms.TextInput(attrs={'autofocus': ''}),
