@@ -258,6 +258,10 @@ def field_value(revision, field):
         if features:
             features = features[:-2]
         return mark_safe(features)
+    elif field == 'name' and \
+      revision._meta.model_name == 'creatorsignaturerevision':
+        if revision.source:
+            return absolute_url(revision.source, descriptor=value)
     return value
 
 
