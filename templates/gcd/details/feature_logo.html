@@ -36,6 +36,12 @@
 generic
 {% endif %}
 </dl>
+<ul style="columns: 2;">
+  <li><a href='{% url "feature_logo_issuelist_by_id" feature_logo_id=feature_logo.id %}'>Issue Checklist (via linked s
+tory records)</a></li>
+  <li><a href='{% url "feature_logo_sequences" feature_logo_id=feature_logo.id %}'>Sequences List (via linked story re
+cords)</a></li>
+</ul>
 {% endblock content %}
 
 {% block edit_box %}

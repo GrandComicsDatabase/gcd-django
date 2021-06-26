@@ -266,7 +266,8 @@ def creator_sequences(request, creator_id, series_id=None,
         heading = 'Sequences for Name %s of Creator %s' % (creator,
                                                            creator.creator)
     elif signature:
-        stories = stories.filter(credits__signature=signature)
+        stories = stories.filter(credits__signature=signature,
+                                 credits__deleted=False)
         heading = 'Sequences for Signature %s of Creator %s' % (signature,
                                                                 creator)
     else:
@@ -2073,6 +2074,57 @@ def show_feature_logo(request, feature_logo, preview=False):
             'error_subject': '%s' % feature_logo,
             'preview': preview}
     return render(request, 'gcd/details/feature_logo.html', vars)
+
+
+def feature_logo_sequences(request, feature_logo_id, country=None):
+    feature_logo = get_gcd_object(FeatureLogo, feature_logo_id)
+    stories = Story.objects.filter(feature_logo=feature_logo,
+                                   deleted=False).distinct()\
+                           .select_related('issue__series__publisher')
+    if country:
+        country = get_object_or_404(Country, code=country)
+        stories = stories.filter(issue__series__country=country)
+    heading = 'Sequences for Feature Logo %s' % (feature_logo)
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'sequence',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('issue'))
+    return generic_sortable_list(request, stories, table, template, context)
+
+
+def feature_logo_issuelist_by_id(request, feature_logo_id):
+    feature_logo = get_gcd_object(FeatureLogo, feature_logo_id)
+
+    if feature_logo.feature.all()[0].feature_type.id == 1:
+        issues = Issue.objects.filter(story__feature_logo=feature_logo,
+                                      story__type__id__in=CORE_TYPES,
+                                      story__deleted=False).distinct()\
+                              .select_related('series__publisher')
+        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    else:
+        issues = Issue.objects.filter(story__feature_logo=feature_logo,
+                                      story__deleted=False).distinct()\
+                              .select_related('series__publisher')
+        result_disclaimer = MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for Feature Logo %s' % (feature_logo)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
 
 
 def feature_relation(request, feature_relation_id):
