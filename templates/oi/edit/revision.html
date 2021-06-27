@@ -53,6 +53,9 @@
 <input type="submit" name="save_return" value="Save and return to changeset"></input>
 <input type="submit" name="cancel_return"
        value="Return to changeset without saving"></input>
+{% if revision.source_name == 'story' and revision.old_credits %}
+  <input type="submit" name="save_migrate" value="Save and migrate credits">
+{% endif %}
 </form>
 </div>
 {% endblock %}

@@ -685,6 +685,13 @@ def _save(request, form, revision, changeset=None, model_name=None):
         if 'save' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
               kwargs={ 'model_name': model_name, 'id': revision.id }))
+        if 'save_migrate' in request.POST:
+            if revision.old_credits():
+                revision.migrate_credits()
+            if revision.feature:
+                revision.migrate_feature()
+            return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
+              kwargs={ 'model_name': model_name, 'id': revision.id }))
         if 'save_return' in request.POST:
             # BiblioEntry needs second form for specific fields
             if revision.source_class == Story \
@@ -1501,7 +1508,8 @@ def process_revision(request, id, model_name):
         return HttpResponseRedirect(urlresolvers.reverse('edit',
           kwargs={ 'id': revision.changeset.id }))
 
-    if 'save' in request.POST or 'save_return' in request.POST:
+    if 'save' in request.POST or 'save_return' in request.POST \
+       or 'save_migrate' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         form = get_revision_form(revision)(request.POST, instance=revision)
         return _save(request, form, revision, model_name=model_name)
