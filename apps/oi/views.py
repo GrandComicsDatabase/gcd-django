@@ -5568,6 +5568,7 @@ def add_creator_relation(request, creator_id):
 
         revision = relation_form.save(commit=False)
         revision.save_added_revision(changeset=changeset, creator=creator)
+        relation_form.save_m2m()
         revision.save()
 
         process_data_source(relation_form, '', changeset,
