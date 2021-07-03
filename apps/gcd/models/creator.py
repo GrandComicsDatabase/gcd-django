@@ -133,7 +133,10 @@ class CreatorNameDetail(GcdData):
                                           is_official_name=True).in_script):
                 as_name = self
             if self.type and self.type_id == NAME_TYPES['ghost']:
-                as_name = self.creator_relation.get().to_creator
+                if self.creator_relation.exists():
+                    as_name = self.creator_relation.get().to_creator
+                else:
+                    as_name = self
             elif compare or search:
                 # for compare and search use uncredited non-official-name
                 as_name = self
@@ -175,7 +178,10 @@ class CreatorNameDetail(GcdData):
             if as_name:
                 if self.type_id == NAME_TYPES['ghost']:
                     attribute = 'ghosted for'
-                    display_as_name = as_name.gcd_official_name
+                    if self.creator_relation.exists():
+                        display_as_name = as_name.gcd_official_name
+                    else:
+                        display_as_name = as_name.name
                 elif credit.is_credited and not credit.credited_as:
                     attribute = 'credited as'
                     display_as_name = as_name.name
