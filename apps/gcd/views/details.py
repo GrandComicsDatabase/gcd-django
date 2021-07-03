@@ -830,7 +830,8 @@ def indicia_publisher(request, indicia_publisher_id):
     """
     Display the details page for an Indicia Publisher.
     """
-    indicia_publisher = get_gcd_object(IndiciaPublisher, indicia_publisher_id)
+    indicia_publisher = get_gcd_object(IndiciaPublisher, indicia_publisher_id,
+                                       model_name='indicia_publisher')
     return show_indicia_publisher(request, indicia_publisher)
 
 

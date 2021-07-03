@@ -669,13 +669,14 @@ class CreatorRelationRevisionForm(forms.ModelForm):
     )
 
     creator_name = forms.ModelMultipleChoiceField(
-      queryset=CreatorNameDetail.objects.filter(type__id=8, deleted=False),
+      queryset=CreatorNameDetail.objects.filter(type__id__in=[8,12],
+                                                deleted=False),
       widget=autocomplete.ModelSelect2Multiple(
         url='creator_name_4_relation_autocomplete',
         attrs={'style': 'min-width: 60em'},
         forward=['from_creator']),
-      help_text='For employee or user of house name relations also add the '
-                'involved creator name(s).',
+      help_text='For employee, ghosts, or user of house name relations also '
+                'add the involved creator name(s).',
       required=False
       )
 
@@ -692,11 +693,11 @@ class CreatorRelationRevisionForm(forms.ModelForm):
     def clean(self):
         cd = self.cleaned_data
 
-        if cd['creator_name'] and not cd['relation_type'].id in [2, 3, 4]:
+        if cd['creator_name'] and not cd['relation_type'].id in [2, 3, 4, 9]:
             self.add_error(
               'creator_name', 'Select a creator name only for owners or '
                               'employees of a studio or for house names.')
-        if cd['creator_name'] and cd['relation_type'].id in [2, 3, 4]:
+        if cd['creator_name'] and cd['relation_type'].id in [2, 3, 4, 9]:
             for creator_name in cd['creator_name']:
                 if creator_name.creator != cd['from_creator']:
                     self.add_error(

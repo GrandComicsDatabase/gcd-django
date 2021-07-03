@@ -19,6 +19,7 @@ MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 NAME_TYPES = {
     'house': 5,
     'studio': 8,
+    'ghost': 12,
 }
 
 
@@ -131,6 +132,8 @@ class CreatorNameDetail(GcdData):
                or (self.in_script != self.creator.creator_names.get(
                                           is_official_name=True).in_script):
                 as_name = self
+            if self.type and self.type_id == NAME_TYPES['ghost']:
+                as_name = self.creator_relation.get().to_creator
             elif compare or search:
                 # for compare and search use uncredited non-official-name
                 as_name = self
@@ -163,21 +166,29 @@ class CreatorNameDetail(GcdData):
                           (self.creator.get_absolute_url(),
                            esc(name))
             if co_name:
-                credit_text += ' of <a href="%s">%s</a>' % \
-                               (co_name.get_absolute_url(),
-                                esc(co_name.gcd_official_name))
-            if as_name:
-                if credit.is_credited and not credit.credited_as:
-                    attribute = 'credited '
+                if self.type_id == NAME_TYPES['studio']:
+                    credit_text += ' of <a href="%s">%s</a>' % \
+                                    (co_name.get_absolute_url(),
+                                     esc(co_name.gcd_official_name))
                 else:
-                    attribute = ''
-                    if compare:
+                    raise ValueError
+            if as_name:
+                if self.type_id == NAME_TYPES['ghost']:
+                    attribute = 'ghosted for'
+                    display_as_name = as_name.gcd_official_name
+                elif credit.is_credited and not credit.credited_as:
+                    attribute = 'credited as'
+                    display_as_name = as_name.name
+                else:
+                    attribute = 'as'
+                    display_as_name = as_name.name
+                    if compare and self.type_id != NAME_TYPES['studio']:
                         compare_info = '<br> Note: Non-official name '\
                                        'selected without credited-flag.'
-                credit_text += ' (%sas <a href="%s">%s</a>)' % \
+                credit_text += ' (%s <a href="%s">%s</a>)' % \
                                (attribute,
                                 as_name.get_absolute_url(),
-                                esc(as_name.name))
+                                esc(display_as_name))
             if credit_attribute:
                 credit_text += ' (%s)' % credit_attribute
             if hasattr(credit, 'signature') and credit.signature:
