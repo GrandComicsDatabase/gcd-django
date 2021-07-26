@@ -5311,9 +5311,14 @@ class StoryRevision(Revision):
                     else:
                         note = ''
                     if credit.find('[') > 1:
-                        credit = credit[credit.find('[')+1:]
-                        credit = credit[credit.find(' ')+1:]
-                        credit = credit.strip().strip(']')
+                        value = credit[credit.find('[')+1:]
+                        value = value[value.find(' ')+1:]
+                        value = value.strip().strip(']')
+                        if is_signed:
+                            signed_as = value
+                            credit = credit[:credit.find('[')-1]
+                        else:
+                            credit = value
                     creator = CreatorNameDetail.objects.filter(name=credit,
                                                                deleted=False)
                     if creator.count() == 1:
