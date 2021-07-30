@@ -5268,6 +5268,7 @@ class StoryRevision(Revision):
                     credited_as = ''
                     signed_as = ''
                     is_signed = False
+                    ghost_possible = False
                     if credit.find('(') > 1:
                         note = credit[credit.find('(')+1:].strip()
                         end_note = note.find(')')
@@ -5319,8 +5320,13 @@ class StoryRevision(Revision):
                             credit = credit[:credit.find('[')-1]
                         else:
                             credit = value
+                            ghost_possible = True
                     creator = CreatorNameDetail.objects.filter(name=credit,
                                                                deleted=False)
+                    if not ghost_possible:
+                        # exclude ghost names
+                        creator = creator.exclude(type=12)
+
                     if creator.count() == 1:
                         creator = creator.get()
                         if uncertain and not creator.is_official_name:
