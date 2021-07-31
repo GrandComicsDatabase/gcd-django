@@ -293,6 +293,11 @@ def creator_issues(request, creator_id, series_id,
 
 
 def creator_series(request, creator_id, country=None, language=None):
+    if '_export' in request.GET:
+        if request.GET['_export'] in ['db_csv', 'db_json']:
+            return render(request, 'indexer/error.html',
+                          {'error_text':
+                           'There is no raw export for these objects.'})
     creator = get_gcd_object(Creator, creator_id)
     names = creator.creator_names.filter(deleted=False)
 
