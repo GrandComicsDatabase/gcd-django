@@ -168,45 +168,54 @@ class CreatorNameDetail(GcdData):
             credit_text = '<a href="%s">%s</a>' % \
                           (self.creator.get_absolute_url(),
                            esc(name))
-            if co_name:
-                if self.type_id == NAME_TYPES['studio']:
+        else:
+            credit_text = esc(name)
+        if co_name:
+            if self.type_id == NAME_TYPES['studio']:
+                if url:
                     credit_text += ' of <a href="%s">%s</a>' % \
                                     (co_name.get_absolute_url(),
                                      esc(co_name.gcd_official_name))
                 else:
-                    raise ValueError
-            if as_name:
-                if self.type_id == NAME_TYPES['ghost']:
-                    attribute = 'ghosted for'
-                    if self.creator_relation.exists():
-                        display_as_name = as_name.gcd_official_name
-                    else:
-                        display_as_name = as_name.name
-                elif credit.is_credited and not credit.credited_as:
-                    attribute = 'credited as'
-                    display_as_name = as_name.name
+                    credit_text += ' of ' % esc(co_name.gcd_official_name)
+            else:
+                raise ValueError
+        if as_name:
+            if self.type_id == NAME_TYPES['ghost']:
+                attribute = 'ghosted for'
+                if self.creator_relation.exists():
+                    display_as_name = as_name.gcd_official_name
                 else:
-                    attribute = 'as'
                     display_as_name = as_name.name
-                    if compare and self.type_id != NAME_TYPES['studio']:
-                        compare_info = '<br> Note: Non-official name '\
-                                       'selected without credited-flag.'
+            elif credit.is_credited and not credit.credited_as:
+                attribute = 'credited as'
+                display_as_name = as_name.name
+            else:
+                attribute = 'as'
+                display_as_name = as_name.name
+                if compare and self.type_id != NAME_TYPES['studio']:
+                    compare_info = '<br> Note: Non-official name '\
+                                    'selected without credited-flag.'
+            if url:
                 credit_text += ' (%s <a href="%s">%s</a>)' % \
-                               (attribute,
-                                as_name.get_absolute_url(),
-                                esc(display_as_name))
-            if credit_attribute:
-                credit_text += ' (%s)' % credit_attribute
-            if hasattr(credit, 'signature') and credit.signature:
+                                (attribute,
+                                 as_name.get_absolute_url(),
+                                 esc(display_as_name))
+            else:
+                credit_text += ' (%s %s)' % \
+                                (attribute,
+                                 esc(display_as_name))
+        if credit_attribute:
+            credit_text += ' (%s)' % credit_attribute
+        if hasattr(credit, 'signature') and credit.signature:
+            if url:
                 from apps.gcd.templatetags.display import absolute_url
                 credit_text += ' (signed as %s)' % \
                                absolute_url(credit.signature,
                                             credit.signature.signature,
                                             esc(credit.signature.name))
-        else:
-            credit_text = esc(name)
-            if as_name:
-                credit_text += ' [as %s]' % esc(as_name.name)
+            else:
+                credit_text += ' (signed as %s)' % esc(credit.signature.name)
 
         if credit.credited_as and getattr(credit, 'signed_as', None) and \
            (credit.credited_as == credit.signed_as):
