@@ -11,6 +11,7 @@ import django_tables2 as tables
 
 from .gcddata import GcdData
 from .award import ReceivedAward
+from .character import CharacterNameDetail, Group
 from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
 
@@ -54,7 +55,7 @@ NO_GENRE_TYPES = [8, 22, 24, 25]
 DEPRECATED_TYPES = [3, 4, 23]
 
 
-def show_feature(story):
+def show_feature(story, url=True):
     first = True
     features = ''
     for feature in story.feature_object.all():
@@ -62,31 +63,95 @@ def show_feature(story):
             first = False
         else:
             features += '; '
-        features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
-                                             esc(feature.name))
-    if story.feature:
-        if features:
-            features += '; %s' % esc(story.feature)
+        if url:
+            features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
+                                                 esc(feature.name))
         else:
-            features = esc(story.feature)
-    return mark_safe(features)
+            features += '%s' % feature.name
+    if story.feature:
+        if url:
+            text_feature = esc(story.feature)
+        else:
+            text_feature = story.feature
+        if features:
+            features += '; %s' % text_feature
+        else:
+            features = text_feature
+    if url:
+        return mark_safe(features)
+    else:
+        return features
 
 
 def show_feature_as_text(story):
+    return show_feature(story, url=False)
+
+
+def show_characters(story, url=True, css_style=True):
     first = True
-    features = ''
-    for feature in story.feature_object.all():
+    characters = ''
+    appearing_characters = story.appearing_characters.all()
+    in_group = appearing_characters.exclude(group=None)
+    groups = Group.objects.filter(id__in=in_group.values_list('group'))
+    for group in groups:
+        first = False
+        first_member = True
+        for member in in_group.filter(group=group):
+            if first_member:
+                first_member = False
+                if url:
+                    characters += '<a href="%s">%s</a> [<a href="%s">%s</a>' \
+                                  % (group.get_absolute_url(), esc(group.name),
+                                     member.character.get_absolute_url(),
+                                     esc(member.character.name))
+                else:
+                    characters += '%s [%s' % (group.name,
+                                              member.character.name)
+            else:
+                characters += '; '
+                if url:
+                    characters += '<a href="%s">%s</a>' \
+                                  % (member.character.get_absolute_url(),
+                                     esc(member.character.name))
+                else:
+                    characters += '%s' % member.character.name
+        characters += ']; '
+    characters = characters[:-2]
+
+    appearing_characters = appearing_characters.exclude(
+      character__id__in=in_group.values_list('character'))
+    for character in appearing_characters:
         if first:
             first = False
         else:
-            features += '; '
-        features += '%s' % feature.name
-    if story.feature:
-        if features:
-            features += '; %s' % story.feature
+            characters += '; '
+        if url:
+            characters += '<a href="%s">%s</a>' % (
+              character.character.get_absolute_url(),
+              esc(character.character.name))
         else:
-            features = story.feature
-    return features
+            characters += '%s' % character.character.name
+    if story.characters:
+        if url:
+            text_characters = esc(story.characters)
+        else:
+            text_characters = story.characters
+        if characters:
+            characters += '; %s' % text_characters
+        else:
+            characters = text_characters
+
+    if url:
+        if css_style:
+            dt = '<dt class="credit_tag"><span class="credit_label">' \
+                 'Characters</span></dt>'
+            return mark_safe(
+              dt + '<dd class="credit_def"><span class="credit_value">'
+              + characters + '</span></dd>')
+        else:
+            return mark_safe(characters)
+    else:
+        return characters
 
 
 class CreditType(models.Model):
@@ -128,6 +193,42 @@ class StoryCredit(GcdData):
 
     def __str__(self):
         return "%s: %s (%s)" % (self.story, self.creator, self.credit_type)
+
+
+class CharacterRole(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_character_role'
+        ordering = ['sort_code']
+
+    name = models.CharField(max_length=50, db_index=True, unique=True)
+    sort_code = models.IntegerField(unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class StoryCharacter(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_story_character'
+        ordering = ['character__sort_name']
+
+    character = models.ForeignKey(CharacterNameDetail,
+                                  on_delete=models.CASCADE)
+    story = models.ForeignKey('Story', on_delete=models.CASCADE,
+                              related_name='appearing_characters')
+    group = models.ManyToManyField(Group)
+    role = models.ForeignKey(CharacterRole, null=True,
+                             on_delete=models.CASCADE)
+    is_flashback = models.BooleanField(default=False, db_index=True)
+    is_origin = models.BooleanField(default=False, db_index=True)
+    is_death = models.BooleanField(default=False, db_index=True)
+
+    notes = models.TextField()
+
+    def __str__(self):
+        return "%s: %s" % (self.story, self.character)
 
 
 class StoryTypeManager(models.Manager):
@@ -209,6 +310,14 @@ class Story(GcdData):
                                                        'creator__type')
         return self._active_credits
 
+    @property
+    def active_characters(self):
+        if not hasattr(self, '_active_characters'):
+            self._active_characters = self.appearing_characters\
+                                      .exclude(deleted=True)\
+                                      .select_related('character__character')
+        return self._active_characters
+
     def stat_counts(self):
         if self.deleted:
             return {}
@@ -235,7 +344,7 @@ class Story(GcdData):
         """
         return self.job_number or \
             self.genre or \
-            self.characters or \
+            self.has_characters or \
             self.first_line or \
             self.synopsis or \
             self.has_keywords() or \
@@ -243,6 +352,12 @@ class Story(GcdData):
             self.has_reprints() or \
             self.feature_logo.count() or \
             self.active_awards().count()
+
+    def has_characters(self):
+        """
+        UI check for characters.
+        """
+        return self.characters or self.appearing_characters.count()
 
     def has_feature(self):
         """
@@ -268,6 +383,12 @@ class Story(GcdData):
 
     def active_awards(self):
         return self.awards.exclude(deleted=True)
+
+    def _show_characters(cls, story):
+        return show_characters(story)
+
+    def show_characters(self):
+        return self._show_characters(self)
 
     def _show_feature(cls, story):
         return show_feature(story)

@@ -55,6 +55,11 @@ urlpatterns = [
         name='character_autocomplete',
     ),
     url(
+        r'^autocomplete/character_name/$',
+        select_views.CharacterNameAutocomplete.as_view(),
+        name='character_name_autocomplete',
+    ),
+    url(
         r'^autocomplete/group/$',
         select_views.GroupAutocomplete.as_view(),
         name='group_autocomplete',

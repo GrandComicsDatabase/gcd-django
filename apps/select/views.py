@@ -17,7 +17,7 @@ from dal import autocomplete
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
-                            Character, Group, STORY_TYPES
+                            Character, CharacterNameDetail, Group, STORY_TYPES
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -573,15 +573,39 @@ class CharacterAutocomplete(LoginRequiredMixin,
         return qs
 
 
+class CharacterNameAutocomplete(LoginRequiredMixin,
+                            autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = CharacterNameDetail.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+        group = self.forwarded.get('group', None)
+
+        if language:
+            qs = qs.filter(character__language__code__in=[language, 'zxx'])
+
+        if group:
+            qs = qs.filter(character__memberships__group=group)\
+                   .distinct()
+        qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
 class GroupAutocomplete(LoginRequiredMixin,
                         autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Group.objects.filter(deleted=False)
 
         language = self.forwarded.get('language_code', None)
+        character_name = self.forwarded.get('character_name', None)
 
         if language:
             qs = qs.filter(language__code__in=[language, 'zxx'])
+
+        if character_name:
+            qs = qs.filter(members__character__character_names=character_name)\
+                   .distinct()
 
         qs = _filter_and_sort(qs, self.q)
 

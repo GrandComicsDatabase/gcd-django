@@ -2156,6 +2156,8 @@ def character(request, character_id):
 
 def show_character(request, character, preview=False):
     vars = {'character': character,
+            'additional_names': character.active_names()
+                                         .filter(is_official_name=False),
             'error_subject': '%s' % character,
             'preview': preview}
     return render(request, 'gcd/details/character.html', vars)

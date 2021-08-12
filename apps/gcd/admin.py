@@ -3,7 +3,9 @@ from django.contrib import admin
 from .models import (MembershipType, NameType, NonComicWorkRole, CreditType,
                      NonComicWorkType, RelationType, School, SeriesBondType,
                      SourceType, FeatureType, FeatureRelationType, StoryType,
-                     Degree, CodeNumberType, CharacterRelationType)
+                     Degree, CodeNumberType, CharacterRelationType,
+                     CharacterRole)
+
 
 class StoryTypeAdmin(admin.ModelAdmin):
     list_display = ('sort_code', 'name')
@@ -19,8 +21,9 @@ class ImpGrantAdmin(admin.ModelAdmin):
     raw_id_fields = ('indexer',)
 
 
-#register models without editing to admin panel
+# register models without editing to admin panel
 admin.site.register(StoryType, StoryTypeAdmin)
+admin.site.register(CharacterRole)
 admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 admin.site.register(NameType)
 admin.site.register(SourceType)

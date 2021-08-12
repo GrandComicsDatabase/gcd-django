@@ -123,6 +123,8 @@ def header_link(changeset):
         return absolute_url(revision.object)
     elif changeset.change_type == CTYPES['award']:
         return mark_safe('%s' % (absolute_url(revision)))
+    elif changeset.change_type == CTYPES['character']:
+        return mark_safe('%s' % (absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator']:
         return mark_safe('%s' % (absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_signature']:

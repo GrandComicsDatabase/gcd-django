@@ -22,6 +22,7 @@ class CharacterNameDetail(GcdData):
     sort_name = models.CharField(max_length=255, db_index=True, default='')
     character = models.ForeignKey('Character', on_delete=models.CASCADE,
                                   related_name='character_names')
+    is_official_name = models.BooleanField(default=False)
 
     def get_absolute_url(self):
         return urlresolvers.reverse(

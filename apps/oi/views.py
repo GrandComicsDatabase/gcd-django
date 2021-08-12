@@ -84,6 +84,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            PublisherCodeNumberFormSet,
                            get_story_revision_form,
                            StoryRevisionFormSet,
+                           StoryCharacterRevisionFormSet,
                            get_feature_logo_revision_form,
                            get_feature_relation_revision_form,
                            get_date_revision_form,
@@ -599,7 +600,7 @@ def _save(request, form, revision, changeset=None, model_name=None):
                                          new_state=changeset.state)
 
         revision.save()
-        revision.process_extra_forms(request, extra_forms)
+        revision.process_extra_forms(extra_forms)
         if revision.changeset.change_type == CTYPES['series'] and \
           'move_to_publisher_with_id' in form.cleaned_data and \
           request.user.has_perm('indexer.can_approve') and \
@@ -663,20 +664,7 @@ def _save(request, form, revision, changeset=None, model_name=None):
                 else:
                     form.save_m2m()
 
-        # TODO re-factor into model routine
-        if revision.source_name == 'story':
-            if revision.feature_logo.count():
-                # stories for variants in variant-add next to issue have issue
-                if revision.issue:
-                    language = revision.issue.series.language
-                else:
-                    language = revision.my_issue_revision.\
-                                        other_issue_revision.series.language
-                for feature_logo in revision.feature_logo.all():
-                    if feature_logo.feature.get(language=language) not in \
-                       revision.feature_object.all():
-                        revision.feature_object.add(feature_logo.feature.
-                                                    get(language=language))
+        revision.post_form_save()
 
         if 'submit' in request.POST:
             return submit(request, revision.changeset.id)
@@ -2114,7 +2102,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     form.save_m2m()
     extra_forms = {'credits_formset': credits_formset,
                    'code_number_formset': code_number_formset}
-    revision.process_extra_forms(request, extra_forms)
+    revision.process_extra_forms(extra_forms)
 
     if variant_of:
         return edit(request, changeset.id)
@@ -2177,7 +2165,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     form.save_m2m()
     extra_forms = {'credits_formset': credits_formset,
                    'code_number_formset': code_number_formset}
-    variant_revision.process_extra_forms(request, extra_forms)
+    variant_revision.process_extra_forms(extra_forms)
     changeset.change_type = CTYPES['variant_add']
     changeset.save()
 
@@ -2211,7 +2199,7 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision,
         code_number_formset = None
     extra_forms = {'credits_formset': credits_formset,
                    'code_number_formset': code_number_formset}
-    issuerevision.process_extra_forms(request, extra_forms)
+    issuerevision.process_extra_forms(extra_forms)
 
     return True
 
@@ -2776,6 +2764,7 @@ def add_story(request, issue_revision_id, changeset_id):
           issue_revision=issue_revision)(request.POST or None,
                                          initial=initial)
         credits_formset = StoryRevisionFormSet(request.POST or None)
+        characters_formset = StoryCharacterRevisionFormSet(request.POST or None)
 
         if not form.is_valid() or not credits_formset.is_valid():
             kwargs = {
@@ -2793,6 +2782,7 @@ def add_story(request, issue_revision_id, changeset_id):
                     'form': form,
                     'settings': settings,
                     'credits_formset': credits_formset,
+                    'characters_formset': characters_formset,
                 })
 
         revision = form.save(commit=False)
@@ -2810,8 +2800,9 @@ def add_story(request, issue_revision_id, changeset_id):
                                      old_state=changeset.state,
                                      new_state=changeset.state)
 
-        extra_forms = {'credits_formset': credits_formset, }
-        revision.process_extra_forms(request, extra_forms)
+        extra_forms = {'credits_formset': credits_formset,
+                       'characters_formset': characters_formset, }
+        revision.process_extra_forms(extra_forms)
         form.save_m2m()
         if revision.feature_logo.count():
             # stories for variants in variant-add next to issue have issue
@@ -4944,7 +4935,8 @@ def compare(request, id):
                                    CTYPES['creator_signature']]:
         sourced_fields = {'': 'notes'}
     elif changeset.change_type == CTYPES['character']:
-        character_name_revisions = changeset.characternamedetailrevisions.all()
+        character_name_revisions = changeset.characternamedetailrevisions\
+                                            .filter(is_official_name=False)
         for character_name_revision in character_name_revisions:
             revisions_after.append(character_name_revision)
 
@@ -5482,7 +5474,7 @@ def add_creator(request):
                    'birth_date_form': birth_date_form,
                    'death_date_form': death_date_form
                    }
-    revision.process_extra_forms(request, extra_forms)
+    revision.process_extra_forms(extra_forms)
 
     for field in _get_creator_sourced_fields():
         process_data_source(creator_form, field, revision.changeset,

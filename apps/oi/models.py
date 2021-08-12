@@ -35,10 +35,10 @@ from apps.stats.models import RecentIndexedIssue, CountStats
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
     SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
-    CodeNumberType, Story, StoryCredit, Feature,
+    CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
     BiblioEntry, Reprint, ReprintToIssue, ReprintFromIssue, IssueReprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
-    FeatureLogo, FeatureRelation, Character, CharacterRelation,
+    Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
     CharacterNameDetail, Group, GroupRelation, GroupMembership, ImageType,
     Printer, IndiciaPrinter,
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
@@ -49,7 +49,8 @@ from apps.gcd.models import (
 from apps.gcd.models.gcddata import GcdData
 
 from apps.gcd.models.issue import issue_descriptor
-from apps.gcd.models.story import show_feature, show_feature_as_text
+from apps.gcd.models.story import show_feature, show_feature_as_text,\
+                                  show_characters
 
 from apps.indexer.views import ErrorWithMessage
 
@@ -353,6 +354,7 @@ class Changeset(models.Model):
                     self.issuecreditrevisions.all(),
                     self.storyrevisions.all(),
                     self.storycreditrevisions.all(),
+                    self.storycharacterrevisions.all(),
                     self.coverrevisions.all(),
                     self.reprintrevisions.all(),
                     self.publishercodenumberrevisions.all())
@@ -364,6 +366,7 @@ class Changeset(models.Model):
                         self.issuecreditrevisions.all(),
                         self.storyrevisions.all(),
                         self.storycreditrevisions.all(),
+                        self.storycharacterrevisions.all(),
                         self.coverrevisions.all(),
                         self.reprintrevisions.all(),
                         self.publishercodenumberrevisions.all())
@@ -1851,6 +1854,30 @@ class Revision(models.Model):
                 new_value.save()
 
     # #####################################################################
+    # Methods for processing the indexer edits, in particular involving
+    # several forms.
+
+    def extra_forms(self, request):
+        """
+        Fetch additional forms of other/related objects for editing.
+        """
+        return {}
+
+    def process_extra_forms(self, extra_forms):
+        """
+        Process additional forms of other/related objects on save.
+        """
+        pass
+
+    def post_form_save(self):
+        """
+        Runs just after the revision and extra forms are saved.
+
+        Handles connection between forms and between fields.
+        """
+        pass
+
+    # #####################################################################
     # Methods for saving the Revision back to the data object, including
     # hook methods for customizing that process.
 
@@ -1966,18 +1993,6 @@ class Revision(models.Model):
             # value and only assign the field if that flag is True.
             if (name not in c or reduce(getattr, c[name], self)):
                 setattr(target, name, getattr(self, name))
-
-    def extra_forms(self, request):
-        """
-        Fetch additional forms of other/related objects for editing.
-        """
-        return {}
-
-    def process_extra_forms(self, request, extra_forms):
-        """
-        Process additional forms of other/related objects on save.
-        """
-        pass
 
     def commit_to_display(self, clear_reservation=True):
         """
@@ -4144,6 +4159,16 @@ class IssueRevision(Revision):
                 if delete:
                     credit_revision.deleted = story_revision.deleted
                     credit_revision.save()
+            for character in story.active_characters:
+                character_lock = _get_revision_lock(character,
+                                                    changeset=self.changeset)
+                if character_lock is None:
+                    raise IntegrityError("needed Character lock not possible")
+                character_revision = StoryCharacterRevision.clone(
+                  character, self.changeset, story_revision=story_revision)
+                if delete:
+                    character_revision.deleted = story_revision.deleted
+                    character_revision.save()
         for code_number in self.issue.active_code_numbers():
             code_number_lock = _get_revision_lock(code_number,
                                                   changeset=self.changeset)
@@ -4193,7 +4218,7 @@ class IssueRevision(Revision):
         return {'credits_formset': credits_formset,
                 'code_number_formset': code_number_formset}
 
-    def process_extra_forms(self, request, extra_forms):
+    def process_extra_forms(self, extra_forms):
         credits_formset = extra_forms['credits_formset']
         for credit_form in credits_formset:
             if credit_form.is_valid() and credit_form.cleaned_data:
@@ -4927,6 +4952,79 @@ class StoryCreditRevision(Revision):
         return 0
 
 
+class StoryCharacterRevision(Revision):
+    class Meta:
+        db_table = 'oi_story_character_revision'
+        ordering = ['character__sort_name']
+
+    story_character = models.ForeignKey(StoryCharacter, null=True,
+                                        on_delete=models.CASCADE,
+                                        related_name='revisions')
+
+    character = models.ForeignKey(CharacterNameDetail,
+                                  on_delete=models.CASCADE,
+                                  related_name='story_character_revisions')
+    story_revision = models.ForeignKey('StoryRevision',
+                                       on_delete=models.CASCADE,
+                                       related_name='story_character_revisions')
+    group = models.ManyToManyField(Group, blank=True)
+    role = models.ForeignKey(CharacterRole, null=True, blank=True,
+                             on_delete=models.CASCADE)
+    is_flashback = models.BooleanField(default=False)
+    is_origin = models.BooleanField(default=False)
+    is_death = models.BooleanField(default=False)
+
+    notes = models.TextField(blank=True)
+
+    source_name = 'story_character'
+    source_class = StoryCharacter
+
+    @property
+    def source(self):
+        return self.story_character
+
+    @source.setter
+    def source(self, value):
+        self.story_character = value
+
+    def _pre_save_object(self, changes):
+        self.story_character.story = self.story_revision.story
+
+    def _do_complete_added_revision(self, story_revision):
+        self.story_revision = story_revision
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        self.story_revision = kwargs['story_revision']
+
+    def __str__(self):
+        return "%s: %s" % (self.story_revision, self.character)
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    _base_field_list = ['character', 'role', 'group', 'is_flashback',
+                        'is_origin', 'is_death', 'notes']
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'character': None,
+            'role': None,
+            'group': None,
+            'is_flashback': False,
+            'is_origin': False,
+            'is_death': False,
+            'notes': '',
+        }
+
+    def _imps_for(self, field_name):
+        # imps already come from StoryRevision, since is_changed is True there
+        return 0
+
+
 class StoryRevision(Revision):
     class Meta:
         db_table = 'oi_story_revision'
@@ -5070,6 +5168,13 @@ class StoryRevision(Revision):
                             self.changed[credit_type] = True
                             self.is_changed = True
                             break
+        if not self.changed['characters']:
+            for story_character in self.story_character_revisions.all():
+                story_character.compare_changes()
+                if story_character.is_changed:
+                    self.changed['characters'] = True
+                    self.is_changed = True
+                    break
 
     def _do_complete_added_revision(self, issue):
         """
@@ -5173,14 +5278,20 @@ class StoryRevision(Revision):
                 RecentIndexedIssue.objects.update_recents(issue)
 
     def extra_forms(self, request):
-        from apps.oi.forms.story import StoryRevisionFormSet
+        from apps.oi.forms.story import StoryRevisionFormSet, \
+                                        StoryCharacterRevisionFormSet
         credits_formset = StoryRevisionFormSet(
           request.POST or None,
           instance=self,
           queryset=self.story_credit_revisions.filter(deleted=False))
-        return {'credits_formset': credits_formset, }
+        characters_formset = StoryCharacterRevisionFormSet(
+          request.POST or None,
+          instance=self,
+          queryset=self.story_character_revisions.filter(deleted=False))
+        return {'credits_formset': credits_formset,
+                'characters_formset': characters_formset, }
 
-    def process_extra_forms(self, request, extra_forms):
+    def process_extra_forms(self, extra_forms):
         credits_formset = extra_forms['credits_formset']
         for credit_form in credits_formset:
             if credit_form.is_valid() and credit_form.cleaned_data:
@@ -5234,6 +5345,62 @@ class StoryRevision(Revision):
                         removed_credit.cleaned_data['id'].save()
                     else:
                         removed_credit.cleaned_data['id'].delete()
+        characters_formset = extra_forms['characters_formset']
+        for character_form in characters_formset:
+            if character_form.is_valid() and character_form.cleaned_data:
+                cd = character_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    character_revision = character_form.save()
+                else:
+                    character_revision = character_form.save(commit=False)
+                    character_revision.save_added_revision(
+                      changeset=self.changeset, story_revision=self)
+                    character_form.save_m2m()
+            elif (not character_form.is_valid() and
+                  character_form not in characters_formset.deleted_forms):
+                raise ValueError
+        removed_characters = characters_formset.deleted_forms
+        if removed_characters:
+            for removed_character in removed_characters:
+                if removed_character.cleaned_data['id']:
+                    if removed_character.cleaned_data['id'].story_character:
+                        removed_character.cleaned_data['id'].deleted = True
+                        removed_character.cleaned_data['id'].save()
+                    else:
+                        removed_character.cleaned_data['id'].delete()
+
+    def post_form_save(self):
+        if self.feature_logo.count():
+            # stories for variants in variant-add next to issue have issue
+            if self.issue:
+                language = self.issue.series.language
+            else:
+                language = self.my_issue_revision.\
+                                other_issue_revision.series.language
+            for feature_logo in self.feature_logo.all():
+                if feature_logo.feature.get(language=language) not in \
+                    self.feature_object.all():
+                    self.feature_object.add(feature_logo.feature.
+                                            get(language=language))
+        if self.story_character_revisions.count():
+            for story_character in self.story_character_revisions.all():
+                # check if a superhero has a unique civilian identity
+                # if so, add it if not already present
+                if story_character.character.character.to_related_character\
+                                  .filter(relation_type__id=2).count() == 1:
+                    character_identity = story_character.character.character\
+                      .to_related_character.filter(relation_type__id=2).get()\
+                      .to_character
+                    if not self.story_character_revisions\
+                               .filter(character__character=character_identity)\
+                               .exists():
+                        # civilian identities are not in a superhero group, so
+                        # we don't need to copy this data via add's
+                        story_character.pk = None
+                        story_character._state.adding = True
+                        story_character.character = character_identity\
+                          .character_names.get(is_official_name=True)
+                        story_character.save()
 
     def old_credits(self):
         for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',
@@ -5412,6 +5579,13 @@ class StoryRevision(Revision):
         feature_object entry, therefore no check needed
         """
         return self.feature or self.feature_object.count()
+
+    @property
+    def appearing_characters(self):
+        return self.story_character_revisions.exclude(deleted=True)
+
+    def show_characters(self, url=True):
+        return show_characters(self, url=url)
 
     def show_feature(self):
         return show_feature(self)
@@ -5832,6 +6006,16 @@ class PreviewStory(Story):
     def has_keywords(self):
         return self.revision.has_keywords()
 
+    @property
+    def appearing_characters(self):
+        return self.revision.story_character_revisions.exclude(deleted=True)
+
+    def has_characters(self):
+        return self.revision.characters or self.revision.story_character_revisions.exclude(deleted=True)
+
+    def show_characters(self):
+        return self._show_characters(self)
+
     def has_feature(self):
         return self.revision.feature or self.revision.feature_object.count()
 
@@ -5870,7 +6054,7 @@ class BiblioEntryRevision(StoryRevision):
     def extra_forms(self, request):
         return {}
 
-    def process_extra_forms(self, request, extra_forms):
+    def process_extra_forms(self, extra_forms):
         pass
 
     def previous(self):
@@ -6266,12 +6450,13 @@ class CharacterRevision(CharacterGroupRevisionBase):
 
         character_names_formset = CharacterRevisionFormSet(
           request.POST or None, instance=self,
-          queryset=self.character_name_revisions.filter(deleted=False))
+          queryset=self.character_name_revisions.filter(deleted=False,
+                                                        is_official_name=False))
 
         return {'character_names_formset': character_names_formset,
                 }
 
-    def process_extra_forms(self, request, extra_forms):
+    def process_extra_forms(self, extra_forms):
         character_names_formset = extra_forms['character_names_formset']
         for character_name_form in character_names_formset:
             if character_name_form.is_valid() and character_name_form.cleaned_data:
@@ -6332,6 +6517,7 @@ class CharacterNameDetailRevision(Revision):
                                   related_name='name_revisions', null=True)
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, default='')
+    is_official_name = models.BooleanField(default=False)
 
     source_name = 'character_name_detail'
     source_class = CharacterNameDetail
@@ -7752,7 +7938,7 @@ class CreatorRevision(Revision):
                 'death_date_form': death_date_form
                 }
 
-    def process_extra_forms(self, request, extra_forms):
+    def process_extra_forms(self, extra_forms):
         creator_names_formset = extra_forms['creator_names_formset']
         for creator_name_form in creator_names_formset:
             if creator_name_form.is_valid() and creator_name_form.cleaned_data:

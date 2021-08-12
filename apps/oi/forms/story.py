@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.forms.models import inlineformset_factory
 
-from dal import autocomplete
+from dal import autocomplete, forward
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -15,11 +15,11 @@ from crispy_forms.utils import render_field
 from apps.oi.models import (
     get_reprint_field_list, get_story_field_list,
     BiblioEntryRevision, ReprintRevision, StoryRevision,
-    StoryCreditRevision)
+    StoryCreditRevision, StoryCharacterRevision)
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
-                            Feature, FeatureLogo, \
+                            Feature, FeatureLogo, CharacterNameDetail, Group,\
                             STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
@@ -81,6 +81,7 @@ def get_story_revision_form(revision=None, user=None,
     # either there is a revision (editing a sequence) or
     # an issue_revision (adding a sequence)
     if revision is not None:
+        changeset = revision.changeset
         # Don't allow blanking out the type field.  However, when its a
         # new story make indexers consciously choose a type by allowing
         # an empty initial value.  So only set None if there is an existing
@@ -106,6 +107,7 @@ def get_story_revision_form(revision=None, user=None,
     else:
         issue = issue_revision.issue
         series = issue_revision.series
+        changeset = issue_revision.changeset
     is_comics_publication = series.is_comics_publication
     has_about_comics = series.has_about_comics
     language = series.language
@@ -149,6 +151,29 @@ def get_story_revision_form(revision=None, user=None,
                                additional_genres=additional_genres)
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
+
+        def save(self, commit=True):
+            instance = super(RuntimeStoryRevisionForm,
+                             self).save(commit=commit)
+            appearing_characters = self.cleaned_data['appearing_characters']
+            if appearing_characters:
+                for character in appearing_characters:
+                    story_character = StoryCharacterRevision(
+                      character=character,
+                      story_revision=instance,
+                      changeset=changeset)
+                    story_character.save()
+            group = self.cleaned_data['group']
+            if group:
+                group_members = self.cleaned_data['group_members']
+                for member in group_members:
+                    story_character = StoryCharacterRevision(
+                      character=member,
+                      story_revision=instance,
+                      changeset=changeset)
+                    story_character.save()
+                    story_character.group.add(group)
+            return instance
 
         def clean_type(self):
             if queryset:
@@ -245,12 +270,60 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['signed_as'] and not cd['is_signed']:
             cd['signed_as'] = ""
 
-        if cd['signature']  and not cd['is_signed']:
+        if cd['signature'] and not cd['is_signed']:
             cd['signature'] = None
 
 
 StoryRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryCreditRevision, form=StoryCreditRevisionForm,
+    can_delete=True, extra=1)
+
+
+class StoryCharacterRevisionForm(forms.ModelForm):
+    class Meta:
+        model = StoryCharacterRevision
+        fields = ['character', 'role', 'group', 'is_flashback',
+                  'is_origin', 'is_death', 'notes']
+        help_texts = {
+            'role':
+                'You can enter what role the character played in the story',
+            'group':
+                'Character is appearing as a member of these groups.',
+        }
+        labels = {'is_flashback': 'Flashback',
+                  'is_origin': 'Origin',
+                  'is_death': 'Death'}
+
+    def __init__(self, *args, **kwargs):
+        super(StoryCharacterRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+
+    character = forms.ModelChoiceField(
+      queryset=CharacterNameDetail.objects.all(),
+      widget=autocomplete.ModelSelect2(url='character_name_autocomplete',
+                                       forward=['language_code'],
+                                       attrs={'style': 'min-width: 60em'}),
+      required=True,
+      help_text='By entering (any part of) a name select a character from the'
+                ' database.'
+    )
+
+    group = forms.ModelMultipleChoiceField(
+      queryset=Group.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+        url='group_autocomplete',
+        attrs={'data-html': True, 'style': 'min-width: 60em'},
+        forward=[forward.Field('character', 'character_name'),
+                 'language_code']),
+      help_text='Select a group the character is appearing as a member of.',
+      required=False,
+    )
+
+
+StoryCharacterRevisionFormSet = inlineformset_factory(
+    StoryRevision, StoryCharacterRevision, form=StoryCharacterRevisionForm,
     can_delete=True, extra=1)
 
 
@@ -277,6 +350,10 @@ class StoryRevisionForm(forms.ModelForm):
                           'no_%s' % seq_type)
 
         fields.insert(fields.index('script'), 'creator_help')
+        fields.insert(fields.index('characters'), 'character_help')
+        fields.insert(fields.index('characters'), 'appearing_characters')
+        fields.insert(fields.index('characters'), 'group')
+        fields.insert(fields.index('group')+1, 'group_members')
         widgets = {
             'feature': forms.TextInput(attrs={'class': 'wide'}),
         }
@@ -315,12 +392,17 @@ class StoryRevisionForm(forms.ModelForm):
                                       template='oi/bits/uni_field.html'))
                       for field in fields[:credit_start]]
         field_list.append(Formset('credits_formset'))
+        character_start = fields.index('characters')
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[credit_start:]])
+                           for field in fields[credit_start:
+                                               character_start+1]])
+        field_list.append(Formset('characters_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[character_start+1:]])
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
-
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
     sequence_number = forms.IntegerField(widget=forms.HiddenInput)
@@ -383,6 +465,24 @@ class StoryRevisionForm(forms.ModelForm):
                   'mark.<p>Existing text credits should be migrated, either '
                   'using the migrate button on the issue change overview page'
                   ' or by editing on this page.',
+        label='')
+
+    character_help = forms.CharField(
+        widget=HiddenInputWithHelp,
+        required=False,
+        help_text='Characters can be entered in several ways:<br>'
+                  'a) select several characters in the first autocomplete '
+                  '"Appearing characters", each without additional details '
+                  'about the appearance,<br>'
+                  'b) select a group in the second autocomplete with the '
+                  'appearing group members in the third autocomplete, again '
+                  'without additional details about the appearance,<br>'
+                  'c) the old text field for characters,<br>'
+                  'd) each character (with its groups) separately, where '
+                  'additional details about the appearance can be entered.<br>'
+                  'For a selected superhero the civilian identity (if unique)'
+                  ' will be added automatically.<br>Note that data from a) and'
+                  ' b) will be appear in section d) after a save.',
         label='')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
@@ -448,6 +548,37 @@ class StoryRevisionForm(forms.ModelForm):
         help_text='A brief description of the contents. No text under '
                   'copyright, such as solicitation or other promotional text, '
                   'may be used without clear permission and credit.')
+
+    group = forms.ModelChoiceField(
+      queryset=Group.objects.all(),
+      widget=autocomplete.ModelSelect2(
+        url='group_autocomplete',
+        attrs={'data-html': True, 'style': 'min-width: 60em'},
+        forward=['language_code']),
+      help_text='Select a group and enter its characters.',
+      required=False,
+    )
+
+    group_members = forms.ModelMultipleChoiceField(
+      queryset=CharacterNameDetail.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+        url='character_name_autocomplete',
+        attrs={'data-html': True, 'style': 'min-width: 60em'},
+        forward=['language_code', 'group']),
+      help_text='Select the appearing members of the group.',
+      required=False,
+    )
+
+    appearing_characters = forms.ModelMultipleChoiceField(
+      queryset=CharacterNameDetail.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+        url='character_name_autocomplete',
+        attrs={'data-html': True, 'style': 'min-width: 60em'},
+        forward=['language_code', ]),
+      help_text='Select appearing characters without additonal details.',
+      required=False,
+    )
+
     comments = _get_comments_form_field()
 
     def clean_keywords(self):
@@ -509,7 +640,7 @@ class StoryRevisionForm(forms.ModelForm):
                  'unofficial checkbox instead.'])
 
         if (cd['feature'] or cd['feature_object'] or cd['feature_logo']) and \
-          cd['type'].id in NO_FEATURE_TYPES:
+           cd['type'].id in NO_FEATURE_TYPES:
             raise forms.ValidationError(
                 ['The sequence type cannot have a feature.'])
 
@@ -537,7 +668,7 @@ class StoryRevisionForm(forms.ModelForm):
                                              STORY_TYPES['comics-form ad']]:
                         raise forms.ValidationError(
                           ['Incorrect feature for this sequence.'])
-                elif feature.feature_type.id in [2,4]:
+                elif feature.feature_type.id in [2, 4]:
                     raise forms.ValidationError(
                       ['Incorrect feature for this sequence.'])
 
@@ -562,7 +693,7 @@ class StoryRevisionForm(forms.ModelForm):
                     if not cd['type'].id == STORY_TYPES['ad']:
                         raise forms.ValidationError(
                           ['Incorrect feature logo for this sequence.'])
-                elif feature_logo.feature.filter(feature_type_id__in=[2,4])\
+                elif feature_logo.feature.filter(feature_type_id__in=[2, 4])\
                                          .count():
                     raise forms.ValidationError(
                       ['Incorrect feature logo for this sequence.'])

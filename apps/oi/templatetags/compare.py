@@ -69,10 +69,13 @@ def field_value(revision, field):
         if value and credits:
             value += '; '
         for credit in credits:
-            value += credit.creator.display_credit(credit, url=True, compare=True) + '; '
+            value += credit.creator.display_credit(credit, url=True,
+                                                   compare=True) + '; '
         if credits:
             value = value[:-2]
         return mark_safe(value)
+    if field == 'characters':
+        return mark_safe(revision.show_characters(url=False))
     if field in ['is_surrogate', 'no_volume', 'display_volume_with_number',
                  'no_brand', 'page_count_uncertain', 'title_inferred',
                  'no_barcode', 'no_indicia_frequency', 'no_isbn',
@@ -122,7 +125,7 @@ def field_value(revision, field):
                 features += absolute_url(feature, feature.logo)
         return mark_safe(features)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
-                   'characters', 'synopsis']:
+                   'synopsis']:
         return linebreaksbr(value)
     elif field == 'reprint_notes':
         reprint = ''
@@ -301,8 +304,13 @@ def diff_list(prev_rev, revision, field):
                 splitted_signature_link = True
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
+    if field == 'characters':
+        diff = diff_match_patch().diff_main(field_value(prev_rev, field),
+                                            field_value(revision, field))
+        diff_match_patch().diff_cleanupSemantic(diff)
+        return diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
-                 'characters', 'synopsis', 'title', 'first_line',
+                 'synopsis', 'title', 'first_line',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name',
                  'price', 'indicia_frequency', 'variant_name',
