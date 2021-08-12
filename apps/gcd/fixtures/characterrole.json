@@ -1,0 +1,42 @@
+[
+{
+    "model": "gcd.characterrole",
+    "pk": 1,
+    "fields": {
+        "name": "Antagonist",
+        "sort_code": 1
+    }
+},
+{
+    "model": "gcd.characterrole",
+    "pk": 2,
+    "fields": {
+        "name": "Cameo",
+        "sort_code": 2
+    }
+},
+{
+    "model": "gcd.characterrole",
+    "pk": 3,
+    "fields": {
+        "name": "Featured",
+        "sort_code": 3
+    }
+},
+{
+    "model": "gcd.characterrole",
+    "pk": 4,
+    "fields": {
+        "name": "Guest",
+        "sort_code": 4
+    }
+},
+{
+    "model": "gcd.characterrole",
+    "pk": 5,
+    "fields": {
+        "name": "Supporting",
+        "sort_code": 5
+    }
+}
+]
