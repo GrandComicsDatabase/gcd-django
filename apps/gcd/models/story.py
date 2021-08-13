@@ -99,6 +99,9 @@ def character_notes(character):
     if note:
         note = ' (%s)' % note
 
+    if character.role:
+        note += ' (%s)' % character.role
+
     if character.notes:
         note += ' (%s)' % character.notes
 
