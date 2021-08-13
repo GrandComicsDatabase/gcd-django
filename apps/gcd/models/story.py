@@ -87,6 +87,24 @@ def show_feature_as_text(story):
     return show_feature(story, url=False)
 
 
+def character_notes(character):
+    notes = []
+    if character.is_flashback:
+        notes.append('flashback')
+    if character.is_death:
+        notes.append('death')
+    if character.is_origin:
+        notes.append('origin')
+    note = "; ".join(notes)
+    if note:
+        note = ' (%s)' % note
+
+    if character.notes:
+        note += ' (%s)' % character.notes
+
+    return note
+
+
 def show_characters(story, url=True, css_style=True):
     first = True
     characters = ''
@@ -115,6 +133,7 @@ def show_characters(story, url=True, css_style=True):
                                      esc(member.character.name))
                 else:
                     characters += '%s' % member.character.name
+            characters += character_notes(member)
         characters += ']; '
     characters = characters[:-2]
 
@@ -131,6 +150,7 @@ def show_characters(story, url=True, css_style=True):
               esc(character.character.name))
         else:
             characters += '%s' % character.character.name
+        characters += character_notes(character)
     if story.characters:
         if url:
             text_characters = esc(story.characters)
