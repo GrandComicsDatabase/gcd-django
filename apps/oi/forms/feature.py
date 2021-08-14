@@ -4,14 +4,14 @@ from django import forms
 
 from dal import autocomplete
 
-from apps.gcd.models import Feature
+from apps.gcd.models import Feature, FeatureRelationType
 from apps.gcd.models.support import GENRES
 
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, remove_leading_article)
 
 from .support import (_set_help_labels, _clean_keywords,
-                      _get_comments_form_field)
+                      _get_comments_form_field, combine_reverse_relations)
 from .story import _genre_choices
 
 
@@ -166,4 +166,24 @@ class FeatureRelationRevisionForm(forms.ModelForm):
                                          attrs={'style': 'min-width: 45em'})
     )
 
+    choices = list(FeatureRelationType.objects.values_list('id',
+                                                           'description'))
+    additional_choices = FeatureRelationType.objects\
+                                            .values_list('id',
+                                                         'reverse_description')
+    choices = combine_reverse_relations(choices, additional_choices)
+    relation_type = forms.ChoiceField(choices=choices)
+
     comments = _get_comments_form_field()
+
+    def clean(self):
+        cd = self.cleaned_data
+        type = int(cd['relation_type'])
+        if type < 0:
+            stash = cd['from_feature']
+            cd['from_feature'] = cd['to_feature']
+            cd['to_feature'] = stash
+            cd['relation_type'] = FeatureRelationType.objects.get(id=-type)
+        else:
+            cd['relation_type'] = FeatureRelationType.objects.get(id=type)
+        return cd

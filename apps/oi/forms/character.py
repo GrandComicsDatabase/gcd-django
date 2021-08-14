@@ -19,7 +19,8 @@ from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
                             GroupMembershipRevision, GroupRelationRevision)
 
 from .support import (_get_comments_form_field, HiddenInputWithHelp,
-                      GENERIC_ERROR_MESSAGE, BaseForm)
+                      GENERIC_ERROR_MESSAGE, BaseForm,
+                      combine_reverse_relations)
 
 
 class CharacterNameDetailRevisionForm(forms.ModelForm):
@@ -189,13 +190,7 @@ class CharacterRelationRevisionForm(forms.ModelForm):
     additional_choices = CharacterRelationType.objects.exclude(id__in=[3, 4])\
                                               .values_list('id',
                                                            'reverse_type')
-    choices.extend(additional_choices)
-    choices.sort()
-    for choice in additional_choices:
-        index = choices.index(choice)
-        choices.insert(index, tuple((-choice[0], choice[1])))
-        choices.pop(index+1)
-    choices.insert(0, (None, '--------'))
+    choices = combine_reverse_relations(choices, additional_choices)
     relation_type = forms.ChoiceField(choices=choices)
 
     to_character = forms.ModelChoiceField(

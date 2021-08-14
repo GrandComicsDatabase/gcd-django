@@ -4,10 +4,11 @@ import re
 import six
 from pagedown.widgets import PagedownWidget
 
-from django.conf import settings
 from django import forms
-from django.utils.safestring import mark_safe
+from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.forms.widgets import TextInput
+from django.utils.safestring import mark_safe
 
 from apps.gcd.models import Brand, SourceType
 from apps.gcd.templatetags.credits import format_page_count
@@ -245,7 +246,7 @@ CREATOR_HELP_TEXTS = {
         "A short biography (1-4 paragraphs) noting highlights of the career "
         "of the creator, which might include a list of characters created.",
     'whos_who':
-         "Link to the old Who’s Who, if available.",
+        "Link to the old Who’s Who, if available.",
 }
 
 CREATOR_MEMBERSHIP_HELP_TEXTS = {
@@ -286,7 +287,7 @@ CREATOR_NONCOMICWORK_HELP_TEXTS = {
 
 CREATOR_RELATION_HELP_TEXTS = {
     'relation_type': "The type of relation between the two creators, where "
-        "'Creator A' has the chosen relation with 'Creator B'"
+                     "'Creator A' has the chosen relation with 'Creator B'"
 }
 
 CREATOR_SIGNATURE_HELP_TEXTS = {
@@ -642,7 +643,7 @@ def _clean_keywords(cleaned_data):
         if not_allowed:
             raise forms.ValidationError(
                 'The following characters are not allowed in a keyword: '
-                '"< > { } : / \ | @ ,". Also a linebreak is not allowed.')
+                '"< > { } : / \\ | @ ,". Also a linebreak is not allowed.')
         if keywords and '' in keywords.split(';'):
             raise forms.ValidationError(
                 'An extra ";" needs to removed.')
@@ -659,7 +660,7 @@ def init_data_source_fields(field_name, revision, fields):
             fields['%s_source_description' % field_name].initial = \
                                         data_source_revision.source_description
             fields['%s_source_type' % field_name].initial = \
-                                        data_source_revision.source_type
+                                               data_source_revision.source_type
 
 
 def add_data_source_fields(form, field_name):
@@ -679,6 +680,17 @@ def insert_data_source_fields(field_name, ordering, fields, insert_after):
     ordering.insert(index+2, '%s_source_type' % field_name)
     fields.update({'%s_source_type' % field_name: forms.ModelChoiceField(
                         queryset=SourceType.objects.all(), required=False)})
+
+
+def combine_reverse_relations(choices, additional_choices):
+    choices.extend(additional_choices)
+    choices.sort()
+    for choice in additional_choices:
+        index = choices.index(choice)
+        choices.insert(index, tuple((-choice[0], choice[1])))
+        choices.pop(index+1)
+    choices.insert(0, (None, '--------'))
+    return choices
 
 
 class PageCountInput(TextInput):
@@ -705,7 +717,7 @@ class ForeignKeyField(forms.IntegerField):
             return self.queryset.get(id=id)
         except ObjectDoesNotExist:
             raise forms.ValidationError("%d is not the ID of a valid %s" %
-                               (id, self.target_name))
+                                        (id, self.target_name))
         except MultipleObjectsReturned:
             raise forms.ValidationError(
               "%d matched multiple instances of %s" % (id, self.target_name))
@@ -721,7 +733,7 @@ class KeywordsWidget(forms.TextInput):
 
 class KeywordsField(forms.CharField):
     _SPLIT_RE = re.compile(r'\s*;\s*')
-    _NOT_ALLOWED = ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']
+    _NOT_ALLOWED = ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',']
 
     widget = KeywordsWidget
 
