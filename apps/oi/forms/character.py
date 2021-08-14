@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 from dal import autocomplete
 
-from apps.gcd.models import Character, Group
+from apps.gcd.models import Character, Group, CharacterRelationType
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -16,12 +16,11 @@ from .custom_layout_object import Formset
 
 from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
                             CharacterRelationRevision, GroupRevision,
-                            GroupMembershipRevision, GroupRelationRevision,
-                            remove_leading_article)
+                            GroupMembershipRevision, GroupRelationRevision)
 
-from .support import (_set_help_labels, _clean_keywords,
-                      _get_comments_form_field, HiddenInputWithHelp,
-                      GENERIC_ERROR_MESSAGE, BaseForm, ModifiedPagedownWidget)
+from .support import (_get_comments_form_field, HiddenInputWithHelp,
+                      GENERIC_ERROR_MESSAGE, BaseForm)
+
 
 class CharacterNameDetailRevisionForm(forms.ModelForm):
     class Meta:
@@ -46,7 +45,7 @@ def get_character_revision_form(revision=None, user=None):
     class RuntimeCharacterRevisionForm(CharacterRevisionForm):
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
-                # _set_help_labels(self, FEATURE_HELP_LINKS)
+            # _set_help_labels(self, FEATURE_HELP_LINKS)
             return super(CharacterRevisionForm, self).as_table()
 
     return RuntimeCharacterRevisionForm
@@ -85,14 +84,14 @@ class CharacterRevisionForm(BaseForm):
                                       template='oi/bits/uni_field.html'))
                       for field in fields[:3]]
         field_list.append(BaseField(Field('additional_names_help',
-                                      template='oi/bits/uni_field.html')))
+                                    template='oi/bits/uni_field.html')))
         field_list.append(Formset('character_names_formset'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[3:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
 
-    additional_names_help  = forms.CharField(
+    additional_names_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
         help_text="Additional names for the character can be entered "
@@ -105,7 +104,7 @@ def get_group_revision_form(revision=None, user=None):
     class RuntimeGroupRevisionForm(GroupRevisionForm):
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
-                # _set_help_labels(self, FEATURE_HELP_LINKS)
+            # _set_help_labels(self, FEATURE_HELP_LINKS)
             return super(GroupRevisionForm, self).as_table()
 
     return RuntimeGroupRevisionForm
@@ -166,7 +165,7 @@ def get_character_relation_revision_form(revision=None, user=None):
     class RuntimeCharacterRelationRevisionForm(CharacterRelationRevisionForm):
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
-                # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
+            # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
             return super(CharacterRelationRevisionForm, self).as_table()
 
     return RuntimeCharacterRelationRevisionForm
@@ -177,30 +176,55 @@ class CharacterRelationRevisionForm(forms.ModelForm):
         model = CharacterRelationRevision
         fields = model._base_field_list
         # help_texts = FEATURE_RELATION_HELP_TEXTS
-        labels = {'relation_type': 'Relation',}
+        labels = {'relation_type': 'Relation', }
 
     from_character = forms.ModelChoiceField(
         queryset=Character.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='character_autocomplete',
                                          attrs={'style': 'min-width: 45em'}),
-        label = 'Character A'
+        label='Character A'
     )
+
+    choices = list(CharacterRelationType.objects.values_list('id', 'type'))
+    additional_choices = CharacterRelationType.objects.exclude(id__in=[3, 4])\
+                                              .values_list('id',
+                                                           'reverse_type')
+    choices.extend(additional_choices)
+    choices.sort()
+    for choice in additional_choices:
+        index = choices.index(choice)
+        choices.insert(index, tuple((-choice[0], choice[1])))
+        choices.pop(index+1)
+    choices.insert(0, (None, '--------'))
+    relation_type = forms.ChoiceField(choices=choices)
 
     to_character = forms.ModelChoiceField(
         queryset=Character.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='character_autocomplete',
                                          attrs={'style': 'min-width: 45em'}),
-        label = 'Character B'
+        label='Character B'
     )
 
     comments = _get_comments_form_field()
+
+    def clean(self):
+        cd = self.cleaned_data
+        type = int(cd['relation_type'])
+        if type < 0:
+            stash = cd['from_character']
+            cd['from_character'] = cd['to_character']
+            cd['to_character'] = stash
+            cd['relation_type'] = CharacterRelationType.objects.get(id=-type)
+        else:
+            cd['relation_type'] = CharacterRelationType.objects.get(id=type)
+        return cd
 
 
 def get_group_relation_revision_form(revision=None, user=None):
     class RuntimeGroupRelationRevisionForm(GroupRelationRevisionForm):
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
-                # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
+            # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
             return super(GroupRelationRevisionForm, self).as_table()
 
     return RuntimeGroupRelationRevisionForm
@@ -211,20 +235,20 @@ class GroupRelationRevisionForm(forms.ModelForm):
         model = GroupRelationRevision
         fields = model._base_field_list
         # help_texts = FEATURE_RELATION_HELP_TEXTS
-        labels = {'relation_type': 'Relation',}
+        labels = {'relation_type': 'Relation', }
 
     from_group = forms.ModelChoiceField(
         queryset=Group.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='group_autocomplete',
                                          attrs={'style': 'min-width: 45em'}),
-        label = 'Group A'
+        label='Group A'
     )
 
     to_group = forms.ModelChoiceField(
         queryset=Group.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='group_autocomplete',
                                          attrs={'style': 'min-width: 45em'}),
-        label = 'Group B'
+        label='Group B'
     )
 
     comments = _get_comments_form_field()
