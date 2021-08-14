@@ -211,6 +211,9 @@ class StoryCredit(GcdData):
     signed_as = models.CharField(max_length=255)
     credited_as = models.CharField(max_length=255)
 
+    is_sourced = models.BooleanField(default=False, db_index=True)
+    sourced_by = models.CharField(max_length=255)
+
     # record for a wider range of creative work types, or how it is credited
     credit_name = models.CharField(max_length=255)
 

@@ -192,7 +192,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
         model = StoryCreditRevision
         fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
                   'is_signed', 'signature', 'signed_as', 'uncertain',
-                  'credit_name']
+                  'is_sourced', 'sourced_by', 'credit_name']
         help_texts = {
             'credit_type':
                 'Selecting multi-credit entries such as "pencil and inks", or'
@@ -220,6 +220,13 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 ' a generic textual signature will be auto-created. If '
                 ' you want to record the visuals of the signature, you first '
                 'have to upload an image in a separate signature change.',
+            'uncertain':
+                'Check in case the credit is uncertain.',
+            'is_sourced':
+                'Check in case the entered credit has external sources.',
+            'sourced_by':
+                'A concise and clear description of the external source of '
+                'the credit.'
         }
         labels = {'credit_name': 'Credit description'}
 

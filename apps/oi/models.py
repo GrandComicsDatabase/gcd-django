@@ -3687,6 +3687,9 @@ class IssueCreditRevision(Revision):
     # record for a wider range of work types, or how it is credited
     credit_name = models.CharField(max_length=255)
 
+    is_sourced = models.BooleanField(default=False, db_index=True, blank=True)
+    sourced_by = models.CharField(max_length=255, blank=True)
+
     source_name = 'issue_credit'
     source_class = IssueCredit
 
@@ -3716,7 +3719,8 @@ class IssueCreditRevision(Revision):
     # TODO old methods, t.b.c
 
     _base_field_list = ['creator', 'credit_type', 'is_credited', 'uncertain',
-                        'credited_as', 'credit_name']
+                        'credited_as', 'credit_name',
+                        'is_sourced', 'sourced_by']
 
     def _field_list(self):
         return self._base_field_list
@@ -4859,6 +4863,9 @@ class StoryCreditRevision(Revision):
     signed_as = models.CharField(max_length=255, blank=True)
     credited_as = models.CharField(max_length=255, blank=True)
 
+    is_sourced = models.BooleanField(default=False, db_index=True, blank=True)
+    sourced_by = models.CharField(max_length=255, blank=True)
+
     # record for a wider range of creative work types, or how it is credited
     credit_name = models.CharField(max_length=255, blank=True)
 
@@ -4928,7 +4935,7 @@ class StoryCreditRevision(Revision):
 
     _base_field_list = ['creator', 'credit_type', 'is_credited', 'is_signed',
                         'uncertain', 'signature', 'signed_as', 'credited_as',
-                        'credit_name']
+                        'credit_name', 'is_sourced', 'sourced_by']
 
     def _field_list(self):
         return self._base_field_list

@@ -92,6 +92,9 @@ class IssueCredit(GcdData):
     # record for a wider range of work types, or how it is credited
     credit_name = models.CharField(max_length=255)
 
+    is_sourced = models.BooleanField(default=False, db_index=True)
+    sourced_by = models.CharField(max_length=255)
+
     def __str__(self):
         return "%s: %s (%s)" % (self.issue, self.creator, self.credit_type)
 

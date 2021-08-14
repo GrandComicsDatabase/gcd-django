@@ -418,7 +418,7 @@ class IssueCreditRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueCreditRevision
         fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
-                  'uncertain', 'credit_name']
+                  'uncertain', 'is_sourced', 'sourced_by', 'credit_name']
         help_texts = {
             'credit_name':
                 'Enter here additional specifications for the credit, for '
@@ -430,6 +430,11 @@ class IssueCreditRevisionForm(forms.ModelForm):
             'credited_as':
                 'Enter a name if the credited name is unusual and '
                 'therefore not a creator name record.',
+            'is_sourced':
+                'Check in case the entered credit has external sources.',
+            'sourced_by':
+                'A concise and clear description of the external source of '
+                'the credit.'
         }
         labels = {'credit_name': 'Credit description'}
 

@@ -227,6 +227,9 @@ class CreatorNameDetail(GcdData):
             if hasattr(credit, 'is_signed') and credit.signed_as:
                 credit_text += ' (signed as %s)' % esc(credit.signed_as)
 
+        if credit.is_sourced:
+            credit_text += ' (sourced)'
+
         if credit.credit_name:
             credit_text += ' (%s)' % esc(credit.credit_name)
 

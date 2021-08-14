@@ -16,20 +16,30 @@ $(function() {
 
 $(document).on('change', 'input[type=checkbox]', function () {
     var id = $(this).attr('id'),
-        match = id.match(/story_credit_revisions-(\d+)-(is_signed|is_credited)/)
+        match = id.match(/story_credit_revisions-(\d+)-(is_signed|is_credited|is_sourced)/)
 
     if (match) {
-    var inputRow = $('#id_story_credit_revisions-' + match[1] +
-		(match[2] == 'is_signed'? '-signed_as': '-credited_as'))
-                .parent().parent();
+        if (match[2] == 'is_sourced'){
+            var inputRow = $('#id_story_credit_revisions-' + match[1] + '-sourced_by')
+                        .parent().parent();
+            if ($(this).is(':checked')) {
+                inputRow.show()
+            } else {
+                inputRow.hide()
+            }
+            return;
+        }
+        var inputRow = $('#id_story_credit_revisions-' + match[1] +
+            (match[2] == 'is_signed'? '-signed_as': '-credited_as'))
+                    .parent().parent();
         if ($(this).is(':checked')) {
             inputRow.show()
         } else {
             inputRow.hide()
         }
         if (match[2] == 'is_signed') {
-        var inputRow = $('#id_story_credit_revisions-' + match[1] + '-signature')
-                    .parent().parent();
+            var inputRow = $('#id_story_credit_revisions-' + match[1] + '-signature')
+                        .parent().parent();
             if ($(this).is(':checked')) {
                 inputRow.show()
             } else {
