@@ -9,7 +9,7 @@ from calendar import monthrange
 from operator import attrgetter
 from random import randint
 
-from django.db.models import F, Q, Min, Count
+from django.db.models import F, Q, Min, Count, Sum
 from django.conf import settings
 import django.urls as urlresolvers
 from django.shortcuts import get_object_or_404, \
@@ -1130,11 +1130,15 @@ def show_series(request, series, preview=False):
     else:
         cover_status_width = "status_small"
 
+    images = series.active_issues().filter(variant_of=None)\
+                   .annotate(num_scans=Sum('image_resources__type__id'))
+
     return render(
       request, 'gcd/details/series.html',
       {
         'series': series,
         'scans': scans,
+        'image_resources': images,
         'image_tag': image_tag,
         'image_issue': issue,
         'country': series.country,

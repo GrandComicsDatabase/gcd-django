@@ -1,0 +1,20 @@
+{% load display %}
+{% load gcdtable %}
+
+<div class="left" style="width:calc(100% - 200px);">
+<table class="status">
+  <tr>
+    <td class="status_approved"> SoO and Indicia </td>
+    <td class="status_partial"> Indicia </td>
+    <td class="status_pending"> SoO </td>
+    <td class="status_available"> No Scans </td>
+  </tr>
+</table>
+  <div class="status_grid">
+{% for issue in image_resources %}
+    <div class="status_grid_flex status_{{ issue|issue_image_status_css }} {{ issue_status_width }}">
+      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor|default:issue }}</a> </td>
+    </div>
+{% endfor %}
+  </div>
+</div>

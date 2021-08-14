@@ -275,6 +275,21 @@ def index_status_css(issue):
 
 
 @register.filter
+def issue_image_status_css(issue):
+    """
+    Text form of issue image resources status.
+    """
+    if issue.num_scans == 1:
+        return 'partial'
+    elif issue.num_scans is None:
+        return 'available'
+    elif issue.num_scans == 2:
+        return 'pending'
+    else:
+        return 'approved'
+
+
+@register.filter
 def show_revision_type(cover):
     if cover.deleted:
         return '[DELETED]'
