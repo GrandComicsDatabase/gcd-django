@@ -5405,6 +5405,7 @@ class StoryRevision(Revision):
                         # we don't need to copy this data via add's
                         story_character.pk = None
                         story_character._state.adding = True
+                        story_character.previous_revision_id = None
                         story_character.character = character_identity\
                           .character_names.get(is_official_name=True)
                         story_character.save()

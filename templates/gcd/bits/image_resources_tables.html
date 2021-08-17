@@ -13,7 +13,7 @@
   <div class="status_grid">
 {% for issue in image_resources %}
     <div class="status_grid_flex status_{{ issue|issue_image_status_css }} {{ issue_status_width }}">
-      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor|default:issue }}</a> </td>
+      <a href="{{ issue.get_absolute_url }}image/">{{ issue.issue_descriptor|default:issue }}</a> </td>
     </div>
 {% endfor %}
   </div>
