@@ -117,7 +117,8 @@ class CreatorNameDetail(GcdData):
     in_script = models.ForeignKey(Script, on_delete=models.CASCADE,
                                   default=Script.LATIN_PK)
 
-    def display_credit(self, credit, url=True, compare=False, search=False):
+    def display_credit(self, credit, url=True, compare=False, search=False,
+                       show_sources=False, full_path=''):
         co_name = ''
         as_name = ''
         compare_info = ''
@@ -228,7 +229,21 @@ class CreatorNameDetail(GcdData):
                 credit_text += ' (signed as %s)' % esc(credit.signed_as)
 
         if credit.is_sourced:
-            credit_text += ' (sourced)'
+            if show_sources:
+                credit_text += ' (sourced: %s)' % esc(credit.sourced_by)
+            else:
+                if url and full_path:
+                    credit_text += ' (<a href="%s' % full_path
+                    if '?' in full_path:
+                        credit_text += '&show_sources'
+                    else:
+                        credit_text += '?show_sources'
+                    if hasattr(credit, 'story'):
+                        credit_text += '#%d">sourced</a>)' % credit.story_id
+                    else:
+                        credit_text += '">sourced</a>)'
+                else:
+                    credit_text += ' (sourced)'
 
         if credit.credit_name:
             credit_text += ' (%s)' % esc(credit.credit_name)

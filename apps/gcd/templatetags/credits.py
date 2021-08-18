@@ -290,7 +290,7 @@ def search_creator_credit(story, credit_type):
     return mark_safe(credit_value)
 
 
-def __credit_value(story, credit_type, url):
+def __credit_value(story, credit_type, url, show_sources=False, full_path=''):
     # for results from elasticsearch
     if '_object' in story.__dict__:
         credits = story.object.active_credits.filter(
@@ -301,14 +301,12 @@ def __credit_value(story, credit_type, url):
     credit_value = ''
     for credit in credits:
         if credit.credit_type_id == CREDIT_TYPES[credit_type]:
+            displayed_credit = credit.creator.display_credit(
+              credit, url=url, show_sources=show_sources, full_path=full_path)
             if credit_value:
-                credit_value = '%s; %s' % (credit_value,
-                                           credit.creator
-                                                 .display_credit(credit,
-                                                                 url=url))
+                credit_value += '; %s' % displayed_credit
             else:
-                credit_value = '%s' % (credit.creator.display_credit(credit,
-                                                                     url=url))
+                credit_value = displayed_credit
     old_credit_field = getattr(story, credit_type)
     if old_credit_field:
         if credit_value:
@@ -318,9 +316,17 @@ def __credit_value(story, credit_type, url):
     return mark_safe(credit_value)
 
 
+@register.simple_tag
+def show_full_credits(story, credit_type, show_sources, full_path):
+    return show_creator_credit(story, credit_type,
+                               show_sources=show_sources, full_path=full_path)
+
+
 @register.filter
-def show_creator_credit(story, credit_type, url=True):
-    credit_value = __credit_value(story, credit_type, url)
+def show_creator_credit(story, credit_type, url=True,
+                        show_sources=False, full_path=''):
+    credit_value = __credit_value(story, credit_type, url,
+                                  show_sources, full_path)
     if credit_value and url:
         return mark_safe(
            '<dt class="credit_tag"><span class="credit_label">'

@@ -2398,6 +2398,10 @@ def show_issue(request, issue, preview=False):
         not_shown_types = AD_TYPES
     else:
         not_shown_types = []
+    if 'show_sources' in request.GET:
+        show_sources = True
+    else:
+        show_sources = False
     image_tag = get_image_tags_per_issue(issue=issue,
                                          zoom_level=zoom_level,
                                          alt_text=alt_text)
@@ -2471,6 +2475,7 @@ def show_issue(request, issue, preview=False):
        'error_subject': '%s' % issue,
        'preview': preview,
        'not_shown_types': not_shown_types,
+       'show_sources': show_sources,
        'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
        })
 

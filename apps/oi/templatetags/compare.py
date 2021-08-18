@@ -70,7 +70,8 @@ def field_value(revision, field):
             value += '; '
         for credit in credits:
             value += credit.creator.display_credit(credit, url=True,
-                                                   compare=True) + '; '
+                                                   compare=True,
+                                                   show_sources=True) + '; '
         if credits:
             value = value[:-2]
         return mark_safe(value)
