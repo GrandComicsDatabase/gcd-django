@@ -3731,8 +3731,10 @@ class IssueCreditRevision(Revision):
             'credit_type': None,
             'issue': None,
             'is_credited': False,
+            'is_sourced': False,
             'uncertain': False,
             'credited_as': '',
+            'sourced_by': '',
             'credit_name': '',
         }
 
@@ -4947,10 +4949,12 @@ class StoryCreditRevision(Revision):
             'story': None,
             'is_credited': False,
             'is_signed': False,
+            'is_sourced': False,
             'uncertain': False,
             'signature': None,
             'signed_as': '',
             'credited_as': '',
+            'sourced_by': '',
             'credit_name': '',
         }
 
