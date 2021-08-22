@@ -21,12 +21,12 @@ django-tables2<2.5
 django-taggit<1.6
 django-model-utils<4.2
 git+git://github.com/GrandComicsDatabase/django-templatesadmin.git@python3
+chardet<3.1
 elasticsearch<3.0
-facebook-sdk<3.2
-python-graph-core<1.9
 python-memcached<1.60
 python-stdnum<1.17
 python3-vote-core==20170329.0
+python-graph-core<1.9
 requests<2.27
 simplejson<3.18
 tablib<3.1
