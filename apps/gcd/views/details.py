@@ -9,7 +9,7 @@ from calendar import monthrange
 from operator import attrgetter
 from random import randint
 
-from django.db.models import F, Q, Min, Count, Sum
+from django.db.models import F, Q, Min, Count, Sum, Case, When, Value
 from django.conf import settings
 import django.urls as urlresolvers
 from django.shortcuts import get_object_or_404, \
@@ -40,6 +40,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             Character, Group, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable
+from apps.gcd.models.feature import FeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   BrandEmblemIssueTable,\
                                   IndiciaPublisherIssueTable,\
@@ -284,6 +285,63 @@ def creator_sequences(request, creator_id, series_id=None,
                        template_name='gcd/bits/sortable_table.html',
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
+
+
+def creator_features(request, creator_id, country=None, language=None):
+    creator = get_gcd_object(Creator, creator_id)
+    names = creator.creator_names.filter(deleted=False)
+
+    features = Feature.objects.filter(story__credits__creator__in=names,
+                                      story__credits__deleted=False).distinct()
+    if country:
+        country = get_object_or_404(Country, code=country)
+        features = features.filter(issue__series__country=country)
+    if language:
+        language = get_object_or_404(Language, code=language)
+        features = features.filter(issue__series__language=language)
+
+    features = features.annotate(issue_credits_count=Count('story__issue',
+                                                           distinct=True))
+    features = features.annotate(first_credit=Min(
+                                 Case(When(story__issue__key_date='',
+                                           then=Value('9999-99-99'),
+                                           ),
+                                      default=F('story__issue__key_date'))))
+    script = Count('story__issue',
+                   filter=Q(story__credits__credit_type__id=1),
+                   distinct=True)
+    pencils = Count('story__issue',
+                    filter=Q(story__credits__credit_type__id=2),
+                    distinct=True)
+    inks = Count('story__issue',
+                 filter=Q(story__credits__credit_type__id=3),
+                 distinct=True)
+    colors = Count('story__issue',
+                   filter=Q(story__credits__credit_type__id=4),
+                   distinct=True)
+    letters = Count('story__issue',
+                    filter=Q(story__credits__credit_type__id=5),
+                    distinct=True)
+
+    features = features.annotate(
+      script=script,
+      pencils=pencils,
+      inks=inks,
+      colors=colors,
+      letters=letters)
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'feature',
+        'plural_suffix': 's',
+        'heading': 'Features for Creator %s' % (creator)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = FeatureTable(features, attrs={'class': 'sortable_listing'},
+                         creator=creator,
+                         template_name='gcd/bits/sortable_table.html',
+                         order_by=('feature'))
+    return generic_sortable_list(request, features, table, template, context)
 
 
 def creator_issues(request, creator_id, series_id,
