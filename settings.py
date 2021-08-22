@@ -45,12 +45,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.template.context_processors.static',
                 'django.contrib.messages.context_processors.messages',
-#                'django_mobile.context_processors.flavour',
                 'apps.gcd.context_processors.gcd',
             ],
             'loaders': [
                 # insert your TEMPLATE_LOADERS here
-#                'django_mobile.loader.Loader',
                 'django.template.loaders.filesystem.Loader',
                 'django.template.loaders.app_directories.Loader',
             ],
@@ -119,8 +117,6 @@ MIDDLEWARE = (
    'django.contrib.messages.middleware.MessageMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.common.CommonMiddleware',
-   'django_mobile.middleware.MobileDetectionMiddleware',
-   'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
    'apps.middleware.errorhandling.ErrorHandlingMiddleware',
 )
@@ -155,7 +151,6 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-#    'django_mobile',
     'django_tables2',
     'apps.indexer',
     'apps.gcd',
@@ -236,12 +231,15 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # for series reorders with many issues
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 5120
 
+# type of implicitly generated primary key
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 #################################################################################
 # 3rd-party app settings
 #################################################################################
 
-COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
-                        'compressor.filters.cssmin.rCSSMinFilter']
+COMPRESS_FILTERS = {'css': ['compressor.filters.css_default.CssAbsoluteFilter',
+                            'compressor.filters.cssmin.rCSSMinFilter'],}
 
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),

@@ -12,7 +12,7 @@ from django import forms
 from django.conf import settings
 from django.db import models, transaction, IntegrityError
 from django.db.models import F, Manager
-from django.db.models.fields import Field, related, FieldDoesNotExist
+from django.db.models.fields import Field, related
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, \
@@ -20,7 +20,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, \
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 from django.core.validators import RegexValidator, URLValidator
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, FieldDoesNotExist
 
 from imagekit.cachefiles.backends import CacheFileState
 from imagekit.models import ImageSpecField
