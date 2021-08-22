@@ -2093,8 +2093,11 @@ def feature_creatorlist(request, feature_id):
           storycredit__deleted=False).distinct().select_related('creator')
         result_disclaimer = MIGRATE_DISCLAIMER
 
-    creators = creators.annotate(
-      first_credit=Min('storycredit__story__issue__key_date'))
+    creators = creators.annotate(first_credit=Min(
+                                 Case(When(storycredit__story__issue__key_date='',
+                                           then=Value('9999-99-99'),
+                                           ),
+                                      default=F('storycredit__story__issue__key_date'))))
     script = Count('storycredit__story__issue',
                    filter=Q(storycredit__credit_type__id=1), distinct=True)
     pencils = Count('storycredit__story__issue',
