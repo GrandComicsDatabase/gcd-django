@@ -131,6 +131,8 @@ urlpatterns = [
       gcd_views.details.creator_sequences, name='creator_sequences'),
     url(r'^creator/(?P<creator_id>\d+)/series/$',
       gcd_views.details.creator_series, name='creator_series'),
+    url(r'^creator/(?P<creator_id>\d+)/features/$',
+      gcd_views.details.creator_features, name='creator_features'),
     url(r'^creator/(?P<creator_id>\d+)/series/(?P<series_id>\d+)/issues/$',
       gcd_views.details.creator_issues, name='creator_series_issues'),
     url(r'^creator/(?P<creator_id>\d+)/series/(?P<series_id>\d+)/sequences/$',

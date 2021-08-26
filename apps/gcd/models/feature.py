@@ -2,8 +2,12 @@ from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 import django.urls as urlresolvers
+from django.utils.safestring import mark_safe
+from django.utils.html import conditional_escape as esc
 
 from taggit.managers import TaggableManager
+
+import django_tables2 as tables
 
 from apps.stddata.models import Language
 from .gcddata import GcdData, GcdLink
@@ -186,3 +190,54 @@ class FeatureRelation(GcdLink):
                                            str(self.to_feature),
                                            str(self.relation_type)
                                            )
+
+
+class FeatureTable(tables.Table):
+    credits_count = tables.Column(accessor='issue_credits_count',
+                                  verbose_name='Issues')
+    feature = tables.Column(accessor='name',
+                            verbose_name='Feature')
+    first_credit = tables.Column(verbose_name='First Credit')
+    role = tables.Column(accessor='script', orderable=False)
+
+    class Meta:
+        model = Feature
+        fields = ('feature', 'first_credit')
+
+    def __init__(self, *args, **kwargs):
+        self.creator = kwargs.pop('creator')
+        super(FeatureTable, self).__init__(*args, **kwargs)
+
+    def render_feature(self, record):
+        name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
+                                                  esc(record.name),
+                                                  record.language.name)
+        return mark_safe(name_link)
+
+    def render_first_credit(self, value):
+        return value[:4]
+
+    def render_credits_count(self, record):
+        url = urlresolvers.reverse(
+                'creator_name_checklist',
+                kwargs={'creator_name_id': self.creator.id,
+                        'feature_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_credits_count))
+
+    def value_credits_count(self, record):
+        return record.issue_credits_count
+
+    def render_role(self, record):
+        role = ''
+        if record.script:
+            role = 'script (%d); ' % record.script
+        if record.pencils:
+            role += 'pencils (%d); ' % record.pencils
+        if record.inks:
+            role += 'inks (%d); ' % record.inks
+        if record.colors:
+            role += 'colors (%d); ' % record.colors
+        if record.letters:
+            role += 'letters (%d); ' % record.letters
+        return role[:-2]

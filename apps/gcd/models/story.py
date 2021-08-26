@@ -95,7 +95,7 @@ def character_notes(character):
         notes.append('death')
     if character.is_origin:
         notes.append('origin')
-    note = "; ".join(notes)
+    note = ", ".join(notes)
     if note:
         note = ' (%s)' % note
 
