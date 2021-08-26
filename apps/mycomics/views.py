@@ -774,6 +774,8 @@ def import_items(request):
                 not_found += '","'.join(line) + '\n'
             else:
                 issues = issues | issue
+        if 'import_my_issues_base_only' in request.POST:
+            issues = issues.filter(variant_of=None)
         issues = issues.distinct()
         tmpfile.close()
         os.remove(tmpfile_name)
