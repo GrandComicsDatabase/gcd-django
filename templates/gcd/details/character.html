@@ -39,6 +39,11 @@ GCD :: Character :: {{ character.name }}
 {% endif %}
 <p>{{ character|show_credit:'keywords' }}</P>
       </dl>
+      <ul style="columns: 2;">
+	<li><a href='{% url "character_creators" character_id=character.id %}'>Creator Checklist (via linked story records)</a></li>
+        <li><a href='{% url "character_issues" character_id=character.id %}'>Issue Checklist (via linked story records)</a></li>
+        <li><a href='{% url "character_sequences" character_id=character.id %}'>Sequences List (via linked story records)</a></li>
+      </ul>
   {% if additional_names %}
           <h3>Additional Names:</h3>
     {% if additional_names.count > 1 %}

@@ -219,8 +219,8 @@ class FeatureTable(tables.Table):
 
     def render_credits_count(self, record):
         url = urlresolvers.reverse(
-                'creator_name_checklist',
-                kwargs={'creator_name_id': self.creator.id,
+                'creator_feature_issues',
+                kwargs={'creator_id': self.creator.id,
                         'feature_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_credits_count))

@@ -981,6 +981,13 @@ class CreatorTable(tables.Table):
         return role[:-2]
 
 
+class CharacterCreatorTable(CreatorTable):
+    def __init__(self, *args, **kwargs):
+        self.character = kwargs.pop('character')
+        self.resolve_name = 'character'
+        super(CreatorTable, self).__init__(*args, **kwargs)
+
+
 class FeatureCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         self.feature = kwargs.pop('feature')

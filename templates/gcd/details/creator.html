@@ -57,7 +57,8 @@
             <li><a href='{% url "checklist_by_id" creator_id=creator.id %}'>Issue Checklist (via linked credit records)</a></li>
 	    <li><a href='{% url "cover_checklist_by_id" creator_id=creator.id %}'>Cover List (via linked credit records)</a></li>
 	    <li><a href='{% url "creator_series" creator_id=creator.id %}'>Series List (via linked credit records)</a></li>
-            <li><a href='{% url "creator_features" creator_id=creator.id %}'>Features List (via linked credit records)</a></li>
+            <li><a href='{% url "creator_characters" creator_id=creator.id %}'>Characters List (via linked credit records)</a></li>
+	    <li><a href='{% url "creator_features" creator_id=creator.id %}'>Features List (via linked credit records)</a></li>
 	    <li><a href='{% url "creator_sequences" creator_id=creator.id %}'>Sequences List (via linked credit records)</a></li>
             <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD (via search for "{{ creator.gcd_official_name }}")</a></li>
 
