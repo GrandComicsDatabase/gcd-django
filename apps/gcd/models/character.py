@@ -302,6 +302,8 @@ class GroupMembership(GcdLink):
         if self.year_left:
             years += '%d%s' % (self.year_left,
                                '?' if self.year_left_uncertain else '')
+        elif self.year_left_uncertain:
+            years += '?'
         else:
             years += 'present'
         return years
