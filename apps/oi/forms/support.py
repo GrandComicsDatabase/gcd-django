@@ -9,8 +9,9 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 from django.forms.widgets import TextInput
 from django.utils.safestring import mark_safe
+from django.forms.utils import pretty_name
 
-from apps.gcd.models import Brand, SourceType
+from apps.gcd.models import SourceType
 from apps.gcd.templatetags.credits import format_page_count
 
 
@@ -568,7 +569,7 @@ def _set_help_labels(self, help_links):
     for field in self.fields:
         if field in help_links:
             if not self.fields[field].label:
-                label = forms.forms.pretty_name(field)
+                label = pretty_name(field)
             else:
                 label = self.fields[field].label
             self.fields[field].label = mark_safe(
@@ -660,7 +661,7 @@ def init_data_source_fields(field_name, revision, fields):
             fields['%s_source_description' % field_name].initial = \
                                         data_source_revision.source_description
             fields['%s_source_type' % field_name].initial = \
-                                               data_source_revision.source_type
+                data_source_revision.source_type
 
 
 def add_data_source_fields(form, field_name):
@@ -761,7 +762,7 @@ class BrandEmblemSelect(forms.Select):
                       .create_option(name, value, label, selected, index,
                                      subindex=subindex, attrs=attrs)
         if value:
-            brand = Brand.objects.get(id=value)
+            brand = value.instance
             if brand.emblem and not settings.FAKE_IMAGES:
                 option_dict['url'] = brand.emblem.icon.url
                 option_dict['image_width'] = brand.emblem.icon.width
