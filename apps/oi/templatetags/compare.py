@@ -16,8 +16,9 @@ from apps.gcd.templatetags.credits import format_page_count, \
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, \
-                           ReprintRevision, StoryRevision
+                           ReprintRevision, StoryRevision, IssueRevision
 from apps.gcd.models import CREDIT_TYPES
+from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
 
@@ -120,8 +121,8 @@ def field_value(revision, field):
             else:
                 features += '; '
             if field == 'feature_object':
-                features += '<a href="%s">%s</a>' % (feature.get_absolute_url(),
-                                                     esc(feature.name))
+                features += '<a href="%s">%s</a>' % (
+                  feature.get_absolute_url(), esc(feature.name))
             else:
                 features += absolute_url(feature, feature.logo)
         return mark_safe(features)
@@ -207,7 +208,8 @@ def field_value(revision, field):
             return return_val[:-2] + ')'
     elif field == 'leading_article':
         if value is True:
-            return 'Yes (sorted as: %s)' % remove_leading_article(revision.name)
+            return 'Yes (sorted as: %s)' % remove_leading_article(
+              revision.name)
         else:
             return 'No'
     elif field in ['has_barcode', 'has_isbn', 'has_issue_title',
@@ -221,8 +223,8 @@ def field_value(revision, field):
                     value_count = revision.series.active_issues()\
                                                  .exclude(**kwargs).count()
                     if value_count:
-                        return 'No (note: %d issues have a non-empty %s value)' % \
-                                (value_count, field[4:])
+                        return 'No (note: %d issues have a non-empty %s '\
+                               'value)' % (value_count, field[4:])
         return yesno(value, 'Yes,No')
     elif field == 'is_singleton':
         if hasattr(revision, 'changed'):
@@ -361,11 +363,13 @@ def compare_current_reprints(object_type, changeset):
         active = ReprintRevision.objects.filter(
           next_revision__in=changeset.reprintrevisions.all())
         if type(object_type) == StoryRevision:
-            active_origin = active.filter(origin_story=object_type.source)
-            active_target = active.filter(target_story=object_type.source)
+            active_origin = active.filter(origin=object_type.source)
+            active_target = active.filter(target=object_type.source)
         else:
-            active_origin = active.filter(origin_issue=object_type.source)
-            active_target = active.filter(target_issue=object_type.source)
+            active_origin = active.filter(origin_issue=object_type.source,
+                                          origin=None)
+            active_target = active.filter(target_issue=object_type.source,
+                                          target=None)
     else:
         if not object_type.source:
             active_origin = object_type.origin_reprint_revisions\
@@ -377,6 +381,9 @@ def compare_current_reprints(object_type, changeset):
                 .filter(changeset=changeset)
             active_target = object_type.source.target_reprint_revisions\
                 .filter(changeset=changeset)
+    if type(object_type) == IssueRevision:
+        active_origin = active_origin.filter(origin=None, origin_revision=None)
+        active_target = active_target.filter(target=None, target_revision=None)
 
     if not object_type.source:
         kept_origin = ReprintRevision.objects.none()
@@ -384,27 +391,18 @@ def compare_current_reprints(object_type, changeset):
     else:
         kept_origin = object_type.source.origin_reprint_revisions\
           .filter(changeset__modified__lte=changeset.modified)\
-          .filter(next_revision=None).exclude(changeset=changeset)\
-          .filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True)
-        kept_origin = kept_origin | object_type\
-          .source.origin_reprint_revisions\
-          .filter(changeset__modified__lte=changeset.modified)\
           .exclude(changeset=changeset)\
           .filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True).exclude(next_revision=None)
+          .exclude(deleted=True)
 
         kept_target = object_type.source.target_reprint_revisions\
           .filter(changeset__modified__lte=changeset.modified)\
-          .filter(next_revision=None).exclude(changeset=changeset)\
-          .filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True)
-        kept_target = kept_target | object_type.source\
-          .target_reprint_revisions\
-          .filter(changeset__modified__lte=changeset.modified)\
           .exclude(changeset=changeset)\
           .filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True).exclude(next_revision=None)
+          .exclude(deleted=True)
+        if type(object_type) == IssueRevision:
+            kept_origin = kept_origin.filter(origin=None, origin_revision=None)
+            kept_target = kept_target.filter(target=None, target_revision=None)
 
     if active_origin.exists() or active_target.exists():
         if object_type.changeset_id != changeset.id:
@@ -414,37 +412,34 @@ def compare_current_reprints(object_type, changeset):
             reprint_string = '<ul>The following reprint links are edited ' \
                              'in this changeset.'
 
-        active_target = list(active_target.select_related(
-                             'origin_issue__series__publisher',
-                             'origin_story__issue__series__publisher',
-                             'origin_revision__issue__series__publisher',
-                             'target_issue',
-                             'target_story__issue',
-                             'target_revision__issue'))
-        active_target = sorted(active_target, key=lambda a: a.origin_sort)
+        active_target = active_target.select_related(
+                        'origin_issue__series__publisher',
+                        'origin_revision__issue__series__publisher',
+                        'target_issue',
+                        'target_revision__issue')
+        active_target = active_target.order_by('origin_issue__key_date')
 
-        active_origin = list(active_origin.select_related(
-                            'target_issue__series__publisher',
-                            'target_story__issue__series__publisher',
-                            'target_revision__issue__series__publisher',
-                            'origin_issue',
-                            'origin_story__issue',
-                            'origin_revision__issue'))
-        active_origin = sorted(active_origin, key=lambda a: a.target_sort)
+        active_origin = active_origin.select_related(
+                        'target_issue__series__publisher',
+                        'target_revision__issue__series__publisher',
+                        'origin_issue',
+                        'origin_revision__issue')
+        active_origin = active_origin.order_by('target_issue__key_date')
 
-        for reprint in active_target + active_origin:
+        for reprint in (active_origin | active_target):
             if object_type.changeset_id != changeset.id:
                 do_compare = False
                 action = ''
             else:
                 do_compare = True
-                if reprint.in_type is None:
+                if reprint.previous_revision is None:
                     action = " <span class='added'>[ADDED]</span>"
                 elif reprint.deleted:
                     action = " <span class='deleted'>[DELETED]</span>"
                 else:
                     action = ""
-            reprint_string = '%s<li>%s%s</li>' % (reprint_string,
+            reprint_string = '%s<li>%s%s</li>' % (
+              reprint_string,
               reprint.get_compare_string(object_type.issue,
                                          do_compare=do_compare),
               action)
@@ -454,25 +449,10 @@ def compare_current_reprints(object_type, changeset):
 
     if kept_origin.exists() or kept_target.exists():
         kept_string = ''
-        kept_target = list(kept_target.select_related(
-                           'origin_issue__series__publisher',
-                           'origin_story__issue__series__publisher',
-                           'origin_revision__issue__series__publisher',
-                           'target_issue',
-                           'target_story__issue',
-                           'target_revision__issue'))
-        kept_target = sorted(kept_target, key=lambda a: a.origin_sort)
+        kept_target = kept_target.order_by('origin_issue__key_date')
+        kept_origin = kept_origin.order_by('target_issue__key_date')
 
-        kept_origin = list(kept_origin.select_related(
-                           'target_issue__series__publisher',
-                           'target_story__issue__series__publisher',
-                           'target_revision__issue__series__publisher',
-                           'origin_issue',
-                           'origin_story__issue',
-                           'origin_revision__issue'))
-        kept_origin = sorted(kept_origin, key=lambda a: a.target_sort)
-
-        for reprint in kept_target + kept_origin:
+        for reprint in kept_origin.union(kept_target):
             # the checks for nex_revision.changeset seemingly cannot be done
             # in the filter/exclude process above. next_revision does not need
             # to exists and makes problems in that.
@@ -482,7 +462,7 @@ def compare_current_reprints(object_type, changeset):
                  reprint.next_revision.changeset.modified <= changeset.modified)):
                 kept_string = '%s<li>%s' % (
                   kept_string, reprint.get_compare_string(object_type.issue))
-                if reprint.source and reprint.source.reserved:
+                if reprint.source and is_locked(reprint.source):
                     kept_string += '<br>reserved in a different changeset'
                 kept_string += '</li>'
         if kept_string != '':

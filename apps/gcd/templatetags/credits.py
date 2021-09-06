@@ -538,7 +538,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
     last_follow = None
     same_issue_cnt = 0
     for from_reprint in from_reprints:
-        if hasattr(from_reprint, 'origin_issue') and from_reprint.origin_issue:
+        if not from_reprint.origin:
             follow_info = ''
             if last_series == from_reprint.origin_issue.series and \
                last_follow == follow_info:
@@ -562,7 +562,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
         else:
             follow_info = follow_reprint_link(from_reprint, 'from',
                                               level=level+1)
-            if last_series == from_reprint.origin.issue.series and \
+            if last_series == from_reprint.origin_issue.series and \
                last_follow == follow_info:
                 reprint += generate_reprint_link_sequence(
                              from_reprint.origin, "from ",
@@ -575,7 +575,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                                                           'which are', 1)
                     reprint += '</li>' + last_follow
                 same_issue_cnt = 0
-                last_series = from_reprint.origin.issue.series
+                last_series = from_reprint.origin_issue.series
 
                 reprint += generate_reprint_link_sequence(
                              from_reprint.origin, "from ",
@@ -591,7 +591,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
     same_issue_cnt = 0
 
     for to_reprint in to_reprints:
-        if hasattr(to_reprint, 'target_issue') and to_reprint.target_issue:
+        if not to_reprint.target:
             follow_info = ''
             if last_series == to_reprint.target_issue.series and \
                last_follow == follow_info:
@@ -650,16 +650,11 @@ def follow_reprint_link(reprint, direction, level=0):
     reprint_note = ''
     if direction == 'from':
         if type(reprint.origin) == Story:
-            further_reprints = list(
-              reprint.origin.from_reprints
-                     .select_related('origin__issue__series__publisher').all())
+            further_reprints = reprint.origin.from_all_reprints \
+              .select_related('origin_issue__series__publisher')\
+              .order_by('origin_issue__key_date')
         else:
             further_reprints = list(reprint.origin.from_reprints.all())
-        further_reprints.extend(list(
-          reprint.origin.from_issue_reprints
-                 .select_related('origin_issue__series__publisher').all()))
-        further_reprints = sorted(further_reprints,
-                                  key=lambda a: a.origin_sort)
         reprint_note += generate_reprint_notes(from_reprints=further_reprints,
                                                level=level)
         if reprint.origin.reprint_notes:
@@ -669,16 +664,11 @@ def follow_reprint_link(reprint, direction, level=0):
                     reprint_note += '<li> ' + esc(string) + ' </li>'
     else:
         if type(reprint.target) == Story:
-            further_reprints = list(
-              reprint.target.to_reprints
-                     .select_related('target__issue__series__publisher').all())
+            further_reprints = reprint.target.to_all_reprints\
+              .select_related('target_issue__series__publisher')\
+              .order_by('target_issue__key_date')
         else:
             further_reprints = list(reprint.target.to_reprints.all())
-        further_reprints.extend(list(
-          reprint.target.to_issue_reprints
-                 .select_related('target_issue__series__publisher').all()))
-        further_reprints = sorted(further_reprints,
-                                  key=lambda a: a.target_sort)
         reprint_note += generate_reprint_notes(to_reprints=further_reprints,
                                                level=level)
         if reprint.target.reprint_notes:
@@ -695,32 +685,18 @@ def follow_reprint_link(reprint, direction, level=0):
 @register.filter
 def show_reprints(story):
     """ Filter for our reprint line on the story level."""
-    if type(story) != Story:
-        sel = False
-    else:
-        sel = True
-    from_reprints = list(
-      story.from_reprints
-           .select_related('origin__issue__series__publisher' if sel
-                           else None).all())
-    from_reprints.extend(list(
-      story.from_issue_reprints
-           .select_related('origin_issue__series__publisher').all()))
-    from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+    from_reprints = story.from_all_reprints \
+                         .select_related('origin_issue__series__publisher')\
+                         .order_by('origin_issue__key_date')
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
     if story.type.id != STORY_TYPES['preview']:
         no_promo = True
     else:
         no_promo = False
-    to_reprints = list(
-      story.to_reprints
-           .select_related('target__issue__series__publisher' if sel
-                           else None).all())
-    to_reprints.extend(list(
-      story.to_issue_reprints
-           .select_related('target_issue__series__publisher').all()))
-    to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
+    to_reprints = story.to_all_reprints\
+                       .select_related('target_issue__series__publisher')\
+                       .order_by('target_issue__key_date')
     reprint += generate_reprint_notes(to_reprints=to_reprints,
                                       no_promo=no_promo)
 
@@ -744,16 +720,14 @@ def show_reprints(story):
 def show_reprints_for_issue(issue):
     """ show reprints stored on the issue level. """
 
-    reprint = ""
-    from_reprints = list(issue.from_reprints.select_related().all())
-    from_reprints.extend(list(issue.from_issue_reprints.select_related()
-                                                       .all()))
-    from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+    from_reprints = issue.from_reprints\
+                         .select_related('origin_issue__series__publisher')\
+                         .order_by('origin_issue__sort_code')
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
-    to_reprints = list(issue.to_reprints.select_related().all())
-    to_reprints.extend(list(issue.to_issue_reprints.select_related().all()))
-    to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
+    to_reprints = issue.to_reprints\
+                       .select_related('target_issue__series__publisher')\
+                       .order_by('target_issue__sort_code')
     reprint += generate_reprint_notes(to_reprints=to_reprints,
                                       no_promo=True)
 

@@ -26,7 +26,7 @@ from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
-    IssueReprint, Publisher, Reprint, ReprintFromIssue, ReprintToIssue,
+    Publisher, Reprint,
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
     CreatorRelation, CreatorSchool, CreatorNameDetail, CreditType,
@@ -169,9 +169,6 @@ DISPLAY_CLASSES = {
     'group_membership': GroupMembership,
     'cover': Cover,
     'reprint': Reprint,
-    'reprint_to_issue': ReprintToIssue,
-    'reprint_from_issue': ReprintFromIssue,
-    'issue_reprint': IssueReprint,
     'image': Image,
     'award': Award,
     'received_award': ReceivedAward,
@@ -3141,7 +3138,7 @@ def list_issue_reprints(request, id):
 
 
 @permission_required('indexer.can_reserve')
-def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
+def reserve_reprint(request, changeset_id, reprint_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
         return render_error(request,
@@ -3166,15 +3163,14 @@ def reserve_reprint(request, changeset_id, reprint_id, reprint_type):
         which_side = 'edit_note_target'
     else:
         return _cant_get(request)
-    display_obj = get_object_or_404(DISPLAY_CLASSES[reprint_type],
+    display_obj = get_object_or_404(DISPLAY_CLASSES['reprint'],
                                     id=reprint_id)
     revision_lock = _get_revision_lock(display_obj, changeset)
     if not revision_lock:
         return render_error(request,
           'Cannot edit "%s" as it is already reserved.' % display_obj)
 
-    revision = ReprintRevision.objects.clone_revision(display_obj,
-                                                      changeset=changeset)
+    revision = ReprintRevision.clone(display_obj, changeset=changeset)
 
     return HttpResponseRedirect(urlresolvers.reverse('edit_reprint',
         kwargs={'id': revision.id, 'which_side': which_side }))
@@ -3220,9 +3216,9 @@ def edit_reprint(request, id, which_side=None):
     story = None
     story_revision = None
     if which_side.startswith('origin'):
-        if reprint_revision.origin_story:
-            select_issue = reprint_revision.origin_story.issue
-            sequence_number = reprint_revision.origin_story.sequence_number
+        if reprint_revision.origin:
+            select_issue = reprint_revision.origin_issue
+            sequence_number = reprint_revision.origin.sequence_number
         elif reprint_revision.origin_issue:
             select_issue = reprint_revision.origin_issue
             sequence_number = None
@@ -3230,16 +3226,15 @@ def edit_reprint(request, id, which_side=None):
             select_issue = reprint_revision.origin_revision.issue
         else: # for newly added stories problematic otherwise
             raise NotImplementedError
-        if reprint_revision.target_issue:
-            issue = reprint_revision.target_issue
-        elif reprint_revision.target_story:
-            story = reprint_revision.target_story
+        issue = reprint_revision.target_issue
+        if reprint_revision.target:
+            story = reprint_revision.target
         else:
             story_revision = reprint_revision.target_revision
     elif which_side.startswith('target'):
-        if reprint_revision.target_story:
-            select_issue = reprint_revision.target_story.issue
-            sequence_number = reprint_revision.target_story.sequence_number
+        if reprint_revision.target:
+            select_issue = reprint_revision.target.issue
+            sequence_number = reprint_revision.target.sequence_number
         elif reprint_revision.target_issue:
             select_issue = reprint_revision.target_issue
             sequence_number = None
@@ -3249,18 +3244,18 @@ def edit_reprint(request, id, which_side=None):
             raise NotImplementedError
         if reprint_revision.origin_issue:
             issue = reprint_revision.origin_issue
-        elif reprint_revision.origin_story:
-            story = reprint_revision.origin_story
+        elif reprint_revision.origin:
+            story = reprint_revision.origin
         else:
             story_revision = reprint_revision.origin_revision
     elif which_side == 'flip_direction':
-        origin_story = reprint_revision.target_story
+        origin = reprint_revision.target
         origin_revision = reprint_revision.target_revision
         origin_issue = reprint_revision.target_issue
-        reprint_revision.target_story = reprint_revision.origin_story
+        reprint_revision.target = reprint_revision.origin
         reprint_revision.target_revision = reprint_revision.origin_revision
         reprint_revision.target_issue = reprint_revision.origin_issue
-        reprint_revision.origin_story = origin_story
+        reprint_revision.origin = origin
         reprint_revision.origin_revision = origin_revision
         reprint_revision.origin_issue = origin_issue
         reprint_revision.save()
@@ -3284,11 +3279,11 @@ def edit_reprint(request, id, which_side=None):
         return HttpResponseRedirect(
           urlresolvers.reverse('remove_reprint_revision', kwargs={ 'id': id }))
     elif which_side == 'matching_sequence':
-        if reprint_revision.origin_story:
-            story = reprint_revision.origin_story
+        if reprint_revision.origin:
+            story = reprint_revision.origin
             issue = reprint_revision.target_issue
         else:
-            story = reprint_revision.target_story
+            story = reprint_revision.target
             issue = reprint_revision.origin_issue
         if issue != changeset_issue.issue:
             return _cant_get(request)
@@ -3301,8 +3296,8 @@ def edit_reprint(request, id, which_side=None):
     elif which_side.startswith('edit_note'):
         if which_side == 'edit_note_origin':
             which_side = 'target'
-            if reprint_revision.origin_story:
-                story = reprint_revision.origin_story
+            if reprint_revision.origin:
+                story = reprint_revision.origin
                 story_story = True
                 story_revision = False
                 issue = None
@@ -3316,16 +3311,16 @@ def edit_reprint(request, id, which_side=None):
                 story_story = False
                 story_revision = False
                 issue = reprint_revision.origin_issue
-            if reprint_revision.target_story:
-                selected_story = reprint_revision.target_story
+            if reprint_revision.target:
+                selected_story = reprint_revision.target
                 selected_issue = None
             else:
                 selected_story = None
                 selected_issue = reprint_revision.target_issue
         else:
             which_side = 'origin'
-            if reprint_revision.target_story:
-                story = reprint_revision.target_story
+            if reprint_revision.target:
+                story = reprint_revision.target
                 story_story = True
                 story_revision = False
                 issue = None
@@ -3339,8 +3334,8 @@ def edit_reprint(request, id, which_side=None):
                 story_story = False
                 story_revision = False
                 issue = reprint_revision.target_issue
-            if reprint_revision.origin_story:
-                selected_story = reprint_revision.origin_story
+            if reprint_revision.origin:
+                selected_story = reprint_revision.origin
                 selected_issue = None
             else:
                 selected_story = None
@@ -3460,8 +3455,8 @@ def select_internal_object(request, id, changeset_id, which_side,
         return render_error(request,
           'Only the reservation holder may access this page.')
     if which_side == 'origin':
-        if reprint_revision.target_story:
-            other_story = reprint_revision.target_story
+        if reprint_revision.target:
+            other_story = reprint_revision.target
             other_issue = None
         elif reprint_revision.target_issue:
             other_issue = reprint_revision.target_issue
@@ -3469,8 +3464,8 @@ def select_internal_object(request, id, changeset_id, which_side,
         else:
             raise NotImplementedError
     elif which_side == 'target':
-        if reprint_revision.origin_story:
-            other_story = reprint_revision.origin_story
+        if reprint_revision.origin:
+            other_story = reprint_revision.origin
             other_issue = None
         elif reprint_revision.origin_issue:
             other_issue = reprint_revision.origin_issue
@@ -3567,7 +3562,7 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
     if issue != changeset_issue.issue:
         return _cant_get(request)
     if request.method != 'POST' and not edit:
-        if story == reprint_revision.origin_story:
+        if story == reprint_revision.origin:
             direction = 'from'
         else:
             direction = 'in'
@@ -3577,7 +3572,7 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
     else:
         story_revision = StoryRevision.copied_revision(story, changeset,
                                                        issue=issue)
-        if reprint_revision.origin_story:
+        if reprint_revision.origin:
             reprint_revision.target_revision = story_revision
             reprint_revision.target_issue = None
         else:
@@ -3685,10 +3680,10 @@ def save_reprint(request, reprint_revision_id, changeset_id,
 
     changeset = get_object_or_404(Changeset, id=changeset_id)
 
-    origin_story = None
+    origin = None
     origin_revision = None
     origin_issue = None
-    target_story = None
+    target = None
     target_revision = None
     target_issue = None
 
@@ -3703,42 +3698,46 @@ def save_reprint(request, reprint_revision_id, changeset_id,
 
     if request.POST['direction'] == 'from':
         if story_one_id:
-            target_story = Story.objects.get(id=story_one_id)
+            target = Story.objects.get(id=story_one_id)
+            target_issue = target.issue
         elif story_revision_id:
             target_revision = story_revision
+            target_issue = target_revision.issue
         else:
             target_issue = Issue.objects.get(id=issue_one_id)
         if story_two_id:
-            origin_story = Story.objects.get(id=story_two_id)
+            origin = Story.objects.get(id=story_two_id)
         else:
             origin_issue = Issue.objects.get(id=issue_two_id)
     else:
         if story_one_id:
-            origin_story = Story.objects.get(id=story_one_id)
+            origin = Story.objects.get(id=story_one_id)
+            origin_issue = origin.issue
         elif story_revision_id:
             origin_revision = story_revision
+            origin_issue = origin_revision.issue
         else:
             origin_issue = Issue.objects.get(id=issue_one_id)
         if story_two_id:
-            target_story = Story.objects.get(id=story_two_id)
+            target = Story.objects.get(id=story_two_id)
         else:
             target_issue = Issue.objects.get(id=issue_two_id)
 
     notes = request.POST['reprint_link_notes']
     if revision:
-        revision.origin_story = origin_story
+        revision.origin = origin
         revision.origin_revision=origin_revision
         revision.origin_issue=origin_issue
-        revision.target_story=target_story
+        revision.target=target
         revision.target_revision=target_revision
         revision.target_issue=target_issue
         revision.notes=notes
         revision.save()
     else:
-        revision = ReprintRevision(origin_story=origin_story,
+        revision = ReprintRevision(origin=origin,
                                    origin_revision=origin_revision,
                                    origin_issue=origin_issue,
-                                   target_story=target_story,
+                                   target=target,
                                    target_revision=target_revision,
                                    target_issue=target_issue,
                                    notes=notes)
@@ -3759,10 +3758,10 @@ def save_reprint(request, reprint_revision_id, changeset_id,
             kwargs={ 'id': changeset.issuerevisions.get().id }))
     if 'matching_sequence' in request.POST:
         if revision.origin_story:
-            story = revision.origin_story
+            story = revision.origin
             issue = revision.target_issue
         else:
-            story = revision.target_story
+            story = revision.target
             issue = revision.origin_issue
         if issue != changeset.issuerevisions.get().issue:
             return _cant_get(request)
@@ -4008,7 +4007,7 @@ def move_story_revision(request, id):
                       commit=True, unique=False)
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',
-      kwargs={ 'id': story.changeset.id }))
+      kwargs={'id': story.changeset.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -4029,8 +4028,8 @@ def move_cover(request, id, cover_id=None):
             if revision.issue and revision.issue.has_covers():
                 for image in get_image_tags_per_issue(revision.issue,
                   "current covers", ZOOM_MEDIUM, as_list=True):
-                  image.append(revision)
-                  covers.append(image)
+                    image.append(revision)
+                    covers.append(image)
         return oi_render(
           request,
           'oi/edit/move_covers.html',
@@ -4055,7 +4054,7 @@ def move_cover(request, id, cover_id=None):
     revision = CoverRevision.objects.clone_revision(cover, changeset=changeset)
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',
-      kwargs={ 'id': changeset.id }))
+      kwargs={'id': changeset.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -4073,7 +4072,7 @@ def undo_move_cover(request, id, cover_id):
     cover_revision.delete()
 
     return HttpResponseRedirect(urlresolvers.reverse('edit',
-      kwargs={ 'id': changeset.id }))
+      kwargs={'id': changeset.id}))
 
 ##############################################################################
 # Removing Items from a Changeset
@@ -4084,7 +4083,8 @@ def undo_move_cover(request, id, cover_id):
 def remove_story_revision(request, id):
     story = get_object_or_404(StoryRevision, id=id)
     if request.user != story.changeset.indexer:
-        return render_error(request,
+        return render_error(
+          request,
           'Only the reservation holder may remove stories.')
 
     # if user manually tries to permanently remove a sequence revision
@@ -4098,8 +4098,8 @@ def remove_story_revision(request, id):
         return oi_render(
           request, 'oi/edit/remove_story_revision.html',
           {
-            'story' : preview_story,
-            'issue' : story.issue
+            'story': preview_story,
+            'issue': story.issue
           })
 
     # we fully delete the freshly added sequence, but first check if a
@@ -4112,7 +4112,7 @@ def remove_story_revision(request, id):
             story.page_count_uncertain = True
         comment.text += '\nThe StoryRevision "%s" for which this comment was'\
                         ' entered was removed.' % show_revision_short(story,
-                                                                markup=False)
+                                                                  markup=False)
         comment.revision_id = None
         comment.save()
     elif story.changeset.approver:
@@ -4125,19 +4125,20 @@ def remove_story_revision(request, id):
                           new_state=story.changeset.state)
     story.delete()
     return HttpResponseRedirect(urlresolvers.reverse('edit',
-      kwargs={ 'id': story.changeset.id }))
+                                kwargs={'id': story.changeset.id}))
 
 
 @permission_required('indexer.can_reserve')
 def toggle_delete_story_revision(request, id):
     story = get_object_or_404(StoryRevision, id=id)
     if request.user != story.changeset.indexer:
-        return render_error(request,
+        return render_error(
+          request,
           'Only the reservation holder may delete or restore stories.')
 
     story.toggle_deleted()
     return HttpResponseRedirect(urlresolvers.reverse('edit',
-      kwargs={ 'id': story.changeset.id }))
+                                kwargs={'id': story.changeset.id}))
 
 ##############################################################################
 # Ongoing Reservations
@@ -4175,24 +4176,27 @@ def ongoing(request, user_id=None):
             reservation.indexer = request.user
             reservation.save()
             return HttpResponseRedirect(urlresolvers.reverse(
-              'show_series', kwargs={ 'series_id': reservation.series.id }))
+              'show_series', kwargs={'series_id': reservation.series.id}))
         else:
-            return render_error(request, 'Something went wrong while reserving'
+            return render_error(
+              request, 'Something went wrong while reserving'
               ' the series. Please contact us if this error persists.')
 
 
 def delete_ongoing(request, series_id):
     if request.method != 'POST':
-        return render_error(request,
+        return render_error(
+          request,
           'You must access this page through the proper form.')
     reservation = get_object_or_404(OngoingReservation, series=series_id)
     if request.user != reservation.indexer:
-        return render_error(request,
+        return render_error(
+          request,
           'Only the reservation holder may delete the reservation.')
     series = reservation.series
     reservation.delete()
     return HttpResponseRedirect(urlresolvers.reverse(
-      'show_series', kwargs={ 'series_id': series.id }))
+      'show_series', kwargs={'series_id': series.id}))
 
 ##############################################################################
 # Reordering
@@ -4251,8 +4255,8 @@ def reorder_series(request, series_id):
     if request.method != 'POST':
         return oi_render(
           request, 'oi/edit/reorder_series.html',
-          { 'series': series,
-            'issue_list': [ (i, None) for i in series.active_issues() ] })
+          {'series': series,
+           'issue_list': [(i, None) for i in series.active_issues()]})
 
     try:
         issues = _process_reorder_form(request, series, 'sort_code',
@@ -4292,10 +4296,12 @@ def reorder_series_by_issue_number(request, series_id):
                     else:
                         variant_counts[number] = 1
                     # there won't be more than 9999 variants...
-                    number = float("%d.%04d" % (number, variant_counts[number]))
+                    number = float("%d.%04d" % (number,
+                                                variant_counts[number]))
                 else:
-                    return render_error(request,
-                      "Cannot sort by issue with duplicate issue numbers: %i" \
+                    return render_error(
+                      request,
+                      "Cannot sort by issue with duplicate issue numbers: %i"
                       % number,
                       redirect=False)
             reorder_map[number] = issue
@@ -4306,8 +4312,10 @@ def reorder_series_by_issue_number(request, series_id):
         return _reorder_series(request, series, issues)
 
     except ValueError:
-        return render_error(request,
-          "Cannot sort by issue numbers because they are not all whole numbers",
+        return render_error(
+          request,
+          "Cannot sort by issue numbers because they are not all whole "
+          "numbers",
           redirect=False)
 
 
@@ -4333,18 +4341,19 @@ def _reorder_series(request, series, issues):
     if 'commit' in request.POST:
         set_series_first_last(series)
         return HttpResponseRedirect(urlresolvers.reverse(
-          'show_series', kwargs={ 'series_id': series.id }))
+          'show_series', kwargs={'series_id': series.id}))
 
     return oi_render(request, 'oi/edit/reorder_series.html',
-      { 'series': series,
-        'issue_list': issue_list })
+                     {'series': series,
+                      'issue_list': issue_list})
 
 
 @permission_required('indexer.can_reserve')
 def reorder_stories(request, issue_id, changeset_id):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
-        return render_error(request,
+        return render_error(
+          request,
           'Only the reservation holder may reorder stories.')
 
     # At this time, only existing issues can have their stories reordered.
@@ -4352,21 +4361,22 @@ def reorder_stories(request, issue_id, changeset_id):
     issue_revision = changeset.issuerevisions.get(issue=issue_id)
     if request.method != 'POST':
         return oi_render(request, 'oi/edit/reorder_stories.html',
-          { 'issue': issue_revision, 'changeset': changeset })
+                         {'issue': issue_revision, 'changeset': changeset})
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
-          'edit', kwargs={ 'id': changeset_id }))
+          'edit', kwargs={'id': changeset_id}))
 
     try:
-        stories = _process_reorder_form(request, issue_revision, 'sequence_number',
-                                       'story', StoryRevision)
+        stories = _process_reorder_form(request, issue_revision,
+                                        'sequence_number',
+                                        'story', StoryRevision)
         _reorder_children(request, issue_revision, stories,
-                         'sequence_number', issue_revision.active_stories(),
-                         commit=True, unique=False)
+                          'sequence_number', issue_revision.active_stories(),
+                          commit=True, unique=False)
 
         return HttpResponseRedirect(urlresolvers.reverse(
-          'edit', kwargs={ 'id': changeset_id }))
+          'edit', kwargs={'id': changeset_id}))
 
     except ViewTerminationError as vte:
         return vte.response
@@ -4399,10 +4409,11 @@ def _reorder_children(request, parent, children, sort_field, child_set,
         # the issue table, which is great for avoiding nonsensical sort_code
         # situations that we had in the old system, but annoying when updating
         # the codes.  Get around it by shifing the numbers down to starting
-        # at one if they'll fit, or up above the current range if not.  Given that
-        # the numbers were all set to consecutive ranges when we migrated to this
-        # system, and this code always produces consecutive ranges, the chances
-        # that we won't have room at one end or the other are very slight.
+        # at one if they'll fit, or up above the current range if not.  Given
+        # that the numbers were all set to consecutive ranges when we migrated
+        # to this system, and this code always produces consecutive ranges, the
+        # chances that we won't have room at one end or the other are very
+        # slight.
 
         # Use child_set because children may be a list, not a query set.
         min = child_set.aggregate(Min(sort_field))['%s__min' % sort_field]
@@ -4416,8 +4427,10 @@ def _reorder_children(request, parent, children, sort_field, child_set,
         else:
             # This should be extremely rare, so let's not bother to
             # code our way out.
-            raise ViewTerminationError(render_error(request,
-              "Can't find room for rearranged sort codes, please contact an admin",
+            raise ViewTerminationError(render_error(
+              request,
+              "Can't find room for rearranged sort codes, please contact "
+              "an admin",
               redirect=False))
     else:
         # If there's no uniqueness constraints, always sort starting with zero.
@@ -5258,10 +5271,10 @@ def contacting(request):
 def mentoring(request):
     max_show_new = 50
     new_indexers = User.objects.filter(indexer__mentor=None) \
-                               .filter(indexer__is_new=True) \
-                               .filter(is_active=True) \
-                               .order_by('-date_joined') \
-                               .select_related('indexer__country')[:max_show_new]
+                       .filter(indexer__is_new=True) \
+                       .filter(is_active=True) \
+                       .order_by('-date_joined') \
+                       .select_related('indexer__country')[:max_show_new]
     my_mentees = User.objects.filter(indexer__mentor=request.user) \
                              .filter(indexer__is_new=True) \
                              .select_related('indexer__country')
@@ -5316,9 +5329,10 @@ def add_creator_award(request, creator_id):
                                   change_type=CTYPES['received_award'])
             changeset.save()
             revision = award_form.save(commit=False)
-            revision.save_added_revision(changeset=changeset,
-                                         recipient=creator,
-                                         award=award_form.cleaned_data['award'])
+            revision.save_added_revision(
+              changeset=changeset,
+              recipient=creator,
+              award=award_form.cleaned_data['award'])
             revision.save()
 
             process_data_source(award_form, '', changeset,

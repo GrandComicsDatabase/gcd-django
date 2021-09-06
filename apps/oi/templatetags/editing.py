@@ -35,20 +35,20 @@ def header_link(changeset):
                                    CTYPES['indicia_publisher'],
                                    CTYPES['indicia_printer']]:
         return mark_safe('%s : %s' % (absolute_url(revision.parent),
-                                       absolute_url(revision)))
+                                      absolute_url(revision)))
     elif changeset.change_type == CTYPES['brand']:
         header_link = ''
         if revision.parent:
             return mark_safe('%s : %s' % (absolute_url(revision.parent),
-                                           absolute_url(revision)))
+                                          absolute_url(revision)))
         for group in revision.group.all():
             header_link += absolute_url(group) + '; '
         header_link = header_link[:-2]
         return mark_safe('%s : %s' % (header_link, absolute_url(revision)))
     elif changeset.change_type == CTYPES['brand_use']:
         return mark_safe('%s at %s (%s)' % (absolute_url(revision.emblem),
-                                             absolute_url(revision.publisher),
-                                             revision.year_began))
+                                            absolute_url(revision.publisher),
+                                            revision.year_began))
     elif changeset.change_type == CTYPES['series']:
         if revision.previous() and (revision.previous().publisher !=
                                     revision.publisher):
@@ -72,9 +72,9 @@ def header_link(changeset):
         issue_url = revision.issue.get_absolute_url()
         issue_num = revision.issue.display_number
         header_link = mark_safe('%s (%s) <a href="%s">%s</a>' % (series_url,
-                                                                  pub_url,
-                                                                  issue_url,
-                                                                  issue_num))
+                                                                 pub_url,
+                                                                 issue_url,
+                                                                 issue_num))
         if changeset.change_type == CTYPES['two_issues']:
             revision = changeset.issuerevisions.all()[1]
             series_url = absolute_url(revision.issue.series)
@@ -229,8 +229,8 @@ def is_locked(object):
 def show_doc_link(doc_links, field):
     if field in doc_links:
         return mark_safe(
-            ' <a href="%s%s" target=_blank>[?]</a>' % (DOC_URL,
-                                                        doc_links[field]))
+          ' <a href="%s%s" target=_blank>[?]</a>' % (DOC_URL,
+                                                     doc_links[field]))
     else:
         return ""
 
@@ -247,7 +247,7 @@ def show_revision_short(revision, markup=True):
 @register.filter
 def link_other_reprint(reprint, is_source):
     if is_source:
-        if hasattr(reprint, 'target'):
+        if reprint.target:
             text = '<a href="%s">%s</a> <br> of %s' % \
                      (reprint.target.get_absolute_url(),
                       show_story_short(reprint.target),
@@ -257,7 +257,7 @@ def link_other_reprint(reprint, is_source):
                      (reprint.target_issue.get_absolute_url(),
                       reprint.target_issue.full_name())
     else:
-        if hasattr(reprint, 'origin'):
+        if reprint.origin:
             text = '<a href="%s">%s</a> <br> of %s' % \
                      (reprint.origin.get_absolute_url(),
                       show_story_short(reprint.origin),

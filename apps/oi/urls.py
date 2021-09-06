@@ -253,7 +253,7 @@ urlpatterns = [
 
     url(r'^issue/revision/(?P<id>\d+)/list_reprints/$',
       oi_views.list_issue_reprints, name='list_issue_reprints'),
-    url(r'^reserve_reprint/(?P<reprint_id>\d+)/type/(?P<reprint_type>.+)/edit/(?P<changeset_id>\d+)/$',
+    url(r'^reserve_reprint/(?P<reprint_id>\d+)/edit/(?P<changeset_id>\d+)/$',
       oi_views.reserve_reprint, name='reserve_reprint'),
     url(r'^reprint/revision/(?P<id>\d+)/side/(?P<which_side>.+)/$',
       oi_views.edit_reprint, name='edit_reprint'),

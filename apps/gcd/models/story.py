@@ -367,7 +367,29 @@ class Story(GcdData):
     # Fields from issue.
     issue = models.ForeignKey('Issue', on_delete=models.CASCADE)
 
-    _update_stats = True
+    @property
+    def from_reprints(self):
+        return self.from_all_reprints.all()
+
+    @property
+    def from_story_reprints(self):
+        return self.from_reprints.exclude(origin=None)
+
+    @property
+    def from_issue_reprints(self):
+        return self.from_reprints.filter(origin=None)
+
+    @property
+    def to_reprints(self):
+        return self.to_all_reprints.all()
+
+    @property
+    def to_story_reprints(self):
+        return self.to_reprints.exclude(target=None)
+
+    @property
+    def to_issue_reprints(self):
+        return self.to_reprints.filter(target=None)
 
     @property
     def active_credits(self):
@@ -384,6 +406,8 @@ class Story(GcdData):
                                       .exclude(deleted=True)\
                                       .select_related('character__character')
         return self._active_characters
+
+    _update_stats = True
 
     def stat_counts(self):
         if self.deleted:
@@ -437,10 +461,8 @@ class Story(GcdData):
 
     def has_reprints(self, notes=True):
         return (notes and self.reprint_notes) or \
-               self.from_reprints.count() or \
-               self.to_reprints.count() or \
-               self.from_issue_reprints.count() or \
-               self.to_issue_reprints.count()
+               self.from_all_reprints.count() or \
+               self.to_all_reprints.count()
 
     def has_data(self):
         """

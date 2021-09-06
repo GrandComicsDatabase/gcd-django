@@ -20,10 +20,7 @@ from .character import (Character, CharacterNameDetail, CharacterRelationType,
                         CharacterRelation, Group, GroupRelation,
                         GroupMembership, GroupMembershipType)
 from .cover import Cover
-from .issuereprint import IssueReprint
 from .reprint import Reprint
-from .reprinttoissue import ReprintToIssue
-from .reprintfromissue import ReprintFromIssue
 from .seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING, \
                         SUBNUMBER_TRACKING, MERGE_TRACKING
 from .image import ImageType, Image

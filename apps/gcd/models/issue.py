@@ -188,6 +188,30 @@ class Issue(GcdData):
             return None
 
     @property
+    def from_reprints(self):
+        return self.from_all_reprints.filter(target=None)
+
+    @property
+    def from_story_reprints(self):
+        return self.from_reprints.exclude(origin=None)
+
+    @property
+    def from_issue_reprints(self):
+        return self.from_reprints.filter(origin=None)
+
+    @property
+    def to_reprints(self):
+        return self.to_all_reprints.filter(origin=None)
+
+    @property
+    def to_story_reprints(self):
+        return self.to_reprints.exclude(target=None)
+
+    @property
+    def to_issue_reprints(self):
+        return self.to_reprints.filter(target=None)
+
+    @property
     def active_credits(self):
         return self.credits.exclude(deleted=True)
 
@@ -336,9 +360,7 @@ class Issue(GcdData):
     def has_reprints(self, ignore=STORY_TYPES['preview']):
         """Simplifies UI checks for conditionals, notes and reprint fields"""
         return self.from_reprints.count() or \
-            self.to_reprints.exclude(target__type__id=ignore).count() or \
-            self.from_issue_reprints.count() or \
-            self.to_issue_reprints.count()
+            self.to_reprints.exclude(target__type__id=ignore).count()
 
     def has_variants(self):
         return self.active_variants().exists()
