@@ -140,12 +140,12 @@
 </table>
       {% endif %}
 
-      {% if story.to_reprints_oi.count %}
+      {% if story.to_story_reprints_oi.count %}
 <h3>sequence reprinted <i>in</i> the sequence:</h3>
 <table class="story_list">
         {% with 1 as is_source %}
         {% with 'reprint' as reprint_type %}
-          {% for reprint in story.to_reprints_oi.all %}
+          {% for reprint in story.to_story_reprints_oi.all %}
             {% include 'oi/bits/reprint_type_list.html' %}
           {% endfor %}
         {% endwith %}

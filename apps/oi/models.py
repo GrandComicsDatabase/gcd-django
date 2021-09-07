@@ -4371,10 +4371,12 @@ class IssueRevision(Revision):
         if self.issue is None:
             return False
         if self.issue.target_reprint_revisions\
-               .filter(changeset__id=self.changeset_id).count():
+               .filter(changeset__id=self.changeset_id)\
+               .filter(target=None, target_revision=None).exists():
             return True
         elif self.issue.origin_reprint_revisions\
-                 .filter(changeset__id=self.changeset_id).count():
+                 .filter(changeset__id=self.changeset_id)\
+                 .filter(origin=None, origin_revision=None).exists():
             return True
         if self.issue.to_reprints\
                .filter(revisions__changeset=self.changeset)\
@@ -5864,13 +5866,13 @@ class PreviewStory(Story):
         """
         Simplifies UI checks for conditionals.  Credit fields.
         """
-        return self.script or \
-               self.pencils or \
-               self.inks or \
-               self.colors or \
-               self.letters or \
-               self.editing or \
-               self.active_credits.exists()
+        return (self.script or
+                self.pencils or
+                self.inks or
+                self.colors or
+                self.letters or
+                self.editing or
+                self.active_credits.exists())
 
     @property
     def from_all_reprints(self):
@@ -5904,7 +5906,8 @@ class PreviewStory(Story):
         return self.revision.story_character_revisions.exclude(deleted=True)
 
     def has_characters(self):
-        return self.revision.characters or self.revision.story_character_revisions.exclude(deleted=True)
+        return self.revision.characters or \
+          self.revision.story_character_revisions.exclude(deleted=True)
 
     def show_characters(self):
         return self._show_characters(self)
@@ -6395,7 +6398,7 @@ class CharacterNameDetailRevision(Revision):
 
     class Meta:
         db_table = 'oi_character_name_detail_revision'
-        ordering = ['sort_name',]
+        ordering = ['sort_name', ]
         verbose_name_plural = 'Character Name Detail Revisions'
 
     character_name_detail = models.ForeignKey('gcd.CharacterNameDetail',
@@ -6477,7 +6480,8 @@ class CharacterRelationRevision(Revision):
     relation_type = models.ForeignKey('gcd.CharacterRelationType',
                                       on_delete=models.CASCADE,
                                       related_name='revisions')
-    from_character = models.ForeignKey('gcd.Character', on_delete=models.CASCADE,
+    from_character = models.ForeignKey('gcd.Character',
+                                       on_delete=models.CASCADE,
                                        related_name='from_character_revisions')
     notes = models.TextField(blank=True)
 
@@ -6561,17 +6565,17 @@ class GroupRelationRevision(Revision):
         verbose_name_plural = 'Group Relation Revisions'
 
     group_relation = models.ForeignKey('gcd.GroupRelation',
-                                           on_delete=models.CASCADE,
-                                           null=True,
-                                           related_name='revisions')
+                                       on_delete=models.CASCADE,
+                                       null=True,
+                                       related_name='revisions')
 
     to_group = models.ForeignKey('gcd.Group', on_delete=models.CASCADE,
-                                     related_name='to_group_revisions')
+                                 related_name='to_group_revisions')
     relation_type = models.ForeignKey('gcd.GroupRelationType',
                                       on_delete=models.CASCADE,
                                       related_name='revisions')
     from_group = models.ForeignKey('gcd.Group', on_delete=models.CASCADE,
-                                       related_name='from_group_revisions')
+                                   related_name='from_group_revisions')
     notes = models.TextField(blank=True)
 
     source_name = 'group_relation'
@@ -6907,7 +6911,8 @@ class ReprintRevision(Revision):
         moved = False
         if do_compare:
             self.compare_changes()
-        if self.origin_issue == base_issue:
+        if self.origin_issue == base_issue or \
+           (self.origin_revision and self.origin_revision.issue == base_issue):
             direction = 'in'
             if do_compare and self.previous_revision:
                 if 'origin_issue' in self.changed and \

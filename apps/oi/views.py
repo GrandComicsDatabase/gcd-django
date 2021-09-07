@@ -3785,14 +3785,20 @@ def remove_reprint_revision(request, id):
     if reprint.source:
         return _cant_get(request)
 
-    if hasattr(reprint, "origin"):
+    if reprint.origin:
         origin = reprint.origin
+        origin_issue = None
+    elif reprint.origin_revision:
+        origin = PreviewStory.init(reprint.origin_revision)
         origin_issue = None
     else:
         origin = None
         origin_issue = reprint.origin_issue
-    if hasattr(reprint, "target"):
+    if reprint.target:
         target = reprint.target
+        target_issue = None
+    elif reprint.target_revision:
+        target = PreviewStory.init(reprint.target_revision)
         target_issue = None
     else:
         target = None
