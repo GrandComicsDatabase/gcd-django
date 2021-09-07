@@ -3757,7 +3757,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
             kwargs={ 'id': changeset.issuerevisions.get().id }))
     if 'matching_sequence' in request.POST:
-        if revision.origin_story:
+        if revision.origin:
             story = revision.origin
             issue = revision.target_issue
         else:
