@@ -6874,7 +6874,6 @@ class ReprintRevision(Revision):
                     "Reprint origin story revision issue and origin issue "
                     "do not agree.  Issue from revision: '%s'; Issue: '%s'" %
                     (self.origin_revision.issue, self.origin_issue))
-                self.target_issue = self.target.issue
 
         if self.target_revision:
             if self.target and self.target_revision.story != self.target:
@@ -6992,6 +6991,14 @@ class ReprintRevision(Revision):
                     '<br>reprint link was moved from %s]' % \
                     show_story_short(self.previous_revision.origin)
         return mark_safe(reprint)
+
+    def _post_create_for_add(self, changes):
+        if self.origin_revision:
+            self.origin = self.origin_revision.story
+            self.origin_issue = self.origin.issue
+        if self.target_revision:
+            self.target = self.target_revision.story
+            self.target_issue = self.target.issue
 
     def __str__(self):
         from apps.gcd.templatetags.credits import show_title
