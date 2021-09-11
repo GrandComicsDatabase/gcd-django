@@ -6992,7 +6992,7 @@ class ReprintRevision(Revision):
                     show_story_short(self.previous_revision.origin)
         return mark_safe(reprint)
 
-    def _post_create_for_add(self, changes):
+    def _handle_prerequisites(self, changes):
         if self.origin_revision:
             self.origin = self.origin_revision.story
             self.origin_issue = self.origin.issue

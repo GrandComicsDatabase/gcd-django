@@ -178,7 +178,7 @@ class CreatorNameDetail(GcdData):
                                     (co_name.get_absolute_url(),
                                      esc(co_name.gcd_official_name))
                 else:
-                    credit_text += ' of ' % esc(co_name.gcd_official_name)
+                    credit_text += ' of %s' % esc(co_name.gcd_official_name)
             else:
                 raise ValueError
         if as_name:
