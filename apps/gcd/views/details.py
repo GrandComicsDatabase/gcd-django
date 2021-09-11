@@ -296,7 +296,7 @@ def creator_characters(request, creator_id, country=None):
     characters = Character.objects.filter(
       character_names__storycharacter__story__credits__creator__in=names,
       character_names__storycharacter__story__credits__deleted=False)\
-      .distinct()
+        .distinct()
 
     characters = characters.annotate(issue_credits_count=Count(
       'character_names__storycharacter__story__issue', distinct=True))
@@ -566,23 +566,29 @@ def checklist_by_name(request, creator, country=None, language=None):
         q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
                             '%stype__id__in' % (prefix): CORE_TYPES})
     issues = Issue.objects.filter(q_objs_text).distinct()\
-                          .annotate(series__name=F('series__name'))
-    if 'sort' in request.GET and request.GET['sort'] in ['issue', '-issue']:
-        issues = issues.annotate(series__year_began=F('series__year_began'))\
-                       .annotate(series__id=F('series__id'))\
-                       .annotate(series__name=F('series__name'))
-
+                          .annotate(series_name=F('series__sort_name'))
+    if 'sort' in request.GET:
+        if request.GET['sort'] in ['issue', '-issue']:
+            issues = issues.annotate(series__year_began=F(
+                                     'series__year_began'))\
+                           .annotate(series__id=F('series__id'))
+        elif request.GET['sort'] in ['publisher', '-publisher']:
+            issues = issues.annotate(publisher_name=F(
+                                     'series__publisher__name'))
     creator = CreatorNameDetail.objects.filter(name__iexact=creator)
     if creator:
         q_objs_credits = Q(**{'%scredits__creator__in' % (prefix): creator,
                               '%stype__id__in' % (prefix): CORE_TYPES})
         items2 = Issue.objects.filter(q_objs_credits).distinct()\
-                              .annotate(series__name=F('series__name'))
-        if 'sort' in request.GET and request.GET['sort'] in ['issue',
-                                                             '-issue']:
-            items2 = items2.annotate(
-              series__year_began=F('series__year_began')).annotate(
-              series__id=F('series__id'))
+                              .annotate(series_name=F('series__sort_name'))
+        if 'sort' in request.GET:
+            if request.GET['sort'] in ['issue', '-issue']:
+                items2 = items2.annotate(
+                  series__year_began=F('series__year_began')).annotate(
+                  series__id=F('series__id'))
+            elif request.GET['sort'] in ['publisher', '-publisher']:
+                items2 = items2.annotate(
+                  publisher_name=F('series__publisher__name'))
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
@@ -1460,9 +1466,10 @@ def keyword(request, keyword, model_name='story'):
                            order_by=('name'))
         description = 'showing %d stories for keyword' % objs.count()
     elif model_name == 'issue':
-        table = IssuePublisherTable(objs, attrs={'class': 'sortable_listing'},
-                                    template_name='gcd/bits/sortable_table.html',
-                                    order_by=('name'))
+        table = IssuePublisherTable(
+          objs, attrs={'class': 'sortable_listing'},
+          template_name='gcd/bits/sortable_table.html',
+          order_by=('name'))
         description = 'showing %d issues for keyword' % objs.count()
     context = {'object': keyword,
                'description': description

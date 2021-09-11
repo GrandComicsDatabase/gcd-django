@@ -3,7 +3,7 @@
 
 from decimal import Decimal
 
-from django.db import models
+from django.db import models, NotSupportedError
 import django.urls as urlresolvers
 from django.db.models import Sum, F
 from django.contrib.contenttypes.models import ContentType
@@ -579,7 +579,12 @@ class IssueColumn(tables.Column):
         return str(record)
 
     def order(self, query_set, is_descending):
-        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        try:
+            query_set = query_set.annotate(series_name=F('series__sort_name'))
+        except NotSupportedError:
+            # it fails for joined querysets, but there we did the annotation
+            # beforehand !
+            pass
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'series_name',
                                        'series__year_began',
@@ -599,7 +604,12 @@ class IssueTable(tables.Table):
         attrs = {'th': {'class': "non_visited"}}
 
     def order_publication_date(self, query_set, is_descending):
-        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        try:
+            query_set = query_set.annotate(series_name=F('series__sort_name'))
+        except NotSupportedError:
+            # it fails for joined querysets, but there we did the annotation
+            # beforehand !
+            pass
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'key_date',
                                        direction + 'series_name',
@@ -607,7 +617,12 @@ class IssueTable(tables.Table):
         return (query_set, True)
 
     def order_on_sale_date(self, query_set, is_descending):
-        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        try:
+            query_set = query_set.annotate(series_name=F('series__sort_name'))
+        except NotSupportedError:
+            # it fails for joined querysets, but there we did the annotation
+            # beforehand !
+            pass
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'on_sale_date',
                                        direction + 'key_date',
@@ -626,9 +641,14 @@ class IssuePublisherTable(IssueTable):
         attrs = {'th': {'class': "non_visited"}}
 
     def order_publisher(self, query_set, is_descending):
-        query_set = query_set.annotate(
-          publisher_name=F('series__publisher__name'))
-        query_set = query_set.annotate(series_name=F('series__sort_name'))
+        try:
+            query_set = query_set.annotate(
+              publisher_name=F('series__publisher__name'))
+            query_set = query_set.annotate(series_name=F('series__sort_name'))
+        except NotSupportedError:
+            # it fails for joined querysets, but there we did the annotation
+            # beforehand !
+            pass
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'publisher_name',
                                        direction + 'series_name',
