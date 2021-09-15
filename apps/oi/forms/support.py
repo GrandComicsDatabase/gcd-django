@@ -497,7 +497,7 @@ ISSUE_HELP_TEXTS = {
         'after the currency code for notes: "2.99 USD; 3.99 USD '
         '(newsstand)" Use country codes after the currency code if more '
         'than one price uses the same currency: '
-        '"3.99 EUR DE; 3.50 EUR AT; 1.50 EUR FR"',
+        '"3,99 EUR DE; 3,50 EUR AT; 1,50 EUR FR"',
     'page_count':
         "Count of all pages in the issue, including the covers but "
         "excluding dust jackets and inserts.  A single sheet of paper "
