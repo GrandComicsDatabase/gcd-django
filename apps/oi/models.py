@@ -6264,7 +6264,7 @@ class CharacterGroupRevisionBase(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'sort_name', 'disambiguation',
+    _base_field_list = ['disambiguation',
                         'year_first_published',
                         'year_first_published_uncertain', 'language',
                         'description', 'notes', 'keywords']
@@ -6346,8 +6346,7 @@ class CharacterRevision(CharacterGroupRevisionBase):
 
         character_names_formset = CharacterRevisionFormSet(
           request.POST or None, instance=self,
-          queryset=self.character_name_revisions.filter(deleted=False,
-                                                        is_official_name=False))
+          queryset=self.character_name_revisions.filter(deleted=False))
 
         return {'character_names_formset': character_names_formset,
                 }
@@ -6377,6 +6376,12 @@ class CharacterRevision(CharacterGroupRevisionBase):
                     removed_name.cleaned_data['id'].save()
                 else:
                     removed_name.cleaned_data['id'].delete()
+
+    def _pre_save_object(self, changes):
+        name = self.changeset.characternamedetailrevisions\
+                             .get(is_official_name=True)
+        self.character.name = name.name
+        self.character.sort_name = name.sort_name
 
     def _handle_dependents(self, changes):
         # for new creator, we need to save the record_id in the name revisions
@@ -6439,14 +6444,18 @@ class CharacterNameDetailRevision(Revision):
     # #####################################################################
     # Old methods. t.b.c, if deprecated.
 
+    _base_field_list = ['name', 'sort_name', 'is_official_name']
+
     def _field_list(self):
-        field_list = ['name', 'sort_name']
-        return field_list
+        # for some reason, if we use self._base_field_list an additional
+        # field 'character_revision' gets added, but don't know where and why.
+        return ['name', 'sort_name', 'is_official_name']
 
     def _get_blank_values(self):
         return {
             'name': '',
             'sort_name': '',
+            'is_official_name': False,
         }
 
     def _imps_for(self, field_name):

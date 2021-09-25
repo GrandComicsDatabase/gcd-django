@@ -4954,11 +4954,9 @@ def compare(request, id):
                                    CTYPES['creator_signature']]:
         sourced_fields = {'': 'notes'}
     elif changeset.change_type == CTYPES['character']:
-        character_name_revisions = changeset.characternamedetailrevisions\
-                                            .filter(is_official_name=False)
+        character_name_revisions = changeset.characternamedetailrevisions.all()
         for character_name_revision in character_name_revisions:
-            revisions_after.append(character_name_revision)
-
+            revisions_before.append(character_name_revision)
     for revision_before in revisions_before:
         revision_before.compare_changes()
     for revision_after in revisions_after:

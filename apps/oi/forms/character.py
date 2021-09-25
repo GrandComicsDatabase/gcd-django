@@ -26,7 +26,7 @@ from .support import (_get_comments_form_field, HiddenInputWithHelp,
 class CharacterNameDetailRevisionForm(forms.ModelForm):
     class Meta:
         model = CharacterNameDetailRevision
-        fields = ['name', 'sort_name']
+        fields = model._base_field_list
 
     def __init__(self, *args, **kwargs):
         super(CharacterNameDetailRevisionForm, self).__init__(*args, **kwargs)
@@ -37,9 +37,33 @@ class CharacterNameDetailRevisionForm(forms.ModelForm):
                                              " 'family name, given name'."
 
 
+class CharacterInlineFormSet(forms.BaseInlineFormSet):
+    def _should_delete_form(self, form):
+        # TODO workaround, better to not allow the removal, see above
+        if form.instance.character_name_detail:
+            if form.instance.character_name_detail.storycharacter_set\
+                                                  .filter(deleted=False).count():
+                form.cleaned_data['DELETE'] = False
+                return False
+        return super(CharacterInlineFormSet, self)._should_delete_form(form)
+
+    def clean(self):
+        super(CharacterInlineFormSet, self).clean()
+        gcd_official_count = 0
+        for form in self.forms:
+            cd = form.cleaned_data
+            if 'is_official_name' in cd and cd['is_official_name'] and \
+               not cd['DELETE']:
+                gcd_official_count += 1
+        if gcd_official_count != 1:
+            raise forms.ValidationError(
+              "Exactly one name needs to selected as the gcd_official_name.")
+
+
 CharacterRevisionFormSet = inlineformset_factory(
     CharacterRevision, CharacterNameDetailRevision,
-    form=CharacterNameDetailRevisionForm, can_delete=True, extra=1)
+    form=CharacterNameDetailRevisionForm, can_delete=True, extra=1,
+    formset=CharacterInlineFormSet)
 
 
 def get_character_revision_form(revision=None, user=None):
@@ -81,23 +105,21 @@ class CharacterRevisionForm(BaseForm):
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
         fields = list(self.fields)
-        field_list = [BaseField(Field(field,
-                                      template='oi/bits/uni_field.html'))
-                      for field in fields[:3]]
-        field_list.append(BaseField(Field('additional_names_help',
-                                    template='oi/bits/uni_field.html')))
+        field_list = [BaseField(Field('additional_names_help',
+                                    template='oi/bits/uni_field.html'))]
         field_list.append(Formset('character_names_formset'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[3:-1]])
+                           for field in fields])
         self.helper.layout = Layout(*(f for f in field_list))
 
     additional_names_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text="Additional names for the character can be entered "
+        help_text="Several names for the character can be entered "
                   "(for example a common name vs. a formal full name, "
-                  "or a maiden vs. a married name).",
+                  "or a maiden vs. a married name). One name is marked "
+                  "as the official name.",
         label='')
 
 
