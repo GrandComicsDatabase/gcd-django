@@ -6542,6 +6542,11 @@ class GroupRevision(CharacterGroupRevisionBase):
         db_table = 'oi_group_revision'
         ordering = ['created', '-id']
 
+    _base_field_list = ['name', 'sort_name', 'disambiguation',
+                        'year_first_published',
+                        'year_first_published_uncertain', 'language',
+                        'description', 'notes', 'keywords']
+
     group = models.ForeignKey('gcd.Group',
                               on_delete=models.CASCADE,
                               null=True,
