@@ -94,6 +94,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            CreatorArtInfluenceRevisionForm,
                            CreatorMembershipRevisionForm,
                            GroupMembershipRevisionForm,
+                           CharacterRevisionFormSet,
                            ReceivedAwardRevisionForm,
                            CreatorNonComicWorkRevisionForm,
                            CreatorRelationRevisionForm,
@@ -2604,8 +2605,42 @@ def add_feature_relation(request, feature_id):
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
 
+# TODO: add extra_forms to add_generic
+# could work with extra_forms_name and extra_form in call to it
+# needs also changes in add_frame-templare
+# compare the following with add_generic
 
 def add_character(request):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        if cancel:
+            return HttpResponseRedirect(cancel)
+        return HttpResponseRedirect(urlresolvers.reverse('add'))
+
+    form = get_revision_form(model_name='character',
+                             user=request.user)(request.POST or None)
+    character_names_formset = CharacterRevisionFormSet(request.POST or None)
+    if not form.is_valid() or not character_names_formset.is_valid():
+        return oi_render(
+          request, 'oi/edit/add_frame.html',
+          {
+            'object_name': 'Character',
+            'object_url': urlresolvers.reverse('add_character'),
+            'action_label': 'Submit new',
+            'form': form,
+            'character_names_formset': character_names_formset
+          })
+    else:
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['character'])
+        changeset.save()
+        revision = form.save(commit=False)
+        revision.save_added_revision(changeset=changeset)
+        extra_forms = {'character_names_formset': character_names_formset, }
+        revision.process_extra_forms(extra_forms)
+        return submit(request, changeset.id)
     return add_generic(request, 'character')
 
 

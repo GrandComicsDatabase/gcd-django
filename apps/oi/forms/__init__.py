@@ -34,7 +34,7 @@ from .character import (get_character_revision_form, get_group_revision_form,
                         get_group_membership_revision_form,
                         get_character_relation_revision_form,
                         get_group_relation_revision_form,
-                        GroupMembershipRevisionForm)
+                        GroupMembershipRevisionForm, CharacterRevisionFormSet)
 from .image import (get_cover_revision_form,
                     UploadScanForm,
                     UploadVariantScanForm,
