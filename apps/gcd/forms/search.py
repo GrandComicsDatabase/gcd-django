@@ -187,8 +187,8 @@ class AdvancedSearch(forms.Form):
                                         required=False)
     issue_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
       widget=forms.Select(choices=((None, ""),
-                                   (True, "has issue level sources"),
-                                   (False, "has issue level targets"))))
+                                   (True, "parts of the issue are reprints"),
+                                   (False, "parts of the issue are reprinted"))))
 
     cover_needed = forms.BooleanField(label="Cover is Needed",
                                        required=False)
