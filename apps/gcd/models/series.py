@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
 import django.urls as urlresolvers
@@ -16,7 +15,7 @@ from taggit.managers import TaggableManager
 from apps.stddata.models import Country, Language
 from .gcddata import GcdData
 from .publisher import Publisher, Brand, IndiciaPublisher
-from .story import Story
+from .story import Story, AD_TYPES
 from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
@@ -338,9 +337,10 @@ class Series(GcdData):
         stories = Story.objects.exclude(Q(script='') | Q(script__startswith='?'),
                                         Q(pencils='') | Q(pencils__startswith='?'),
                                         Q(inks='') | Q(inks__startswith='?'),
-                                        Q(colors='') | Q(colors__startswith='?'),
-                                        feature='') \
-                                        .filter(issue__series__id=self.id)
+                                        Q(colors='') | Q(colors__startswith='?'))\
+                                        .filter(issue__series__id=self.id)\
+                                        .exclude(type__in=AD_TYPES)\
+                                        .filter(deleted=False)
         issues = self.active_issues().filter(id__in=set(stories.values_list(
                                                         'issue', flat=True)))
         return issues
@@ -531,7 +531,8 @@ class SeriesPublisherTable(SeriesTable):
 
     class Meta:
         model = Series
-        fields = ('publisher', 'name', 'year', 'issue_count', 'covers', 'published')
+        fields = ('publisher', 'name', 'year', 'issue_count', 'covers',
+                  'published')
 
     def order_publisher(self, query_set, is_descending):
         query_set = query_set.annotate(publisher_name=F('publisher__name'))
