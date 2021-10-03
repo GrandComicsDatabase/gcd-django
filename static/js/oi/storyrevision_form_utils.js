@@ -49,4 +49,24 @@ $(document).on('change', 'input[type=checkbox]', function () {
     }
 })
 
+$(document).on('change', 'input[type=checkbox]', function () {
+    var id = $(this).attr('id'),
+        match = id.match(/story_character_revisions-(\d+)-(additional_information)/)
+
+    if (match) {
+        if (match[2] == 'additional_information'){
+            var fields = ['role', 'group', 'is_flashback', 'is_origin', 'is_death', 'notes'];
+            for (var i=0; i<fields.length; i++){
+                var inputRow = $('#id_story_character_revisions-' + match[1] + '-' + fields[i])
+                            .parent().parent();
+                if ($(this).is(':checked')) {
+                    inputRow.show()
+                } else {
+                    inputRow.hide()
+                }
+            }
+        }
+    }
+})
+
 $('input[type=checkbox]').change()

@@ -290,8 +290,8 @@ StoryRevisionFormSet = inlineformset_factory(
 class StoryCharacterRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCharacterRevision
-        fields = ['character', 'role', 'group', 'is_flashback',
-                  'is_origin', 'is_death', 'notes']
+        fields = ['character', 'additional_information', 'role', 'group',
+                  'is_flashback', 'is_origin', 'is_death', 'notes']
         help_texts = {
             'role':
                 'You can enter what role the character played in the story',
@@ -307,6 +307,12 @@ class StoryCharacterRevisionForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.form_tag = True
         self.helper.layout = Layout(*(f for f in self.fields))
+        instance = kwargs.get('instance', None)
+        if instance:
+            if instance.role or instance.group.exists() or \
+               instance.is_flashback or instance.is_origin or \
+               instance.is_death or instance.notes:
+                self.fields['additional_information'].initial = True
 
     character = forms.ModelChoiceField(
       queryset=CharacterNameDetail.objects.all(),
@@ -328,6 +334,11 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       help_text='Select a group the character is appearing as a member of.',
       required=False,
     )
+
+    additional_information = forms.BooleanField(
+      required=False,
+      help_text='Click to enter role, group, flashback, origin, death, or '
+                'notes.')
 
 
 StoryCharacterRevisionFormSet = inlineformset_factory(
