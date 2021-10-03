@@ -6363,6 +6363,9 @@ class CharacterRevision(CharacterGroupRevisionBase):
                     character_revision = character_name_form.save(commit=False)
                     character_revision.save_added_revision(
                       changeset=self.changeset, character_revision=self)
+                if cd['is_official_name']:
+                    self.name = cd['name']
+                    self.save()
             elif (
               not character_name_form.is_valid() and
               character_name_form not in character_names_formset.deleted_forms
