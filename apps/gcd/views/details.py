@@ -17,6 +17,7 @@ from django.shortcuts import get_object_or_404, \
 from django.http import HttpResponseRedirect, Http404, JsonResponse
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from django_tables2 import RequestConfig
 from django_tables2.paginators import LazyPaginator
@@ -2712,6 +2713,7 @@ def show_issue(request, issue, preview=False):
        })
 
 
+@xframe_options_sameorigin
 def daily_creators(request, offset=0):
     today = datetime.today()
     if offset:
