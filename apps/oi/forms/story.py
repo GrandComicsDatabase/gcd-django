@@ -245,7 +245,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
                                        attrs={'style': 'min-width: 60em'}),
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
-                ' database.'
+                ' database. Search for the name of the ghosted creator for '
+                'ghost work.'
     )
 
     signature = forms.ModelChoiceField(

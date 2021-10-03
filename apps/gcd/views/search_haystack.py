@@ -129,11 +129,14 @@ class PaginatedFacetedSearchView(FacetedSearchView):
 
         self.results = self.get_results()
         if 'date_facet' in request.GET:
-            year = datetime.strptime(request.GET['date_facet'],
-                                     '%Y-%m-%d %H:%M:%S')
-            self.results = self.results.filter(date__gte=year)\
-                               .filter(date__lt=year.replace(year=year.year+1))
-            self.date_facet = request.GET['date_facet']
+            try:
+                year = datetime.strptime(request.GET['date_facet'],
+                                         '%Y-%m-%d %H:%M:%S')
+                self.results = self.results.filter(date__gte=year)\
+                                   .filter(date__lt=year.replace(year=year.year+1))
+                self.date_facet = request.GET['date_facet']
+            except ValueError:
+                self.date_facet = None
         else:
             self.date_facet = None
         if 'sort' in request.GET:

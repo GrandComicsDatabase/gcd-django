@@ -690,7 +690,8 @@ def show_reprints(story):
                          .order_by('origin_issue__key_date')
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
-    if story.type.id != STORY_TYPES['preview']:
+    if story.type.id not in [STORY_TYPES['preview'],
+                             STORY_TYPES['comics-form ad']]:
         no_promo = True
     else:
         no_promo = False

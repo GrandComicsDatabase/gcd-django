@@ -4659,11 +4659,6 @@ def show_queue(request, queue_name):
             'changesets': groups.order_by('modified', 'id')
           },
           {
-            'object_name': 'Group Memberships',
-            'object_type': 'group_membership',
-            'changesets': group_memberships.order_by('modified', 'id')
-          },
-          {
             'object_name': 'Issue Skeletons',
             'object_type': 'issue',
             'changesets': issue_adds.order_by('modified', 'id')
@@ -4759,6 +4754,11 @@ def show_queue(request, queue_name):
             'object_name': 'Group Relations',
             'object_type': 'group_relation',
             'changesets': group_relations.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Group Memberships',
+            'object_type': 'group_membership',
+            'changesets': group_memberships.order_by('modified', 'id')
           },
           {
             'object_name': 'Covers',
