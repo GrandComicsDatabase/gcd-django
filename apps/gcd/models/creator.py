@@ -121,6 +121,7 @@ class CreatorNameDetail(GcdData):
                        show_sources=False, full_path=''):
         co_name = ''
         as_name = ''
+        extra_name = ''
         compare_info = ''
         if search:
             url = False
@@ -136,6 +137,12 @@ class CreatorNameDetail(GcdData):
             if self.type and self.type_id == NAME_TYPES['ghost']:
                 if self.creator_relation.exists():
                     as_name = self.creator_relation.get().to_creator
+                else:
+                    as_name = self
+            elif self.type and self.type_id == NAME_TYPES['house']:
+                if self.creator_relation.exists():
+                    as_name = self.creator_relation.get().to_creator\
+                                  .active_names().get(is_official_name=True)
                 else:
                     as_name = self
             elif compare or search:
@@ -186,6 +193,8 @@ class CreatorNameDetail(GcdData):
                 attribute = 'ghosted for'
                 if self.creator_relation.exists():
                     display_as_name = as_name.gcd_official_name
+                    if self.name != display_as_name:
+                        extra_name = self.name
                 else:
                     display_as_name = as_name.name
             elif credit.is_credited and not credit.credited_as:
@@ -206,6 +215,8 @@ class CreatorNameDetail(GcdData):
                 credit_text += ' (%s %s)' % \
                                 (attribute,
                                  esc(display_as_name))
+            if extra_name:
+                credit_text = credit_text[:-1] + ' as %s)' % extra_name
         if credit_attribute:
             credit_text += ' (%s)' % credit_attribute
         if hasattr(credit, 'signature') and credit.signature:
