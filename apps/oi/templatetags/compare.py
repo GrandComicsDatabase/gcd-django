@@ -77,7 +77,7 @@ def field_value(revision, field):
             value = value[:-2]
         return mark_safe(value)
     if field == 'characters':
-        return mark_safe(revision.show_characters(url=False))
+        return mark_safe(revision.show_characters(css_style=False))
     if field in ['is_surrogate', 'no_volume', 'display_volume_with_number',
                  'no_brand', 'page_count_uncertain', 'title_inferred',
                  'no_barcode', 'no_indicia_frequency', 'no_isbn',
@@ -274,7 +274,8 @@ def field_value(revision, field):
 @register.simple_tag
 def diff_list(prev_rev, revision, field):
     """Generates an array which describes the change in text fields"""
-    if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
+    if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing',
+                 'characters']:
         diff = diff_match_patch().diff_main(field_value(prev_rev, field),
                                             field_value(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)
@@ -307,11 +308,6 @@ def diff_list(prev_rev, revision, field):
                 splitted_signature_link = True
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
-    if field == 'characters':
-        diff = diff_match_patch().diff_main(field_value(prev_rev, field),
-                                            field_value(revision, field))
-        diff_match_patch().diff_cleanupSemantic(diff)
-        return diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
                  'synopsis', 'title', 'first_line',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',

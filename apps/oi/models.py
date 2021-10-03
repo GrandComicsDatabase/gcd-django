@@ -5327,10 +5327,11 @@ class StoryRevision(Revision):
                                             get(language=language))
         if self.story_character_revisions.count():
             for story_character in self.story_character_revisions.all():
-                # check if a superhero has a unique civilian identity
-                # if so, add it if not already present
+                # Check if a superhero has a unique civilian identity.
                 if story_character.character.character.to_related_character\
                                   .filter(relation_type__id=2).count() == 1:
+                    # Check if a superhero has a civilian identity entered.
+                    # If not, add the official name of the civilian identity
                     character_identity = story_character.character.character\
                       .to_related_character.filter(relation_type__id=2).get()\
                       .to_character
@@ -5528,8 +5529,8 @@ class StoryRevision(Revision):
     def appearing_characters(self):
         return self.story_character_revisions.exclude(deleted=True)
 
-    def show_characters(self, url=True):
-        return show_characters(self, url=url)
+    def show_characters(self, url=True, css_style=True):
+        return show_characters(self, url=url, css_style=css_style)
 
     def show_feature(self):
         return show_feature(self)

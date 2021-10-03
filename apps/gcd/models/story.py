@@ -108,7 +108,7 @@ def character_notes(character):
     return note
 
 
-def get_civilian_identity(character, appearing_characters):
+def get_civilian_identity(character, appearing_characters, url=True):
     civilian_identity = set(
         character.character.character.to_related_character
                  .filter(relation_type__id=2).values_list('to_character',
@@ -116,11 +116,24 @@ def get_civilian_identity(character, appearing_characters):
                  .intersection(appearing_characters.values_list(
                                'character__character', flat=True))
     if civilian_identity:
-        civilian_identity = appearing_characters.get(
+        civilian_identity = appearing_characters.filter(
               character__character__id=civilian_identity.pop())
+        characters = ' ['
+        several = False
+        for identity in civilian_identity:
+            if several:
+                characters += '; '
+            if url:
+                characters += '<a href="%s">%s</a>' % (
+                    identity.character.get_absolute_url(),
+                    esc(identity.character.name))
+            else:
+                characters += '%s' % identity.character.name
+            several = True
+        characters += ']'
+        return characters
     else:
-        civilian_identity = ''
-    return civilian_identity
+        return ''
 
 
 def show_characters(story, url=True, css_style=True):
@@ -133,8 +146,6 @@ def show_characters(story, url=True, css_style=True):
         first = False
         first_member = True
         for member in in_group.filter(group=group):
-            civilian_identity = get_civilian_identity(member,
-                                                      all_appearing_characters)
             if first_member:
                 first_member = False
                 if url:
@@ -153,13 +164,9 @@ def show_characters(story, url=True, css_style=True):
                                      esc(member.character.name))
                 else:
                     characters += '%s' % member.character.name
-            if civilian_identity:
-                if url:
-                    characters += ' [<a href="%s">%s</a>]' % (
-                        civilian_identity.character.get_absolute_url(),
-                        esc(civilian_identity.character.name))
-                else:
-                    characters += ' [%s]' % civilian_identity.character.name
+            characters +=  get_civilian_identity(member,
+                                                 all_appearing_characters,
+                                                 url=url)
             characters += character_notes(member)
         characters += ']; '
     characters = characters[:-2]
@@ -175,8 +182,6 @@ def show_characters(story, url=True, css_style=True):
                                  'character__character', flat=True))
         if alias_identity:
             continue
-        civilian_identity = get_civilian_identity(character,
-                                                  appearing_characters)
         if first:
             first = False
         else:
@@ -187,13 +192,9 @@ def show_characters(story, url=True, css_style=True):
               esc(character.character.name))
         else:
             characters += '%s' % character.character.name
-        if civilian_identity:
-            if url:
-                characters += ' [<a href="%s">%s</a>]' % (
-                    civilian_identity.character.get_absolute_url(),
-                    esc(civilian_identity.character.name))
-            else:
-                characters += ' [%s]' % civilian_identity.character.name
+        characters += get_civilian_identity(character,
+                                            appearing_characters,
+                                            url=url)
         characters += character_notes(character)
     if story.characters:
         if url:
