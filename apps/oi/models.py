@@ -5111,7 +5111,7 @@ class StoryRevision(Revision):
                             self.changed[credit_type] = True
                             self.is_changed = True
                             break
-        if not self.changed['characters']:
+        if 'characters' not in self.changed or not self.changed['characters']:
             for story_character in self.story_character_revisions.all():
                 story_character.compare_changes()
                 if story_character.is_changed:

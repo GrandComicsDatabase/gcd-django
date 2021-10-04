@@ -234,6 +234,9 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'the credit.'
         }
         labels = {'credit_name': 'Credit description'}
+        widgets = {
+            'sourced_by': forms.TextInput(attrs={'class': 'wide'}),
+        }
 
     def __init__(self, *args, **kwargs):
         super(StoryCreditRevisionForm, self).__init__(*args, **kwargs)
@@ -721,6 +724,10 @@ class StoryRevisionForm(forms.ModelForm):
                                          .count():
                     raise forms.ValidationError(
                       ['Incorrect feature logo for this sequence.'])
+
+        if cd['group'] and not cd['group_members']:
+            raise forms.ValidationError(
+                ['Groups can only be entered with group members.'])
 
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
