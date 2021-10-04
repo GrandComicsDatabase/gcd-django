@@ -206,7 +206,7 @@ def show_characters(story, url=True, css_style=True):
         else:
             characters = text_characters
 
-    if url:
+    if characters and url:
         if css_style:
             dt = '<dt class="credit_tag"><span class="credit_label">' \
                  'Characters</span></dt>'
