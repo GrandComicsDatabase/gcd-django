@@ -2825,6 +2825,8 @@ def add_story(request, issue_revision_id, changeset_id):
         revision.save_added_revision(changeset=changeset,
                                      issue=issue)
         revision.save()
+        form.save_characters(revision)
+
         if form.cleaned_data['comments']:
             revision.comments.create(commenter=request.user,
                                      changeset=changeset,

@@ -155,6 +155,12 @@ def get_story_revision_form(revision=None, user=None,
         def save(self, commit=True):
             instance = super(RuntimeStoryRevisionForm,
                              self).save(commit=commit)
+            if instance.id:
+                self.save_characters(instance)
+            return instance
+
+
+        def save_characters(self, instance):
             appearing_characters = self.cleaned_data['appearing_characters']
             if appearing_characters:
                 for character in appearing_characters:
@@ -173,7 +179,6 @@ def get_story_revision_form(revision=None, user=None,
                       changeset=changeset)
                     story_character.save()
                     story_character.group.add(group)
-            return instance
 
         def clean_type(self):
             if queryset:
