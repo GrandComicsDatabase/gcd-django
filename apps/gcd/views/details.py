@@ -41,7 +41,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             Character, Group, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable,\
-                                    CharacterCreatorTable
+                                    CharacterCreatorTable, GroupCreatorTable
 from apps.gcd.models.character import CharacterTable
 from apps.gcd.models.feature import FeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
@@ -610,7 +610,7 @@ def checklist_by_name(request, creator, country=None, language=None):
 
 
 def creator_name_checklist(request, creator_name_id, character_id=None,
-                           feature_id=None, series_id=None,
+                           group_id=None, feature_id=None, series_id=None,
                            country=None, language=None):
     creator = get_gcd_object(CreatorNameDetail, creator_name_id)
 
@@ -623,6 +623,11 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
         issues = issues.filter(
           story__appearing_characters__character__character=character)
         heading_addon = 'Character %s' % (character)
+    if group_id:
+        group = get_gcd_object(Group, group_id)
+        issues = issues.filter(
+          story__appearing_characters__group=group)
+        heading_addon = 'Group %s' % (group)
     if feature_id:
         feature = get_gcd_object(Feature, feature_id)
         issues = issues.filter(story__credits__creator=creator,
@@ -2427,6 +2432,96 @@ def show_group(request, group, preview=False):
             'error_subject': '%s' % group,
             'preview': preview}
     return render(request, 'gcd/details/group.html', vars)
+
+
+def group_issues(request, group_id):
+    group = get_gcd_object(Group, group_id)
+
+    issues = Issue.objects.filter(
+      story__appearing_characters__group=group,
+      story__type__id__in=CORE_TYPES,
+      story__deleted=False).distinct().select_related('series__publisher')
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for Group %s' % (group)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def group_creators(request, group_id):
+    group = get_gcd_object(Group, group_id)
+
+    creators = CreatorNameDetail.objects.all()
+    creators = creators.filter(
+      storycredit__story__appearing_characters__group=group,
+      storycredit__story__type__id__in=CORE_TYPES,
+      storycredit__deleted=False).distinct().select_related('creator')
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    creators = creators.annotate(
+      first_credit=Min('storycredit__story__issue__key_date'))
+    script = Count('storycredit__story__issue',
+                   filter=Q(storycredit__credit_type__id=1), distinct=True)
+    pencils = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=2), distinct=True)
+    inks = Count('storycredit__story__issue',
+                 filter=Q(storycredit__credit_type__id=3), distinct=True)
+    colors = Count('storycredit__story__issue',
+                   filter=Q(storycredit__credit_type__id=4), distinct=True)
+    letters = Count('storycredit__story__issue',
+                    filter=Q(storycredit__credit_type__id=5), distinct=True)
+    creators = creators.annotate(
+      credits_count=Count('storycredit__story__issue', distinct=True),
+      script=script,
+      pencils=pencils,
+      inks=inks,
+      colors=colors,
+      letters=letters)
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'creator',
+        'plural_suffix': 's',
+        'heading': 'Creators Working on Group %s' % (group)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = GroupCreatorTable(creators, attrs={'class':
+                                                   'sortable_listing'},
+                                  group=group,
+                                  template_name='gcd/bits/sortable_table.html',
+                                  order_by=('creator__sort_name'))
+    return generic_sortable_list(request, creators, table, template, context)
+
+
+def group_sequences(request, group_id, country=None):
+    group = get_gcd_object(Group, group_id)
+    stories = Story.objects.filter(
+      appearing_characters__group=group,
+      deleted=False).distinct().select_related('issue__series__publisher')
+    if country:
+        country = get_object_or_404(Country, code=country)
+        stories = stories.filter(issue__series__country=country)
+    heading = 'Sequences for Group %s' % (group)
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'sequence',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('issue'))
+    return generic_sortable_list(request, stories, table, template, context)
 
 
 def group_relation(request, group_relation_id):

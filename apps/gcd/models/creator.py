@@ -999,6 +999,13 @@ class CharacterCreatorTable(CreatorTable):
         super(CreatorTable, self).__init__(*args, **kwargs)
 
 
+class GroupCreatorTable(CreatorTable):
+    def __init__(self, *args, **kwargs):
+        self.group = kwargs.pop('group')
+        self.resolve_name = 'group'
+        super(CreatorTable, self).__init__(*args, **kwargs)
+
+
 class FeatureCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         self.feature = kwargs.pop('feature')
