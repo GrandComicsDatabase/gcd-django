@@ -226,6 +226,7 @@ class CharacterRelationRevisionForm(forms.ModelForm):
 
     def clean(self):
         cd = self.cleaned_data
+
         type = int(cd['relation_type'])
         if type < 0:
             stash = cd['from_character']
@@ -234,8 +235,16 @@ class CharacterRelationRevisionForm(forms.ModelForm):
             cd['relation_type'] = CharacterRelationType.objects.get(id=-type)
         else:
             cd['relation_type'] = CharacterRelationType.objects.get(id=type)
-        return cd
 
+        if cd['from_character'].language != cd['to_character'].language:
+            if cd['relation_type'].id !=1:
+                raise forms.ValidationError(
+                  "Characters have a different language.")
+        else:
+            if cd['relation_type'].id ==1:
+                raise forms.ValidationError(
+                  "Characters have the same language.")
+        return cd
 
 def get_group_relation_revision_form(revision=None, user=None):
     class RuntimeGroupRelationRevisionForm(GroupRelationRevisionForm):
