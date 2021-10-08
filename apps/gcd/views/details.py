@@ -488,7 +488,8 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     elif character_id:
         character = get_gcd_object(Character, character_id)
         issues = issues.filter(
-          story__appearing_characters__character__character=character)
+          story__appearing_characters__character__character=character,
+          story__appearing_characters__deleted=False)
         heading = 'Issues for Creator %s for Character %s' % (creator,
                                                               character)
     elif feature_id:
@@ -621,12 +622,14 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
     if character_id:
         character = get_gcd_object(Character, character_id)
         issues = issues.filter(
-          story__appearing_characters__character__character=character)
+          story__appearing_characters__character__character=character,
+          story__appearing_characters__deleted=False)
         heading_addon = 'Character %s' % (character)
     if group_id:
         group = get_gcd_object(Group, group_id)
         issues = issues.filter(
-          story__appearing_characters__group=group)
+          story__appearing_characters__group=group,
+          story__appearing_characters__deleted=False)
         heading_addon = 'Group %s' % (group)
     if feature_id:
         feature = get_gcd_object(Feature, feature_id)
@@ -2320,6 +2323,7 @@ def character_issues(request, character_id):
 
     issues = Issue.objects.filter(
       story__appearing_characters__character__character=character,
+      story__appearing_characters__deleted=False,
       story__type__id__in=CORE_TYPES,
       story__deleted=False).distinct().select_related('series__publisher')
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -2343,6 +2347,7 @@ def character_creators(request, character_id):
     creators = CreatorNameDetail.objects.all()
     creators = creators.filter(
       storycredit__story__appearing_characters__character__character=character,
+      storycredit__story__appearing_characters__deleted=False,
       storycredit__story__type__id__in=CORE_TYPES,
       storycredit__deleted=False).distinct().select_related('creator')
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -2386,6 +2391,7 @@ def character_sequences(request, character_id, country=None):
     character = get_gcd_object(Character, character_id)
     stories = Story.objects.filter(
       appearing_characters__character__character=character,
+      appearing_characters__deleted=False,
       deleted=False).distinct().select_related('issue__series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
@@ -2439,6 +2445,7 @@ def group_issues(request, group_id):
 
     issues = Issue.objects.filter(
       story__appearing_characters__group=group,
+      story__appearing_characters__deleted=False,
       story__type__id__in=CORE_TYPES,
       story__deleted=False).distinct().select_related('series__publisher')
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -2462,6 +2469,7 @@ def group_creators(request, group_id):
     creators = CreatorNameDetail.objects.all()
     creators = creators.filter(
       storycredit__story__appearing_characters__group=group,
+      storycredit__story__appearing_characters__deleted=False,
       storycredit__story__type__id__in=CORE_TYPES,
       storycredit__deleted=False).distinct().select_related('creator')
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -2505,6 +2513,7 @@ def group_sequences(request, group_id, country=None):
     group = get_gcd_object(Group, group_id)
     stories = Story.objects.filter(
       appearing_characters__group=group,
+      appearing_characters__deleted=False,
       deleted=False).distinct().select_related('issue__series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)

@@ -5863,6 +5863,10 @@ class PreviewStory(Story):
     def active_credits(self):
         return self.revision.story_credit_revisions.exclude(deleted=True)
 
+    @property
+    def active_characters(self):
+        return self.revision.story_character_revisions.exclude(deleted=True)
+
     def has_credits(self):
         """
         Simplifies UI checks for conditionals.  Credit fields.

@@ -139,7 +139,7 @@ def get_civilian_identity(character, appearing_characters, url=True):
 def show_characters(story, url=True, css_style=True):
     first = True
     characters = ''
-    all_appearing_characters = story.appearing_characters.all()
+    all_appearing_characters = story.active_characters
     in_group = all_appearing_characters.exclude(group=None)
     groups = Group.objects.filter(id__in=in_group.values_list('group'))
     for group in groups:
