@@ -5127,6 +5127,7 @@ class StoryRevision(Revision):
         self.issue = issue
 
     def _reset_values(self):
+        # TODO: undo StoryCredit and StoryCharacter changes
         if self.deleted:
             # users can edit story revisions before deleting them.
             # ensure that the final deleted revision matches the
@@ -5327,6 +5328,9 @@ class StoryRevision(Revision):
                                             get(language=language))
         if self.story_character_revisions.count():
             for story_character in self.story_character_revisions.all():
+                # no processing for deleted appearances
+                if story_character.deleted:
+                    continue
                 # Check if a superhero has a unique civilian identity.
                 if story_character.character.character.to_related_character\
                                   .filter(relation_type__id=2).count() == 1:
@@ -5339,10 +5343,11 @@ class StoryRevision(Revision):
                                .filter(character__character=character_identity)\
                                .exists():
                         # civilian identities are not in a superhero group, so
-                        # we don't need to copy this data via add's
+                        # we don't need to copy this data via adds
                         story_character.pk = None
                         story_character._state.adding = True
                         story_character.previous_revision_id = None
+                        story_character.source = None
                         story_character.character = character_identity\
                           .character_names.get(is_official_name=True)
                         story_character.save()
@@ -5527,6 +5532,10 @@ class StoryRevision(Revision):
 
     @property
     def appearing_characters(self):
+        return self.story_character_revisions.exclude(deleted=True)
+
+    @property
+    def active_characters(self):
         return self.story_character_revisions.exclude(deleted=True)
 
     def show_characters(self, url=True, css_style=True):
