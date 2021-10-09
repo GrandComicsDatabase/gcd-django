@@ -1993,7 +1993,12 @@ class Revision(models.Model):
             self._post_assign_fields(changes)
 
         self._pre_save_object(changes)
-        self.source.save()
+        # Deletes of links are 'real', the source_id is reset in _pre_delete.
+        # Some deletes therefore do not have self.source anymore.
+        # It might be fine to just check self.deleted, but some sources
+        # might need to be saved on a delete ?
+        if not self.deleted or self.source:
+            self.source.save()
 
         if self.added:
             # Reset the source because now it has a database id,
