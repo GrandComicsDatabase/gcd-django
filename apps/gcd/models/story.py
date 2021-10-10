@@ -164,15 +164,15 @@ def show_characters(story, url=True, css_style=True):
                                      esc(member.character.name))
                 else:
                     characters += '%s' % member.character.name
-            characters +=  get_civilian_identity(member,
-                                                 all_appearing_characters,
-                                                 url=url)
+            characters += get_civilian_identity(member,
+                                                all_appearing_characters,
+                                                url=url)
             characters += character_notes(member)
         characters += ']; '
     characters = characters[:-2]
 
     appearing_characters = all_appearing_characters.exclude(
-      character__id__in=in_group.values_list('character'))
+      character__id__in=in_group.values_list('character'), group__isnull=False)
     for character in appearing_characters:
         alias_identity = set(
           character.character.character.from_related_character
