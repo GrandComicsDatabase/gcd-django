@@ -421,11 +421,11 @@ class StoryRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credit_start:
-                                               character_start+1]])
+                                               character_start]])
         field_list.append(Formset('characters_formset'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[character_start+1:]])
+                           for field in fields[character_start:]])
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
     # The sequence number can only be changed through the reorder form, but
@@ -511,12 +511,12 @@ class StoryRevisionForm(forms.ModelForm):
                   'b) select a group in the second autocomplete with the '
                   'appearing group members in the third autocomplete, again '
                   'without additional details about the appearance,<br>'
-                  'c) the old text field for characters,<br>'
-                  'd) each character (with its groups) separately, where '
+                  'c) each character (with its groups) separately, where '
                   'additional details about the appearance can be entered.<br>'
+                  'd) the old text field for characters,<br>'
                   'For a selected superhero the civilian identity (if unique)'
                   ' will be added automatically.<br>Note that data from a) and'
-                  ' b) will be appear in section d) after a save.',
+                  ' b) will be appear in section c) after a save.',
         label='<br><hr><strong>Characters</strong>')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
