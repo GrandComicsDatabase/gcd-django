@@ -20,9 +20,9 @@
         {% endif %}
         </th>
             <td>{{ field.errors }}{% crispy_field field %}
-
         {% if field.help_text %}
-            <br /><span class="helptext">{{ field.help_text|safe }}</span>
+          {% if field.field.widget.input_type != 'checkbox' %}<br/>{% endif %}
+            <span class="helptext">{{ field.help_text|safe }}</span>
         {% endif %}
             </td></tr>
 {% endif %}

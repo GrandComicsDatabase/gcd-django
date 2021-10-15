@@ -309,6 +309,9 @@ class StoryCharacterRevisionForm(forms.ModelForm):
         labels = {'is_flashback': 'Flashback',
                   'is_origin': 'Origin',
                   'is_death': 'Death'}
+        widgets = {
+            'notes': forms.TextInput(attrs={'class': 'wide'}),
+        }
 
     def __init__(self, *args, **kwargs):
         super(StoryCharacterRevisionForm, self).__init__(*args, **kwargs)
@@ -376,6 +379,7 @@ class StoryRevisionForm(forms.ModelForm):
             fields.insert(fields.index('page_count_uncertain')+1,
                           'no_%s' % seq_type)
 
+        fields.insert(fields.index('no_script'), 'no_creator_help')
         fields.insert(fields.index('script'), 'creator_help')
         fields.insert(fields.index('characters'), 'character_help')
         fields.insert(fields.index('characters'), 'appearing_characters')
@@ -390,11 +394,6 @@ class StoryRevisionForm(forms.ModelForm):
                 'depicted in the content, such as "Phantom Zone", '
                 '"red kryptonite", "Vietnam". or "time travel".  Multiple '
                 'entries are to be separated by semi-colons.',
-            'page_count_uncertain':
-                '<br><br> For sequence types with non-optional fields the '
-                'corresponding no-field is to be checked in case the type '
-                'of credit does not apply.<br>If a credit field is not '
-                'required for a sequence type it can be left unset or blank.',
             'reprint_notes':
                 'Textual reprint notes can be used for comic material that '
                 'is not in our database, either because the issue is not '
@@ -408,7 +407,6 @@ class StoryRevisionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(StoryRevisionForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_tag = True
         self.helper.form_class = 'form-horizontal'
         self.helper.label_class = 'col-md-3 create-label'
         self.helper.field_class = 'col-md-9'
@@ -478,6 +476,15 @@ class StoryRevisionForm(forms.ModelForm):
                 'selected.'
       )
 
+    no_creator_help = forms.CharField(
+      widget=HiddenInputWithHelp,
+      required=False,
+      help_text='<hr><br>For sequence types with non-optional fields the '
+                'corresponding no-field is to be checked in case the type '
+                'of credit does not apply.<br>If a credit field is not '
+                'required for a sequence type it can be left unset or blank.',
+      label='<br><hr><strong>Creator Credits</strong>')
+
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
@@ -497,7 +504,7 @@ class StoryRevisionForm(forms.ModelForm):
     character_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='Characters can be entered in several ways:<br>'
+        help_text='<hr><br>Characters can be entered in several ways:<br>'
                   'a) select several characters in the first autocomplete '
                   '"Appearing characters", each without additional details '
                   'about the appearance,<br>'
@@ -510,7 +517,7 @@ class StoryRevisionForm(forms.ModelForm):
                   'For a selected superhero the civilian identity (if unique)'
                   ' will be added automatically.<br>Note that data from a) and'
                   ' b) will be appear in section d) after a save.',
-        label='')
+        label='<br><hr><strong>Characters</strong>')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,
