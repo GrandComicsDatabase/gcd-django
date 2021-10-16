@@ -127,6 +127,11 @@ class CreatorNameDetail(GcdData):
             url = False
         if self.is_official_name:
             name = self.name
+            if self.type and self.type_id == NAME_TYPES['house']:
+                if credit.credit_name:
+                    credit.credit_name += ', house name'
+                else:
+                    credit.credit_name = 'house name'
         else:
             name = self.creator.gcd_official_name
             if (credit.is_credited and not credit.credited_as) \
