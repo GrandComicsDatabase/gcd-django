@@ -197,6 +197,9 @@ class CreatorNameDetail(GcdData):
                         extra_name = self.name
                 else:
                     display_as_name = as_name.name
+            elif self.type_id == NAME_TYPES['house']:
+                attribute = 'under house name'
+                display_as_name = as_name.name
             elif credit.is_credited and not credit.credited_as:
                 attribute = 'credited as'
                 display_as_name = as_name.name
@@ -422,6 +425,11 @@ class Creator(GcdData):
     def active_names(self):
         return self.creator_names.exclude(deleted=True)
 
+    def _official_creator_detail(self):
+        return self.creator_names.get(is_official_name=True)
+
+    official_creator_detail = property(_official_creator_detail)
+
     def active_art_influences(self):
         return self.art_influences.exclude(deleted=True)\
                    .order_by('influence_link__sort_name', 'influence_name')
@@ -488,10 +496,10 @@ class Creator(GcdData):
 
     def __str__(self):
         if self.birth_date.year:
-            year = '(b. %s)' % self.birth_date.year
+            year = ' (b. %s)' % self.birth_date.year
         else:
             year = ''
-        return '%s %s' % (str(self.gcd_official_name), year)
+        return '%s%s' % (str(self.gcd_official_name), year)
 
 
 class CreatorSignature(GcdData):

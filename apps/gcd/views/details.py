@@ -41,7 +41,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             Character, Group, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable,\
-                                    CharacterCreatorTable, GroupCreatorTable
+                                    CharacterCreatorTable, GroupCreatorTable,\
+                                    NAME_TYPES
 from apps.gcd.models.character import CharacterTable
 from apps.gcd.models.feature import FeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
@@ -250,7 +251,7 @@ def creator_sequences(request, creator_id, series_id=None,
         creator_names = creator.creator_names.filter(deleted=False)
     else:
         creator = get_gcd_object(Creator, creator_id)
-        creator_names = creator.creator_names.filter(deleted=False)
+        creator_names = list(_get_creator_names_for_checklist(creator))
 
     stories = Story.objects.filter(credits__creator__in=creator_names,
                                    credits__deleted=False).distinct()\
@@ -292,7 +293,7 @@ def creator_sequences(request, creator_id, series_id=None,
 
 def creator_characters(request, creator_id, country=None):
     creator = get_gcd_object(Creator, creator_id)
-    names = creator.creator_names.filter(deleted=False)
+    names = list(_get_creator_names_for_checklist(creator))
 
     characters = Character.objects.filter(
       character_names__storycharacter__story__credits__creator__in=names,
@@ -347,7 +348,7 @@ def creator_characters(request, creator_id, country=None):
 
 def creator_features(request, creator_id, country=None, language=None):
     creator = get_gcd_object(Creator, creator_id)
-    names = creator.creator_names.filter(deleted=False)
+    names = list(_get_creator_names_for_checklist(creator))
 
     features = Feature.objects.filter(story__credits__creator__in=names,
                                       story__credits__deleted=False).distinct()
@@ -405,6 +406,17 @@ def creator_issues(request, creator_id, series_id,
                            country=country, language=language)
 
 
+def _get_creator_names_for_checklist(creator):
+    creator_names = creator.creator_names.filter(deleted=False)
+    if creator.official_creator_detail.type_id == NAME_TYPES['house']:
+        house_names = creator.from_related_creator.filter(
+            relation_type_id=4, creator_name__isnull=False)\
+            .values_list('creator_name', flat=True)
+        creator_names |= CreatorNameDetail.objects.filter(id__in=house_names)
+    creator_names = creator_names.values_list('id', flat=True)
+    return creator_names
+
+
 def creator_series(request, creator_id, country=None, language=None):
     if '_export' in request.GET:
         if request.GET['_export'] in ['db_csv', 'db_json']:
@@ -412,7 +424,7 @@ def creator_series(request, creator_id, country=None, language=None):
                           {'error_text':
                            'There is no raw export for these objects.'})
     creator = get_gcd_object(Creator, creator_id)
-    names = creator.creator_names.filter(deleted=False)
+    names = list(_get_creator_names_for_checklist(creator))
 
     series = Series.objects.filter(
       issue__story__credits__creator__in=names,
@@ -466,8 +478,12 @@ def creator_series(request, creator_id, country=None, language=None):
 
 def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                     feature_id=None, country=None, language=None):
+    """
+    Provides checklists for a Creator. These include results for all
+    CreatorNames and for the overall House Name all uses of that House Name.
+    """
     creator = get_gcd_object(Creator, creator_id)
-    creator_names = creator.creator_names.filter(deleted=False)
+    creator_names = list(_get_creator_names_for_checklist(creator))
 
     issues = Issue.objects.filter(story__credits__creator__in=creator_names,
                                   story__type__id__in=CORE_TYPES,
@@ -517,8 +533,7 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
 def cover_checklist_by_id(request, creator_id, series_id=None,
                           country=None, language=None):
     creator = get_gcd_object(Creator, creator_id)
-    creator_names = creator.creator_names.filter(deleted=False)
-
+    creator_names = list(_get_creator_names_for_checklist(creator))
     issues = Issue.objects.filter(story__credits__creator__in=creator_names,
                                   story__type__id=6,
                                   story__credits__deleted=False,
@@ -613,6 +628,9 @@ def checklist_by_name(request, creator, country=None, language=None):
 def creator_name_checklist(request, creator_name_id, character_id=None,
                            group_id=None, feature_id=None, series_id=None,
                            country=None, language=None):
+    """
+    Provides checklists for a CreatorNameDetail.
+    """
     creator = get_gcd_object(CreatorNameDetail, creator_name_id)
 
     issues = Issue.objects.filter(story__credits__creator=creator,
@@ -2502,10 +2520,10 @@ def group_creators(request, group_id):
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = GroupCreatorTable(creators, attrs={'class':
-                                                   'sortable_listing'},
-                                  group=group,
-                                  template_name='gcd/bits/sortable_table.html',
-                                  order_by=('creator__sort_name'))
+                                               'sortable_listing'},
+                              group=group,
+                              template_name='gcd/bits/sortable_table.html',
+                              order_by=('creator__sort_name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 
