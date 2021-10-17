@@ -306,6 +306,9 @@ def diff_list(prev_rev, revision, field):
               di[1].rfind('/">',
                           di[1].rfind('<a href="/creator_signature/')) < 0:
                 splitted_signature_link = True
+            elif di[1].find('<a href="/character/') >= 0 and \
+              di[1].find('/">', di[1].rfind('<a href="/character/')) < 0:
+                splitted_link = True
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
