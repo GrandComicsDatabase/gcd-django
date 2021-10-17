@@ -724,7 +724,8 @@ class StoryRevisionForm(forms.ModelForm):
                           ['Select the correct feature logo for an '
                            'in-house column.'])
                 elif feature_logo.feature.filter(feature_type__id=3).count():
-                    if not cd['type'].id == STORY_TYPES['ad']:
+                    if not cd['type'].id in [STORY_TYPES['ad'],
+                                             STORY_TYPES['comics-form ad']]:
                         raise forms.ValidationError(
                           ['Incorrect feature logo for this sequence.'])
                 elif feature_logo.feature.filter(feature_type_id__in=[2, 4])\
