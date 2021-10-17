@@ -2838,6 +2838,8 @@ def add_story(request, issue_revision_id, changeset_id):
                        'characters_formset': characters_formset, }
         revision.process_extra_forms(extra_forms)
         form.save_m2m()
+        revision.post_form_save()
+
         if revision.feature_logo.count():
             # stories for variants in variant-add next to issue have issue
             if revision.issue:
