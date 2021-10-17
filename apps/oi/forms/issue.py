@@ -134,7 +134,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
         if not series.has_indicia_printer:
             no_indicia_printer = forms.BooleanField(widget=forms.HiddenInput,
-                                         required=False)
+                                                    required=False)
             indicia_printer = forms.ModelMultipleChoiceField(
               widget=forms.MultipleHiddenInput,
               queryset=IndiciaPrinter.objects.all(),
@@ -244,7 +244,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                             form_deleted = True
                     if not form_deleted:
                         credit_type = \
-                            self.data['issue_credit_revisions-%d-credit_type' % i]
+                            self.data['issue_credit_revisions-%d-credit_type'
+                                      % i]
                         if credit_type == '6':
                             seq_type_found = True
                         elif credit_type:
@@ -254,8 +255,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 # no_editing is present, no need to check here again
                 if cd['editing'] != "" or seq_type_found:
                     raise forms.ValidationError(
-                        ['%s field and No %s checkbox cannot both be filled in.' %
-                         ("Editing", "Editing")])
+                        ['%s field and No %s checkbox cannot both be filled'
+                         ' in.' % ("Editing", "Editing")])
 
             if cd['no_brand'] and cd['brand'] is not None:
                 raise forms.ValidationError(
@@ -464,7 +465,8 @@ class IssueCreditRevisionForm(forms.ModelForm):
               ['Is credited needs to be selected when entering a name as '
                'credited.'])
 
-        if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
+        if cd['credited_as'] and 'creator' in cd and \
+           cd['credited_as'] == cd['creator'].name:
             raise forms.ValidationError(
               ['Name entered as "credited as" is identicial to creator name.']
             )
@@ -473,6 +475,7 @@ class IssueCreditRevisionForm(forms.ModelForm):
 IssueRevisionFormSet = inlineformset_factory(
     IssueRevision, IssueCreditRevision, form=IssueCreditRevisionForm,
     can_delete=True, extra=1)
+
 
 # not sure why we need this, the docs say that extra would be on top
 # of the number of forms initialized, but that doesn't work, or is
@@ -569,7 +572,8 @@ class IssueRevisionForm(forms.ModelForm):
             url='indicia_printer_autocomplete',
             attrs={'style': 'min-width: 60em'}),
         required=False,
-        help_text='The exact printer listed in the indicia or colophon, if any.'
+        help_text='The exact printer listed in the indicia or colophon, '
+                  'if any.'
     )
 
     comments = _get_comments_form_field()
