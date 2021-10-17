@@ -1296,7 +1296,8 @@ def show_series(request, series, preview=False):
         cover_status_width = "status_small"
 
     images = series.active_issues().filter(variant_of=None)\
-                   .annotate(num_scans=Sum('image_resources__type__id'))
+                   .annotate(num_scans=Sum('image_resources__type__id'))\
+                   .order_by('sort_code')
 
     return render(
       request, 'gcd/details/series.html',
