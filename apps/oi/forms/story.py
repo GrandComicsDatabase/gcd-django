@@ -609,7 +609,8 @@ class StoryRevisionForm(forms.ModelForm):
         url='character_name_autocomplete',
         attrs={'data-html': True, 'style': 'min-width: 60em'},
         forward=['language_code', ]),
-      help_text='Select appearing characters without additional details.',
+      help_text='Select one or more appearing characters without additional '
+                'details.',
       required=False,
     )
 
