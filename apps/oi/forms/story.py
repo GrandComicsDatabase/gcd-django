@@ -159,7 +159,6 @@ def get_story_revision_form(revision=None, user=None,
                 self.save_characters(instance)
             return instance
 
-
         def save_characters(self, instance):
             appearing_characters = self.cleaned_data['appearing_characters']
             if appearing_characters:
@@ -748,7 +747,8 @@ class StoryRevisionForm(forms.ModelForm):
                 if delete_i in self.data:
                     if self.data[delete_i]:
                         form_deleted = True
-                if not form_deleted:
+                if not form_deleted and \
+                   'story_credit_revisions-%d-credit_type' % i in self.data:
                     credit_type = \
                       self.data['story_credit_revisions-%d-credit_type' % i]
                     if credit_type == str(CREDIT_TYPES[seq_type]):
