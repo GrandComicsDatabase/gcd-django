@@ -488,7 +488,7 @@ class StoryRevisionForm(forms.ModelForm):
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='Text credits can be used for creators not currently not in '
+        help_text='Text credits can be used for creators not currently in '
                   'the database or for special credit entries. Otherwise, '
                   'please use the above autocomplete to link to the creator '
                   'records. If needed, you can enter the relevant creator '
@@ -609,7 +609,7 @@ class StoryRevisionForm(forms.ModelForm):
         url='character_name_autocomplete',
         attrs={'data-html': True, 'style': 'min-width: 60em'},
         forward=['language_code', ]),
-      help_text='Select appearing characters without additonal details.',
+      help_text='Select appearing characters without additional details.',
       required=False,
     )
 
