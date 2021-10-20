@@ -164,8 +164,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 widget=HiddenInputWithHelp,
                 required=False,
                 label='Deactivated fields',
-                help_text='The fields "%s" are deactivated for this series. '
-                          'To enter a value for one of these the '
+                help_text='The fields <i>%s</i> are deactivated for this '
+                          'series. To enter a value for one of these the '
                           'corresponding series setting has to be changed.' %
                           turned_off_list)
 
@@ -423,7 +423,7 @@ class IssueCreditRevisionForm(forms.ModelForm):
         help_texts = {
             'credit_name':
                 'Enter here additional specifications for the credit, for '
-                'example "associate editor", or "design".',
+                'example <i>associate editor</i>, or <i>design</i>.',
             'is_credited':
                 'Check in case the creator is credited. If the credited name '
                 'is not the selected creator name, enter the credited name'

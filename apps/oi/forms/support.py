@@ -24,6 +24,13 @@ NO_CREATOR_CREDIT_HELP = (
     'Check this box if %s does not apply to this sequence%s and leave the '
     '%s field blank. ')
 
+
+KEYWORDS_HELP = (
+    'Search terms for significant objects, locations, or themes depicted '
+    'in the content, such as <i>Phantom Zone</i>, <i>red kryptonite</i>, '
+    '<i>Vietnam</i>, or <i>time travel</i>. Multiple entries are to be '
+    'separated by semi-colons.')
+
 GENERIC_ERROR_MESSAGE = (
     'Please correct the field errors.  Scroll down to see the specific error '
     'message(s) next to each field.')
@@ -323,13 +330,7 @@ PUBLISHER_HELP_TEXTS = {
         "Anything that doesn't fit in other fields.  These notes are part "
         "of the regular display.",
     'keywords':
-        'Significant objects, locations, or themes (NOT characters) depicted '
-        'in the content, such as "Phantom Zone", "red kryptonite", "Vietnam". '
-        'or "time travel".  Multiple entries are to be separated by '
-        'semi-colons. Enter non-proper noun keywords in the plural, e.g. '
-        '"automobiles; beaches". But, sciences, philosophies, activities '
-        'etc. should be in the singular, e.g. "communism; physics; '
-        'photography; surfing".',
+        KEYWORDS_HELP,
     'url':
         'The official web site of the publisher.  Must include "http://" or '
         '"https://", for example "https://www.example.com" not '
@@ -412,10 +413,7 @@ SERIES_HELP_TEXTS = {
         "Note that for an added series, or for a series with no issues, an "
         "issue with no issue number will be created upon approval.",
     'keywords':
-        'Significant objects, locations, or themes (NOT characters) '
-        'depicted in the content, such as "Phantom Zone", '
-        '"red kryptonite", "Vietnam". or "time travel".  Multiple '
-        'entries are to be separated by semi-colons.',
+        KEYWORDS_HELP,
 }
 
 ISSUE_LABELS = {
@@ -434,10 +432,10 @@ ISSUE_HELP_TEXTS = {
         'The issue number (or other label) as it appears in the indicia. '
         'If there is no indicia the cover number may be used. '
         'Series that number by year (mostly European series) should write '
-        'the year after a slash: "4/2009" for issue #4 in publication '
+        'the year after a slash: <i>4/2009</i> for issue #4 in publication '
         'year 2009.  Place brackets around an issue number if there is an '
-        'indicia but the number does not appear in it.  Use "[nn]" or the '
-        'next logical number in brackets like "[2]" if '
+        'indicia but the number does not appear in it.  Use <i>[nn]</i> or '
+        'the next logical number in brackets like <i>[2]</i> if '
         'there is no number printed anywhere on the issue.',
 
     'title':
@@ -464,7 +462,7 @@ ISSUE_HELP_TEXTS = {
         'The publication date as printed on or in the comic, except with the '
         'name of the month (if any) spelled out.  Any part of the date '
         'that is not printed on the comic but is known should be put '
-        'in square brackets, such as "[January] 2009". ',
+        'in square brackets, such as <i>[January] 2009</i>. ',
     'key_date':
         'Keydate is a translation of the publication date, possibly '
         'supplemented by the on-sale date, into numeric '
@@ -489,15 +487,15 @@ ISSUE_HELP_TEXTS = {
     'no_indicia_printer':
         'Check this box if there is no printer given in the issue.',
     'price':
-        'Price in ISO format ("0.50 USD" for 50 cents (U.S.), '
-        '"2.99 CAD" for $2.99 Canadian.  Use a format like '
-        '"2/6 [0-2-6 GBP]" for pre-decimal British pounds. '
-        'Use "0.00 FREE" for free issues. '
+        'Price in ISO format (<i>0.50 USD</i> for 50 cents (U.S.), '
+        '<i>2.99 CAD</i> for $2.99 Canadian.  Use a format like '
+        '<i>2/6 [0-2-6 GBP]</i> for pre-decimal British pounds. '
+        'Use <i>0.00 FREE</i> for free issues. '
         'Separate multiple prices with a semicolon.  Use parentheses '
-        'after the currency code for notes: "2.99 USD; 3.99 USD '
-        '(newsstand)" Use country codes after the currency code if more '
+        'after the currency code for notes: <i>2.99 USD; 3.99 USD '
+        '(newsstand)</i>. Use country codes after the currency code if more '
         'than one price uses the same currency: '
-        '"3,99 EUR DE; 3,50 EUR AT; 1,50 EUR FR"',
+        '<i>3,99 EUR DE; 3,50 EUR AT; 1,50 EUR FR</i>.',
     'page_count':
         "Count of all pages in the issue, including the covers but "
         "excluding dust jackets and inserts.  A single sheet of paper "
@@ -512,11 +510,7 @@ ISSUE_HELP_TEXTS = {
         'Check if there is no editor or similar credit (such as '
         'publisher) for the issue as a whole.',
     'keywords':
-        'Significant objects, locations, or themes (NOT characters) '
-        'depicted in the content, such as "Phantom Zone", '
-        '"red kryptonite", "Vietnam". or "time travel".  Multiple '
-        'entries are to be separated by semi-colons.',
-
+        KEYWORDS_HELP,
     'indicia_publisher':
         'The exact corporation listed as the publisher in the '
         'indicia or colophon, if any.  If there is none, the copyright '
@@ -537,10 +531,9 @@ ISSUE_HELP_TEXTS = {
         'The ISBN as printed on the item. Do not use this field for '
         'numbering systems other than ISBN. If both ISBN 10 and '
         'ISBN 13 are listed, separate them with a semi-colon. '
-        ' Example: "978-0-307-29063-2; 0-307-29063-8".',
+        ' Example: <i>978-0-307-29063-2; 0-307-29063-8</i>.',
     'no_isbn':
         "Check this box if there is no ISBN.",
-
     'barcode':
         'The barcode as printed on the item with no spaces. In case '
         'two barcodes are present, separate them with a semi-colon.',
@@ -554,9 +547,9 @@ ISSUE_HELP_TEXTS = {
 }
 
 VARIANT_NAME_HELP_TEXT = (
-    'Name of this variant. Examples are: "Cover A" (if listed as such in '
-    'the issue), "Second Printing", "Newsstand", "Direct", or the name of '
-    'the artist if different from the base issue.')
+    'Name of this variant. Examples are: <i>Cover A</i> (if listed as such in '
+    'the issue), <i>Second Printing</i>, <i>Newsstand</i>, <i>Direct</i>, or '
+    'the name of the artist if different from the base issue.')
 
 BIBLIOGRAPHIC_ENTRY_HELP_TEXT = {
     'page_began': 'Enter the first and if existing last page.',
@@ -629,8 +622,8 @@ class HiddenInputWithHelp(forms.TextInput):
 def _get_comments_form_field():
     return forms.CharField(
         widget=forms.Textarea, required=False,
-        help_text='Comments about the change. These are part of the change '
-                  'history, but not part of the regular display.')
+        help_text='Information about the changes submitted. Will not '
+                  'displayed, but is stored in the change history.')
 
 
 def _clean_keywords(cleaned_data):

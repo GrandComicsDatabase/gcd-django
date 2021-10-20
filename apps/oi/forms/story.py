@@ -28,7 +28,7 @@ from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 from .custom_layout_object import Formset
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
-    GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
+    GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP, KEYWORDS_HELP,
     SEQUENCE_HELP_LINKS, BIBLIOGRAPHIC_ENTRY_HELP_LINKS,
     BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
@@ -199,17 +199,18 @@ class StoryCreditRevisionForm(forms.ModelForm):
                   'is_sourced', 'sourced_by', 'credit_name']
         help_texts = {
             'credit_type':
-                'Selecting multi-credit entries such as "pencil and inks", or'
-                ' "pencils, inks, and colors", will after saving create credit'
-                ' entries for the different credit types. Selecting "painting"'
-                ' will also add a credit description.',
+                'Selecting multi-credit entries such as <i>pencil and inks</i>,'
+                ' or <i>pencils, inks, and colors</i>, will after saving '
+                'create credit entries for the different credit types. '
+                'Selecting <i>painting</i> will add also a credit '
+                'description.',
             'credit_name':
                 'Enter here additional specifications for the credit, for '
-                'example "finishes", "flats", or "pages 1-3".',
+                'example <i>finishes</i>, <i>flats</i>, or <i>pages 1-3</i>.',
             'is_credited':
                 'Check in case the creator is credited. The credited name '
                 'shall correspond to the selected name. You can also enter '
-                'the credited name in the unfolded "credited as" field.',
+                'the credited name in the unfolded <i>credited as</i> field.',
             'credited_as':
                 'You can enter here the credited name. If the entered text '
                 'matches an existing name for the selected creator a database '
@@ -389,18 +390,15 @@ class StoryRevisionForm(forms.ModelForm):
         }
         help_texts = {
             'keywords':
-                'Significant objects, locations, or themes (NOT characters) '
-                'depicted in the content, such as "Phantom Zone", '
-                '"red kryptonite", "Vietnam". or "time travel".  Multiple '
-                'entries are to be separated by semi-colons.',
+                KEYWORDS_HELP,
             'reprint_notes':
                 'Textual reprint notes can be used for comic material that '
                 'is not in our database, either because the issue is not '
                 'indexed at all or because it cannot such as newspaper strips.'
-                '<br>For newspaper strips the format is "from &lt;comic strip'
-                '&gt; (&lt;syndicate name&gt;) &lt;date&gt;", example:<br> '
-                'from Calvin and Hobbes daily (Universal Press Syndicate) '
-                '1985-11-18 - 1988-10-01.'
+                '<br>For newspaper strips the format is <i>from &lt;comic strip'
+                '&gt; (&lt;syndicate name&gt;) &lt;date&gt;</i>, example:<br> '
+                '<i>from Calvin and Hobbes daily (Universal Press Syndicate) '
+                '1985-11-18 - 1988-10-01</i>.'
         }
 
     def __init__(self, *args, **kwargs):
@@ -434,9 +432,8 @@ class StoryRevisionForm(forms.ModelForm):
     title = forms.CharField(
         widget=forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
         required=False,
-        help_text='If no title can be determined from the issue, follow '
-                  ' our instructions to determine a title and check '
-                  'unofficial title if needed.')
+        help_text='If no title can be determined from a story, our '
+                  'documentation gives a list of possible choices.')
     title_inferred = forms.BooleanField(
         required=False, label='Unofficial title', help_text='')
 
@@ -470,9 +467,7 @@ class StoryRevisionForm(forms.ModelForm):
       required=False,
       help_text='Only select a feature logo if it is present <b>directly</b> '
                 'on the sequence. The feature corresponding to the selected '
-                'feature logos will be added automatically. Only feature '
-                'logos connected to features of the series language can be '
-                'selected.'
+                'feature logos will be added automatically.'
       )
 
     no_creator_help = forms.CharField(
@@ -492,8 +487,7 @@ class StoryRevisionForm(forms.ModelForm):
                   'please use the above autocomplete to link to the creator '
                   'records. If needed, you can enter the relevant creator '
                   'credits in the following fields, where multiple credits '
-                  'are separated by semi-colons. Enter notes '
-                  'in () and aliases in []. If the credit applies to a '
+                  'are separated by semi-colons.<br>If the credit applies to a '
                   'sequence type, but the creator is unknown enter a question '
                   'mark.<p>Existing text credits should be migrated, either '
                   'using the migrate button on the issue change overview page'
@@ -505,17 +499,18 @@ class StoryRevisionForm(forms.ModelForm):
         required=False,
         help_text='<hr><br>Characters can be entered in several ways:<br>'
                   'a) select several characters in the first autocomplete '
-                  '"Appearing characters", each without additional details '
-                  'about the appearance,<br>'
-                  'b) select a group in the second autocomplete with the '
-                  'appearing group members in the third autocomplete, again '
+                  '<i>Appearing characters</i>, each without additional '
+                  'details about the appearance,<br>'
+                  'b) select a group in the second autocomplete <i>Group</i>'
+                  ' with the appearing group members in the third autocomplete'
+                  ' <i>Group members</i> again '
                   'without additional details about the appearance,<br>'
                   'c) each character (with its groups) separately, where '
                   'additional details about the appearance can be entered.<br>'
                   'd) the old text field for characters,<br>'
                   'For a selected superhero the civilian identity (if unique)'
                   ' will be added automatically.<br>Note that data from a) and'
-                  ' b) will be appear in section c) after a save.',
+                  ' b) will appear in section c) after a save.',
         label='<br><hr><strong>Characters</strong>')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
@@ -578,9 +573,9 @@ class StoryRevisionForm(forms.ModelForm):
     synopsis = forms.CharField(
         widget=forms.Textarea(attrs={'style': 'height: 9em'}),
         required=False,
-        help_text='A brief description of the contents. No text under '
-                  'copyright, such as solicitation or other promotional text, '
-                  'may be used without clear permission and credit.')
+        help_text='A brief description of the contents. Do not use any text '
+                  'that may be copyrighted, such as solicitation or other '
+                  'promotional text.')
 
     group = forms.ModelChoiceField(
       queryset=Group.objects.all(),
