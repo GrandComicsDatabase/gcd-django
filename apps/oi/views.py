@@ -2607,7 +2607,7 @@ def add_feature_relation(request, feature_id):
 
 # TODO: add extra_forms to add_generic
 # could work with extra_forms_name and extra_form in call to it
-# needs also changes in add_frame-templare
+# needs also changes in add_frame-template
 # compare the following with add_generic
 
 def add_character(request):
@@ -2615,8 +2615,6 @@ def add_character(request):
         return render_error(request, REACHED_CHANGE_LIMIT)
 
     if request.method == 'POST' and 'cancel' in request.POST:
-        if cancel:
-            return HttpResponseRedirect(cancel)
         return HttpResponseRedirect(urlresolvers.reverse('add'))
 
     form = get_revision_form(model_name='character',

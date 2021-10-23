@@ -5374,7 +5374,8 @@ class StoryRevision(Revision):
                             'editing'):
             if getattr(self, credit_type) and \
               getattr(self, credit_type) != '?':
-                credits = getattr(self, credit_type).split(';')
+                credits = getattr(self, credit_type).strip(';')
+                credits = credits.split(';')
                 old_credits = ''
                 for credit in credits:
                     credit = credit.strip()
