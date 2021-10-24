@@ -186,6 +186,13 @@ class GroupMembershipRevisionForm(forms.ModelForm):
 
 def get_character_relation_revision_form(revision=None, user=None):
     class RuntimeCharacterRelationRevisionForm(CharacterRelationRevisionForm):
+        choices = list(CharacterRelationType.objects.values_list('id', 'type'))
+        additional_choices = CharacterRelationType.objects.exclude(id__in=[3, 4])\
+                                                .values_list('id',
+                                                            'reverse_type')
+        choices = combine_reverse_relations(choices, additional_choices)
+        relation_type = forms.ChoiceField(choices=choices)
+
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
             # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
@@ -207,13 +214,6 @@ class CharacterRelationRevisionForm(forms.ModelForm):
                                          attrs={'style': 'min-width: 45em'}),
         label='Character A'
     )
-
-    choices = list(CharacterRelationType.objects.values_list('id', 'type'))
-    additional_choices = CharacterRelationType.objects.exclude(id__in=[3, 4])\
-                                              .values_list('id',
-                                                           'reverse_type')
-    choices = combine_reverse_relations(choices, additional_choices)
-    relation_type = forms.ChoiceField(choices=choices)
 
     to_character = forms.ModelChoiceField(
         queryset=Character.objects.filter(deleted=False),

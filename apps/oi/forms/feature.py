@@ -138,6 +138,14 @@ class FeatureLogoRevisionForm(forms.ModelForm):
 
 def get_feature_relation_revision_form(revision=None, user=None):
     class RuntimeFeatureRelationRevisionForm(FeatureRelationRevisionForm):
+        choices = list(FeatureRelationType.objects.values_list('id',
+                                                            'description'))
+        additional_choices = FeatureRelationType.objects\
+                                                .values_list('id',
+                                                            'reverse_description')
+        choices = combine_reverse_relations(choices, additional_choices)
+        relation_type = forms.ChoiceField(choices=choices)
+
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
                 # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
@@ -165,14 +173,6 @@ class FeatureRelationRevisionForm(forms.ModelForm):
         widget=autocomplete.ModelSelect2(url='feature_autocomplete',
                                          attrs={'style': 'min-width: 45em'})
     )
-
-    choices = list(FeatureRelationType.objects.values_list('id',
-                                                           'description'))
-    additional_choices = FeatureRelationType.objects\
-                                            .values_list('id',
-                                                         'reverse_description')
-    choices = combine_reverse_relations(choices, additional_choices)
-    relation_type = forms.ChoiceField(choices=choices)
 
     comments = _get_comments_form_field()
 
