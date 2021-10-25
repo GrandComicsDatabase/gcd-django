@@ -79,7 +79,8 @@ def test_commit_added_revision(any_added_story_rev, story_add_values,
 
     for k, v in story_add_values.items():
         if k == 'keywords':
-            kws = [k for k in rev.story.keywords.names()]
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            kws = [k.name for k in rev.story.keywords.all()]
             kws.sort()
             assert kws == keywords['list']
         else:
@@ -137,7 +138,8 @@ def test_create_edit_revision(any_edit_story_rev, story_add_values,
 
     for k, v in story_edit_values.items():
         if k == 'keywords':
-            kws = [k for k in rev.story.keywords.names()]
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            kws = [k.name for k in rev.story.keywords.all()]
             kws.sort()
             assert kws == keywords['list']
         else:

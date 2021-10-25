@@ -128,7 +128,8 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
     on_sale_revision_fields = ('year_on_sale', 'month_on_sale', 'day_on_sale')
     for k, v in issue_add_values.items():
         if k == 'keywords':
-            kws = [k for k in rev.issue.keywords.names()]
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            kws = [k.name for k in rev.issue.keywords.all()]
             kws.sort()
             assert kws == keywords['list']
         elif k in on_sale_revision_fields:
@@ -186,7 +187,8 @@ def test_commit_variant_added_revision(any_added_variant_rev,
 
     for k, v in variant_add_values.items():
         if k == 'keywords':
-            kws = [k for k in rev.issue.keywords.names()]
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            kws = [k.name for k in rev.issue.keywords.all()]
             kws.sort()
             assert kws == keywords['list']
         else:
@@ -205,12 +207,18 @@ def test_commit_variant_added_revision(any_added_variant_rev,
 
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_issue, issue_add_values,
-                              any_editing_changeset):
+                              any_editing_changeset, keywords):
     rev = IssueRevision.clone(data_object=any_added_issue,
                               changeset=any_editing_changeset)
 
     for k, v in issue_add_values.items():
-        assert getattr(rev, k) == v
+        if k == 'keywords':
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            kws = [k.name for k in rev.issue.keywords.all()]
+            kws.sort()
+            assert kws == keywords['list']
+        else:
+            assert getattr(rev, k) == v
 
     assert rev.issue is any_added_issue
     assert rev.source is rev.issue
@@ -345,8 +353,10 @@ def test_noncomics_counts(any_added_series_rev,
 
     issue_add_values['series'] = series
 
+    indicia_printer = issue_add_values.pop('indicia_printer')
     i_rev = IssueRevision(changeset=any_adding_changeset, **issue_add_values)
     i_rev.save()
+    i_rev.indicia_printer.set([indicia_printer,])
     i_rev = IssueRevision.objects.get(pk=i_rev.pk)
 
     old_series_issue_count = i_rev.series.issue_count
@@ -494,7 +504,8 @@ def test_noncomics_counts(any_added_series_rev,
 
 @pytest.mark.django_db
 def test_fork_variant_for_cover_no_reserve(any_added_issue,
-                                           any_editing_changeset):
+                                           any_editing_changeset,
+                                           any_added_indicia_printer):
     # Make it a wraparound to test cover sequence page count logic.
     cover_rev = CoverRevision(changeset=any_editing_changeset,
                               is_wraparound=2)
@@ -513,6 +524,9 @@ def test_fork_variant_for_cover_no_reserve(any_added_issue,
             assert issue_rev.year_on_sale is None
             assert issue_rev.month_on_sale is None
             assert issue_rev.day_on_sale is None
+        elif name == 'indicia_printer':
+            indicia_printers = list(issue_rev.indicia_printer.order_by('id'))
+            assert indicia_printers == [any_added_indicia_printer]
         elif name in EXCLUDED_FORK_FIELDS:
             assert getattr(issue_rev, name) == EXCLUDED_FORK_FIELDS[name]
         else:

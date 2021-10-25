@@ -30,8 +30,8 @@ class Dummy(GcdData):
     # Note that GcdData brings in some excluded fields.
     i = models.IntegerField()
     b = models.BooleanField(default=False)
-    f = models.ForeignKey('gcd.OtherDummy')
-    o = models.OneToOneField('gcd.OtherDummy')
+    f = models.ForeignKey('gcd.OtherDummy', on_delete=models.CASCADE)
+    o = models.OneToOneField('gcd.OtherDummy', on_delete=models.CASCADE)
     m = models.ManyToManyField('gcd.OtherDummy')
     z = models.DecimalField()           # used to test meta fields
     x = models.BooleanField(default=False)           # type mismatch with revision
@@ -52,13 +52,13 @@ class DummyRevision(Revision):
     class Meta:
         app_label = 'oi'
 
-    dummy = models.ForeignKey('gcd.Dummy', null=True)
+    dummy = models.ForeignKey('gcd.Dummy', null=True, on_delete=models.CASCADE)
 
     # Note that the 'deleted' excluded field is defined in Revision.
     i = models.IntegerField()
     b = models.BooleanField()
-    f = models.ForeignKey('gcd.OtherDummy')
-    o = models.OneToOneField('gcd.OtherDummy')
+    f = models.ForeignKey('gcd.OtherDummy', on_delete=models.CASCADE)
+    o = models.OneToOneField('gcd.OtherDummy', on_delete=models.CASCADE)
     m = models.ManyToManyField('gcd.OtherDummy')
     z = models.DecimalField()           # used to test meta fields
     x = models.CharField()              # type mismatch with data object
@@ -94,7 +94,7 @@ class OtherDummyRevision(Revision):
     class Meta:
         app_label = 'oi'
 
-    other_dummy = models.ForeignKey(OtherDummy, null=True)
+    other_dummy = models.ForeignKey(OtherDummy, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
 
     source_name = 'OtherDummy'

@@ -59,6 +59,8 @@ def test_classification():
         'indicia_pub_not_printed': gf('indicia_pub_not_printed'),
         'brand': gf('brand'),
         'no_brand': gf('no_brand'),
+        'no_indicia_printer': gf('no_indicia_printer'),
+        'indicia_printer': gf('indicia_printer'),
     }
 
     irregular_fields = {
@@ -74,9 +76,10 @@ def test_classification():
 
     single_value_fields = regular_fields.copy()
     del single_value_fields['keywords']
+    del single_value_fields['indicia_printer']
     assert IssueRevision._get_single_value_fields() == single_value_fields
 
-    assert IssueRevision._get_multi_value_fields() == {}
+    assert IssueRevision._get_multi_value_fields() == {'indicia_printer': gf('indicia_printer'),}
 
 
 def test_conditional_field_mapping():
@@ -93,6 +96,8 @@ def test_conditional_field_mapping():
         'valid_isbn': ('series', 'has_isbn'),
         'indicia_frequency': ('series', 'has_indicia_frequency'),
         'no_indicia_frequency': ('series', 'has_indicia_frequency'),
+        'indicia_printer': ('series', 'has_indicia_printer'),
+        'no_indicia_printer': ('series', 'has_indicia_printer'),
     }
 
 
@@ -193,16 +198,11 @@ def test_pre_commit_check_success(pre_commit_rev):
         mock.call().filter().order_by('revision_sort_code'),
         mock.call().filter().order_by().first()])
 
-    # Note that the __nonzero__ call represents the result of exists()
-    # being evaluated in a boolean expression.  __nonzero__ is the method
-    # used to evaluate truthiness.  I wouldn't bother to check for it
-    # but the only options are to include it, or to make the assertion
-    # order-insensitive which is too loose of a check.
     pre_commit_rev._same_series_open_with_after.assert_has_calls([
         mock.call(),
         mock.call().count(),
         mock.call().exists(),
-        mock.call().exists().__nonzero__(),
+        mock.call().exists().__bool__(),
         mock.call().first()])
 
 

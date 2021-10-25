@@ -42,7 +42,8 @@ def test_commit_added_revision(any_added_brand_rev, brand_add_values,
 
     for k, v in brand_add_values.items():
         if k == 'keywords':
-            pub_kws = [k for k in rev.brand.keywords.names()]
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            pub_kws = [k.name for k in rev.brand.keywords.all()]
             pub_kws.sort()
             assert pub_kws == keywords['list']
         else:
@@ -61,7 +62,13 @@ def test_create_edit_revision(any_added_brand, brand_add_values,
         changeset=any_editing_changeset)
 
     for k, v in brand_add_values.items():
-        assert getattr(rev, k) == v
+        if k == 'keywords':
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            pub_kws = [k.name for k in rev.brand.keywords.all()]
+            pub_kws.sort()
+            assert pub_kws == keywords['list']
+        else:
+            assert getattr(rev, k) == v
     assert rev.brand is any_added_brand
     groups = list(rev.group.order_by('id'))
     assert groups == [any_added_brand_group1]

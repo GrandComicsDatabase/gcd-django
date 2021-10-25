@@ -143,7 +143,7 @@ def test_added_with_source():
     with mock.patch('apps.oi.models.Revision.source') as source_mock:
         rev = DummyRevision()
         added = rev.added
-        assert not source_mock.__nonzero__.called
+        assert not source_mock.called
         assert added is True
 
 

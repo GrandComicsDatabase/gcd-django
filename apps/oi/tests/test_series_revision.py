@@ -43,7 +43,7 @@ def patched_series_class():
             mock.patch('%s.publisher' % SREV):
         # previous_revision needs to read as False by default so that the
         # Revision.added property behaves normally be default.
-        pr.__nonzero__.return_value = False
+        pr.return_value = False
         yield
 
 
@@ -135,7 +135,8 @@ def test_get_major_changes_added(patched_series_class):
                          publisher=PUBLISHER_TWO,
                          is_comics_publication=True,
                          is_current=True,
-                         is_singleton=False)
+                         is_singleton=False,
+                         previous_revision=None)
     c = new._get_major_changes()
     assert c == {
         'publisher changed': True,
@@ -397,6 +398,8 @@ def test_handle_dependents_to_singleton(year_began, key_date):
             'after': None,
             'number': '[nn]',
             'publication_date': year_began,
+            'notes': '',
+            'reservation_requested': False
         }
         ir = IssueRevision(**ir_params)
 

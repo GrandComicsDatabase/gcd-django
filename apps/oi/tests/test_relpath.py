@@ -34,10 +34,12 @@ def classes_and_fields():
     single_value_field = mock.MagicMock(spec=related.ForeignKey)
     single_value_field.many_to_many = False
     single_value_field.one_to_many = False
+    single_value_field.remote_field = mock.MagicMock(spec=fields.Field)
 
     multi_value_field = mock.MagicMock(spec=related.ManyToManyField)
     multi_value_field.many_to_many = True
     multi_value_field.one_to_many = False
+    multi_value_field.remote_field = mock.MagicMock(spec=fields.Field)
 
     non_relational_field = mock.MagicMock(spec=fields.Field)
     non_relational_field.one_to_one = None
@@ -57,9 +59,9 @@ def class_and_field_setup(classes_and_fields):
     ) = classes_and_fields
 
     starting_model_class._meta.get_field.return_value = single_value_field
-    single_value_field.rel.model = foo_model_class
+    single_value_field.remote_field.model = foo_model_class
     foo_model_class._meta.get_field.return_value = multi_value_field
-    multi_value_field.rel.model = bar_model_class
+    multi_value_field.remote_field.model = bar_model_class
 
     return (starting_model_class, foo_model_class, bar_model_class,
             single_value_field, multi_value_field)
@@ -116,9 +118,9 @@ def test_init_prefix_multi(classes_and_fields):
     ) = classes_and_fields
 
     starting_model_class._meta.get_field.return_value = multi_value_field
-    multi_value_field.rel.model = foo_model_class
+    multi_value_field.remote_field.model = foo_model_class
     foo_model_class._meta.get_field.return_value = single_value_field
-    single_value_field.rel.model = bar_model_class
+    single_value_field.remote_field.model = bar_model_class
 
     with pytest.raises(ValueError) as excinfo:
         RelPath(starting_model_class, 'foo', 'bar')
@@ -241,7 +243,7 @@ def test_get_value_multi_empty(multi_isinstance_passes, instance):
     # fields, in case there is actually no related object present
     # in the instance.
     empty_queryset = mock.MagicMock(spec=models.QuerySet)
-    multi_isinstance_passes._fields[-1].rel.model.objects.none.return_value = \
+    multi_isinstance_passes._fields[-1].remote_field.model.objects.none.return_value = \
         empty_queryset
 
     value = multi_isinstance_passes.get_value(instance, empty=True)
@@ -257,7 +259,7 @@ def test_get_value_all_none_or_empty(multi_isinstance_passes):
     # so we don't check them specifically, just the final value.
     empty_queryset = mock.MagicMock(spec=models.QuerySet)
     stored_last_field = multi_isinstance_passes.get_field()
-    stored_last_field.rel.model.objects.none \
+    stored_last_field.remote_field.model.objects.none \
                      .return_value.all.return_value = empty_queryset
 
     value = multi_isinstance_passes.get_value(None)
@@ -281,10 +283,11 @@ def test_set_value_single(single_isinstance_passes, instance):
 
 def test_set_value_multiple(multi_isinstance_passes, instance):
     value = [mock.MagicMock(), mock.MagicMock(), mock.MagicMock()]
-    with mock.patch('apps.oi.relpath.setattr') as setattr_mock:
+    with mock.patch('apps.oi.relpath.getattr') as getattr_mock:
         multi_isinstance_passes.set_value(instance, value)
-        setattr_mock.assert_called_once_with(instance.foo, 'bar', value)
-
+        assert getattr_mock.call_count == 3
+        getattr_mock.assert_has_calls([mock.call(instance, 'foo'), ])
+        getattr_mock.assert_has_calls([mock.call().set(value), ])
 
 def test_set_value_instance_check(multi_relpath, instance):
     # Need to make sure there is an actual type and not a mock object

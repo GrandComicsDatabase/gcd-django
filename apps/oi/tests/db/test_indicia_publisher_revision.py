@@ -41,7 +41,8 @@ def test_commit_added_revision(any_added_indicia_publisher_rev,
 
     for k, v in indicia_publisher_add_values.items():
         if k == 'keywords':
-            pub_kws = [k for k in rev.indicia_publisher.keywords.names()]
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            pub_kws = [k.name for k in rev.indicia_publisher.keywords.all()]
             pub_kws.sort()
             assert pub_kws == keywords['list']
         else:
@@ -58,7 +59,13 @@ def test_create_edit_revision(any_added_indicia_publisher,
         changeset=any_editing_changeset)
 
     for k, v in indicia_publisher_add_values.items():
-        assert getattr(rev, k) == v
+        if k == 'keywords':
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            pub_kws = [k.name for k in rev.indicia_publisher.keywords.all()]
+            pub_kws.sort()
+            assert pub_kws == keywords['list']
+        else:
+            assert getattr(rev, k) == v
     assert rev.indicia_publisher is any_added_indicia_publisher
 
     assert rev.changeset == any_editing_changeset

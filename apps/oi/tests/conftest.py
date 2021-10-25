@@ -17,6 +17,7 @@ from apps.gcd.models.gcddata import GcdData
 from apps.oi import states
 from apps.oi.models import (
     Revision, PublisherRevision, IndiciaPublisherRevision,
+    PrinterRevision, IndiciaPrinterRevision,
     BrandGroupRevision, BrandRevision, BrandUseRevision,
     SeriesRevision, SeriesBondRevision, IssueRevision, StoryRevision,
     Changeset, CTYPES)
@@ -24,7 +25,7 @@ from apps.oi.models import (
 
 @pytest.fixture
 def keywords():
-    kw = ['bar', 'foo']
+    kw = ['Bar', 'bar', 'foo']
     return {
         'list': kw,
         'string': '; '.join(kw),
@@ -99,7 +100,7 @@ def any_deleting_changeset(any_indexer):
 @pytest.fixture
 def any_variant_adding_changeset(any_indexer):
     """
-    Use this when adding a varaint.
+    Use this when adding a variant.
     """
     # TODO: A better strategy for dealing with changesets in fixtures.
     c = Changeset(state=states.OPEN,
@@ -109,10 +110,14 @@ def any_variant_adding_changeset(any_indexer):
     return c
 
 
-@pytest.fixture
 def any_country():
     c = Country.objects.get_or_create(code='XZZ', name='Test Country')
     return c[0]
+
+
+@pytest.fixture(name="any_country")
+def any_country_fixture():
+    return any_country()
 
 
 @pytest.fixture
@@ -205,6 +210,74 @@ def any_added_indicia_publisher(any_added_indicia_publisher_rev):
     any_added_indicia_publisher_rev.changeset.state = states.APPROVED
     any_added_indicia_publisher_rev.changeset.save()
     return any_added_indicia_publisher_rev.indicia_publisher
+
+
+@pytest.fixture
+def printer_add_values(any_country, keywords):
+    return {
+        'name': 'Test Printer',
+        'year_began': 1960,
+        'year_ended': None,
+        'year_began_uncertain': True,
+        'year_ended_uncertain': False,
+        'notes': 'printer add notes',
+        'url': 'http://whatever.com',
+        'keywords': keywords['string'],
+        'country': any_country,
+    }
+
+
+@pytest.fixture
+def any_added_printer_rev(any_country, any_adding_changeset,
+                          printer_add_values):
+    """
+    Returns a newly added printer using values from any_printer_add_values.
+    """
+    pr = PrinterRevision(changeset=any_adding_changeset,
+                         **printer_add_values)
+    pr.save()
+    return pr
+
+
+@pytest.fixture
+def any_added_printer(any_added_printer_rev):
+    any_added_printer_rev.commit_to_display()
+    any_added_printer_rev.changeset.state = states.APPROVED
+    any_added_printer_rev.changeset.save()
+    return any_added_printer_rev.printer
+
+
+@pytest.fixture
+def indicia_printer_add_values(any_country, any_added_printer, keywords):
+    return {
+        'name': 'Test Indicia Printer',
+        'year_began': 1970,
+        'year_ended': 2000,
+        'year_began_uncertain': True,
+        'year_ended_uncertain': False,
+        'notes': 'indicia printer add notes',
+        'url': 'http://indicia.whatever.com',
+        'keywords': keywords['string'],
+        'country': any_country,
+        'parent': any_added_printer,
+    }
+
+
+@pytest.fixture
+def any_added_indicia_printer_rev(indicia_printer_add_values,
+                                  any_adding_changeset):
+    ipr = IndiciaPrinterRevision(changeset=any_adding_changeset,
+                                 **indicia_printer_add_values)
+    ipr.save()
+    return ipr
+
+
+@pytest.fixture
+def any_added_indicia_printer(any_added_indicia_printer_rev):
+    any_added_indicia_printer_rev.commit_to_display()
+    any_added_indicia_printer_rev.changeset.state = states.APPROVED
+    any_added_indicia_printer_rev.changeset.save()
+    return any_added_indicia_printer_rev.indicia_printer
 
 
 @pytest.fixture
@@ -415,7 +488,7 @@ def any_added_series_bond(any_added_series_bond_rev):
 @pytest.fixture
 def issue_add_values(any_adding_changeset, any_country, any_language,
                      any_added_publisher, any_added_indicia_publisher,
-                     any_added_brand, keywords):
+                     any_added_indicia_printer, any_added_brand, keywords):
     """
     Add values for a pretty basic issue.  All conditional fields are turned
     on because turning them off produces some strange behavior.
@@ -447,6 +520,7 @@ def issue_add_values(any_adding_changeset, any_country, any_language,
         'no_volume': True,
         'series': series_rev.series,
         'indicia_publisher': any_added_indicia_publisher,
+        'indicia_printer': any_added_indicia_printer,
         'brand': any_added_brand,
         'publication_date': 'January 1947',
         'key_date': '1947-01-00',
@@ -468,8 +542,10 @@ def issue_add_values(any_adding_changeset, any_country, any_language,
 
 @pytest.fixture
 def any_added_issue_rev(any_adding_changeset, issue_add_values):
+    indicia_printer = issue_add_values.pop('indicia_printer')
     rev = IssueRevision(changeset=any_adding_changeset, **issue_add_values)
     rev.save()
+    rev.indicia_printer.set([indicia_printer,])
     return rev
 
 

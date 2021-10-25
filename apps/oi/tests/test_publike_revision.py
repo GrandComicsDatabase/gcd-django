@@ -4,12 +4,15 @@
 import pytest
 
 from apps.oi.models import (PublisherRevision, IndiciaPublisherRevision,
+                            PrinterRevision, IndiciaPrinterRevision,
                             BrandGroupRevision, BrandRevision)
 
 
 @pytest.mark.parametrize('has_country, rev_class',
                          [(True, PublisherRevision),
                           (True, IndiciaPublisherRevision),
+                          (True, PrinterRevision),
+                          (True, IndiciaPrinterRevision),
                           (False, BrandGroupRevision),
                           (False, BrandRevision)])
 def test_stats_category_field_tuples(has_country, rev_class):

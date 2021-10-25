@@ -42,12 +42,14 @@ def test_commit_added_revision(any_added_publisher_rev, publisher_add_values,
 
     for k, v in publisher_add_values.items():
         if k == 'keywords':
-            pub_kws = [k for k in rev.publisher.keywords.names()]
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            pub_kws = [k.name for k in rev.publisher.keywords.all()]
             pub_kws.sort()
             assert pub_kws == keywords['list']
         else:
             assert getattr(rev.publisher, k) == v
     assert rev.publisher.brand_count == 0
+    assert rev.publisher.indicia_publisher_count == 0
     assert rev.publisher.series_count == 0
     assert rev.publisher.issue_count == 0
 
@@ -60,7 +62,13 @@ def test_create_edit_revision(any_added_publisher, publisher_add_values,
         changeset=any_editing_changeset)
 
     for k, v in publisher_add_values.items():
-        assert getattr(rev, k) == v
+        if k == 'keywords':
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            pub_kws = [k.name for k in rev.publisher.keywords.all()]
+            pub_kws.sort()
+            assert pub_kws == keywords['list']
+        else:
+            assert getattr(rev, k) == v
     assert rev.publisher is any_added_publisher
 
     assert rev.changeset == any_editing_changeset

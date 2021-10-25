@@ -87,9 +87,9 @@ def test_no_soo_image(any_series, image_and_content_type):
         assert i.soo_image is None
 
 
-def test_has_keywords():
+def test_has_keywords(any_series):
     with mock.patch('%s.keywords' % ISSUE_PATH) as kw_mock:
-        i = Issue()
+        i = Issue(series=any_series)
 
         kw_mock.exists.return_value = False
         assert i.has_keywords() is False
