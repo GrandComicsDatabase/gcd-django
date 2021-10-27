@@ -503,13 +503,17 @@ class StoryRevisionForm(forms.ModelForm):
                   'details about the appearance,<br>'
                   'b) select a group in the second autocomplete <i>Group</i>'
                   ' with the appearing group members in the third autocomplete'
-                  ' <i>Group members</i> again '
+                  ' <i>Group members</i>, again '
                   'without additional details about the appearance,<br>'
                   'c) each character (with its groups) separately, where '
                   'additional details about the appearance can be entered.<br>'
                   'd) the old text field for characters,<br>'
-                  'For a selected superhero the civilian identity (if unique)'
-                  ' will be added automatically.<br>Note that data from a) and'
+                  'For a selected superhero the linked civilian identity will '
+                  'be added automatically. In the later character display both'
+                  ' are shown together as <i>Superhero [Civilian Name]</i>, '
+                  'but they appear as two entries in this editing form. '
+                  'You can also select an alternative civilian name, if '
+                  'needed.<br>Note that data from a) and'
                   ' b) will appear in section c) after a save.',
         label='<br><hr><strong>Characters</strong>')
 
