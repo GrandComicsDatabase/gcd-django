@@ -2610,6 +2610,7 @@ def add_feature_relation(request, feature_id):
 # needs also changes in add_frame-template
 # compare the following with add_generic
 
+@permission_required('indexer.can_reserve')
 def add_character(request):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
