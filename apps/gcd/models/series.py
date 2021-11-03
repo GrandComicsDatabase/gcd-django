@@ -153,7 +153,7 @@ class Series(GcdData):
         return self.active_issues().exclude(variant_of__series=self)
 
     def active_base_issues_variant_count(self):
-        issues = self.active_base_issues()
+        issues = self.active_base_issues().order_by('sort_code')
         issues = issues.annotate(
           variant_count=Count(Case(When(variant_set__deleted=False, then=1))))
         return issues
