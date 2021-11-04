@@ -29,7 +29,9 @@ def header_link(changeset):
         else:
             raise NotImplementedError
 
-    if changeset.change_type in [CTYPES['publisher'], CTYPES['printer']]:
+    if changeset.change_type in [CTYPES['publisher'], CTYPES['printer'],
+                                 CTYPES['award'], CTYPES['character'],
+                                 CTYPES['group'], CTYPES['creator']]:
         return absolute_url(revision)
     elif changeset.change_type in [CTYPES['brand_group'],
                                    CTYPES['indicia_publisher'],
@@ -121,12 +123,6 @@ def header_link(changeset):
         return mark_safe('%s' % (absolute_url(revision)))
     elif changeset.change_type == CTYPES['image']:
         return absolute_url(revision.object)
-    elif changeset.change_type == CTYPES['award']:
-        return mark_safe('%s' % (absolute_url(revision)))
-    elif changeset.change_type == CTYPES['character']:
-        return mark_safe('%s' % (absolute_url(revision)))
-    elif changeset.change_type == CTYPES['creator']:
-        return mark_safe('%s' % (absolute_url(revision)))
     elif changeset.change_type == CTYPES['creator_signature']:
         return mark_safe('%s' % (absolute_url(revision.creator)))
     elif changeset.change_type == CTYPES['creator_art_influence']:
