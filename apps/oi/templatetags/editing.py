@@ -248,18 +248,22 @@ def link_other_reprint(reprint, is_source):
                      (reprint.target.get_absolute_url(),
                       show_story_short(reprint.target),
                       reprint.target.issue.full_name())
-        else:
+        elif reprint.target_issue:
             text = '<a href="%s">%s</a>' % \
                      (reprint.target_issue.get_absolute_url(),
                       reprint.target_issue.full_name())
+        else:
+            text = '%s' % reprint
     else:
         if reprint.origin:
             text = '<a href="%s">%s</a> <br> of %s' % \
                      (reprint.origin.get_absolute_url(),
                       show_story_short(reprint.origin),
                       reprint.origin.issue.full_name())
-        else:
+        elif reprint.origin_issue:
             text = '<a href="%s">%s</a>' % \
                      (reprint.origin_issue.get_absolute_url(),
                       reprint.origin_issue.full_name())
+        else:
+            text = '%s' % reprint
     return mark_safe(text)
