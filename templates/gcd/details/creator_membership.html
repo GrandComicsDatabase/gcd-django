@@ -24,7 +24,7 @@
     {% endif %}
     {% if creator_membership.notes %}
       <dt>Notes:
-      <dd>{{ creator_membership.notes }}
+      <dd>{{ creator_membership.notes|urlizetrunc:75|linebreaksbr }}
     {% endif %}
     {% with creator_membership.data_source.all as data_sources %}
       {% include "gcd/bits/show_sources.html" %}

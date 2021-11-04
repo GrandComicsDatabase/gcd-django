@@ -26,7 +26,7 @@
   <dd> {{ feature_logo.display_years }}
   {% if feature_logo.notes %}
   <dt>Notes:
-  <dd>{{ feature_logo.notes }}
+  <dd>{{ feature_logo.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
 <dt>Feature Logo:</dt>
 {% if feature_logo.logo %}

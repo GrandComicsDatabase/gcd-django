@@ -38,7 +38,7 @@
   {% endif %}
   {% if creator_non_comic_work.notes %}
     <dt>Notes:
-    <dd>{{ creator_non_comic_work.notes }}
+    <dd>{{ creator_non_comic_work.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
 </dl>
 {% endblock content %}

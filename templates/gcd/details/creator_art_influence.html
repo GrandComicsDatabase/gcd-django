@@ -20,7 +20,7 @@
         {% endif %}
         {% if creator_art_influence.notes %}
         <dt>Notes
-        <dd>{{ creator_art_influence.notes }}
+        <dd>{{ creator_art_influence.notes|urlizetrunc:75|linebreaksbr }}
         {% endif %}
         {% with creator_art_influence.data_source.all as data_sources %}
         {% include "gcd/bits/show_sources.html" %}

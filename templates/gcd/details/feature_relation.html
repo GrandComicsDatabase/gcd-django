@@ -25,7 +25,7 @@
         <dd> <a href="{{ feature_relation.to_feature.get_absolute_url }}">{{ feature_relation.to_feature }}</a>
 	  {% if feature_relation.notes %}
         <dt>Notes
-        <dd>{{ feature_relation.notes }}
+        <dd>{{ feature_relation.notes|urlizetrunc:75|linebreaksbr }}
     {% endif %}
       </dl>
     </div> <!-- control_center -->

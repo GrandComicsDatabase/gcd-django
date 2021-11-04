@@ -24,7 +24,7 @@
   <dd> {{ group_membership.display_years }}
   {% if group_membership.notes %}
     <dt>Notes:
-    <dd>{{ group_membership.notes }}
+    <dd>{{ group_membership.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
 </dl>
 {% endblock content %}

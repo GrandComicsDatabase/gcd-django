@@ -22,7 +22,7 @@
     {% endif %}
     {% if creator_school.notes %}
       <dt>Notes
-      <dd>{{ creator_school.notes }}
+      <dd>{{ creator_school.notes|urlizetrunc:75|linebreaksbr }}
     {% endif %}
     {% with creator_school.data_source.all as data_sources %}
       {% include "gcd/bits/show_sources.html" %}

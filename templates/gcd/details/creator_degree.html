@@ -25,7 +25,7 @@
     {% endif %}
     {% if creator_degree.notes %}
       <dt>Notes:
-      <dd>{{ creator_degree.notes }}
+      <dd>{{ creator_degree.notes|urlizetrunc:75|linebreaksbr }}
     {% endif %}
     {% with creator_degree.data_source.all as data_sources %}
       {% include "gcd/bits/show_sources.html" %}
