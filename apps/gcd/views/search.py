@@ -784,7 +784,8 @@ def compute_isbn_qobj(isbn, prefix, op):
             q_obj |= Q(**{'%svalid_isbn' % prefix:
                           stdisbn.to_isbn13(isbn_compact)})
     else:
-        q_obj = Q(**{'%sisbn__%s' % (prefix, op): isbn})
+        isbn = isbn.replace('-', '')
+        q_obj = Q(**{'%svalid_isbn__%s' % (prefix, op): isbn})
     return q_obj
 
 
