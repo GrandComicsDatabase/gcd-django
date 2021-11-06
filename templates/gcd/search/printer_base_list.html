@@ -1,0 +1,22 @@
+{% load display %}
+{% load credits %}
+
+<table class="sortable_listing">
+  <tr>
+    <th colspan="2"> Printer </th>
+    <th> Year&nbsp;Began </th>
+    <th> Year&nbsp;Ended </th>
+    <th> #&nbsp;Issues </th>
+  </tr>
+  {% for printer in items %}
+    {% with printer|object_filter as printer %}
+    <tr">
+      <td class="listing_country"> <img {{ printer.country|show_country_info }}>
+      <td class="listing_publisher"> <a href="{{ printer.get_absolute_url }}">{{ printer.name }}</a> 
+      <td style="text-align: center"> {{ printer.year_began|default:'' }} </td>
+      <td style="text-align: center"> {{ printer.year_ended|default:'' }} </td>
+      <td style="text-align: right"> {{ printer.show_issue_count }} </td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>

@@ -1,0 +1,17 @@
+{% extends "gcd/base_view.html" %}
+
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+    <script src="https://unpkg.com/htmx.org@1.6.0" integrity="sha384-G4dtlRlMBrk5fEiRXDsLjriPo8Qk5ZeHVVxS8KhX6D7I9XXJlNqbdvRlp9/glk5D" crossorigin="anonymous"></script>
+{% endblock %}
+
+
+{% block view_body %}
+<div id="tabs" hx-get="/creator/search/" hx-trigger="load after:100ms" hx-target="#tabs" hx-swap="innerHTML"></div>
+
+{% endblock %}

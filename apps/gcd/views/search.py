@@ -32,7 +32,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, StoryType,\
                             CREDIT_TYPES, Creator, CreatorMembership, \
                             CreatorArtInfluence, CreatorNonComicWork, \
                             CreatorNameDetail, SeriesPublicationType, \
-                            Award, ReceivedAward
+                            Award, ReceivedAward, Character, Group, Printer
 from apps.gcd.models.issue import INDEXED, IssuePublisherTable
 from apps.gcd.models.story import StoryTable
 from apps.gcd.models.series import SeriesPublisherTable
@@ -116,6 +116,23 @@ def generic_by_name(request, name, q_obj, sort,
             query_val[base_name] = name
 
     elif class_ is Award:
+        sort_name = "name"
+
+        if sqs is None:
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            things = things.order_by(sort_name)
+            things = things.distinct()
+        else:
+            things = sqs
+            things = things.order_by(sort_name)
+        display_name = class_.__name__
+        base_name = display_name.lower()
+        item_name = display_name.lower()
+        selected = base_name
+
+        heading = '%s Search Results' % display_name
+
+    elif class_ in [Character, Group, Printer]:
         sort_name = "name"
 
         if sqs is None:
@@ -341,16 +358,27 @@ def award_by_name(request, award_name, sort=ORDER_ALPHA):
                                Award, 'gcd/search/award_list.html')
 
 
-def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA):
+def publisher_search_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'Publishers',
+                       'object_type': 'publisher'})
+    publisher_name = request.POST['search']
+    return publisher_by_name(request, publisher_name,
+                           template='gcd/search/publisher_base_list.html')
+
+
+def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA,
+                      template='gcd/search/publisher_list.html'):
     if settings.USE_ELASTICSEARCH:
         sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
                               .models(Publisher)
         return generic_by_name(request, publisher_name, None, sort, Publisher,
-                               'gcd/search/publisher_list.html', sqs=sqs)
+                               template, sqs=sqs)
     else:
         q_obj = Q(name__icontains=publisher_name)
         return generic_by_name(request, publisher_name, q_obj, sort,
-                               Publisher, 'gcd/search/publisher_list.html')
+                               Publisher, template)
 
 
 def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
@@ -393,21 +421,95 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
                                'gcd/search/indicia_publisher_list.html')
 
 
-def creator_by_name(request, creator_name, sort=ORDER_ALPHA):
+def object_search_hx(request):
+    return render(request, 'gcd/search/active_search.html',
+                    {'object_name': 'Creators',
+                     'object_type': 'creator'})
+
+
+def printer_search_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'Printers',
+                       'object_type': 'printer'})
+    printer_name = request.POST['search']
+    sort = ORDER_ALPHA
+    template = 'gcd/search/printer_base_list.html'
+    if settings.USE_ELASTICSEARCH:
+        # TODO use name instead ?
+        sqs = SearchQuerySet().filter(
+          name=GcdNameQuery(printer_name)).models(Printer)
+        return generic_by_name(request, printer_name, None, sort,
+                               Printer, template, sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=printer_name)
+        return generic_by_name(request, printer_name, q_obj, sort,
+                               Printer, template)
+
+
+def character_search_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'Characters',
+                       'object_type': 'character'})
+    character_name = request.POST['search']
+    sort = ORDER_ALPHA
+    template = 'gcd/search/character_base_list.html'
+    if settings.USE_ELASTICSEARCH:
+        # TODO use name instead ?
+        sqs = SearchQuerySet().filter(
+          name=GcdNameQuery(character_name)).models(Character)
+        return generic_by_name(request, character_name, None, sort,
+                               Character, template, sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=character_name)
+        return generic_by_name(request, character_name, q_obj, sort,
+                               Character, template)
+
+
+def group_search_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'Groups',
+                       'object_type': 'group'})
+    group_name = request.POST['search']
+    sort = ORDER_ALPHA
+    template = 'gcd/search/character_base_list.html'
+    if settings.USE_ELASTICSEARCH:
+        # TODO use name instead ?
+        sqs = SearchQuerySet().filter(
+          name=GcdNameQuery(group_name)).models(Group)
+        return generic_by_name(request, group_name, None, sort,
+                               Character, template, sqs=sqs)
+    else:
+        q_obj = Q(name__icontains=group_name)
+        return generic_by_name(request, group_name, q_obj, sort,
+                               Group, template)
+
+
+def creator_search_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'Creators',
+                       'object_type': 'creator'})
+    creator_name = request.POST['search']
+    return creator_by_name(request, creator_name,
+                           template='gcd/search/creator_base_list.html')
+
+
+def creator_by_name(request, creator_name, sort=ORDER_ALPHA,
+                    template='gcd/search/creator_list.html'):
     if settings.USE_ELASTICSEARCH:
         # TODO use name instead ?
         sqs = SearchQuerySet().filter(
           gcd_official_name=GcdNameQuery(creator_name)).models(Creator)
         return generic_by_name(request, creator_name, None, sort,
-                               Creator,
-                               'gcd/search/creator_list.html',
-                               sqs=sqs)
+                               Creator, template, sqs=sqs)
     else:
         q_obj = Q(creator_names__name__icontains=creator_name) | Q(
             gcd_official_name__icontains=creator_name)
         return generic_by_name(request, creator_name, q_obj, sort,
-                               Creator,
-                               'gcd/search/creator_list.html')
+                               Creator, template)
 
 
 def creator_membership_by_name(request, creator_membership_name,
@@ -623,17 +725,28 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
                            selected="feature")
 
 
-def series_by_name(request, series_name, sort=ORDER_ALPHA):
+def series_search_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'Series',
+                       'object_type': 'series'})
+    series_name = request.POST['search']
+    return series_by_name(request, series_name,
+                          template='gcd/search/series_base_list.html')
+
+
+def series_by_name(request, series_name, sort=ORDER_ALPHA,
+                   template='gcd/search/series_list.html'):
     if settings.USE_ELASTICSEARCH:
         sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name)) \
                               .models(Series)
         return generic_by_name(request, series_name, None, sort, Series,
-                               'gcd/search/series_list.html', sqs=sqs)
+                               template, sqs=sqs)
     else:
         q_obj = Q(name__icontains=series_name) | \
                 Q(issue__title__icontains=series_name)
         return generic_by_name(request, series_name, q_obj, sort,
-                               Series, 'gcd/search/series_list.html')
+                               Series, template)
 
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):

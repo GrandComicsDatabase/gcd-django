@@ -23,11 +23,13 @@ NAME_TYPES = {
 }
 
 
-def _display_day(date):
+def _display_day(date, table=False):
     if date.year:
         display = '%s%s ' % (date.year,
                              '?' if date.year_uncertain else '')
     else:
+        if table:
+            return mark_safe('&mdash;')
         display = 'year? '
 
     if date.month:
@@ -35,17 +37,22 @@ def _display_day(date):
           display, calendar.month_name[int(date.month)],
           '?' if date.month_uncertain else '')
     else:
+        if table:
+            return display
         display += 'month? '
 
     if date.day:
         display = '%s%s%s ' % (display, date.day.lstrip('0'),
                                '?' if date.day_uncertain else '')
     else:
+        if table:
+            return display
         display += 'day? '
+
     return display
 
 
-def _display_place(self, type):
+def _display_place(self, type, table=False):
     city = '%s_city' % type
     if getattr(self, city):
         display = '%s%s' % (getattr(self, city),
@@ -70,7 +77,10 @@ def _display_place(self, type):
                                              country + '_uncertain') else '')
 
     if display == '':
-        return '?'
+        if table:
+            return mark_safe('&mdash;')
+        else:
+            return '?'
     return display
 
 
@@ -389,14 +399,27 @@ class Creator(GcdData):
     def display_birthday(self):
         return _display_day(self.birth_date)
 
+    def display_birthday_table(self):
+        return _display_day(self.birth_date, table=True)
+
     def display_birthplace(self):
         return _display_place(self, 'birth')
+
+    def display_birthplace_table(self):
+        return _display_place(self, 'birth', table=True)
 
     def display_deathday(self):
         return _display_day(self.death_date)
 
     def display_deathplace(self):
         return _display_place(self, 'death')
+
+    def linked_issues_count(self):
+        from .issue import Issue
+        return Issue.objects.filter(story__credits__creator__creator=self,
+                                    story__credits__deleted=False)\
+                            .distinct().count()
+
 
     def has_death_info(self):
         if str(self.death_date) != '':

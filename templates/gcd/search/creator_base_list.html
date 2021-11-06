@@ -1,0 +1,23 @@
+{% load display %}
+{% load credits %}
+<table class="sortable_listing">
+  <tr>
+    <th colspan="2">Creator</th>
+    <th> Date of Birth </th>
+    <th> Place of Birth </th>
+    <th> Issues Linked </th>
+  </tr>
+  {% for creator in items %}
+    {% with creator|object_filter as creator %}
+    <tr>
+      <td class="listing_country"> <img {{ creator.birth_country|show_country_info  }}>&nbsp&nbsp&nbsp<a href="{{ creator.get_absolute_url }}">{{ creator.gcd_official_name }}</a><td>
+      <td> {{ creator.display_birthday_table }} </td>
+      <td> {{ creator.display_birthplace_table }} </td>
+      <td> {{ creator.linked_issues_count }} </td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>
+{% if not no_result_count %}
+Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}
+{% endif %}
