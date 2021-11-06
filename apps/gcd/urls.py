@@ -36,9 +36,9 @@ urlpatterns = [
       {'export_csv': True}, name='process_advanced_search_csv'),
     url(r'^search/advanced/process/$', gcd_views.search.process_advanced,
       name='process_advanced_search'),
-    url(r'^object/search/$',
-      gcd_views.search.object_search_hx,
-      name='object_search_hx'),
+    url(r'^search/name/$',
+      gcd_views.search.name_search_hx,
+      name='name_search_hx'),
 
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/history/$',
      gcd_views.details.change_history, name='change_history'),

@@ -421,7 +421,7 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
                                'gcd/search/indicia_publisher_list.html')
 
 
-def object_search_hx(request):
+def name_search_hx(request):
     return render(request, 'gcd/search/active_search.html',
                     {'object_name': 'Creators',
                      'object_type': 'creator'})
