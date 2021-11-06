@@ -1,0 +1,17 @@
+{% load display %}
+{% load credits %}
+<table class="sortable_listing">
+  <tr>
+    <th colspan="2">{{ item_name|capfirst }} Name</th>
+    <th> Year of First Publication </th>
+  </tr>
+  {% for character in items %}
+    {% with character|object_filter as character %}
+    <tr>
+      <td> <a href="{{ character.get_absolute_url }}">{{ character }}</a><td>
+      <td> {{ character.display_year_first_published }} </td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>
+Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}

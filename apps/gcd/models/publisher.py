@@ -405,6 +405,11 @@ class Printer(BasePublisher):
 
     _update_stats = True
 
+    def show_issue_count(self):
+        from .issue import Issue
+        return Issue.objects.filter(indicia_printer__parent=self,
+                                    deleted=False).count()
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_printer',

@@ -390,6 +390,49 @@ h1.search_id {
     margin-top: 1em;
 }
 
+.active_search {
+    margin-left: -8px;
+    padding-left: 8px;
+    clear: both;
+    background-color: #ebf3ff;
+    color: black;
+    margin-bottom: 0em;
+    vertical-align: middle;
+    font-weight: bold;
+    width: 100%;
+}
+
+.active_search ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #ebf3ff;
+}
+
+.active_search li {
+    float: left;
+}
+
+.active_search li a {
+    display: block;
+    color: black;
+    text-align: center;
+    padding: 0.6em 0.6em 0.6em 0.6em;
+    text-decoration: none;
+}
+
+.active_search li a:hover {
+    background-color: #b3cff8;
+    color: DarkSlateGray;
+    text-decoration: none;
+}
+
+.active_search_selected {
+    background-color: #b3cff8;
+}
+
+
 /* for two columns on the pages with control box on the right */
 
 .control_body{
