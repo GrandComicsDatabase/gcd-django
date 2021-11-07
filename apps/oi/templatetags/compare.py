@@ -77,7 +77,8 @@ def field_value(revision, field):
             value = value[:-2]
         return mark_safe(value)
     if field == 'characters':
-        return mark_safe(revision.show_characters(css_style=False))
+        return mark_safe(revision.show_characters(css_style=False,
+                                                  compare=True))
     if field in ['is_surrogate', 'no_volume', 'display_volume_with_number',
                  'no_brand', 'page_count_uncertain', 'title_inferred',
                  'no_barcode', 'no_indicia_frequency', 'no_isbn',

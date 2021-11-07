@@ -84,6 +84,13 @@ class CharacterGroupBase(GcdData):
             return '%d%s' % (self.year_first_published,
                              '?' if self.year_first_published_uncertain else '')
 
+    @property
+    def disambiguated(self):
+        if self.disambiguation:
+            return '%s [%s]' % (self.name, self.disambiguation)
+        else:
+            return self.name
+
     def __str__(self):
         if self.year_first_published:
             year = '(p. %s)' % self.year_first_published
@@ -108,6 +115,9 @@ class Character(CharacterGroupBase):
     def active_relations(self):
         return self.from_related_character.all() | \
                self.to_related_character.all()
+
+    def active_incarnations(self):
+        return self.to_related_character.filter(relation_type_id=6)
 
     def active_memberships(self):
         return self.memberships.all().order_by('year_joined',

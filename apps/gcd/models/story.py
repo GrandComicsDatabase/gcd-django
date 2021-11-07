@@ -108,7 +108,8 @@ def character_notes(character):
     return note
 
 
-def get_civilian_identity(character, appearing_characters, url=True):
+def get_civilian_identity(character, appearing_characters, url=True,
+                          compare=False):
     civilian_identity = set(
         character.character.character.to_related_character
                  .filter(relation_type__id=2).values_list('to_character',
@@ -129,6 +130,8 @@ def get_civilian_identity(character, appearing_characters, url=True):
                     esc(identity.character.name))
             else:
                 characters += '%s' % identity.character.name
+            if compare:
+                return ' [%s]' % identity.character.character.disambiguated
             several = True
         characters += ']'
         return characters
@@ -136,9 +139,11 @@ def get_civilian_identity(character, appearing_characters, url=True):
         return ''
 
 
-def show_characters(story, url=True, css_style=True):
+def show_characters(story, url=True, css_style=True, compare=False):
     first = True
     characters = ''
+    disambiguation = ''
+
     all_appearing_characters = story.active_characters
     in_group = all_appearing_characters.exclude(group=None)
     groups = Group.objects.filter(id__in=in_group.values_list('group'))
@@ -156,6 +161,9 @@ def show_characters(story, url=True, css_style=True):
                 else:
                     characters += '%s [%s' % (group.name,
                                               member.character.name)
+                if compare:
+                    disambiguation += '%s [%s' % (
+                      group, member.character.character.disambiguated)
             else:
                 characters += '; '
                 if url:
@@ -164,10 +172,16 @@ def show_characters(story, url=True, css_style=True):
                                      esc(member.character.name))
                 else:
                     characters += '%s' % member.character.name
+                if compare:
+                    disambiguation += \
+                      '%s' % member.character.character.disambiguated
             characters += get_civilian_identity(member,
                                                 all_appearing_characters,
                                                 url=url)
             characters += character_notes(member)
+            if compare:
+                disambiguation += get_civilian_identity(
+                  member, all_appearing_characters, url=url, compare=compare)
         characters += ']; '
     characters = characters[:-2]
 
@@ -186,16 +200,27 @@ def show_characters(story, url=True, css_style=True):
             first = False
         else:
             characters += '; '
+            if compare:
+                disambiguation += '; '
         if url:
             characters += '<a href="%s">%s</a>' % (
               character.character.get_absolute_url(),
               esc(character.character.name))
         else:
             characters += '%s' % character.character.name
+        if compare:
+            disambiguation += \
+              '%s' % character.character.character.disambiguated
+
         characters += get_civilian_identity(character,
                                             appearing_characters,
                                             url=url)
         characters += character_notes(character)
+        if compare:
+            disambiguation += get_civilian_identity(character,
+                                                    appearing_characters,
+                                                    url=url,
+                                                    compare=compare)
     if story.characters:
         if url:
             text_characters = esc(story.characters)
@@ -214,7 +239,12 @@ def show_characters(story, url=True, css_style=True):
               dt + '<dd class="credit_def"><span class="credit_value">'
               + characters + '</span></dd>')
         else:
-            return mark_safe(characters)
+            if compare and disambiguation:
+                return mark_safe(characters +
+                                 '<br>For information, linked characters '
+                                 'with disambiguation:<br>' + disambiguation)
+            else:
+                return mark_safe(characters)
     else:
         return characters
 

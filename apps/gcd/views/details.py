@@ -2345,6 +2345,16 @@ def character_issues(request, character_id):
       story__appearing_characters__deleted=False,
       story__type__id__in=CORE_TYPES,
       story__deleted=False).distinct().select_related('series__publisher')
+    if character.active_incarnations().exists():
+        characters = character.active_incarnations()\
+                              .values_list('to_character_id', flat=True)
+        issues |= Issue.objects.filter(
+            story__appearing_characters__character__character_id__in=list(
+              characters),
+            story__appearing_characters__deleted=False,
+            story__type__id__in=CORE_TYPES,
+            story__deleted=False).distinct()\
+                                 .select_related('series__publisher')
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
     context = {

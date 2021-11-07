@@ -5544,8 +5544,9 @@ class StoryRevision(Revision):
     def active_characters(self):
         return self.story_character_revisions.exclude(deleted=True)
 
-    def show_characters(self, url=True, css_style=True):
-        return show_characters(self, url=url, css_style=css_style)
+    def show_characters(self, url=True, css_style=True, compare=False):
+        return show_characters(self, url=url, css_style=css_style,
+                               compare=compare)
 
     def show_feature(self):
         return show_feature(self)
