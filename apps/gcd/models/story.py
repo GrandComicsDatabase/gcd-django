@@ -163,7 +163,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
                                               member.character.name)
                 if compare:
                     disambiguation += '%s [%s' % (
-                      group, member.character.character.disambiguated)
+                      group.disambiguated, member.character.character.disambiguated)
             else:
                 characters += '; '
                 if url:
@@ -174,7 +174,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
                     characters += '%s' % member.character.name
                 if compare:
                     disambiguation += \
-                      '%s' % member.character.character.disambiguated
+                      '; %s' % member.character.character.disambiguated
             characters += get_civilian_identity(member,
                                                 all_appearing_characters,
                                                 url=url)
@@ -183,7 +183,11 @@ def show_characters(story, url=True, css_style=True, compare=False):
                 disambiguation += get_civilian_identity(
                   member, all_appearing_characters, url=url, compare=compare)
         characters += ']; '
+        if compare:
+            disambiguation += ']; '
     characters = characters[:-2]
+    if compare:
+        disambiguation = disambiguation[:-2]
 
     appearing_characters = all_appearing_characters.exclude(
       character__id__in=in_group.values_list('character'), group__isnull=False)
