@@ -789,11 +789,21 @@ def compute_isbn_qobj(isbn, prefix, op):
     return q_obj
 
 
-def issue_by_isbn(request, isbn, sort=ORDER_ALPHA):
+def issue_by_isbn_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'ISBN',
+                       'object_type': 'isbn'})
+    isbn = request.POST['search']
+    return issue_by_isbn(request, isbn,
+                         template='gcd/search/issue_base_list.html')
+
+
+def issue_by_isbn(request, isbn, sort=ORDER_ALPHA,
+                  template='gcd/search/issue_list.html'):
     q_obj = compute_isbn_qobj(isbn, '', 'icontains')
     return generic_by_name(request, isbn, q_obj, sort, class_=Issue,
-                           template='gcd/search/issue_list.html',
-                           credit="isbn")
+                           template=template, credit="isbn")
 
 
 def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
@@ -805,10 +815,21 @@ def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
                            kwargs={'isbn': isbn, 'sort': sort}))
 
 
-def issue_by_barcode(request, barcode, sort=ORDER_ALPHA):
+def issue_by_barcode_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'Barcode',
+                       'object_type': 'barcode'})
+    barcode = request.POST['search']
+    return issue_by_barcode(request, barcode,
+                            template='gcd/search/issue_base_list.html')
+
+
+def issue_by_barcode(request, barcode, sort=ORDER_ALPHA,
+                     template='gcd/search/issue_list.html'):
     q_obj = Q(barcode__icontains=barcode)
     return generic_by_name(request, barcode, q_obj, sort, class_=Issue,
-                           template='gcd/search/issue_list.html',
+                           template=template,
                            credit="barcode")
 
 

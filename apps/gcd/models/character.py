@@ -116,8 +116,11 @@ class Character(CharacterGroupBase):
         return self.from_related_character.all() | \
                self.to_related_character.all()
 
-    def active_incarnations(self):
+    def active_specifications(self):
         return self.to_related_character.filter(relation_type_id=6)
+
+    def active_generalisations(self):
+        return self.from_related_character.filter(relation_type_id=6)
 
     def active_memberships(self):
         return self.memberships.all().order_by('year_joined',

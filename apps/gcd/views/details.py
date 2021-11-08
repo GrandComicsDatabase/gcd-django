@@ -2337,7 +2337,7 @@ def show_character(request, character, preview=False):
     return render(request, 'gcd/details/character.html', vars)
 
 
-def character_issues(request, character_id):
+def character_issues(request, character_id, layer=None):
     character = get_gcd_object(Character, character_id)
 
     issues = Issue.objects.filter(
@@ -2345,9 +2345,19 @@ def character_issues(request, character_id):
       story__appearing_characters__deleted=False,
       story__type__id__in=CORE_TYPES,
       story__deleted=False).distinct().select_related('series__publisher')
-    if character.active_incarnations().exists():
-        characters = character.active_incarnations()\
+    if layer == -1 and character.active_specifications().exists():
+        characters = character.active_specifications()\
                               .values_list('to_character_id', flat=True)
+        issues |= Issue.objects.filter(
+            story__appearing_characters__character__character_id__in=list(
+              characters),
+            story__appearing_characters__deleted=False,
+            story__type__id__in=CORE_TYPES,
+            story__deleted=False).distinct()\
+                                 .select_related('series__publisher')
+    if layer == 1 and character.active_generalisations().exists():
+        characters = character.active_generalisations()\
+                              .values_list('from_character_id', flat=True)
         issues |= Issue.objects.filter(
             story__appearing_characters__character__character_id__in=list(
               characters),

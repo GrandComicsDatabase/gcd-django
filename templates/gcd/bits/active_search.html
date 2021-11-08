@@ -12,9 +12,11 @@
 {% block view_body %}
 <div class="active_search">
   <ul>
+	<li><a {% if object_name == "Barcode" %}class="active_search_selected"{% endif %} hx-get="/barcode/search/">Barcode</a></li>
 	<li><a {% if object_name == "Characters" %}class="active_search_selected"{% endif %} hx-get="/character/search/">Characters</a></li>
 	<li><a {% if object_name == "Creators" %}class="active_search_selected"{% endif %}hx-get="/creator/search/" class="selected">Creators</a></li>
 	<li><a {% if object_name == "Groups" %}class="active_search_selected"{% endif %}hx-get="/group/search/">Groups</a></li>
+	<li><a {% if object_name == "ISBN" %}class="active_search_selected"{% endif %}hx-get="/isbn/search/">ISBN</a></li>
 	<li><a {% if object_name == "Printers" %}class="active_search_selected"{% endif %}hx-get="/printer/search/">Printers</a></li>
 	<li><a {% if object_name == "Publishers" %}class="active_search_selected"{% endif %}hx-get="/publisher/search/">Publishers</a></li>
   </ul>
