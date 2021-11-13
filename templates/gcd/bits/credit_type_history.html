@@ -1,0 +1,45 @@
+{% load compare %}
+{% load display %}
+{% load static %}
+{% load credits %}
+
+<script src="https://unpkg.com/hyperscript.org"></script>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}">
+</link>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default/edit.css" %}">
+</link>
+<link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/modal.css" %}"/>
+
+<div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
+  <div class="modal-underlay" _="on click trigger closeModal"></div>
+  <div class="modal-content">
+    <table class="sortable_listing">
+      <tr>
+		<th>Date Approved</th>
+		<th>Indexer</th>
+		<th>Previous</th>
+		<th>Change</th>
+	  </tr>
+  {% with changeset=first.revision.changeset %}
+	  <tr>
+	    <td><a href="{% url "compare" changeset.id %}">{{ changeset.modified }}</a></td>
+	    <td>{{ changeset.indexer.indexer|absolute_url }}</td>
+        <td>{{ first|show_creator_credit_bare:credit_type }}</td>
+        <td></td>
+	  </tr>
+  {% endwith %}
+  {% for change in changes %}
+	  <tr>
+	    <td><a href="{% url "compare" change.0.id %}">{{ change.0.modified }}</a></td>
+	    <td>{{ change.0.indexer.indexer|absolute_url }}</td>
+		<td>{{ change.1|show_diff:"orig" }}</td>
+		<td>{{ change.1|show_diff:"change" }}</td>
+	  </tr>
+   {% endfor %}
+	</table>
+    <button _="on click trigger closeModal">Close</button> 
+  </div>
+</div>

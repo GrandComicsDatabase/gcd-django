@@ -1,0 +1,14 @@
+{% load static %}
+<link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/modal.css" %}"/>
+<script src="https://unpkg.com/hyperscript.org"></script>
+<div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
+	<div class="modal-underlay" _="on click trigger closeModal"></div>
+	<div class="modal-content">
+		<p>The source of the <b>{{ credit.credit_type }}</b> credit for <b>{{ credit.creator.name }}</b> is:
+		<br>
+		{{ credit.sourced_by }}
+		</p>
+		<button _="on click trigger closeModal">Close</button> <a style="float: right;" href="{{ issue_url }}">Show All Sources</a>
+	</div>
+</div>

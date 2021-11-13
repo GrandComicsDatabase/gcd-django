@@ -128,7 +128,7 @@ class CreatorNameDetail(GcdData):
                                   default=Script.LATIN_PK)
 
     def display_credit(self, credit, url=True, compare=False, search=False,
-                       show_sources=False, full_path=''):
+                       show_sources=False):
         co_name = ''
         as_name = ''
         extra_name = ''
@@ -261,16 +261,11 @@ class CreatorNameDetail(GcdData):
             if show_sources:
                 credit_text += ' (sourced: %s)' % esc(credit.sourced_by)
             else:
-                if url and full_path:
-                    credit_text += ' (<a href="%s' % full_path
-                    if '?' in full_path:
-                        credit_text += '&show_sources'
-                    else:
-                        credit_text += '?show_sources'
-                    if hasattr(credit, 'story'):
-                        credit_text += '#%d">sourced</a>)' % credit.story_id
-                    else:
-                        credit_text += '">sourced</a>)'
+                if url:
+                    credit_text += ' <a hx-get="/credit/%d/source/"' % \
+                      credit.id
+                    credit_text += ' hx-target="body" hx-swap="beforeend"' +\
+                                   ' style="color: #00e;">(sourced)</a>'
                 else:
                     credit_text += ' (sourced)'
 
@@ -419,7 +414,6 @@ class Creator(GcdData):
         return Issue.objects.filter(story__credits__creator__creator=self,
                                     story__credits__deleted=False)\
                             .distinct().count()
-
 
     def has_death_info(self):
         if str(self.death_date) != '':

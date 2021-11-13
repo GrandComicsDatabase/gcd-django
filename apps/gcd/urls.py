@@ -287,6 +287,13 @@ urlpatterns = [
     url(r'^issue/(?P<issue_id>\d+)/image/$',
       gcd_views.details.issue_images, name='issue_images'),
 
+    # Credits
+    url(r'^credit/(?P<credit_id>\d+)/source/$',
+      gcd_views.details.credit_source, name='credit_source'),
+    # Stories
+    url(r'^story/(?P<story_id>\d+)/(?P<credit_type>.+)/history/$',
+      gcd_views.details.credit_type_history, name='credit_type_history'),
+
     # Feature
     url(r'^feature/(?P<feature_id>\d+)/issues/$',
       gcd_views.details.feature_issuelist_by_id, name='feature_issuelist_by_id'),

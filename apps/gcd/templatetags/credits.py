@@ -290,7 +290,7 @@ def search_creator_credit(story, credit_type):
     return mark_safe(credit_value)
 
 
-def __credit_value(story, credit_type, url, show_sources=False, full_path=''):
+def __credit_value(story, credit_type, url, show_sources=False):
     # for results from elasticsearch
     if '_object' in story.__dict__:
         credits = story.object.active_credits.filter(
@@ -302,7 +302,7 @@ def __credit_value(story, credit_type, url, show_sources=False, full_path=''):
     for credit in credits:
         if credit.credit_type_id == CREDIT_TYPES[credit_type]:
             displayed_credit = credit.creator.display_credit(
-              credit, url=url, show_sources=show_sources, full_path=full_path)
+              credit, url=url, show_sources=show_sources)
             if credit_value:
                 credit_value += '; %s' % displayed_credit
             else:
@@ -317,24 +317,34 @@ def __credit_value(story, credit_type, url, show_sources=False, full_path=''):
 
 
 @register.simple_tag
-def show_full_credits(story, credit_type, show_sources, full_path):
+def show_full_credits(story, credit_type, show_sources):
     return show_creator_credit(story, credit_type,
-                               show_sources=show_sources, full_path=full_path)
+                               show_sources=show_sources)
 
 
 @register.filter
 def show_creator_credit(story, credit_type, url=True,
-                        show_sources=False, full_path=''):
+                        show_sources=False):
     credit_value = __credit_value(story, credit_type, url,
-                                  show_sources, full_path)
+                                  show_sources)
     if credit_value and url:
-        return mark_safe(
-           '<dt class="credit_tag"><span class="credit_label">'
-           + credit_type.capitalize() + '</span></dt>' +
-           '<dd class="credit_def"><span class="credit_value">'
-           + credit_value + '</span></dd>')
+        val = '<dt class="credit_tag"><span class="credit_label">'
+        if type(story) == Story:
+            val += '<a hx-get="/story/%d/%s/history/" ' % (story.id,
+                                                           credit_type) + \
+                   'hx-target="body" hx-swap="beforeend" style="color: #00e;">'
+        val += credit_type.capitalize() + '</a></span></dt>' + \
+          '<dd class="credit_def"><span class="credit_value">' + \
+          credit_value + '</span></dd>'
+        return mark_safe(val)
     else:
         return credit_value
+
+
+@register.filter
+def show_creator_credit_bare(story, credit_type):
+    credit_value = __credit_value(story, credit_type, url=True)
+    return credit_value
 
 
 @register.filter

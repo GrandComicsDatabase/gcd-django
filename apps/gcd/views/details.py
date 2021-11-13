@@ -14,7 +14,8 @@ from django.conf import settings
 import django.urls as urlresolvers
 from django.shortcuts import get_object_or_404, \
                              render
-from django.http import HttpResponseRedirect, Http404, JsonResponse
+from django.http import HttpResponseRedirect, Http404, JsonResponse, \
+                        HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -38,7 +39,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
                             Printer, IndiciaPrinter, School, Story, \
-                            Character, Group, \
+                            Character, Group, StoryCredit, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable,\
                                     CharacterCreatorTable, GroupCreatorTable,\
@@ -50,7 +51,8 @@ from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
                                   IndiciaPublisherIssueTable,\
                                   IssuePublisherTable, PublisherIssueTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable
-from apps.gcd.models.story import CORE_TYPES, AD_TYPES, StoryTable
+from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
+                                  StoryTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
                            ResponsePaginator
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
@@ -2854,6 +2856,65 @@ def show_issue(request, issue, preview=False):
        'show_sources': show_sources,
        'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
        })
+
+
+def credit_source(request, credit_id):
+    """
+    Show the source of a credit for use in a modal.
+    """
+    credit = get_object_or_404(StoryCredit.objects.select_related(
+      'creator', 'credit_type', 'story__issue'), id=credit_id)
+
+    if credit.deleted or not credit.is_sourced:
+        return HttpResponse("")
+
+    issue_url = credit.story.issue.get_absolute_url()
+    issue_url += '?show_all&show_sources#%d' % credit.story.id
+
+    return render(request, 'gcd/bits/credit_source.html',
+                  {'credit': credit, 'issue_url': issue_url})
+
+
+def credit_type_history(request, story_id, credit_type):
+    from apps.oi.templatetags.compare import diff_list
+    from apps.oi.models import PreviewStory
+
+    if credit_type not in CREDIT_TYPES:
+        raise ValueError
+
+    story = get_object_or_404(Story, id=story_id)
+    storyrevisions = story.revisions.filter(changeset__state=states.APPROVED)\
+                                    .order_by('modified', 'id')\
+                                    .select_related('changeset__indexer')
+    old = getattr(storyrevisions[0], credit_type)
+    old_rev = storyrevisions[0]
+    changes = []
+    for storyrev in storyrevisions[1:]:
+        new = getattr(storyrev, credit_type)
+        changed = old.strip() != new.strip()
+        if not changed:
+            credits = storyrev.story_credit_revisions.filter(
+                              credit_type__name=credit_type)
+            if credits:
+                for credit in credits:
+                    credit.compare_changes()
+                    if credit.is_changed:
+                        changed = True
+                        break
+        if changed:
+            changes.append((old_rev, storyrev))
+        old = new
+        old_rev = storyrev
+    change_data = []
+    for change in changes:
+        change_data.append((change[1].changeset, diff_list(change[0],
+                                                           change[1],
+                                                           credit_type)))
+
+    return render(request, 'gcd/bits/credit_type_history.html',
+                  {'changes': change_data,
+                   'first': PreviewStory.init(storyrevisions[0]),
+                   'credit_type': credit_type})
 
 
 @xframe_options_sameorigin

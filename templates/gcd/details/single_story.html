@@ -45,16 +45,16 @@
         {% if story.has_credits %}
       <dl class="credits">
           {% with full_path=request.get_full_path %}
-            {% show_full_credits story "script" show_sources full_path %}
-            {% show_full_credits story "pencils" show_sources full_path %}
-            {% show_full_credits story "inks" show_sources full_path %}
-            {% show_full_credits story "colors" show_sources full_path %}
+            {% show_full_credits story "script" show_sources %}
+            {% show_full_credits story "pencils" show_sources %}
+            {% show_full_credits story "inks" show_sources %}
+            {% show_full_credits story "colors" show_sources %}
 	  {% if is_cover and not preview and user.is_authenticated and user.indexer.cover_letterer_creator_only %}
             {{ story|show_cover_letterer_credit }}
 	  {% else %}
-            {% show_full_credits story "letters" show_sources full_path %}
+            {% show_full_credits story "letters" show_sources %}
 	  {% endif %}
-            {% show_full_credits story "editing" show_sources full_path %}
+            {% show_full_credits story "editing" show_sources %}
           {% endwith %}
       </dl>
         {% endif %}
