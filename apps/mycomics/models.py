@@ -131,7 +131,7 @@ class Collection(models.Model):
     sell_price_used = models.BooleanField(default=False,
                                           verbose_name="show sell price")
     digital_used = models.BooleanField(default=False,
-                                       verbose_name="track digitial versions")
+                                       verbose_name="track digital versions")
     rating_used = models.BooleanField(default=False,
                                       verbose_name="rate comics")
     def get_absolute_url(self):
