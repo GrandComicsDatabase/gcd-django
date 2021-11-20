@@ -71,6 +71,10 @@
     color: red;
 }
 
+.form-group .control-label {
+    color: black;
+}
+
 .btn-group > .my-btn {
     position: absolute;
     left: -35px;

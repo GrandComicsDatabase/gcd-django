@@ -33,7 +33,7 @@ from apps.mycomics.forms import CollectionForm, CollectionItemForm, \
 from apps.stddata.models import Date
 from apps.stddata.forms import DateForm
 from apps.mycomics.models import Collection, CollectionItem, Subscription, \
-                                 Location, PurchaseLocation
+                                 Location, PurchaseLocation, CollectionItemFilter
 from django.utils.translation import ugettext as _
 
 INDEX_TEMPLATE = 'mycomics/index.html'
@@ -103,9 +103,13 @@ def view_collection(request, collection_id):
             'base_url': base_url,
             'needed_covers_url': needed_covers_url,
             'unindexed_issues_url': unindexed_issues_url}
-    paginator = ResponsePaginator(items, vars=vars, per_page=DEFAULT_PER_PAGE,
+    f = CollectionItemFilter(request.GET, queryset=items, collection=collection)
+    vars['filter'] = f
+    paginator = ResponsePaginator(f.qs, vars=vars, per_page=DEFAULT_PER_PAGE,
                                   alpha=True)
     paginator.paginate(request)
+
+
     return render(request, COLLECTION_TEMPLATE, vars)
 
 

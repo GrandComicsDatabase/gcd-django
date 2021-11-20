@@ -170,7 +170,8 @@ INSTALLED_APPS = (
     'captcha',
     'crispy_forms',
     'pagedown.apps.PagedownConfig',
-    'rosetta'
+    'rosetta',
+    'django_filters',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.

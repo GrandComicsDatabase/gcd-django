@@ -4,6 +4,8 @@ from django.db import models
 from django.utils.safestring import mark_safe
 import django.urls as urlresolvers
 
+import django_filters
+
 from model_utils import Choices
 
 from apps.gcd.models import Issue, Series
@@ -252,6 +254,53 @@ class CollectionItem(models.Model):
     def get_absolute_url(self, collection):
         return urlresolvers.reverse('view_item', kwargs={'item_id':self.id,
                                     'collection_id':collection.id})
+
+
+OWN_CHOICES = (
+    (True, 'I own'),
+    (False, 'I want'),
+)
+
+class CollectionItemFilter(django_filters.FilterSet):
+    price_paid = django_filters.RangeFilter()
+    sell_price = django_filters.RangeFilter()
+    market_value = django_filters.RangeFilter()
+    rating = django_filters.RangeFilter()
+    own = django_filters.ChoiceFilter(choices=OWN_CHOICES)
+    def __init__(self, *args, **kwargs):
+        collection = kwargs.pop('collection')
+        super().__init__(*args, **kwargs)
+        if not collection.price_paid_used:
+            self.filters.pop('price_paid')
+        if not collection.sell_price_used:
+            self.filters.pop('sell_price')
+        if not collection.market_value_used:
+            self.filters.pop('market_value')
+        if not collection.rating_used:
+            self.filters.pop('rating')
+        if not collection.signed_used:
+            self.filters.pop('signed')
+        if not collection.was_read_used:
+            self.filters.pop('was_read')
+        if not collection.for_sale_used:
+            self.filters.pop('for_sale')
+        if not collection.own_used:
+            self.filters.pop('own')
+        if not collection.digital_used:
+            self.filters.pop('is_digital')
+
+    class Meta:
+        model = CollectionItem
+        fields = ['own',
+                  'was_read',
+                  'signed',
+                  'is_digital',
+                  'for_sale',
+                  'rating',
+                  'price_paid',
+                  'market_value',
+                  'sell_price']
+
 
 class ConditionGradeScale(models.Model):
     """Class representing condition grade scale for use by collectors."""
