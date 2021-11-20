@@ -13,6 +13,7 @@ from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.utils.html import conditional_escape as esc
 from django.utils.html import mark_safe
+from django.utils.http import urlencode
 
 from djqscsv import render_to_csv_response
 import csv
@@ -108,7 +109,13 @@ def view_collection(request, collection_id):
     paginator = ResponsePaginator(f.qs, vars=vars, per_page=DEFAULT_PER_PAGE,
                                   alpha=True)
     paginator.paginate(request)
-
+    get_copy = request.GET.copy()
+    get_copy.pop('page', None)
+    if get_copy:
+        extra_query_string = '&%s' % get_copy.urlencode()
+    else:
+        extra_query_string = ''
+    vars['extra_query_string'] = extra_query_string
 
     return render(request, COLLECTION_TEMPLATE, vars)
 
