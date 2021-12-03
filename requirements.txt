@@ -10,7 +10,7 @@ django-bootstrap3<16
 django-compressor<2.5
 django-contact-form<1.10
 django-crispy-forms<1.13
-django-filters<22
+django-filter<22
 django-haystack<3.1
 django-imagekit<4.1
 django-markdownx<3.1
