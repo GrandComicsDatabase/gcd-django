@@ -474,7 +474,7 @@ def creator_series(request, creator_id, country=None, language=None):
     table = CreatorSeriesTable(series, attrs={'class': 'sortable_listing'},
                                creator=creator,
                                template_name='gcd/bits/sortable_table.html',
-                               order_by=('feature'))
+                               order_by=('name'))
     return generic_sortable_list(request, series, table, template, context)
 
 
