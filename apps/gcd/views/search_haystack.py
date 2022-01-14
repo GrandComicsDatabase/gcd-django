@@ -161,6 +161,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                    in self.form.selected_facets) or \
                   ('facet_model_name_exact:series'
                    in self.form.selected_facets) or \
+                  ('facet_model_name_exact:character'
+                   in self.form.selected_facets) or \
                   ('facet_model_name_exact:feature'
                    in self.form.selected_facets):
                     if request.GET['sort'] == 'alpha':
