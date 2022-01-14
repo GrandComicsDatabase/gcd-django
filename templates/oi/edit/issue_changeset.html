@@ -32,24 +32,24 @@
   {% else %}
     {% if issue_revision.issue or issue_revision.variant_of %}
   <tr>
-  <form class="changeset" method="GET"
-        action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
     <td colspan="2" align="left">
-      <div class="left">
-      <input type="submit" id="add_story" name="add" value="Add story">
+      <form class="changeset" method="GET"
+        action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+        <div class="left">
+          <input type="submit" id="add_story" name="add" value="Add story">
       {% if issue_revision.variant_of %}
-      <br>Only a cover sequence can be added to a variant, and only if the cover artwork is different. On the issue display page the <br>sequences from the <a href="{% url "show_issue" issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence, if that one exists.
-      <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
+          <br>Only a cover sequence can be added to a variant, and only if the cover artwork is different. On the issue display page the <br>sequences from the <a href="{% url "show_issue" issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence, if that one exists.
+          <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
       {% else %}
-      <input type="submit" id="copy_story" name="copy" value="Copy story">
-      </div>
-      <div class="right">
-      &nbsp;sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
-      <input type="text" size="4" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
-      </div>
+          <input type="submit" id="copy_story" name="copy" value="Copy story">
+        </div>
+        <div class="right">
+          &nbsp;sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
+          <input type="text" size="4" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
+        </div>
       {% endif %}
+      </form>
     </td>
-  </form>
   </tr>
     {% endif %}
   {% endif %}
@@ -101,8 +101,8 @@
     <td colspan="2">
       <form method="GET"
         action="{% url "move_issue" issue_revision_id=issue_revision.id series_id=0 %}">
-        <input type="submit" value="Move to series with id"></input>
-        <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"></input> brand/indicia publisher values might reset
+        <input type="submit" value="Move to series with id">
+        <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"> brand/indicia publisher values might reset
       </form>
     </td>
   </tr>
