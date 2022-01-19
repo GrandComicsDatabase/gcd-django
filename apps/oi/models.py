@@ -6856,6 +6856,12 @@ class ReprintRevision(Revision):
             'notes': '',
         }
 
+    def _pre_delete(self, changes):
+        for revision in self.source.revisions.all():
+            setattr(revision, 'reprint_id', None)
+            revision.save()
+        self.reprint_id = None
+
     def _start_imp_sum(self):
         self._seen_origin = False
         self._seen_target = False
