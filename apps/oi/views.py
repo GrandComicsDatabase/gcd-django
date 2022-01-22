@@ -2080,7 +2080,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                        variant_of, variant_cover)
 
     form = form_class(request.POST)
-    if not form.is_valid() or not credits_formset.is_valid():
+    if not form.is_valid() or not credits_formset.is_valid() \
+       or not external_link_formset.is_valid():
         return _display_add_issue_form(request, series, form,
                                        credits_formset, code_number_formset,
                                        external_link_formset,
