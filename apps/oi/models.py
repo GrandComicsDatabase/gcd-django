@@ -4357,6 +4357,83 @@ class IssueRevision(Revision):
                 _removed_related_objects(removed_code_numbers,
                                          'publisher_code_number')
 
+    def migrate_credits(self):
+        if self.editing and self.editing != '?':
+            credits = self.editing.strip(';')
+            credits = credits.split(';')
+            old_credits = ''
+            for credit in credits:
+                credit = credit.strip()
+                save_credit = credit
+                if credit.strip()[-1] == '?':
+                    credit = credit[:-1]
+                    uncertain = True
+                else:
+                    uncertain = False
+                is_credited = False
+                credited_as = ''
+                if credit.find('(') > 1:
+                    note = credit[credit.find('(')+1:].strip()
+                    end_note = note.find(')')
+                    remainder_note = note[end_note+1:].strip()
+                    note = note[:end_note].strip()
+                    save_credit = credit
+                    credit = credit[:credit.find('(')-1]
+                    if note in ['credited', 'kreditert']:
+                        is_credited = True
+                        note = ''
+                        if remainder_note:
+                            if remainder_note.find('as ') > 1:
+                                credited_as = remainder_note[
+                                                remainder_note.find('as ')+3:
+                                                remainder_note.find(']')]
+                            else:
+                                note = remainder_note
+                    else:
+                        note = save_credit[save_credit.find('('):].strip()
+                else:
+                    note = ''
+                if credit.find('[') > 1:
+                    value = credit[credit.find('[')+1:]
+                    value = value[value.find(' ')+1:]
+                    value = value.strip().strip(']')
+                    credit = value
+
+                creator = CreatorNameDetail.objects.filter(name=credit,
+                                                           deleted=False)
+                # exclude ghost names
+                creator = creator.exclude(type=12)
+
+                if creator.count() == 1:
+                    creator = creator.get()
+                    if uncertain and not creator.is_official_name:
+                        if creator.in_script == creator.creator\
+                            .active_names().get(is_official_name=True)\
+                            .in_script:
+                            creator = creator.creator.active_names().get(
+                                                is_official_name=True)
+                    if note and note[0] == '(' and note[-1] == ')':
+                        note = note[1:-1]
+                    if note == '':
+                        note = 'editor'
+                    credit_revision = IssueCreditRevision(
+                        changeset=self.changeset,
+                        issue_revision_id=self.id,
+                        creator=creator,
+                        credit_type_id=CREDIT_TYPES['editing'],
+                        is_credited=is_credited,
+                        credited_as=credited_as,
+                        uncertain=uncertain,
+                        credit_name=note)
+                    credit_revision.save()
+                else:
+                    if old_credits:
+                        old_credits += '; ' + save_credit
+                    else:
+                        old_credits = save_credit
+            setattr(self, 'editing', old_credits)
+            self.save()
+
     def get_absolute_url(self):
         if self.issue is None:
             return "/issue/revision/%i/preview" % self.id

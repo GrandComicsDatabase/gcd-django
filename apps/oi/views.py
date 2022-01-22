@@ -673,10 +673,14 @@ def _save(request, form, revision, changeset=None, model_name=None):
             return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
         if 'save_migrate' in request.POST:
-            if revision.old_credits():
-                revision.migrate_credits()
-            if revision.feature:
-                revision.migrate_feature()
+            if model_name == 'issue':
+                if revision.editing:
+                    revision.migrate_credits()
+            else:
+                if revision.old_credits():
+                    revision.migrate_credits()
+                if revision.feature:
+                    revision.migrate_feature()
             return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
         if 'save_return' in request.POST:

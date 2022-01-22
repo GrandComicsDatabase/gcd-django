@@ -13,7 +13,7 @@ from django.forms.models import inlineformset_factory
 from dal import autocomplete
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field
+from crispy_forms.layout import Layout, Field, HTML
 
 from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
@@ -23,8 +23,7 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision,\
-                           PublisherCodeNumberRevision, ExternalLinkRevision, \
-                           get_issue_field_list
+                           PublisherCodeNumberRevision, get_issue_field_list
 from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType,\
                             CreatorNameDetail, IndiciaPrinter
 
@@ -46,6 +45,9 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
+            self.helper.layout[26].append(
+              HTML('<th></th><td><input type="submit" name="save_migrate"'
+                   ' value="save and migrate editing"  /></td>'))
 
             issue_year = None
             if revision and revision.key_date:
