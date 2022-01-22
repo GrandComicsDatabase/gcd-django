@@ -2134,6 +2134,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
         code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
     else:
         code_number_formset = None
+    external_link_formset = ExternalLinkRevisionFormSet(request.POST or None)
 
     if request.method != 'POST':
         initial = dict(issue_revision.__dict__)
@@ -2147,7 +2148,8 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
               extra=credits.count() + 1)(initial=credits.values(
                                          *credits[0]._field_list()))
         return _display_add_issue_form(request, series, form, credits_formset,
-                                       code_number_formset, None, None, None,
+                                       code_number_formset,
+                                       external_link_formset, None, None,
                                        issue_revision=issue_revision)
 
     if 'cancel' in request.POST:
@@ -2158,7 +2160,8 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     form = form_class(request.POST)
     if not form.is_valid():
         return _display_add_issue_form(request, series, form, credits_formset,
-                                       code_number_formset, None, None, None,
+                                       code_number_formset,
+                                       external_link_formset, None, None,
                                        issue_revision=issue_revision)
 
     variant_revision = form.save(commit=False)
@@ -2167,7 +2170,8 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
                                          variant_of=issue_revision.issue)
     form.save_m2m()
     extra_forms = {'credits_formset': credits_formset,
-                   'code_number_formset': code_number_formset}
+                   'code_number_formset': code_number_formset,
+                   'external_link_formset': external_link_formset}
     variant_revision.process_extra_forms(extra_forms)
     changeset.change_type = CTYPES['variant_add']
     changeset.save()
@@ -2200,8 +2204,10 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision,
         code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
     else:
         code_number_formset = None
+    external_link_formset = ExternalLinkRevisionFormSet(request.POST or None)
     extra_forms = {'credits_formset': credits_formset,
-                   'code_number_formset': code_number_formset}
+                   'code_number_formset': code_number_formset,
+                   'external_link_formset': external_link_formset}
     issuerevision.process_extra_forms(extra_forms)
 
     return True
