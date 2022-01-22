@@ -1,6 +1,6 @@
 # GCD Web Application
 
-This file last updated: *Aug 2020*
+This file last updated: *Jan 2022*
 
 This is the current implementation of the Grand Comics Database, hosted at
 https://www.comics.org/ (production) and https://beta.comics.org/ (public beta
@@ -17,7 +17,9 @@ http://groups.google.com/group/gcd-tech/
 
 ## Setting up a Development Environment
 
-Our Vagrant-setup needs updating ! We used recommend that you use [our Vagrant-based development environment](https://github.com/GrandComicsDatabase/gcd-django-vagrant-install), but it is not working any more and currently no one with expertise to update it.
+Our Vagrant-setup needs updating ! We used to recommend that you use [our Vagrant-based development environment](https://github.com/GrandComicsDatabase/gcd-django-vagrant-install), but it is not working any more and there is currently no one with the expertise to update it.
+
+We are investigating a container based setup using docker, help in setting this up is appreciated.
 
 You can find manual instructions for various platforms in the docs directory
 [GCD Docs](https://github.com/GrandComicsDatabase/gcd-django/tree/beta/docs) but they aren't
@@ -74,7 +76,7 @@ via [gcd-tech](https://groups.google.com/group/gcd-tech/)
 
 ## History of the Code
 
-The current production code runs on Django 2.2.
+The current production code runs on Django 3.2.
 
 This version of the GCD web application was initially written in Python using
 Django 0.96, and rushed into deployment in late 2009 when the prior system's
