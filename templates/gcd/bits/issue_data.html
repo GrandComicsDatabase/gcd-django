@@ -54,16 +54,23 @@
             <dt>Barcode</dt>
             <dd id="barcode">{{ issue.barcode|show_barcode|default:"?" }}</dd>
 {% endif %}
-  {% if issue.active_code_numbers.count %}
-    {% for code_number in issue.active_code_numbers %}
-      <dt>{{ code_number.number_type }}</dt> <dd>{{ code_number.number }}</dd>
-    {% endfor %}
-  {% endif %}
+{% if issue.active_code_numbers.count %}
+  {% for code_number in issue.active_code_numbers %}
+    <dt>{{ code_number.number_type }}</dt> <dd>{{ code_number.number }}</dd>
+  {% endfor %}
+{% endif %}
 {% if not issue.no_indicia_printer and issue.series.has_indicia_printer and issue.active_printers.count %}
             <dt>Printer</dt>
             <dd id="printer">{{ issue.show_printer }}</dd>
 {% endif %}
-      </dl>
+</dl>
+<dl id="issue_data_list">
+{% if issue.external_link.count %}
+  {% for external_link in issue.external_link.all %}
+    <dt>Link</dt> <dd>{{ external_link.link|urlize }}</dd>
+  {% endfor %}
+{% endif %}
+</dl>
 <dl>
 {{ issue|show_creator_credit:"editing" }}
 </dl>

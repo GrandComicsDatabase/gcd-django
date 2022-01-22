@@ -38,6 +38,13 @@ After approval the <span class="comparison_highlight">approver needs to check th
     {% endwith %}
   {% endfor %}
 {% endif %}
+{% if revision.external_link_revisions %}
+  {% for external_link_revision in revision.external_link_revisions.all %}
+    {% with external_link_revision as story_revision %}
+      {% include 'oi/bits/compare_story.html' %}
+    {% endwith %}
+  {% endfor %}
+{% endif %}
 <hr>
   {% if not revision.series.is_comics_publication %}
 <div>The individual issues of this series are each less than 50% comics.</div>

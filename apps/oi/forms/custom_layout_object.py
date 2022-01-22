@@ -1,8 +1,21 @@
-from crispy_forms.layout import LayoutObject
 from django.template.loader import render_to_string
+
+from crispy_forms.layout import LayoutObject
+from crispy_forms.layout import Field
+from crispy_forms.utils import render_field
 
 # from:
 # ###### https://stackoverflow.com/questions/15157262/django-crispy-forms-nesting-a-formset-within-a-form/22053952#22053952
+
+
+class BaseField(Field):
+    def render(self, form, form_style, context, template_pack=None):
+        fields = ''
+
+        for field in self.fields:
+            fields += render_field(field, form, form_style, context,
+                                   template_pack=template_pack)
+        return fields
 
 
 class FormAsField(LayoutObject):

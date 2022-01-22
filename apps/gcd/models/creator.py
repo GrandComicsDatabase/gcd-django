@@ -10,7 +10,7 @@ import django_tables2 as tables
 
 from .gcddata import GcdData
 from .award import ReceivedAward
-from .datasource import DataSource
+from .datasource import DataSource, ExternalLink
 from .image import Image
 from apps.stddata.models import Country, Date, Script
 
@@ -338,6 +338,7 @@ class Creator(GcdData):
                                    related_name='+', null=True)
 
     whos_who = models.URLField(null=True)
+    external_link = models.ManyToManyField(ExternalLink)
 
     birth_country = models.ForeignKey(Country, on_delete=models.CASCADE,
                                       related_name='birth_country',

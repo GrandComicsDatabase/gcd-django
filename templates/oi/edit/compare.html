@@ -83,6 +83,15 @@ The <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:re
   {% include 'oi/bits/compare.html' %}
 {% endif %}
 
+{% if revision.external_link_revisions and not changeset_type == 'issue' %}
+  {% for external_link_revision in revision.external_link_revisions.all %}
+    {% with revision=external_link_revision prev_rev=external_link_revision.previous field_list=external_link_revision.field_list post_rev=external_link_revision.posterior revisions_before=None %}
+      {{ revision.compare_changes|default:'' }}
+      {% include 'oi/bits/compare.html' %}
+    {% endwith %}
+  {% endfor %}
+{% endif %}
+
 <h3> Comments </h3>
 
 {% with changeset.comments as comments %}

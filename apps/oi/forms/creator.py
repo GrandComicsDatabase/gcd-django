@@ -12,7 +12,6 @@ from dal import autocomplete
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
-from crispy_forms.utils import render_field
 
 from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
                            CreatorArtInfluenceRevision, CreatorDegreeRevision,\
@@ -25,7 +24,7 @@ from apps.gcd.models import NameType, CreatorNameDetail, ImageType, School
 from apps.stddata.models import Country
 from apps.oi import states
 
-from .custom_layout_object import Formset, FormAsField
+from .custom_layout_object import Formset, FormAsField, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_HELP_TEXTS, CREATOR_ARTINFLUENCE_HELP_TEXTS,
                       CREATOR_NONCOMICWORK_HELP_TEXTS,
@@ -122,16 +121,6 @@ CreatorRevisionFormSet = inlineformset_factory(
     formset=CustomInlineFormSet)
 
 
-class BaseField(Field):
-    def render(self, form, form_style, context, template_pack=None):
-        fields = ''
-
-        for field in self.fields:
-            fields += render_field(field, form, form_style, context,
-                                   template_pack=template_pack)
-        return fields
-
-
 def get_creator_revision_form(revision=None, user=None):
     class RuntimeCreatorRevisionForm(CreatorRevisionForm):
         def __init__(self, *args, **kwargs):
@@ -187,9 +176,14 @@ class CreatorRevisionForm(forms.ModelForm):
                                            template='oi/bits/uni_field.html'))
                            for field in fields[1:death_start]])
         field_list.append(FormAsField('death_date_form'))
+        whos_link = fields.index('whos_who')
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[death_start:-1]])
+                           for field in fields[death_start:whos_link+1]])
+        field_list.append(Formset('external_link_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[whos_link+1:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = CREATOR_HELP_LINKS
 

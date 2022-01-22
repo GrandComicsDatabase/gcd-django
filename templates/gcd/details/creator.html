@@ -51,6 +51,11 @@
   {% if creator.notes %}
             <p><strong>Notes:</strong> {{ creator.notes|urlizetrunc:75|linebreaksbr }}</p>
   {% endif %}
+  {% if creator.external_link.count %}
+  {% for external_link in creator.external_link.all %}
+    <strong>Link:</strong> {{ external_link.link|urlize }}
+  {% endfor %}
+{% endif %}
             <p>
           <ul style="columns: 2;">
             <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue Checklist (via credit search for name "{{ creator.gcd_official_name }}")</a></li>

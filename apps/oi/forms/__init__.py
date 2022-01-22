@@ -3,8 +3,9 @@
 
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.contrib.contenttypes.forms import generic_inlineformset_factory
 
-from apps.oi.models import OngoingReservation
+from apps.oi.models import OngoingReservation, ExternalLinkRevision
 from apps.gcd.models import Series
 from apps.stddata.forms import DateForm
 
@@ -245,3 +246,22 @@ class DateRevisionForm(DateForm):
                     '%s_source_description' % self.prefix,
                     'Source description and source type must both be set.')
         return cd
+
+
+class ExternalLinkRevisionForm(forms.ModelForm):
+    class Meta:
+        model = ExternalLinkRevision
+        fields = ['site', 'link']
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['link'] and 'site' in cd and \
+           cd['site'].matching not in cd['link']:
+            raise forms.ValidationError(
+              ['Matching phrase "%s" from "%s" is not in "%s".' % (
+                cd['site'].matching, cd['site'], cd['link'])])
+
+
+ExternalLinkRevisionFormSet = generic_inlineformset_factory(
+  ExternalLinkRevision, form=ExternalLinkRevisionForm,
+  can_delete=True, extra=1)

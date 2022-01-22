@@ -37,6 +37,12 @@ GCD :: Character :: {{ character.name }}
         <dt> Notes:
         <dd> {{ character.notes|markdown }}
 {% endif %}
+{% if character.external_link.count %}
+  {% for external_link in character.external_link.all %}
+    <strong>Link:</strong> {{ external_link.link|urlize }}
+  {% endfor %}
+{% endif %}
+
 <p>{{ character|show_credit:'keywords' }}</P>
       </dl>
       <ul style="columns: 2;">

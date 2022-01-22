@@ -81,6 +81,7 @@ from apps.oi.forms import (get_brand_group_revision_form,
                            get_revision_form,
                            get_series_revision_form,
                            IssueRevisionFormSet,
+                           ExternalLinkRevisionFormSet,
                            PublisherCodeNumberFormSet,
                            get_story_revision_form,
                            StoryRevisionFormSet,
@@ -275,7 +276,7 @@ def reserve(request, id, model_name, delete=False,
         return HttpResponseRedirect(urlresolvers.reverse('change_history',
           kwargs={'model_name': model_name, 'id': id}))
 
-    try: # if something goes wrong we unreserve
+    try:  # if something goes wrong we unreserve
         if delete:
             # TODO, this likely should not be needed anymore with the new
             # transaction handling ?
@@ -307,7 +308,7 @@ def reserve(request, id, model_name, delete=False,
                 return HttpResponseRedirect(urlresolvers.reverse('editing'))
             if model_name == 'cover':
                 return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
-                         kwargs={'issue_id' : display_obj.issue.id}))
+                         kwargs={'issue_id': display_obj.issue.id}))
             if model_name == 'brand_use':
                 return HttpResponseRedirect(urlresolvers.reverse(
                      'show_brand',
@@ -323,7 +324,7 @@ def reserve(request, id, model_name, delete=False,
                     return render_error(request,
                       'Not all objects could be reserved.')
             return HttpResponseRedirect(urlresolvers.reverse(
-              'edit', kwargs={ 'id': changeset.id }))
+              'edit', kwargs={'id': changeset.id}))
 
     except:
         #_free_revision_lock(display_obj)
@@ -453,7 +454,7 @@ def reserve_other_issue(changeset, revision, issue_one):
     if not _do_reserve(changeset.indexer, issue_one, 'issue',
                        changeset=changeset):
         return False
-    changeset.change_type=CTYPES['two_issues']
+    changeset.change_type = CTYPES['two_issues']
     changeset.save()
     return True
 
@@ -544,7 +545,7 @@ thanks,
            str(changeset.indexer.indexer),
            comment,
            settings.SITE_URL.rstrip('/') +
-             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
            settings.SITE_NAME,
            settings.SITE_URL)
 
@@ -560,7 +561,7 @@ thanks,
 def show_error_with_return(request, text, changeset):
     return render_error(request, '%s <a href="%s">Return to changeset.</a>' \
         % (esc(text), urlresolvers.reverse('edit',
-                                           kwargs={ 'id': changeset.id })),
+                                           kwargs={'id': changeset.id})),
         is_safe=True)
 
 
@@ -578,7 +579,7 @@ def _save_data_source_revision(form, revision, field):
 def _extra_forms_valid(request, extra_forms):
     is_valid = True
     for form in extra_forms:
-        if extra_forms[form]: # some forms are sometimes None
+        if extra_forms[form]:  # some forms are sometimes None
             is_valid = is_valid and extra_forms[form].is_valid()
     return is_valid
 
@@ -670,14 +671,14 @@ def _save(request, form, revision, changeset=None, model_name=None):
             return HttpResponseRedirect(urlresolvers.reverse('editing'))
         if 'save' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
-              kwargs={ 'model_name': model_name, 'id': revision.id }))
+              kwargs={'model_name': model_name, 'id': revision.id}))
         if 'save_migrate' in request.POST:
             if revision.old_credits():
                 revision.migrate_credits()
             if revision.feature:
                 revision.migrate_feature()
             return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
-              kwargs={ 'model_name': model_name, 'id': revision.id }))
+              kwargs={'model_name': model_name, 'id': revision.id}))
         if 'save_return' in request.POST:
             # BiblioEntry needs second form for specific fields
             if revision.source_class == Story \
@@ -692,9 +693,9 @@ def _save(request, form, revision, changeset=None, model_name=None):
                 return HttpResponseRedirect(
                   urlresolvers.reverse('edit_revision',
                                        kwargs={'model_name': 'biblio_entry',
-                                               'id': biblio_revision.id }))
+                                               'id': biblio_revision.id}))
             return HttpResponseRedirect(urlresolvers.reverse('edit',
-              kwargs={ 'id': revision.changeset.id }))
+              kwargs={'id': revision.changeset.id}))
         return render_error(request,
           'Revision saved but cannot determine which '
           'page to load now.  Contact an editor if this error persists.')
@@ -849,7 +850,7 @@ thanks,
        str(changeset.approver.indexer),
        comment_text,
        settings.SITE_URL.rstrip('/') +
-         urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+         urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
        changeset.approver.email,
        settings.SITE_NAME,
        settings.SITE_URL)
@@ -939,7 +940,7 @@ thanks,
            str(changeset),
            comment_text,
            settings.SITE_URL.rstrip('/') +
-             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
            settings.SITE_NAME,
            settings.SITE_URL)
         changeset.indexer.email_user('GCD comment', email_body,
@@ -952,7 +953,7 @@ thanks,
     else:
         option = ''
     return HttpResponseRedirect(urlresolvers.reverse('compare',
-                                             kwargs={'id': changeset.id }) \
+                                             kwargs={'id': changeset.id}) \
                                 + option)
 
 
@@ -989,7 +990,7 @@ thanks,
            str(changeset),
            comment_text,
            settings.SITE_URL.rstrip('/') +
-             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
            settings.SITE_NAME,
            settings.SITE_URL)
         changeset.indexer.email_user('GCD comment', email_body,
@@ -1061,7 +1062,7 @@ thanks,
        action_by,
        email_comments,
        settings.SITE_URL.rstrip('/') +
-         urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+         urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
        settings.SITE_NAME,
        settings.SITE_URL)
 
@@ -1152,7 +1153,7 @@ thanks,
        str(changeset.approver.indexer),
        email_comments,
        settings.SITE_URL.rstrip('/') +
-         urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+         urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
        settings.SITE_NAME,
        settings.SITE_URL,
        postscript)
@@ -1329,7 +1330,7 @@ thanks,
        str(changeset.approver.indexer),
        comment_text,
        settings.SITE_URL.rstrip('/') +
-         urlresolvers.reverse('edit', kwargs={'id': changeset.id }),
+         urlresolvers.reverse('edit', kwargs={'id': changeset.id}),
        settings.SITE_NAME,
        settings.SITE_URL)
 
@@ -1366,7 +1367,7 @@ thanks,
            str(changeset),
            comments,
            settings.SITE_URL.rstrip('/') +
-             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
            settings.SITE_NAME,
            settings.SITE_URL)
 
@@ -1415,7 +1416,7 @@ thanks,
            str(changeset),
            comment_text,
            settings.SITE_URL.rstrip('/') +
-             urlresolvers.reverse('compare', kwargs={'id': changeset.id }),
+             urlresolvers.reverse('compare', kwargs={'id': changeset.id}),
            settings.SITE_NAME,
            settings.SITE_URL)
 
@@ -1432,7 +1433,7 @@ thanks,
         return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
     return HttpResponseRedirect(urlresolvers.reverse(compare,
-                                                     kwargs={ 'id': id }))
+                                                     kwargs={'id': id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -1492,7 +1493,7 @@ def process_revision(request, id, model_name):
     if 'cancel_return' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': revision.changeset.id }))
+          kwargs={'id': revision.changeset.id}))
 
     if 'save' in request.POST or 'save_return' in request.POST \
        or 'save_migrate' in request.POST:
@@ -1548,7 +1549,7 @@ def edit_issues_in_bulk(request):
       content_type=ContentType.objects.get_for_model(items[0])).count()
     nr_items_unreserved = nr_items - nr_items_reserved
     if nr_items_unreserved == 0:
-        if nr_items == 0: # shouldn't really happen
+        if nr_items == 0:  # shouldn't really happen
             return HttpResponseRedirect(urlresolvers.reverse \
                      ('process_advanced_search') + '?' + \
                      request.GET.urlencode())
@@ -1562,7 +1563,7 @@ def edit_issues_in_bulk(request):
     if len(series_list) == 1:
         series = Series.objects.get(id=series_list[0])
     else:
-        if len(items) > 100: # shouldn't happen, just in case
+        if len(items) > 100:  # shouldn't happen, just in case
             raise ValueError('not more than 100 issues if more than one series')
         series = Series.objects.exclude(deleted=True).filter(id__in=series_list)
         publisher_list = Publisher.objects.exclude(deleted=True) \
@@ -1593,8 +1594,8 @@ def edit_issues_in_bulk(request):
     # look at values for the issue fields
     # if only one it gives the initial value
     # if several, the field is not editable
-    initial = {} # init value is the common value for all issues
-    remove_fields = [] # field to take out of the form
+    initial = {}  # init value is the common value for all issues
+    remove_fields = []  # field to take out of the form
     if ignore_publisher:
         remove_fields.append('brand')
         remove_fields.append('no_brand')
@@ -1799,17 +1800,17 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
         if brand_group_id:
             return HttpResponseRedirect(urlresolvers.reverse(
                 'show_brand_group',
-                kwargs={ 'brand_group_id': brand_group_id }))
+                kwargs={'brand_group_id': brand_group_id}))
         else:
             return HttpResponseRedirect(urlresolvers.reverse(
                 'show_publisher',
-                kwargs={ 'publisher_id': publisher_id }))
+                kwargs={'publisher_id': publisher_id}))
 
     form = get_brand_revision_form(user=request.user, publisher=publisher,
                                    brand_group=brand_group)(request.POST)
     if not form.is_valid():
         return _display_add_brand_form(request, form, brand_group, publisher)
-    
+
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                             change_type=CTYPES['brand'])
     changeset.save()
@@ -1857,7 +1858,7 @@ def add_brand_use(request, brand_id, publisher_id=None):
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
                 'show_brand',
-                kwargs={ 'brand_id': brand_id }))
+                kwargs={'brand_id': brand_id}))
 
         form = get_brand_use_revision_form(user=request.user)(request.POST)
         if not form.is_valid:
@@ -1899,8 +1900,8 @@ def process_add_brand_use(request, data, object_type, publisher_id):
 def _display_add_brand_use_form(request, form, brand, publisher):
     object_name = 'BrandUse for %s at %s' % (brand, publisher)
     object_url = urlresolvers.reverse('add_brand_use',
-                                      kwargs={ 'brand_id': brand.id,
-                                               'publisher_id': publisher.id})
+                                      kwargs={'brand_id': brand.id,
+                                              'publisher_id': publisher.id})
 
     return oi_render(
       request, 'oi/edit/add_frame.html',
@@ -1927,9 +1928,9 @@ def add_indicia_printer(request, parent_id):
           '"%s" is deleted or pending deletion.' % parent)
     save_kwargs = {'parent': parent}
     cancel = urlresolvers.reverse('show_printer',
-                                  kwargs={ 'printer_id': parent_id })
+                                  kwargs={'printer_id': parent_id})
     object_url = urlresolvers.reverse('add_indicia_printer',
-                                      kwargs={ 'parent_id': parent.id })
+                                      kwargs={'parent_id': parent.id})
     return add_generic(request, 'indicia_printer',
                        object_url=object_url,
                        object_name = 'Indicia Printer',
@@ -1963,7 +1964,7 @@ def add_series(request, publisher_id):
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
               'show_publisher',
-              kwargs={ 'publisher_id': publisher_id }))
+              kwargs={'publisher_id': publisher_id}))
 
         form = get_series_revision_form(publisher,
                                         user=request.user)(request.POST)
@@ -2049,6 +2050,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
         code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
     else:
         code_number_formset = None
+    external_link_formset = ExternalLinkRevisionFormSet(request.POST or None)
 
     if request.method != 'POST':
         if variant_of:
@@ -2070,12 +2072,14 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
             form = form_class(initial=initial)
         return _display_add_issue_form(request, series, form,
                                        credits_formset, code_number_formset,
+                                       external_link_formset,
                                        variant_of, variant_cover)
 
     form = form_class(request.POST)
     if not form.is_valid() or not credits_formset.is_valid():
         return _display_add_issue_form(request, series, form,
                                        credits_formset, code_number_formset,
+                                       external_link_formset,
                                        variant_of, variant_cover)
 
     if variant_of and edit_with_base:
@@ -2142,7 +2146,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
               extra=credits.count() + 1)(initial=credits.values(
                                          *credits[0]._field_list()))
         return _display_add_issue_form(request, series, form, credits_formset,
-                                       code_number_formset, None, None,
+                                       code_number_formset, None, None, None,
                                        issue_revision=issue_revision)
 
     if 'cancel' in request.POST:
@@ -2153,7 +2157,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
     form = form_class(request.POST)
     if not form.is_valid():
         return _display_add_issue_form(request, series, form, credits_formset,
-                                       code_number_formset, None, None,
+                                       code_number_formset, None, None, None,
                                        issue_revision=issue_revision)
 
     variant_revision = form.save(commit=False)
@@ -2222,8 +2226,8 @@ def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
 
 
 def _display_add_issue_form(request, series, form, credits_formset,
-                            code_number_formset, variant_of, variant_cover,
-                            issue_revision=None):
+                            code_number_formset, external_link_formset,
+                            variant_of, variant_cover, issue_revision=None):
     action_label = 'Submit new'
     alternative_action = None
     alternative_label = None
@@ -2273,6 +2277,7 @@ def _display_add_issue_form(request, series, form, credits_formset,
         'form': form,
         'credits_formset': credits_formset,
         'code_number_formset': code_number_formset,
+        'external_link_formset': external_link_formset,
         'alternative_action': alternative_action,
         'alternative_label': alternative_label,
       })
@@ -2610,6 +2615,7 @@ def add_feature_relation(request, feature_id):
 # needs also changes in add_frame-template
 # compare the following with add_generic
 
+
 @permission_required('indexer.can_reserve')
 def add_character(request):
     if not request.user.indexer.can_reserve_another():
@@ -2621,7 +2627,10 @@ def add_character(request):
     form = get_revision_form(model_name='character',
                              user=request.user)(request.POST or None)
     character_names_formset = CharacterRevisionFormSet(request.POST or None)
-    if not form.is_valid() or not character_names_formset.is_valid():
+    external_link_formset = ExternalLinkRevisionFormSet(request.POST or None)
+
+    if not form.is_valid() or not character_names_formset.is_valid()\
+      or not external_link_formset.is_valid():
         return oi_render(
           request, 'oi/edit/add_frame.html',
           {
@@ -2629,7 +2638,8 @@ def add_character(request):
             'object_url': urlresolvers.reverse('add_character'),
             'action_label': 'Submit new',
             'form': form,
-            'character_names_formset': character_names_formset
+            'character_names_formset': character_names_formset,
+            'external_link_formset': external_link_formset,
           })
     else:
         changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -2640,7 +2650,6 @@ def add_character(request):
         extra_forms = {'character_names_formset': character_names_formset, }
         revision.process_extra_forms(extra_forms)
         return submit(request, changeset.id)
-    return add_generic(request, 'character')
 
 
 @permission_required('indexer.can_reserve')
@@ -3090,7 +3099,7 @@ def parse_reprint(reprints):
     reprint_direction_to = ["in", "i"]
     from_to = reprints.split(' ')[0].lower()
     if from_to in reprint_direction_from + reprint_direction_to:
-        try:# our format: seriesname (publisher, year <series>) #nr
+        try:  # our format: seriesname (publisher, year <series>) #nr
             position = reprints.find(' (')
             series = reprints[len(from_to) + 1:position]
             string = reprints[position + 2:]
@@ -3116,20 +3125,20 @@ def parse_reprint(reprints):
             if position > 0 and len(string[position+2:]):
 
                 string = string[position + 2:]
-                position = string.find(' [') #check for notes
+                position = string.find(' [')  # check for notes
                 if position > 0:
                     position_end = string.find(']')
                     if position_end > position:
                         notes = string[position+2:position_end]
-                    date_pos = string.find(' (') #check for (date)
+                    date_pos = string.find(' (')  # check for (date)
                     if date_pos > 0 and date_pos < position:
                         position = date_pos
                 else:
-                    position = string.find(' (') #check for (date)
-                    if position > 0: #if found ignore later
+                    position = string.find(' (')  # check for (date)
+                    if position > 0:  # if found ignore later
                         pass
                 volume = None
-                if string.isdigit(): #in this case we are fine
+                if string.isdigit():  # in this case we are fine
                     number = string
                 elif string[0].lower() == 'v' and string.find('#') > 0:
                     n_pos = string.find('#')
@@ -3170,7 +3179,7 @@ def list_issue_reprints(request, id):
         return render_error(request,
           'Only the reservation holder may access this page.')
     response = oi_render(request, 'oi/edit/list_issue_reprints.html',
-      { 'issue_revision': issue_revision, 'changeset': changeset })
+      {'issue_revision': issue_revision, 'changeset': changeset})
     response['Cache-Control'] = "no-cache, no-store, max-age=0, must-revalidate"
     return response
 
@@ -3211,7 +3220,7 @@ def reserve_reprint(request, changeset_id, reprint_id):
     revision = ReprintRevision.clone(display_obj, changeset=changeset)
 
     return HttpResponseRedirect(urlresolvers.reverse('edit_reprint',
-        kwargs={'id': revision.id, 'which_side': which_side }))
+        kwargs={'id': revision.id, 'which_side': which_side}))
 
 
 @permission_required('indexer.can_reserve')
@@ -3262,7 +3271,7 @@ def edit_reprint(request, id, which_side=None):
             sequence_number = None
         elif which_side == 'origin_internal':
             select_issue = reprint_revision.origin_revision.issue
-        else: # for newly added stories problematic otherwise
+        else:  # for newly added stories problematic otherwise
             raise NotImplementedError
         issue = reprint_revision.target_issue
         if reprint_revision.target:
@@ -3278,7 +3287,7 @@ def edit_reprint(request, id, which_side=None):
             sequence_number = None
         elif which_side == 'target_internal':
             select_issue = reprint_revision.target_revision.issue
-        else: # for newly added stories problematic otherwise
+        else:  # for newly added stories problematic otherwise
             raise NotImplementedError
         if reprint_revision.origin_issue:
             issue = reprint_revision.origin_issue
@@ -3298,24 +3307,24 @@ def edit_reprint(request, id, which_side=None):
         reprint_revision.origin_issue = origin_issue
         reprint_revision.save()
         return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
-            kwargs={ 'id': changeset_issue.id }))
+            kwargs={'id': changeset_issue.id}))
     elif which_side == 'delete':
         reprint_revision.deleted = True
         reprint_revision.save()
         return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
-            kwargs={ 'id': changeset_issue.id }))
+            kwargs={'id': changeset_issue.id}))
     elif which_side == 'restore':
         if reprint_revision.deleted:
             reprint_revision.deleted = False
             reprint_revision.save()
             return HttpResponseRedirect(
                 urlresolvers.reverse('list_issue_reprints',
-                                     kwargs={ 'id': changeset_issue.id }))
+                                     kwargs={'id': changeset_issue.id}))
         else:
             return _cant_get(request)
     elif which_side == 'remove':
         return HttpResponseRedirect(
-          urlresolvers.reverse('remove_reprint_revision', kwargs={ 'id': id }))
+          urlresolvers.reverse('remove_reprint_revision', kwargs={'id': id}))
     elif which_side == 'matching_sequence':
         if reprint_revision.origin:
             story = reprint_revision.origin
@@ -3327,9 +3336,9 @@ def edit_reprint(request, id, which_side=None):
             return _cant_get(request)
         return HttpResponseRedirect(
           urlresolvers.reverse('create_matching_sequence',
-                               kwargs={ 'reprint_revision_id': id,
-                                        'story_id': story.id,
-                                        'issue_id': issue.id }))
+                               kwargs={'reprint_revision_id': id,
+                                       'story_id': story.id,
+                                       'issue_id': issue.id}))
         raise ValueError
     elif which_side.startswith('edit_note'):
         if which_side == 'edit_note_origin':
@@ -3399,9 +3408,9 @@ def edit_reprint(request, id, which_side=None):
     if which_side.endswith('internal'):
         issue_revision  = select_issue.revisions.get(changeset=changeset)
         return oi_render(request, 'oi/edit/select_internal_object.html',
-            { 'issue_revision': issue_revision, 'changeset': changeset,
-              'reprint_revision': reprint_revision,
-              'which_side': which_side[:6] })
+            {'issue_revision': issue_revision, 'changeset': changeset,
+             'reprint_revision': reprint_revision,
+             'which_side': which_side[:6]})
 
     initial = {'series': select_issue.series.name,
                'publisher': select_issue.series.publisher,
@@ -3456,8 +3465,8 @@ def add_reprint(request, changeset_id,
     if reprint_note:
         publisher, series, year, number, volume = \
             parse_reprint(unquote(reprint_note).split(';')[0])
-        initial = { 'series': series, 'publisher': publisher,
-                    'year': year, 'number': number }
+        initial = {'series': series, 'publisher': publisher,
+                   'year': year, 'number': number}
     else:
         initial = {}
     if story_id:
@@ -3522,10 +3531,10 @@ def select_internal_object(request, id, changeset_id, which_side,
         this_issue = None
 
     return oi_render(request, 'oi/edit/confirm_internal.html',
-        { 'this_issue': this_issue, 'this_story': this_story,
-          'other_issue': other_issue, 'other_story': other_story,
-          'changeset': changeset, 'reprint_revision_id': reprint_revision.id,
-          'reprint_revision': reprint_revision, 'which_side': which_side })
+        {'this_issue': this_issue, 'this_story': this_story,
+         'other_issue': other_issue, 'other_story': other_story,
+         'changeset': changeset, 'reprint_revision_id': reprint_revision.id,
+         'reprint_revision': reprint_revision, 'which_side': which_side})
 
 
 def _selected_copy_sequence(request, data, object_type, selected_id):
@@ -3533,7 +3542,7 @@ def _selected_copy_sequence(request, data, object_type, selected_id):
         return _cant_get(request)
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': data['changeset_id'] }))
+          kwargs={'id': data['changeset_id']}))
 
     return copy_sequence(request, data['changeset_id'], data['issue_id'],
                          story_id=selected_id,
@@ -3583,7 +3592,7 @@ def copy_sequence(request, changeset_id, issue_id, story_id=None,
                               skip=story_revision)
         return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
                                     kwargs={'model_name': 'story',
-                                            'id': story_revision.id }))
+                                            'id': story_revision.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -3605,8 +3614,8 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
         else:
             direction = 'in'
         return oi_render(request, 'oi/edit/create_matching_sequence.html',
-            { 'issue': issue, 'story': story,
-              'reprint_revision': reprint_revision, 'direction': direction })
+            {'issue': issue, 'story': story,
+             'reprint_revision': reprint_revision, 'direction': direction})
     else:
         story_revision = StoryRevision.copied_revision(story, changeset,
                                                        issue=issue)
@@ -3618,7 +3627,8 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id, e
             reprint_revision.origin_issue = None
         reprint_revision.save()
         return HttpResponseRedirect(urlresolvers.reverse('edit_revision',
-              kwargs={ 'model_name': 'story', 'id': story_revision.id }))
+              kwargs={'model_name': 'story',
+                      'id': story_revision.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -3627,7 +3637,7 @@ def confirm_reprint(request, data, object_type, selected_id):
         return _cant_get(request)
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': data['changeset_id'] }))
+          kwargs={'id': data['changeset_id']}))
 
     if 'story_id' in data and data['story_id']:
         story = get_object_or_404(Story, id=data['story_id'])
@@ -3704,7 +3714,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         return _cant_get(request)
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
-          kwargs={ 'id': changeset_id }))
+          kwargs={'id': changeset_id}))
     if story_one_id and (story_revision_id or issue_one_id):
         return _cant_get(request)
     if story_two_id and issue_two_id:
@@ -3764,12 +3774,12 @@ def save_reprint(request, reprint_revision_id, changeset_id,
     notes = request.POST['reprint_link_notes']
     if revision:
         revision.origin = origin
-        revision.origin_revision=origin_revision
-        revision.origin_issue=origin_issue
-        revision.target=target
-        revision.target_revision=target_revision
-        revision.target_issue=target_issue
-        revision.notes=notes
+        revision.origin_revision = origin_revision
+        revision.origin_issue = origin_issue
+        revision.target = target
+        revision.target_revision = target_revision
+        revision.target_issue = target_issue
+        revision.notes = notes
         revision.save()
     else:
         revision = ReprintRevision(origin=origin,
@@ -3793,7 +3803,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
                                  new_state=changeset.state)
     if 'add_reprint_view' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
-            kwargs={ 'id': changeset.issuerevisions.get().id }))
+            kwargs={'id': changeset.issuerevisions.get().id}))
     if 'matching_sequence' in request.POST:
         if revision.origin:
             story = revision.origin
@@ -3805,12 +3815,12 @@ def save_reprint(request, reprint_revision_id, changeset_id,
             return _cant_get(request)
         return HttpResponseRedirect(
           urlresolvers.reverse('create_edit_matching_sequence',
-                               kwargs={ 'reprint_revision_id': revision.id,
-                                        'story_id': story.id,
-                                        'issue_id': issue.id }))
+                               kwargs={'reprint_revision_id': revision.id,
+                                       'story_id': story.id,
+                                       'issue_id': issue.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse('edit',
-            kwargs={ 'id': changeset_id }))
+            kwargs={'id': changeset_id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -3870,7 +3880,7 @@ def remove_reprint_revision(request, id):
                           new_state=reprint.changeset.state)
     reprint.delete()
     return HttpResponseRedirect(urlresolvers.reverse('list_issue_reprints',
-        kwargs={ 'id': reprint.changeset.issuerevisions.get().id }))
+        kwargs={'id': reprint.changeset.issuerevisions.get().id}))
 
 ##############################################################################
 # Moving Items
@@ -5113,7 +5123,8 @@ def cover_compare(request, changeset, revision):
             kwargs['current_covers'] = current_covers
         cover_revisions = CoverRevision.objects.filter(issue=revision.issue) | \
           CoverRevision.objects.filter(issue=revision.issue.variant_of) | \
-          CoverRevision.objects.filter(issue__in=revision.issue.variant_set.all())
+          CoverRevision.objects.filter(
+            issue__in=revision.issue.variant_set.all())
         cover_revisions = cover_revisions.exclude(id=revision.id)\
                                          .filter(cover=None)\
                                          .filter(changeset__state__in=states.ACTIVE) \
@@ -5503,9 +5514,11 @@ def add_creator(request):
     death_date_form = form_class(request.POST or None, prefix='death_date')
 
     creator_names_formset = CreatorRevisionFormSet(request.POST or None)
+    external_link_formset = ExternalLinkRevisionFormSet(request.POST or None)
 
     if not creator_form.is_valid() or not creator_names_formset.is_valid()\
-       or not birth_date_form.is_valid() or not death_date_form.is_valid():
+       or not birth_date_form.is_valid() or not death_date_form.is_valid()\
+       or not external_link_formset.is_valid():
         birth_date_form.fields['date'].label = 'Birth date'
         death_date_form.fields['date'].label = 'Death date'
 
@@ -5513,6 +5526,7 @@ def add_creator(request):
                    'creator_names_formset': creator_names_formset,
                    'birth_date_form': birth_date_form,
                    'death_date_form': death_date_form,
+                   'external_link_formset': external_link_formset,
                    'object_name': 'Creator',
                    'object_url': urlresolvers.reverse('add_creator'),
                    'action_label': 'Submit new',
@@ -5528,7 +5542,8 @@ def add_creator(request):
     revision.gcd_official_name = "Dummy"
     extra_forms = {'creator_names_formset': creator_names_formset,
                    'birth_date_form': birth_date_form,
-                   'death_date_form': death_date_form
+                   'death_date_form': death_date_form,
+                   'external_link_formset': external_link_formset
                    }
     revision.process_extra_forms(extra_forms)
 

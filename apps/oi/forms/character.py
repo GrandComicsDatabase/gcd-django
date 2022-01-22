@@ -11,8 +11,7 @@ from apps.gcd.models import Character, Group, CharacterRelationType
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
-from crispy_forms.utils import render_field
-from .custom_layout_object import Formset
+from .custom_layout_object import Formset, BaseField
 
 from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
                             CharacterRelationRevision, GroupRevision,
@@ -76,16 +75,6 @@ def get_character_revision_form(revision=None, user=None):
     return RuntimeCharacterRevisionForm
 
 
-class BaseField(Field):
-    def render(self, form, form_style, context, template_pack=None):
-        fields = ''
-
-        for field in self.fields:
-            fields += render_field(field, form, form_style, context,
-                                   template_pack=template_pack)
-        return fields
-
-
 class CharacterRevisionForm(BaseForm):
     class Meta:
         model = CharacterRevision
@@ -108,10 +97,16 @@ class CharacterRevisionForm(BaseForm):
         field_list = [BaseField(Field('additional_names_help',
                                     template='oi/bits/uni_field.html'))]
         field_list.append(Formset('character_names_formset'))
+        description_pos = fields.index('description')
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields])
+                           for field in fields[:description_pos]])
+        field_list.append(Formset('external_link_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[description_pos:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
+
 
     additional_names_help = forms.CharField(
         widget=HiddenInputWithHelp,

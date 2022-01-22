@@ -21,6 +21,7 @@ from .image import Image
 from .story import StoryType, STORY_TYPES, CreditType
 from .creator import CreatorNameDetail
 from .award import ReceivedAward
+from .datasource import ExternalLink
 
 INDEXED = {
     'skeleton': 0,
@@ -143,6 +144,7 @@ class Issue(GcdData):
     editing = models.TextField()
     no_editing = models.BooleanField(default=False, db_index=True)
     notes = models.TextField()
+    external_link = models.ManyToManyField(ExternalLink)
 
     keywords = TaggableManager()
 

@@ -44,9 +44,9 @@ from apps.gcd.models import (
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
     CreatorNameDetail, CreatorNonComicWork, CreatorSchool, CreatorRelation,
     CreatorSignature, NonComicWorkYear, Award, ReceivedAward, DataSource,
-    STORY_TYPES, CREDIT_TYPES)
+    ExternalLink, STORY_TYPES, CREDIT_TYPES)
 
-from apps.gcd.models.gcddata import GcdData
+from apps.gcd.models.gcddata import GcdData, GcdLink
 
 from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.story import show_feature, show_feature_as_text,\
@@ -331,7 +331,8 @@ class Changeset(models.Model):
                     self.storycharacterrevisions.all(),
                     self.coverrevisions.all(),
                     self.reprintrevisions.all(),
-                    self.publishercodenumberrevisions.all())
+                    self.publishercodenumberrevisions.all(),
+                    self.externallinkrevisions.all())
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
             if self.issuerevisions.all().count() == 1 and \
@@ -343,7 +344,8 @@ class Changeset(models.Model):
                         self.storycharacterrevisions.all(),
                         self.coverrevisions.all(),
                         self.reprintrevisions.all(),
-                        self.publishercodenumberrevisions.all())
+                        self.publishercodenumberrevisions.all(),
+                        self.externallinkrevisions.all())
             elif self.issuerevisions.all().count() == 1:
                 return (self.issuerevisions.all(),
                         self.issuecreditrevisions.all(),
@@ -368,7 +370,8 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['character']:
             return (self.characterrevisions.all(),
-                    self.characternamedetailrevisions.all())
+                    self.characternamedetailrevisions.all(),
+                    self.externallinkrevisions.all())
 
         if self.change_type == CTYPES['character_relation']:
             return (self.characterrelationrevisions.all(),)
@@ -436,7 +439,8 @@ class Changeset(models.Model):
                     self.creatormembershiprevisions.all(),
                     self.creatornoncomicworkrevisions.all(),
                     self.creatorrelationrevisions.all(),
-                    self.creatorschoolrevisions.all()
+                    self.creatorschoolrevisions.all(),
+                    self.externallinkrevisions.all(),
                     )
 
         if self.change_type == CTYPES['creator_art_influence']:
@@ -1894,6 +1898,13 @@ class Revision(models.Model):
         """
         Runs just before the data object is deleted in a deletion revision.
         """
+        # for models of type GcdLink we need to clear the source info in
+        # all revisions since the link object gets deleted
+        if GcdLink in type(self.source).mro():
+            for revision in self.source.revisions.all():
+                setattr(revision, 'source', None)
+                revision.save()
+            self.source = None
         pass
 
     def _post_create_for_add(self, changes):
@@ -2280,6 +2291,24 @@ class Revision(models.Model):
         Some Revisions have dependent objects, this locks the objects and
         creates the corresponding revisions.
         """
+        if hasattr(self.source, 'external_link'):
+            for external_link in self.source.external_link.all():
+                external_link_lock = _get_revision_lock(external_link,
+                                                        changeset=self.changeset)
+                if external_link_lock is None:
+                    raise IntegrityError("needed External Link lock not possible")
+                external_link_revision = ExternalLinkRevision.clone(
+                    external_link, self.changeset, object_revision=self)
+                if delete:
+                    external_link_revision.deleted = self.deleted
+                    external_link_revision.save()
+        self._do_create_dependent_revisions(delete, **kwargs)
+
+    def _do_create_dependent_revisions(self, delete=False, **kwargs):
+        """
+        Some Revisions have dependent objects, this locks the objects and
+        creates the corresponding revisions.
+        """
         pass
 
     def has_keywords(self):
@@ -2311,6 +2340,70 @@ class OngoingReservation(models.Model):
 
     def __str__(self):
         return '%s reserved by %s' % (self.series, self.indexer.indexer)
+
+
+class ExternalLinkRevision(Revision):
+    """
+    Revision for recording the links for a data object.
+    """
+
+    class Meta:
+        db_table = 'oi_external_link_revision'
+        ordering = ['created', '-id']
+        verbose_name_plural = 'External Link Revisions'
+
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE,
+                                     null=True)
+    object_id = models.IntegerField(db_index=True, null=True)
+    object_revision = GenericForeignKey('content_type', 'object_id')
+
+    external_link = models.ForeignKey('gcd.ExternalLink',
+                                      on_delete=models.CASCADE,
+                                      related_name='revisions',
+                                      null=True)
+    site = models.ForeignKey('gcd.ExternalSite', on_delete=models.CASCADE,
+      help_text='External site, links to its pages that are directly related'
+                ' to this record can be added.')
+    link = models.URLField(max_length=2000)
+
+    source_name = 'external_link'
+    source_class = ExternalLink
+
+    @property
+    def source(self):
+        return self.external_link
+
+    @source.setter
+    def source(self, value):
+        self.external_link = value
+
+    def _field_list(self):
+        return ['site', 'link']
+
+    def _get_blank_values(self):
+        return {
+            'site': '',
+            'link': '',
+        }
+
+    def _imps_for(self, field_name):
+        return 1
+
+    def _do_complete_added_revision(self, content_type, object_id):
+        self.content_type = content_type
+        self.object_id = object_id
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        self.object_revision = kwargs['object_revision']
+
+    def _post_save_object(self, changes):
+        source_object = self.object_revision.source
+        source_object.external_link.add(self.source)
+
+    def __str__(self):
+        return '%s - %s' % (str(self.site),
+                            self.link)
 
 
 class PublisherRevisionBase(Revision):
@@ -2428,7 +2521,7 @@ class PublisherRevision(PublisherRevisionBase):
 
     _update_stats = True
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         if delete:
             for indicia_publisher in self.publisher\
                                          .active_indicia_publishers():
@@ -2661,7 +2754,7 @@ class BrandRevision(PublisherRevisionBase):
     def _get_parent_field_tuples(cls):
         return frozenset({('group',)})
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         if delete:
             for brand_use in self.brand.in_use.all():
                 # TODO check if transaction rollback works
@@ -2851,7 +2944,7 @@ class PrinterRevision(PublisherRevisionBase):
 
     _update_stats = True
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         if delete:
             for indicia_printer in self.printer\
                                        .active_indicia_printers():
@@ -3722,6 +3815,38 @@ class IssueCreditRevision(Revision):
         return 0
 
 
+def _removed_related_objects(removed_objects, source_type):
+    for removed_object in removed_objects:
+        if removed_object.cleaned_data['id']:
+            if getattr(removed_object.cleaned_data['id'], source_type):
+                removed_object.cleaned_data['id'].deleted = True
+                removed_object.cleaned_data['id'].save()
+            else:
+                removed_object.cleaned_data['id'].delete()
+
+
+def _process_formset(self, formset, revision_type=None, generic=False):
+    for form in formset:
+        if form.is_valid() and form.cleaned_data:
+            cd = form.cleaned_data
+            if 'id' in cd and cd['id']:
+                form.save()
+            else:
+                revision = form.save(commit=False)
+                kwargs = {}
+                if generic:
+                    content_type = ContentType.objects.get_for_model(self)
+                    kwargs['content_type'] = content_type
+                    kwargs['object_id'] = self.id
+                else:
+                    kwargs[revision_type] = self
+
+                revision.save_added_revision(changeset=self.changeset,
+                                             **kwargs)
+        elif (not form.is_valid() and form not in formset.deleted_forms):
+            raise ValueError
+
+
 class IssueRevision(Revision):
     class Meta:
         db_table = 'oi_issue_revision'
@@ -3807,6 +3932,8 @@ class IssueRevision(Revision):
     no_rating = models.BooleanField(default=False)
 
     date_inferred = models.BooleanField(default=False)
+
+    external_link_revisions = GenericRelation(ExternalLinkRevision)
 
     source_name = 'issue'
     source_class = Issue
@@ -4113,7 +4240,7 @@ class IssueRevision(Revision):
             self.source.is_indexed = self.source.variant_of.is_indexed
             self.source.save()
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         for credit in self.issue.active_credits:
             credit_lock = _get_revision_lock(credit,
                                              changeset=self.changeset)
@@ -4187,8 +4314,8 @@ class IssueRevision(Revision):
             story.save()
 
     def extra_forms(self, request):
-        from apps.oi.forms.issue import IssueRevisionFormSet, \
-            PublisherCodeNumberFormSet
+        from apps.oi.forms import IssueRevisionFormSet, \
+            PublisherCodeNumberFormSet, ExternalLinkRevisionFormSet
         credits_formset = IssueRevisionFormSet(
           request.POST or None,
           instance=self,
@@ -4200,57 +4327,35 @@ class IssueRevision(Revision):
               queryset=self.publisher_code_number_revisions.filter(deleted=False))
         else:
             code_number_formset = None
+        external_link_formset = ExternalLinkRevisionFormSet(
+          request.POST or None,
+          instance=self,
+          queryset=self.external_link_revisions.filter(deleted=False))
         return {'credits_formset': credits_formset,
-                'code_number_formset': code_number_formset}
+                'code_number_formset': code_number_formset,
+                'external_link_formset': external_link_formset}
 
     def process_extra_forms(self, extra_forms):
         credits_formset = extra_forms['credits_formset']
-        for credit_form in credits_formset:
-            if credit_form.is_valid() and credit_form.cleaned_data:
-                cd = credit_form.cleaned_data
-                if 'id' in cd and cd['id']:
-                    credit_form.save()
-                else:
-                    credit_revision = credit_form.save(commit=False)
-                    credit_revision.save_added_revision(
-                      changeset=self.changeset, issue_revision=self)
-            elif (not credit_form.is_valid() and
-                  credit_form not in credits_formset.deleted_forms):
-                raise ValueError
+        _process_formset(self, credits_formset, revision_type='issue_revision')
         removed_credits = credits_formset.deleted_forms
         if removed_credits:
-            for removed_credit in removed_credits:
-                if removed_credit.cleaned_data['id']:
-                    if removed_credit.cleaned_data['id'].issue_credit:
-                        removed_credit.cleaned_data['id'].deleted = True
-                        removed_credit.cleaned_data['id'].save()
-                    else:
-                        removed_credit.cleaned_data['id'].delete()
+            _removed_related_objects(removed_credits, 'issue_credit')
+
+        external_link_formset = extra_forms['external_link_formset']
+        _process_formset(self, external_link_formset, generic=True)
+        removed_external_links = external_link_formset.deleted_forms
+        if removed_external_links:
+            _removed_related_objects(removed_external_links, 'external_link')
 
         if self.series.has_publisher_code_number:
             code_number_formset = extra_forms['code_number_formset']
-            for code_number_form in code_number_formset:
-                if code_number_form.is_valid() and code_number_form.cleaned_data:
-                    cd = code_number_form.cleaned_data
-                    if 'id' in cd and cd['id']:
-                        code_number_form.save()
-                    else:
-                        credit_revision = code_number_form.save(commit=False)
-                        credit_revision.save_added_revision(
-                          changeset=self.changeset, issue_revision=self)
-                elif (not code_number_form.is_valid() and
-                      code_number_form not in code_number_formset.deleted_forms):
-                    raise ValueError
+            _process_formset(self, code_number_formset,
+                             revision_type='issue_revision')
             removed_code_numbers = code_number_formset.deleted_forms
             if removed_code_numbers:
-                for removed_code_number in removed_code_numbers:
-                    if removed_code_number.cleaned_data['id']:
-                        if removed_code_number.cleaned_data['id']\
-                                              .publisher_code_number:
-                            removed_code_number.cleaned_data['id'].deleted = True
-                            removed_code_number.cleaned_data['id'].save()
-                        else:
-                            removed_code_number.cleaned_data['id'].delete()
+                _removed_related_objects(removed_code_numbers,
+                                         'publisher_code_number')
 
     def get_absolute_url(self):
         if self.issue is None:
@@ -6334,6 +6439,8 @@ class CharacterRevision(CharacterGroupRevisionBase):
                                   null=True,
                                   related_name='revisions')
 
+    external_link_revisions = GenericRelation(ExternalLinkRevision)
+
     source_name = 'character'
     source_class = Character
 
@@ -6345,7 +6452,7 @@ class CharacterRevision(CharacterGroupRevisionBase):
     def source(self, value):
         self.character = value
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         name_details = self.character.active_names()
         for name_detail in name_details:
             name_lock = _get_revision_lock(name_detail,
@@ -6362,14 +6469,20 @@ class CharacterRevision(CharacterGroupRevisionBase):
                 character_name.save()
 
     def extra_forms(self, request):
-        from apps.oi.forms.character import CharacterRevisionFormSet
+        from apps.oi.forms import CharacterRevisionFormSet, \
+                                            ExternalLinkRevisionFormSet
         # from apps.oi.forms.support import CREATOR_HELP_LINKS
 
         character_names_formset = CharacterRevisionFormSet(
           request.POST or None, instance=self,
           queryset=self.character_name_revisions.filter(deleted=False))
+        external_link_formset = ExternalLinkRevisionFormSet(
+          request.POST or None,
+          instance=self,
+          queryset=self.external_link_revisions.filter(deleted=False))
 
         return {'character_names_formset': character_names_formset,
+                'external_link_formset': external_link_formset
                 }
 
     def process_extra_forms(self, extra_forms):
@@ -6400,6 +6513,12 @@ class CharacterRevision(CharacterGroupRevisionBase):
                     removed_name.cleaned_data['id'].save()
                 else:
                     removed_name.cleaned_data['id'].delete()
+
+        external_link_formset = extra_forms['external_link_formset']
+        _process_formset(self, external_link_formset, generic=True)
+        removed_external_links = external_link_formset.deleted_forms
+        if removed_external_links:
+            _removed_related_objects(removed_external_links, 'external_link')
 
     def _pre_save_object(self, changes):
         name = self.changeset.characternamedetailrevisions\
@@ -7302,7 +7421,7 @@ class ReceivedAwardRevision(Revision):
         self.recipient = recipient
         self.award = award
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         data_sources = self.received_award.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
 
@@ -7587,6 +7706,7 @@ class CreatorRevision(Revision):
 
     whos_who = models.URLField(blank=True, default='')
     bio = models.TextField(blank=True, default='')
+    external_link_revisions = GenericRelation(ExternalLinkRevision)
 
     notes = models.TextField(blank=True, default='')
 
@@ -7614,7 +7734,7 @@ class CreatorRevision(Revision):
         death_date.save()
         self.death_date = death_date
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         name_details = self.creator.active_names()
         for name_detail in name_details:
             name_lock = _get_revision_lock(name_detail,
@@ -7710,7 +7830,8 @@ class CreatorRevision(Revision):
     def extra_forms(self, request):
         from apps.oi.forms.creator import CreatorRevisionFormSet
         from apps.oi.forms.support import CREATOR_HELP_LINKS
-        from apps.oi.forms import get_date_revision_form
+        from apps.oi.forms import get_date_revision_form, \
+                                  ExternalLinkRevisionFormSet
 
         creator_names_formset = CreatorRevisionFormSet(
           request.POST or None, instance=self,
@@ -7726,10 +7847,15 @@ class CreatorRevision(Revision):
                                      instance=self.death_date)
         birth_date_form.fields['date'].label = 'Birth date'
         death_date_form.fields['date'].label = 'Death date'
+        external_link_formset = ExternalLinkRevisionFormSet(
+          request.POST or None,
+          instance=self,
+          queryset=self.external_link_revisions.filter(deleted=False))
 
         return {'creator_names_formset': creator_names_formset,
                 'birth_date_form': birth_date_form,
-                'death_date_form': death_date_form
+                'death_date_form': death_date_form,
+                'external_link_formset': external_link_formset
                 }
 
     def process_extra_forms(self, extra_forms):
@@ -7780,6 +7906,11 @@ class CreatorRevision(Revision):
         process_data_source(death_date_form, 'death_date', self.changeset,
                             revision=data_source_revision,
                             sourced_revision=self)
+        external_link_formset = extra_forms['external_link_formset']
+        _process_formset(self, external_link_formset, generic=True)
+        removed_external_links = external_link_formset.deleted_forms
+        if removed_external_links:
+            _removed_related_objects(removed_external_links, 'external_link')
 
     def _pre_save_object(self, changes):
         name = self.changeset.creatornamedetailrevisions.get(
@@ -7984,7 +8115,7 @@ class CreatorRelationRevision(Revision):
     def _imps_for(self, field_name):
         return 1
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         data_sources = self.creator_relation.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
 
@@ -8142,7 +8273,7 @@ class CreatorSignatureRevision(Revision):
     def _do_complete_added_revision(self, creator):
         self.creator = creator
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         data_sources = self.creator_signature.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
 
@@ -8221,7 +8352,7 @@ class CreatorSchoolRevision(Revision):
     def _do_complete_added_revision(self, creator):
         self.creator = creator
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         data_sources = self.creator_school.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
 
@@ -8325,7 +8456,7 @@ class CreatorDegreeRevision(Revision):
     def _do_complete_added_revision(self, creator):
         self.creator = creator
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         data_sources = self.creator_degree.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
 
@@ -8425,7 +8556,7 @@ class CreatorMembershipRevision(Revision):
     def _do_complete_added_revision(self, creator):
         self.creator = creator
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         data_sources = self.creator_membership.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
 
@@ -8532,7 +8663,7 @@ class CreatorArtInfluenceRevision(Revision):
     def _do_complete_added_revision(self, creator):
         self.creator = creator
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         data_sources = self.creator_art_influence.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
 
@@ -8646,7 +8777,7 @@ class CreatorNonComicWorkRevision(Revision):
     def _do_complete_added_revision(self, creator):
         self.creator = creator
 
-    def _create_dependent_revisions(self, delete=False):
+    def _do_create_dependent_revisions(self, delete=False):
         data_sources = self.creator_non_comic_work.data_source.all()
         reserve_data_sources(data_sources, self.changeset, self, delete)
 

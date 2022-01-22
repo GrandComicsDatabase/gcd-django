@@ -9,6 +9,7 @@ import django_tables2 as tables
 
 from .gcddata import GcdData, GcdLink
 from apps.stddata.models import Language
+from .datasource import ExternalLink
 
 
 class CharacterNameDetail(GcdData):
@@ -108,6 +109,8 @@ class Character(CharacterGroupBase):
         app_label = 'gcd'
         ordering = ('sort_name', 'created',)
         verbose_name_plural = 'Characters'
+
+    external_link = models.ManyToManyField(ExternalLink)
 
     def active_names(self):
         return self.character_names.exclude(deleted=True)

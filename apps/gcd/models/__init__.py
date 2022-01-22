@@ -30,7 +30,7 @@ from .creator import CreatorArtInfluence, Creator, CreatorDegree, \
                     CreatorNonComicWork, NonComicWorkType, NonComicWorkRole, \
                     NonComicWorkYear, RelationType, School, MembershipType
 from .award import Award, ReceivedAward
-from .datasource import DataSource, SourceType
+from .datasource import DataSource, SourceType, ExternalSite, ExternalLink
 
 
 def _display_uncertain(value, flag):

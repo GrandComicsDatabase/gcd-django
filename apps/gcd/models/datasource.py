@@ -1,6 +1,6 @@
 from django.db import models
 
-from .gcddata import GcdData
+from .gcddata import GcdData, GcdLink
 
 class SourceType(models.Model):
     """
@@ -39,3 +39,37 @@ class DataSource(GcdData):
                             str(self.source_type.type))
 
 
+class ExternalSite(models.Model):
+    """
+    Pre-approved external sites that can be linked to.
+    """
+
+    class Meta:
+        db_table = 'gcd_external_site'
+        app_label = 'gcd'
+        ordering = ('site',)
+        verbose_name_plural = 'External Sites'
+
+    site = models.CharField(max_length=255)
+    matching = models.CharField(max_length=50)
+
+    def __str__(self):
+        return str(self.site)
+
+
+class ExternalLink(GcdLink):
+    """
+    Records the links for a data record.
+    """
+
+    class Meta:
+        db_table = 'gcd_external_link'
+        app_label = 'gcd'
+        verbose_name_plural = 'External Links'
+
+    site = models.ForeignKey(ExternalSite, on_delete=models.CASCADE)
+    link = models.URLField(max_length=2000)
+
+    def __str__(self):
+        return '%s - %s' % (str(self.site),
+                            self.link)

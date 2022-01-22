@@ -14,9 +14,8 @@ from dal import autocomplete
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
-from crispy_forms.utils import render_field
 
-from .custom_layout_object import Formset
+from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       VARIANT_NAME_HELP_TEXT, ISSUE_LABELS, ISSUE_HELP_TEXTS,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
@@ -24,7 +23,8 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision,\
-                           PublisherCodeNumberRevision, get_issue_field_list
+                           PublisherCodeNumberRevision, ExternalLinkRevision, \
+                           get_issue_field_list
 from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType,\
                             CreatorNameDetail, IndiciaPrinter
 
@@ -506,16 +506,6 @@ PublisherCodeNumberFormSet = inlineformset_factory(
     can_delete=True, extra=1)
 
 
-class BaseField(Field):
-    def render(self, form, form_style, context, template_pack=None):
-        fields = ''
-
-        for field in self.fields:
-            fields += render_field(field, form, form_style, context,
-                                   template_pack=template_pack)
-        return fields
-
-
 class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
@@ -560,6 +550,7 @@ class IssueRevisionForm(forms.ModelForm):
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credit_start:-4]])
         field_list.append(Formset('code_number_formset'))
+        field_list.append(Formset('external_link_formset'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[-4:]])
