@@ -2103,7 +2103,8 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
                                  variant_of=variant_of)
     form.save_m2m()
     extra_forms = {'credits_formset': credits_formset,
-                   'code_number_formset': code_number_formset}
+                   'code_number_formset': code_number_formset,
+                   'external_link_formset': external_link_formset}
     revision.process_extra_forms(extra_forms)
 
     if variant_of:
@@ -2647,7 +2648,8 @@ def add_character(request):
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset)
-        extra_forms = {'character_names_formset': character_names_formset, }
+        extra_forms = {'character_names_formset': character_names_formset,
+                       'external_link_formset': external_link_formset}
         revision.process_extra_forms(extra_forms)
         return submit(request, changeset.id)
 
