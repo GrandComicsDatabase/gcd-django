@@ -1655,10 +1655,16 @@ def search_issues(data, op, stories_q=None):
         q_objs.append(Q(**{'%snotes__%s' % (prefix, op): data['issue_notes']}))
 
     if data['issue_reprinted'] is not None:
-        if data['issue_reprinted'] is True:
+        if data['issue_reprinted'] == 'has_reprints':
             q_objs.append(Q(**{'%sfrom_all_reprints__isnull' % prefix: False}))
-        else:
+        elif data['issue_reprinted'] == 'is_reprinted':
             q_objs.append(Q(**{'%sto_all_reprints__isnull' % prefix: False}))
+        elif data['issue_reprinted'] == 'issue_level_reprints':
+            q_objs.append(Q(**{'%sfrom_all_reprints__target__isnull' % prefix: True}) &
+                         ~Q(**{'%sfrom_all_reprints__origin__isnull' % prefix: True}))
+        elif data['issue_reprinted'] == 'issue_level_reprinted':
+            q_objs.append(Q(**{'%sto_all_reprints__origin__isnull' % prefix: True}) &
+                         ~Q(**{'%sto_all_reprints__target__isnull' % prefix: True}))
 
     if 'in_collection' in data and data['in_collection']:
         if data['in_selected_collection']:
