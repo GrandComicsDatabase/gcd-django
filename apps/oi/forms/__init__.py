@@ -255,7 +255,7 @@ class ExternalLinkRevisionForm(forms.ModelForm):
 
     def clean(self):
         cd = self.cleaned_data
-        if cd['link'] and 'site' in cd and \
+        if 'link' in cd and cd['link'] and 'site' in cd and \
            cd['site'].matching not in cd['link']:
             raise forms.ValidationError(
               ['Matching phrase "%s" from "%s" is not in "%s".' % (
