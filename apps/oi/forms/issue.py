@@ -45,7 +45,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
-            self.helper.layout[26].append(
+            position = self.helper['editing'].slice[0][0][0]
+            self.helper.layout[position].append(
               HTML('<th></th><td><input type="submit" name="save_migrate"'
                    ' value="save and migrate editing"  /></td>'))
 
@@ -344,18 +345,18 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     fields = ['after'] + fields
                     labels['after'] = 'Add this issue after'
 
-                if not edit_with_base:
-                    fields = ['reservation_requested'] + fields
+                    if not edit_with_base:
+                        fields = ['reservation_requested'] + fields
 
-                    help_texts = RuntimeIssueRevisionForm.Meta.help_texts
-                    help_texts.update(
-                      reservation_requested='Check this box to have this '
-                                            'issue reserved to you '
-                                            'automatically when it is '
-                                            'approved, unless someone '
-                                            "has acquired the series' "
-                                            'ongoing reservation before '
-                                            'then.')
+                        help_texts = RuntimeIssueRevisionForm.Meta.help_texts
+                        help_texts.update(
+                        reservation_requested='Check this box to have this '
+                                                'issue reserved to you '
+                                                'automatically when it is '
+                                                'approved, unless someone '
+                                                "has acquired the series' "
+                                                'ongoing reservation before '
+                                                'then.')
 
             def __init__(self, *args, **kwargs):
                 super(RuntimeAddVariantIssueRevisionForm,
