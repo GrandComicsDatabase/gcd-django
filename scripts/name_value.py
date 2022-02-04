@@ -13,7 +13,8 @@ import django
 from django.db import connection, models
 from apps.stddata.models import Country
 from apps.gcd.models import Issue, Story
-
+from apps.gcd.models.story import show_feature
+from apps.gcd.templatetags.credits import show_creator_credit
 
 # TODO: When we move up to Python 2.6 (or even 2.5) these related name access
 # functions can all be replaced by the "x if foo else y" construct in a lambda.
@@ -26,6 +27,18 @@ def _brand_group_name(issue):
         return groups[:-2]
     return ''
 
+def _show_genre(story):
+    genres = story.genre.lower()
+    for feature in story.feature_object.all():
+        for genre in feature.genre.split(';'):
+            genre = genre.strip()
+            if genre not in genres:
+                if genres == '':
+                    genres = genre
+                else:
+                    genres += '; %s' % genre
+    return genres
+
 
 # Map moderately human-friendly field names to functions producing the data
 # from an issue record.
@@ -36,6 +49,7 @@ ISSUE_FIELDS = {
     'no volume': lambda i: i.no_volume,
     'display number': lambda i: i.display_number,
     'variant name': lambda i: i.variant_name if i.variant_name else '',
+    'variant_of': lambda i: i.variant_of.id if i.variant_of else '',
     'price': lambda i: i.price or '',
     'issue page count': lambda i: i.page_count if i.page_count else '',
     'issue page count uncertain': lambda i: i.page_count_uncertain,
@@ -57,13 +71,14 @@ ISSUE_FIELDS = {
 
 # Map moderately human-friendly field names to functions producing the data
 # from a story record.
-STORY_FIELDS = {'title': lambda s: s.title,
+STORY_FIELDS = {'sequence_number': lambda s: s.sequence_number,
+                'title': lambda s: s.title,
                 'title by gcd': lambda s: s.title_inferred,
-                'feature': lambda s: s.feature,
-                'script': lambda s: s.script,
-                'pencils': lambda s: s.pencils,
-                'inks': lambda s: s.inks,
-                'genre': lambda s: s.genre,
+                'feature': lambda s: show_feature(s, url=False),
+                'script': lambda s: show_creator_credit(s, 'script', url=False),
+                'pencils': lambda s: show_creator_credit(s, 'pencils', url=False),
+                'inks': lambda s: show_creator_credit(s, 'inks', url=False),
+                'genre': lambda s: _show_genre(s),
                 'type': lambda s: s.type.name}
 
 
