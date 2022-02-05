@@ -9,15 +9,16 @@ which field values are grouped on a particular story.
 
 import sys
 import logging
-import django
+import itertools
 from django.db import connection, models
-from apps.stddata.models import Country
+from django.db.models import prefetch_related_objects
 from apps.gcd.models import Issue, Story
 from apps.gcd.models.story import show_feature
 from apps.gcd.templatetags.credits import show_creator_credit
 
 # TODO: When we move up to Python 2.6 (or even 2.5) these related name access
 # functions can all be replaced by the "x if foo else y" construct in a lambda.
+
 
 def _brand_group_name(issue):
     if issue.brand:
@@ -26,6 +27,7 @@ def _brand_group_name(issue):
             groups += group.name + ', '
         return groups[:-2]
     return ''
+
 
 def _show_genre(story):
     genres = story.genre.lower()
@@ -49,7 +51,7 @@ ISSUE_FIELDS = {
     'no volume': lambda i: i.no_volume,
     'display number': lambda i: i.display_number,
     'variant name': lambda i: i.variant_name if i.variant_name else '',
-    'variant_of': lambda i: i.variant_of.id if i.variant_of else '',
+    'variant_of': lambda i: i.variant_of_id if i.variant_of else '',
     'price': lambda i: i.price or '',
     'issue page count': lambda i: i.page_count if i.page_count else '',
     'issue page count uncertain': lambda i: i.page_count_uncertain,
@@ -58,7 +60,7 @@ ISSUE_FIELDS = {
     'publisher name': lambda i: i.series.publisher.name,
     'brand name': lambda i: i.brand.name if i.brand else '',
     'brand group names': _brand_group_name,
-    'indicia publisher name': lambda i: i.indicia_publisher.name if \
+    'indicia publisher name': lambda i: i.indicia_publisher.name if
                                         i.indicia_publisher else '',
     'format': lambda i: i.series.format,
     'language code': lambda i: i.series.language.code,
@@ -75,8 +77,10 @@ STORY_FIELDS = {'sequence_number': lambda s: s.sequence_number,
                 'title': lambda s: s.title,
                 'title by gcd': lambda s: s.title_inferred,
                 'feature': lambda s: show_feature(s, url=False),
-                'script': lambda s: show_creator_credit(s, 'script', url=False),
-                'pencils': lambda s: show_creator_credit(s, 'pencils', url=False),
+                'script': lambda s: show_creator_credit(s, 'script',
+                                                        url=False),
+                'pencils': lambda s: show_creator_credit(s, 'pencils',
+                                                         url=False),
                 'inks': lambda s: show_creator_credit(s, 'inks', url=False),
                 'genre': lambda s: _show_genre(s),
                 'type': lambda s: s.type.name}
@@ -127,7 +131,17 @@ def _fix_value(value):
     return '"' + value + '"'
 
 
-def _dump_table(dumpfile, objects, max, fields, get_id):
+def prefetch_related_iterator(queryset, *related_lookups, chunk_size=1000):
+    iterator = queryset.iterator(chunk_size=chunk_size)
+    while True:
+        chunk = list(itertools.islice(iterator, chunk_size))
+        if not chunk:
+            return
+        prefetch_related_objects(chunk, *related_lookups)
+        yield from chunk
+
+
+def _dump_table(dumpfile, objects, max, fields, get_id, *related_lookups):
     """
     Dump records from a table a chunk at a time, selecting particular fields.
     Fields with a NULL or empty string value are omitted.
@@ -139,13 +153,15 @@ def _dump_table(dumpfile, objects, max, fields, get_id):
         logging.info("Dumping object rows %d through %d (out of %d)" %
                      (start, end, max))
         try:
-            for object in objects.filter(id__range=(start, end)).iterator():
+            for object in prefetch_related_iterator(objects.filter(
+                                                    id__range=(start, end)),
+                                                    *related_lookups):
                 for name, func in list(fields.items()):
                     value = str(func(object)).replace('"', '""')
                     value = _fix_value(value)
                     if value is not None:
                         record = '"%d"\t"%s"\t%s\n' % (get_id(object),
-                                                        name, value)
+                                                       name, value)
                         dumpfile.write(record.encode('utf-8'))
         except IndexError:
             # Somehow our count was wrong and we ran off the end.  That's OK
@@ -201,11 +217,11 @@ def main(*args):
                                       'indicia_publisher',
                                       'series__language',
                                       'series__country',
-                                      'series__publisher__country') \
-                      .prefetch_related('brand__group')
+                                      'series__publisher__country')
         max = issues.aggregate(models.Max('id'))['id__max']
 
         _dump_table(dumpfile, issues, max, ISSUE_FIELDS, lambda i: i.id)
+                    'brand__group')
 
         stories = Story.objects.filter(issue__series__country__code='us',
                                        type__name__in=STORY_TYPES,
@@ -213,15 +229,20 @@ def main(*args):
                                .order_by() \
                                .select_related('type')
         max = stories.aggregate(models.Max('id'))['id__max']
-        _dump_table(dumpfile, stories, max, STORY_FIELDS, lambda s: s.issue_id)
+        # would be good if we could do more prefetching, i.e. for credits, but 
+        # we need to filter on the credit_type later
+        _dump_table(dumpfile, stories, max, STORY_FIELDS, lambda s: s.issue_id,
+                    'feature_object')
 
     finally:
         # We shouldn't have anything to commit or roll back, so just to be
         # safe, use a rollback to end the transation.
         cursor.execute('ROLLBACK')
 
+
 def run(*args):
     main(*args)
+
 
 if __name__ == '__main__':
     main()
