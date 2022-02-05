@@ -244,9 +244,13 @@ class Issue(GcdData):
         stories = list(stories_from.active_stories()
                                    .order_by('sequence_number')
                                    .select_related('type', 'migration_status')
-                                   .prefetch_related('feature_object'))
+                                   .prefetch_related(
+                                     'feature_object',
+                                     'feature_logo__feature',
+                                     'credits__creator__creator',
+                                     'credits__creator__type'))
         if self.series.is_comics_publication:
-            if (len(stories) > 0) and stories[0].type.id == 6:
+            if (len(stories) > 0) and stories[0].type_id == 6:
                 cover_story = stories.pop(0)
                 if self.variant_of:
                     # can have only one sequence, the variant cover
@@ -716,7 +720,7 @@ class BrandEmblemIssueTable(IssueTable):
                                                   show_indicia_pub
         from apps.gcd.templatetags.credits import get_country_flag
         return_val = show_indicia_pub(record)
-        if record.series.publisher.id not in record.brand.group_parents():
+        if record.series.publisher_id not in record.brand.group_parents():
             return_val += " (%s%s)" % (get_country_flag(record.series.publisher
                                                                      .country),
                                        absolute_url(record.series.publisher))

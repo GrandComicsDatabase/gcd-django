@@ -12,10 +12,9 @@ import logging
 import itertools
 from django.db import connection, models
 from django.db.models import prefetch_related_objects
-from django.utils.html import conditional_escape as esc
-from django.utils.safestring import mark_safe
-from apps.gcd.models import Issue, Story, CREDIT_TYPES
+from apps.gcd.models import Issue, Story
 from apps.gcd.models.story import show_feature
+from apps.gcd.templatetags.credits import show_creator_credit
 
 
 def _brand_group_name(issue):
@@ -38,26 +37,6 @@ def _show_genre(story):
                 else:
                     genres += '; %s' % genre
     return genres
-
-
-def _show_credits(story, credit_type):
-    credit_value = ''
-    for credit in story.credits.all():
-        if not credit.deleted and \
-           credit.credit_type_id == CREDIT_TYPES[credit_type]:
-            displayed_credit = credit.creator.display_credit(
-              credit, url=False)
-            if credit_value:
-                credit_value += '; %s' % displayed_credit
-            else:
-                credit_value = displayed_credit
-    old_credit_field = getattr(story, credit_type)
-    if old_credit_field:
-        if credit_value:
-            credit_value = '%s; %s' % (credit_value, esc(old_credit_field))
-        else:
-            credit_value = esc(old_credit_field)
-    return mark_safe(credit_value)
 
 
 # Map moderately human-friendly field names to functions producing the data
@@ -95,9 +74,11 @@ STORY_FIELDS = {'sequence_number': lambda s: s.sequence_number,
                 'title': lambda s: s.title,
                 'title by gcd': lambda s: s.title_inferred,
                 'feature': lambda s: show_feature(s, url=False),
-                'script': lambda s: _show_credits(s, 'script'),
-                'pencils': lambda s: _show_credits(s, 'pencils'),
-                'inks': lambda s: _show_credits(s, 'inks'),
+                'script': lambda s: show_creator_credit(s, 'script',
+                                                        url=False),
+                'pencils': lambda s: show_creator_credit(s, 'pencils',
+                                                         url=False),
+                'inks': lambda s: show_creator_credit(s, 'inks', url=False),
                 'genre': lambda s: _show_genre(s),
                 'type': lambda s: s.type.name}
 
@@ -236,8 +217,8 @@ def main(*args):
                                       'series__publisher__country')
         max = issues.aggregate(models.Max('id'))['id__max']
 
-        _dump_table(dumpfile, issues, max, ISSUE_FIELDS, lambda i: i.id,
-                    'brand__group')
+        # _dump_table(dumpfile, issues, max, ISSUE_FIELDS, lambda i: i.id,
+        #             'brand__group')
 
         stories = Story.objects.filter(issue__series__country__code='us',
                                        type__name__in=STORY_TYPES,

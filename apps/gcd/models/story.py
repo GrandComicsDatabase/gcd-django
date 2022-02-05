@@ -266,6 +266,12 @@ class CreditType(models.Model):
         return self.name
 
 
+# TODO should StoryCredit be a GcdData or a Gcd Link-object ?
+# Unlikely that we need a change history or other access to individual
+# credits, these all go via the issue of the story and that change history.
+# So what is the reason to keep these in the database after a delete ?
+# A GcdLink avoids filtering for active-status, which for example would
+# allow a prefetch_related for all credits of an issue.
 class StoryCredit(GcdData):
     class Meta:
         app_label = 'gcd'
@@ -429,6 +435,8 @@ class Story(GcdData):
     @property
     def active_credits(self):
         if not hasattr(self, '_active_credits'):
+            # the exclude prevents a prefetch_related for the whole story
+            # so one query per story and credit
             self._active_credits = self.credits.exclude(deleted=True)\
                                        .select_related('creator__creator',
                                                        'creator__type')

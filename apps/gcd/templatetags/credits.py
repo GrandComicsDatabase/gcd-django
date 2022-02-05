@@ -291,16 +291,21 @@ def search_creator_credit(story, credit_type):
 
 
 def __credit_value(story, credit_type, url, show_sources=False):
-    # for results from elasticsearch
+    # We use .credits.all() to allow prefetching of the credits when the
+    # story is fetched from the db, otherwise the filter would invalidated
+    # the prefetched data. Prefetching is done by
+    # - issue.shown_stories for show_issue
+    # - the name-value export script
+    #
+    # For results from elasticsearch we need to go to the object.
     if '_object' in story.__dict__:
-        credits = story.object.active_credits.filter(
-                  credit_type_id=CREDIT_TYPES[credit_type])
+        credits = story.objects.credits.all()
     else:
-        credits = story.active_credits.filter(
-                  credit_type_id=CREDIT_TYPES[credit_type])
+        credits = story.credits.all()
     credit_value = ''
     for credit in credits:
-        if credit.credit_type_id == CREDIT_TYPES[credit_type]:
+        if credit.credit_type_id == CREDIT_TYPES[credit_type] and \
+           not credit.deleted:
             displayed_credit = credit.creator.display_credit(
               credit, url=url, show_sources=show_sources)
             if credit_value:
