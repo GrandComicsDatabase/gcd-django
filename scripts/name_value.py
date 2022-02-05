@@ -12,12 +12,10 @@ import logging
 import itertools
 from django.db import connection, models
 from django.db.models import prefetch_related_objects
-from apps.gcd.models import Issue, Story
+from django.utils.html import conditional_escape as esc
+from django.utils.safestring import mark_safe
+from apps.gcd.models import Issue, Story, CREDIT_TYPES
 from apps.gcd.models.story import show_feature
-from apps.gcd.templatetags.credits import show_creator_credit
-
-# TODO: When we move up to Python 2.6 (or even 2.5) these related name access
-# functions can all be replaced by the "x if foo else y" construct in a lambda.
 
 
 def _brand_group_name(issue):
@@ -40,6 +38,26 @@ def _show_genre(story):
                 else:
                     genres += '; %s' % genre
     return genres
+
+
+def _show_credits(story, credit_type):
+    credit_value = ''
+    for credit in story.credits.all():
+        if not credit.deleted and \
+           credit.credit_type_id == CREDIT_TYPES[credit_type]:
+            displayed_credit = credit.creator.display_credit(
+              credit, url=False)
+            if credit_value:
+                credit_value += '; %s' % displayed_credit
+            else:
+                credit_value = displayed_credit
+    old_credit_field = getattr(story, credit_type)
+    if old_credit_field:
+        if credit_value:
+            credit_value = '%s; %s' % (credit_value, esc(old_credit_field))
+        else:
+            credit_value = esc(old_credit_field)
+    return mark_safe(credit_value)
 
 
 # Map moderately human-friendly field names to functions producing the data
@@ -77,11 +95,9 @@ STORY_FIELDS = {'sequence_number': lambda s: s.sequence_number,
                 'title': lambda s: s.title,
                 'title by gcd': lambda s: s.title_inferred,
                 'feature': lambda s: show_feature(s, url=False),
-                'script': lambda s: show_creator_credit(s, 'script',
-                                                        url=False),
-                'pencils': lambda s: show_creator_credit(s, 'pencils',
-                                                         url=False),
-                'inks': lambda s: show_creator_credit(s, 'inks', url=False),
+                'script': lambda s: _show_credits(s, 'script'),
+                'pencils': lambda s: _show_credits(s, 'pencils'),
+                'inks': lambda s: _show_credits(s, 'inks'),
                 'genre': lambda s: _show_genre(s),
                 'type': lambda s: s.type.name}
 
@@ -229,10 +245,10 @@ def main(*args):
                                .order_by() \
                                .select_related('type')
         max = stories.aggregate(models.Max('id'))['id__max']
-        # would be good if we could do more prefetching, i.e. for credits, but 
-        # we need to filter on the credit_type later
+        # to be able to do prefetching for credits we need to filter in python
         _dump_table(dumpfile, stories, max, STORY_FIELDS, lambda s: s.issue_id,
-                    'feature_object')
+                    'feature_object', 'credits__creator__creator',
+                    'credits__creator__type')
 
     finally:
         # We shouldn't have anything to commit or roll back, so just to be
