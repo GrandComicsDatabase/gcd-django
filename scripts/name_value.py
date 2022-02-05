@@ -242,7 +242,7 @@ def main(*args):
         stories = Story.objects.filter(issue__series__country__code='us',
                                        type__name__in=STORY_TYPES,
                                        deleted=False) \
-                               .order_by() \
+                               .order_by('issue_id', 'sequence_number') \
                                .select_related('type')
         max = stories.aggregate(models.Max('id'))['id__max']
         # to be able to do prefetching for credits we need to filter in python
