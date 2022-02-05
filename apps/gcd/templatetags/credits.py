@@ -334,8 +334,8 @@ def show_creator_credit(story, credit_type, url=True,
                                                            credit_type) + \
                    'hx-target="body" hx-swap="beforeend" style="color: #00e;">'
         val += credit_type.capitalize() + '</a></span></dt>' + \
-          '<dd class="credit_def"><span class="credit_value">' + \
-          credit_value + '</span></dd>'
+            '<dd class="credit_def"><span class="credit_value">' + \
+            credit_value + '</span></dd>'
         return mark_safe(val)
     else:
         return credit_value
@@ -391,7 +391,7 @@ def show_keywords_comma(object):
 @register.filter
 def show_cover_contributor(cover_revision):
     if cover_revision.file_source:
-        if cover_revision.changeset.indexer.id == 381:  # anon user
+        if cover_revision.changeset.indexer_id == 381:  # anon user
             # filter away '( email@domain.part )' for old contributions
             text = cover_revision.file_source
             bracket = text.rfind('(')
@@ -511,25 +511,25 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
         return link
 
 
-def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
+def generate_reprint_link_sequence(story, issue, from_to, notes=None, li=True,
                                    only_number=False):
     ''' generate reprint link to story'''
     if only_number:
-        link = ', <a href="%s#%d">%s</a>' % (story.issue.get_absolute_url(),
+        link = ', <a href="%s#%d">%s</a>' % (issue.get_absolute_url(),
                                              story.id,
-                                             esc(story.issue.display_number))
+                                             esc(issue.display_number))
     elif story.sequence_number == 0:
         link = '%s %s <a href="%s#%d">%s</a>' % \
-          (get_country_flag(story.issue.series.country), from_to,
-           story.issue.get_absolute_url(), story.id,
-           esc(story.issue.full_name()))
+          (get_country_flag(issue.series.country), from_to,
+           issue.get_absolute_url(), story.id,
+           esc(issue.full_name()))
     else:
         link = '%s %s <a href="%s#%d">%s</a>' % \
-          (get_country_flag(story.issue.series.country), from_to,
-           story.issue.get_absolute_url(), story.id,
-           esc(story.issue.full_name(variant_name=False)))
-    if story.issue.publication_date:
-        link = "%s (%s)" % (link, esc(story.issue.publication_date))
+          (get_country_flag(issue.series.country), from_to,
+           issue.get_absolute_url(), story.id,
+           esc(issue.full_name(variant_name=False)))
+    if issue.publication_date:
+        link = "%s (%s)" % (link, esc(issue.publication_date))
     if notes:
         link = '%s [%s]' % (link, esc(notes))
     if li and not only_number:
@@ -575,7 +575,8 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
             if last_series == from_reprint.origin_issue.series and \
                last_follow == follow_info:
                 reprint += generate_reprint_link_sequence(
-                             from_reprint.origin, "from ",
+                             from_reprint.origin, from_reprint.origin_issue,
+                             "from ",
                              notes=from_reprint.notes, only_number=True)
                 same_issue_cnt += 1
             else:
@@ -588,8 +589,8 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                 last_series = from_reprint.origin_issue.series
 
                 reprint += generate_reprint_link_sequence(
-                             from_reprint.origin, "from ",
-                             notes=from_reprint.notes)
+                             from_reprint.origin, from_reprint.origin_issue,
+                             "from ", notes=from_reprint.notes)
             last_follow = follow_info
 
     if last_follow:
@@ -622,16 +623,17 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                              notes=to_reprint.notes)
                 last_follow = follow_info
         else:
-            if no_promo and to_reprint.target.type.id in AD_TYPES:
+            if no_promo and to_reprint.target.type_id in AD_TYPES:
                 pass
             else:
                 follow_info = follow_reprint_link(to_reprint, 'in',
                                                   level=level+1)
-                if last_series == to_reprint.target.issue.series and \
+                if last_series == to_reprint.target_issue.series and \
                    last_follow == follow_info:
                     reprint += generate_reprint_link_sequence(
-                                 to_reprint.target, "in ",
-                                 notes=to_reprint.notes, only_number=True)
+                                 to_reprint.target, to_reprint.target_issue,
+                                 "in ", notes=to_reprint.notes,
+                                 only_number=True)
                     same_issue_cnt += 1
                 else:
                     if last_follow:
@@ -640,11 +642,11 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                                                               'which are', 1)
                         reprint += '</li>' + last_follow
                     same_issue_cnt = 0
-                    last_series = to_reprint.target.issue.series
+                    last_series = to_reprint.target_issue.series
 
                     reprint += generate_reprint_link_sequence(
-                                 to_reprint.target, "in ",
-                                 notes=to_reprint.notes)
+                                 to_reprint.target, to_reprint.target_issue,
+                                 "in ", notes=to_reprint.notes)
                 last_follow = follow_info
     if last_follow:
         if same_issue_cnt > 0:
@@ -696,17 +698,19 @@ def follow_reprint_link(reprint, direction, level=0):
 def show_reprints(story):
     """ Filter for our reprint line on the story level."""
     from_reprints = story.from_all_reprints \
-                         .select_related('origin_issue__series__publisher')\
+                         .select_related('origin_issue__series__publisher',
+                                         'origin')\
                          .order_by('origin_issue__key_date')
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
-    if story.type.id not in [STORY_TYPES['preview'],
+    if story.type_id not in [STORY_TYPES['preview'],
                              STORY_TYPES['comics-form ad']]:
         no_promo = True
     else:
         no_promo = False
     to_reprints = story.to_all_reprints\
-                       .select_related('target_issue__series__publisher')\
+                       .select_related('target_issue__series__publisher',
+                                       'target')\
                        .order_by('target_issue__key_date')
     reprint += generate_reprint_notes(to_reprints=to_reprints,
                                       no_promo=no_promo)
