@@ -140,11 +140,13 @@ This issue has variants:
         </div> <!-- coverContainer -->
       </div> <!-- cover -->
       <div id="story_data">
-{% for story in stories %}
-  {% if not not_shown_types or not request.user.indexer or story.type not in request.user.indexer.no_show_sequences.all %}
-  {% include "gcd/details/single_story.html" %}
-  {% endif %}
-{% endfor %}
+{% with no_show_sequence_types=request.user.indexer.no_show_sequences.all %}
+  {% for story in stories %}
+    {% if not not_shown_types or not request.user.indexer or story.type not in no_show_sequence_types %}
+      {% include "gcd/details/single_story.html" %}
+    {% endif %}
+  {% endfor %}
+{% endwith %}
       </div>
     </div> <!-- control_center -->
 
