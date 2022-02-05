@@ -220,7 +220,7 @@ def main(*args):
                                       'series__publisher__country')
         max = issues.aggregate(models.Max('id'))['id__max']
 
-        _dump_table(dumpfile, issues, max, ISSUE_FIELDS, lambda i: i.id)
+        _dump_table(dumpfile, issues, max, ISSUE_FIELDS, lambda i: i.id,
                     'brand__group')
 
         stories = Story.objects.filter(issue__series__country__code='us',
