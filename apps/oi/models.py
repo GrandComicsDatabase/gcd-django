@@ -4504,14 +4504,18 @@ class IssueRevision(Revision):
             if not preview:
                 new_revisions |= \
                     self.issue.target_reprint_revisions.active_set()\
-                        .filter(previous_revision=None)\
                         .filter(target=None, target_revision=None)
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
             existing_reprints = from_reprints
-            old_revisions = self.old_revisions_base()\
-                                .filter(reprint__in=existing_reprints,
-                                        next_revision=None)
+            if not preview:
+                old_revisions = self.old_revisions_base()\
+                                    .filter(reprint__in=existing_reprints,
+                                            next_revision=None)
+            else:
+                old_revisions = self.old_revisions_base()\
+                                    .filter(reprint__in=existing_reprints,
+                                            changeset__state=states.APPROVED)
             return new_revisions | old_revisions
         else:
             return from_reprints
@@ -4540,10 +4544,16 @@ class IssueRevision(Revision):
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
             existing_reprints = to_reprints
-            old_revisions = \
-                self.old_revisions_base()\
-                    .filter(reprint__in=existing_reprints,
-                            next_revision=None)
+            if not preview:
+                old_revisions = \
+                    self.old_revisions_base()\
+                        .filter(reprint__in=existing_reprints,
+                                next_revision=None)
+            else:
+                old_revisions = \
+                    self.old_revisions_base()\
+                        .filter(reprint__in=existing_reprints,
+                                changeset__state=states.APPROVED)
             return new_revisions | old_revisions
         else:
             return to_reprints
@@ -4859,6 +4869,10 @@ class PreviewIssue(Issue):
             if self.id != 0:
                 return self._active_covers()
         return Cover.objects.none()
+
+    @property
+    def credits(self):
+        return self.revision.issue_credit_revisions.exclude(deleted=True)
 
     @property
     def active_credits(self):
@@ -5946,9 +5960,14 @@ class StoryRevision(Revision):
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
             existing_reprints = from_reprints
-            old_revisions = self.old_revisions_base()\
-                                .filter(reprint__in=existing_reprints,
-                                        next_revision=None)
+            if not preview:
+                old_revisions = self.old_revisions_base()\
+                                    .filter(reprint__in=existing_reprints,
+                                            next_revision=None)
+            else:
+                old_revisions = self.old_revisions_base()\
+                                    .filter(reprint__in=existing_reprints,
+                                            changeset__state=states.APPROVED)
             return new_revisions | old_revisions
         else:
             return from_reprints
@@ -5989,9 +6008,16 @@ class StoryRevision(Revision):
             else:
                 new_revisions = new_revisions.exclude(deleted=True)
             existing_reprints = to_reprints
-            old_revisions = \
-                self.old_revisions_base()\
-                    .filter(reprint__in=existing_reprints, next_revision=None)
+            if not preview:
+                old_revisions = \
+                    self.old_revisions_base()\
+                        .filter(reprint__in=existing_reprints,
+                                next_revision=None)
+            else:
+                old_revisions = \
+                    self.old_revisions_base()\
+                        .filter(reprint__in=existing_reprints,
+                                changeset__state=states.APPROVED)
             return new_revisions | old_revisions
         else:
             return to_reprints
@@ -6056,6 +6082,10 @@ class PreviewStory(Story):
         else:
             preview_story.id = 0
         return preview_story
+
+    @property
+    def credits(self):
+        return self.revision.story_credit_revisions.exclude(deleted=True)
 
     @property
     def active_credits(self):
