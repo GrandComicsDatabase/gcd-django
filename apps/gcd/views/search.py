@@ -1227,7 +1227,8 @@ def process_advanced(request, export_csv=False):
                    'used_search_terms': used_search_terms,
                    'target': 'Stories',
                    'method': method,
-                   'logic': logic
+                   'logic': logic,
+                   'advanced_search': True,
                    }
         return generic_sortable_list(request, items, table,
                                      'gcd/search/generic_list.html', context)
@@ -1242,7 +1243,8 @@ def process_advanced(request, export_csv=False):
                    'used_search_terms': used_search_terms,
                    'target': 'Issues',
                    'method': method,
-                   'logic': logic
+                   'logic': logic,
+                   'advanced_search': True,
                    }
         if request.user.is_authenticated and not settings.MYCOMICS:
             context['bulk_edit'] = urlresolvers.reverse('edit_issues_in_bulk')
@@ -1260,7 +1262,8 @@ def process_advanced(request, export_csv=False):
                    'used_search_terms': used_search_terms,
                    'target': 'Series',
                    'method': method,
-                   'logic': logic
+                   'logic': logic,
+                   'advanced_search': True,
                    }
         return generic_sortable_list(request, items, table,
                                      'gcd/search/generic_list.html', context)
