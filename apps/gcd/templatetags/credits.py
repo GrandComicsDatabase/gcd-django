@@ -262,7 +262,7 @@ def __format_credit(story, credit):
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
-    if credit in ['genre', 'first_line', 'job_number', 'feature_logo']:
+    if credit in ['genre', 'job_number', 'feature_logo']:
         dt += ' short'
         dd += ' short'
     dt += '">'
