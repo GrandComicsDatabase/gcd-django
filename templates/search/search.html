@@ -174,7 +174,7 @@
                 {{ result.object.publication_date|str_encl:'(' }}</td>
             {% endif %}
             {% if result.model_name == 'story' %}
-                <td>[STORY]</td>
+                <td><a hx-get="/story/{{ results.object.id }}/modal/" hx-target="body" hx-swap="beforeend" style="color: #00e;">[STORY]</a></td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object|show_title:1 }}</a>
               {% if result.object.has_feature %} / {{ result.object.show_feature }}{% endif %}
               {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}

@@ -7,9 +7,11 @@
       <a name="{{ story.id }}"></a>
       <h2 class="sequence header title">
         <span class="title left">{{ story|show_title }}</span>
+        {% if not modal %}
         <span class="right single_story_navigation"><a class="toc" href="#toc_{{ story.id }}">(Table of Contents{% if forloop.counter %}: {{ forloop.counter }}{% endif %})</a></span>
-        {% if story.type.id in not_shown_types %}
+          {% if story.type.id in not_shown_types %}
         <span class="right single_story_navigation"><a class="toc" href="?issue_detail=2">(Expand)</a> / </span>
+          {% endif %}
         {% endif %}
       </h2>
       <h3 class="sequence_header feature">
@@ -29,7 +31,7 @@
           </span>
         {%endif %}
         </span>
-        {% if not preview %}
+        {% if not preview and not modal %}
           {% if user.is_authenticated and story and not MYCOMICS %}
             {% if is_cover %}
         <span class="right single_story_navigation"><a href="{% url "cache_cover" cover_story_id=story.id %}">(remember cover)</a></span>

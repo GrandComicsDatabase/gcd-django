@@ -2858,6 +2858,23 @@ def show_issue(request, issue, preview=False):
        })
 
 
+def show_story_modal(request, story_id):
+    """
+    Show a single story in a modal.
+    """
+    story = get_object_or_404(Story.objects.prefetch_related(
+                              'feature_object',
+                              'feature_logo__feature',
+                              'credits__creator__creator',
+                              'credits__creator__type'),
+                              id=story_id)
+
+    if story.deleted:
+        return HttpResponse("")
+
+    return render(request, 'gcd/bits/single_story_modal.html',
+                  {'story': story})
+
 def credit_source(request, credit_id):
     """
     Show the source of a credit for use in a modal.
