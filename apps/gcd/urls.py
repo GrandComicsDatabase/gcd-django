@@ -293,6 +293,8 @@ urlpatterns = [
     # Stories
     url(r'^story/(?P<story_id>\d+)/(?P<credit_type>.+)/history/$',
       gcd_views.details.credit_type_history, name='credit_type_history'),
+    url(r'^story/(?P<story_id>\d+)/modal/$',
+      gcd_views.details.show_story_modal, name='show_story_modal'),
 
     # Feature
     url(r'^feature/(?P<feature_id>\d+)/issues/$',

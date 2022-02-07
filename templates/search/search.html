@@ -7,6 +7,9 @@
   <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
+{% block css_raw %}
+<script src="https://unpkg.com/htmx.org@1.6.0" integrity="sha384-G4dtlRlMBrk5fEiRXDsLjriPo8Qk5ZeHVVxS8KhX6D7I9XXJlNqbdvRlp9/glk5D" crossorigin="anonymous"></script>
+{% endblock %}
 {% block view_body %}
   <form method="get" action=".">
       <p>
@@ -174,7 +177,7 @@
                 {{ result.object.publication_date|str_encl:'(' }}</td>
             {% endif %}
             {% if result.model_name == 'story' %}
-                <td><a hx-get="/story/{{ results.object.id }}/modal/" hx-target="body" hx-swap="beforeend" style="color: #00e;">[STORY]</a></td>
+                <td><a hx-get="{% url "show_story_modal" story_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="color: #00e;">[STORY]</a></td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object|show_title:1 }}</a>
               {% if result.object.has_feature %} / {{ result.object.show_feature }}{% endif %}
               {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}
