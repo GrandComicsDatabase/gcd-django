@@ -38,5 +38,13 @@
         "name": "supporting",
         "sort_code": 5
     }
+},
+{
+    "model": "gcd.characterrole",
+    "pk": 6,
+    "fields": {
+        "name": "villain",
+        "sort_code": 6
+    }
 }
 ]
