@@ -9,8 +9,12 @@ from django.forms.models import inlineformset_factory
 from dal import autocomplete, forward
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field
+from crispy_forms.layout import Layout, Field, HTML
 from crispy_forms.utils import render_field
+from crispy_forms.bootstrap import (
+    Tab,
+    TabHolder,
+)
 
 from apps.oi.models import (
     get_reprint_field_list, get_story_field_list,
@@ -250,7 +254,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
-                                       attrs={'style': 'min-width: 60em'}),
+                                       attrs={'style': 'width: 60em'}),
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
@@ -261,7 +265,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
       queryset=CreatorSignature.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_signature_autocomplete',
                                        attrs={'data-html': True,
-                                              'style': 'min-width: 60em'},
+                                              'style': 'width: 40em'},
                                        forward=['creator']),
       help_text='Select an existing signature for the creator.',
       required=False,
@@ -329,7 +333,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='character_name_autocomplete',
                                        forward=['language_code'],
-                                       attrs={'style': 'min-width: 60em'}),
+                                       attrs={'style': 'width: 60em'}),
       required=True,
       help_text='By entering (any part of) a name select a character from the'
                 ' database.'
@@ -409,21 +413,42 @@ class StoryRevisionForm(forms.ModelForm):
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
         fields = list(self.fields)
-        credit_start = fields.index('creator_help')
+        credits_start = fields.index('creator_help')
         field_list = [BaseField(Field(field,
                                       template='oi/bits/uni_field.html'))
-                      for field in fields[:credit_start]]
+                      for field in fields[:credits_start]]
         field_list.append(Formset('credits_formset'))
-        character_start = fields.index('characters')
+        credits_end = len(field_list)
+        characters_start = fields.index('characters')
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[credit_start:
-                                               character_start]])
+                           for field in fields[credits_start:
+                                               characters_start]])
         field_list.append(Formset('characters_formset'))
+        characters_end = len(field_list)
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[character_start:]])
-        self.helper.layout = Layout(*(f for f in field_list))
+                           for field in fields[characters_start:]])
+        # self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.layout = Layout(TabHolder(
+        Tab(
+            'Sequence Details',
+            *(f for f in field_list[:credits_start-7]),
+            *(f for f in field_list[characters_end+1:-2]),
+            template = 'oi/bits/tab.html', css_class='editing',
+        ),
+        Tab('Creator Credits',
+            *(f for f in field_list[credits_start-7:credits_end+7]),
+            template = 'oi/bits/tab.html', css_class='editing',
+            ),
+        Tab('Characters',
+            *(f for f in field_list[credits_end+7:characters_end]),
+            template = 'oi/bits/tab.html', css_class='editing',
+            ),
+        ),
+        HTML('<table class="editing">'),
+        *(f for f in field_list[-2:]),
+        HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
@@ -473,11 +498,11 @@ class StoryRevisionForm(forms.ModelForm):
     no_creator_help = forms.CharField(
       widget=HiddenInputWithHelp,
       required=False,
-      help_text='<hr><br>For sequence types with non-optional fields the '
+      help_text='For sequence types with non-optional fields the '
                 'corresponding no-field is to be checked in case the type '
                 'of credit does not apply.<br>If a credit field is not '
                 'required for a sequence type it can be left unset or blank.',
-      label='<br><hr><strong>Creator Credits</strong>')
+      label='')
 
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
@@ -497,7 +522,7 @@ class StoryRevisionForm(forms.ModelForm):
     character_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='<hr><br>Characters can be entered in several ways:<br>'
+        help_text='Characters can be entered in several ways:<br>'
                   'a) select several characters in the first autocomplete '
                   '<i>Appearing characters</i>, each without additional '
                   'details about the appearance,<br>'
@@ -515,7 +540,7 @@ class StoryRevisionForm(forms.ModelForm):
                   'You can also select an alternative civilian name, if '
                   'needed.<br>Note that data from a) and'
                   ' b) will appear in section c) after a save.',
-        label='<br><hr><strong>Characters</strong>')
+        label='')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,
@@ -585,7 +610,7 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=Group.objects.all(),
       widget=autocomplete.ModelSelect2(
         url='group_autocomplete',
-        attrs={'data-html': True, 'style': 'min-width: 60em'},
+        attrs={'data-html': True, 'style': 'width: 60em'},
         forward=['language_code']),
       help_text='Select a group and enter its characters.',
       required=False,
@@ -595,7 +620,7 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
-        attrs={'data-html': True, 'style': 'min-width: 60em'},
+        attrs={'data-html': True, 'style': 'width: 60em'},
         forward=['language_code', 'group']),
       help_text='Select the appearing members of the group.',
       required=False,
@@ -605,7 +630,7 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
-        attrs={'data-html': True, 'style': 'min-width: 60em'},
+        attrs={'data-html': True, 'style': 'width: 60em'},
         forward=['language_code', ]),
       help_text='Select one or more appearing characters without additional '
                 'details.',

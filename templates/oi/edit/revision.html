@@ -49,10 +49,10 @@
   {% include 'oi/bits/comments.html' %}
   {% endwith %}
 
-<input type="submit" name="save" value="Save and continue editing"></input>
-<input type="submit" name="save_return" value="Save and return to changeset"></input>
+<input type="submit" name="save" value="Save and continue editing">
+<input type="submit" name="save_return" value="Save and return to changeset">
 <input type="submit" name="cancel_return"
-       value="Return to changeset without saving"></input>
+       value="Return to changeset without saving">
 {% if revision.source_name == 'story' and revision.old_credits %}
   <input type="submit" name="save_migrate" value="Save and migrate credits">
 {% endif %}

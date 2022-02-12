@@ -40,13 +40,13 @@ Adding {{ object_name }}
   {% endif %}
   </table>
 {% if alternative_action %}
-  <input type="submit" name="{{ alternative_action }}" value="{{ alternative_label }}"></input>
+  <input type="submit" name="{{ alternative_action }}" value="{{ alternative_label }}">
 {% endif %}
-  <input type="submit" name="add" value="{{ action_label}} {{ object_name }}"></input>
+  <input type="submit" name="add" value="{{ action_label}} {{ object_name }}">
 {% ifequal object_name "Story" %}
-  <input type="submit" name="cancel_return" value="Cancel" formnovalidate></input>
+  <input type="submit" name="cancel_return" value="Cancel" formnovalidate>
 {% else %}
-  <input type="submit" name="cancel" value="Cancel" formnovalidate></input>
+  <input type="submit" name="cancel" value="Cancel" formnovalidate>
 {% endifequal %}
 </form>
 </div>

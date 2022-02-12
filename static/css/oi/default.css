@@ -39,8 +39,44 @@
     background-color: #ebf3ff;
 }
 
-.oi_bar li {
+.oi_bar li, li.tab-pane {
     float: left;
+}
+
+ul.nav-tabs {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #ebf3ff;
+}
+
+/* Style the tab content */
+table.tab-pane {
+    display: none;
+    padding: 6px 12px;
+}
+
+table.active {
+    display: block;
+}
+
+li.tab-pane a:hover {
+    background-color: #b3cff8;
+    color: DarkSlateGray;
+}
+
+li.active {
+  background-color: #b3cff8;
+}
+
+li.tab-pane a {
+    display: block;
+    color: black;
+    text-align: center;
+    padding: 0.6em 0.6em 0.6em 0.6em;
+    text-decoration: none;
+    font-weight: bold;
 }
 
 .oi_bar li a {

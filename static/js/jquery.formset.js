@@ -142,10 +142,12 @@
             }
             if (hasChildElements(row)) {
                 row.addClass(options.formCssClass);
-                if (row.is(':visible')) {
+                // Hmm, with the tab-view, the :visible doesn't work. Makes sense since at first it is not visible, so needs updating after a tab
+                // TODO
+                // if (row.is(':visible')) {
                     insertDeleteLink(row);
                     applyExtraClasses(row, i);
-                }
+                // }
             }
         });
 
