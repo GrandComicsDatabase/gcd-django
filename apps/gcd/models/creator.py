@@ -205,7 +205,7 @@ class CreatorNameDetail(GcdData):
                 raise ValueError
         if as_name:
             if self.type_id == NAME_TYPES['ghost']:
-                attribute = 'ghosted for'
+                attribute = 'ghosted for '
                 if self.creator_relation.exists():
                     display_as_name = as_name.gcd_official_name
                     if self.name != display_as_name:
@@ -213,19 +213,23 @@ class CreatorNameDetail(GcdData):
                 else:
                     display_as_name = as_name.name
             elif self.type_id == NAME_TYPES['house']:
-                attribute = 'under house name'
+                attribute = 'under house name '
                 display_as_name = as_name.name
             elif credit.is_credited and not credit.credited_as:
-                attribute = 'credited as'
+                attribute = 'credited as '
+                display_as_name = as_name.name
+            elif self.in_script != self.creator.creator_names.get(
+                                        is_official_name=True).in_script:
+                attribute = ''
                 display_as_name = as_name.name
             else:
-                attribute = 'as'
+                attribute = 'as '
                 display_as_name = as_name.name
                 if compare and self.type_id != NAME_TYPES['studio']:
                     compare_info = '<br> Note: Non-official name '\
                                     'selected without credited-flag.'
             if url:
-                credit_text += ' (%s <a href="%s">%s</a>)' % \
+                credit_text += ' (%s<a href="%s">%s</a>)' % \
                                 (attribute,
                                  as_name.get_absolute_url(),
                                  esc(display_as_name))
