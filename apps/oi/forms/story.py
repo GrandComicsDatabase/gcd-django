@@ -425,30 +425,29 @@ class StoryRevisionForm(forms.ModelForm):
                            for field in fields[credits_start:
                                                characters_start]])
         field_list.append(Formset('characters_formset'))
-        characters_end = len(field_list)
+        characters_end = len(field_list) + 1
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[characters_start:]])
         # self.helper.layout = Layout(*(f for f in field_list))
         self.helper.layout = Layout(TabHolder(
-        Tab(
-            'Sequence Details',
-            *(f for f in field_list[:credits_start-7]),
-            *(f for f in field_list[characters_end+1:-2]),
-            template = 'oi/bits/tab.html', css_class='editing',
-        ),
-        Tab('Creator Credits',
-            *(f for f in field_list[credits_start-7:credits_end+7]),
-            template = 'oi/bits/tab.html', css_class='editing',
-            ),
-        Tab('Characters',
-            *(f for f in field_list[credits_end+7:characters_end]),
-            template = 'oi/bits/tab.html', css_class='editing',
-            ),
-        ),
-        HTML('<table class="editing">'),
-        *(f for f in field_list[-2:]),
-        HTML('</table>'))
+          Tab('Sequence Details',
+              *(f for f in field_list[:credits_start-7]),
+              *(f for f in field_list[characters_end:-2]),
+              template='oi/bits/tab.html', css_class='editing',
+              ),
+          Tab('Creator Credits',
+              *(f for f in field_list[credits_start-7:credits_end+7]),
+              template='oi/bits/tab.html', css_class='editing',
+              ),
+          Tab('Characters',
+              *(f for f in field_list[credits_end+7:characters_end]),
+              template='oi/bits/tab.html', css_class='editing',
+              ),
+          ),
+          HTML('<table class="editing">'),
+          *(f for f in field_list[-2:]),
+          HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
@@ -512,9 +511,9 @@ class StoryRevisionForm(forms.ModelForm):
                   'please use the above autocomplete to link to the creator '
                   'records. If needed, you can enter the relevant creator '
                   'credits in the following fields, where multiple credits '
-                  'are separated by semi-colons.<br>If the credit applies to a '
-                  'sequence type, but the creator is unknown enter a question '
-                  'mark.<p>Existing text credits should be migrated, either '
+                  'are separated by semi-colons.<br>If the credit applies to a'
+                  ' sequence type, but the creator is unknown enter a question'
+                  ' mark.<p>Existing text credits should be migrated, either '
                   'using the migrate button on the issue change overview page'
                   ' or by editing on this page.',
         label='')
