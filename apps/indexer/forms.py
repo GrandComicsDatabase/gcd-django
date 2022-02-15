@@ -144,6 +144,11 @@ class AccountForm(forms.Form):
       label="Wiki Links in OI", initial=True, required=False,
       help_text=('If checked, the links to the documentation show in the OI'))
 
+    use_tabs = forms.BooleanField(
+      label="Use Tabs in Editing", initial=True, required=False,
+      help_text=('If checked, the editing of stories uses tabs on the page, '
+                 'otherwise a single page view.'))
+
     def clean(self):
         cd = self.cleaned_data
 

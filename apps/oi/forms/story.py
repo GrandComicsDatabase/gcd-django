@@ -156,6 +156,10 @@ def get_story_revision_form(revision=None, user=None,
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
 
+        def __init__(self, *args, **kwargs):
+            kwargs['user'] = user
+            super(RuntimeStoryRevisionForm, self).__init__(*args, **kwargs)
+
         def save(self, commit=True):
             instance = super(RuntimeStoryRevisionForm,
                              self).save(commit=commit)
@@ -406,6 +410,7 @@ class StoryRevisionForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
         super(StoryRevisionForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_class = 'form-horizontal'
@@ -416,38 +421,51 @@ class StoryRevisionForm(forms.ModelForm):
         credits_start = fields.index('creator_help')
         field_list = [BaseField(Field(field,
                                       template='oi/bits/uni_field.html'))
-                      for field in fields[:credits_start]]
+                      for field in fields[:credits_start-7]]
+        field_list.append(HTML('<tr><td><hr>&nbsp;<strong>Creator Credits:'
+                               '</strong></td><th><hr></th></tr>'))
+        field_list.extend([BaseField(Field(field,
+                                     template='oi/bits/uni_field.html'))
+                           for field in fields[credits_start-7:credits_start]])
         field_list.append(Formset('credits_formset'))
         credits_end = len(field_list)
         characters_start = fields.index('characters')
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credits_start:
+                                               characters_start-4]])
+        field_list.append(HTML('<tr><td><hr>&nbsp;<strong>Characters:</strong>'
+                               '</td><th><hr></th></tr>'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[characters_start-4:
                                                characters_start]])
         field_list.append(Formset('characters_formset'))
         characters_end = len(field_list) + 1
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[characters_start:]])
-        # self.helper.layout = Layout(*(f for f in field_list))
-        self.helper.layout = Layout(TabHolder(
-          Tab('Sequence Details',
-              *(f for f in field_list[:credits_start-7]),
-              *(f for f in field_list[characters_end:-2]),
-              template='oi/bits/tab.html', css_class='editing',
-              ),
-          Tab('Creator Credits',
-              *(f for f in field_list[credits_start-7:credits_end+7]),
-              template='oi/bits/tab.html', css_class='editing',
-              ),
-          Tab('Characters',
-              *(f for f in field_list[credits_end+7:characters_end]),
-              template='oi/bits/tab.html', css_class='editing',
-              ),
-          ),
-          HTML('<table class="editing">'),
-          *(f for f in field_list[-2:]),
-          HTML('</table>'))
+        if user.indexer.use_tabs:
+            self.helper.layout = Layout(*(f for f in field_list))
+        else:
+            self.helper.layout = Layout(TabHolder(
+              Tab('Sequence Details',
+                  *(f for f in field_list[:credits_start-7]),
+                  *(f for f in field_list[characters_end:-2]),
+                  template='oi/bits/tab.html', css_class='editing',
+                  ),
+              Tab('Creator Credits',
+                  *(f for f in field_list[credits_start-6:credits_end+7]),
+                  template='oi/bits/tab.html', css_class='editing',
+                  ),
+              Tab('Characters',
+                  *(f for f in field_list[credits_end+8:characters_end]),
+                  template='oi/bits/tab.html', css_class='editing',
+                  ),
+            ),
+              HTML('<table class="editing">'),
+              *(f for f in field_list[-2:]),
+              HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
