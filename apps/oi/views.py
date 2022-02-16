@@ -1502,7 +1502,9 @@ def process_revision(request, id, model_name):
     if 'save' in request.POST or 'save_return' in request.POST \
        or 'save_migrate' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
-        form = get_revision_form(revision)(request.POST, instance=revision)
+        form = get_revision_form(revision,
+                                 user=request.user)(request.POST,
+                                                    instance=revision)
         return _save(request, form, revision, model_name=model_name)
 
     return render_error(request,
