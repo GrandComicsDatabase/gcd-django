@@ -4515,7 +4515,8 @@ class IssueRevision(Revision):
             else:
                 old_revisions = self.old_revisions_base()\
                                     .filter(reprint__in=existing_reprints,
-                                            changeset__state=states.APPROVED)
+                                            changeset__state=states.APPROVED,
+                                            next_revision=None)
             return new_revisions | old_revisions
         else:
             return from_reprints
@@ -4553,7 +4554,8 @@ class IssueRevision(Revision):
                 old_revisions = \
                     self.old_revisions_base()\
                         .filter(reprint__in=existing_reprints,
-                                changeset__state=states.APPROVED)
+                                changeset__state=states.APPROVED,
+                                next_revision=None)
             return new_revisions | old_revisions
         else:
             return to_reprints
@@ -5967,7 +5969,8 @@ class StoryRevision(Revision):
             else:
                 old_revisions = self.old_revisions_base()\
                                     .filter(reprint__in=existing_reprints,
-                                            changeset__state=states.APPROVED)
+                                            changeset__state=states.APPROVED,
+                                            next_revision=None)
             return new_revisions | old_revisions
         else:
             return from_reprints
