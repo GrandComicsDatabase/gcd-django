@@ -6017,7 +6017,8 @@ class StoryRevision(Revision):
                 old_revisions = \
                     self.old_revisions_base()\
                         .filter(reprint__in=existing_reprints,
-                                changeset__state=states.APPROVED)
+                                changeset__state=states.APPROVED,
+                                next_revision=None)
             return new_revisions | old_revisions
         else:
             return to_reprints
@@ -7097,12 +7098,12 @@ class ReprintRevision(Revision):
         All current reprint fields are simple one point fields.
         Only one point for changing origin issue to origin story, etc.
         """
-        if field_name in ('origin_story', 'origin_story_revision',
+        if field_name in ('origin', 'origin_revision',
                           'origin_issue'):
             if not self._seen_origin:
                 self._seen_origin = True
                 return 1
-        if field_name in ('target_story', 'target_story_revision',
+        if field_name in ('target', 'target_revision',
                           'target_issue'):
             if not self._seen_target:
                 self._seen_target = True

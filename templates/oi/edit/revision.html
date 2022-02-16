@@ -35,6 +35,10 @@
 {{ changeset|header_link }}
 </h1>
 
+{% if revision.source_name == 'story' %}
+<h2 class='important' style="text-align:left"> We changed to a tabbed editing for stories as a default. Edit in all three (if needed) tabs and press save after editing in all, but not necessarily in-between. In your profile you can unset the flag 'Use Tabs in Editing' to have the earlier behavior of a single long view.</h3>
+{% endif %}
+
 <div class="edit">
 <form action="{% url "process_revision" model_name=revision.source_name id=revision.id %}" method="POST">
   {% csrf_token %}
