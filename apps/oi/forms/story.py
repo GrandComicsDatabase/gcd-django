@@ -445,7 +445,7 @@ class StoryRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[characters_start:]])
-        if user.indexer.use_tabs:
+        if not user.indexer.use_tabs:
             self.helper.layout = Layout(*(f for f in field_list))
         else:
             self.helper.layout = Layout(TabHolder(
