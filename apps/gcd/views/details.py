@@ -2858,6 +2858,27 @@ def show_issue(request, issue, preview=False):
        })
 
 
+def show_issue_modal(request, issue_id):
+    """
+    Show short info and cover of an issue in a modal.
+    """
+    issue = get_object_or_404(
+              Issue.objects.select_related('series__publisher'),
+              id=issue_id)
+
+    if issue.deleted:
+        return HttpResponse("")
+
+    alt_text = 'Cover Thumbnail for %s' % issue.full_name()
+    image_tag = get_image_tags_per_issue(issue=issue,
+                                         zoom_level=ZOOM_MEDIUM,
+                                         alt_text=alt_text)
+
+    return render(request, 'gcd/bits/issue_modal.html',
+                  {'issue': issue,
+                   'image_tag': image_tag,})
+
+
 def show_story_modal(request, story_id):
     """
     Show a single story in a modal.

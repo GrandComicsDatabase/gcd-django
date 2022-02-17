@@ -1,0 +1,16 @@
+{% load static %}
+<script src="https://unpkg.com/hyperscript.org"></script>
+<link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/modal.css" %}"/>
+        <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default.css" %}"/>
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/issue.css" %}"/>
+<div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
+        <div class="modal-underlay" _="on click trigger closeModal"></div>
+        <div class="modal-content">
+            <div class="left"><a href="{{ issue.get_absolute_url }}">{{ image_tag }}</a></div> 
+            <div class="right"><a href="{{ issue.get_absolute_url }}">{{ issue.full_name }}</a></div> 
+            <br><br><div class="right"><p><button _="on click trigger closeModal">Close</button></p></div>
+      </div>
+</div>

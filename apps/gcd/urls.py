@@ -253,6 +253,8 @@ urlpatterns = [
       gcd_views.details.scans, name='series_scan_table'),
 
     # Issue
+    url(r'^issue/(?P<issue_id>\d+)/modal/$',
+      gcd_views.details.show_issue_modal, name='show_issue_modal'),
     url(r'^issue/(?P<issue_id>\d+)/$',
       gcd_views.details.issue, name='show_issue'),
     url(r'^issue/$', gcd_views.details.issue_form, name='issue_select_form'),
