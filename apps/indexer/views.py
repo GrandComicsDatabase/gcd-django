@@ -539,6 +539,7 @@ def profile(request, user_id=None, edit=False):
               'collapse_compare_view':
               profile_user.indexer.collapse_compare_view,
               'show_wiki_links': profile_user.indexer.show_wiki_links,
+              'use_tabs': profile_user.indexer.use_tabs,
             })
             context['form'] = form
         else:
@@ -605,6 +606,7 @@ def update_profile(request, user_id=None):
     indexer.issue_detail = form.cleaned_data['issue_detail']
     indexer.no_show_sequences.set(form.cleaned_data['no_show_sequences'])
     indexer.cover_letterer_creator_only = form.cleaned_data['cover_letterer_creator_only']
+    indexer.use_tabs = form.cleaned_data['use_tabs']
     indexer.save()
 
     return HttpResponseRedirect(
