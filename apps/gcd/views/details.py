@@ -2873,9 +2873,15 @@ def show_issue_modal(request, issue_id):
     image_tag = get_image_tags_per_issue(issue=issue,
                                          zoom_level=ZOOM_MEDIUM,
                                          alt_text=alt_text)
+    cover_story, stories = issue.shown_stories()
+    not_shown_types = StoryType.objects.exclude(id__in=CORE_TYPES)\
+                               .values_list('id', flat=True)
 
     return render(request, 'gcd/bits/issue_modal.html',
                   {'issue': issue,
+                   'cover_story': cover_story,
+                   'stories': stories,
+                   'not_shown_types': not_shown_types,
                    'image_tag': image_tag,})
 
 
