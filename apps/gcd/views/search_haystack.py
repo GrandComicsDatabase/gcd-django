@@ -213,6 +213,13 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.paginator.vars['page'] = self.paginator.paginate(request)
         return self.create_response()
 
+    def get_queryset(self):
+        options = {"size": 0} # capped @ 100
+        qs = super().get_queryset()
+        for field in self.facet_fields:
+            qs = qs.facet(field, **options)
+        return qs
+
     def extra_context(self):
         extra = super(PaginatedFacetedSearchView, self).extra_context()
         extra.update(self.paginator.vars)
