@@ -172,12 +172,12 @@
                 <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'issue' %}
-                <td><a hx-get="{% url "show_issue_modal" issue_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="color: #00e;">[ISSUE]</a></td>
+                <td><a hx-get="{% url "show_issue_modal" issue_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">[ISSUE]</a></td>
                 <td><img {{ result.object.series.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
                 {{ result.object.publication_date|str_encl:'(' }}</td>
             {% endif %}
             {% if result.model_name == 'story' %}
-                <td><a hx-get="{% url "show_story_modal" story_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="color: #00e;">[STORY]</a></td>
+                <td><a hx-get="{% url "show_story_modal" story_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">[STORY]</a></td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object|show_title:1 }}</a>
               {% if result.object.has_feature %} / {{ result.object.show_feature }}{% endif %} / {{ result.object.type }}
               {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}

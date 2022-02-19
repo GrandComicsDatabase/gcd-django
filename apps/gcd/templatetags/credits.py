@@ -337,7 +337,8 @@ def show_creator_credit(story, credit_type, url=True,
         if type(story) == Story:
             val += '<a hx-get="/story/%d/%s/history/" ' % (story.id,
                                                            credit_type) + \
-                   'hx-target="body" hx-swap="beforeend" style="color: #00e;">'
+                   'hx-target="body" hx-swap="beforeend" ' +\
+                   'style="cursor: pointer; color: #00e;">'
         val += credit_type.capitalize() + '</a></span></dt>' + \
             '<dd class="credit_def"><span class="credit_value">' + \
             credit_value + '</span></dd>'

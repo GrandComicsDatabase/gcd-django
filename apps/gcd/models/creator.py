@@ -269,7 +269,8 @@ class CreatorNameDetail(GcdData):
                     credit_text += ' <a hx-get="/credit/%d/source/"' % \
                       credit.id
                     credit_text += ' hx-target="body" hx-swap="beforeend"' +\
-                                   ' style="color: #00e;">(sourced)</a>'
+                                   ' style="cursor: pointer; color: #00e;">' +\
+                                   '(sourced)</a>'
                 else:
                     credit_text += ' (sourced)'
 
