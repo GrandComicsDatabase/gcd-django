@@ -88,5 +88,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(consolidate_reprints)
+        # migrations.RunPython(consolidate_reprints)
     ]
