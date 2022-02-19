@@ -226,6 +226,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         is_language_selected = False
         is_publisher_selected = False
         is_feature_selected = False
+        is_type_selected = False
         if self.date_facet:
             is_date_selected = True
             facet_page += '&date_facet=%s' % self.date_facet
@@ -244,6 +245,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                     is_publisher_selected = True
                 elif 'feature_exact:' in facet:
                     is_feature_selected = True
+                elif 'type_exact:' in facet:
+                    is_type_selected = True
         extra.update({'suggestion': suggestion,
                       'facet_page': facet_page,
                       'is_date_selected': is_date_selected,
@@ -251,7 +254,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                       'is_country_selected': is_country_selected,
                       'is_language_selected': is_language_selected,
                       'is_publisher_selected': is_publisher_selected,
-                      'is_feature_selected': is_feature_selected})
+                      'is_feature_selected': is_feature_selected,
+                      'is_type_selected': is_type_selected})
         if self.sort:
             extra.update({'sort': '&sort=%s' % self.sort})
         else:

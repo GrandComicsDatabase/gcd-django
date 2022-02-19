@@ -145,7 +145,8 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                      indexed=False)
     sequence_number = indexes.IntegerField(model_attr='sequence_number',
                                            indexed=False)
-    type = indexes.CharField(model_attr='type__name', indexed=False)
+    type = indexes.CharField(model_attr='type__name', faceted=True,
+                             indexed=False)
     year = indexes.IntegerField()
     date = indexes.DateField(faceted=True)
     country = indexes.CharField(model_attr='issue__series__country__name',

@@ -129,7 +129,17 @@
       {% endfor %}
         </table>
       </details>
-       <details {% if is_feature_selected %} open="open" {% endif %} class="facet_listing left">
+      <details {% if is_type_selected %} open="open" {% endif %} class="facet_listing left">
+        <summary>Sequence ({{ facets.fields.type|length }})</summary>
+        <table class="facet_listing left">
+      {% for type in facets.fields.type %}
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_type_selected or forloop.counter > 1 %}&amp;selected_facets=type_exact:{{ type.0|urlencode }}{% endif %}">{{ type.0 }} ({{ type.1}})</a>
+          </td></tr>
+      {% endfor %}
+        </table>
+      </details>
+      <details {% if is_feature_selected %} open="open" {% endif %} class="facet_listing left">
         <summary>Feature ({{ facets.fields.feature|length }})</summary>
         <table class="facet_listing left">
       {% for feature in facets.fields.feature %}

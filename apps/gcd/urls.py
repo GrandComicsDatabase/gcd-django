@@ -515,7 +515,8 @@ urlpatterns = [
 
 # haystack search
 sqs = GcdSearchQuerySet().facet('facet_model_name').facet('country') \
-                         .facet('language').facet('publisher').facet('feature')\
+                         .facet('language').facet('publisher')\
+                         .facet('feature').facet('type')\
                          .date_facet('date', start_date=date(1000, 1, 1),
                                      end_date=date(3000, 1, 1), gap_by='year')
 
