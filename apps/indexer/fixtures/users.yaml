@@ -135,7 +135,7 @@
     max_reservations: 12
     max_ongoing: 4
     imps: 100
-    notify_on_approve: True
+    notify_on_approve: False
     collapse_compare_view: False
 
 - model: mycomics.collector
