@@ -79,6 +79,8 @@ STORY_FIELDS = {'sequence_number': lambda s: s.sequence_number,
                 'pencils': lambda s: show_creator_credit(s, 'pencils',
                                                          url=False),
                 'inks': lambda s: show_creator_credit(s, 'inks', url=False),
+                'colors': lambda s: show_creator_credit(s, 'colors',
+                                                        url=False),
                 'genre': lambda s: _show_genre(s),
                 'type': lambda s: s.type.name}
 
