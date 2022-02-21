@@ -2899,8 +2899,15 @@ def show_story_modal(request, story_id):
     if story.deleted:
         return HttpResponse("")
 
+    if story.type.name == 'cover':
+        alt_text = 'Cover Thumbnail for %s' % story.issue.full_name()
+        image_tag = get_image_tags_per_issue(issue=story.issue,
+                                             zoom_level=ZOOM_MEDIUM,
+                                             alt_text=alt_text)
+    else:
+        image_tag = ''
     return render(request, 'gcd/bits/single_story_modal.html',
-                  {'story': story})
+                  {'story': story, 'image_tag': image_tag})
 
 def credit_source(request, credit_id):
     """
