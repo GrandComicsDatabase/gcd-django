@@ -159,8 +159,13 @@ def _dump_table(dumpfile, objects, max, fields, get_id, *related_lookups):
                     value = str(func(object)).replace('"', '""')
                     value = _fix_value(value)
                     if value is not None:
-                        record = '"%d"\t"%s"\t%s\n' % (get_id(object),
-                                                       name, value)
+                        if isinstance(object, Story):
+                            record = '"%d"\t"%d"\t"%s"\t%s\n' % (
+                              get_id(object), object.sequence_number,
+                              name, value)
+                        else:
+                            record = '"%d"\t"%s"\t%s\n' % (get_id(object),
+                                                           name, value)
                         dumpfile.write(record.encode('utf-8'))
         except IndexError:
             # Somehow our count was wrong and we ran off the end.  That's OK
@@ -208,7 +213,7 @@ def main(*args):
         # more than we absolutely have to.  Since this is being done within a
         # transaction, the count should never change.
         issues = Issue.objects \
-                      .filter(series__country__code='us', deleted=False) \
+                      .filter(deleted=False) \
                       .order_by() \
                       .select_related('series',
                                       'series__publisher',
@@ -222,8 +227,7 @@ def main(*args):
         _dump_table(dumpfile, issues, max, ISSUE_FIELDS, lambda i: i.id,
                     'brand__group')
 
-        stories = Story.objects.filter(issue__series__country__code='us',
-                                       type__name__in=STORY_TYPES,
+        stories = Story.objects.filter(type__name__in=STORY_TYPES,
                                        deleted=False) \
                                .order_by('issue_id', 'sequence_number') \
                                .select_related('type')
