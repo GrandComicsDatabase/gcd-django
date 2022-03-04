@@ -3,7 +3,7 @@ This script produces an issue-centric name-value pair export of the database.
 This format is useful for some clients of GCD data, but is not intended to
 be a general-purpose format.  It folds some data from series, publishers, etc.
 into the issue-centric view, and results in story-specific data fields simply
-appearing mutliple times per issue with different values and no indication of
+appearing multiple times per issue with different values and no indication of
 which field values are grouped on a particular story.
 """
 
@@ -13,7 +13,7 @@ import itertools
 from django.db import connection, models
 from django.db.models import prefetch_related_objects
 from apps.gcd.models import Issue, Story
-from apps.gcd.models.story import show_feature
+from apps.gcd.models.story import show_feature, character_notes
 from apps.gcd.templatetags.credits import show_creator_credit
 
 
@@ -37,6 +37,27 @@ def _show_genre(story):
                 else:
                     genres += '; %s' % genre
     return genres
+
+
+def _show_characters(story):
+    first = True
+    characters = ''
+
+    for character in story.appearing_characters.all():
+        if first:
+            first = False
+        else:
+            characters += '; '
+        characters += '%s' % character.character.name
+        characters += character_notes(character)
+    if story.characters:
+        text_characters = story.characters
+        if characters:
+            characters += '; %s' % text_characters
+        else:
+            characters = text_characters
+
+    return characters
 
 
 # Map moderately human-friendly field names to functions producing the data
@@ -82,7 +103,8 @@ STORY_FIELDS = {'sequence_number': lambda s: s.sequence_number,
                 'colors': lambda s: show_creator_credit(s, 'colors',
                                                         url=False),
                 'genre': lambda s: _show_genre(s),
-                'type': lambda s: s.type.name}
+                'type': lambda s: s.type.name,
+                'characters': lambda s: _show_characters(s)}
 
 
 # The story types to include in the data.  This is intended to pick up various
@@ -184,7 +206,7 @@ def main(*args):
     """
     Dump public data in chunks, manually establishing a transaction to ensure
     a consistent view.  The BEGIN statement must be issued manually because
-    django transation objects will only initiate a transaction when writes
+    django transaction objects will only initiate a transaction when writes
     are involved.
     """
 
@@ -199,7 +221,13 @@ def main(*args):
 
     filename = args[0]
     try:
-        dumpfile = open(filename, 'wb')
+        dumpfile_issues = open(filename + '_issues.tsv', 'wb')
+    except (IOError, OSError) as e:
+        logging.error("Error opening output file '%s': %s" % (filename,
+                                                              e.strerror))
+        sys.exit(-1)
+    try:
+        dumpfile_sequences = open(filename + '_sequences.tsv', 'wb')
     except (IOError, OSError) as e:
         logging.error("Error opening output file '%s': %s" % (filename,
                                                               e.strerror))
@@ -224,7 +252,8 @@ def main(*args):
                                       'series__publisher__country')
         max = issues.aggregate(models.Max('id'))['id__max']
 
-        _dump_table(dumpfile, issues, max, ISSUE_FIELDS, lambda i: i.id,
+        _dump_table(dumpfile_issues, issues, max, ISSUE_FIELDS,
+                    lambda i: i.id,
                     'brand__group')
 
         stories = Story.objects.filter(type__name__in=STORY_TYPES,
@@ -232,14 +261,17 @@ def main(*args):
                                .order_by('issue_id', 'sequence_number') \
                                .select_related('type')
         max = stories.aggregate(models.Max('id'))['id__max']
+
         # to be able to do prefetching for credits we need to filter in python
-        _dump_table(dumpfile, stories, max, STORY_FIELDS, lambda s: s.issue_id,
+        _dump_table(dumpfile_sequences, stories, max, STORY_FIELDS,
+                    lambda s: s.issue_id,
                     'feature_object', 'credits__creator__creator',
-                    'credits__creator__type')
+                    'credits__creator__type',
+                    'appearing_characters__character')
 
     finally:
         # We shouldn't have anything to commit or roll back, so just to be
-        # safe, use a rollback to end the transation.
+        # safe, use a rollback to end the transaction.
         cursor.execute('ROLLBACK')
 
 
