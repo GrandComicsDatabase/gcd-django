@@ -26,40 +26,6 @@ def _brand_group_name(issue):
     return ''
 
 
-def _show_genre(story):
-    genres = story.genre.lower()
-    for feature in story.feature_object.all():
-        for genre in feature.genre.split(';'):
-            genre = genre.strip()
-            if genre not in genres:
-                if genres == '':
-                    genres = genre
-                else:
-                    genres += '; %s' % genre
-    return genres
-
-
-def _show_characters(story):
-    first = True
-    characters = ''
-
-    for character in story.appearing_characters.all():
-        if first:
-            first = False
-        else:
-            characters += '; '
-        characters += '%s' % character.character.name
-        characters += character_notes(character)
-    if story.characters:
-        text_characters = story.characters
-        if characters:
-            characters += '; %s' % text_characters
-        else:
-            characters = text_characters
-
-    return characters
-
-
 # Map moderately human-friendly field names to functions producing the data
 # from an issue record.
 ISSUE_FIELDS = {
@@ -89,6 +55,41 @@ ISSUE_FIELDS = {
 }
 
 
+def _show_genre(story):
+    genres = story.genre.lower()
+    for feature in story.feature_object.all():
+        for genre in feature.genre.split(';'):
+            genre = genre.strip()
+            if genre not in genres:
+                if genres == '':
+                    genres = genre
+                else:
+                    genres += '; %s' % genre
+    return genres
+
+
+def _show_characters(story):
+    first = True
+    characters = ''
+
+    for character in story.appearing_characters.all():
+        if not character.deleted:
+            if first:
+                first = False
+            else:
+                characters += '; '
+            characters += '%s' % character.character.name
+            characters += character_notes(character)
+    if story.characters:
+        text_characters = story.characters
+        if characters:
+            characters += '; %s' % text_characters
+        else:
+            characters = text_characters
+
+    return characters
+
+
 # Map moderately human-friendly field names to functions producing the data
 # from a story record.
 STORY_FIELDS = {'sequence_number': lambda s: s.sequence_number,
@@ -102,6 +103,8 @@ STORY_FIELDS = {'sequence_number': lambda s: s.sequence_number,
                 'inks': lambda s: show_creator_credit(s, 'inks', url=False),
                 'colors': lambda s: show_creator_credit(s, 'colors',
                                                         url=False),
+                'letters': lambda s: show_creator_credit(s, 'letters',
+                                                         url=False),
                 'genre': lambda s: _show_genre(s),
                 'type': lambda s: s.type.name,
                 'characters': lambda s: _show_characters(s)}
@@ -121,6 +124,38 @@ STORY_TYPES = ('comic story',
                'illustration',
                'filler',
                'character profile')
+
+
+def _get_cover_image_url(issue):
+    for cover in issue.cover_set.all():
+        if not cover.deleted:
+            break
+    return cover.get_base_url() + ("/w400/%d.jpg" % (cover.id))
+
+
+def _get_cover_last_upload(issue):
+    for cover in issue.cover_set.all():
+        if not cover.deleted:
+            break
+    return "%s" % cover.last_upload
+
+
+def _is_wraparound(issue):
+    for cover in issue.cover_set.all():
+        if not cover.deleted:
+            break
+    if cover.is_wraparound:
+        return "True"
+    else:
+        return ""
+
+
+# Map moderately human-friendly field names to functions producing the data
+# from an issue cover record.
+COVER_FIELDS = {'image_url': lambda s: _get_cover_image_url(s),
+                'last_upload': lambda s: _get_cover_last_upload(s),
+                'is_wraparound': lambda s: _is_wraparound(s),
+                }
 
 DELTA = 10000
 
@@ -232,6 +267,12 @@ def main(*args):
         logging.error("Error opening output file '%s': %s" % (filename,
                                                               e.strerror))
         sys.exit(-1)
+    try:
+        dumpfile_covers = open(filename + '_covers.tsv', 'wb')
+    except (IOError, OSError) as e:
+        logging.error("Error opening output file '%s': %s" % (filename,
+                                                              e.strerror))
+        sys.exit(-1)
 
     cursor = connection.cursor()
     cursor.execute('BEGIN')
@@ -262,12 +303,23 @@ def main(*args):
                                .select_related('type')
         max = stories.aggregate(models.Max('id'))['id__max']
 
-        # to be able to do prefetching for credits we need to filter in python
+        # to be able to do prefetching for credits and characters we need to
+        # filter in python
         _dump_table(dumpfile_sequences, stories, max, STORY_FIELDS,
                     lambda s: s.issue_id,
                     'feature_object', 'credits__creator__creator',
                     'credits__creator__type',
                     'appearing_characters__character')
+
+        covers = Issue.objects \
+                      .filter(deleted=False) \
+                      .exclude(cover=None) \
+                      .order_by()
+        max = covers.aggregate(models.Max('id'))['id__max']
+
+        # to be able to do prefetching for covers we need to filter in python
+        _dump_table(dumpfile_covers, covers, max, COVER_FIELDS,
+                    lambda i: i.id, 'cover_set')
 
     finally:
         # We shouldn't have anything to commit or roll back, so just to be
