@@ -983,7 +983,7 @@ def publisher_monthly_covers(request,
       'publisher': publisher,
       'date': start_date,
       'monthly': True,
-      'years': range(date.today().year, publisher.year_began or 1900, -1),
+      'years': range(date.today().year, (publisher.year_began-1) or 1900, -1),
       'choose_url': choose_url,
       'choose_url_after': choose_url_after,
       'choose_url_before': choose_url_before,
@@ -2882,7 +2882,7 @@ def show_issue_modal(request, issue_id):
                    'cover_story': cover_story,
                    'stories': stories,
                    'not_shown_types': not_shown_types,
-                   'image_tag': image_tag,})
+                   'image_tag': image_tag})
 
 
 def show_story_modal(request, story_id):
@@ -2908,6 +2908,7 @@ def show_story_modal(request, story_id):
         image_tag = ''
     return render(request, 'gcd/bits/single_story_modal.html',
                   {'story': story, 'image_tag': image_tag})
+
 
 def credit_source(request, credit_id):
     """
