@@ -3304,9 +3304,8 @@ def edit_reprint(request, id, which_side=None):
             select_issue = reprint_revision.target_revision.issue
         else:  # for newly added stories problematic otherwise
             raise NotImplementedError
-        if reprint_revision.origin_issue:
-            issue = reprint_revision.origin_issue
-        elif reprint_revision.origin:
+        issue = reprint_revision.origin_issue
+        if reprint_revision.origin:
             story = reprint_revision.origin
         else:
             story_revision = reprint_revision.origin_revision
