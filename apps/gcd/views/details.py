@@ -408,6 +408,12 @@ def creator_issues(request, creator_id, series_id,
                            country=country, language=language)
 
 
+def creator_edited_issues(request, creator_id, series_id=None,
+                          country=None, language=None):
+    return checklist_by_id(request, creator_id, series_id=series_id,
+                           country=country, language=language, edits=True)
+
+
 def _get_creator_names_for_checklist(creator):
     creator_names = creator.creator_names.filter(deleted=False)
     if creator.official_creator_detail.type_id == NAME_TYPES['house']:
@@ -479,7 +485,7 @@ def creator_series(request, creator_id, country=None, language=None):
 
 
 def checklist_by_id(request, creator_id, series_id=None, character_id=None,
-                    feature_id=None, country=None, language=None):
+                    feature_id=None, edits=False, country=None, language=None):
     """
     Provides checklists for a Creator. These include results for all
     CreatorNames and for the overall House Name all uses of that House Name.
@@ -487,11 +493,16 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     creator = get_gcd_object(Creator, creator_id)
     creator_names = list(_get_creator_names_for_checklist(creator))
 
-    issues = Issue.objects.filter(story__credits__creator__in=creator_names,
-                                  story__type__id__in=CORE_TYPES,
-                                  story__credits__deleted=False,
-                                  story__credits__credit_type__id__lt=6)\
-                          .distinct().select_related('series__publisher')
+    if edits:
+        issues = Issue.objects.filter(credits__creator__in=creator_names,
+                                      credits__deleted=False)\
+                              .distinct().select_related('series__publisher')
+    else:
+        issues = Issue.objects.filter(story__credits__creator__in=creator_names,
+                                      story__type__id__in=CORE_TYPES,
+                                      story__credits__deleted=False,
+                                      story__credits__credit_type__id__lt=6)\
+                              .distinct().select_related('series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
@@ -516,6 +527,8 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                                story__feature_object=feature)
         heading = 'Issues for Creator %s on Feature %s' % (creator,
                                                            feature)
+    elif edits:
+        heading = 'Issue Edit List for Creator %s' % (creator)
     else:
         heading = 'Issue Checklist for Creator %s' % (creator)
 
@@ -525,6 +538,8 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
         'plural_suffix': 's',
         'heading': heading
     }
+    if edits:
+        context['result_disclaimer'] = MIGRATE_DISCLAIMER
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
                                 template_name='gcd/bits/sortable_table.html',
