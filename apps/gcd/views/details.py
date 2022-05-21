@@ -1506,7 +1506,8 @@ def keyword(request, keyword, model_name='story'):
             {'error_text':
              'There are no keyword-lists for these objects.'})
 
-    objs = DISPLAY_CLASSES[model_name].objects.filter(keywords__name=keyword)
+    objs = DISPLAY_CLASSES[model_name].objects.filter(keywords__name=keyword,
+                                                      deleted=False)
     if model_name == 'story':
         table = StoryTable(objs, attrs={'class': 'sortable_listing'},
                            template_name='gcd/bits/sortable_table.html',
