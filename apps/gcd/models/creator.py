@@ -472,7 +472,7 @@ class Creator(GcdData):
     def active_awards_for_issues(self):
         from .issue import Issue
         issues = Issue.objects.filter(story__credits__creator__creator=self,
-                                      story__type__id=6,
+                                      story__type__id__in=[10, 19, 20, 21, 27],
                                       awards__isnull=False).distinct()
         content_type = ContentType.objects.get(model='Issue')
         awards = ReceivedAward.objects.filter(content_type=content_type,
