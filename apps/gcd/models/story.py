@@ -184,7 +184,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
                   member, all_appearing_characters, url=url, compare=compare)
         characters += ']; '
         if compare:
-            disambiguation += ']; '
+            disambiguation += ']<br>'
     characters = characters[:-2]
     if compare:
         disambiguation = disambiguation[:-2]
@@ -205,7 +205,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
         else:
             characters += '; '
             if compare:
-                disambiguation += '; '
+                disambiguation += '<br>'
         if url:
             characters += '<a href="%s">%s</a>' % (
               character.character.get_absolute_url(),
