@@ -86,14 +86,16 @@ table#covers span.modify {
 
 .sortable_listing th.orderable > a {
     padding-right: 20px;
-    background: right center no-repeat;
+    background: right no-repeat;
 }
 
 .sortable_listing th.orderable.asc > a {
-    background-image: url(../../../img/gcd/icons/gnome/19x19/actions/sort-asc.png);
+    background-position-y: 2px;
+    background-image: url(../../../img/gcd/icons/adwaita/sort-asc.svg);
 }
 .sortable_listing th.orderable.desc > a {
-    background-image: url(../../../img/gcd/icons/gnome/19x19/actions/sort-desc.png);
+    background-position-y: bottom;
+    background-image: url(../../../img/gcd/icons/adwaita/sort-desc.svg);
 }
 
 .label_binding {

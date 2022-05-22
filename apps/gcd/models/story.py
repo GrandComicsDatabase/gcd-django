@@ -600,21 +600,7 @@ class BiblioEntry(Story):
 ##############################################################################
 
 
-class StoryColumn(tables.Column):
-    def render(self, record):
-        first_line = '<a href="%s">%s</a>' % (record.get_absolute_url(),
-                                              esc(record.show_title()))
-        second_line = record.show_feature()
-        if second_line:
-            second_line += ' / '
-        second_line += record.type.name
-
-        if record.page_count:
-            second_line += ' / ' + record.show_page_count(True)
-
-        return mark_safe('%s<br>%s' % (first_line,
-                                       second_line))
-
+class StoryColumn(tables.TemplateColumn):
     def order(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'title',
@@ -626,11 +612,8 @@ class StoryColumn(tables.Column):
     def value(self, record):
         return str(record)
 
-
-class IssueColumn(tables.Column):
-    def render(self, record):
-        return mark_safe(record.issue.show_series_and_issue_link())
-
+# keep similar to issue.py, but here is record.issue and not record
+class IssueColumn(tables.TemplateColumn):
     def order(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue__series__sort_name',
@@ -643,8 +626,10 @@ class IssueColumn(tables.Column):
 
 
 class StoryTable(tables.Table):
-    story = StoryColumn(accessor='id', verbose_name='Story')
-    issue = IssueColumn(accessor='issue__id', verbose_name='Issue')
+    story = StoryColumn(accessor='id', verbose_name='Story',
+                        template_name='gcd/bits/sortable_sequence_entry.html')
+    issue = IssueColumn(accessor='issue__id', verbose_name='Issue',
+                        template_name='gcd/bits/sortable_issue_entry.html')
     publisher = tables.Column(accessor='issue.series.publisher',
                               verbose_name='Publisher')
     publication_date = tables.Column(accessor='issue.publication_date',

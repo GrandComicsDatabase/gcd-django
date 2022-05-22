@@ -373,6 +373,7 @@ NEW_GENERIC_IMAGE_DIR = 'img/gcd/new_generic_images/'
 # Name of the directory in the gcd/icons tree under the media root
 # to use for icons within the app.
 ICON_SET = "gnome"
+ICON_SET_SYMBOLIC = "adwaita"
 
 BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com', 'trash-mail.com')
 

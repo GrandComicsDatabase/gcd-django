@@ -44,7 +44,7 @@
             <dd id="publication_dates"> {{ series.display_publication_dates }}
 {% if series.issue_count %}
             <dt> Number of Issues Published:
-            <dd id="issues_published"> {{ series.issue_count }} 
+            <dd id="issues_published"> {{ series.issue_count }}
   {% if series.issue_count > 1 %}
             ({{ series.first_issue.display_number }} - {{ series.last_issue.display_number}})
   {% endif %}
@@ -85,10 +85,10 @@
           <div class="series_detail_header">Series Details:</div>
           <ul class="series_detail_info"><li>
   {% if series.has_gallery %}
-            <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png">Cover Gallery</a>&nbsp;
+            <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/camera-photo-symbolic.svg" %}">Cover Gallery</a>&nbsp;
   {% endif %}
-            <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
-            <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+            <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/columns-symbolic.svg" %}">Details by Issue</a>&nbsp;
+            <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/month-symbolic.svg" %}">Series Timeline</a>
             <li><a href='{% url "series_creatorlist" series_id=series.id %}'>Creator Checklist (via linked story records)</a></li>
             {% if series.issues_to_migrate.count %}<li>Approximately <a href='{% url "series_migrate" series_id=series.id %}'>{{ series.issues_to_migrate.count }} issues</a> with text credits to migrate.</li>{% endif %}
 	  </ul>
@@ -102,7 +102,7 @@
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ brand|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.used_issue_count }} issue{{ brand.used_issue_count|pluralize }}</a>)
   {% endfor %}
   {% if brand_counts.no_brand %}
-            <li> no publisher's brand 
+            <li> no publisher's brand
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_none }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }}</a>)
   {% endif %}
   {% if brand_counts.unknown %}

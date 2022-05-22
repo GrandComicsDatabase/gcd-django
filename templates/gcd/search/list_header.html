@@ -1,5 +1,5 @@
 {% load i18n %}
-
+{% load static %}
 <div>
   <h1 class="item_id search_id">
     <div class="left">
@@ -14,7 +14,10 @@ Order:
 {% endif %}
       <a name="{{ position }}"></a>
       <a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
-        <img src="{{ STATIC_URL }}/img/gcd/icons/{{ ICON_SET }}/19x19/actions/go-{{ link_direction }}.png">
+        <svg style="height: 0.8em; width: 0.8em; fill: currentColor;"><use
+          href="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/arrows.svg" %}#go-{{ link_direction }}"
+        >
+        </svg>
       </a>
     </div>
   </h1>

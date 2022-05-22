@@ -577,10 +577,7 @@ class Issue(GcdData):
 ##############################################################################
 
 
-class IssueColumn(tables.Column):
-    def render(self, record):
-        return mark_safe(record.show_series_and_issue_link())
-
+class IssueColumn(tables.TemplateColumn):
     def value(self, record):
         return str(record)
 
@@ -600,7 +597,9 @@ class IssueColumn(tables.Column):
 
 
 class IssueTable(tables.Table):
-    issue = IssueColumn(accessor='id', verbose_name='Issue')
+    issue = IssueColumn(accessor='id', verbose_name='Issue',
+                        template_name='gcd/bits/sortable_issue_entry.html',
+                        )
     publication_date = tables.Column(verbose_name='Publication Date')
     on_sale_date = tables.Column(verbose_name='On-sale Date')
 
