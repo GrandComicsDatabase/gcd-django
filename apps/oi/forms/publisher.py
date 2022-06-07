@@ -215,12 +215,15 @@ def get_brand_revision_form(user=None, revision=None,
     class RuntimeBrandRevisionForm(BrandRevisionForm):
         def __init__(self, *args, **kw):
             super(BrandRevisionForm, self).__init__(*args, **kw)
-            # brand_group_other_publisher_id is last field, move it after group
-            ordering = list(self.fields)
-            ordering.insert(ordering.index('group') + 1,
-                            ordering.pop())
-            new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
-            self.fields = new_fields
+            if revision:
+                # brand_group_other_publisher_id is last field,
+                # move it after group
+                ordering = list(self.fields)
+                ordering.insert(ordering.index('group') + 1,
+                                ordering.pop())
+                new_fields = OrderedDict([(f,
+                                           self.fields[f]) for f in ordering])
+                self.fields = new_fields
         group = forms.ModelMultipleChoiceField(
             required=True,
             widget=FilteredSelectMultiple('Brand Groups', False),
@@ -231,9 +234,9 @@ def get_brand_revision_form(user=None, revision=None,
             brand_group_other_publisher_id = forms.IntegerField(
                 required=False,
                 label="Add Brand Group",
-                help_text="One can add a brand group from a different publisher "
-                          "by id. If an id is entered the submit will return for "
-                          "confirmation.")
+                help_text="One can add a brand group from a different "
+                          "publisher by id. If an id is entered the submit "
+                          "will return for confirmation.")
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
