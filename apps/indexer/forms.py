@@ -5,6 +5,7 @@ pieces, this should probably be moved out of the gcd app.
 """
 
 from datetime import date, timedelta
+from captcha.fields import ReCaptchaField
 
 from django import forms
 from django.forms.utils import ErrorList
@@ -217,6 +218,7 @@ class RegistrationForm(AccountForm):
     confirm_password = forms.CharField(widget=forms.PasswordInput,
                                        min_length=MIN_PASSWORD_LENGTH,
                                        max_length=MAX_PASSWORD_LENGTH)
+    captcha = ReCaptchaField()
 
     def __init__(self, *args, **kwargs):
         AccountForm.__init__(self, *args, **kwargs)
