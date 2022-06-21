@@ -6650,6 +6650,11 @@ class CharacterRevision(CharacterGroupRevisionBase):
         return self.character.get_absolute_url()
 
 
+class PreviewCharacter(Character):
+    class Meta:
+        proxy = True
+
+
 class CharacterNameDetailRevision(Revision):
     """
     record of the character's name

@@ -39,7 +39,7 @@ from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
     show_creator_membership, show_received_award, show_creator_art_influence, \
     show_creator_non_comic_work, show_creator_school, show_creator_degree, \
-    show_award, show_printer, show_indicia_printer
+    show_award, show_printer, show_indicia_printer, show_character
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -5284,7 +5284,7 @@ def preview(request, id, model_name):
 
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
                       'brand', 'printer', 'indicia_printer', 'series',
-                      'issue', 'award', 'creator',
+                      'issue', 'award', 'creator', 'character',
                       'received_award', 'creator_art_influence',
                       'creator_degree', 'creator_membership',
                       'creator_non_comic_work', 'creator_school']:
