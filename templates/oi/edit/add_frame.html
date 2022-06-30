@@ -29,10 +29,6 @@ Adding {{ object_name }}
 {% include "oi/bits/multi_selector.html" %}
 <h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
 
-{% if object_name == 'Story' %}
-<h2 class='important' style="text-align:left"> We changed to a tabbed editing for stories as a default. Edit in all three (if needed) tabs and press save after editing in all, but not necessarily in-between. In your profile you can unset the flag 'Use Tabs in Editing' to have the earlier behavior of a single long view.</h3>
-{% endif %}
-
 <div class="edit">
 <form action="{{ object_url }}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
