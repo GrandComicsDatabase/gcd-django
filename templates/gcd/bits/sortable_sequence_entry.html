@@ -1,7 +1,4 @@
 {% load static %}
-{% block css_raw %}
-<script src="https://unpkg.com/htmx.org@1.6.0" integrity="sha384-G4dtlRlMBrk5fEiRXDsLjriPo8Qk5ZeHVVxS8KhX6D7I9XXJlNqbdvRlp9/glk5D" crossorigin="anonymous"></script>
-{% endblock %}
 <div style="float: left;">
 <a hx-get="{% url "show_story_modal" story_id=record.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
 <img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"></img></a>
