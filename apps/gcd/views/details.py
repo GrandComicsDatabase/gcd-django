@@ -585,7 +585,8 @@ def cover_checklist_by_id(request, creator_id, series_id=None,
     return generic_sortable_list(request, issues, table, template, context)
 
 
-def checklist_by_name(request, creator, country=None, language=None):
+def checklist_by_name(request, creator, country=None, language=None,
+                      to_be_migrated=False):
     creator = creator.replace('+', ' ').title()
     context = {
         'item_name': 'issue',
@@ -611,7 +612,7 @@ def checklist_by_name(request, creator, country=None, language=None):
             issues = issues.annotate(publisher_name=F(
                                      'series__publisher__name'))
     creator = CreatorNameDetail.objects.filter(name__iexact=creator)
-    if creator:
+    if creator and not to_be_migrated:
         q_objs_credits = Q(**{'%scredits__creator__in' % (prefix): creator,
                               '%stype__id__in' % (prefix): CORE_TYPES})
         items2 = Issue.objects.filter(q_objs_credits).distinct()\
@@ -627,14 +628,14 @@ def checklist_by_name(request, creator, country=None, language=None):
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
-        if creator:
+        if creator and not to_be_migrated:
             items2 = items2.filter(series__country=country)
     if language:
         language = get_object_or_404(Language, code=language)
         issues = issues.filter(series__language=language)
-        if creator:
+        if creator and not to_be_migrated:
             items2 = items2.filter(series__language=language)
-    if creator:
+    if creator and not to_be_migrated:
         issues = issues.union(items2)
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},

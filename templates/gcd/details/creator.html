@@ -60,6 +60,7 @@
           <ul style="columns: 2;">
             <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue Checklist (via credit search for name "{{ creator.gcd_official_name }}")</a></li>
             <li><a href='{% url "checklist_by_id" creator_id=creator.id %}'>Issue Checklist (via linked credit records)</a></li>
+            <li><a href='{% url "creator_migrate_checklist" creator=creator.gcd_official_name %}'>List of to be migrated issues (via credit search for name "{{ creator.gcd_official_name }}")</a></li>
 	    <li><a href='{% url "creator_edited_issues" creator_id=creator.id %}'>Issue Edit List (via linked credit records)</a></li>
 	    <li><a href='{% url "cover_checklist_by_id" creator_id=creator.id %}'>Cover List (via linked credit records)</a></li>
 	    <li><a href='{% url "creator_series" creator_id=creator.id %}'>Series List (via linked credit records)</a></li>
@@ -358,7 +359,7 @@
     {% endfor %}
           </ol>
   {% endif %}
-                    
+
           <br>
 
         </div> <!-- pub_data -->
@@ -451,7 +452,7 @@
             <button>Add Sample Scan Image</button>
           </a></p>
           {% endif %}
-        {% endif %} 
+        {% endif %}
       {% endif %} <!-- not preview -->
     {% endif %} <!-- MYCOMCIS -->
         </div> <!-- control_rail -->
