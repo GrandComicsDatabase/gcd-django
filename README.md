@@ -17,9 +17,7 @@ http://groups.google.com/group/gcd-tech/
 
 ## Setting up a Development Environment
 
-Our Vagrant-setup needs updating ! We used to recommend that you use [our Vagrant-based development environment](https://github.com/GrandComicsDatabase/gcd-django-vagrant-install), but it is not working any more and there is currently no one with the expertise to update it.
-
-We are investigating a container based setup using docker, help in setting this up is appreciated.
+We used to recommend that you use [our Docjer-based development environment](https://github.com/GrandComicsDatabase/gcd-django-docker).
 
 You can find manual instructions for various platforms in the docs directory
 [GCD Docs](https://github.com/GrandComicsDatabase/gcd-django/tree/beta/docs) but they aren't
@@ -57,7 +55,7 @@ via [gcd-tech](https://groups.google.com/group/gcd-tech/)
 ### `experimental`
 
 This branch is for experimental work to refactor the system in
-several stages.  
+several stages.
 
 There will probably be some modernization and code clean-up along the way.
 
@@ -85,8 +83,7 @@ remain some oddities and things that you would not see in a modern Django system
 
 ## Reporting or Examining Bugs
 
-Bugs and feature requests are currently recorded in GitHub's issue tracking system. We previously
-used an instance of Bugzilla but all bugs/requests from that system have been moved to GitHub. 
+Bugs and feature requests are recorded in GitHub's issue tracking system.
 
 If you are unfamiliar with the code, please contact the
 [gcd-tech](https://groups.google.com/group/gcd-tech/) list before starting
