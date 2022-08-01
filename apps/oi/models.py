@@ -922,7 +922,8 @@ class Changeset(models.Model):
                        isinstance(revision, StoryCreditRevision) or \
                        isinstance(revision, IssueCreditRevision) or \
                        isinstance(revision, ReprintRevision) or \
-                       isinstance(revision, CreatorNameDetailRevision):
+                       isinstance(revision, CreatorNameDetailRevision) or \
+                       isinstance(revision, StoryCharacterRevision):
                         self.imps += IMP_DELETE
                     else:
                         self.imps = IMP_DELETE
