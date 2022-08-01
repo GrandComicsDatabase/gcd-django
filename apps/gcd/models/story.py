@@ -162,10 +162,13 @@ def show_characters(story, url=True, css_style=True, compare=False):
                     characters += '%s [%s' % (group.name,
                                               member.character.name)
                 if compare:
-                    disambiguation += '%s [%s' % (
-                      group.disambiguated, member.character.character.disambiguated)
+                    disambiguation += '%s [<br>&nbsp;&nbsp; %s' % (
+                      group.disambiguated,
+                      member.character.character.disambiguated)
             else:
                 characters += '; '
+                if compare:
+                    disambiguation += '<br>'
                 if url:
                     characters += '<a href="%s">%s</a>' \
                                   % (member.character.get_absolute_url(),
@@ -173,8 +176,8 @@ def show_characters(story, url=True, css_style=True, compare=False):
                 else:
                     characters += '%s' % member.character.name
                 if compare:
-                    disambiguation += \
-                      '; %s' % member.character.character.disambiguated
+                    disambiguation += '&nbsp;&nbsp; %s' % \
+                                      member.character.character.disambiguated
             characters += get_civilian_identity(member,
                                                 all_appearing_characters,
                                                 url=url)
@@ -186,8 +189,6 @@ def show_characters(story, url=True, css_style=True, compare=False):
         if compare:
             disambiguation += ']<br>'
     characters = characters[:-2]
-    if compare:
-        disambiguation = disambiguation[:-2]
 
     appearing_characters = all_appearing_characters.exclude(
       character__id__in=in_group.values_list('character'), group__isnull=False)
@@ -611,6 +612,7 @@ class StoryColumn(tables.TemplateColumn):
 
     def value(self, record):
         return str(record)
+
 
 # keep similar to issue.py, but here is record.issue and not record
 class IssueColumn(tables.TemplateColumn):
