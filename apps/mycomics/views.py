@@ -885,7 +885,8 @@ def subscribed_into_collection(request, collection_id):
     issues = Issue.objects.none()
     for subscription in collection.subscriptions.all():
         new_issues = subscription.series.active_issues()\
-                                 .filter(created__gte=subscription.last_pulled)
+                                 .filter(created__gte=subscription.last_pulled)\
+                                 .exclude(collectionitem__collections=collection)
         issues |= new_issues
     return_url = HttpResponseRedirect(
       urlresolvers.reverse('subscriptions_collection',
