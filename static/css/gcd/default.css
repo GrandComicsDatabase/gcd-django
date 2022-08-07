@@ -452,8 +452,8 @@ h1.search_id {
 }
 #control_rail{
 	float:right;
-	width:15.25em;
-	margin-right:-15.25em;
+	width:15.5em;
+	margin-right:-15.5em;
 	position:relative;
 }
 #control_header, #control_footer{
