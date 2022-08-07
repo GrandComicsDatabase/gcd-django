@@ -287,7 +287,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
 
         if cd['credited_as'] and cd['credited_as'] == cd['creator'].name:
             raise forms.ValidationError(
-              ['Name entered as "credited as" is identicial to the creator '
+              ['Name entered as "credited as" is identical to the creator '
                'name.']
             )
 

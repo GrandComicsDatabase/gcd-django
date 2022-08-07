@@ -31,7 +31,8 @@ def header_link(changeset):
 
     if changeset.change_type in [CTYPES['publisher'], CTYPES['printer'],
                                  CTYPES['award'], CTYPES['character'],
-                                 CTYPES['group'], CTYPES['creator']]:
+                                 CTYPES['group'], CTYPES['creator'],
+                                 CTYPES['universe']]:
         return absolute_url(revision)
     elif changeset.change_type in [CTYPES['brand_group'],
                                    CTYPES['indicia_publisher'],

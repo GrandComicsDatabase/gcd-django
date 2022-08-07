@@ -32,14 +32,15 @@ from apps.gcd.models import (
     CreatorRelation, CreatorSchool, CreatorNameDetail, CreditType,
     STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
     IndiciaPrinter, CreatorSignature, Character, CharacterRelation, Group,
-    GroupRelation, GroupMembership)
+    GroupRelation, GroupMembership, Universe)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import show_publisher, show_indicia_publisher, \
     show_brand_group, show_brand, show_series, show_issue, show_creator, \
     show_creator_membership, show_received_award, show_creator_art_influence, \
     show_creator_non_comic_work, show_creator_school, show_creator_degree, \
-    show_award, show_printer, show_indicia_printer, show_character
+    show_award, show_printer, show_indicia_printer, show_character, \
+    show_universe
 
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
@@ -58,7 +59,7 @@ from apps.oi.models import (
     CreatorRevision, CreatorNameDetailRevision, CreatorMembershipRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision, CreatorRelationRevision,
-    FeatureRevision, FeatureLogoRevision,
+    FeatureRevision, FeatureLogoRevision, UniverseRevision,
     CharacterRevision, CharacterRelationRevision, GroupRevision,
     GroupRelationRevision, GroupMembershipRevision,
     PreviewBrand, PreviewIssue, PreviewStory,
@@ -127,6 +128,7 @@ REVISION_CLASSES = {
     'feature': FeatureRevision,
     'feature_logo': FeatureLogoRevision,
     'feature_relation': FeatureRelationRevision,
+    'universe': UniverseRevision,
     'character': CharacterRevision,
     'character_relation': CharacterRelationRevision,
     'group': GroupRevision,
@@ -164,6 +166,7 @@ DISPLAY_CLASSES = {
     'feature': Feature,
     'feature_logo': FeatureLogo,
     'feature_relation': FeatureRelation,
+    'universe': Universe,
     'character': Character,
     'character_relation': CharacterRelation,
     'group': Group,
@@ -2634,6 +2637,11 @@ def add_feature_relation(request, feature_id):
                'settings': settings}
     return oi_render(request, 'oi/edit/add_frame.html', context)
 
+
+def add_universe(request):
+    return add_generic(request, 'universe')
+
+
 # TODO: add extra_forms to add_generic
 # could work with extra_forms_name and extra_form in call to it
 # needs also changes in add_frame-template
@@ -4651,6 +4659,7 @@ def show_queue(request, queue_name):
     features = changes.filter(change_type=CTYPES['feature'])
     feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
     feature_relations = changes.filter(change_type=CTYPES['feature_relation'])
+    universes = changes.filter(change_type=CTYPES['universe'])
     characters = changes.filter(change_type=CTYPES['character'])
     character_relations = changes.filter(
       change_type=CTYPES['character_relation'])
@@ -4755,6 +4764,11 @@ def show_queue(request, queue_name):
             'object_name': 'Feature Logos',
             'object_type': 'feature_logo',
             'changesets': feature_logos.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Universes',
+            'object_type': 'universe',
+            'changesets': universes.order_by('modified', 'id')
           },
           {
             'object_name': 'Characters',
@@ -5285,6 +5299,7 @@ def preview(request, id, model_name):
     if model_name in ['publisher', 'indicia_publisher', 'brand_group',
                       'brand', 'printer', 'indicia_printer', 'series',
                       'issue', 'award', 'creator', 'character',
+                      'universe',
                       'received_award', 'creator_art_influence',
                       'creator_degree', 'creator_membership',
                       'creator_non_comic_work', 'creator_school']:
@@ -5355,7 +5370,7 @@ def preview(request, id, model_name):
         if model_name not in ['award', 'creator', 'received_award',
                               'creator_art_influence', 'creator_degree',
                               'creator_membership', 'creator_non_comic_work',
-                              'creator_school']:
+                              'creator_school', 'universe']:
             model_object.keywords = revision.keywords
         return globals()['show_%s' % (model_name)](request, model_object, True)
     return render_error(request,

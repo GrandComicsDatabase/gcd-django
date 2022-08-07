@@ -39,7 +39,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
                             Printer, IndiciaPrinter, School, Story, \
-                            Character, Group, StoryCredit, \
+                            Character, Group, Universe, StoryCredit, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable,\
                                     CharacterCreatorTable, GroupCreatorTable,\
@@ -1542,7 +1542,7 @@ def change_history(request, model_name, id):
                           'creator_relation', 'creator_school',
                           'creator_signature', 'feature', 'feature_logo',
                           'character', 'group', 'character_relation',
-                          'group_relation', 'group_membership']:
+                          'group_relation', 'group_membership', 'universe']:
         if not (model_name == 'imprint' and
            get_object_or_404(Publisher, id=id).deleted):
             return render(
@@ -2340,6 +2340,21 @@ def show_feature_relation(request, feature_relation, preview=False):
             'error_subject': feature_relation,
             'preview': preview}
     return render(request, 'gcd/details/feature_relation.html', vars)
+
+
+def universe(request, universe_id):
+    """
+    Display the details page for a Universe.
+    """
+    universe = get_gcd_object(Universe, universe_id)
+    return show_universe(request, universe)
+
+
+def show_universe(request, universe, preview=False):
+    vars = {'universe': universe,
+            'error_subject': '%s' % feature,
+            'preview': preview}
+    return render(request, 'gcd/details/universe.html', vars)
 
 
 def character(request, character_id):

@@ -14,7 +14,7 @@
   <form method="get" action=".">
       <p>
         <label for="id_q">Search for:</label>
-        {{ form.q }} in 
+        {{ form.q }} in
         <select name="search_object" size="1">
             <option value="all"> All </option>
             <option value="story" {% if 'facet_model_name_exact:story' in form.selected_facets %}selected{% endif %}> Story </option>
@@ -198,6 +198,10 @@
             {% endif %}
             {% if result.model_name == 'feature' %}
                 <td>[FEATURE]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'universe' %}
+                <td>[UNIVERSE]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
             {% if result.model_name == 'character' %}

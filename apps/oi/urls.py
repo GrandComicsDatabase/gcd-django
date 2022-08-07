@@ -187,6 +187,10 @@ urlpatterns = [
     url(r'^feature/(?P<feature_id>\d+)/relation/add/$',
       oi_views.add_feature_relation, name='add_feature_relation'),
 
+    # Universe URLs
+    url(r'^universe/add/$',
+      oi_views.add_universe, name='add_universe'),
+
     # Character URLs
     url(r'^character/add/$',
       oi_views.add_character, name='add_character'),
@@ -264,22 +268,22 @@ urlpatterns = [
       oi_views.add_reprint, name='add_story_reprint'),
     url(r'^story/revision/(?P<story_id>\d+)/add_reprint/(?P<changeset_id>\d+)/$',
       oi_views.add_reprint, name='add_story_reprint'),
-      
+
     url(r'^issue/revision/(?P<issue_id>\d+)/add_reprint/(?P<changeset_id>\d+)/reprint_note/(?P<reprint_note>.+)/$',
       oi_views.add_reprint, name='add_issue_reprint'),
     url(r'^issue/revision/(?P<issue_id>\d+)/add_reprint/(?P<changeset_id>\d+)/$',
       oi_views.add_reprint, name='add_issue_reprint'),
-      
+
     url(r'^reprint/revision/(?P<reprint_revision_id>\d+)/storyrevision/(?P<story_revision_id>\d+)/confirm_reprint/(?P<changeset_id>\d+)/story/(?P<story_two_id>\d+)/$',
       oi_views.save_reprint, name='save_revision_story_reprint'),
     url(r'^reprint/revision/(?P<reprint_revision_id>\d+)/storyrevision/(?P<story_revision_id>\d+)/confirm_reprint/(?P<changeset_id>\d+)/issue/(?P<issue_two_id>\d+)/$',
       oi_views.save_reprint, name='save_revision_issue_reprint'),
-      
+
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/storyrevision/(?P<story_revision_id>\d+)/confirm_reprint/(?P<changeset_id>\d+)/story/(?P<story_two_id>\d+)/$',
       oi_views.save_reprint, name='save_revision_story_reprint'),
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/storyrevision/(?P<story_revision_id>\d+)/confirm_reprint/(?P<changeset_id>\d+)/issue/(?P<issue_two_id>\d+)/$',
       oi_views.save_reprint, name='save_revision_issue_reprint'),
-      
+
     url(r'^reprint/revision/(?P<reprint_revision_id>\d+)/story/(?P<story_one_id>\d+)/confirm_reprint/(?P<changeset_id>\d+)/story/(?P<story_two_id>\d+)/$',
       oi_views.save_reprint, name='save_story_story_reprint'),
     url(r'^reprint/revision/(?P<reprint_revision_id>\d+)/story/(?P<story_one_id>\d+)/confirm_reprint/(?P<changeset_id>\d+)/issue/(?P<issue_two_id>\d+)/$',

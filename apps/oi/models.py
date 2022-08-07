@@ -36,7 +36,7 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
     SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
     CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
-    BiblioEntry, Reprint,
+    Universe, BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
     CharacterNameDetail, Group, GroupRelation, GroupMembership, ImageType,
@@ -98,6 +98,7 @@ CTYPES = {
     'group_membership': 33,
     'character_relation': 34,
     'group_relation': 35,
+    'universe': 36,
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -111,6 +112,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['feature'],
                            CTYPES['feature_logo'],
                            CTYPES['feature_relation'],
+                           CTYPES['universe'],
                            CTYPES['character'],
                            CTYPES['character_relation'],
                            CTYPES['group'],
@@ -367,6 +369,9 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['feature_relation']:
             return (self.featurerelationrevisions.all(),)
+
+        if self.change_type == CTYPES['universe']:
+            return (self.universerevisions.all(),)
 
         if self.change_type == CTYPES['character']:
             return (self.characterrevisions.all(),
@@ -6475,6 +6480,88 @@ class FeatureRelationRevision(Revision):
                                str(self.relation_type),
                                str(self.to_feature)
                                )
+
+
+class UniverseRevision(Revision):
+    class Meta:
+        db_table = 'oi_universe_revision'
+        ordering = ['created', '-id']
+
+    universe = models.ForeignKey('gcd.Universe',
+                                 on_delete=models.CASCADE,
+                                 null=True,
+                                 related_name='revisions')
+
+    multiverse = models.CharField(max_length=255, db_index=True, blank=True)
+    name = models.CharField(max_length=255, db_index=True, blank=True)
+    designation = models.CharField(max_length=255, db_index=True, blank=True)
+
+    year_first_published = models.IntegerField(db_index=True, null=True,
+                                               blank=True)
+    year_first_published_uncertain = models.BooleanField(default=False)
+    description = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
+
+    source_name = 'universe'
+    source_class = Universe
+
+    @property
+    def source(self):
+        return self.universe
+
+    @source.setter
+    def source(self, value):
+        self.universe = value
+
+    _base_field_list = ['multiverse', 'name', 'designation',
+                        'year_first_published',
+                        'year_first_published_uncertain',
+                        'description', 'notes']
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'multiverse': '',
+            'name': '',
+            'designation': '',
+            'year_first_published': None,
+            'year_first_published_uncertain': False,
+            'description': '',
+            'notes': '',
+        }
+
+    def _start_imp_sum(self):
+        self._seen_year_first_published = False
+
+    def _imps_for(self, field_name):
+        if field_name in ('year_first_published',
+                          'year_first_published_uncertain'):
+            if not self._seen_year_first_published:
+                self._seen_year_first_published = True
+                return 1
+        elif field_name in self._field_list():
+            return 1
+        return 0
+
+    def _queue_name(self):
+        return '%s: %s - %s (%s)' % (self.multiverse, self.name,
+                                     self.designation,
+                                     self.year_first_published)
+
+    def get_absolute_url(self):
+        if self.universe is None:
+            return "/universe/revision/%i/preview" % self.id
+        return self.universe.get_absolute_url()
+
+    def __str__(self):
+        return '%s: %s - %s' % (self.multiverse, self.name, self.designation)
+
+
+class PreviewUniverse(Universe):
+    class Meta:
+        proxy = True
 
 
 class CharacterGroupRevisionBase(Revision):

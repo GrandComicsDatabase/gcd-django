@@ -19,7 +19,7 @@ from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
 from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup,\
                             Series, Issue, Cover, Image, Feature, FeatureLogo,\
                             Character, Group, CharacterRelation, \
-                            GroupRelation, GroupMembership,\
+                            GroupRelation, GroupMembership, Universe, \
                             INDEXED, SeriesBond, BOND_TRACKING, \
                             SUBNUMBER_TRACKING, MERGE_TRACKING
 from apps.gcd.views.covers import get_image_tag
@@ -330,6 +330,8 @@ def changed_fields(changeset, object):
         revision = changeset.featurerevisions.get(feature=object.id)
     elif object_class is FeatureLogo:
         revision = changeset.featurelogorevisions.get(feature_logo=object.id)
+    elif object_class is Universe:
+        revision = changeset.universerevisions.get(universe=object.id)
     elif object_class is Character:
         revision = changeset.characterrevisions.get(character=object.id)
     elif object_class is Group:

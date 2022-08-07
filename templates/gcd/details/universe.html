@@ -1,0 +1,44 @@
+{% extends "gcd/base_content.html" %}
+
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Universe :: {{ universe.name }}
+{% endblock %}
+
+{% block content_header %}
+<h1 class="item_id">
+  <div class="left">
+    {{ universe.display_name }}
+  </div>
+</h1>
+{% endblock content_header %}
+
+{% block content %}
+      <dl class="pub_data">
+{% if universe.year_first_published %}
+        <p><strong>First published in:</strong> {{ universe.year_first_published }}</p>
+{% endif %}
+{% if universe.description %}
+        <dt> Description:
+        <dd><br>{{ universe.description|markdown }}
+{% endif %}
+{% if universe.notes %}
+        <dt> Notes:
+        <dd><br> {{ universe.notes|markdown }}
+{% endif %}
+{% endblock content %}
+
+{% block edit_box %}
+ {% if not preview %}
+   {% with object=universe object_class='universe' object_name='Universe' %}
+     {% include "gcd/bits/status_banner.html" %}
+   {% endwith %}
+ {% endif %}
+{% endblock edit_box %}
+
+{% block change_history %}
+  <a href="{% url "change_history" model_name='universe' id=universe.id %}">View Change History</a>
+{% endblock change_history %}

@@ -771,6 +771,8 @@ class ModifiedPagedownWidget(PagedownWidget):
 
 class BaseForm(forms.ModelForm):
     notes = forms.CharField(widget=ModifiedPagedownWidget(), required=False)
+    description = forms.CharField(widget=ModifiedPagedownWidget(),
+                                  required=False)
 
     comments = _get_comments_form_field()
 

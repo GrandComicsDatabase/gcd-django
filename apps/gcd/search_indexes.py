@@ -4,7 +4,7 @@ from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
     CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature, Printer,\
-    Character, Group
+    Character, Group, Universe
 
 from apps.oi.models import on_sale_date_fields
 
@@ -305,6 +305,36 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "feature"
 
 
+class UniverseIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/universe_text.txt')
+    name = indexes.CharField(boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(indexed=False)
+    year = indexes.IntegerField()
+
+    def prepare_name(self, obj):
+        return obj.display_name
+
+    def prepare_sort_name(self, obj):
+        return obj.display_name
+
+    def prepare_year(self, obj):
+        if obj.year_first_published:
+            return obj.year_first_published
+        else:
+            return 9999
+
+    def get_model(self):
+        return Universe
+
+    def prepare_facet_model_name(self, obj):
+        return "universe"
+
+
 class CharacterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
@@ -584,7 +614,7 @@ class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,
 class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
                                indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True,
-             template_name='search/indexes/gcd/creator_art_influence_text.txt')
+           template_name='search/indexes/gcd/creator_art_influence_text.txt')
     name = indexes.CharField(model_attr="influence", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 

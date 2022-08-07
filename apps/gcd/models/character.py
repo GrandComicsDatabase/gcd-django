@@ -12,6 +12,48 @@ from apps.stddata.models import Language
 from .datasource import ExternalLink
 
 
+class Universe(GcdData):
+    """
+    Characters and stories can belong to publisher universe.
+    """
+
+    class Meta:
+        app_label = 'gcd'
+        ordering = ('multiverse', 'designation', 'name')
+        verbose_name_plural = 'Universes'
+
+    multiverse = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
+    designation = models.CharField(max_length=255, db_index=True)
+
+    year_first_published = models.IntegerField(db_index=True, null=True)
+    year_first_published_uncertain = models.BooleanField(default=False)
+    description = models.TextField()
+    notes = models.TextField()
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_universe',
+                kwargs={'universe_id': self.id})
+
+    @property
+    def display_name(self):
+        if self.multiverse:
+            display_name = self.multiverse + ': '
+        else:
+            display_name = ''
+        if self.name:
+            display_name += self.name
+            if self.designation:
+                display_name += ' - ' + self.designation
+        else:
+            display_name += self.designation
+        return display_name
+
+    def __str__(self):
+        return '%s : %s - %s' % (self.multiverse, self.name, self.designation)
+
+
 class CharacterNameDetail(GcdData):
     """
     Indicates the additional names of a character.

@@ -15,11 +15,53 @@ from .custom_layout_object import Formset, BaseField
 
 from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
                             CharacterRelationRevision, GroupRevision,
-                            GroupMembershipRevision, GroupRelationRevision)
+                            GroupMembershipRevision, GroupRelationRevision,
+                            UniverseRevision)
 
 from .support import (_get_comments_form_field, HiddenInputWithHelp,
                       GENERIC_ERROR_MESSAGE, BaseForm,
                       combine_reverse_relations)
+
+
+def get_universe_revision_form(revision=None, user=None):
+    class RuntimeUniverseRevisionForm(UniverseRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeUniverseRevisionForm, self).__init__(*args, **kwargs)
+
+        # def as_table(self):
+        #     # if not user or user.indexer.show_wiki_links:
+        #         # _set_help_labels(self, FEATURE_HELP_LINKS)
+        #     return super(FeatureRevisionForm, self).as_table()
+
+    return RuntimeUniverseRevisionForm
+
+
+class UniverseRevisionForm(BaseForm):
+    class Meta:
+        model = UniverseRevision
+        fields = model._base_field_list
+        help_texts = {
+            'multiverse':
+                'WIP: The name of the multiverse the universe belongs to, '
+                'e.g. DC or Marvel.',
+            'name':
+                'WIP: A description or common name for the universe, '
+                'e.g. mainstream, Ultimate. (TBD other good examples)',
+            'designation':
+                'WIP: The designation of the universe, e.g. Earth-1610, '
+                'Earth 1'
+        }
+
+    comments = _get_comments_form_field()
+
+    def clean(self):
+        cd = self.cleaned_data
+        if not cd['name'] and not cd['designation']:
+            raise forms.ValidationError(
+              ['Either a name or a designation needs to be entered']
+            )
+
+        return cd
 
 
 class CharacterNameDetailRevisionForm(forms.ModelForm):
@@ -41,7 +83,7 @@ class CharacterInlineFormSet(forms.BaseInlineFormSet):
         # TODO workaround, better to not allow the removal, see above
         if form.instance.character_name_detail:
             if form.instance.character_name_detail.storycharacter_set\
-                                                  .filter(deleted=False).count():
+                            .filter(deleted=False).count():
                 form.cleaned_data['DELETE'] = False
                 return False
         return super(CharacterInlineFormSet, self)._should_delete_form(form)
@@ -95,7 +137,7 @@ class CharacterRevisionForm(BaseForm):
         self.fields = new_fields
         fields = list(self.fields)
         field_list = [BaseField(Field('additional_names_help',
-                                    template='oi/bits/uni_field.html'))]
+                                      template='oi/bits/uni_field.html'))]
         field_list.append(Formset('character_names_formset'))
         description_pos = fields.index('description')
         field_list.extend([BaseField(Field(field,
@@ -106,7 +148,6 @@ class CharacterRevisionForm(BaseForm):
                                            template='oi/bits/uni_field.html'))
                            for field in fields[description_pos:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
-
 
     additional_names_help = forms.CharField(
         widget=HiddenInputWithHelp,
@@ -182,9 +223,10 @@ class GroupMembershipRevisionForm(forms.ModelForm):
 def get_character_relation_revision_form(revision=None, user=None):
     class RuntimeCharacterRelationRevisionForm(CharacterRelationRevisionForm):
         choices = list(CharacterRelationType.objects.values_list('id', 'type'))
-        additional_choices = CharacterRelationType.objects.exclude(id__in=[3, 4])\
-                                                .values_list('id',
-                                                            'reverse_type')
+        additional_choices = CharacterRelationType.objects.exclude(id__in=[3,
+                                                                           4])\
+                                                  .values_list('id',
+                                                               'reverse_type')
         choices = combine_reverse_relations(choices, additional_choices)
         relation_type = forms.ChoiceField(choices=choices)
 
@@ -232,14 +274,15 @@ class CharacterRelationRevisionForm(forms.ModelForm):
             cd['relation_type'] = CharacterRelationType.objects.get(id=type)
 
         if cd['from_character'].language != cd['to_character'].language:
-            if cd['relation_type'].id !=1:
+            if cd['relation_type'].id != 1:
                 raise forms.ValidationError(
                   "Characters have a different language.")
         else:
-            if cd['relation_type'].id ==1:
+            if cd['relation_type'].id == 1:
                 raise forms.ValidationError(
                   "Characters have the same language.")
         return cd
+
 
 def get_group_relation_revision_form(revision=None, user=None):
     class RuntimeGroupRelationRevisionForm(GroupRelationRevisionForm):
