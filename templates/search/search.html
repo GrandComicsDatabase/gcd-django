@@ -153,13 +153,16 @@
       <div id="RightSearchColumn">
       <div class="left">
         <table class="listing left">
+          <thead>
           <tr>
       {% if select_key %}
             <th> Selection </th>
       {% endif %}
-            <th>Type</th>
+            <th style="width: 170px;">Type</th>
             <th>Name</th>
           </tr>
+          </thead>
+          <tbody>
         {% for result in page.object_list %}
             <tr class="{% cycle 'listing_even' 'listing_odd' %}">
             {% if select_key %}
@@ -182,12 +185,12 @@
                 <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'issue' %}
-                <td><a hx-get="{% url "show_issue_modal" issue_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">[ISSUE]</a></td>
+                <td><a hx-get="{% url "show_issue_modal" issue_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"></img> [ISSUE]</a></td>
                 <td><img {{ result.object.series.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
                 {{ result.object.publication_date|str_encl:'(' }}</td>
             {% endif %}
             {% if result.model_name == 'story' %}
-                <td><a hx-get="{% url "show_story_modal" story_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">[STORY]</a></td>
+                <td><a hx-get="{% url "show_story_modal" story_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"></img> [STORY]</a></td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object|show_title:1 }}</a>
               {% if result.object.has_feature %} / {{ result.object.show_feature }}{% endif %} / {{ result.object.type }}
               {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}
@@ -263,6 +266,7 @@
             {% endif %}
             </tr>
         {% endfor %}
+        </tbody>
         </table>
       </div>
       <div class="right">
