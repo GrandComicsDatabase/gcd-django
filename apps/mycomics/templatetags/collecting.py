@@ -88,3 +88,7 @@ def issue_in_collection(series, collection):
     items = series.active_issues()\
                   .filter(collectionitem__collections__id=collection.id)
     return items.count()
+
+@register.filter
+def for_sale(issue):
+    return issue.collectionitem_set.filter(for_sale=True).count()
