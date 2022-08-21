@@ -1847,6 +1847,13 @@ class Revision(models.Model):
         """
         return {}
 
+    @classmethod
+    def extra_forms_errors(cls, request, form, extra_forms):
+        """
+        Process additional forms for errors when validation failed.
+        """
+        pass
+
     def process_extra_forms(self, extra_forms):
         """
         Process additional forms of other/related objects on save.
@@ -5443,6 +5450,16 @@ class StoryRevision(Revision):
           queryset=self.story_character_revisions.filter(deleted=False))
         return {'credits_formset': credits_formset,
                 'characters_formset': characters_formset, }
+
+    @classmethod
+    def extra_forms_errors(cls, request, form, extra_forms):
+        credits_formset = extra_forms['credits_formset']
+        if not credits_formset.is_valid() and request.user.indexer.use_tabs:
+            form.add_error(None, "Changes needed on the Creators tab.")
+
+        characters_formset = extra_forms['characters_formset']
+        if not characters_formset.is_valid() and request.user.indexer.use_tabs:
+            form.add_error(None, "Changes needed on the Characters tab.")
 
     def process_extra_forms(self, extra_forms):
         credits_formset = extra_forms['credits_formset']
