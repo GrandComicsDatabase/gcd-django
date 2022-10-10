@@ -754,7 +754,9 @@ class Changeset(models.Model):
         the examiner's approval queue.
         """
         if self.state != states.PENDING:
-            if self.state != states.REVIEWING or not self.review_is_overdue:
+            if self.state != states.REVIEWING or \
+              (self.state == states.REVIEWING
+               and not self.review_is_overdue()):
                 raise ErrorWithMessage("Only PENDING changes can be reviewed.")
 
         # TODO: check that the approver has approval priviliges.
@@ -928,6 +930,7 @@ class Changeset(models.Model):
                        isinstance(revision, IssueCreditRevision) or \
                        isinstance(revision, ReprintRevision) or \
                        isinstance(revision, CreatorNameDetailRevision) or \
+                       isinstance(revision, DataSourceRevision) or \
                        isinstance(revision, StoryCharacterRevision):
                         self.imps += IMP_DELETE
                     else:
@@ -5600,10 +5603,10 @@ class StoryRevision(Revision):
                 old_credits = ''
                 for credit in credits:
                     credit = credit.strip()
-                    if credit == 'Typeset':
+                    if credit in ['Typeset', 'Computer']:
                         credit = 'typeset'
                     save_credit = credit
-                    if credit.strip()[-1] == '?':
+                    if credit[-1] == '?':
                         credit = credit[:-1]
                         uncertain = True
                     else:
@@ -5619,7 +5622,10 @@ class StoryRevision(Revision):
                         remainder_note = note[end_note+1:].strip()
                         note = note[:end_note].strip()
                         save_credit = credit
-                        credit = credit[:credit.find('(')-1]
+                        credit = credit[:credit.find('(')-1].strip()
+                        if credit[-1] == '?':
+                            credit = credit[:-1].strip()
+                            uncertain = True
                         if note in ['credited', 'kreditert']:
                             is_credited = True
                             note = ''
@@ -5706,6 +5712,8 @@ class StoryRevision(Revision):
             features = self.feature.split(';')
             old_features = ''
             for feature in features:
+                if feature.find('['):
+                    feature = feature[:feature.find('[')]
                 feature = feature.strip()
                 save_feature = feature
                 feature_object = Feature.objects.filter(
