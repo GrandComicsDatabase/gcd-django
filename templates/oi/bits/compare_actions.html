@@ -19,8 +19,8 @@
 {% endif %}
 
 {% if changeset.state == states.PENDING %}
-  {% if perms.indexer.can_approve %}
-    {% if user != changeset.indexer %}
+  {% if user != changeset.indexer %}
+    {% if perms.indexer.can_approve %}
   <input type="submit" name="assign"
       {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and not is_cover %}
     value="Assign and mentor"
@@ -28,10 +28,10 @@
     value="Assign"
       {% endif %}
   >
-    {% else %}
-      {% if changeset.editable and not is_cover %}
+    {% endif %}
+  {% else %}
+    {% if changeset.editable and not is_cover %}
   <input type="submit" name="retract" value="Retract and edit further">
-      {% endif %}
     {% endif %}
   {% endif %}
 {% endif %}
