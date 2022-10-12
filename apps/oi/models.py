@@ -5712,10 +5712,11 @@ class StoryRevision(Revision):
             features = self.feature.split(';')
             old_features = ''
             for feature in features:
-                if feature.find('[') > 1:
-                    feature = feature[:feature.find('[')]
                 feature = feature.strip()
                 save_feature = feature
+                if feature.find('[') > 1:
+                    feature = feature[:feature.find('[')]
+                    feature = feature.strip()
                 feature_object = Feature.objects.filter(
                   name=feature, deleted=False, feature_type__id=1,
                   language=self.issue.series.language)
