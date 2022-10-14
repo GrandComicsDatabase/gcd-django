@@ -5707,6 +5707,15 @@ class StoryRevision(Revision):
                 setattr(self, credit_type, old_credits)
                 self.save()
 
+    def migrate_single_feature(self, feature):
+        feature_object = Feature.objects.filter(
+            name=feature, deleted=False, feature_type__id=1,
+            language=self.issue.series.language)
+        if feature_object.count() == 1:
+            self.feature_object.add(feature_object.get())
+            return True
+        return False
+
     def migrate_feature(self):
         if self.feature:
             features = self.feature.split(';')
@@ -5714,15 +5723,12 @@ class StoryRevision(Revision):
             for feature in features:
                 feature = feature.strip()
                 save_feature = feature
-                if feature.find('[') > 1:
+                migrated = self.migrate_single_feature(feature)
+                if not migrated and feature.find('[') > 1:
                     feature = feature[:feature.find('[')]
                     feature = feature.strip()
-                feature_object = Feature.objects.filter(
-                  name=feature, deleted=False, feature_type__id=1,
-                  language=self.issue.series.language)
-                if feature_object.count() == 1:
-                    self.feature_object.add(feature_object.get())
-                else:
+                    migrated = self.migrate_single_feature(feature)
+                if not migrated:
                     if old_features:
                         old_features += '; ' + save_feature
                     else:
