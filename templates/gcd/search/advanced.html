@@ -74,6 +74,7 @@ if ($(window).width() < 1240) {
   <fieldset class="credits">
     <legend> Credits </legend>
     <ol>
+      {{ form.credit_is_linked|show_form }}
       {{ form.script|show_form }}
       {{ form.pencils|show_form }}
       {{ form.inks|show_form }}
@@ -251,10 +252,13 @@ if ($(window).width() < 1240) {
            name and issue date.
            This ordering is not very useful if you search for publishers, you might
            want to change it under "Ordering".
-      <li> There's no way to search for multiple values in a field (for instance,
+      <li> There is no way to search for multiple values in a field. For instance,
            while you can search for stories written or penciled by someone,
            you cannot search for stories penciled by either Jack Kirby or
-           Joe Simon.
+           Joe Simon in the text credit fields.
+      <li> Using only linked credits one can search for stories penciled by either
+           Jack Kirby or Joe Simon, or both of same together, no matter in which
+           they are credited.
       <li> Searching by date is somewhat tricky.  Supported formats include
            "year.month.day", "year-month-day", "month/day/year",
            "month-name day, year", "day month-name, year" and just plain year.

@@ -598,9 +598,13 @@ def checklist_by_name(request, creator, country=None, language=None,
 
     q_objs_text = Q(**{'%s%s__%s' % (prefix, 'editing', op): creator})
     for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
-        q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
-                            '%stype__id__in' % (prefix): CORE_TYPES,
-                            '%sdeleted' % (prefix): False})
+        if to_be_migrated:
+            q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
+                                '%sdeleted' % (prefix): False})
+        else:
+            q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
+                                '%stype__id__in' % (prefix): CORE_TYPES,
+                                '%sdeleted' % (prefix): False})
     issues = Issue.objects.filter(q_objs_text).distinct()\
                           .annotate(series_name=F('series__sort_name'))
     if 'sort' in request.GET:

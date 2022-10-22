@@ -66,7 +66,7 @@ def generic_by_name(request, name, q_obj, sort,
     """
     base_name = 'unknown'
     plural_suffix = 's'
-    query_val = {'method': 'icontains', 'logic': 'True'}
+    query_val = {'method': 'icontains', 'logic': True}
 
     if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher)):
         if class_ is IndiciaPublisher:
@@ -365,7 +365,7 @@ def publisher_search_hx(request):
                        'object_type': 'publisher'})
     publisher_name = request.POST['search']
     return publisher_by_name(request, publisher_name,
-                           template='gcd/search/publisher_base_list.html')
+                             template='gcd/search/publisher_base_list.html')
 
 
 def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA,
@@ -423,8 +423,8 @@ def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
 
 def name_search_hx(request):
     return render(request, 'gcd/search/active_search.html',
-                    {'object_name': 'Creators',
-                     'object_type': 'creator'})
+                  {'object_name': 'Creators',
+                   'object_type': 'creator'})
 
 
 def printer_search_hx(request):
@@ -974,7 +974,8 @@ def do_advanced_search(request):
     op = str(data['method'] or 'iregex')
 
     try:
-        stq_obj = search_stories(data, op)
+        stq_obj, linked_credits_q_objs, other_stq_obj = search_stories(data,
+                                                                       op)
         iq_obj = search_issues(data, op)
         sq_obj = search_series(data, op)
         ipq_obj = search_indicia_publishers(data, op)
@@ -990,6 +991,9 @@ def do_advanced_search(request):
             cq_obj = None
         query = combine_q(data, stq_obj, iq_obj, sq_obj, pq_obj,
                           bq_obj, bgq_obj, ipq_obj, cq_obj)
+        if linked_credits_q_objs:
+            query_linked = combine_q(data, other_stq_obj, iq_obj, sq_obj,
+                                     pq_obj, bq_obj, bgq_obj, ipq_obj, cq_obj)
         terms = compute_order(data)
     except SearchError as se:
         raise ViewTerminationError(render(
@@ -1058,8 +1062,17 @@ def do_advanced_search(request):
     elif data['target'] == 'sequence':
         filter = Story.objects.exclude(deleted=True)
         if query:
-            filter = filter.filter(query)
-        items = filter.order_by(*terms).select_related(
+            text_filter = filter.filter(query)
+            if linked_credits_q_objs and data['credit_is_linked'] is not False:
+                linked_filter = filter.filter(query_linked)
+                for credit_obj in linked_credits_q_objs:
+                    linked_filter = linked_filter.filter(credit_obj)
+                if data['credit_is_linked'] is True:
+                    text_filter = linked_filter
+                else:
+                    text_filter = text_filter | linked_filter
+
+        items = text_filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
 
     if data['keywords']:
@@ -1171,6 +1184,17 @@ def used_search(search_values):
             text += ', %s' % str(indexer)
         used_search_terms.append(('indexer', text))
         del search_values['indexer']
+    if 'credit_is_linked' in search_values:
+        if search_values['credit_is_linked'] == 'True':
+            used_search_terms.append(('credit_is_linked',
+                                      'linked credits only'))
+        elif search_values['credit_is_linked'] == 'False':
+            used_search_terms.append(('credit_is_linked',
+                                      'text credits only'))
+        else:
+            used_search_terms.append(('credit_is_linked',
+                                      'both linked and text credits'))
+        del search_values['credit_is_linked']
     for i in search_values:
         if search_values[i] and search_values[i] not in ['None', 'False']:
             used_search_terms.append((i, search_values[i]))
@@ -1233,8 +1257,9 @@ def process_advanced(request, export_csv=False):
         return generic_sortable_list(request, items, table,
                                      'gcd/search/generic_list.html', context)
     if target == 'issue':
-        table = IssuePublisherTable(items, attrs={'class': 'sortable_listing'},
-                           template_name='gcd/bits/sortable_table.html',)
+        table = IssuePublisherTable(
+          items, attrs={'class': 'sortable_listing'},
+          template_name='gcd/bits/sortable_table.html',)
         context = {'object': target,
                    'heading': heading,
                    'item_name': 'issue',
@@ -1252,8 +1277,9 @@ def process_advanced(request, export_csv=False):
                                      'gcd/search/generic_list.html', context)
 
     if target == 'series':
-        table = SeriesPublisherTable(items, attrs={'class': 'sortable_listing'},
-                            template_name='gcd/bits/sortable_table.html',)
+        table = SeriesPublisherTable(
+          items, attrs={'class': 'sortable_listing'},
+          template_name='gcd/bits/sortable_table.html',)
         context = {'object': target,
                    'heading': heading,
                    'item_name': 'series',
@@ -1663,11 +1689,15 @@ def search_issues(data, op, stories_q=None):
         elif data['issue_reprinted'] == 'is_reprinted':
             q_objs.append(Q(**{'%sto_all_reprints__isnull' % prefix: False}))
         elif data['issue_reprinted'] == 'issue_level_reprints':
-            q_objs.append(Q(**{'%sfrom_all_reprints__target__isnull' % prefix: True}) &
-                         ~Q(**{'%sfrom_all_reprints__origin__isnull' % prefix: True}))
+            q_objs.append(Q(**{'%sfrom_all_reprints__target__isnull' % prefix:
+                               True}) &
+                          ~Q(**{'%sfrom_all_reprints__origin__isnull' % prefix:
+                                True}))
         elif data['issue_reprinted'] == 'issue_level_reprinted':
-            q_objs.append(Q(**{'%sto_all_reprints__origin__isnull' % prefix: True}) &
-                         ~Q(**{'%sto_all_reprints__target__isnull' % prefix: True}))
+            q_objs.append(Q(**{'%sto_all_reprints__origin__isnull' % prefix:
+                               True}) &
+                          ~Q(**{'%sto_all_reprints__target__isnull' % prefix:
+                                True}))
 
     if 'in_collection' in data and data['in_collection']:
         if data['in_selected_collection']:
@@ -1759,20 +1789,26 @@ def search_stories(data, op):
     prefix = compute_prefix(target, 'sequence')
 
     q_objs = []
+    text_credits_q_objs = []
+    linked_credits_q_objs = []
     q_and_only = []
 
     for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
         if data[field]:
-            creator_q_obj = Q(**{'name__%s' % (op): data[field]}) | \
-                            Q(**{'creator__gcd_official_name__%s' % (op):
-                                 data[field]})
-            creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
-                                             .values_list('id', flat=True))
-            q_objs.append(
-              Q(**{'%s%s__%s' % (prefix, field, op): data[field]}) |
-              Q(**{'%scredits__creator__id__in' % (prefix): creators,
-                   '%scredits__credit_type__id' % (prefix): CREDIT_TYPES[field]})
-            )
+            text_credits_q_objs.append(
+              Q(**{'%s%s__%s' % (prefix, field, op): data[field]}))
+            for creator in data[field].split(';'):
+                creator = creator.strip()
+                creator_q_obj = Q(**{'name__%s' % (op): creator}) | \
+                                Q(**{'creator__gcd_official_name__%s' % (op):
+                                     creator})
+                creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
+                                                 .values_list('id', flat=True))
+                linked_credits_q_objs.append(
+                  (Q(**{'%scredits__creator__id__in' % (prefix): creators,
+                        '%scredits__credit_type__id' % (prefix):
+                        CREDIT_TYPES[field]}))
+                )
 
     for field in ('title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
@@ -1795,12 +1831,19 @@ def search_stories(data, op):
             q_and_only.append(Q(**{'%sgenre__icontains' % prefix: genre}))
 
     if data['story_editing']:
-        q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
-                           data['story_editing']}) |
-                      Q(**{'%scredits__creator__name__%s' % (prefix, op):
-                           data['story_editing'],
-                           '%scredits__credit_type__id' % (prefix):
-                               CREDIT_TYPES['editing']}))
+        text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
+                                   data['story_editing']}))
+
+        creator_q_obj = Q(**{'name__%s' % (op): data['story_editing']}) | \
+                        Q(**{'creator__gcd_official_name__%s' % (op):
+                             data['story_editing']})
+        creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
+                                         .values_list('id', flat=True))
+        linked_credits_q_objs.append(
+          (Q(**{'%scredits__creator__id__in' % (prefix): creators,
+                '%scredits__credit_type__id' % (prefix):
+                CREDIT_TYPES['editing']}))
+        )
 
     if data['story_reprinted'] != '':
         if data['story_reprinted'] == 'from':
@@ -1828,7 +1871,7 @@ def search_stories(data, op):
         q_objs.append(Q(**{'%spage_count_uncertain' %
                            prefix: data['pages_uncertain']}))
 
-    if q_and_only or q_objs:
+    if q_and_only or q_objs or text_credits_q_objs or linked_credits_q_objs:
         q_and_only.append(Q(**{'%sdeleted__exact' % prefix: False}))
 
     # since issue_editing is credit use it here to allow correct 'OR' behavior
@@ -1849,7 +1892,18 @@ def search_stories(data, op):
                                '%scredits__credit_type__id' % (prefix[:-7]):
                                    CREDIT_TYPES['editing']}))
 
-    return compute_qobj(data, q_and_only, q_objs)
+    text_credits_q_objs.extend(q_objs)
+    if data['logic'] is True:  # OR credits
+        if data['credit_is_linked'] is True:
+            linked_credits_q_objs.extend(q_objs)
+            return compute_qobj(data, q_and_only, linked_credits_q_objs), \
+                None, None
+        elif data['credit_is_linked'] is None:
+            text_credits_q_objs.extend(linked_credits_q_objs)
+        return compute_qobj(data, q_and_only, text_credits_q_objs), None, None
+    else:  # AND credits
+        return compute_qobj(data, q_and_only, text_credits_q_objs), \
+          linked_credits_q_objs, compute_qobj(data, q_and_only, q_objs),
 
 
 def compute_prefix(target, current):
@@ -1944,7 +1998,7 @@ def compute_qobj(data, q_and_only, q_objs):
     q_combined = None
     if q_objs:
         # Should be bool, but is string.  TODO: Find out why.
-        if data['logic'] == 'True':
+        if data['logic'] is True:
             q_combined = reduce(lambda x, y: x | y, q_objs)
         else:
             q_combined = reduce(lambda x, y: x & y, q_objs)

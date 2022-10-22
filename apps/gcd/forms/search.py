@@ -94,11 +94,14 @@ class AdvancedSearch(forms.Form):
 
     logic_help = "This option applies primarily to the story credit fields." \
                  "It will eventually be replaced by more powerful options."
-    logic = forms.ChoiceField(choices=[[False, 'AND all fields'],
-                                       [True, 'OR credits, AND other fields']],
-                              initial=False,
-                              label='Behavior',
-                              help_text=logic_help)
+    logic = forms.BooleanField(widget=forms.Select(choices=(
+                                   (False, 'AND all fields'),
+                                   (True, 'OR credits, AND other fields'),
+                                   )),
+                               initial=False,
+                               required=False,
+                               label='Behavior',
+                               help_text=logic_help)
 
     keywords = forms.CharField(required=False)
 
@@ -237,6 +240,11 @@ class AdvancedSearch(forms.Form):
                                    (True, "yes"),
                                    (False, "no"))))
 
+    credit_is_linked = forms.NullBooleanField(
+      label="Linked and Text Credits", required=False,
+      widget=forms.Select(choices=((None, "both linked and text credits"),
+                                   (True, "linked credits only"),
+                                   (False, "text credits only"))))
     script = forms.CharField(required=False)
     pencils = forms.CharField(required=False)
     inks = forms.CharField(required=False)
