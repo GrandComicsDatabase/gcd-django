@@ -1003,14 +1003,12 @@ def do_advanced_search(request):
               'error_text': '%s' % se,
           }))
 
-    if (not query) and terms and (not data['keywords']):
+    if (not query) and (not data['keywords']):
         raise ViewTerminationError(render(
           request, 'gcd/search/advanced.html',
           {
             'form': form,
             'error_text': "Please enter at least one search term "
-                          "or clear the 'ordering' fields.  Ordered searches "
-                          "must have at least one search term."
           }))
 
     items = []
@@ -1847,11 +1845,14 @@ def search_stories(data, op):
 
     if data['story_reprinted'] != '':
         if data['story_reprinted'] == 'from':
-            q_objs.append(Q(**{'%sfrom_all_reprints__isnull' % prefix: False}))
+            q_and_only.append(Q(**{'%sfrom_all_reprints__isnull' % prefix:
+                                   False}))
         elif data['story_reprinted'] == 'in':
-            q_objs.append(Q(**{'%sto_all_reprints__isnull' % prefix: False}))
+            q_and_only.append(Q(**{'%sto_all_reprints__isnull' % prefix:
+                                   False}))
         elif data['story_reprinted'] == 'not':
-            q_objs.append(Q(**{'%sfrom_all_reprints__isnull' % prefix: True}))
+            q_and_only.append(Q(**{'%sfrom_all_reprints__isnull' % prefix:
+                                   True}))
     try:
         if data['pages'] is not None and data['pages'] != '':
             range_match = match(PAGE_RANGE_REGEXP, data['pages'])
