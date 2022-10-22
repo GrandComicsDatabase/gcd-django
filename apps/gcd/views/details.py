@@ -645,6 +645,8 @@ def checklist_by_name(request, creator, country=None, language=None,
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
                                 template_name='gcd/bits/sortable_table.html',
                                 order_by=('publication_date'))
+    if not to_be_migrated:
+        context['result_disclaimer'] = ISSUE_CHECKLIST_DISCLAIMER
     return generic_sortable_list(request, issues, table, template, context)
 
 
