@@ -16,6 +16,7 @@ ZOOM_SMALL = 1
 ZOOM_MEDIUM = 2
 ZOOM_LARGE = 4
 
+
 class Cover(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -54,25 +55,25 @@ class Cover(models.Model):
           str(int(self.id/1000))
 
     def get_absolute_url(self):
-        return urlresolvers.reverse('issue_cover_view', 
-                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
+        return urlresolvers.reverse(
+          'issue_cover_view',
+          kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE})
 
-    def get_base_url(self):
-        return settings.IMAGE_SERVER_URL + settings.COVERS_DIR + \
+    def get_base_url(self, image_server_url=settings.IMAGE_SERVER_URL):
+        return image_server_url + settings.COVERS_DIR + \
           str(int(self.id/1000))
 
     def get_status_url(self):
         if self.marked and not settings.NO_OI and not settings.MYCOMICS:
             return urlresolvers.reverse(
                 'replace_cover',
-                kwargs={'cover_id': self.id} )
+                kwargs={'cover_id': self.id})
         else:
             return urlresolvers.reverse(
-                'issue_cover_view', 
-                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE } )
+                'issue_cover_view',
+                kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE})
 
     def get_cover_status(self):
-        import logging
         if self.marked:
             return 4
         return 3
@@ -89,18 +90,22 @@ class Cover(models.Model):
     def __str__(self):
         return '%s %s cover' % (self.issue.series, self.issue.display_number)
 
+
 class CoverIssuePublisherTable(IssuePublisherTable):
     cover = tables.Column(accessor='active_covers',
                           verbose_name='Cover', orderable=False)
 
     class Meta:
         model = Issue
-        fields = ('cover', 'publisher', 'issue', 'publication_date', 'on_sale_date')
+        fields = ('cover', 'publisher', 'issue', 'publication_date',
+                  'on_sale_date')
         attrs = {'th': {'class': "non_visited"}}
 
     def render_cover(self, value):
         from apps.gcd.views.covers import get_image_tag
         cover_tag = ''
         for cover in value:
-            cover_tag += '<a href="%s">%s</a>' % (cover.get_absolute_url(), get_image_tag(cover, '', 1))
+            cover_tag += '<a href="%s">%s</a>' % (cover.get_absolute_url(),
+                                                  get_image_tag(cover,
+                                                                '', 1))
         return mark_safe(cover_tag)
