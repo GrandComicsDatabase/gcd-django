@@ -1341,7 +1341,7 @@ def combine_q(data, *qobjs):
     return None
 
 
-def search_dates(data, formatter=lambda d: d.year,
+def search_dates(data, formatter=lambda d, start_end: d.year,
                  start_name='year_began', end_name='year_ended'):
     """
     Add query terms for date ranges, which may have either or both
@@ -1355,8 +1355,8 @@ def search_dates(data, formatter=lambda d: d.year,
     q_and_only = []
     if data['start_date']:
         begin_after_start = \
-          {'%s__gte' % start_name: formatter(data['start_date'])}
-        end_after_start = {'%s__gte' % end_name: formatter(data['start_date'])}
+          {'%s__gte' % start_name: formatter(data['start_date'], True)}
+        end_after_start = {'%s__gte' % end_name: formatter(data['start_date'], True)}
 
         if data['end_date']:
             q_and_only.append(Q(**begin_after_start) & Q(**end_after_start))
@@ -1365,8 +1365,8 @@ def search_dates(data, formatter=lambda d: d.year,
 
     if data['end_date']:
         begin_before_end = \
-          {'%s__lte' % start_name: formatter(data['end_date'])}
-        end_before_end = {'%s__lte' % end_name: formatter(data['end_date'])}
+          {'%s__lte' % start_name: formatter(data['end_date'], False)}
+        end_before_end = {'%s__lte' % end_name: formatter(data['end_date'], False)}
 
         if data['start_date']:
             q_and_only.append(Q(**begin_before_end) & Q(**end_before_end))
@@ -1591,6 +1591,17 @@ def search_series(data, op):
     return compute_qobj(data, q_and_only, q_objs)
 
 
+def issue_date_formatter(date, start_end):
+    month = date.month
+    if start_end and date.day == 1:
+        day = 0
+        if month == 1:
+            month = 0
+    else:
+        day = date.day
+    return '%04d-%02d-%02d' % (date.year, month, day)
+
+
 def search_issues(data, op, stories_q=None):
     """
     Handle issue fields.
@@ -1600,13 +1611,12 @@ def search_issues(data, op, stories_q=None):
 
     q_and_only = []
     if target in ['issue', 'cover', 'issue_cover', 'feature', 'sequence']:
-        date_formatter = lambda d: '%04d-%02d-%02d' % (d.year, d.month, d.day)
         if data['use_on_sale_date']:
-            q_and_only.extend(search_dates(data, date_formatter,
+            q_and_only.extend(search_dates(data, issue_date_formatter,
                                            '%son_sale_date' % prefix,
                                            '%son_sale_date' % prefix))
         else:
-            q_and_only.extend(search_dates(data, date_formatter,
+            q_and_only.extend(search_dates(data, issue_date_formatter,
                                            '%skey_date' % prefix,
                                            '%skey_date' % prefix))
 

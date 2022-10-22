@@ -366,8 +366,5 @@ class AdvancedSearch(forms.Form):
                                                   'sequence', 'cover']:
                         raise forms.ValidationError(
                           "For issue-level search targets please use full "
-                          "dates. To get everything from a year/month you need"
-                          " to use the last day of the preceding year/month, "
-                          "e.g. 1989-12-31 will find all comics we have "
-                          "recorded with a publication date 1990 and later.")
+                          "dates.")
         return cleaned_data
