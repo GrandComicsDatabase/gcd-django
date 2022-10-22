@@ -7,18 +7,6 @@ from apps.gcd.views import paginate_response
 from apps.projects.forms import IssuesWithCoversForm
 
 
-def creators_sort_name(request):
-    creators = Creator.objects.filter(creator_names__sort_name='',
-                                      creator_names__type__id=1,
-                                      deleted=False)
-
-    vars = {'item_name': 'creator',
-            'plural_suffix': 's',
-            'heading': 'Test'}
-    return paginate_response(request, creators,
-                             'gcd/search/creator_list.html', vars)
-
-
 def issues_with_several_covers(request):
     """
     This project is geared towards moving variant covers into variant issues.
