@@ -596,8 +596,8 @@ def checklist_by_name(request, creator, country=None, language=None,
     prefix = 'story__'
     op = 'icontains'
 
-    q_objs_text = Q(**{'%s%s__%s' % (prefix, 'editing', op): creator})
-    for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
+    q_objs_text = Q()
+    for field in ('script', 'pencils', 'inks', 'colors', 'letters', 'editing'):
         if to_be_migrated:
             q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
                                 '%sdeleted' % (prefix): False})
@@ -615,9 +615,9 @@ def checklist_by_name(request, creator, country=None, language=None,
         elif request.GET['sort'] in ['publisher', '-publisher']:
             issues = issues.annotate(publisher_name=F(
                                      'series__publisher__name'))
-    creator = CreatorNameDetail.objects.filter(name__iexact=creator)
+    creator = Creator.objects.filter(gcd_official_name__iexact=creator)
     if creator and not to_be_migrated:
-        q_objs_credits = Q(**{'%scredits__creator__in' % (prefix): creator,
+        q_objs_credits = Q(**{'%scredits__creator__creator__in' % (prefix): creator,
                               '%stype__id__in' % (prefix): CORE_TYPES})
         items2 = Issue.objects.filter(q_objs_credits).distinct()\
                               .annotate(series_name=F('series__sort_name'))
