@@ -1069,8 +1069,9 @@ def do_advanced_search(request):
                     text_filter = linked_filter
                 else:
                     text_filter = text_filter | linked_filter
+            filter = text_filter
 
-        items = text_filter.order_by(*terms).select_related(
+        items = filter.order_by(*terms).select_related(
           'issue__series__publisher', 'type').distinct()
 
     if data['keywords']:
