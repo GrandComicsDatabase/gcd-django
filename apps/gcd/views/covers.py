@@ -82,13 +82,13 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
         covers = covers.exclude(id__in=exclude_ids)
     if as_list:
         cover_tags = []
-        alt_string = 'Cover for %s' % issue.full_name()
     else:
         tag = ''
 
     for cover in covers:
         if as_list:
             active = cover.revisions.filter(changeset__state__in=states.ACTIVE)
+            alt_string = 'Cover for %s' % cover.issue.full_name()
             cover_tags.append([cover, issue,
                                get_image_tag(cover, alt_string, zoom_level),
                                active.count()])
