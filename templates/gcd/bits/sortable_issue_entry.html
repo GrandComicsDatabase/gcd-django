@@ -1,8 +1,8 @@
 {% load static %}
 {% if value == record.id %}
 <a hx-get="{% url "show_issue_modal" issue_id=value %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
-<img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"></img></a>{{ record.show_series_and_issue_link }}
+<img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img></a>{{ record.show_series_and_issue_link }}
 {% else %}
 <a hx-get="{% url "show_issue_modal" issue_id=value %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
-<img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}"></img></a>{{ record.issue.show_series_and_issue_link }}
+<img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img></a>{{ record.issue.show_series_and_issue_link }}
 {% endif %}
