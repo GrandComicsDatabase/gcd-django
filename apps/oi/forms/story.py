@@ -125,12 +125,13 @@ def get_story_revision_form(revision=None, user=None,
             current_type_not_allowed_id = revision.type.id
             queryset = queryset | StoryType.objects.filter(id=revision.type.id)
     elif not is_comics_publication:
-        sequence_filter = ['comic story', 'photo story', 'cartoon']
+        sequence_filter = ['comic story', 'photo story', 'cartoon',
+                           'cover reprint (on interior page)',
+                           'comics-form advertising']
         if has_about_comics is True:
             sequence_filter.append('about comics')
             if issue.is_indexed == INDEXED['full']:
                 sequence_filter.extend(['cover',
-                                        'cover reprint (on interior page)',
                                         'illustration'])
         queryset = StoryType.objects.filter(name__in=sequence_filter)
         # an added story can have a different type, do not overwrite
