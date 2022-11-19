@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
 import re
 import tempfile
 import os
@@ -131,7 +130,8 @@ def _process_file(request, changeset, is_issue, use_csv=False):
         if is_issue and not lines:
             # check number of fields
             line_length = len(split_line)
-            if line_length not in list(range(MIN_ISSUE_FIELDS, MAX_ISSUE_FIELDS+1)):
+            if line_length not in list(range(MIN_ISSUE_FIELDS,
+                                             MAX_ISSUE_FIELDS+1)):
                 error_text = 'issue line %s has %d fields, it must have at '\
                              'least %d and not more than %d.' \
                   % (split_line, line_length, MIN_ISSUE_FIELDS,
@@ -154,7 +154,7 @@ def _process_file(request, changeset, is_issue, use_csv=False):
             # check number of fields
             line_length = len(split_line)
             if line_length not in list(range(MIN_SEQUENCE_FIELDS,
-                                        MAX_SEQUENCE_FIELDS+1)):
+                                       MAX_SEQUENCE_FIELDS+1)):
                 error_text = 'sequence line %s has %d fields, it must have '\
                              'at least %d and not more than %d.' \
                   % (split_line, line_length, MIN_SEQUENCE_FIELDS,
@@ -255,8 +255,8 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
         else:
             title_inferred = False
         feature = fields[FEATURE].strip()
-        page_count, page_count_uncertain = \
-          _check_page_count(fields[STORY_PAGE_COUNT])
+        page_count, page_count_uncertain = _check_page_count(
+          fields[STORY_PAGE_COUNT])
         script, no_script = _check_for_none(fields[SCRIPT])
         if story_type == StoryType.objects.get(name='cover'):
             if not script:
@@ -365,8 +365,8 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
             # parse the issue line
             issue_fields = lines.pop(0)
             issue_revision.number = issue_fields[NUMBER].strip()
-            issue_revision.volume, issue_revision.no_volume = \
-              _parse_volume(issue_fields[VOLUME].strip())
+            issue_revision.volume, issue_revision.no_volume = _parse_volume(
+              issue_fields[VOLUME].strip())
 
             indicia_publisher_name, issue_revision.indicia_pub_not_printed = \
               _check_for_none(issue_fields[INDICIA_PUBLISHER])
@@ -380,8 +380,8 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
             else:
                 issue_revision.indicia_publisher = indicia_publisher
 
-            brand_name, issue_revision.no_brand = \
-              _check_for_none(issue_fields[BRAND])
+            brand_name, issue_revision.no_brand = _check_for_none(
+              issue_fields[BRAND])
             brand, failure = _find_publisher_object(
               request, changeset, brand_name,
               issue_revision.issue.series.publisher.active_brand_emblems(),
@@ -395,8 +395,8 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
               issue_fields[PUBLICATION_DATE].strip()
             issue_revision.key_date = issue_fields[KEY_DATE].strip()\
                                                             .replace('.', '-')
-            if issue_revision.key_date and not \
-              re.search(KEY_DATE_REGEXP, issue_revision.key_date):
+            if issue_revision.key_date and not re.search(
+              KEY_DATE_REGEXP, issue_revision.key_date):
                 return render_error(
                   request,
                   "key_date '%s' is invalid." % issue_revision.key_date)
@@ -409,8 +409,8 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
               _check_page_count(issue_fields[ISSUE_PAGE_COUNT])
             issue_revision.editing, issue_revision.no_editing = \
               _check_for_none(issue_fields[ISSUE_EDITING])
-            issue_revision.isbn, issue_revision.no_isbn = \
-              _check_for_none(issue_fields[ISBN])
+            issue_revision.isbn, issue_revision.no_isbn = _check_for_none(
+              issue_fields[ISBN])
             issue_revision.barcode, issue_revision.no_barcode = \
               _check_for_none(issue_fields[BARCODE])
             on_sale_date = issue_fields[ON_SALE_DATE].strip()
@@ -583,6 +583,10 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                     export_data.append('None')
             elif field_name == 'title' and sequence.title_inferred:
                 export_data.append('[%s]' % sequence.title)
+            elif field_name == 'feature':
+                export_data.append('%s' % sequence.show_feature_as_text())
+            elif field_name == 'characters':
+                export_data.append('%s' % sequence.show_characters_as_text())
             elif field_name == 'reprint_notes':
                 reprint = ''
                 from_reprints = list(sequence.from_reprints.select_related()

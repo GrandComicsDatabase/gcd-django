@@ -523,6 +523,9 @@ class Story(GcdData):
     def show_characters(self):
         return self._show_characters(self)
 
+    def show_characters_as_text(self):
+        return show_characters(self, url=False)
+
     def _show_feature(cls, story):
         return show_feature(story)
 
