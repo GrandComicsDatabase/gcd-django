@@ -2267,6 +2267,30 @@ def feature_creatorlist(request, feature_id):
     return generic_sortable_list(request, creators, table, template, context)
 
 
+def feature_covers(request, feature_id):
+    feature = get_gcd_object(Feature, feature_id)
+    issues = Issue.objects.filter(story__feature_object=feature,
+                                  story__type__id=6,
+                                  story__credits__deleted=False).distinct()\
+                          .select_related('series__publisher')
+
+    heading = 'Covers with Feature %s' % feature
+
+    context = {
+        'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'item_name': 'cover',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CoverIssuePublisherTable(
+      issues,
+      attrs={'class': 'sortable_listing'},
+      template_name='gcd/bits/sortable_table.html',
+      order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
 def feature_logo(request, feature_logo_id):
     """
     Display the details page for a Feature.
@@ -2491,6 +2515,31 @@ def character_sequences(request, character_id, country=None):
                        template_name='gcd/bits/sortable_table.html',
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
+
+
+def character_covers(request, character_id):
+    character = get_gcd_object(Character, character_id)
+    issues = Issue.objects.filter(
+      story__appearing_characters__character__character=character,
+      story__appearing_characters__deleted=False,
+      story__type__id=6,
+      story__deleted=False).distinct().select_related('series__publisher')
+
+    heading = 'Covers with Character %s' % character
+
+    context = {
+        'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'item_name': 'cover',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CoverIssuePublisherTable(
+      issues,
+      attrs={'class': 'sortable_listing'},
+      template_name='gcd/bits/sortable_table.html',
+      order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
 
 
 def character_relation(request, character_relation_id):
