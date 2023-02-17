@@ -161,11 +161,11 @@ def test_active_base_issues_variant_count():
             mock.patch('apps.gcd.models.series.Count') as count_class_mock:
         count_mock = mock.MagicMock(spec=Count)
         count_class_mock.return_value = count_mock
-        ab_issues.return_value.annotate.return_value = 100
+        ab_issues.return_value.order_by.return_value.annotate.return_value = 100
 
         s = Series()
         assert s.active_base_issues_variant_count() == 100
-        s.active_base_issues.return_value.annotate.assert_called_once_with(
+        s.active_base_issues.return_value.order_by.return_value.annotate.assert_called_once_with(
             variant_count=count_mock)
 
 
