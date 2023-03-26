@@ -24,6 +24,7 @@ from django.template.loader import get_template
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 from django.utils.translation import ugettext as _
@@ -592,6 +593,7 @@ def update_profile(request, user_id=None):
     if set_password is True:
         request.user.set_password(new)
     request.user.save()
+    update_session_auth_hash(request, request.user)
 
     indexer = request.user.indexer
     indexer.notify_on_approve = form.cleaned_data['notify_on_approve']
