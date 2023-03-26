@@ -308,7 +308,7 @@ def test_check_major_change_no_changes():
     }
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def mock_update_all():
     with mock.patch(
             'apps.oi.models.CountStats.objects.update_all_counts') \
@@ -316,7 +316,7 @@ def mock_update_all():
         yield uac_mock
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_other_dummy():
     # Don't set a source- this way we can just fake the country/language stuff.
     # Note that OtherDummy.save must be patched before
@@ -481,7 +481,7 @@ def test_adjust_parent_counts_multi_no_change(patched_other_dummy):
             v.save.assert_called_once_with()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_dummy():
     p = 'apps.oi.models.Revision'
     with mock.patch('%s._copy_fields_to' % p), \
@@ -574,7 +574,7 @@ def test_commit_deleted(patched_dummy):
     data_obj.save.assert_called_once_with()
 
     # stat_counts called twice for deletes, at beginning and end.
-    d.source.stat_counts.has_calls([mock.call(), mock.call()])
+    d.source.stat_counts.assert_has_calls([mock.call(), mock.call()])
     assert d.source.stat_counts.call_count == 2
     d._adjust_stats.assert_called_once_with(changes, stats[0], stats[1])
     d._handle_dependents.assert_called_once_with(changes)
@@ -614,7 +614,7 @@ def test_commit_edited_dont_clear(patched_dummy):
     data_obj.save.assert_called_once_with()
 
     # stat_counts called twice for deletes, at beginning and end.
-    d.source.stat_counts.has_calls([mock.call(), mock.call()])
+    d.source.stat_counts.assert_has_calls([mock.call(), mock.call()])
     assert d.source.stat_counts.call_count == 2
     d._adjust_stats.assert_called_once_with(changes, stats[0], stats[1])
     d._handle_dependents.assert_called_once_with(changes)

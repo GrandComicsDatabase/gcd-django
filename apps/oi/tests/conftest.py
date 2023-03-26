@@ -38,6 +38,7 @@ def django_db_setup(django_db_setup, django_db_blocker):
         CountStats.objects.init_stats()
         CountStats.objects.init_stats(country=any_country())
 
+
 @pytest.fixture
 def any_changeset(any_indexer):
     """

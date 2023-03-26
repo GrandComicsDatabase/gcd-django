@@ -69,6 +69,7 @@ def test_classification():
         'on_sale_date': gf('on_sale_date'),
         'sort_code': gf('sort_code'),
         'is_indexed': gf('is_indexed'),
+        'external_link': gf('external_link'),
     }
 
     assert IssueRevision._get_regular_fields() == regular_fields
@@ -155,7 +156,7 @@ def test_pre_initial_save_no_date():
     assert rev.day_on_sale is None
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def pre_commit_rev():
     with mock.patch('%s._same_series_revisions' % IREV), \
             mock.patch('%s._same_series_open_with_after' % IREV):
@@ -253,7 +254,7 @@ def test_pre_commit_check_after_not_first(pre_commit_rev):
             "the lowest revision_sort_code.") in str(excinfo.value)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def multiple_issue_revs():
     with mock.patch('apps.oi.models.Issue.objects') as obj_mock, \
             mock.patch('%s._same_series_revisions' % IREV) as same_mock, \
@@ -415,7 +416,7 @@ def test_handle_prerequisites_non_move_edit():
         assert not open_mock.called
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def multiple_issue_revs_pre_stats(multiple_issue_revs):
     # While multiple_issue_revs has a few things the pre_stats_measurement
     # tests don't need, those things are harmless, and otherwise the
@@ -505,7 +506,7 @@ def test_handle_prerequisites_exit_infinite_loop(
     rev3.commit_to_display.assert_called_once_with()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patch_for_optional_move():
     with mock.patch('%s.set_first_last_issues' % SERIES), \
             mock.patch('%s.scan_count' % SERIES), \
@@ -532,7 +533,7 @@ def test_post_save_no_series_changed(patch_for_optional_move):
     s.set_first_last_issues.assert_called_once_with()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patch_for_move(patch_for_optional_move):
     patch_for_optional_move.return_value = True
 
@@ -635,7 +636,7 @@ def story_revs():
             mock.MagicMock(spec=StoryRevision)]
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_edit(story_revs):
     with mock.patch(RECENT) as recent_mock, mock.patch(SAVE), \
             mock.patch('%s.storyrevisions' % CSET) as story_mock:

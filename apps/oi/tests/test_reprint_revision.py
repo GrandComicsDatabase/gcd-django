@@ -7,7 +7,7 @@ from apps.gcd.models import Story, Issue, Series
 from apps.oi.models import StoryRevision, ReprintRevision, Changeset
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_for_save():
     def story_uni(self):
         return self.title
@@ -27,7 +27,7 @@ def patched_for_save():
                      issue=Issue(number='9', title='t issue', series=s)))
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_for_commit(patched_for_save):
     # We don't actually need save patched, but it's harmless and easy.
     save_mock, origin, target = patched_for_save
