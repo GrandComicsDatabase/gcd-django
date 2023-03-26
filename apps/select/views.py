@@ -446,7 +446,7 @@ class CreatorName4RelationAutocomplete(LoginRequiredMixin,
                                        autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = CreatorNameDetail.objects.filter(deleted=False,
-                                              type__id__in=[5, 8, 12])
+                                              type__id__in=[5, 8, 12, 13])
 
         creator_id = self.forwarded.get('to_creator', None)
 

@@ -20,6 +20,7 @@ NAME_TYPES = {
     'house': 5,
     'studio': 8,
     'ghost': 12,
+    'joint': 13,
 }
 
 
@@ -142,6 +143,11 @@ class CreatorNameDetail(GcdData):
                     credit.credit_name += ', house name'
                 else:
                     credit.credit_name = 'house name'
+            elif self.type and self.type_id == NAME_TYPES['joint']:
+                if credit.credit_name:
+                    credit.credit_name += ', joint name'
+                else:
+                    credit.credit_name = 'joint name'
         else:
             name = self.creator.gcd_official_name
             if (credit.is_credited and not credit.credited_as) \
@@ -160,12 +166,18 @@ class CreatorNameDetail(GcdData):
                                   .active_names().get(is_official_name=True)
                 else:
                     as_name = self
+            elif self.type and self.type_id == NAME_TYPES['joint']:
+                if self.creator_relation.exists():
+                    as_name = self.creator_relation.get().to_creator\
+                                  .active_names().get(is_official_name=True)
+                else:
+                    as_name = self
             elif compare or search:
                 # for compare and search use uncredited non-official-name
                 as_name = self
             if self.type and self.type_id == NAME_TYPES['studio'] \
                and self.creator_relation.count():
-                co_name = self.creator_relation.get().to_creator
+                co_name = self.creator_relation.filter(deleted=False).get().to_creator
 
         if credit.uncertain:
             name += ' ?'
@@ -215,6 +227,9 @@ class CreatorNameDetail(GcdData):
             elif self.type_id == NAME_TYPES['house']:
                 attribute = 'under house name '
                 display_as_name = as_name.name
+            elif self.type_id == NAME_TYPES['joint']:
+                attribute = 'under joint name '
+                display_as_name = as_name.name
             elif credit.is_credited and not credit.credited_as:
                 attribute = 'credited as '
                 display_as_name = as_name.name
@@ -225,7 +240,8 @@ class CreatorNameDetail(GcdData):
             else:
                 attribute = 'as '
                 display_as_name = as_name.name
-                if compare and self.type_id != NAME_TYPES['studio']:
+                if compare and self.type_id not in [NAME_TYPES['joint'],
+                                                    NAME_TYPES['studio']]:
                     compare_info = '<br> Note: Non-official name '\
                                     'selected without credited-flag.'
             if url:

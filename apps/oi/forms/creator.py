@@ -663,7 +663,7 @@ class CreatorRelationRevisionForm(forms.ModelForm):
     )
 
     creator_name = forms.ModelMultipleChoiceField(
-      queryset=CreatorNameDetail.objects.filter(type__id__in=[5, 8, 12],
+      queryset=CreatorNameDetail.objects.filter(type__id__in=[5, 8, 12, 13],
                                                 deleted=False),
       widget=autocomplete.ModelSelect2Multiple(
         url='creator_name_4_relation_autocomplete',
