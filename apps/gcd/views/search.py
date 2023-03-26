@@ -1133,11 +1133,12 @@ def used_search(search_values):
         method = 'Contains'
     del search_values['method']
 
-    if search_values['logic'] == 'True':
+    if 'logic' in search_values and search_values['logic'] == 'True':
         logic = 'OR credits, AND other fields'
     else:
         logic = 'AND all fields'
-    del search_values['logic']
+    if 'logic' in search_values:
+        del search_values['logic']
 
     used_search_terms = []
     if 'type' in search_values:
