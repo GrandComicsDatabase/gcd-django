@@ -89,7 +89,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
             # Current cover is the one from this revision, show it.
             return get_image_tag(revision.cover, esc(alt_text), zoom_level)
         else:
-            if request and request.user.has_perm('indexer.can_approve') \
+            if request and request.user.has_perm('indexer.can_vote') \
               and not settings.BETA:
                 # The cover was replaced by now, show original uploaded file,
                 # scaled in the browser.
@@ -115,7 +115,7 @@ def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
             elif settings.BETA:
                 return 'no old covers on BETA'
             else:
-                return 'only editors can view covers which were replaced'
+                return 'only members can view covers that were replaced'
     elif revision.deleted:
         return get_image_tag(revision.cover, esc(alt_text), zoom_level)
     else:
