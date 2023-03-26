@@ -440,7 +440,10 @@ def get_country_flag(country):
 
 @register.filter
 def get_country_flag_by_name(country_name):
-    return(get_country_flag(Country.objects.get(name=country_name)))
+    try:
+        return(get_country_flag(Country.objects.get(name=country_name)))
+    except Country.DoesNotExist:
+        return country_name
 
 
 @register.filter
@@ -670,7 +673,9 @@ def follow_reprint_link(reprint, direction, level=0):
         if type(reprint.origin) == Story:
             further_reprints = reprint.origin.from_all_reprints \
               .select_related('origin_issue__series__publisher')\
-              .order_by('origin_issue__key_date')
+              .order_by('origin_issue__key_date',
+                        'origin_issue__series',
+                        'origin_issue__sort_code')
         else:
             further_reprints = list(reprint.origin.from_reprints.all())
         reprint_note += generate_reprint_notes(from_reprints=further_reprints,
@@ -684,7 +689,9 @@ def follow_reprint_link(reprint, direction, level=0):
         if type(reprint.target) == Story:
             further_reprints = reprint.target.to_all_reprints\
               .select_related('target_issue__series__publisher')\
-              .order_by('target_issue__key_date')
+              .order_by('target_issue__key_date',
+                        'target_issue__series',
+                        'target_issue__sort_code')
         else:
             further_reprints = list(reprint.target.to_reprints.all())
         reprint_note += generate_reprint_notes(to_reprints=further_reprints,
@@ -706,7 +713,9 @@ def show_reprints(story):
     from_reprints = story.from_all_reprints \
                          .select_related('origin_issue__series__publisher',
                                          'origin')\
-                         .order_by('origin_issue__key_date')
+                         .order_by('origin_issue__key_date',
+                                   'origin_issue__series',
+                                   'origin_issue__sort_code')
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
     if story.type_id not in [STORY_TYPES['preview'],
@@ -717,7 +726,9 @@ def show_reprints(story):
     to_reprints = story.to_all_reprints\
                        .select_related('target_issue__series__publisher',
                                        'target')\
-                       .order_by('target_issue__key_date')
+                       .order_by('target_issue__key_date',
+                                 'target_issue__series',
+                                 'target_issue__sort_code')
     reprint += generate_reprint_notes(to_reprints=to_reprints,
                                       no_promo=no_promo)
 

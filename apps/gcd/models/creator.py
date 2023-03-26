@@ -240,8 +240,7 @@ class CreatorNameDetail(GcdData):
             else:
                 attribute = 'as '
                 display_as_name = as_name.name
-                if compare and self.type_id not in [NAME_TYPES['joint'],
-                                                    NAME_TYPES['studio']]:
+                if compare and self.type_id not in [NAME_TYPES['studio'], ]:
                     compare_info = '<br> Note: Non-official name '\
                                     'selected without credited-flag.'
             if url:
