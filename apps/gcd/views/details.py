@@ -66,6 +66,7 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, CoverRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset,\
                            SeriesBondRevision, CreatorRevision, CTYPES
+from apps.select.views import SeriesFilter, SequenceFilter, filter_issues
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -131,10 +132,7 @@ def generic_sortable_list(request, items, table, template, context):
     paginator = ResponsePaginator(items, per_page=100, vars=context)
     page_number = paginator.paginate(request).number
 
-    if 'sort' in request.GET:
-        extra_string = 'sort=%s' % (request.GET['sort'])
-    else:
-        extra_string = ''
+    extra_string = request.GET.urlencode()
 
     RequestConfig(request, paginate={"paginator_class": LazyPaginator,
                                      'per_page': 100,
@@ -280,11 +278,32 @@ def creator_sequences(request, creator_id, series_id=None,
     else:
         heading = 'Sequences for Creator %s' % (creator)
 
+    if not series_id:
+        data = set(stories.values_list('issue__series__country',
+                                       'issue__series__language',
+                                       'issue__series__publisher'))
+        countries = []
+        languages = []
+        publishers = []
+        for i in data:
+            countries.append(i[0])
+            languages.append(i[1])
+            publishers.append(i[2])
+        filter = SequenceFilter(request.GET,
+                                queryset=stories,
+                                countries=countries,
+                                languages=languages,
+                                publishers=publishers)
+        stories = filter.qs
+    else:
+        filter = None
+
     context = {
         'result_disclaimer': MIGRATE_DISCLAIMER,
         'item_name': 'sequence',
         'plural_suffix': 's',
-        'heading': heading
+        'heading': heading,
+        'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = StoryTable(stories, attrs={'class': 'sortable_listing'},
@@ -463,6 +482,20 @@ def creator_series(request, creator_id, country=None, language=None):
     letters = Count('issue',
                     filter=Q(issue__story__credits__credit_type__id=5),
                     distinct=True)
+    data = set(series.values_list('country', 'language', 'publisher'))
+    countries = []
+    languages = []
+    publishers = []
+    for i in data:
+        countries.append(i[0])
+        languages.append(i[1])
+        publishers.append(i[2])
+    filter = SeriesFilter(request.GET,
+                          queryset=series,
+                          countries=countries,
+                          languages=languages,
+                          publishers=publishers)
+    series = filter.qs
     series = series.annotate(
       script=script,
       pencils=pencils,
@@ -474,7 +507,8 @@ def creator_series(request, creator_id, country=None, language=None):
         'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
         'item_name': 'series',
         'plural_suffix': '',
-        'heading': 'Series for Creator %s' % (creator)
+        'heading': 'Series for Creator %s' % (creator),
+        'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = CreatorSeriesTable(series, attrs={'class': 'sortable_listing'},
@@ -492,6 +526,7 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     """
     creator = get_gcd_object(Creator, creator_id)
     creator_names = list(_get_creator_names_for_checklist(creator))
+    filter = None
 
     if edits:
         issues = Issue.objects.filter(credits__creator__in=creator_names,
@@ -529,14 +564,19 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                                                            feature)
     elif edits:
         heading = 'Issue Edit List for Creator %s' % (creator)
+        filter = filter_issues(request, issues)
+        issues = filter.qs
     else:
         heading = 'Issue Checklist for Creator %s' % (creator)
+        filter = filter_issues(request, issues)
+        issues = filter.qs
 
     context = {
         'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': heading
+        'heading': heading,
+        'filter': filter
     }
     if edits:
         context['result_disclaimer'] = MIGRATE_DISCLAIMER
@@ -569,12 +609,15 @@ def cover_checklist_by_id(request, creator_id, series_id=None,
                                                            series)
     else:
         heading = 'Cover Checklist for Creator %s' % (creator)
+        filter = filter_issues(request, issues)
+        issues = filter.qs
 
     context = {
         'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
         'item_name': 'cover',
         'plural_suffix': 's',
-        'heading': heading
+        'heading': heading,
+        'filter': filter,
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = CoverIssuePublisherTable(
@@ -641,6 +684,7 @@ def checklist_by_name(request, creator, country=None, language=None,
             items2 = items2.filter(series__language=language)
     if creator and not to_be_migrated:
         issues = issues.union(items2)
+
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
                                 template_name='gcd/bits/sortable_table.html',

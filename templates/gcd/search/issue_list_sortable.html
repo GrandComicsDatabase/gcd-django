@@ -29,6 +29,12 @@
   <p>
     {{ result_disclaimer }}
   </p>
+  {% if filter %}
+    <form method="get">
+    {{ filter.form }}
+    <input type="submit" value='filter results'/>
+    </form>
+  {% endif %}
 {% render_table table %}
 
 <div class="right">

@@ -12,12 +12,15 @@ from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.html import format_html
 
+from django_filters import FilterSet, ModelChoiceFilter
+
 from dal import autocomplete
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
                             Character, CharacterNameDetail, Group, STORY_TYPES
+from apps.stddata.models import Country, Language
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
 from apps.gcd.views import paginate_response
@@ -628,3 +631,137 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
         qs = _filter_and_sort(qs, self.q)
 
         return qs
+
+
+##############################################################################
+# filtering of objects in lists
+##############################################################################
+
+class SeriesFilter(FilterSet):
+    country = ModelChoiceFilter(queryset=Country.objects.all())
+    language =ModelChoiceFilter(queryset=Language.objects.all())
+    publisher = ModelChoiceFilter(queryset=Publisher.objects.all())
+    class Meta:
+        model = Series
+        fields = ['country', 'language', 'publisher']
+
+    def __init__(self, *args, **kwargs):
+        if 'countries' in kwargs:
+            countries = kwargs.pop('countries')
+        else:
+            countries = None
+        if 'languages' in kwargs:
+            languages = kwargs.pop('languages')
+        else:
+            languages = None
+        if 'publishers' in kwargs:
+            publishers = kwargs.pop('publishers')
+        else:
+            publishers = None
+        super(SeriesFilter, self).__init__(*args, **kwargs)
+        if countries:
+            qs = Country.objects.filter(id__in=countries)
+            self.filters['country'].queryset = qs
+        if languages:
+            qs = Language.objects.filter(id__in=languages)
+            self.filters['language'].queryset = qs
+        if publishers:
+            qs = Publisher.objects.filter(id__in=publishers)
+            self.filters['publisher'].queryset = qs
+
+
+class IssueFilter(FilterSet):
+    country = ModelChoiceFilter(field_name='series__country',
+                                label='Country',
+                                queryset=Country.objects.all())
+    language = ModelChoiceFilter(field_name='series__language',
+                                 label='Language',
+                                 queryset=Language.objects.all())
+    publisher = ModelChoiceFilter(field_name='series__publisher',
+                                  label='Publisher',
+                                  queryset=Publisher.objects.all())
+    class Meta:
+        model = Issue
+        fields = ['country', 'language', 'publisher']
+
+    def __init__(self, *args, **kwargs):
+        if 'countries' in kwargs:
+            countries = kwargs.pop('countries')
+        else:
+            countries = None
+        if 'languages' in kwargs:
+            languages = kwargs.pop('languages')
+        else:
+            languages = None
+        if 'publishers' in kwargs:
+            publishers = kwargs.pop('publishers')
+        else:
+            publishers = None
+        super(IssueFilter, self).__init__(*args, **kwargs)
+        if countries:
+            qs = Country.objects.filter(id__in=countries)
+            self.filters['country'].queryset = qs
+        if languages:
+            qs = Language.objects.filter(id__in=languages)
+            self.filters['language'].queryset = qs
+        if publishers:
+            qs = Publisher.objects.filter(id__in=publishers)
+            self.filters['publisher'].queryset = qs
+
+
+class SequenceFilter(FilterSet):
+    country = ModelChoiceFilter(field_name='issue__series__country',
+                                label='Country',
+                                queryset=Country.objects.all())
+    language = ModelChoiceFilter(field_name='issue__series__language',
+                                 label='Language',
+                                 queryset=Language.objects.all())
+    publisher = ModelChoiceFilter(field_name='issue__series__publisher',
+                                  label='Publisher',
+                                  queryset=Publisher.objects.all())
+    class Meta:
+        model = Issue
+        fields = ['country', 'language', 'publisher']
+
+    def __init__(self, *args, **kwargs):
+        if 'countries' in kwargs:
+            countries = kwargs.pop('countries')
+        else:
+            countries = None
+        if 'languages' in kwargs:
+            languages = kwargs.pop('languages')
+        else:
+            languages = None
+        if 'publishers' in kwargs:
+            publishers = kwargs.pop('publishers')
+        else:
+            publishers = None
+        super(SequenceFilter, self).__init__(*args, **kwargs)
+        if countries:
+            qs = Country.objects.filter(id__in=countries)
+            self.filters['country'].queryset = qs
+        if languages:
+            qs = Language.objects.filter(id__in=languages)
+            self.filters['language'].queryset = qs
+        if publishers:
+            qs = Publisher.objects.filter(id__in=publishers)
+            self.filters['publisher'].queryset = qs
+
+
+def filter_issues(request, issues):
+    data = set(issues.values_list('series__country',
+                                  'series__language',
+                                  'series__publisher'))
+    countries = []
+    languages = []
+    publishers = []
+    for i in data:
+        countries.append(i[0])
+        languages.append(i[1])
+        publishers.append(i[2])
+    filter = IssueFilter(request.GET,
+                         queryset=issues,
+                         countries=countries,
+                         languages=languages,
+                         publishers=publishers)
+    return filter
