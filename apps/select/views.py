@@ -414,12 +414,20 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
 
 def _filter_and_sort(qs, query, field='name'):
     if query:
-        qs = qs.filter(Q(**{'%s__icontains' % field: query}))
-        qs_match = qs.filter(Q(**{'%s' % field: query}))
-        if qs_match:
-            qs = qs_match.union(qs)
+        qs_contains = qs.filter(Q(**{'%s__icontains' % field: query}))
+        qs_return = None
+        if query.isdigit():
+            qs_match_id = qs.filter(Q(**{'id': query}))
+            if qs_match_id:
+                qs_return = qs_match_id.union(qs_contains)
+        if not qs_return:
+            qs_match = qs.filter(Q(**{'%s' % field: query}))
+            if qs_match:
+                qs_return = qs_match.union(qs_contains)
+            else:
+                qs_return = qs_contains
+        return qs_return
     return qs
-
 
 class CreatorAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
