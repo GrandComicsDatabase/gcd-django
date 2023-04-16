@@ -485,9 +485,11 @@ class SeriesTable(tables.Table):
     name = NameColumn(verbose_name='Series')
     year = tables.Column(accessor='year_began', verbose_name='Year')
     issue_count = tables.Column(attrs={'td': {'style': "text-align: right"}},
-                                verbose_name='Issues')
+                                verbose_name='Issues',
+                                initial_sort_descending=True)
     covers = CoversColumn(accessor='scan_count',
-                          attrs={'td': {'style': "text-align: right"}})
+                          attrs={'td': {'style': "text-align: right"}},
+                          initial_sort_descending=True)
     published = PublishedColumn(accessor='year_began',
                                 attrs={'td': {'style': "text-align: right"}},
                                 orderable=False,
@@ -554,7 +556,8 @@ class SeriesPublisherTable(SeriesTable):
 
 class CreatorSeriesTable(SeriesTable):
     credits_count = tables.Column(accessor='issue_credits_count',
-                                  verbose_name='Issues')
+                                  verbose_name='Issues',
+                                  initial_sort_descending=True)
     covers = None
     published = None
     first_credit = tables.Column(verbose_name='First Credit')
