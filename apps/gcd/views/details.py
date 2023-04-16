@@ -684,6 +684,11 @@ def checklist_by_name(request, creator, country=None, language=None,
             items2 = items2.filter(series__language=language)
     if creator and not to_be_migrated:
         issues = issues.union(items2)
+        filter = None
+    else:
+        filter = filter_issues(request, issues)
+        issues = filter.qs
+
 
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
@@ -691,6 +696,9 @@ def checklist_by_name(request, creator, country=None, language=None,
                                 order_by=('publication_date'))
     if not to_be_migrated:
         context['result_disclaimer'] = ISSUE_CHECKLIST_DISCLAIMER
+    else:
+        context['filter'] = filter
+
     return generic_sortable_list(request, issues, table, template, context)
 
 
