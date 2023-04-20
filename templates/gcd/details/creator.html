@@ -51,11 +51,6 @@
   {% if creator.notes %}
             <p><strong>Notes:</strong> {{ creator.notes|urlizetrunc:75|linebreaksbr }}</p>
   {% endif %}
-  {% if creator.external_link.count %}
-  {% for external_link in creator.external_link.all %}
-    <strong>Link:</strong> {{ external_link.link|urlize }}
-  {% endfor %}
-{% endif %}
             <p>
           <ul style="columns: 2;">
             <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue Checklist (via credit search for name "{{ creator.gcd_official_name }}")</a></li>
@@ -72,6 +67,11 @@
   {% if creator.whos_who %}
             <li><a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a></li>
   {% endif %}</p>
+  {% if creator.external_link.count %}
+    {% for external_link in creator.external_link.all %}
+    <li><a href="{{ external_link.link }}">{{ external_link.site }}</a></li>
+    {% endfor %}
+  {% endif %}
           </ul>
           </div> <!-- table-container -->
   <!-- TODO Bio Sources -->
