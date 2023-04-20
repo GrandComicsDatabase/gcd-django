@@ -66,6 +66,7 @@ class ExternalLink(GcdLink):
         db_table = 'gcd_external_link'
         app_label = 'gcd'
         verbose_name_plural = 'External Links'
+        ordering = ('site__site',)
 
     site = models.ForeignKey(ExternalSite, on_delete=models.CASCADE)
     link = models.URLField(max_length=2000)
