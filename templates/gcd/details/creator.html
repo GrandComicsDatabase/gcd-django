@@ -66,13 +66,13 @@
 
   {% if creator.whos_who %}
             <li><a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a></li>
-  {% endif %}</p>
+  {% endif %}
   {% if creator.external_link.count %}
     {% for external_link in creator.external_link.all %}
     <li><a href="{{ external_link.link }}">{{ external_link.site }}</a></li>
     {% endfor %}
   {% endif %}
-          </ul>
+          </ul></p>
           </div> <!-- table-container -->
   <!-- TODO Bio Sources -->
   {% if creator.bio_source.all %}
