@@ -16,8 +16,9 @@ GCD :: Brand Emblem :: {{ brand.name }}
       href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/listing.css" %}"/>
-<script type="text/javascript"
-      src="{% static "js/htmx.min.js" %}"></script>
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}

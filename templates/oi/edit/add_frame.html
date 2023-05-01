@@ -16,8 +16,6 @@ Adding {{ object_name }}
       {% include "oi/bits/jquery.html" %}
       {{ credits_formset.media }}
       {{ form.media }}
-<script type="text/javascript"
-      src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 {% block css_raw %}
 {% comment %} this css doesn't like compressing {% endcomment %}
@@ -25,6 +23,7 @@ Adding {{ object_name }}
 <link rel="stylesheet" type="text/css"
       href="{% static "jquery/css/msdropdown/dd.css" %}"/>
 {% endif %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}

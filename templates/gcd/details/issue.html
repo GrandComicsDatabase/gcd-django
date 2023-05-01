@@ -17,8 +17,9 @@
         href="{% static "css/gcd/default/issue.css" %}"/>
   <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default/single_story.css" %}"/>
-  <script type="text/javascript"
-        src="{% static "js/htmx.min.js" %}"></script>
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}

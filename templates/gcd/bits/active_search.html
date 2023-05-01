@@ -5,7 +5,9 @@
       href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/listing.css" %}"/>
-    <script src="https://unpkg.com/htmx.org@1.6.0" integrity="sha384-G4dtlRlMBrk5fEiRXDsLjriPo8Qk5ZeHVVxS8KhX6D7I9XXJlNqbdvRlp9/glk5D" crossorigin="anonymous"></script>
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 
@@ -22,16 +24,16 @@
   </ul>
 </div>
 <h4>  Search: &nbsp;
-<input class="form-control" type="text" 
-       name="search" placeholder="Begin Typing To Search..." 
-       hx-post="/{{ object_type }}/search/" 
+<input class="form-control" type="text"
+       name="search" placeholder="Begin Typing To Search..."
+       hx-post="/{{ object_type }}/search/"
        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-       hx-trigger="keyup changed delay:500ms" 
-       hx-target="#search-results" 
+       hx-trigger="keyup changed delay:500ms"
+       hx-target="#search-results"
        hx-indicator=".htmx-indicator">
-  <span class="htmx-indicator"> 
+  <span class="htmx-indicator">
     <img src="{% static "img/bars.svg" %}"> Searching...
-   </span> 
+   </span>
 </h4>
 <table class="table">
     <tbody id="search-results">
