@@ -2,7 +2,7 @@
 {% load editing %}
 
 {% if field.is_hidden %}
-    {{ field }}
+  {{ field }}
 {% else %}
 {% comment %}        {% if form_show_errors %}
             {% for error in field.errors %}
@@ -12,17 +12,19 @@
             {% endfor %}
         {% endif %}
 {% endcomment %}
-    <tr><th style="width:150px">
-            {% if field.label %}
-            <label for="{{ field.id_for_label }}" {% if field.field.required %}class="requiredField"{% endif %}>
-                {{ field.label|safe }}{% if request.user.indexer.show_wiki_links %}{{ doc_links|show_doc_link:field.name }}{% endif %}:
-            </label>
-        {% endif %}
-        </th>
-            <td>{{ field.errors }}{% crispy_field field %}
-        {% if field.help_text %}
-          {% if field.field.widget.input_type != 'checkbox' %}<br/>{% endif %}
-            <span class="helptext">{{ field.help_text|safe }}</span>
-        {% endif %}
-            </td></tr>
+<tr>
+  <th style="width:150px">
+  {% if field.label %}
+    <label for="{{ field.id_for_label }}" {% if field.field.required %}class="requiredField"{% endif %}>
+    {{ field.label|safe }}{% if request.user.indexer.show_wiki_links %}{{ doc_links|show_doc_link:field.name }}{% endif %}{% if field.field.label_suffix != None %}{{ field.field.label_suffix }}{% else %}{{ field.form.label_suffix }}{% endif %}
+    </label>
+  {% endif %}
+  </th>
+  <td>{{ field.errors }}{% crispy_field field %}
+  {% if field.help_text %}
+    {% if field.field.widget.input_type != 'checkbox' %}<br/>{% endif %}
+    <span class="helptext">{{ field.help_text|safe }}</span>
+  {% endif %}
+  </td>
+</tr>
 {% endif %}

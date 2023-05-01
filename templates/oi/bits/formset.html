@@ -1,31 +1,74 @@
 {% load crispy_forms_tags %}
 {% load static %}
 {{ formset.management_form|crispy }}
+{% comment %} // is we use crispy for the individual forms as well use:
+{% crispy formset.management_form formset.form.formset_helper  %}
+{% endcomment %}
 {{ formset.non_form_errors }}
-    {% for form in formset.forms %}
-            <tr class="{% cycle 'row1' 'row2' %} formset_row-{{ formset.prefix }}">
-                <td colspan="2"><table class="editing">
-                {{ form.non_field_errors }} 
-                {% for field in form.visible_fields %}
-                    {# Include the hidden fields in the form #}
-                    {% if forloop.first %}
-                        {% for hidden in form.hidden_fields %}
-                            {{ hidden }}
-                        {% endfor %}
-                    {% endif %}
-                    {% include "oi/bits/uni_field.html" %}
-                {% endfor %}
-                </table></td>
-            </tr>
-    {% endfor %}
+{% for form in formset.forms %}
+<tr class="{% cycle 'row1' 'row2' %} formset_row-{{ formset.prefix }}">
+  <td colspan="2">
+    <table class="editing">
+        {% comment %}
+        If we want to use crispy for the forms of the formset, use:
+        {% crispy form form.helper %}
+        But the interplay with the jquery-based dynamic formsets has to be investigated further.
+        crispy-forms are setup for the story screen, but not the issue screen, or others.
+        {% endcomment %}
+  {{ form.non_field_errors }}
+  {% for field in form.visible_fields %}
+    {# include the hidden fields in the form #}
+    {% if forloop.first %}
+      {% for hidden in form.hidden_fields %}
+      {{ hidden }}
+      {% endfor %}
+    {% endif %}
+    {% include "oi/bits/uni_field.html" %}
+  {% endfor %}
+    </table>
+  </td>
+</tr>
+{% endfor %}
 
 <script src="{% static 'js/jquery.formset.js' %}"></script>
+
 <script type="text/javascript">
     $('.formset_row-{{ formset.prefix }}').formset({
         addText: 'add another',
         deleteText: 'remove above',
         prefix: '{{ formset.prefix }}',
 	added: function (row) {
-    row.find('input[type=checkbox]').change()},
+    row.find('input[type=checkbox]').change();htmx.process(document.body);},
     });
+</script>
+
+<script type="text/javascript">
+function getSelectValue(event) {
+    const $next_select = $(event.target.activeElement).parent().parent().parent().find('select');
+    {% comment %} // if we use the button with HTML in Layout between Creator and CreditType, use instead
+    const $next_select = $(event.target.activeElement).next().find('select');
+    {% endcomment %}
+    if ($next_select.val())
+        return $next_select.val();
+    else
+        return -1;
+  }
+
+function setSelectValue(event) {
+    const $selected = $(event.target).parent().parent().parent().find('select');
+    {% comment %}
+    // if we use the button with HTML in Layout between Creator and CreditType, use instead
+    const $selected = $(event.target).next().find('select').first();
+    {% endcomment %}
+    const jsonData = JSON.parse(event.detail.xhr.response);
+    if (jsonData[0].creator_id != -1){
+        // Create a new option element for the returned value
+        var $newOption = $('<option>', {value: jsonData[0].creator_id,
+                                        text: jsonData[0].creator_name});
+        // Append the new option element to the Select2 element
+        $selected.append($newOption);
+        $selected.val(jsonData[0].creator_id);
+        $selected.trigger('change');
+    }
+  }
 </script>

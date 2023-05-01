@@ -7,6 +7,7 @@ from crispy_forms.utils import render_field
 # from:
 # ###### https://stackoverflow.com/questions/15157262/django-crispy-forms-nesting-a-formset-within-a-form/22053952#22053952
 
+# TODO remove form_style with crispy_forms 2.0
 
 class BaseField(Field):
     def render(self, form, form_style, context, template_pack=None):

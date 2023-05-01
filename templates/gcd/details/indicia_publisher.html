@@ -15,9 +15,8 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
       href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/listing.css" %}"/>
-{% endblock %}
-{% block css_raw %}
-<script src="https://unpkg.com/htmx.org@1.6.0" integrity="sha384-G4dtlRlMBrk5fEiRXDsLjriPo8Qk5ZeHVVxS8KhX6D7I9XXJlNqbdvRlp9/glk5D" crossorigin="anonymous"></script>
+<script type="text/javascript"
+      src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}

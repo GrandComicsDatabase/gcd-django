@@ -208,8 +208,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
                   'is_sourced', 'sourced_by', 'credit_name']
         help_texts = {
             'credit_type':
-                'Selecting multi-credit entries such as <i>pencil and inks</i>,'
-                ' or <i>pencils, inks, and colors</i>, will after saving '
+                'Selecting multi-credit entries such as <i>pencil and inks</i>'
+                ', or <i>pencils, inks, and colors</i>, will after saving '
                 'create credit entries for the different credit types. '
                 'Selecting <i>painting</i> will add also a credit '
                 'description.',
@@ -249,9 +249,22 @@ class StoryCreditRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(StoryCreditRevisionForm, self).__init__(*args, **kwargs)
+        # If we want to use the helper, need to change formset.html to
+        # use crispy. Need to investigate the interplay with dynamic
+        # formset if one does more than simple layout changes in the helper.
+        # For example, 'add another' clears entries in the form, so one
+        # would need IDs in it ?!
+        # The helper is currently not used !
         self.helper = FormHelper()
-        self.helper.form_tag = True
-        self.helper.layout = Layout(*(f for f in self.fields))
+        self.helper.form_tag = False
+        # self.helper.disable_csrf = True
+        self.formset_helper = StoryFormSetHelper()
+        fields = list(self.fields)
+        fields.append('id')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields]
+        self.helper.layout = Layout(*(f for f in field_list))
         if self.instance.id:
             self.fields['credit_type'].empty_label = None
             self.fields['credit_type'].help_text = ''
@@ -263,7 +276,11 @@ class StoryCreditRevisionForm(forms.ModelForm):
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
-                'ghost work.'
+                'ghost work.',
+      label='<button hx-get="/select/creator/by_detail/" '
+            'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
+            'hx-on="htmx:afterRequest: setSelectValue(event)" '
+            'hx-swap="none">To Official</button> Creator'
     )
 
     signature = forms.ModelChoiceField(
@@ -299,6 +316,13 @@ class StoryCreditRevisionForm(forms.ModelForm):
             cd['signature'] = None
 
 
+class StoryFormSetHelper(FormHelper):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.form_tag = False
+        self.disable_csrf = True
+
+
 StoryRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryCreditRevision, form=StoryCreditRevisionForm,
     can_delete=True, extra=1)
@@ -324,9 +348,18 @@ class StoryCharacterRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(StoryCharacterRevisionForm, self).__init__(*args, **kwargs)
+        # The helper is currently not used !
+        # See comments above for the StoryCreditRevisionForm
         self.helper = FormHelper()
-        self.helper.form_tag = True
-        self.helper.layout = Layout(*(f for f in self.fields))
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        self.formset_helper = StoryFormSetHelper()
+        fields = list(self.fields)
+        fields.append('id')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields]
+        self.helper.layout = Layout(*(f for f in field_list))
         instance = kwargs.get('instance', None)
         if instance:
             if instance.role or instance.group.exists() or \
@@ -366,6 +399,7 @@ StoryCharacterRevisionFormSet = inlineformset_factory(
     can_delete=True, extra=1)
 
 
+# check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
     def render(self, form, form_style, context, renderer=None,
                template_pack=None):
@@ -394,6 +428,7 @@ class StoryRevisionForm(forms.ModelForm):
         fields.insert(fields.index('characters'), 'appearing_characters')
         fields.insert(fields.index('characters'), 'group')
         fields.insert(fields.index('group')+1, 'group_members')
+        fields.insert(fields.index('characters'), 'one_character_help')
         widgets = {
             'feature': forms.TextInput(attrs={'class': 'wide'}),
         }
@@ -418,6 +453,8 @@ class StoryRevisionForm(forms.ModelForm):
         self.helper.label_class = 'col-md-3 create-label'
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        self.fields['characters'].label = 'd) Characters'
         fields = list(self.fields)
         credits_start = fields.index('creator_help')
         field_list = [BaseField(Field(field,
@@ -434,12 +471,12 @@ class StoryRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credits_start:
-                                               characters_start-4]])
+                                               characters_start-5]])
         field_list.append(HTML('<tr><td><hr>&nbsp;<strong>Characters:</strong>'
                                '</td><th><hr></th></tr>'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start-4:
+                           for field in fields[characters_start-5:
                                                characters_start]])
         field_list.append(Formset('characters_formset'))
         characters_end = len(field_list) + 1
@@ -560,6 +597,12 @@ class StoryRevisionForm(forms.ModelForm):
                   ' b) will appear in section c) after a save.',
         label='')
 
+    one_character_help = forms.CharField(
+        widget=HiddenInputWithHelp,
+        required=False,
+        label_suffix='',
+        label='c)')
+
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,
                              help_text='')
@@ -631,6 +674,7 @@ class StoryRevisionForm(forms.ModelForm):
         attrs={'data-html': True, 'style': 'width: 60em'},
         forward=['language_code']),
       help_text='Select a group and enter its characters.',
+      label='b) Group',
       required=False,
     )
 
@@ -652,6 +696,7 @@ class StoryRevisionForm(forms.ModelForm):
         forward=['language_code', ]),
       help_text='Select one or more appearing characters without additional '
                 'details.',
+      label='a) Appearing characters',
       required=False,
     )
 

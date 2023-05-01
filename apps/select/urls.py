@@ -20,6 +20,12 @@ urlpatterns = [
       select_views.process_multiple_selects, name='process_multiple_selects'),
 
     url(
+        r'^select/creator/by_detail/$',
+        select_views.creator_for_detail,
+        name='select_creator_for_detail',
+    ),
+
+    url(
         r'^autocomplete/creator/$',
         select_views.CreatorAutocomplete.as_view(),
         name='creator_autocomplete',
@@ -69,7 +75,7 @@ urlpatterns = [
         select_views.IndiciaPrinterAutocomplete.as_view(),
         name='indicia_printer_autocomplete',
     ),
-        url(
+    url(
         r'^autocomplete/school/$',
         select_views.SchoolAutocomplete.as_view(),
         name='school_autocomplete',

@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 import django.urls as urlresolvers
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.html import format_html
@@ -765,3 +765,18 @@ def filter_issues(request, issues):
                          languages=languages,
                          publishers=publishers)
     return filter
+
+##############################################################################
+# selecting of objects
+##############################################################################
+
+def creator_for_detail(request):
+    name_detail_id = request.GET['name_detail_id']
+    qs = Creator.objects.filter(creator_names__id=name_detail_id)
+    if qs:
+        creator_name = qs.get().creator_names.get(is_official_name=True)
+        data = [{'creator_id' : creator_name.id,
+                 'creator_name' : str(creator_name)}]
+    else:
+        data = [{'creator_id' : -1}]
+    return JsonResponse(data, safe=False)
