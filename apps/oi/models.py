@@ -5589,7 +5589,9 @@ class StoryRevision(Revision):
                 for s in credit.split(";"):
                     stripped = s.strip()
                     if not stripped.startswith('?') \
-                      and stripped not in ['various', 'typeset']:
+                      and stripped not in ['various', 'typeset', 'gesetzt',
+                                           'tryckstil', 'formatadas',
+                                           'composición tipográfica']:
                         return True
         return False
 
