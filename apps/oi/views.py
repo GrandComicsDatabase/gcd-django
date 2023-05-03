@@ -534,6 +534,18 @@ def submit(request, id):
           request, 'indexer/error.html',
           {'error_text': 'A change may only be submitted by its author.'})
     comment_text = request.POST['comments'].strip()
+    if comment_text == '' and changeset.approver is None and \
+       changeset.comments.count() == 1:
+        changeset.calculate_imps()
+        if changeset.imps == 0:
+            return oi_render(
+              request, 'indexer/error.html',
+              {'error_text': mark_safe('A submission needs to consists of at '
+                                       'least one change to the data or have '
+                                       'a comment. <a href="%s">Go back.</a>'
+                                       % request.META['HTTP_REFERER'])
+               })
+
     changeset.submit(notes=comment_text)
     if changeset.approver is not None:
         if comment_text:
