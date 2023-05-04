@@ -463,7 +463,6 @@ def creator_features(request, creator_id, country=None, language=None):
         'item_name': 'feature',
         'plural_suffix': 's',
         'heading': 'Features for Creator %s' % (creator),
-        'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = FeatureTable(features, attrs={'class': 'sortable_listing'},
