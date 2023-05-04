@@ -43,7 +43,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable, SeriesCreatorTable,\
                                     CharacterCreatorTable, GroupCreatorTable,\
-                                    NAME_TYPES
+                                    CreatorCreatorTable, NAME_TYPES
 from apps.gcd.models.character import CharacterTable
 from apps.gcd.models.feature import FeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
@@ -66,7 +66,7 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, CoverRevision, \
                            IndiciaPublisherRevision, ImageRevision, Changeset,\
                            SeriesBondRevision, CreatorRevision, CTYPES
-from apps.select.views import SeriesFilter, SequenceFilter, filter_issues
+from apps.select.views import SeriesFilter, filter_issues, filter_sequences
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -279,21 +279,7 @@ def creator_sequences(request, creator_id, series_id=None,
         heading = 'Sequences for Creator %s' % (creator)
 
     if not series_id:
-        data = set(stories.values_list('issue__series__country',
-                                       'issue__series__language',
-                                       'issue__series__publisher'))
-        countries = []
-        languages = []
-        publishers = []
-        for i in data:
-            countries.append(i[0])
-            languages.append(i[1])
-            publishers.append(i[2])
-        filter = SequenceFilter(request.GET,
-                                queryset=stories,
-                                countries=countries,
-                                languages=languages,
-                                publishers=publishers)
+        filter = filter_sequences(request, stories)
         stories = filter.qs
     else:
         filter = None
@@ -363,8 +349,73 @@ def creator_characters(request, creator_id, country=None):
     table = CharacterTable(characters, attrs={'class': 'sortable_listing'},
                            creator=creator,
                            template_name='gcd/bits/sortable_table.html',
-                           order_by=('feature'))
+                           order_by=('character'))
     return generic_sortable_list(request, characters, table, template, context)
+
+
+def creator_creators(request, creator_id):
+    creator = get_gcd_object(Creator, creator_id)
+    names = list(_get_creator_names_for_checklist(creator))
+
+    stories = Story.objects.filter(credits__creator__in=names,
+                                   credits__credit_type__id__lt=6,
+                                   credits__deleted=False).distinct()
+    filter = filter_sequences(request, stories)
+    stories = filter.qs
+    stories_ids = stories.values_list('id', flat=True)
+
+    creators = Creator.objects.filter(
+      creator_names__storycredit__story__id__in=stories_ids,
+      creator_names__storycredit__story__type__id__in=CORE_TYPES,
+      creator_names__storycredit__deleted=False,
+      creator_names__storycredit__credit_type__id__lt=6).exclude(id=creator.id)
+    creators = creators.annotate(
+      issue_credits_count=Count("creator_names__storycredit__story__issue",
+                                distinct=True))
+    creators = creators.annotate(first_credit=Min(
+      Case(When(creator_names__storycredit__story__issue__key_date="",
+                then=Value("9999-99-99"),
+                ),
+           default=F("creator_names__storycredit__story__issue__key_date"),
+           )))
+
+    target = 'creator_names__storycredit__credit_type__id'
+    script = Count('creator_names__storycredit__story__issue',
+                   filter=Q(**{target: 1}),
+                   distinct=True)
+    pencils = Count('creator_names__storycredit__story__issue',
+                    filter=Q(**{target: 2}),
+                    distinct=True)
+    inks = Count('creator_names__storycredit__story__issue',
+                 filter=Q(**{target: 3}),
+                 distinct=True)
+    colors = Count('creator_names__storycredit__story__issue',
+                   filter=Q(**{target: 4}),
+                   distinct=True)
+    letters = Count('creator_names__storycredit__story__issue',
+                    filter=Q(**{target: 5}),
+                    distinct=True)
+
+    creators = creators.annotate(
+      script=script,
+      pencils=pencils,
+      inks=inks,
+      colors=colors,
+      letters=letters)
+
+    context = {
+        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'item_name': 'creator',
+        'plural_suffix': 's',
+        'heading': 'Creators that worked with Creator %s' % (creator),
+        'filter': filter
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CreatorCreatorTable(creators, attrs={'class': 'sortable_listing'},
+                                creator=creator,
+                                template_name='gcd/bits/sortable_table.html',
+                                order_by=('name'))
+    return generic_sortable_list(request, creators, table, template, context)
 
 
 def creator_features(request, creator_id, country=None, language=None):
@@ -411,7 +462,8 @@ def creator_features(request, creator_id, country=None, language=None):
         'result_disclaimer': MIGRATE_DISCLAIMER,
         'item_name': 'feature',
         'plural_suffix': 's',
-        'heading': 'Features for Creator %s' % (creator)
+        'heading': 'Features for Creator %s' % (creator),
+        'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = FeatureTable(features, attrs={'class': 'sortable_listing'},
@@ -519,7 +571,8 @@ def creator_series(request, creator_id, country=None, language=None):
 
 
 def checklist_by_id(request, creator_id, series_id=None, character_id=None,
-                    feature_id=None, edits=False, country=None, language=None):
+                    feature_id=None, co_creator_id=None, edits=False,
+                    country=None, language=None):
     """
     Provides checklists for a Creator. These include results for all
     CreatorNames and for the overall House Name all uses of that House Name.
@@ -566,6 +619,23 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
         heading = 'Issue Edit List for Creator %s' % (creator)
         filter = filter_issues(request, issues)
         issues = filter.qs
+    elif co_creator_id:
+        co_creator = get_gcd_object(Creator, co_creator_id)
+        stories = Story.objects.filter(credits__creator__creator=creator,
+                                       credits__deleted=False,
+                                       credits__credit_type__id__lt=6)\
+                               .filter(credits__creator__creator=co_creator,
+                                       credits__credit_type__id__lt=6,
+                                       credits__deleted=False)\
+                               .filter(type__id__in=CORE_TYPES,
+                                       deleted=False)
+        issue_list = stories.values_list('issue', flat=True)
+        issues = Issue.objects.filter(id__in=issue_list,
+                                      deleted=False).distinct()
+        filter = filter_issues(request, issues)
+        issues = filter.qs
+        heading = 'Issues for Creator %s with Creator %s' % (creator,
+                                                             co_creator)
     else:
         heading = 'Issue Checklist for Creator %s' % (creator)
         filter = filter_issues(request, issues)
@@ -688,7 +758,6 @@ def checklist_by_name(request, creator, country=None, language=None,
     else:
         filter = filter_issues(request, issues)
         issues = filter.qs
-
 
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},

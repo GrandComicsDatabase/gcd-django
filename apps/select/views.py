@@ -432,6 +432,7 @@ def _filter_and_sort(qs, query, field='name'):
         return qs_return
     return qs
 
+
 class CreatorAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
     def get_queryset(self):
@@ -493,7 +494,7 @@ class CreatorSignatureAutocomplete(LoginRequiredMixin,
 
 
 class SchoolAutocomplete(LoginRequiredMixin,
-                          autocomplete.Select2QuerySetView):
+                         autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = School.objects.all()
 
@@ -585,7 +586,7 @@ class CharacterAutocomplete(LoginRequiredMixin,
 
 
 class CharacterNameAutocomplete(LoginRequiredMixin,
-                            autocomplete.Select2QuerySetView):
+                                autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = CharacterNameDetail.objects.filter(deleted=False)
 
@@ -639,8 +640,9 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
 
 class SeriesFilter(FilterSet):
     country = ModelChoiceFilter(queryset=Country.objects.all())
-    language =ModelChoiceFilter(queryset=Language.objects.all())
+    language = ModelChoiceFilter(queryset=Language.objects.all())
     publisher = ModelChoiceFilter(queryset=Publisher.objects.all())
+
     class Meta:
         model = Series
         fields = ['country', 'language', 'publisher']
@@ -680,6 +682,7 @@ class IssueFilter(FilterSet):
     publisher = ModelChoiceFilter(field_name='series__publisher',
                                   label='Publisher',
                                   queryset=Publisher.objects.all())
+
     class Meta:
         model = Issue
         fields = ['country', 'language', 'publisher']
@@ -719,6 +722,7 @@ class SequenceFilter(FilterSet):
     publisher = ModelChoiceFilter(field_name='issue__series__publisher',
                                   label='Publisher',
                                   queryset=Publisher.objects.all())
+
     class Meta:
         model = Issue
         fields = ['country', 'language', 'publisher']
@@ -766,17 +770,37 @@ def filter_issues(request, issues):
                          publishers=publishers)
     return filter
 
+
+def filter_sequences(request, sequences):
+    data = set(sequences.values_list('issue__series__country',
+                                     'issue__series__language',
+                                     'issue__series__publisher'))
+    countries = []
+    languages = []
+    publishers = []
+    for i in data:
+        countries.append(i[0])
+        languages.append(i[1])
+        publishers.append(i[2])
+    filter = SequenceFilter(request.GET,
+                            queryset=sequences,
+                            countries=countries,
+                            languages=languages,
+                            publishers=publishers)
+    return filter
+
 ##############################################################################
 # selecting of objects
 ##############################################################################
+
 
 def creator_for_detail(request):
     name_detail_id = request.GET['name_detail_id']
     qs = Creator.objects.filter(creator_names__id=name_detail_id)
     if qs:
         creator_name = qs.get().creator_names.get(is_official_name=True)
-        data = [{'creator_id' : creator_name.id,
-                 'creator_name' : str(creator_name)}]
+        data = [{'creator_id': creator_name.id,
+                 'creator_name': str(creator_name)}]
     else:
-        data = [{'creator_id' : -1}]
+        data = [{'creator_id': -1}]
     return JsonResponse(data, safe=False)

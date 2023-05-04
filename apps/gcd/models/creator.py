@@ -177,7 +177,8 @@ class CreatorNameDetail(GcdData):
                 as_name = self
             if self.type and self.type_id == NAME_TYPES['studio'] \
                and self.creator_relation.count():
-                co_name = self.creator_relation.filter(deleted=False).get().to_creator
+                co_name = self.creator_relation.filter(deleted=False).get()\
+                              .to_creator
 
         if credit.uncertain:
             name += ' ?'
@@ -995,7 +996,8 @@ class CreatorTable(tables.Table):
     detail_name = tables.Column(accessor='name', verbose_name='Used Name')
     first_credit = tables.Column(verbose_name='First Credit')
     credits_count = tables.Column(accessor='credits_count',
-                                  verbose_name='# Issues')
+                                  verbose_name='# Issues',
+                                  initial_sort_descending=True)
     role = tables.Column(accessor='script', orderable=False)
 
     def order_name(self, query_set, is_descending):
@@ -1049,6 +1051,43 @@ class CharacterCreatorTable(CreatorTable):
         self.character = kwargs.pop('character')
         self.resolve_name = 'character'
         super(CreatorTable, self).__init__(*args, **kwargs)
+
+
+class CreatorCreatorTable(CreatorTable):
+    name = tables.Column(accessor='gcd_official_name',
+                         verbose_name='Creator Name')
+    credits_count = tables.Column(accessor='issue_credits_count',
+                                  verbose_name='# Issues',
+                                  initial_sort_descending=True)
+    detail_name = None
+
+    def __init__(self, *args, **kwargs):
+        self.creator = kwargs.pop('creator')
+        self.resolve_name = 'creator'
+        super(CreatorTable, self).__init__(*args, **kwargs)
+
+    def order_name(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'sort_name')
+        return (query_set, True)
+
+    class Meta:
+        model = Creator
+        fields = ('name', 'credits_count', 'first_credit', 'role')
+
+    def render_credits_count(self, record):
+        # return record.issue_credits_count
+        url = urlresolvers.reverse(
+                'creator_cocreator_issues',
+                kwargs={'co_creator_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_credits_count))
+
+    def render_name(self, record):
+        from apps.gcd.templatetags.display import absolute_url
+        return absolute_url(record)
 
 
 class GroupCreatorTable(CreatorTable):
