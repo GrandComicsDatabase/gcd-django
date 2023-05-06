@@ -2831,7 +2831,7 @@ def add_story(request, issue_revision_id, changeset_id):
         return render_error(
           request, 'Only the reservation holder may add stories.')
     # check if this is a request to add a copy of a sequence
-    if 'copy' in request.GET:
+    if 'copy' in request.GET or 'copy_cover' in request.GET:
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
         if issue_revision.issue:
             issue_id = issue_revision.issue_id
@@ -2839,8 +2839,13 @@ def add_story(request, issue_revision_id, changeset_id):
             raise NotImplementedError
         seq = request.GET.get('added_sequence_number')
         initial = _get_initial_add_story_data(request, issue_revision, seq)
+        if 'copy_cover' in request.GET:
+            cover = True
+        else:
+            cover = False
         return copy_sequence(request, changeset_id, issue_id,
-                             sequence_number=initial['sequence_number'])
+                             sequence_number=initial['sequence_number'],
+                             cover=cover)
 
     if request.method == 'POST' and 'cancel_return' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -3634,7 +3639,7 @@ def _selected_copy_sequence(request, data, object_type, selected_id):
 
 @permission_required('indexer.can_reserve')
 def copy_sequence(request, changeset_id, issue_id, story_id=None,
-                  sequence_number=None):
+                  sequence_number=None, cover=False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
         return render_error(
@@ -3646,11 +3651,17 @@ def copy_sequence(request, changeset_id, issue_id, story_id=None,
                                                             flat=True):
         return _cant_get(request)
 
+    if cover:
+        story = False
+    else:
+        story = True
+
     if request.method != 'POST':
         heading = 'Select story to copy into %s' % (esc(issue))
         data = {'issue_id': issue_id,
                 'changeset_id': changeset_id,
-                'story': True,
+                'story': story,
+                'cover': cover,
                 'initial': {},
                 'heading': mark_safe('<h2>%s</h2>' % heading),
                 'target': 'a story',

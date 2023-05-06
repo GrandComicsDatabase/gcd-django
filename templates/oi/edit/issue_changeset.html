@@ -26,31 +26,36 @@
   {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
   <tr>
     <td colspan="2" align="left">
-      One cannot add another story to this variant since it has a cover sequence. On the issue display page the <br>sequences from the <a href="{% url "show_issue" issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence.
+      A cover sequence exists for the cover artwork, which is different between variant and base. <br>
+      Other changes between variant and base are so far not supported, while some changes can be captured in the notes.
     </td>
   </tr>
   {% else %}
     {% if issue_revision.issue or issue_revision.variant_of %}
+      {% if not issue_revision.variant_of or issue_revision.variant_cover_status is 3 %}
   <tr>
     <td colspan="2" align="left">
       <form class="changeset" method="GET"
         action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
         <div class="left">
           <input type="submit" id="add_story" name="add" value="Add story">
-      {% if issue_revision.variant_of %}
-          <br>Only a cover sequence can be added to a variant, and only if the cover artwork is different. On the issue display page the <br>sequences from the <a href="{% url "show_issue" issue_id=issue_revision.variant_of.id %}">base issue</a> are shown, where the cover one is replaced by the variant cover sequence, if that one exists.
+        {% if issue_revision.variant_of %}
+          <input type="submit" id="copy_cover" name="copy_cover" value="Copy story">
+          <br>A cover sequence can be added in case the cover artwork is different between variant and base. <br>
+          Other changes between variant and base are so far not supported, while some changes can be captured in the notes.
           <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
-      {% else %}
+        {% else %}
           <input type="submit" id="copy_story" name="copy" value="Copy story">
         </div>
         <div class="right">
           &nbsp;sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
           <input type="text" size="4" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
         </div>
-      {% endif %}
+        {% endif %}
       </form>
     </td>
   </tr>
+      {% endif %}
     {% endif %}
   {% endif %}
   {% if issue_revision.source and issue_revision.story_set.count > 1 %}
@@ -191,18 +196,20 @@
       </form>
         {% endif %}
         {% if story.old_credits %}
-      <form class="story_button" method="POST" style="color: red" 
+      <form class="story_button" method="POST" style="color: red"
             action="{% url "migrate_story_revision" id=story.id %}">
         {% csrf_token %}
         <input type="submit" value="Migrate Credits" style="color: red">
       </form>
         {% endif %}
       {% else %}
+        {% if issuerevision.variant_cover_status == 3 %}
       <form class="story_button" method="POST"
             action="{% url "toggle_delete_story_revision" id=story.id %}">
         {% csrf_token %}
         <input type="submit" value="Restore">
       </form>
+        {% endif %}
       {% endif %}
     </td>
   </tr>

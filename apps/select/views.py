@@ -65,21 +65,25 @@ def get_select_data(request, select_key):
 
 
 def get_select_forms(request, initial, data, publisher=False,
-                     series=False, issue=False, story=False):
+                     series=False, issue=False, story=False, cover=False):
     if issue:
         cached_issues = get_cached_issues(request)
     else:
         cached_issues = None
     if story:
         cached_stories = get_cached_stories(request)
-        cached_covers = get_cached_covers(request)
     else:
         cached_stories = None
+    if story or cover:
+        cached_covers = get_cached_covers(request)
+    else:
         cached_covers = None
+
     search_form = get_select_search_form(search_publisher=publisher,
                                          search_series=series,
                                          search_issue=issue,
-                                         search_story=story)
+                                         search_story=story,
+                                         search_cover=cover)
     if data:
         search_form = search_form(data)
     else:
@@ -274,13 +278,15 @@ def select_object(request, select_key):
         series = data.get('series', False)
         issue = data.get('issue', False)
         story = data.get('story', False)
+        cover = data.get('cover', False)
         search_form, cache_form = get_select_forms(request,
                                                    initial,
                                                    request_data,
                                                    publisher=publisher,
                                                    series=series,
                                                    issue=issue,
-                                                   story=story)
+                                                   story=story,
+                                                   cover=cover)
         haystack_form = FacetedSearchForm()
         return render(request, 'oi/edit/select_object.html',
                       {'heading': data['heading'],
@@ -292,6 +298,7 @@ def select_object(request, select_key):
                        'series': series,
                        'issue': issue,
                        'story': story,
+                       'cover': cover,
                        'target': data['target']
                        })
 

@@ -33,6 +33,7 @@ def get_select_cache_form(cached_issues=None, cached_stories=None,
 
 def get_select_search_form(search_publisher=False, search_series=False,
                            search_issue=False, search_story=False,
+                           search_cover=False,
                            changeset_id=None, story_id=None, issue_id=None,
                            revision_id=None, return_type_='reprint'):
     class SelectSearchForm(forms.Form):
@@ -40,14 +41,14 @@ def get_select_search_form(search_publisher=False, search_series=False,
             publisher = forms.CharField(label='Publisher', required=True)
         else:
             publisher = forms.CharField(label='Publisher', required=False)
-        if search_series or search_issue or search_story:
+        if search_series or search_issue or search_story or search_cover:
             series = forms.CharField(label='Series', required=False)
             year = forms.IntegerField(label='Series year', required=False,
                                       min_value=1800, max_value=2025)
-        if search_issue or search_story:
+        if search_issue or search_story or search_cover:
             number = forms.CharField(label='Issue Number',
                                      required=True)
-        if search_story:
+        if search_story or search_cover:
             sequence_number = forms.IntegerField(label='Sequence Number',
                                                  required=False, min_value=0)
         select_key = forms.CharField(widget=HiddenInput)
