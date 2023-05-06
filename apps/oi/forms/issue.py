@@ -17,7 +17,8 @@ from crispy_forms.layout import Layout, Field, HTML
 
 from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
-                      VARIANT_NAME_HELP_TEXT, ISSUE_LABELS, ISSUE_HELP_TEXTS,
+                      VARIANT_NAME_HELP_TEXT, VARIANT_COVER_STATUS_HELP_TEXT,
+                      ISSUE_LABELS, ISSUE_HELP_TEXTS,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
@@ -176,7 +177,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             year_on_sale = self.cleaned_data['year_on_sale']
             year_string = str(year_on_sale)[:2]
             if year_on_sale is not None and (year_string < '18' or
-                                             year_string > '20'):
+                                             year_string > '20' or
+                                             len(str(year_on_sale)) > 4):
                 raise forms.ValidationError('Unreasonable year entered.')
             return year_on_sale
 
@@ -332,13 +334,17 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         class RuntimeAddVariantIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
-                fields = fields[0:1] + ['variant_name'] + fields[1:]
+                fields = fields[0:1] + ['variant_name'] \
+                                     + ['variant_cover_status'] + fields[1:]
 
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
                 widgets['variant_name'] = \
                     forms.TextInput(attrs={'class': 'wide'})
                 help_texts = RuntimeIssueRevisionForm.Meta.help_texts
                 help_texts['variant_name'] = VARIANT_NAME_HELP_TEXT
+                help_texts['variant_cover_status'] = \
+                    VARIANT_COVER_STATUS_HELP_TEXT
+
                 labels = RuntimeIssueRevisionForm.Meta.labels
 
                 if revision is None or revision.source is None:
@@ -350,7 +356,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
                         help_texts = RuntimeIssueRevisionForm.Meta.help_texts
                         help_texts.update(
-                        reservation_requested='Check this box to have this '
+                          reservation_requested='Check this box to have this '
                                                 'issue reserved to you '
                                                 'automatically when it is '
                                                 'approved, unless someone '

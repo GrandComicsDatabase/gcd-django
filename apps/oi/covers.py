@@ -46,46 +46,49 @@ def get_preview_generic_image_tag(revision, alt_text):
     img_class = 'cover_img'
     if revision.image_file:
         width = min(revision.image_file.width, 400)
-        return mark_safe('<img src="' + revision.scaled_image.url + '" alt="' + esc(alt_text) \
-                + '" ' + ' class="' + img_class + '" width="' + str(width) + '"/>')
+        return mark_safe('<img src="' + revision.scaled_image.url + '" alt="'
+                         + esc(alt_text) + '" ' + ' class="' + img_class
+                         + '" width="' + str(width) + '"/>')
     elif revision.deleted:
         return get_generic_image_tag(revision.image, esc(alt_text))
     else:
-        last_revision = ImageRevision.objects.filter(image=revision.image,
-          changeset__change_type=revision.changeset.change_type,
-          changeset__state=states.APPROVED).order_by('-created')[0]
-        if revision==last_revision:
+        last_revision = ImageRevision.objects.filter(
+                        image=revision.image,
+                        changeset__change_type=revision.changeset.change_type,
+                        changeset__state=states.APPROVED)\
+                        .order_by('-created')[0]
+        if revision == last_revision:
             # Current cover is the one from this revision, show it.
             return get_generic_image_tag(revision.image, esc(alt_text))
         else:
             if settings.BETA:
                 return 'no old images on BETA'
 
+
 def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
     if revision is None:
-        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
-               'img/nocover.gif" alt="No image yet" class="cover_img"/>')
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
+                         'img/nocover.gif" alt="No image yet" class="cover_img"/>')
 
     img_class = 'cover_img'
     if zoom_level == ZOOM_SMALL:
         width = 100
-        size = 'small'
         if revision.is_wraparound:
             img_class = 'wraparound_cover_img'
     elif zoom_level == ZOOM_MEDIUM:
         width = 200
-        size = 'medium'
         if revision.is_wraparound:
             img_class = 'wraparound_cover_img'
     elif zoom_level == ZOOM_LARGE:
         width = 400
-        size = 'large'
 
     if revision.changeset.state == states.APPROVED:
-        current_cover = CoverRevision.objects.filter(cover=revision.cover,
-          changeset__change_type=CTYPES['cover'],
-          changeset__state=states.APPROVED).order_by('-created')[0]
-        if revision==current_cover:
+        current_cover = CoverRevision.objects.filter(
+                        cover=revision.cover,
+                        changeset__change_type=CTYPES['cover'],
+                        changeset__state=states.APPROVED)\
+                        .order_by('-created')[0]
+        if revision == current_cover:
             # Current cover is the one from this revision, show it.
             return get_image_tag(revision.cover, esc(alt_text), zoom_level)
         else:
@@ -93,25 +96,28 @@ def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
               and not settings.BETA:
                 # The cover was replaced by now, show original uploaded file,
                 # scaled in the browser.
-                # It is the real uploaded file for uploads on the new server, and
-                # the large scan for older uploads, copied on replacement.
-                suffix = "/uploads/%d_%s" % (revision.cover.id,
-                        revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
+                # It is the real uploaded file for uploads on the new server,
+                # and the large scan for older uploads, copied on replacement.
+                suffix = "/uploads/%d_%s" % (
+                         revision.cover.id,
+                         revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
                 if revision.created > settings.NEW_SITE_COVER_CREATION_DATE:
-                    filename = glob.glob(revision.cover.base_dir() + suffix + '*')[0]
+                    filename = glob.glob(revision.cover.base_dir() +
+                                         suffix + '*')[0]
                     file_extension = os.path.splitext(filename)[1]
                 else:
                     file_extension = ".jpg"
                 # TODO:
-                suffix = "%d/uploads/%d_%s" % (int(revision.cover.id/1000),
-                        revision.cover.id,
-                        revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
-                img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR +\
-                        suffix + file_extension
-                # for old covers do manual scaling, since it is the uploaded file
-                return mark_safe('<img src="' + img_url + '" alt="' + \
-                esc(alt_text) + '" width="' + str(width) + \
-                '" class="' + img_class + '"/>')
+                suffix = "%d/uploads/%d_%s" % (
+                         int(revision.cover.id/1000), revision.cover.id,
+                         revision.changeset.created.strftime('%Y%m%d_%H%M%S'))
+                img_url = settings.IMAGE_SERVER_URL + settings.COVERS_DIR \
+                                                    + suffix + file_extension
+                # for old covers do manual scaling, since it is the uploaded
+                # file
+                return mark_safe('<img src="' + img_url + '" alt="' +
+                                 esc(alt_text) + '" width="' + str(width) +
+                                 '" class="' + img_class + '"/>')
             elif settings.BETA:
                 return 'no old covers on BETA'
             else:
@@ -122,8 +128,8 @@ def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
         suffix = "w%d/%d.jpg" % (width, revision.id)
         img_url = NEW_COVERS_LOCATION + \
           revision.changeset.created.strftime('%B_%Y/').lower() + suffix
-        return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) \
-               + '" ' + ' class="' + img_class + '"/>')
+        return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text)
+                         + '" ' + ' class="' + img_class + '"/>')
 
 
 def get_preview_image_tags_per_page(page, series=None):
@@ -136,8 +142,8 @@ def get_preview_image_tags_per_page(page, series=None):
     for change in page.object_list:
         # TODO if we ever do bulk uploads of covers this might need to change,
         # although we might generate one changeset for each cover there as well
-        cover = change.coverrevisions.select_related('changeset__indexer',
-                                     'issue__series__publisher').all()[0]
+        cover = change.coverrevisions.select_related(
+          'changeset__indexer', 'issue__series__publisher').all()[0]
         issue = cover.issue
         alt_string = issue.series.name + ' #' + issue.number
         cover_tags.append([cover, issue, get_preview_image_tag(cover,
@@ -153,6 +159,7 @@ def _create_cover_dir(scan_dir):
         return True
     return False
 
+
 def check_cover_dir(scan_dir):
     """
     Checks if the necessary cover directories exist and creates
@@ -164,6 +171,7 @@ def check_cover_dir(scan_dir):
         for width in [100, 200, 400]:
             _create_cover_dir(scan_dir + "/w" + str(width))
 
+
 def copy_approved_cover(cover_revision):
     cover = cover_revision.cover
     # here we want a server error to get notice to the admins
@@ -173,23 +181,26 @@ def copy_approved_cover(cover_revision):
     # replacement cover
     if cover_revision.is_replacement:
         # get current cover
-        old_cover = CoverRevision.objects.filter(cover=cover,
-          changeset__change_type=CTYPES['cover'],
-          changeset__state=states.APPROVED).order_by('-created')[0]
+        old_cover = CoverRevision.objects.filter(
+                    cover=cover,
+                    changeset__change_type=CTYPES['cover'],
+                    changeset__state=states.APPROVED).order_by('-created')[0]
         if old_cover.created <= settings.NEW_SITE_COVER_CREATION_DATE:
             # uploaded file too old, not stored, copy large file
-            suffix = "/uploads/%d_%s.jpg" % (cover.id,
+            suffix = "/uploads/%d_%s.jpg" % (
+                     cover.id,
                      old_cover.changeset.created.strftime('%Y%m%d_%H%M%S'))
             target_name = cover.base_dir() + suffix
             source_name = cover.base_dir() + "/w400/%d.jpg" % cover.id
             shutil.move(source_name, target_name)
 
-    source_name = glob.glob(cover_revision.base_dir() + \
+    source_name = glob.glob(cover_revision.base_dir() +
                             str(cover_revision.id) + '*')[0]
 
-    target_name = "%s/uploads/%d_%s%s" % (cover.base_dir(), cover.id,
-                    cover_revision.changeset.created.strftime('%Y%m%d_%H%M%S'),
-                    os.path.splitext(source_name)[1])
+    target_name = "%s/uploads/%d_%s%s" % (
+                  cover.base_dir(), cover.id,
+                  cover_revision.changeset.created.strftime('%Y%m%d_%H%M%S'),
+                  os.path.splitext(source_name)[1])
     shutil.move(source_name, target_name)
 
     for width in [100, 200, 400]:
@@ -248,7 +259,7 @@ def edit_covers(request, issue_id):
           {'issue': issue,
            'covers': covers,
            'table_width': UPLOAD_WIDTH
-          })
+           })
     else:
         return upload_cover(request, issue_id=issue_id)
 
@@ -277,6 +288,7 @@ def needed_issue_list(objects, issue, cover=False):
     earlier.reverse()
     return earlier + list(later)
 
+
 @login_required
 def uploaded_cover(request, revision_id):
     """
@@ -291,30 +303,32 @@ def uploaded_cover(request, revision_id):
     revision = get_object_or_404(CoverRevision, id=revision_id)
     issue = revision.issue
 
-    blank_issues = needed_issue_list(issue.series.active_issues() \
+    blank_issues = needed_issue_list(issue.series.active_issues()
                                           .exclude(cover__isnull=False,
                                                    cover__deleted=False),
                                      issue)
-    marked_covers = needed_issue_list(Cover.objects \
+    marked_covers = needed_issue_list(Cover.objects
                                       .filter(issue__series=issue.series,
                                               deleted=False,
                                               marked=True),
                                       issue, cover=True)
     tag = get_preview_image_tag(revision, "uploaded cover", ZOOM_MEDIUM)
     return render(request, uploaded_template,
-                  {'marked_covers' : marked_covers,
-                   'blank_issues' : blank_issues,
+                  {'marked_covers': marked_covers,
+                   'blank_issues': blank_issues,
                    'revision': revision,
-                   'issue' : issue,
-                   'tag'   : tag})
+                   'issue': issue,
+                   'tag': tag})
+
 
 def process_edited_gatefold_cover(request):
     ''' process the edited gatefold cover and generate CoverRevision '''
 
     if request.method != 'POST':
-        return render_error(request,
-            'This page may only be accessed through the proper form',
-            redirect=False)
+        return render_error(
+          request,
+          'This page may only be accessed through the proper form',
+          redirect=False)
 
     form = GatefoldScanForm(request.POST)
     if not form.is_valid():
@@ -328,12 +342,13 @@ def process_edited_gatefold_cover(request):
 
     if 'discard' in request.POST:
         os.remove(tmp_name)
-        return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
-                kwargs={'issue_id': cd['issue_id']} ))
+        return HttpResponseRedirect(urlresolvers.reverse(
+                                    'edit_covers',
+                                    kwargs={'issue_id': cd['issue_id']}))
 
     # create OI records
     changeset = Changeset(indexer=request.user, state=states.OPEN,
-                            change_type=CTYPES['cover'])
+                          change_type=CTYPES['cover'])
 
     if cd['cover_id']:
         cover = get_object_or_404(Cover, id=cd['cover_id'])
@@ -350,8 +365,9 @@ def process_edited_gatefold_cover(request):
         revision_lock.save()
 
         revision = CoverRevision(changeset=changeset, issue=issue,
-            cover=cover, file_source=cd['source'], marked=cd['marked'],
-            is_replacement = True)
+                                 cover=cover, file_source=cd['source'],
+                                 marked=cd['marked'],
+                                 is_replacement=True)
     # no cover_id, therefore upload a cover to an issue (first or variant)
     else:
         changeset.save()
@@ -363,14 +379,14 @@ def process_edited_gatefold_cover(request):
 
     scan_name = str(revision.id) + os.path.splitext(tmp_name)[1]
     upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
-                   changeset.created.strftime('%B_%Y').lower()
+                 changeset.created.strftime('%B_%Y').lower()
     destination_name = os.path.join(upload_dir, scan_name)
-    try: # essentially only needed at beginning of the month
+    try:  # essentially only needed at beginning of the month
         check_cover_dir(upload_dir)
     except IOError:
         changeset.delete()
         error_text = "Problem with file storage for uploaded " + \
-                        "cover, please report an error."
+                     "cover, please report an error."
         return render_error(request, error_text, redirect=False)
 
     shutil.move(tmp_name, destination_name)
@@ -405,7 +421,7 @@ def handle_gatefold_cover(request, cover, issue, form):
     # use media/img/gcd/new_covers/tmp and accept that it could fill up with
     # abandoned files
     tmpdir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + 'tmp'
-    if cover: # upload_type is 'replacement':
+    if cover:  # upload_type is 'replacement':
         scan_name = "%d_%d_%d" % (request.user.id, issue.id, cover.id)
     else:
         scan_name = "%d_%d" % (request.user.id, issue.id)
@@ -422,7 +438,7 @@ def handle_gatefold_cover(request, cover, issue, form):
         info_text = "Image is too small, only " + str(im.size) + \
                     " in size."
         return _display_cover_upload_form(request, form, cover, issue,
-            info_text=info_text)
+                                          info_text=info_text)
 
     vars = {'issue_id': issue.id, 'marked': marked, 'scan_name': scan_name,
             'source': source, 'remember_source': remember_source,
@@ -451,11 +467,11 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
             form = UploadVariantScanForm(request.POST, request.FILES)
         else:
             form = UploadScanForm(request.POST, request.FILES)
-    except IOError: # sometimes uploads misbehave. connection dropped ?
+    except IOError:  # sometimes uploads misbehave. connection dropped ?
         error_text = 'Something went wrong with the upload. ' + \
                         'Please <a href="' + request.path + '">try again</a>.'
         return render_error(request, error_text, redirect=False,
-            is_safe=True)
+                            is_safe=True)
 
     if not form.is_valid():
         return _display_cover_upload_form(request, form, cover, issue,
@@ -470,13 +486,13 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
 
     # create OI records
     changeset = Changeset(indexer=request.user, state=states.OPEN,
-                            change_type=CTYPES['cover'])
+                          change_type=CTYPES['cover'])
     changeset.save()
 
-    if cover: # upload_type is 'replacement':
+    if cover:  # upload_type is 'replacement':
         revision = CoverRevision(changeset=changeset, issue=issue,
-            cover=cover, file_source=file_source, marked=marked,
-            is_replacement = True)
+                                 cover=cover, file_source=file_source,
+                                 marked=marked, is_replacement=True)
         revision_lock.changeset = changeset
         revision_lock.save()
         revision.previous_revision = cover.revisions.get(
@@ -485,7 +501,7 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
                                            committed=True)
     else:
         revision = CoverRevision(changeset=changeset, issue=issue,
-            file_source=file_source, marked=marked)
+                                 file_source=file_source, marked=marked)
     revision.save()
 
     # if uploading a variant, generate an issue_revision for
@@ -497,7 +513,8 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
             add_after = current_variants[0]
         else:
             add_after = issue
-        issue_revision = IssueRevision(changeset=changeset,
+        issue_revision = IssueRevision(
+          changeset=changeset,
           after=add_after,
           number=issue.number,
           title=issue.title,
@@ -516,7 +533,8 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
           )
         issue_revision.save()
         if form.cleaned_data['variant_artwork']:
-            story_revision = StoryRevision(changeset=changeset,
+            story_revision = StoryRevision(
+              changeset=changeset,
               type=StoryType.objects.get(name='cover'),
               no_script=True,
               pencils='?',
@@ -528,6 +546,9 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
               page_count=2 if form.cleaned_data['is_wraparound'] else 1,
               )
             story_revision.save()
+        else:
+            issue_revision.variant_cover_status = 2
+            issue_revision.save()
     # put new uploaded covers into
     # media/<LOCAL_NEW_SCANS>/<monthname>_<year>/
     # with name
@@ -536,12 +557,12 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
     upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
                    changeset.created.strftime('%B_%Y').lower()
     destination_name = os.path.join(upload_dir, scan_name)
-    try: # essentially only needed at beginning of the month
+    try:  # essentially only needed at beginning of the month
         check_cover_dir(upload_dir)
     except IOError:
         changeset.delete()
         error_text = "Problem with file storage for uploaded " + \
-                        "cover, please report an error."
+                     "cover, please report an error."
         return render_error(request, error_text, redirect=False)
 
     # write uploaded file
@@ -574,9 +595,10 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
             os.remove(destination.name)
             info_text = "Image is too small, only " + str(im.size) + \
                         " in size."
-            return _display_cover_upload_form(request, form, cover, issue,
-                info_text=info_text, variant=variant)
-    except IOError as e:
+            return _display_cover_upload_form(
+              request, form, cover, issue,
+              info_text=info_text, variant=variant)
+    except IOError:
         # just in case, django *should* have taken care of file type
         changeset.delete()
         os.remove(destination.name)
@@ -588,16 +610,18 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
     # all done, we can save the state
     return finish_cover_revision(request, revision, form.cleaned_data)
 
+
 def finish_cover_revision(request, revision, cd):
     if cd['remember_source']:
         request.session['oi_file_source'] = cd['source']
     else:
-        request.session.pop('oi_file_source','')
+        request.session.pop('oi_file_source', '')
 
     revision.changeset.submit(cd['comments'])
 
     return HttpResponseRedirect(urlresolvers.reverse('upload_cover_complete',
-        kwargs={'revision_id': revision.id} ))
+        kwargs={'revision_id': revision.id}))
+
 
 @login_required
 def upload_variant(request, issue_id):
@@ -607,18 +631,21 @@ def upload_variant(request, issue_id):
     issue = get_object_or_404(Issue, id=issue_id)
 
     if issue.variant_of:
-        return render_error(request,
-          'Variants can only be uploaded to the base issue.')
+        return render_error(
+          request, 'Variants can only be uploaded to the base issue.')
 
     # check if there is a pending issue deletion
     if IssueRevision.objects.filter(issue=issue, deleted=True,
                                     changeset__state__in=states.ACTIVE):
-        revision = IssueRevision.objects.get(issue=issue,
-          changeset__state__in=states.ACTIVE)
-        return render_error(request,
+        revision = IssueRevision.objects.get(
+          issue=issue, changeset__state__in=states.ACTIVE)
+        return render_error(
+          request,
           ('%s is <a href="%s">pending deletion</a>. Covers '
-          'cannot be added or modified.') % (esc(issue),
-          urlresolvers.reverse('compare', kwargs={'id': revision.changeset.id})),
+           'cannot be added or modified.') % (
+            esc(issue),
+            urlresolvers.reverse('compare',
+                                 kwargs={'id': revision.changeset.id})),
           redirect=False, is_safe=True)
 
     # current request is an upload
@@ -627,20 +654,21 @@ def upload_variant(request, issue_id):
     # request is a GET for the form
     else:
         if 'oi_file_source' in request.session:
-            vars = {'source' : request.session['oi_file_source'],
-                    'remember_source' : True}
+            vars = {'source': request.session['oi_file_source'],
+                    'remember_source': True}
         else:
             vars = None
         form = UploadVariantScanForm(initial=vars)
-        kwargs={'pending_variant_adds': Changeset.objects\
-          .filter(issuerevisions__variant_of=issue,
-                  #state__in=states.ACTIVE,
-                  state__in=[states.PENDING,states.REVIEWING],
-                  change_type__in=[CTYPES['issue_add'],
-                                   CTYPES['variant_add']])}
+        kwargs = {'pending_variant_adds': Changeset.objects
+                  .filter(issuerevisions__variant_of=issue,
+                          # state__in=states.ACTIVE,
+                          state__in=[states.PENDING, states.REVIEWING],
+                          change_type__in=[CTYPES['issue_add'],
+                                           CTYPES['variant_add']])}
         # display the form
         return _display_cover_upload_form(request, form, None, issue,
                                           variant=True, kwargs=kwargs)
+
 
 @login_required
 def upload_cover(request, cover_id=None, issue_id=None):
@@ -663,7 +691,8 @@ def upload_cover(request, cover_id=None, issue_id=None):
     else:
         issue = get_object_or_404(Issue, id=issue_id)
         if not issue.can_have_cover():
-            return render_error(request,
+            return render_error(
+              request,
               'No covers for non-comics publications if the issue has less'
               ' than 10% indexed comics content.', redirect=False)
         cover = None
@@ -671,12 +700,16 @@ def upload_cover(request, cover_id=None, issue_id=None):
     # check if there is a pending issue deletion
     if IssueRevision.objects.filter(issue=issue, deleted=True,
                                     changeset__state__in=states.ACTIVE):
-        revision = IssueRevision.objects.get(issue=issue,
+        revision = IssueRevision.objects.get(
+          issue=issue,
           changeset__state__in=states.ACTIVE)
-        return render_error(request,
-          ('%s is <a href="%s">pending deletion</a>. Covers '
-          'cannot be added or modified.') % (esc(issue),
-          urlresolvers.reverse('compare', kwargs={'id': revision.changeset.id})),
+        return render_error(
+          request, ('%s is <a href="%s">pending deletion</a>. Covers '
+                    'cannot be added or modified.') % (
+                    esc(issue),
+                    urlresolvers.reverse('compare',
+                                         kwargs={'id': revision.changeset.id})
+                    ),
           redirect=False, is_safe=True)
 
     # check if there is a pending change for the cover
@@ -704,8 +737,8 @@ def upload_cover(request, cover_id=None, issue_id=None):
     # request is a GET for the form
     else:
         if 'oi_file_source' in request.session:
-            vars = {'source' : request.session['oi_file_source'],
-                    'remember_source' : True}
+            vars = {'source': request.session['oi_file_source'],
+                    'remember_source': True}
         else:
             vars = None
         form = UploadScanForm(initial=vars)
@@ -713,21 +746,23 @@ def upload_cover(request, cover_id=None, issue_id=None):
         # display the form
         return _display_cover_upload_form(request, form, cover, issue)
 
+
 def _display_cover_upload_form(request, form, cover, issue, info_text='',
                                variant=False, kwargs=None):
-    if kwargs == None:
+    if kwargs is None:
         kwargs = {}
     upload_template = 'oi/edit/upload_cover.html'
     kwargs['upload_type'] = ''
 
     if cover:
         kwargs['upload_type'] = 'replacement'
-        kwargs['replace_cover'] = get_image_tag(cover, "cover to replace", ZOOM_MEDIUM)
+        kwargs['replace_cover'] = get_image_tag(cover, "cover to replace",
+                                                ZOOM_MEDIUM)
     else:
         if issue.has_covers():
-            kwargs['current_covers'] = get_image_tags_per_issue(issue, "current covers",
-                                              ZOOM_MEDIUM, as_list=True,
-                                              variants=True)
+            kwargs['current_covers'] = get_image_tags_per_issue(
+              issue, "current covers", ZOOM_MEDIUM, as_list=True,
+              variants=True)
             kwargs['upload_type'] = 'additional'
         if variant:
             kwargs['upload_type'] = 'variant'
@@ -737,12 +772,12 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
     if issue.variant_of:
         active_covers = CoverRevision.objects\
                         .filter(issue=issue.variant_of,
-                        changeset__state__in=states.ACTIVE,
-                        deleted=False).order_by('created')
-        active_covers = active_covers | CoverRevision.objects\
-                        .filter(issue__variant_of=issue.variant_of,
-                        changeset__state__in=states.ACTIVE,
-                        deleted=False).order_by('created')
+                                changeset__state__in=states.ACTIVE,
+                                deleted=False).order_by('created')
+        active_covers = active_covers | CoverRevision.objects.filter(
+          issue__variant_of=issue.variant_of,
+          changeset__state__in=states.ACTIVE,
+          deleted=False).order_by('created')
         if issue.variant_of.has_covers():
             covers_list = get_image_tags_per_issue(issue.variant_of,
                                                    "current covers",
@@ -753,14 +788,15 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
             else:
                 kwargs['current_covers'] = covers_list
     else:
-        active_covers = CoverRevision.objects.filter(issue=issue,
-                        changeset__state__in=states.ACTIVE,
-                        deleted=False).order_by('created')
-        active_covers = active_covers | CoverRevision.objects\
-                        .filter(issue__variant_of=issue,
-                        changeset__state__in=states.ACTIVE,
-                        deleted=False).order_by('created')
-    active_covers = active_covers.exclude(changeset__change_type=CTYPES['variant_add'])
+        active_covers = CoverRevision.objects.filter(
+          issue=issue, changeset__state__in=states.ACTIVE,
+          deleted=False).order_by('created')
+        active_covers = active_covers | CoverRevision.objects.filter(
+          issue__variant_of=issue,
+          changeset__state__in=states.ACTIVE,
+          deleted=False).order_by('created')
+    active_covers = active_covers.exclude(
+      changeset__change_type=CTYPES['variant_add'])
     for active_cover in active_covers:
         active_covers_tags.append([active_cover,
                                    get_preview_image_tag(active_cover,
@@ -783,7 +819,8 @@ def flip_artwork_flag(request, revision_id=None):
     cover = get_object_or_404(CoverRevision, id=revision_id)
     changeset = cover.changeset
     if request.user != changeset.approver:
-        return render_error(request,
+        return render_error(
+          request,
           'The variant artwork status may only be changed by the approver.')
     story = list(changeset.storyrevisions.all())
     if len(story) == 1:

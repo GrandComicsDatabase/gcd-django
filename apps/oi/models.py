@@ -44,7 +44,7 @@ from apps.gcd.models import (
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
     CreatorNameDetail, CreatorNonComicWork, CreatorSchool, CreatorRelation,
     CreatorSignature, NonComicWorkYear, Award, ReceivedAward, DataSource,
-    ExternalLink, STORY_TYPES, CREDIT_TYPES)
+    ExternalLink, STORY_TYPES, CREDIT_TYPES, VCS_Codes)
 
 from apps.gcd.models.gcddata import GcdData, GcdLink
 
@@ -1205,7 +1205,7 @@ class Revision(models.Model):
     # If False, this revision will never be committed.
     # If None, this revision is still active, and may or may not be committed
     # at some point in the future.
-    committed = models.NullBooleanField(default=None, db_index=True)
+    committed = models.BooleanField(default=None, null=True, db_index=True)
 
     comments = GenericRelation(ChangesetComment,
                                content_type_field='content_type',
@@ -3900,6 +3900,8 @@ class IssueRevision(Revision):
     variant_of = models.ForeignKey(Issue, on_delete=models.CASCADE, null=True,
                                    related_name='variant_revisions')
     variant_name = models.CharField(max_length=255, blank=True, default='')
+    variant_cover_status = models.IntegerField(choices=VCS_Codes.choices,
+                                               default=1, db_index=True)
 
     publication_date = models.CharField(max_length=255, blank=True, default='')
     key_date = models.CharField(
@@ -4679,6 +4681,9 @@ class IssueRevision(Revision):
         if self.variant_of or (self.issue and self.issue.variant_set.count()) \
            or self.changeset.change_type == CTYPES['variant_add']:
             fields = fields[0:1] + ['variant_name'] + fields[1:]
+            if self.variant_of:
+               fields = fields[0:2] + ['variant_cover_status'] + fields[2:]
+
         if self.previous() and (self.previous().series != self.series):
             fields = ['series'] + fields
         return fields
@@ -4722,6 +4727,7 @@ class IssueRevision(Revision):
             'sort_code': None,
             'after': None,
             'variant_name': '',
+            'variant_cover_status': 3,
             'keywords': ''
         }
 
@@ -4741,7 +4747,8 @@ class IssueRevision(Revision):
 
     def _imps_for(self, field_name):
         if field_name in ('number', 'publication_date', 'key_date', 'series',
-                          'price', 'notes', 'variant_name', 'keywords'):
+                          'price', 'notes', 'variant_name',
+                          'variant_cover_status', 'keywords'):
             return 1
         if not self._seen_volume and \
            field_name in ('volume', 'no_volume', 'volume_not_printed',

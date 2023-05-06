@@ -17,7 +17,7 @@ from apps.gcd.templatetags.credits import format_page_count, \
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, \
                            ReprintRevision, StoryRevision, IssueRevision
-from apps.gcd.models import CREDIT_TYPES
+from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
 from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
@@ -269,6 +269,8 @@ def field_value(revision, field):
       revision._meta.model_name == 'creatorsignaturerevision':
         if revision.source:
             return absolute_url(revision.source, descriptor=value)
+    elif field == 'variant_cover_status':
+        return VARIANT_COVER_STATUS[value]
     return value
 
 

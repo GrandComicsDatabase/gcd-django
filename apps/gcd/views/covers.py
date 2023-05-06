@@ -69,7 +69,8 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
                              variants=False, exclude_ids=None):
-    if issue.has_covers() or (variants and issue.variant_covers().count()):
+    if issue.has_covers() or (variants and issue.variant_covers().count()) \
+      or (issue.variant_of and issue.variant_cover_status == 1):
         covers = issue.active_covers()
         if variants:
             covers = covers | issue.variant_covers()

@@ -82,19 +82,18 @@ This issue has variants:
                 </div>
               </div> <!-- issue.notes -->
 {% endif %} <!-- issue.notes -->
-{% if issue.series.is_comics_publication %}
-  {% with cover_story as story %}
-  {% with 1 as is_cover %}
-    {% include "gcd/details/single_story.html" %}
-  {% endwith %}
-  {% endwith %}
-{% else %}
+{% if not issue.series.is_comics_publication %}
               <div class="non_comics">
                 <h3>
                   <span class="left">The individual issues of this series are each less than 50% comics.  Only
                   comics sequences are indexed and cover scans are accepted only if the issue has 10% indexed comics content.<span>
                 </h3>
               </div>
+{% endif %}
+{% if cover_story %}
+  {% with story=cover_story is_cover=1 %}
+    {% include "gcd/details/single_story.html" %}
+  {% endwith %}
 {% endif %}
             </div>
           </div> <!-- coverContent -->
