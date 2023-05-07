@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.contrib.auth.models import User
 from django.db import models
-from django.utils.safestring import mark_safe
 import django.urls as urlresolvers
 
 import django_filters
@@ -13,6 +12,7 @@ from apps.stddata.models import Currency, Date, Language
 from taggit.managers import TaggableManager
 
 # Create your models here.
+
 
 class CollectorManager(models.Manager):
     def create_collector(self, user, grade_system=None, default_language=None):
@@ -57,7 +57,7 @@ class Collector(models.Model):
                                      on_delete=models.CASCADE,
                                      related_name='+')
 
-    #defaults
+    # defaults
     default_have_collection = models.ForeignKey('Collection',
                                                 on_delete=models.CASCADE,
                                                 related_name='+',
@@ -98,26 +98,30 @@ class Collection(models.Model):
     description = models.TextField(blank=True)
     keywords = TaggableManager(blank=True)
 
-    public = models.BooleanField(default=False,
-               verbose_name="collection is public and can be viewed by all")
+    public = models.BooleanField(
+      default=False,
+      verbose_name="collection is public and can be viewed by all")
 
-    #Configuration of fields used - notes and keywords are assumed to be always
-    # 'on'.
+    # Configuration of fields used - notes and keywords are assumed to be
+    # always 'on'.
     condition_used = models.BooleanField(default=False,
                                          verbose_name="show condition")
-    acquisition_date_used = models.BooleanField(default=False,
-                                   verbose_name="show acquisition date")
+    acquisition_date_used = models.BooleanField(
+      default=False,
+      verbose_name="show acquisition date")
     sell_date_used = models.BooleanField(default=False,
                                          verbose_name="show sell data")
     location_used = models.BooleanField(default=False,
                                         verbose_name="show location")
-    purchase_location_used = models.BooleanField(default=False,
-                                    verbose_name="show purchase location")
+    purchase_location_used = models.BooleanField(
+      default=False,
+      verbose_name="show purchase location")
     own_used = models.BooleanField(default=False,
                                    verbose_name="show own/want status")
-    own_default = models.NullBooleanField(default=None,
-                            verbose_name="default ownership status when "
-                                         "adding items to this collection")
+    own_default = models.BooleanField(
+      default=None, null=True,
+      verbose_name="default ownership status when "
+                   "adding items to this collection")
     was_read_used = models.BooleanField(default=False,
                                         verbose_name="show read status")
     for_sale_used = models.BooleanField(default=False,
@@ -126,17 +130,19 @@ class Collection(models.Model):
                                       verbose_name="show signed status")
     price_paid_used = models.BooleanField(default=False,
                                           verbose_name="show price paid")
-    market_value_used = models.BooleanField(default=False,
-                               verbose_name="show entered market value")
+    market_value_used = models.BooleanField(
+      default=False,
+      verbose_name="show entered market value")
     sell_price_used = models.BooleanField(default=False,
                                           verbose_name="show sell price")
     digital_used = models.BooleanField(default=False,
                                        verbose_name="track digital versions")
     rating_used = models.BooleanField(default=False,
                                       verbose_name="rate comics")
+
     def get_absolute_url(self):
         return urlresolvers.reverse('view_collection',
-                                    kwargs={'collection_id':self.id})
+                                    kwargs={'collection_id': self.id})
 
     def __str__(self):
         return str(self.name)
@@ -170,7 +176,7 @@ class PurchaseLocation(models.Model):
     """Class for keeping information about locations where users purchased
     theirs collection's items."""
     class Meta:
-        db_table='mycomics_purchase_location'
+        db_table = 'mycomics_purchase_location'
     user = models.ForeignKey(Collector, on_delete=models.CASCADE)
     name = models.CharField(blank=True, max_length=255)
     description = models.TextField(blank=True)
@@ -195,8 +201,9 @@ class CollectionItem(models.Model):
         (5, 'excellent', '5 - Excellent'),
     )
 
-    collections = models.ManyToManyField(Collection, related_name="items",
-                                db_table="mycomics_collection_item_collections")
+    collections = models.ManyToManyField(
+      Collection, related_name="items",
+      db_table="mycomics_collection_item_collections")
     issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
 
     location = models.ForeignKey(Location,
@@ -220,12 +227,13 @@ class CollectionItem(models.Model):
     sell_date = models.ForeignKey(Date, on_delete=models.CASCADE,
                                   related_name='+', null=True, blank=True)
 
-    own = models.NullBooleanField(default=None, verbose_name="ownership")
-    was_read = models.NullBooleanField(default=None)
+    own = models.BooleanField(default=None, null=True,
+                              verbose_name="ownership")
+    was_read = models.BooleanField(default=None, null=True)
     for_sale = models.BooleanField(default=False)
     signed = models.BooleanField(default=False)
 
-    #price fields
+    # price fields
     price_paid = models.DecimalField(max_digits=10, decimal_places=2,
                                      blank=True, null=True)
     price_paid_currency = models.ForeignKey(Currency, on_delete=models.CASCADE,
@@ -252,8 +260,8 @@ class CollectionItem(models.Model):
             return '-'
 
     def get_absolute_url(self, collection):
-        return urlresolvers.reverse('view_item', kwargs={'item_id':self.id,
-                                    'collection_id':collection.id})
+        return urlresolvers.reverse('view_item', kwargs={'item_id': self.id,
+                                    'collection_id': collection.id})
 
 
 OWN_CHOICES = (
@@ -261,12 +269,14 @@ OWN_CHOICES = (
     (False, 'I want'),
 )
 
+
 class CollectionItemFilter(django_filters.FilterSet):
     price_paid = django_filters.RangeFilter()
     sell_price = django_filters.RangeFilter()
     market_value = django_filters.RangeFilter()
     rating = django_filters.RangeFilter()
     own = django_filters.ChoiceFilter(choices=OWN_CHOICES)
+
     def __init__(self, *args, **kwargs):
         collection = kwargs.pop('collection')
         super().__init__(*args, **kwargs)
@@ -305,10 +315,10 @@ class CollectionItemFilter(django_filters.FilterSet):
 class ConditionGradeScale(models.Model):
     """Class representing condition grade scale for use by collectors."""
     class Meta:
-        db_table='mycomics_condition_grade_scale'
+        db_table = 'mycomics_condition_grade_scale'
 
-    name=models.CharField(blank=False,max_length=255)
-    description=models.CharField(max_length=2000, blank=True)
+    name = models.CharField(blank=False, max_length=255)
+    description = models.CharField(max_length=2000, blank=True)
 
     def __str__(self):
         return str(self.name)
@@ -317,17 +327,16 @@ class ConditionGradeScale(models.Model):
 class ConditionGrade(models.Model):
     """Class representing single grade in a condition grade scale."""
     class Meta:
-        db_table='mycomics_condition_grade'
+        db_table = 'mycomics_condition_grade'
 
-    scale=models.ForeignKey(ConditionGradeScale, on_delete=models.CASCADE,
-                            related_name='grades', null=False)
-    code=models.CharField(blank=False, max_length=20)
-    name=models.CharField(blank=False, max_length=255)
-    value=models.FloatField(blank=False)
+    scale = models.ForeignKey(ConditionGradeScale, on_delete=models.CASCADE,
+                              related_name='grades', null=False)
+    code = models.CharField(blank=False, max_length=20)
+    name = models.CharField(blank=False, max_length=255)
+    value = models.FloatField(blank=False)
 
     def __cmp__(self, other):
         return self.value.__cmp__(other.value)
 
     def __str__(self):
         return "%s - %s" % (self.code, self.name)
-
