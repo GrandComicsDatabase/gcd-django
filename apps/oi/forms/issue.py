@@ -229,7 +229,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 cd['variant_name'] = cd['variant_name'].strip()
 
             if 'variant_cover_status' in cd and cd['variant_cover_status'] < 3:
-                if revision.changeset.storyrevisions.filter(
+                if revision and revision.changeset.storyrevisions.filter(
                   issue=revision.issue, deleted=False).exists():
                     raise forms.ValidationError(
                         'A cover sequence exists for this variant. Before '
