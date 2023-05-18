@@ -553,7 +553,7 @@ VARIANT_NAME_HELP_TEXT = (
 
 VARIANT_COVER_STATUS_HELP_TEXT = (
     'Select among <i>variant with cover artwork different to base</i> '
-    '(Artwork Difference), <i>variant with different cover scan, but cover '
+    '(Artwork Difference), <i>variant with different cover image, but cover '
     'artwork identical to base</i> (Only Scan Difference), and <i>variant '
     'with cover artwork and cover image identical to base</i> (No Difference)')
 
