@@ -1085,9 +1085,15 @@ class CreatorCreatorTable(CreatorTable):
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_credits_count))
 
+    def value_credits_count(self, record):
+        return record.issue_credits_count
+
     def render_name(self, record):
         from apps.gcd.templatetags.display import absolute_url
         return absolute_url(record)
+
+    def value_name(self, record):
+        return str(record)
 
 
 class GroupCreatorTable(CreatorTable):
