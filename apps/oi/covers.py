@@ -529,6 +529,7 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
           series=issue.series,
           editing=issue.editing,
           no_editing=issue.no_editing,
+          variant_cover_status=3,
           reservation_requested=form.cleaned_data['reservation_requested']
           )
         issue_revision.save()

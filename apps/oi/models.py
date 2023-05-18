@@ -3453,6 +3453,7 @@ class SeriesRevision(Revision):
                                            number='[nn]',
                                            publication_date=self.year_began,
                                            notes=self.notes,
+                                           keywords=self.keywords,
                                            reservation_requested=
                                            self.reservation_requested)
             if self.notes:
@@ -5598,6 +5599,7 @@ class StoryRevision(Revision):
                     if not stripped.startswith('?') \
                       and stripped not in ['various', 'typeset', 'gesetzt',
                                            'tryckstil', 'formatadas',
+                                           'typographie',
                                            'composición tipográfica']:
                         return True
         return False

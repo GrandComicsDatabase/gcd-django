@@ -27,7 +27,7 @@
   <tr>
     <td colspan="2" align="left">
       A cover sequence exists for the cover artwork, which is different between variant and base. <br>
-      Other changes between variant and base are so far not supported, while some changes can be captured in the notes.
+      Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
     </td>
   </tr>
   {% else %}
@@ -40,9 +40,11 @@
         <div class="left">
           <input type="submit" id="add_story" name="add" value="Add story">
         {% if issue_revision.variant_of %}
+          {% if issue_revision.issue %}
           <input type="submit" id="copy_cover" name="copy_cover" value="Copy story">
+          {% endif %}
           <br>A cover sequence can be added in case the cover artwork is different between variant and base. <br>
-          Other changes between variant and base are so far not supported, while some changes can be captured in the notes.
+          Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
           <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
         {% else %}
           <input type="submit" id="copy_story" name="copy" value="Copy story">
