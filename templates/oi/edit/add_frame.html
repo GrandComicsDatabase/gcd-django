@@ -13,9 +13,6 @@ Adding {{ object_name }}
       href="{% static "css/oi/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/oi/default/edit.css" %}"/>
-      {% include "oi/bits/jquery.html" %}
-      {{ credits_formset.media }}
-      {{ form.media }}
 {% endblock %}
 {% block css_raw %}
 {% comment %} this css doesn't like compressing {% endcomment %}
@@ -27,6 +24,9 @@ Adding {{ object_name }}
 {% endblock %}
 
 {% block view_body %}
+{% include "oi/bits/jquery.html" %}
+{{ credits_formset.media }}
+{{ form.media }}
 {% include "oi/bits/multi_selector.html" %}
 <h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
 
