@@ -89,6 +89,7 @@
   {% endif %}
             <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/columns-symbolic.svg" %}">Details by Issue</a>&nbsp;
             <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/month-symbolic.svg" %}">Series Timeline</a>
+            <li><a href='{% url "series_overview" series_id=series.id %}'>Cover and Main Story Overview</a></li>
             <li><a href='{% url "series_creatorlist" series_id=series.id %}'>Creator Checklist (via linked story records)</a></li>
             {% if series.issues_to_migrate.count %}<li>Approximately <a href='{% url "series_migrate" series_id=series.id %}'>{{ series.issues_to_migrate.count }} issues</a> with text credits to migrate.</li>{% endif %}
 	  </ul>
