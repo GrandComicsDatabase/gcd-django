@@ -149,7 +149,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   {% for cover, tag in current_covers %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
       <a href="{{ cover.issue.get_absolute_url }}">{{ tag }}</a>
-      <br>
+      <br><span class="cover_links">{{ cover.issue.full_descriptor }}</span><br>
        <span class="cover_links">Zoom:
 <a class="new_window" href="{{ cover.issue.get_absolute_url }}cover/4" target="_blank">Large<span>opens in new window</span></a></span> <br>
    </td>
