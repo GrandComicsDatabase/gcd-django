@@ -1523,7 +1523,7 @@ def series_overview(request, series_id):
       issues,
       attrs={'class': 'sortable_listing'},
       template_name='gcd/bits/sortable_table.html',
-      order_by=('publication_date'))
+      order_by=('issues'))
     return generic_sortable_list(request, issues, table, template, context, 50)
 
 
