@@ -101,3 +101,24 @@ table#covers span.modify {
 .label_binding {
     white-space: nowrap;
 }
+
+dl.credits_table_view {
+    margin: 0;
+}
+
+h3.credits_table_view a:link, h3.credits_table_view a:visited, div.credits_table_view a:link, div.credits_table_view a:visited
+{
+    color: black;
+}
+
+dl.credits_table_view dt {
+  float: left;
+  clear: left;
+  width: 70px;
+  text-align: right;
+}
+
+dl.credits_table_view dd {
+  margin: 0 0 0 80px;
+  float: none;
+}

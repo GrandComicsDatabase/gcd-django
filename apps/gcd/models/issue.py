@@ -39,6 +39,7 @@ VARIANT_COVER_STATUS = {
     3: 'Artwork Difference'
 }
 
+
 class VCS_Codes(models.IntegerChoices):
     NO_DIFFERENCE = 1
     ONLY_SCAN_DIFFERENCE = 2

@@ -9,7 +9,8 @@ from calendar import monthrange
 from operator import attrgetter
 from random import randint
 
-from django.db.models import F, Q, Min, Count, Sum, Case, When, Value
+from django.db.models import F, Q, Min, Count, Sum, Case, When, Value, \
+                             OuterRef, Subquery
 from django.conf import settings
 import django.urls as urlresolvers
 from django.shortcuts import get_object_or_404, \
@@ -58,7 +59,7 @@ from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
                                   get_image_tags_per_page
-from apps.gcd.models.cover import CoverIssuePublisherTable, \
+from apps.gcd.models.cover import CoverIssuePublisherTable, CoverIssueTable, \
                                   ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.gcd.forms import get_generic_select_form
 from apps.oi import states
@@ -128,14 +129,16 @@ def get_gcd_object(model, object_id, model_name=None):
     return object
 
 
-def generic_sortable_list(request, items, table, template, context):
-    paginator = ResponsePaginator(items, per_page=100, vars=context)
+def generic_sortable_list(request, items, table, template, context,
+                          per_page=100):
+    paginator = ResponsePaginator(items, per_page=per_page, vars=context)
     page_number = paginator.paginate(request).number
-
-    extra_string = request.GET.urlencode()
+    request_get = request.GET.copy()
+    request_get.pop('page', None)
+    extra_string = request_get.urlencode()
 
     RequestConfig(request, paginate={"paginator_class": LazyPaginator,
-                                     'per_page': 100,
+                                     'per_page': per_page,
                                      'page': page_number}).configure(table)
     export_format = request.GET.get("_export", None)
     if TableExport.is_valid_format(export_format):
@@ -1467,6 +1470,61 @@ def show_series(request, series, preview=False):
         'is_none': IS_NONE,
         'RANDOM_IMAGE': _publisher_image_content(series.publisher_id)
       })
+
+
+def covers(request, series_id):
+    """
+    Display the cover gallery for a series.
+    """
+
+    series = get_gcd_object(Series, series_id)
+    # TODO: Figure out optimal table width and/or make it user controllable.
+    table_width = COVER_TABLE_WIDTH
+
+    covers = Cover.objects.filter(issue__series=series, deleted=False) \
+                          .select_related('issue')
+
+    vars = {
+      'series': series,
+      'error_subject': '%s covers' % series,
+      'table_width': table_width,
+      'RANDOM_IMAGE': _publisher_image_content(series.publisher_id)
+    }
+
+    return paginate_response(
+      request, covers, 'gcd/details/covers.html', vars,
+      per_page=COVERS_PER_GALLERY_PAGE, callback_key='tags',
+      callback=lambda page: get_image_tags_per_page(page, series))
+
+
+def series_overview(request, series_id):
+    """
+    Display the cover gallery for a series with core sequence info.
+    """
+
+    series = get_gcd_object(Series, series_id)
+
+    issues = series.active_issues().filter(variant_of=None)\
+                   .annotate(longest_story_id=Subquery(Story.objects.filter(
+                                              issue_id=OuterRef('pk'),
+                                              type_id=19, deleted=False)
+                                              .values('pk')
+                                              .order_by('-page_count')[:1]))
+
+    heading = 'Covers and Longest Comic Story for Series %s' % (series)
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': heading,
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CoverIssueTable(
+      issues,
+      attrs={'class': 'sortable_listing'},
+      template_name='gcd/bits/sortable_table.html',
+      order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context, 50)
 
 
 def series_details(request, series_id, by_date=False):
@@ -2856,39 +2914,6 @@ def cover(request, issue_id, size):
         'error_subject': '%s cover' % issue,
         'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
       })
-
-
-def covers(request, series_id):
-    """
-    Display the cover gallery for a series.
-    """
-
-    series = get_gcd_object(Series, series_id)
-    # TODO: Figure out optimal table width and/or make it user controllable.
-    table_width = COVER_TABLE_WIDTH
-
-    # TODO: once we get permissions going 'can_mark' should be one
-    if request.user.is_authenticated and \
-       request.user.groups.filter(name='editor'):
-        can_mark = True
-    else:
-        can_mark = False
-
-    covers = Cover.objects.filter(issue__series=series, deleted=False) \
-                          .select_related('issue')
-
-    vars = {
-      'series': series,
-      'error_subject': '%s covers' % series,
-      'table_width': table_width,
-      'can_mark': can_mark,
-      'RANDOM_IMAGE': _publisher_image_content(series.publisher_id)
-    }
-
-    return paginate_response(
-      request, covers, 'gcd/details/covers.html', vars,
-      per_page=COVERS_PER_GALLERY_PAGE, callback_key='tags',
-      callback=lambda page: get_image_tags_per_page(page, series))
 
 
 def issue_images(request, issue_id):

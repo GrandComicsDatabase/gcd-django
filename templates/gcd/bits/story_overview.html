@@ -1,0 +1,12 @@
+{% load static %}
+{% load credits %}
+{% load display %}
+<h3 style="margin-bottom: 0;" class="credits_table_view">
+  <a hx-get="{% url "show_story_modal" story_id=story.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
+<img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img></a>
+<a href="{{ story.get_absolute_url }}">{{ story|show_title }}</a>
+</h3>
+
+{% with story=story modal=True %}
+  {% include "gcd/bits/single_story_credits.html" %}
+{% endwith %}

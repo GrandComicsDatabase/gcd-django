@@ -3834,7 +3834,8 @@ class IssueCreditRevision(Revision):
 
 def _removed_related_objects(removed_objects, source_type):
     for removed_object in removed_objects:
-        if removed_object.cleaned_data['id']:
+        cd = removed_object.cleaned_data
+        if 'id' in cd and cd['id']:
             if getattr(removed_object.cleaned_data['id'], source_type):
                 removed_object.cleaned_data['id'].deleted = True
                 removed_object.cleaned_data['id'].save()

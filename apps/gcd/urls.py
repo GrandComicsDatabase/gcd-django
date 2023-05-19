@@ -254,6 +254,8 @@ urlpatterns = [
 
     url(r'^series/(?P<series_id>\d+)/covers/$',
       gcd_views.details.covers, name='series_covers'),
+    url(r'^series/(?P<series_id>\d+)/overview/$',
+      gcd_views.details.series_overview, name='series_overview'),
 
     url(r'^series/(?P<series_id>\d+)/scans/$',
       gcd_views.details.scans, name='series_scan_table'),
