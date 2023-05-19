@@ -21,6 +21,8 @@ def get_generic_image_tag(image, alt_text):
 
 def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     img_class = 'cover_img'
+    css_width = ''
+
     if zoom_level == ZOOM_SMALL:
         width = 100
         size = 'small'
@@ -34,6 +36,10 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     elif zoom_level == ZOOM_LARGE:
         width = 400
         size = 'large'
+    elif zoom_level == 1.5:
+        width = 200
+        css_width = 'width="150px"'
+        size = 'medium'
 
     if not can_have_cover:
         return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
@@ -54,7 +60,7 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     if settings.FAKE_IMAGES:
         return mark_safe('<img src="' +settings.STATIC_URL + \
                'img/placeholder_' + size + '.jpg"' + \
-               'class="cover_img">')
+               'class="cover_img"' + css_width + '>')
 
     img_url = cover.get_base_url()+("/w%d/%d.jpg" % (width, cover.id))
 
@@ -64,7 +70,7 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     img_url = img_url + '?' + str(hash(cover.last_upload))
 
     return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) + \
-           '" ' + ' class="' + img_class + '"/>')
+           '" ' + ' class="' + img_class + '"' + css_width + '/>')
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
