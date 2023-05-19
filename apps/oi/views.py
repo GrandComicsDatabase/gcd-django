@@ -4161,6 +4161,68 @@ def move_story_revision(request, id):
 
     new_issue = story.changeset.issuerevisions.exclude(issue=story.issue).get()
     story.issue = new_issue.issue
+
+    # In a two issue changeset (so far) one cannot add/edit reprints, but
+    # reprint_revisions might exist from a move of the story before, free them.
+    for reprint_revision in story.changeset.reprintrevisions.filter(target=story.story):
+        _free_revision_lock(reprint_revision.reprint)
+        reprint_revision.delete()
+    for reprint_revision in story.changeset.reprintrevisions.filter(origin=story.story):
+        _free_revision_lock(reprint_revision.reprint)
+        reprint_revision.delete()
+
+    # Only when moving to a new variant or new issue do we need to handle
+    # reprints. No reprint handling when in a change we move a sequence back,
+    # which was moved in the change to the other side.
+    if not new_issue.issue or new_issue.issue != story.story.issue:
+        reprints = []
+        for reprint in story.story.from_all_reprints.all():
+            if _do_reserve(story.changeset.indexer,
+                        reprint, 'reprint',
+                        changeset=story.changeset):
+                reprint_revision = reprint.revisions.get(changeset__id=story.changeset.id)
+                if new_issue.issue:
+                    reprint_revision.target_issue = new_issue.issue
+                    reprint_revision.target_revision = story
+                    reprint_revision.target = None
+                else:
+                    # Keep reprint_revision.target so that the reprints
+                    # show in the compare. Needs care in checks in save.
+                    reprint_revision.target_issue = None
+                    reprint_revision.target_revision = story
+                reprint_revision.save()
+                reprints.append(reprint_revision)
+            else:
+                for reprint_revision in reprints:
+                    _free_revision_lock(reprint_revision.reprint)
+                    reprint_revision.delete()
+                return show_error_with_return(
+                    request, 'Error while reserving reprints.',
+                    story.changeset)
+        for reprint in story.story.to_all_reprints.all():
+            if _do_reserve(story.changeset.indexer,
+                        reprint, 'reprint',
+                        changeset=story.changeset):
+                reprint_revision = reprint.revisions.get(changeset__id=story.changeset.id)
+                if new_issue.issue:
+                    reprint_revision.origin_issue = new_issue.issue
+                    reprint_revision.origin_revision = story
+                    reprint_revision.origin = None
+                else:
+                    # Keep reprint_revision.origin so that the reprints
+                    # show in the compare. Needs care in checks in save.
+                    reprint_revision.origin_issue = None
+                    reprint_revision.origin_revision = story
+                reprint_revision.save()
+                reprints.append(reprint_revision)
+            else:
+                for reprint_revision in reprints:
+                    _free_revision_lock(reprint_revision.reprint)
+                    reprint_revision.delete()
+                return show_error_with_return(
+                    request, 'Error while reserving reprints.',
+                    story.changeset)
+
     story.sequence_number = new_issue.next_sequence_number()
     story.save()
     old_issue = story.changeset.issuerevisions.exclude(id=new_issue.id).get()

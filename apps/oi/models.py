@@ -7253,24 +7253,8 @@ class ReprintRevision(Revision):
 
     def save(self, *args, **kwargs):
         # Ensure that we can't create a nonsense link.
-        if self.origin:
-            if self.origin_issue and self.origin_issue != self.origin.issue:
-                raise ValueError(
-                    "Reprint origin story and issue do not match.  Story "
-                    "issue: '%s'; Issue: '%s'" % (self.origin.issue,
-                                                  self.origin_issue))
-            if not self.origin_issue:
-                self.origin_issue = self.origin.issue
-
-        if self.target:
-            if self.target_issue and self.target_issue != self.target.issue:
-                raise ValueError(
-                    "Reprint target story and issue do not match.  Story "
-                    "issue: '%s'; Issue: '%s'" % (self.target.issue,
-                                                  self.target_issue))
-            if not self.target_issue:
-                self.target_issue = self.target.issue
-
+        # Check first revisions since for sequence moves things get
+        # complicated in view of the checks.
         if self.origin_revision:
             if self.origin and self.origin_revision.story != self.origin:
                 raise ValueError(
@@ -7298,6 +7282,24 @@ class ReprintRevision(Revision):
                     "Reprint target story revision issue and target issue "
                     "do not agree.  Issue from revision: '%s'; Issue: '%s'" %
                     (self.target_revision.issue, self.target_issue))
+
+        if self.origin:
+            if self.origin_issue and self.origin_issue != self.origin.issue:
+                raise ValueError(
+                    "Reprint origin story and issue do not match.  Story "
+                    "issue: '%s'; Issue: '%s'" % (self.origin.issue,
+                                                  self.origin_issue))
+            if not self.origin_issue:
+                self.origin_issue = self.origin.issue
+
+        if self.target:
+            if self.target_issue and self.target_issue != self.target.issue:
+                raise ValueError(
+                    "Reprint target story and issue do not match.  Story "
+                    "issue: '%s'; Issue: '%s'" % (self.target.issue,
+                                                  self.target_issue))
+            if not self.target_issue:
+                self.target_issue = self.target.issue
 
         super(ReprintRevision, self).save(*args, **kwargs)
 
