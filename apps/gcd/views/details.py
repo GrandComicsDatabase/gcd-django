@@ -2842,7 +2842,7 @@ def cover(request, issue_id, size):
     covers = Cover.objects.filter(issue__series=issue.series,
                                   issue__sort_code__lt=issue.sort_code,
                                   deleted=False)
-    cover_page = covers.count()/COVERS_PER_GALLERY_PAGE + 1
+    cover_page = int(covers.count()/COVERS_PER_GALLERY_PAGE) + 1
 
     return render(
       request, 'gcd/details/cover.html',
@@ -3007,7 +3007,7 @@ def show_issue(request, issue, preview=False):
         covers = Cover.objects.filter(issue__series=issue.series,
                                       issue__sort_code__lt=issue.sort_code,
                                       deleted=False)
-        cover_page = covers.count()/COVERS_PER_GALLERY_PAGE + 1
+        cover_page = int(covers.count()/COVERS_PER_GALLERY_PAGE) + 1
 
     variant_image_tags = []
     for variant_cover in issue.variant_covers():
