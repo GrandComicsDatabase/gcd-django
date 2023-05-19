@@ -9,7 +9,7 @@ from urllib.parse import unquote
 
 import django.urls as urlresolvers
 from django.conf import settings
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.db import transaction, IntegrityError
@@ -3258,9 +3258,15 @@ def list_issue_reprints(request, id):
         return render_error(
           request,
           'Only the reservation holder may access this page.')
-    response = oi_render(
-      request, 'oi/edit/list_issue_reprints.html',
-      {'issue_revision': issue_revision, 'changeset': changeset})
+    try:
+        response = oi_render(
+        request, 'oi/edit/list_issue_reprints.html',
+        {'issue_revision': issue_revision, 'changeset': changeset})
+    except NoReverseMatch:
+        return render_error(
+          request,
+          'A reprint notes entry is malformed, most likely for one sequence '
+          'it contains linebreaks, which are not supported for this field.')
     response['Cache-Control'] = "no-cache, no-store, "\
                                 "max-age=0, must-revalidate"
     return response
