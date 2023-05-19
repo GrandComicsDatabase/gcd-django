@@ -146,7 +146,8 @@ def generic_sortable_list(request, items, table, template, context):
                   if f.auto_created is False]
         fields = [f for f in fields if f not in {'created', 'modified',
                                                  'deleted', 'keywords',
-                                                 'tagged_items'}]
+                                                 'tagged_items', 'awards',
+                                                 'portrait', 'sample_scan'}]
         fields.insert(0, 'id')
         if export_format == 'db_csv':
             return render_to_csv_response(items.values(*fields),
@@ -354,6 +355,7 @@ def creator_characters(request, creator_id, country=None):
 
 
 def creator_creators(request, creator_id):
+    # list of creators the creator creator_id worked with
     creator = get_gcd_object(Creator, creator_id)
     names = list(_get_creator_names_for_checklist(creator))
 
@@ -419,6 +421,7 @@ def creator_creators(request, creator_id):
 
 
 def creator_features(request, creator_id, country=None, language=None):
+    # list of features the creator creator_id worked on
     creator = get_gcd_object(Creator, creator_id)
     names = list(_get_creator_names_for_checklist(creator))
 
@@ -2335,6 +2338,7 @@ def feature_issuelist_by_id(request, feature_id):
 
 
 def feature_creatorlist(request, feature_id):
+    # list of creators that worked on feature feature_id
     feature = get_gcd_object(Feature, feature_id)
 
     creators = CreatorNameDetail.objects.all()
@@ -2383,7 +2387,7 @@ def feature_creatorlist(request, feature_id):
     table = FeatureCreatorTable(creators, attrs={'class': 'sortable_listing'},
                                 feature=feature,
                                 template_name='gcd/bits/sortable_table.html',
-                                order_by=('creator__sort_name'))
+                                order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -2609,7 +2613,7 @@ def character_creators(request, character_id):
                                                    'sortable_listing'},
                                   character=character,
                                   template_name='gcd/bits/sortable_table.html',
-                                  order_by=('creator__sort_name'))
+                                  order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 
