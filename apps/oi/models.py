@@ -5560,7 +5560,7 @@ class StoryRevision(Revision):
                                 other_issue_revision.series.language
             for feature_logo in self.feature_logo.all():
                 if feature_logo.feature.get(language=language) not in \
-                    self.feature_object.all():
+                  self.feature_object.all():
                     self.feature_object.add(feature_logo.feature.
                                             get(language=language))
         if self.story_character_revisions.count():
@@ -5659,13 +5659,13 @@ class StoryRevision(Revision):
                                     note = remainder_note
                         elif note == 'painted':
                             note = 'painting'
-                        elif note == 'signed, credited' or \
-                          note == 'credited, signed':
+                        elif (note == 'signed, credited' or
+                              note == 'credited, signed'):
                             is_signed = True
                             is_credited = True
                             note = ''
-                        elif note == 'signed, painted' or \
-                          note == 'painted, signed':
+                        elif (note == 'signed, painted' or
+                              note == 'painted, signed'):
                             is_signed = True
                             note = 'painting'
                         else:
@@ -5719,9 +5719,13 @@ class StoryRevision(Revision):
                 self.save()
 
     def migrate_single_feature(self, feature):
+        if self.issue:
+            series = self.issue.series
+        else:
+            series = self.changeset.issuerevisions.get(issue=None).series
         feature_object = Feature.objects.filter(
             name=feature, deleted=False, feature_type__id=1,
-            language=self.issue.series.language)
+            language=series.language)
         if feature_object.count() == 1:
             self.feature_object.add(feature_object.get())
             return True
