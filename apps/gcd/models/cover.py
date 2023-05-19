@@ -94,6 +94,10 @@ class Cover(models.Model):
 
 
 class CoverColumn(tables.Column):
+    def value(self, value):
+        for cover in value:
+            return cover
+
     def render(self, value):
         from apps.gcd.views.covers import get_image_tag
         cover_tag = ''
@@ -130,6 +134,12 @@ class CoverIssueTable(IssueTable):
         fields = ('cover', 'issue', 'longest_story', 'publication_date',
                   'on_sale_date')
         attrs = {'th': {'class': "non_visited"}}
+
+    def value_longest_story(self, value):
+        from .story import Story
+        story = Story.objects.get(id=value)
+
+        return story
 
     def render_longest_story(self, value):
         from .story import Story
