@@ -252,6 +252,14 @@ class Issue(GcdData):
     def active_code_numbers(self):
         return self.code_number.all()
 
+    def get_cover_sequence(self):
+        cover = self.active_stories().filter(type=STORY_TYPES['cover'])\
+                    .prefetch_related('credits__creator__creator')
+        if cover:
+            return cover[0]
+        else:
+            return None
+
     def shown_stories(self):
         """ returns cover sequence and story sequences """
         if self.variant_of:

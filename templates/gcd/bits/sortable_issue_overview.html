@@ -1,6 +1,6 @@
 {% load static %}
 <a hx-get="{% url "show_issue_modal" issue_id=value %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
 <img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img></a>{{ record.show_series_and_issue_link }}<br>
-{% with story=record.active_stories.0 modal=True is_cover=True %}
+{% with story=record.get_cover_sequence modal=True is_cover=True %}
   {% include "gcd/bits/single_story_credits.html" %}
 {% endwith %}

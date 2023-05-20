@@ -145,7 +145,8 @@ class CoverIssueTable(IssueTable):
         from .story import Story
         template_name = 'gcd/bits/story_overview.html'
 
-        story = Story.objects.get(id=value)
+        story = Story.objects.prefetch_related('credits__creator__creator')\
+                             .get(id=value)
 
         request_context = self.context
         context = {'story': story,

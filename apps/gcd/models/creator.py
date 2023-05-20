@@ -113,7 +113,7 @@ class CreatorNameDetail(GcdData):
     class Meta:
         db_table = 'gcd_creator_name_detail'
         app_label = 'gcd'
-        ordering = ['sort_name', '-creator__birth_date__year', 'type__id']
+        ordering = ['sort_name', '-creator__birth_date__year', 'type_id']
         verbose_name_plural = 'CreatorName Details'
 
     name = models.CharField(max_length=255, db_index=True)
@@ -391,7 +391,7 @@ class Creator(GcdData):
     def _portrait(self):
         content_type = ContentType.objects.get_for_model(self)
         img = Image.objects.filter(object_id=self.id, deleted=False,
-                                   content_type=content_type, type__id=4)
+                                   content_type=content_type, type_id=4)
         if img:
             return img.get()
         else:
@@ -402,7 +402,7 @@ class Creator(GcdData):
     def _samplescan(self):
         content_type = ContentType.objects.get_for_model(self)
         img = Image.objects.filter(object_id=self.id, deleted=False,
-                                   content_type=content_type, type__id=5)
+                                   content_type=content_type, type_id=5)
         if img:
             return img.get()
         else:
@@ -488,7 +488,7 @@ class Creator(GcdData):
     def active_awards_for_issues(self):
         from .issue import Issue
         issues = Issue.objects.filter(story__credits__creator__creator=self,
-                                      story__type__id__in=[10, 19, 20, 21, 27],
+                                      story__type_id__in=[10, 19, 20, 21, 27],
                                       awards__isnull=False).distinct()
         content_type = ContentType.objects.get(model='Issue')
         awards = ReceivedAward.objects.filter(content_type=content_type,
@@ -569,7 +569,7 @@ class CreatorSignature(GcdData):
     def _signature(self):
         content_type = ContentType.objects.get_for_model(self)
         img = Image.objects.filter(object_id=self.id, deleted=False,
-                                   content_type=content_type, type__id=7)
+                                   content_type=content_type, type_id=7)
         if img:
             return img.get()
         else:
