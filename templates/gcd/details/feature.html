@@ -23,6 +23,9 @@ GCD :: Feature :: {{ feature.name }}
 
 {% block content %}
       <dl class="pub_data">
+{% if feature.disambiguation %}
+        <br><strong>Disambiguation:</strong> {{ feature.disambiguation }}
+{% endif %}
 {% if feature.genre %}
         <p><strong>Genre:</strong> {{ feature.genre }}</p>
 {% endif %}

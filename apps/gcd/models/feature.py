@@ -49,6 +49,8 @@ class Feature(GcdData):
 
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
+    disambiguation = models.CharField(max_length=255, default='',
+                                      db_index=True)
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
     feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
@@ -89,8 +91,20 @@ class Feature(GcdData):
                 'show_feature',
                 kwargs={'feature_id': self.id})
 
+    def name_with_disambiguation(self):
+        extra = ''
+        if self.disambiguation:
+            extra = ' [%s]' % self.disambiguation
+        base_name = str('%s%s' % (self.name, extra))
+        if self.feature_type.id != 1:
+            base_name += ' [%s]' % self.feature_type.name[0]
+        return base_name
+
     def __str__(self):
-        base_name = str('%s (%s)' % (self.name, self.language.name))
+        extra = ''
+        if self.disambiguation:
+            extra = ' [%s]' % self.disambiguation
+        base_name = str('%s%s (%s)' % (self.name, extra, self.language.name))
         if self.feature_type.id != 1:
             base_name += ' [%s]' % self.feature_type.name[0]
         return base_name

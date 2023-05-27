@@ -123,7 +123,8 @@ def field_value(revision, field):
                 features += '; '
             if field == 'feature_object':
                 features += '<a href="%s">%s</a>' % (
-                  feature.get_absolute_url(), esc(feature.name))
+                  feature.get_absolute_url(),
+                  esc(feature.name_with_disambiguation()))
             else:
                 features += absolute_url(feature, feature.logo)
         return mark_safe(features)

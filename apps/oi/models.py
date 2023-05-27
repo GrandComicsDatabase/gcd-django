@@ -3903,7 +3903,7 @@ class IssueRevision(Revision):
                                    related_name='variant_revisions')
     variant_name = models.CharField(max_length=255, blank=True, default='')
     variant_cover_status = models.IntegerField(choices=VCS_Codes.choices,
-                                               default=1, db_index=True)
+                                               default=3, db_index=True)
 
     publication_date = models.CharField(max_length=255, blank=True, default='')
     key_date = models.CharField(
@@ -6291,6 +6291,8 @@ class FeatureRevision(Revision):
 
     name = models.CharField(max_length=255)
     leading_article = models.BooleanField(default=False)
+    disambiguation = models.CharField(max_length=255, default='',
+                                      db_index=True)
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
     feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
@@ -6331,8 +6333,8 @@ class FeatureRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'leading_article', 'genre', 'language',
-                        'feature_type', 'year_created',
+    _base_field_list = ['name', 'leading_article', 'disambiguation',
+                        'genre', 'language', 'feature_type', 'year_created',
                         'year_created_uncertain', 'notes', 'keywords']
 
     def _field_list(self):
@@ -6342,6 +6344,7 @@ class FeatureRevision(Revision):
         return {
             'name': '',
             'leading_article': False,
+            'disambiguation': '',
             'genre': '',
             'language': None,
             'feature_type': None,

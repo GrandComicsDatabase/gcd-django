@@ -138,6 +138,8 @@ class CreatorNameDetail(GcdData):
             url = False
         if self.is_official_name:
             name = self.name
+            if compare and self.creator.disambiguation:
+                name += ' [%s]' % self.creator.disambiguation
             if self.type and self.type_id == NAME_TYPES['house']:
                 if credit.credit_name:
                     credit.credit_name += ', house name'
@@ -150,6 +152,8 @@ class CreatorNameDetail(GcdData):
                     credit.credit_name = 'joint name'
         else:
             name = self.creator.gcd_official_name
+            if compare and self.creator.disambiguation:
+                name += ' [%s]' % self.creator.disambiguation
             if (credit.is_credited and not credit.credited_as) \
                or (self.type and self.type_id == NAME_TYPES['studio']) \
                or (self.in_script != self.creator.creator_names.get(
