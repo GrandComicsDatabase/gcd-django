@@ -294,9 +294,9 @@ class Issue(GcdData):
         else:
             return self.cover_set.none()
 
-    def active_covers(self):
+    def active_covers(self, stats=False):
         # check for variant with no image difference
-        if self.variant_of and self.variant_cover_status == 1:
+        if self.variant_of and self.variant_cover_status == 1 and not stats:
             return self.variant_of.active_covers()
         return self._active_covers()
 
@@ -504,7 +504,7 @@ class Issue(GcdData):
 
         counts = {
             'stories': self.active_stories().count(),
-            'covers': self.active_covers().count(),
+            'covers': self.active_covers(stats=True).count(),
         }
 
         if not self.variant_of_id:
