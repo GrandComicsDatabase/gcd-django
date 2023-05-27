@@ -6292,7 +6292,7 @@ class FeatureRevision(Revision):
     name = models.CharField(max_length=255)
     leading_article = models.BooleanField(default=False)
     disambiguation = models.CharField(
-      max_length=255, default='', db_index=True,
+      max_length=255, default='', db_index=True, blank=True,
       help_text='If needed a short phrase for the disambiguation of features '
                 'with a similar or identical name.')
     genre = models.CharField(max_length=255)
