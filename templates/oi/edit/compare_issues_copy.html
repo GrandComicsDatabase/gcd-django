@@ -1,0 +1,50 @@
+{% extends "oi/base_view.html" %}
+{% load editing %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+Comparing :: {{ revision }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}">
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default.css" %}">
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/oi/default/edit.css" %}">
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/status.css" %}">
+</link>
+{% endblock %}
+
+{% block view_body %}
+<div class="body_content">
+  <h1>
+  {{ revision.changeset|header_link }}
+  </h1>
+  <div class="edit">
+
+    <form action="" method="POST">
+  {% csrf_token %}
+      <table class="comparison modified">
+        <tr>
+          <th> Select </th>
+          <th> Field </th>
+          <th> Source </th>
+          <th> Target </th>
+        </tr>
+{% with select_for_copy=True %}
+  {% for field in field_list %}
+    {% include 'oi/bits/compare_field.html' %}
+  {% endfor %}
+{% endwith %}
+      </table>
+      <div style="clear: both;"></div>
+      <input type="submit" name="copy_select" value="Copy Selected Values">
+      <input type="submit" name="cancel" value="Cancel">
+    </form>
+  </div>
+</div>
+{% endblock %}

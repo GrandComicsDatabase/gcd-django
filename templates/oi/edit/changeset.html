@@ -113,11 +113,11 @@
       </td>
     </tr>
   </table>
-  <input type="submit" name="submit" value="Submit changes for approval">
+  <input type="submit" name="submit" value="Submit Changes For Approval">
       {% if changeset.approver %}
   <input type="submit" name="discuss" value="Discuss">
       {% endif %}
-  <input type="submit" name="discard" value="Discard all changes">
+  <input type="submit" name="discard" value="Discard All Changes">
   <input type="submit" name="add_comment" value="Add Comment">
 </form>
       {% endif %}
@@ -133,7 +133,7 @@ This change is being edited by {{ changeset.indexer.indexer }}.
 
 {% else %} <!--- change is not OPEN --->
 <p>
-  <a href="{% url "compare" id=changeset.id %}">Compare changes</a>
+  <a href="{% url "compare" id=changeset.id %}">Compare Changes</a>
 </p>
 {% endifequal %}
 </div>

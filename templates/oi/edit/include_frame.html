@@ -10,7 +10,7 @@
   </table>
   {% if changeset.comments.count > 1 %} {% comment %} change was sent back {% endcomment %}
   <p>
-    <a href="{% url "compare" id=changeset.id %}">Compare changes</a>
+    <a href="{% url "compare" id=changeset.id %}">Compare Changes</a>
   </p>
   {% endif %}
   {% with changeset.comments as comments %}

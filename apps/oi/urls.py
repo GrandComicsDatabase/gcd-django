@@ -158,6 +158,8 @@ urlpatterns = [
         name='reorder_stories'),
     url(r'^issue/revision/(?P<issue_revision_id>\d+)/move/(?P<series_id>\d+)/$',
         oi_views.move_issue, name='move_issue'),
+    url(r'^issue/revision/(?P<issue_revision_id>\d+)/compare/(?P<issue_id>\d+)/$',
+        oi_views.compare_issues_copy, name='compare_issues_copy'),
 
     url(r'^bulk_issue_edit/$',
         oi_views.edit_issues_in_bulk,

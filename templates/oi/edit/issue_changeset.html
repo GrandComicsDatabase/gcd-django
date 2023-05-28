@@ -19,10 +19,39 @@
       <form class="changeset" method="GET"
             action="{% url "edit_revision" model_name='issue' id=issue_revision.id %}">
         <input type="submit" id="edit_issue_{{ issue_revision.id }}"
-               name="edit_issue_{{ issue_revision.id }}" value="Edit issue fields">
+               name="edit_issue_{{ issue_revision.id }}" value="Edit Issue Fields">
       </form>
     </td>
   </tr>
+  {% if issue_revision.variant_of or issue_revision.issue.get_prev_next_issue.0 or issue_revision.after %}
+  <tr>
+    {% if issue_revision.issue.get_prev_next_issue.0 %}
+    <td>
+      <a href="{% url "compare_issues_copy" issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">
+        <button type="button">Compare With & Copy From Preceeding Issue</button>
+      </a>
+    </td>
+    {% elif issue_revision.after and not issue_revision.variant_of %}
+    <td>
+      <a href="{% url "compare_issues_copy" issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">
+        <button type="button">Compare With & Copy From Preceeding Issue</button>
+      </a>
+    </td>
+    {% else %}
+    <td></td>
+    {% endif %}
+    {% if issue_revision.variant_of %}
+    <td align='right'>
+      <a href="{% url "compare_issues_copy" issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.id %}">
+        <button type="button">Compare With & Copy From Base Issue</button>
+      </a>
+    </td>
+    {% else %}
+    <td></td>
+    {% endif %}
+
+  </tr>
+  {% endif %}
   {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
   <tr>
     <td colspan="2" align="left">
@@ -38,16 +67,16 @@
       <form class="changeset" method="GET"
         action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
         <div class="left">
-          <input type="submit" id="add_story" name="add" value="Add story">
+          <input type="submit" id="add_story" name="add" value="Add Story">
         {% if issue_revision.variant_of %}
           {% if issue_revision.issue %}
-          <input type="submit" id="copy_cover" name="copy_cover" value="Copy story">
+          <input type="submit" id="copy_cover" name="copy_cover" value="Copy Story">
           {% endif %}
           <br>A cover sequence can be added in case the cover artwork is different between variant and base. <br>
           Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
           <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
         {% else %}
-          <input type="submit" id="copy_story" name="copy" value="Copy story">
+          <input type="submit" id="copy_story" name="copy" value="Copy Story">
         </div>
         <div class="right">
           &nbsp;sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
@@ -67,7 +96,7 @@
             action="{% url "reorder_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
         <input type="submit" id="reorder_issue_{{ issue.id }}"
                name="reorder_issue_{{ issue.id }}"
-               value="Reorder issue stories">
+               value="Reorder Issue Stories">
       </form>
     </td>
   </tr>
@@ -78,14 +107,14 @@
       <form class="changeset" method="GET"
             action="{% url "list_issue_reprints" id=issue_revision.id %}">
         <input type="submit" id="list_reprints_{{ issue_revision.id }}"
-               name="list_issue_reprints_{{ issue_revision.id }}" value="Edit issue/story reprint links">
+               name="list_issue_reprints_{{ issue_revision.id }}" value="Edit Issue & Story Reprint Links">
       </form>
     </td>
     <td align="right">
     {% if issue_revision.can_add_reprints %}
       <form class="changeset" method="GET"
             action="{% url "add_issue_reprint" issue_id=issue_revision.id changeset_id=changeset.id %}">
-        <input type="submit" value="Add reprint">
+        <input type="submit" value="Add Reprint">
       </form>
     {% endif %}
     </td>
@@ -98,7 +127,7 @@
             action="{% url "add_variant_to_issue_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
         <input type="submit" id="add_variant_to_issue_revision_{{ issue_revision.id }}"
                name="add_variant_to_issue_revision_{{ issue_revision.id }}"
-               value="Add variant issue">
+               value="Add Variant Issue">
       </form>
     </td>
   </tr>
@@ -108,7 +137,7 @@
     <td colspan="2">
       <form method="GET"
         action="{% url "move_issue" issue_revision_id=issue_revision.id series_id=0 %}">
-        <input type="submit" value="Move to series with id">
+        <input type="submit" value="Move To Series With ID">
         <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"> brand/indicia publisher values might reset
       </form>
     </td>
@@ -125,14 +154,14 @@
 <br>Cover is moved from {{ cover.issue }}.
   <form action="{% url "undo_move_cover" id=changeset.id cover_id=cover.id %}" method="POST">
       {% csrf_token %}
-    <input type="submit" value="Undo move cover">
+    <input type="submit" value="Undo Cover Move">
   </form>
   <br>
     {% endfor %}
 </div>
   {% endif %}
   {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}
-<form action="{% url "move_cover" id=changeset.id %}" method="GET"><input type="submit" value="Move covers between both issues"></form>
+<form action="{% url "move_cover" id=changeset.id %}" method="GET"><input type="submit" value="Move Covers Between Both Issues"></form>
 <br>
   {% endif %}
 {% endif %} <!-- variant_add or two_issues -->
@@ -161,7 +190,7 @@
       <form class="story_button" method="GET"
             action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id reprint_note=story.reprint_notes|default:" "|urlencode %}">
         <input type="submit" id="reprint_{{ story.id }}" name="reprint_{{ story.id }}"
-               value="Add reprint">
+               value="Add Reprint">
       </form>
         {% endif %}
         {% if not story.story and not story.has_reprint_revisions %}
@@ -184,7 +213,7 @@
       <form class="story_button" method="POST"
             action="{% url "toggle_delete_story_revision" id=story.id %}">
               {% csrf_token %}
-        <input type="submit" value="Mark to Delete">
+        <input type="submit" value="Mark To Delete">
       </form>
             {% endif %}
           {% endif %}
@@ -226,7 +255,7 @@
       action="{% url "copy_story_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
     <td colspan="2" align="left">
       <div class="left">
-      <input type="submit" id="copy_story_revision" name="copy_story_revision" value="Copy sequence">
+      <input type="submit" id="copy_story_revision" name="copy_story_revision" value="Copy Sequence">
       </div>
       <div class="right">
       &nbsp;number of sequence to copy
@@ -265,8 +294,8 @@
       Select file: <input type="file" name="flatfile">
     </td>
     <td>
-      <input type="submit" name="tab" value="Import sequences (tab separated)">
-      <input type="submit" name="csv" value="Import sequences (CSV)">
+      <input type="submit" name="tab" value="Import Sequences (Tab Separated)">
+      <input type="submit" name="csv" value="Import Sequences (CSV)">
     </td>
   </form>
   </tr>
@@ -281,7 +310,7 @@
   {% endif %}
 {% endwith %}
 <p>
-  <a href="{% url "compare" id=changeset.id %}">Compare changes</a>
+  <a href="{% url "compare" id=changeset.id %}">Compare Changes</a>
 {% for issue_revision in changeset.issuerevisions.all %}
   | <a class="new_window" href="{% url "preview_revision" model_name='issue' id=issue_revision.id %}" target=_blank>Preview<span>opens in a new window</span>
   {% if issue_revision.variant_of %} (Variant) {% endif %}</a>

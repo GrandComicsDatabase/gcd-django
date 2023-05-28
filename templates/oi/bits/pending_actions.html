@@ -20,13 +20,13 @@
     {% if changeset.indexer != user %}
   <input type="submit" name="assign"
     {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and section.object_type != "cover" %}
-    value="Assign and mentor"
+    value="Assign And Mentor"
     {% else %}
     value="Assign"
     {% endif %}
   ></input>
     {% else %}
-  <input type="submit" name="retract" value="Retract and edit further">
+  <input type="submit" name="retract" value="Retract And Edit Further">
     {% endif %}
 </form>
   {% else %}

@@ -378,7 +378,8 @@ class Issue(GcdData):
         next_issue = None
 
         earlier_issues = self.series.active_base_issues()\
-                             .filter(sort_code__lt=self.sort_code)
+                             .filter(sort_code__lt=self.sort_code)\
+                             .exclude(id=self.variant_of_id)
         earlier_issues = earlier_issues.order_by('-sort_code')
         if earlier_issues:
             prev_issue = earlier_issues[0]

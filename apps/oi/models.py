@@ -2160,7 +2160,7 @@ class Revision(models.Model):
             self._post_rev = self.next_revision
         return self._post_rev
 
-    def compare_changes(self):
+    def compare_changes(self, compare_revision=None):
         """
         Set up the 'changed' property so that it can be accessed conveniently
         from a template.  Template calling limitations prevent just
@@ -2175,7 +2175,11 @@ class Revision(models.Model):
             self.is_changed = True
             return
 
-        prev_rev = self.previous()
+        # if we want to compare to some other revision, call with it
+        if compare_revision:
+            prev_rev = compare_revision
+        else:
+            prev_rev = self.previous()
 
         if prev_rev is None:
             self.is_changed = True
@@ -2309,10 +2313,11 @@ class Revision(models.Model):
         """
         if hasattr(self.source, 'external_link'):
             for external_link in self.source.external_link.all():
-                external_link_lock = _get_revision_lock(external_link,
-                                                        changeset=self.changeset)
+                external_link_lock = _get_revision_lock(
+                  external_link, changeset=self.changeset)
                 if external_link_lock is None:
-                    raise IntegrityError("needed External Link lock not possible")
+                    raise IntegrityError(
+                      "needed External Link lock not possible")
                 external_link_revision = ExternalLinkRevision.clone(
                     external_link, self.changeset, object_revision=self)
                 if delete:
@@ -2377,7 +2382,8 @@ class ExternalLinkRevision(Revision):
                                       on_delete=models.CASCADE,
                                       related_name='revisions',
                                       null=True)
-    site = models.ForeignKey('gcd.ExternalSite', on_delete=models.CASCADE,
+    site = models.ForeignKey(
+      'gcd.ExternalSite', on_delete=models.CASCADE,
       help_text='External site, links to its pages that are directly related'
                 ' to this record can be added.')
     link = models.URLField(max_length=2000)
@@ -3447,15 +3453,15 @@ class SeriesRevision(Revision):
         # Handle adding the singleton issue last, to avoid double-counting
         # the addition in statistics.
         if changes['to is_singleton'] and self.series.issue_count == 0:
-            issue_revision = IssueRevision(changeset=self.changeset,
-                                           series=self.series,
-                                           after=None,
-                                           number='[nn]',
-                                           publication_date=self.year_began,
-                                           notes=self.notes,
-                                           keywords=self.keywords,
-                                           reservation_requested=
-                                           self.reservation_requested)
+            issue_revision = IssueRevision(
+              changeset=self.changeset,
+              series=self.series,
+              after=None,
+              number='[nn]',
+              publication_date=self.year_began,
+              notes=self.notes,
+              keywords=self.keywords,
+              reservation_requested=self.reservation_requested)
             if self.notes:
                 self.notes = ''
                 self.save()
@@ -3702,7 +3708,8 @@ class PublisherCodeNumberRevision(Revision):
                                               null=True,
                                               related_name='revisions')
 
-    number = models.CharField(max_length=50, db_index=True,
+    number = models.CharField(
+      max_length=50, db_index=True,
       help_text='structured publisher code number, from cover or indicia')
     number_type = models.ForeignKey(CodeNumberType, on_delete=models.CASCADE)
     issue_revision = models.ForeignKey(
@@ -4064,9 +4071,10 @@ class IssueRevision(Revision):
             ('brand', 'group'),
         })
 
-    def compare_changes(self):
-        super(IssueRevision, self).compare_changes()
-        if not self.deleted:  # and not self.changed['editing']:
+    def compare_changes(self, compare_revision=None):
+        super(IssueRevision, self).compare_changes(
+          compare_revision=compare_revision)
+        if not self.deleted and not self.changed['editing']:
             credits = self.issue_credit_revisions.filter(
                            credit_type__id=6)
             if credits:
@@ -4344,7 +4352,9 @@ class IssueRevision(Revision):
             code_number_formset = PublisherCodeNumberFormSet(
               request.POST or None,
               instance=self,
-              queryset=self.publisher_code_number_revisions.filter(deleted=False))
+              queryset=self.publisher_code_number_revisions.filter(
+                       deleted=False)
+              )
         else:
             code_number_formset = None
         external_link_formset = ExternalLinkRevisionFormSet(
@@ -4428,8 +4438,8 @@ class IssueRevision(Revision):
                     creator = creator.get()
                     if uncertain and not creator.is_official_name:
                         if creator.in_script == creator.creator\
-                            .active_names().get(is_official_name=True)\
-                            .in_script:
+                           .active_names().get(is_official_name=True)\
+                           .in_script:
                             creator = creator.creator.active_names().get(
                                                 is_official_name=True)
                     if note and note[0] == '(' and note[-1] == ')':
@@ -4684,7 +4694,7 @@ class IssueRevision(Revision):
            or self.changeset.change_type == CTYPES['variant_add']:
             fields = fields[0:1] + ['variant_name'] + fields[1:]
             if self.variant_of:
-               fields = fields[0:2] + ['variant_cover_status'] + fields[2:]
+                fields = fields[0:2] + ['variant_cover_status'] + fields[2:]
 
         if self.previous() and (self.previous().series != self.series):
             fields = ['series'] + fields
@@ -5135,9 +5145,9 @@ class StoryCharacterRevision(Revision):
     character = models.ForeignKey(CharacterNameDetail,
                                   on_delete=models.CASCADE,
                                   related_name='story_character_revisions')
-    story_revision = models.ForeignKey('StoryRevision',
-                                       on_delete=models.CASCADE,
-                                       related_name='story_character_revisions')
+    story_revision = models.ForeignKey(
+      'StoryRevision', on_delete=models.CASCADE,
+      related_name='story_character_revisions')
     group = models.ManyToManyField(Group, blank=True)
     role = models.ForeignKey(CharacterRole, null=True, blank=True,
                              on_delete=models.CASCADE)
@@ -5499,14 +5509,15 @@ class StoryRevision(Revision):
                         credit_revision.id = None
                         credit_revision.previous_revision = None
                         credit_revision.source = None
-                        credit_revision.credit_type = \
-                          CreditType.objects.get(id=4)
+                        credit_revision.credit_type = CreditType.objects.get(
+                          id=4)
                         credit_revision.save()
                     if cd['credit_type'].id in [10, 11, 12, 13]:
                         credit_revision.id = None
                         credit_revision.previous_revision = None
                         credit_revision.source = None
-                        credit_revision.credit_type = CreditType.objects.get(id=1)
+                        credit_revision.credit_type = CreditType.objects.get(
+                          id=1)
                         credit_revision.save()
                     if cd['credit_type'].id in [12, 13, 14]:
                         credit_revision.id = None
@@ -5578,7 +5589,8 @@ class StoryRevision(Revision):
                       .to_related_character.filter(relation_type__id=2).get()\
                       .to_character
                     if not self.story_character_revisions\
-                               .filter(character__character=character_identity)\
+                               .filter(
+                                 character__character=character_identity)\
                                .exists():
                         # civilian identities are not in a superhero group, so
                         # we don't need to copy this data via adds
@@ -5587,7 +5599,8 @@ class StoryRevision(Revision):
                         story_character.previous_revision_id = None
                         story_character.source = None
                         story_character.character = character_identity\
-                          .character_names.get(is_official_name=True)
+                                       .character_names.get(
+                                         is_official_name=True)
                         story_character.save()
 
     def old_credits(self):
@@ -5598,10 +5611,10 @@ class StoryRevision(Revision):
                 for s in credit.split(";"):
                     stripped = s.strip()
                     if not stripped.startswith('?') \
-                      and stripped not in ['various', 'typeset', 'gesetzt',
-                                           'tryckstil', 'formatadas',
-                                           'typographie',
-                                           'composición tipográfica']:
+                       and stripped not in ['various', 'typeset', 'gesetzt',
+                                            'tryckstil', 'formatadas',
+                                            'typographie',
+                                            'composición tipográfica']:
                         return True
         return False
 
@@ -6631,7 +6644,8 @@ class CharacterGroupRevisionBase(Revision):
                                                blank=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
-    description = models.TextField(blank=True,
+    description = models.TextField(
+      blank=True,
       help_text='concise description, including background and premise')
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
@@ -6740,7 +6754,8 @@ class CharacterRevision(CharacterGroupRevisionBase):
     def process_extra_forms(self, extra_forms):
         character_names_formset = extra_forms['character_names_formset']
         for character_name_form in character_names_formset:
-            if character_name_form.is_valid() and character_name_form.cleaned_data:
+            if character_name_form.is_valid() and \
+               character_name_form.cleaned_data:
                 cd = character_name_form.cleaned_data
                 if 'id' in cd and cd['id']:
                     character_revision = character_name_form.save()
@@ -6810,10 +6825,11 @@ class CharacterNameDetailRevision(Revision):
                                               on_delete=models.CASCADE,
                                               null=True,
                                               related_name='revisions')
-    character_revision = models.ForeignKey(CharacterRevision,
-                                           on_delete=models.CASCADE,
-                                           related_name='character_name_revisions',
-                                           null=True)
+    character_revision = models.ForeignKey(
+      CharacterRevision,
+      on_delete=models.CASCADE,
+      related_name='character_name_revisions',
+      null=True)
     character = models.ForeignKey(Character, on_delete=models.CASCADE,
                                   related_name='name_revisions', null=True)
     name = models.CharField(max_length=255, db_index=True)
