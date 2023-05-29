@@ -106,9 +106,15 @@ dl.credits_table_view {
     margin: 0;
 }
 
-h3.credits_table_view a:link, h3.credits_table_view a:visited, div.credits_table_view a:link, div.credits_table_view a:visited
+h3.credits_table_view a:link, h3.credits_table_view a:visited
 {
     color: black;
+}
+
+div.credits_table_view a:link, div.credits_table_view a:visited
+{
+    color: black;
+    text-decoration: underline;
 }
 
 dl.credits_table_view dt {
