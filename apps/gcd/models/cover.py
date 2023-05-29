@@ -111,6 +111,9 @@ class CoverColumn(tables.Column):
 class CoverIssuePublisherTable(IssuePublisherTable):
     cover = CoverColumn(accessor='active_covers',
                         verbose_name='Cover', orderable=False)
+    issue = IssueColumn(accessor='id', verbose_name='Issue',
+                        template_name='gcd/bits/sortable_issue_overview.html',
+                        )
 
     class Meta:
         model = Issue
