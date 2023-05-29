@@ -44,7 +44,7 @@
     {% if daily %}
    | <a href="{{ choose_url_after }}">{% trans "day after" %} &gt;</a>
     {% elif yearly %}
-   | <a href="{{ choose_url_after }}">&lt; {% trans "year after" %}</a>
+   | <a href="{{ choose_url_after }}">{% trans "year after" %} &gt;</a>
     {% else %}
    | <a href="{{ choose_url_after }}">{% trans "month after" %} &gt;</a>
     {% endif %}
