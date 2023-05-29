@@ -1145,10 +1145,16 @@ def publisher_monthly_covers(request,
                                    on_sale_date__lte='%d-%02d-32' % (
               year, month)).order_by('on_sale_date', 'series')
         else:
-            issues = \
-              issues.filter(key_date__gte='%d-%02d-%d' % (year, month-1, day),
-                            key_date__lte='%d-%02d-32' % (year, month))\
-                    .order_by('key_date', 'series')
+            if month == 12:
+                month_end = 14
+            else:
+                month_end = month
+            issues = issues.filter(key_date__gte='%d-%02d-%d' % (year,
+                                                                 month-1,
+                                                                 day),
+                                   key_date__lte='%d-%02d-32' % (year,
+                                                                 month_end))\
+                           .order_by('key_date', 'series')
         if not issues.exists() and year == date.today().year and \
            month == date.today().month:
             issues = Issue.objects.filter(series__publisher=publisher,
@@ -1226,12 +1232,14 @@ def publisher_monthly_covers(request,
                                    issue__on_sale_date__lte='%d-%02d-32' % (
               year, month)).order_by('issue__on_sale_date', 'issue__series')
         else:
-            covers = \
-              covers.filter(issue__key_date__gte='%d-%02d-%d' % (year,
-                                                                 month-1,
-                                                                 day),
-                            issue__key_date__lte='%d-%02d-32' % (year, month))\
-                    .order_by('issue__key_date', 'issue__series')
+            if month == 12:
+                month_end = 14
+            else:
+                month_end = month
+            covers = covers.filter(issue__key_date__gte='%d-%02d-%d' % (
+              year, month-1, day),
+                                   issue__key_date__lte='%d-%02d-32' % (
+              year, month_end)).order_by('issue__key_date', 'issue__series')
         if not covers.exists() and year == date.today().year and \
            month == date.today().month:
             covers = Cover.objects.filter(issue__series__publisher=publisher,
