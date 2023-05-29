@@ -1208,6 +1208,7 @@ def publisher_monthly_covers(request,
                 day = 50
             else:
                 year_start = year
+                month_start = month
             covers = covers.filter(issue__on_sale_date__gte='%d-%02d-%d' % (
               year_start, month_start, day),
                                    issue__on_sale_date__lte='%d-%02d-32' % (
