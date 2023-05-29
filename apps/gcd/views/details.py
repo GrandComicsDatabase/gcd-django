@@ -1202,13 +1202,17 @@ def publisher_monthly_covers(request,
         covers = Cover.objects.filter(issue__series__publisher=publisher,
                                       deleted=False).select_related('issue')
         if use_on_sale:
-            covers = \
-              covers.filter(issue__on_sale_date__gte='%d-%02d-%d' % (year,
-                                                                     month-1,
-                                                                     day),
-                            issue__on_sale_date__lte='%d-%02d-32' % (year,
-                                                                     month))\
-                    .order_by('issue__on_sale_date', 'issue__series')
+            if month == 1:
+                year_start = year-1
+                month_start = 13
+                day = 50
+            else:
+                year_start = year
+            covers = covers.filter(issue__on_sale_date__gte='%d-%02d-%d' % (
+              year_start, month_start, day),
+                                   issue__on_sale_date__lte='%d-%02d-32' % (
+              year, month))\
+                .order_by('issue__on_sale_date', 'issue__series')
         else:
             covers = \
               covers.filter(issue__key_date__gte='%d-%02d-%d' % (year,
@@ -1228,7 +1232,7 @@ def publisher_monthly_covers(request,
                                            .issue.key_date
             year = latest_issues_date[:4]
             month = latest_issues_date[5:7]
-            if month == '00':
+            if not month or month == '00':
                 month = '01'
             kwargs = {}
             kwargs['publisher_id'] = publisher_id
