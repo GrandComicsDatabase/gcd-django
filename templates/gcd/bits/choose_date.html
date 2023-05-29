@@ -3,6 +3,8 @@
 <div class="right">
   {% if daily %}
   <a href="{{ choose_url_before }}">&lt; {% trans "day before" %}</a> |
+  {% elif yearly %}
+  <a href="{{ choose_url_before }}">&lt; {% trans "year before" %}</a> |
   {% else %}
   <a href="{{ choose_url_before }}">&lt; {% trans "month before" %}</a> |
   {% endif %}
@@ -41,6 +43,8 @@
   {% if choose_url_after %}
     {% if daily %}
    | <a href="{{ choose_url_after }}">{% trans "day after" %} &gt;</a>
+    {% elif yearly %}
+   | <a href="{{ choose_url_after }}">&lt; {% trans "year after" %}</a>
     {% else %}
    | <a href="{{ choose_url_after }}">{% trans "month after" %} &gt;</a>
     {% endif %}

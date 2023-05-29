@@ -1120,6 +1120,7 @@ def publisher_monthly_covers(request,
     Display the covers for the monthly publications of a publisher.
     """
     publisher = get_gcd_object(Publisher, publisher_id)
+    yearly = False
 
     if overview:
         if use_on_sale:
@@ -1188,6 +1189,7 @@ def publisher_monthly_covers(request,
                                                use_on_sale)
         # otherwise we have less 50 for this year, modify links, etc.
         elif continue_processing:
+            yearly = True
             if month == 1:
                 year_before = date_before.year
             else:
@@ -1261,6 +1263,7 @@ def publisher_monthly_covers(request,
                          (publisher.year_began or 1900) - 1,
                          -1),
           'sort': sort,
+          'yearly': yearly,
           'choose_url': choose_url,
           'choose_url_after': choose_url_after,
           'choose_url_before': choose_url_before,
@@ -1291,6 +1294,7 @@ def publisher_monthly_covers(request,
             covers = _filter_issues_year_month(covers, year, month,
                                                use_on_sale, cover=True)
         elif continue_processing:
+            yearly = True
             if month == 1:
                 year_before = date_before.year
             else:
@@ -1349,6 +1353,7 @@ def publisher_monthly_covers(request,
           'years': range(date.today().year,
                          (publisher.year_began or 1900) - 1,
                          -1),
+          'yearly': yearly,
           'choose_url': choose_url,
           'choose_url_after': choose_url_after,
           'choose_url_before': choose_url_before,
