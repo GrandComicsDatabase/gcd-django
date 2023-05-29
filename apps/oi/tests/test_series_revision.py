@@ -399,7 +399,8 @@ def test_handle_dependents_to_singleton(year_began, key_date):
             'number': '[nn]',
             'publication_date': year_began,
             'notes': '',
-            'reservation_requested': False
+            'reservation_requested': False,
+            'keywords': '',
         }
         ir = IssueRevision(**ir_params)
 

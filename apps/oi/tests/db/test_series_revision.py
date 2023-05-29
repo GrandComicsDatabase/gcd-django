@@ -134,6 +134,7 @@ def test_commit_add_rev_singleton(any_added_series_rev):
                                      number='[nn]',
                                      publication_date=rev.year_began,
                                      notes='blah blah whatever',
+                                     keywords='Bar; bar; foo',
                                      reservation_requested=False)
     assert ir.key_date == '%d-00-00' % rev.year_began
     ir.save.assert_called_once_with()
@@ -191,6 +192,7 @@ def test_commit_add_rev_non_comics_singleton(any_added_series_rev):
                                      number='[nn]',
                                      publication_date=rev.year_began,
                                      notes='blah blah whatever',
+                                     keywords='Bar; bar; foo',
                                      reservation_requested=False)
     assert ir.key_date == '%d-00-00' % rev.year_began
     ir.save.assert_called_once_with()

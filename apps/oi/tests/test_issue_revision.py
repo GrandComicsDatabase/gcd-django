@@ -36,6 +36,7 @@ def test_classification():
         'display_volume_with_number': gf('display_volume_with_number'),
         'variant_of': gf('variant_of'),
         'variant_name': gf('variant_name'),
+        'variant_cover_status': gf('variant_cover_status'),
         'isbn': gf('isbn'),
         'no_isbn': gf('no_isbn'),
         'barcode': gf('barcode'),
@@ -296,7 +297,7 @@ def _set_up_sort_code_query_sets(revision_list, later_issue_list,
     later_mock = mock.MagicMock(spec=models.QuerySet)
     later_mock.exists.return_value = bool(later_issue_list)
     later_mock.count.return_value = len(later_issue_list)
-    
+
     # later_issues are sorted by reverse sort_code
     try:
         later_mock.last.return_value = later_issue_list[0]
