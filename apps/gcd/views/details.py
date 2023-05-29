@@ -2927,7 +2927,7 @@ def character_covers(request, character_id):
       story__type__id=6,
       story__deleted=False).distinct().select_related('series__publisher')
 
-    heading = 'Covers with Character %s' % character
+    heading = 'Covers with Character %s' % character.name
 
     context = {
         'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
