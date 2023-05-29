@@ -246,7 +246,7 @@
 
             {% if result.model_name == 'creator' %}
                 <td>[CREATOR]</td>
-                <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+                <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatormembership' %}
                 <td>[CREATOR MEMBERSHIP]</td>

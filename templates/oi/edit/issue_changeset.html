@@ -28,13 +28,13 @@
     {% if issue_revision.issue.get_prev_next_issue.0 %}
     <td>
       <a href="{% url "compare_issues_copy" issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">
-        <button type="button">Compare With & Copy From Preceeding Issue</button>
+        <button type="button">Compare With & Copy From Preceding Issue</button>
       </a>
     </td>
     {% elif issue_revision.after and not issue_revision.variant_of %}
     <td>
       <a href="{% url "compare_issues_copy" issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">
-        <button type="button">Compare With & Copy From Preceeding Issue</button>
+        <button type="button">Compare With & Copy From Preceding Issue</button>
       </a>
     </td>
     {% else %}
@@ -280,8 +280,8 @@
       Select file: <input type="file" name="flatfile">
     </td>
     <td>
-      <input type="submit" name="tab" value="Import issue (tab separated)">
-      <input type="submit" name="csv" value="Import issue (CSV)">
+      <input type="submit" name="tab" value="Import Issue (Tab Separated)">
+      <input type="submit" name="csv" value="Import Issue (CSV)">
     </td>
   </form>
   </tr>

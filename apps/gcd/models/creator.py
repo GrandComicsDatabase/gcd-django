@@ -543,12 +543,17 @@ class Creator(GcdData):
                 'show_creator',
                 kwargs={'creator_id': self.id})
 
-    def __str__(self):
-        if self.birth_date.year:
-            year = ' (b. %s)' % self.birth_date.year
+    def search_result_name(self):
+        if self.disambiguation:
+            extra = ' [%s]' % self.disambiguation
         else:
-            year = ''
-        return '%s%s' % (str(self.gcd_official_name), year)
+            extra = ''
+        return self.__str__(extra)
+
+    def __str__(self, extra=''):
+        if self.birth_date.year:
+            extra += ' (b. %s)' % self.birth_date.year
+        return '%s%s' % (str(self.gcd_official_name), extra)
 
 
 class CreatorSignature(GcdData):
