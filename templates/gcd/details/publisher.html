@@ -72,6 +72,8 @@
 {% endif %}
           <dt> Show Covers by Month:
           <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
+          <dt> Show Issues by Month:
+            <dd> <a href='{% url "publisher_monthly_issues_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_issues_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
 {% if publisher.url or publisher.notes or publisher.has_keywords %}
         </dl>
         <dl style="margin-top: -0.5em" class="pub_data">

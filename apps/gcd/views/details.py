@@ -591,11 +591,12 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                                       credits__deleted=False)\
                               .distinct().select_related('series__publisher')
     else:
-        issues = Issue.objects.filter(story__credits__creator__in=creator_names,
-                                      story__type__id__in=CORE_TYPES,
-                                      story__credits__deleted=False,
-                                      story__credits__credit_type__id__lt=6)\
-                              .distinct().select_related('series__publisher')
+        issues = Issue.objects.filter(
+          story__credits__creator__in=creator_names,
+          story__type__id__in=CORE_TYPES,
+          story__credits__deleted=False,
+          story__credits__credit_type__id__lt=6)\
+          .distinct().select_related('series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
@@ -735,8 +736,9 @@ def checklist_by_name(request, creator, country=None, language=None,
                                      'series__publisher__name'))
     creator = Creator.objects.filter(gcd_official_name__iexact=creator)
     if creator and not to_be_migrated:
-        q_objs_credits = Q(**{'%scredits__creator__creator__in' % (prefix): creator,
-                              '%stype__id__in' % (prefix): CORE_TYPES})
+        q_objs_credits = Q(**{
+          '%scredits__creator__creator__in' % (prefix): creator,
+          '%stype__id__in' % (prefix): CORE_TYPES})
         items2 = Issue.objects.filter(q_objs_credits).distinct()\
                               .annotate(series_name=F('series__sort_name'))
         if 'sort' in request.GET:
@@ -1069,16 +1071,23 @@ def publisher_monthly_covers(request,
                              publisher_id,
                              year=None,
                              month=None,
-                             use_on_sale=True):
+                             use_on_sale=True,
+                             overview=False):
     """
     Display the covers for the monthly publications of a publisher.
     """
     publisher = get_gcd_object(Publisher, publisher_id)
 
-    if use_on_sale:
-        date_type = 'publisher_monthly_covers_on_sale'
+    if overview:
+        if use_on_sale:
+            date_type = 'publisher_monthly_issues_on_sale'
+        else:
+            date_type = 'publisher_monthly_issues_pub_date'
     else:
-        date_type = 'publisher_monthly_covers_pub_date'
+        if use_on_sale:
+            date_type = 'publisher_monthly_covers_on_sale'
+        else:
+            date_type = 'publisher_monthly_covers_pub_date'
 
     if year and 'month' not in request.GET:
         year = int(year)
@@ -1094,21 +1103,6 @@ def publisher_monthly_covers(request,
             month = return_val[1]
 
     table_width = COVER_TABLE_WIDTH
-
-    covers = Cover.objects.filter(issue__series__publisher=publisher,
-                                  deleted=False).select_related('issue')
-    if use_on_sale:
-        covers = \
-          covers.filter(issue__on_sale_date__gte='%d-%02d-50' % (year,
-                                                                 month-1),
-                        issue__on_sale_date__lte='%d-%02d-32' % (year,
-                                                                 month))\
-                .order_by('issue__on_sale_date', 'issue__series')
-    else:
-        covers = \
-          covers.filter(issue__key_date__gte='%d-%02d-50' % (year, month-1),
-                        issue__key_date__lte='%d-%02d-32' % (year, month))\
-                .order_by('issue__key_date', 'issue__series')
 
     start_date = datetime(year, month, 1)
     date_before = start_date + timedelta(-1)
@@ -1128,25 +1122,140 @@ def publisher_monthly_covers(request,
                                               'year': date_after.year,
                                               'month': date_after.month})
 
-    vars = {
-      'publisher': publisher,
-      'date': start_date,
-      'monthly': True,
-      'years': range(date.today().year,
-                     (publisher.year_began or 1900) - 1,
-                     -1),
-      'choose_url': choose_url,
-      'choose_url_after': choose_url_after,
-      'choose_url_before': choose_url_before,
-      'use_on_sale': use_on_sale,
-      'table_width': table_width,
-      'RANDOM_IMAGE': _publisher_image_content(publisher.id)
-    }
+    if month == 1:
+        day = 0
+    else:
+        day = 50
 
-    return paginate_response(
-      request, covers, 'gcd/details/publisher_monthly_covers.html', vars,
-      per_page=COVERS_PER_GALLERY_PAGE,
-      callback_key='tags', callback=get_image_tags_per_page)
+    if overview:
+        issues = Issue.objects.filter(series__publisher=publisher,
+                                      variant_of=None, deleted=False)\
+                              .select_related('series')\
+                              .prefetch_related('cover_set')
+        if use_on_sale:
+            issues = \
+              issues.filter(on_sale_date__gte='%d-%02d-%d' % (year,
+                                                              month-1,
+                                                              day),
+                            on_sale_date__lte='%d-%02d-32' % (year, month))\
+                    .order_by('on_sale_date', 'series')
+        else:
+            issues = \
+              issues.filter(key_date__gte='%d-%02d-%d' % (year, month-1, day),
+                            key_date__lte='%d-%02d-32' % (year, month))\
+                    .order_by('key_date', 'series')
+        if not issues.exists() and year == date.today().year and \
+           month == date.today().month:
+            issues = Issue.objects.filter(series__publisher=publisher,
+                                          variant_of=None, deleted=False)
+            if use_on_sale:
+                latest_issues_date = issues.latest('on_sale_date').on_sale_date
+            else:
+                latest_issues_date = issues.latest('key_date').key_date
+            year = latest_issues_date[:4]
+            month = latest_issues_date[5:7]
+            if month == '00':
+                month = '01'
+            kwargs = {}
+            kwargs['publisher_id'] = publisher_id
+            kwargs['year'] = year
+            kwargs['month'] = month
+            return HttpResponseRedirect(urlresolvers.reverse(date_type,
+                                                             kwargs=kwargs))
+        issues = issues.annotate(
+          longest_story_id=Subquery(Story.objects.filter(
+                                    issue_id=OuterRef('pk'),
+                                    type_id=19, deleted=False)
+                                    .values('pk')
+                                    .order_by('-page_count')[:1]))
+        heading = 'Comics '
+        if use_on_sale:
+            heading += 'on-sale in '
+        else:
+            heading += 'with a publication date of '
+        if month == 1:
+            heading += '%d or ' % year
+        heading += '%s from publisher %s' % (date(year,
+                                                  month, 1).strftime('%B %Y'),
+                                             publisher)
+
+        context = {
+          'item_name': 'issue',
+          'plural_suffix': 's',
+          'heading': heading,
+          'years': range(date.today().year,
+                         (publisher.year_began or 1900) - 1,
+                         -1),
+          'choose_url': choose_url,
+          'choose_url_after': choose_url_after,
+          'choose_url_before': choose_url_before,
+        }
+        template = 'gcd/search/issue_list_sortable.html'
+        table = CoverIssueTable(
+          issues,
+          attrs={'class': 'sortable_listing'},
+          template_name='gcd/bits/sortable_table.html',
+          order_by=('issues'))
+        return generic_sortable_list(request, issues, table, template,
+                                     context, 50)
+    else:
+        covers = Cover.objects.filter(issue__series__publisher=publisher,
+                                      deleted=False).select_related('issue')
+        if use_on_sale:
+            covers = \
+              covers.filter(issue__on_sale_date__gte='%d-%02d-%d' % (year,
+                                                                     month-1,
+                                                                     day),
+                            issue__on_sale_date__lte='%d-%02d-32' % (year,
+                                                                     month))\
+                    .order_by('issue__on_sale_date', 'issue__series')
+        else:
+            covers = \
+              covers.filter(issue__key_date__gte='%d-%02d-%d' % (year,
+                                                                 month-1,
+                                                                 day),
+                            issue__key_date__lte='%d-%02d-32' % (year, month))\
+                    .order_by('issue__key_date', 'issue__series')
+        if not covers.exists() and year == date.today().year and \
+           month == date.today().month:
+            covers = Cover.objects.filter(issue__series__publisher=publisher,
+                                          deleted=False)
+            if use_on_sale:
+                latest_issues_date = covers.latest('issue__on_sale_date')\
+                                           .issue.on_sale_date
+            else:
+                latest_issues_date = covers.latest('issue__key_date')\
+                                           .issue.key_date
+            year = latest_issues_date[:4]
+            month = latest_issues_date[5:7]
+            if month == '00':
+                month = '01'
+            kwargs = {}
+            kwargs['publisher_id'] = publisher_id
+            kwargs['year'] = year
+            kwargs['month'] = month
+            return HttpResponseRedirect(urlresolvers.reverse(date_type,
+                                                             kwargs=kwargs))
+
+        context = {
+          'publisher': publisher,
+          'date': start_date,
+          'monthly': True,
+          'years': range(date.today().year,
+                         (publisher.year_began or 1900) - 1,
+                         -1),
+          'choose_url': choose_url,
+          'choose_url_after': choose_url_after,
+          'choose_url_before': choose_url_before,
+          'use_on_sale': use_on_sale,
+          'table_width': table_width,
+          'RANDOM_IMAGE': _publisher_image_content(publisher.id)
+        }
+
+        return paginate_response(
+          request, covers, 'gcd/details/publisher_monthly_covers.html',
+          context, per_page=COVERS_PER_GALLERY_PAGE,
+          callback_key='tags', callback=get_image_tags_per_page)
 
 
 def indicia_publisher(request, indicia_publisher_id):

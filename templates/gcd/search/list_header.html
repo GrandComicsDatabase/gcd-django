@@ -18,6 +18,9 @@ Order:
   {% else %} <a href="{{ change_order}}">Alpha</a> | Chrono
   {% endif %}
 {% endif %}
+{% if choose_url_after %}
+  {% include "gcd/bits/choose_date.html" %}
+{% else %}
       <a name="{{ position }}"></a>
       <a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
         <svg style="height: 0.8em; width: 0.8em; fill: currentColor;">
@@ -25,6 +28,7 @@ Order:
         </svg>
       </a>
     </div>
+{% endif %}
   </h1>
 
   <div class="item_id">
