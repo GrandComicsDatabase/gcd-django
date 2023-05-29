@@ -669,7 +669,7 @@ class IssueTable(tables.Table):
 
 
 class IssuePublisherTable(IssueTable):
-    publisher = tables.Column(accessor='series.publisher',
+    publisher = tables.Column(accessor='series__publisher',
                               verbose_name='Publisher')
 
     class Meta:
