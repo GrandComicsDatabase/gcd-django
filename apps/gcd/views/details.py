@@ -173,6 +173,10 @@ def _handle_date_picker(request, url_reverse,
         if 'year' in request.GET:
             year = int(request.GET['year'])
             month = int(request.GET['month'])
+            if 'sort' in request.GET:
+                sort = '?sort=' + request.GET['sort']
+            else:
+                sort = ''
             if daily:
                 day = int(request.GET['day'])
                 # Do a redirect, otherwise pagination links point to today
@@ -188,7 +192,7 @@ def _handle_date_picker(request, url_reverse,
                 return HttpResponseRedirect(
                     urlresolvers.reverse(
                         url_reverse,
-                        kwargs=kwargs)), False
+                        kwargs=kwargs) + sort), False
         elif show_date:
             year = int(show_date[0:4])
             month = int(show_date[5:7])
@@ -1242,6 +1246,13 @@ def publisher_monthly_covers(request,
                                     .order_by('-page_count')[:1]))
         heading += 'from %s' % publisher
 
+        if 'sort' in request.GET:
+            sort = request.GET['sort']
+            choose_url_after += '?sort=%s' % request.GET['sort']
+            choose_url_before += '?sort=%s' % request.GET['sort']
+        else:
+            sort = ''
+
         context = {
           'item_name': 'issue',
           'plural_suffix': 's',
@@ -1249,6 +1260,7 @@ def publisher_monthly_covers(request,
           'years': range(date.today().year,
                          (publisher.year_began or 1900) - 1,
                          -1),
+          'sort': sort,
           'choose_url': choose_url,
           'choose_url_after': choose_url_after,
           'choose_url_before': choose_url_before,
