@@ -9,6 +9,11 @@
     <form method="GET"
           action="{{ choose_url }}"
           style="display:inline">
+      {% if sort%}
+      <select hidden name="sort" id="sort">
+        <option value="{{ sort }}">{{ sort }}</option>
+      </select>
+      {% endif %}
       <select name="year" id="year">
         {% for year in years  %}
         <option value="{{ year }}">{{ year }}</option>
