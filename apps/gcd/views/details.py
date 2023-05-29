@@ -1067,6 +1067,45 @@ def show_publisher_current_series(request, publisher_id):
                                  'gcd/bits/generic_list.html', context)
 
 
+def _filter_issues_year_month(objects, year, month,
+                              use_on_sale=False, cover=False, yearly=False):
+    day = 99
+    if yearly:
+        month = 1
+    if month == 1:
+        # to get issues with month not set, start from end of year before
+        year_start = year-1
+        month_start = 14
+    else:
+        # start from month before
+        year_start = year
+        month_start = month-1
+
+    # key_date can have valid entry of 13, catch these for December
+    if month == 12 or yearly:
+        month_end = 14
+    else:
+        month_end = month
+
+    if use_on_sale:
+        date_field = 'on_sale_date'
+    else:
+        date_field = 'key_date'
+
+    if cover:
+        date_field = 'issue__' + date_field
+        order_series = 'issue__series'
+    else:
+        order_series = 'series'
+
+    objects = objects.filter(**{date_field + '__gte': '%d-%02d-%d' % (
+        year_start, month_start, day),
+                            date_field + '__lte': '%d-%02d-32' % (
+        year, month_end)}).order_by(date_field, order_series)
+
+    return objects
+
+
 def publisher_monthly_covers(request,
                              publisher_id,
                              year=None,
@@ -1122,80 +1161,75 @@ def publisher_monthly_covers(request,
                                               'year': date_after.year,
                                               'month': date_after.month})
 
-    if month == 1:
-        day = 0
-    else:
-        day = 50
-
     if overview:
+        heading = 'Comics '
         issues = Issue.objects.filter(series__publisher=publisher,
                                       variant_of=None, deleted=False)\
                               .select_related('series')\
                               .prefetch_related('cover_set')
-        if use_on_sale:
-            if month == 1:
-                year_start = year-1
-                month_start = 14
-                day = 50
-            else:
-                year_start = year
-                month_start = month-1
-            issues = issues.filter(on_sale_date__gte='%d-%02d-%d' % (
-              year_start, month_start, day),
-                                   on_sale_date__lte='%d-%02d-32' % (
-              year, month)).order_by('on_sale_date', 'series')
-        else:
-            if month == 12:
-                month_end = 14
-            else:
-                month_end = month
-            issues = issues.filter(key_date__gte='%d-%02d-%d' % (year,
-                                                                 month-1,
-                                                                 day),
-                                   key_date__lte='%d-%02d-32' % (year,
-                                                                 month_end))\
-                           .order_by('key_date', 'series')
-        if not issues.exists() and year == date.today().year and \
-           month == date.today().month:
-            issues = Issue.objects.filter(series__publisher=publisher,
-                                          variant_of=None, deleted=False)
+        continue_filtering = False
+        if issues.count() > 50 or not issues.exists():
             if use_on_sale:
-                latest_issues_date = issues.latest('on_sale_date').on_sale_date
+                heading += 'on-sale in '
             else:
-                latest_issues_date = issues.latest('key_date').key_date
-            year = latest_issues_date[:4]
-            month = latest_issues_date[5:7]
-            if not month or month == '00':
-                month = '01'
-            if month == '13':
-                month = '12'
-            kwargs = {}
-            kwargs['publisher_id'] = publisher_id
-            kwargs['year'] = year
-            kwargs['month'] = month
-            if year:
-                return HttpResponseRedirect(urlresolvers.reverse(
-                  date_type, kwargs=kwargs))
-            else:
-                issues = Issue.objects.none()
-                year = date.today().year
-                month = date.today().month
+                heading += 'with a publication date of '
+            if issues.exists():
+                issues = Issue.objects.filter(series__publisher=publisher,
+                                              variant_of=None, deleted=False)\
+                                      .select_related('series')\
+                                      .prefetch_related('cover_set')
+                issues = _filter_issues_year_month(issues, year, month,
+                                                   use_on_sale, yearly=True)
+                continue_filtering = True
+        if continue_filtering and issues.count() > 25:
+            issues = _filter_issues_year_month(issues, year, month,
+                                               use_on_sale)
+            if not issues.exists() and year == date.today().year and \
+               month == date.today().month:
+                issues = Issue.objects.filter(series__publisher=publisher,
+                                              variant_of=None, deleted=False)
+                if use_on_sale:
+                    latest_issues_date = issues.latest('on_sale_date')\
+                                               .on_sale_date
+                else:
+                    latest_issues_date = issues.latest('key_date').key_date
+                year = latest_issues_date[:4]
+                month = latest_issues_date[5:7]
+                if not month or month == '00':
+                    month = '01'
+                if month == '13':
+                    month = '12'
+                kwargs = {}
+                kwargs['publisher_id'] = publisher_id
+                kwargs['year'] = year
+                kwargs['month'] = month
+                if year:
+                    return HttpResponseRedirect(urlresolvers.reverse(
+                      date_type, kwargs=kwargs))
+                else:
+                    issues = Issue.objects.none()
+                    year = date.today().year
+                    month = date.today().month
+            if month == 1:
+                heading += '%d or ' % year
+            heading += '%s ' % date(year, month, 1).strftime('%B %Y')
+        else:
+            choose_url_before = urlresolvers.reverse(
+              date_type, kwargs={'publisher_id': publisher_id,
+                                 'year': date_before.year-1,
+                                 'month': 12})
+            choose_url_after = urlresolvers.reverse(
+              date_type, kwargs={'publisher_id': publisher_id,
+                                 'year': date_after.year+1,
+                                 'month': 1})
+            heading += '%d ' % year
         issues = issues.annotate(
           longest_story_id=Subquery(Story.objects.filter(
                                     issue_id=OuterRef('pk'),
                                     type_id=19, deleted=False)
                                     .values('pk')
                                     .order_by('-page_count')[:1]))
-        heading = 'Comics '
-        if use_on_sale:
-            heading += 'on-sale in '
-        else:
-            heading += 'with a publication date of '
-        if month == 1:
-            heading += '%d or ' % year
-        heading += '%s from publisher %s' % (date(year,
-                                                  month, 1).strftime('%B %Y'),
-                                             publisher)
+        heading += 'from %s' % publisher
 
         context = {
           'item_name': 'issue',
@@ -1217,54 +1251,65 @@ def publisher_monthly_covers(request,
         return generic_sortable_list(request, issues, table, template,
                                      context, 50)
     else:
+        heading = 'Covers for comics '
         covers = Cover.objects.filter(issue__series__publisher=publisher,
                                       deleted=False).select_related('issue')
-        if use_on_sale:
-            if month == 1:
-                year_start = year-1
-                month_start = 14
-                day = 50
-            else:
-                year_start = year
-                month_start = month-1
-            covers = covers.filter(issue__on_sale_date__gte='%d-%02d-%d' % (
-              year_start, month_start, day),
-                                   issue__on_sale_date__lte='%d-%02d-32' % (
-              year, month)).order_by('issue__on_sale_date', 'issue__series')
-        else:
-            if month == 12:
-                month_end = 14
-            else:
-                month_end = month
-            covers = covers.filter(issue__key_date__gte='%d-%02d-%d' % (
-              year, month-1, day),
-                                   issue__key_date__lte='%d-%02d-32' % (
-              year, month_end)).order_by('issue__key_date', 'issue__series')
-        if not covers.exists() and year == date.today().year and \
-           month == date.today().month:
-            covers = Cover.objects.filter(issue__series__publisher=publisher,
-                                          deleted=False)
+        continue_filtering = False
+        if covers.count() > 50 or not covers.exists():
             if use_on_sale:
-                latest_issues_date = covers.latest('issue__on_sale_date')\
-                                           .issue.on_sale_date
+                heading += 'on-sale in '
             else:
-                latest_issues_date = covers.latest('issue__key_date')\
-                                           .issue.key_date
-            year = latest_issues_date[:4]
-            month = latest_issues_date[5:7]
-            if not month or month == '00':
-                month = '01'
-            if month == '13':
-                month = '12'
-            kwargs = {}
-            kwargs['publisher_id'] = publisher_id
-            kwargs['year'] = year
-            kwargs['month'] = month
-            if year:
-                return HttpResponseRedirect(urlresolvers.reverse(
-                  date_type, kwargs=kwargs))
-            else:
-                covers = Cover.objects.none()
+                heading += 'with a publication date of '
+            if covers.exists():
+                covers = Cover.objects.filter(
+                  issue__series__publisher=publisher, deleted=False)\
+                                      .select_related('issue')
+                covers = _filter_issues_year_month(covers, year, month,
+                                                   use_on_sale, cover=True,
+                                                   yearly=True)
+                continue_filtering = True
+        if continue_filtering and covers.count() > 25:
+            covers = _filter_issues_year_month(covers, year, month,
+                                               use_on_sale, cover=True)
+            if not covers.exists() and year == date.today().year and \
+               month == date.today().month:
+                covers = Cover.objects.filter(
+                  issue__series__publisher=publisher, deleted=False)
+                if use_on_sale:
+                    latest_issues_date = covers.latest('issue__on_sale_date')\
+                                            .issue.on_sale_date
+                else:
+                    latest_issues_date = covers.latest('issue__key_date')\
+                                            .issue.key_date
+                year = latest_issues_date[:4]
+                month = latest_issues_date[5:7]
+                if not month or month == '00':
+                    month = '01'
+                if month == '13':
+                    month = '12'
+                kwargs = {}
+                kwargs['publisher_id'] = publisher_id
+                kwargs['year'] = year
+                kwargs['month'] = month
+                if year:
+                    return HttpResponseRedirect(urlresolvers.reverse(
+                      date_type, kwargs=kwargs))
+                else:
+                    covers = Cover.objects.none()
+            if month == 1:
+                heading += '%d or ' % year
+            heading += '%s ' % date(year, month, 1).strftime('%B %Y')
+        else:
+            choose_url_before = urlresolvers.reverse(
+              date_type, kwargs={'publisher_id': publisher_id,
+                                 'year': date_before.year-1,
+                                 'month': 12})
+            choose_url_after = urlresolvers.reverse(
+              date_type, kwargs={'publisher_id': publisher_id,
+                                 'year': date_after.year+1,
+                                 'month': 1})
+            heading += '%d ' % year
+        heading += 'from %s' % publisher
         context = {
           'publisher': publisher,
           'date': start_date,
@@ -1277,6 +1322,7 @@ def publisher_monthly_covers(request,
           'choose_url_before': choose_url_before,
           'use_on_sale': use_on_sale,
           'table_width': table_width,
+          'heading': heading,
           'RANDOM_IMAGE': _publisher_image_content(publisher.id)
         }
 

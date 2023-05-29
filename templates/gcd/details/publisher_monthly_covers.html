@@ -15,7 +15,7 @@
 
 <h1 class="item_id search_id">
 <div class="left">
-  Covers for comics {% if use_on_sale %}on-sale in{% else %}with a publication date of{% endif %} {% if date.month == 1%} {{ date.year }} or {% endif %}{{ date|date:"F Y" }} from {{ publisher }}
+  {{ heading }}
 </div>
 {% include "gcd/bits/choose_date.html" %}
 </h1>
