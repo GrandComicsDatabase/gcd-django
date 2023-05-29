@@ -1160,8 +1160,13 @@ def publisher_monthly_covers(request,
             kwargs['publisher_id'] = publisher_id
             kwargs['year'] = year
             kwargs['month'] = month
-            return HttpResponseRedirect(urlresolvers.reverse(date_type,
-                                                             kwargs=kwargs))
+            if year:
+                return HttpResponseRedirect(urlresolvers.reverse(
+                  date_type, kwargs=kwargs))
+            else:
+                issues = Issue.objects.none()
+                year = date.today().year
+                month = date.today().month
         issues = issues.annotate(
           longest_story_id=Subquery(Story.objects.filter(
                                     issue_id=OuterRef('pk'),
@@ -1239,9 +1244,11 @@ def publisher_monthly_covers(request,
             kwargs['publisher_id'] = publisher_id
             kwargs['year'] = year
             kwargs['month'] = month
-            return HttpResponseRedirect(urlresolvers.reverse(date_type,
-                                                             kwargs=kwargs))
-
+            if year:
+                return HttpResponseRedirect(urlresolvers.reverse(
+                  date_type, kwargs=kwargs))
+            else:
+                covers = Cover.objects.none()
         context = {
           'publisher': publisher,
           'date': start_date,
