@@ -1133,12 +1133,17 @@ def publisher_monthly_covers(request,
                               .select_related('series')\
                               .prefetch_related('cover_set')
         if use_on_sale:
-            issues = \
-              issues.filter(on_sale_date__gte='%d-%02d-%d' % (year,
-                                                              month-1,
-                                                              day),
-                            on_sale_date__lte='%d-%02d-32' % (year, month))\
-                    .order_by('on_sale_date', 'series')
+            if month == 1:
+                year_start = year-1
+                month_start = 13
+                day = 50
+            else:
+                year_start = year
+                month_start = month-1
+            issues = issues.filter(on_sale_date__gte='%d-%02d-%d' % (
+              year_start, month_start, day),
+                                   on_sale_date__lte='%d-%02d-32' % (
+              year, month)).order_by('on_sale_date', 'series')
         else:
             issues = \
               issues.filter(key_date__gte='%d-%02d-%d' % (year, month-1, day),
@@ -1154,7 +1159,7 @@ def publisher_monthly_covers(request,
                 latest_issues_date = issues.latest('key_date').key_date
             year = latest_issues_date[:4]
             month = latest_issues_date[5:7]
-            if month == '00':
+            if not month or month == '00':
                 month = '01'
             kwargs = {}
             kwargs['publisher_id'] = publisher_id
@@ -1217,8 +1222,7 @@ def publisher_monthly_covers(request,
             covers = covers.filter(issue__on_sale_date__gte='%d-%02d-%d' % (
               year_start, month_start, day),
                                    issue__on_sale_date__lte='%d-%02d-32' % (
-              year, month))\
-                .order_by('issue__on_sale_date', 'issue__series')
+              year, month)).order_by('issue__on_sale_date', 'issue__series')
         else:
             covers = \
               covers.filter(issue__key_date__gte='%d-%02d-%d' % (year,
