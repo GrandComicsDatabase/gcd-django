@@ -1135,7 +1135,7 @@ def publisher_monthly_covers(request,
         if use_on_sale:
             if month == 1:
                 year_start = year-1
-                month_start = 13
+                month_start = 14
                 day = 50
             else:
                 year_start = year
@@ -1161,6 +1161,8 @@ def publisher_monthly_covers(request,
             month = latest_issues_date[5:7]
             if not month or month == '00':
                 month = '01'
+            if month == '13':
+                month = '12'
             kwargs = {}
             kwargs['publisher_id'] = publisher_id
             kwargs['year'] = year
@@ -1214,7 +1216,7 @@ def publisher_monthly_covers(request,
         if use_on_sale:
             if month == 1:
                 year_start = year-1
-                month_start = 13
+                month_start = 14
                 day = 50
             else:
                 year_start = year
@@ -1244,6 +1246,8 @@ def publisher_monthly_covers(request,
             month = latest_issues_date[5:7]
             if not month or month == '00':
                 month = '01'
+            if month == '13':
+                month = '12'
             kwargs = {}
             kwargs['publisher_id'] = publisher_id
             kwargs['year'] = year
