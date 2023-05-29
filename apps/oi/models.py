@@ -5737,8 +5737,15 @@ class StoryRevision(Revision):
             series = self.issue.series
         else:
             series = self.changeset.issuerevisions.get(issue=None).series
+        if self.type_id == STORY_TYPES['letters_page']:
+            feature_type_id = 2
+        elif self.type_id == STORY_TYPES['in-house column']:
+            feature_type_id = 4
+        else:
+            feature_type_id = 1
+
         feature_object = Feature.objects.filter(
-            name=feature, deleted=False, feature_type__id=1,
+            name=feature, deleted=False, feature_type__id=feature_type_id,
             language=series.language)
         if feature_object.count() == 1:
             self.feature_object.add(feature_object.get())
