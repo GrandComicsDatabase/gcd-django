@@ -422,9 +422,30 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
 # auto-complete objects
 ##############################################################################
 
-def _filter_and_sort(qs, query, field='name'):
+def _filter_and_sort(qs, query, field='name', creator_detail=False,
+                     disambiguation=False, parent_disambiguation=None):
     if query:
-        qs_contains = qs.filter(Q(**{'%s__icontains' % field: query}))
+        if disambiguation or parent_disambiguation:
+            if query.find(' [') > 1:
+                pos = query.find(' [')
+                disambiguation = query[pos+2:query.find(']') if
+                                       query.find(']') > 1 else None]
+                dis_query = query[:pos]
+                if parent_disambiguation:
+                    qs_contains = qs.filter(Q(**{
+                      '%s__icontains' % field: dis_query,
+                      '%s__disambiguation__startswith' % parent_disambiguation:
+                      disambiguation}))
+                else:
+                    qs_contains = qs.filter(Q(**{'%s__icontains' % field:
+                                                 dis_query,
+                                                 'disambiguation__startswith':
+                                                 disambiguation}))
+                qs_contains |= qs.filter(Q(**{'%s__icontains' % field: query}))
+            else:
+                qs_contains = qs.filter(Q(**{'%s__icontains' % field: query}))
+        else:
+            qs_contains = qs.filter(Q(**{'%s__icontains' % field: query}))
         qs_return = None
         if query.isdigit():
             qs_match_id = qs.filter(Q(**{'id': query}))
@@ -435,7 +456,10 @@ def _filter_and_sort(qs, query, field='name'):
             if qs_match:
                 qs_return = qs_match.union(qs_contains)
             else:
-                qs_return = qs_contains
+                if creator_detail:
+                    qs_return = qs_contains.select_related('creator')
+                else:
+                    qs_return = qs_contains
         return qs_return
     return qs
 
@@ -456,7 +480,8 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
         qs = CreatorNameDetail.objects.filter(deleted=False)\
                                       .exclude(type__id__in=[3, 4])
 
-        qs = _filter_and_sort(qs, self.q)
+        qs = _filter_and_sort(qs, self.q, creator_detail=True,
+                              parent_disambiguation='creator')
 
         return qs
 
@@ -534,7 +559,7 @@ class FeatureAutocomplete(LoginRequiredMixin,
             if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
                 qs = qs.exclude(feature_type__id=3)
 
-        qs = _filter_and_sort(qs, self.q)
+        qs = _filter_and_sort(qs, self.q, disambiguation=True)
 
         return qs
 
@@ -606,7 +631,7 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
         if group:
             qs = qs.filter(character__memberships__group=group)\
                    .distinct()
-        qs = _filter_and_sort(qs, self.q)
+        qs = _filter_and_sort(qs, self.q, parent_disambiguation='character')
 
         return qs
 

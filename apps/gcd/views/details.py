@@ -2884,7 +2884,7 @@ def character_creators(request, character_id):
         'result_disclaimer': result_disclaimer,
         'item_name': 'creator',
         'plural_suffix': 's',
-        'heading': 'Creators Working on Character %s' % (character)
+        'heading': 'Creators Working on Character %s' % (character.name)
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = CharacterCreatorTable(creators, attrs={'class':
