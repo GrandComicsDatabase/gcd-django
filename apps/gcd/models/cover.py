@@ -138,10 +138,22 @@ class CoverIssueStoryTable(IssueTable):
                   'on_sale_date')
         attrs = {'th': {'class': "non_visited"}}
 
-    def value_longest_story(self, value):
+    def value_longest_story(self, value, record):
         from .story import Story
-        story = Story.objects.get(id=value)
-
+        if not value:
+            if record.variant_of:
+                story = record.variant_of.active_stories()\
+                              .filter(type_id=19, deleted=False)\
+                              .prefetch_related('credits__creator__creator')\
+                              .order_by('-page_count')
+                if story:
+                    story = story[0]
+                else:
+                    return None
+            else:
+                return None
+        else:
+            story = Story.objects.get(id=value)
         return story
 
     def render_longest_story(self, value, record):
@@ -150,6 +162,7 @@ class CoverIssueStoryTable(IssueTable):
         if not value:
             if record.variant_of:
                 story = record.variant_of.active_stories()\
+                              .filter(type_id=19, deleted=False)\
                               .prefetch_related('credits__creator__creator')\
                               .order_by('-page_count')
                 if story:
