@@ -59,7 +59,9 @@ from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
                                   get_image_tags_per_page
-from apps.gcd.models.cover import CoverIssuePublisherTable, CoverIssueTable, \
+from apps.gcd.models.cover import CoverIssuePublisherTable, \
+                                  CoverIssueStoryTable, \
+                                  CoverIssueStoryPublisherTable, \
                                   ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.gcd.forms import get_generic_select_form
 from apps.oi import states
@@ -1269,7 +1271,7 @@ def publisher_monthly_covers(request,
           'choose_url_before': choose_url_before,
         }
         template = 'gcd/search/issue_list_sortable.html'
-        table = CoverIssueTable(
+        table = CoverIssueStoryTable(
           issues,
           attrs={'class': 'sortable_listing'},
           template_name='gcd/bits/sortable_table.html',
@@ -1739,7 +1741,7 @@ def series_overview(request, series_id):
         'heading': heading,
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = CoverIssueTable(
+    table = CoverIssueStoryTable(
       issues,
       attrs={'class': 'sortable_listing'},
       template_name='gcd/bits/sortable_table.html',
@@ -2407,11 +2409,20 @@ def on_sale_weekly(request, year=None, week=None):
         # MYCOMICS
         return issues_on_sale
 
-    table = IssuePublisherTable(
+    issues_on_sale = issues_on_sale.annotate(
+      longest_story_id=Subquery(Story.objects.filter(
+                                issue_id=OuterRef('pk'),
+                                type_id=19, deleted=False)
+                                .values('pk').order_by('-page_count')[:1]))
+
+    filter = filter_issues(request, issues_on_sale)
+    issues_on_sale = filter.qs
+    table = CoverIssueStoryPublisherTable(
       issues_on_sale, attrs={'class': 'sortable_listing'},
       template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    vars['filter'] = filter
     return generic_sortable_list(request, issues_on_sale, table,
-                                 'gcd/status/issues_on_sale.html', vars)
+                                 'gcd/status/issues_on_sale.html', vars, 50)
 
     return paginate_response(request, issues_on_sale,
                              'gcd/status/issues_on_sale.html', vars)
@@ -2478,12 +2489,23 @@ def on_sale_monthly(request, year=None, month=None):
     issues_on_sale, vars = do_on_sale_monthly(request, year, month)
     if vars is None:
         return issues_on_sale
-
-    table = IssuePublisherTable(
+    issues_on_sale = issues_on_sale.annotate(
+      longest_story_id=Subquery(Story.objects.filter(
+                                issue_id=OuterRef('pk'),
+                                type_id=19, deleted=False)
+                                .values('pk')
+                                .order_by('-page_count')[:1]))
+    filter = filter_issues(request, issues_on_sale)
+    issues_on_sale = filter.qs
+    table = CoverIssueStoryPublisherTable(
+      issues_on_sale, attrs={'class': 'sortable_listing'},
+      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    vars['filter'] = filter
+    table = CoverIssueStoryPublisherTable(
       issues_on_sale, attrs={'class': 'sortable_listing'},
       template_name='gcd/bits/sortable_table.html', order_by=('issues'))
     return generic_sortable_list(request, issues_on_sale, table,
-                                 'gcd/status/issues_on_sale.html', vars)
+                                 'gcd/status/issues_on_sale.html', vars, 50)
 
 
 def int_stats_language(request):

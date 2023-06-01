@@ -122,7 +122,7 @@ class CoverIssuePublisherTable(IssuePublisherTable):
         attrs = {'th': {'class': "non_visited"}}
 
 
-class CoverIssueTable(IssueTable):
+class CoverIssueStoryTable(IssueTable):
     cover = CoverColumn(accessor='active_covers',
                         verbose_name='Cover', orderable=False)
     issue = IssueColumn(accessor='id', verbose_name='Issue',
@@ -130,7 +130,7 @@ class CoverIssueTable(IssueTable):
                         )
     longest_story = tables.Column(
       accessor='longest_story_id', verbose_name='Longest Story',
-      orderable=False)
+      orderable=False, empty_values=[])
 
     class Meta:
         model = Issue
@@ -144,12 +144,23 @@ class CoverIssueTable(IssueTable):
 
         return story
 
-    def render_longest_story(self, value):
+    def render_longest_story(self, value, record):
         from .story import Story
         template_name = 'gcd/bits/story_overview.html'
-
-        story = Story.objects.prefetch_related('credits__creator__creator')\
-                             .get(id=value)
+        if not value:
+            if record.variant_of:
+                story = record.variant_of.active_stories()\
+                              .prefetch_related('credits__creator__creator')\
+                              .order_by('-page_count')
+                if story:
+                    story = story[0]
+                else:
+                    return '—'
+            else:
+                return '—'
+        else:
+            story = Story.objects.prefetch_related(
+              'credits__creator__creator').get(id=value)
 
         request_context = self.context
         context = {'story': story,
@@ -160,3 +171,12 @@ class CoverIssueTable(IssueTable):
         rendered_output = template.render(context)
 
         return rendered_output
+
+
+class CoverIssueStoryPublisherTable(IssuePublisherTable, CoverIssueStoryTable):
+    publication_date = None
+
+    class Meta:
+        model = Issue
+        fields = ('cover', 'publisher', 'issue', 'longest_story',
+                  'on_sale_date')

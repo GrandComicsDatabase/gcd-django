@@ -36,9 +36,6 @@
   {% include "gcd/bits/pagination_bar.html" %}
   </div>
 </div>
-<div id="search_reminder">
-You can filter the list using the <a href="{% url "advanced_search" %}?{{ query_string }}">advanced search</a>.
-</div>
 {% if dates %}
 <div class="right">
   {% if MYCOMICS %}
@@ -54,10 +51,17 @@ You can filter the list using the <a href="{% url "advanced_search" %}?{{ query_
 {%  endif %}
 
 {% if MYCOMICS %}
-{% include "gcd/bits/issue_list.html" %}
+  {% include "gcd/bits/issue_list.html" %}
 {% else %}
 <div style="clear: both;"></div>
-{% render_table table %}
+<p>
+  {% if filter %}
+<form method="get">
+    {{ filter.form }}
+ <input type="submit" value='filter results'/>
+</form>
+  {% endif %}
+  {% render_table table %}
 {% endif %}
 
 <h1 class="item_id search_id">
