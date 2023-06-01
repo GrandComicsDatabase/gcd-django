@@ -7256,6 +7256,14 @@ class ReprintRevision(Revision):
     def _pre_delete(self, changes):
         for revision in self.source.revisions.all():
             setattr(revision, 'reprint_id', None)
+            # origin/target sequence might have moved to another issue
+            # after this change was approved
+            if revision.origin and (revision.origin.issue !=
+                                    revision.origin_issue):
+                revision.origin_issue = revision.origin.issue
+            if revision.target and (revision.target.issue !=
+                                    revision.target_issue):
+                revision.target_issue = revision.target.issue
             revision.save()
         self.reprint_id = None
 
@@ -7318,8 +7326,10 @@ class ReprintRevision(Revision):
             if self.origin_issue and self.origin_issue != self.origin.issue:
                 raise ValueError(
                     "Reprint origin story and issue do not match.  Story "
-                    "issue: '%s'; Issue: '%s'" % (self.origin.issue,
-                                                  self.origin_issue))
+                    "issue: '%d: %s'; Issue: '%d: %s'" % (self.origin.issue.id,
+                                                          self.origin.issue,
+                                                          self.origin_issue.id,
+                                                          self.origin_issue))
             if not self.origin_issue:
                 self.origin_issue = self.origin.issue
 
@@ -7327,8 +7337,10 @@ class ReprintRevision(Revision):
             if self.target_issue and self.target_issue != self.target.issue:
                 raise ValueError(
                     "Reprint target story and issue do not match.  Story "
-                    "issue: '%s'; Issue: '%s'" % (self.target.issue,
-                                                  self.target_issue))
+                    "issue: '%d: %s'; Issue: '%d: %s'" % (self.target.issue.id,
+                                                          self.target.issue,
+                                                          self.target_issue.id,
+                                                          self.target_issue))
             if not self.target_issue:
                 self.target_issue = self.target.issue
 
