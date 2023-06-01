@@ -5733,20 +5733,18 @@ class StoryRevision(Revision):
                 self.save()
 
     def migrate_single_feature(self, feature):
+        from apps.select.views import FeatureAutocomplete
         if self.issue:
             series = self.issue.series
         else:
             series = self.changeset.issuerevisions.get(issue=None).series
-        if self.type_id == STORY_TYPES['letters_page']:
-            feature_type_id = 2
-        elif self.type_id == STORY_TYPES['in-house column']:
-            feature_type_id = 4
-        else:
-            feature_type_id = 1
-
-        feature_object = Feature.objects.filter(
-            name=feature, deleted=False, feature_type__id=feature_type_id,
-            language=series.language)
+        self.forwarded = {'language_code': series.language.code,
+                          'type': self.type_id }
+        self.q = feature
+        feature_object = FeatureAutocomplete.get_queryset(
+          self, exact_match_at_front=False)
+        if feature_object.count() > 1:
+            feature_object = feature_object.filter(name=feature)
         if feature_object.count() == 1:
             self.feature_object.add(feature_object.get())
             return True

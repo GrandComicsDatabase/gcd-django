@@ -423,7 +423,8 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
 ##############################################################################
 
 def _filter_and_sort(qs, query, field='name', creator_detail=False,
-                     disambiguation=False, parent_disambiguation=None):
+                     disambiguation=False, parent_disambiguation=None,
+                     exact_match_at_front=True):
     if query:
         if disambiguation or parent_disambiguation:
             if query.find(' [') > 1:
@@ -452,7 +453,10 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
             if qs_match_id:
                 qs_return = qs_match_id.union(qs_contains)
         if not qs_return:
-            qs_match = qs.filter(Q(**{'%s' % field: query}))
+            if exact_match_at_front:
+                qs_match = qs.filter(Q(**{'%s' % field: query}))
+            else:
+                qs_match = None
             if qs_match:
                 qs_return = qs_match.union(qs_contains)
             else:
@@ -537,7 +541,7 @@ class SchoolAutocomplete(LoginRequiredMixin,
 
 class FeatureAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
-    def get_queryset(self):
+    def get_queryset(self, exact_match_at_front=True):
         qs = Feature.objects.filter(deleted=False)
 
         language = self.forwarded.get('language_code', None)
@@ -559,7 +563,8 @@ class FeatureAutocomplete(LoginRequiredMixin,
             if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
                 qs = qs.exclude(feature_type__id=3)
 
-        qs = _filter_and_sort(qs, self.q, disambiguation=True)
+        qs = _filter_and_sort(qs, self.q, disambiguation=True,
+                              exact_match_at_front=exact_match_at_front)
 
         return qs
 
