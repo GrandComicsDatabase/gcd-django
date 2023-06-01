@@ -2598,6 +2598,12 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
         if field in fields_to_set:
             getattr(revision, field).add(*list(getattr(compare_revision,
                                                        field).all()))
+    if 'year_on_sale' in selected_fields:
+        revision.year_on_sale = compare_revision.year_on_sale
+    if 'month_on_sale' in selected_fields:
+        revision.month_on_sale = compare_revision.month_on_sale
+    if 'day_on_sale' in selected_fields:
+        revision.day_on_sale = compare_revision.day_on_sale
     revision.save()
 
     if 'editing' in selected_fields:
