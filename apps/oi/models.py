@@ -1916,6 +1916,9 @@ class Revision(models.Model):
         """
         # for models of type GcdLink we need to clear the source info in
         # all revisions since the link object gets deleted
+        #
+        # TODO many models of this type have this routine as well,likely
+        # not needed but an oversight during re-factor of these models ?
         if GcdLink in type(self.source).mro():
             for revision in self.source.revisions.all():
                 setattr(revision, 'source', None)
