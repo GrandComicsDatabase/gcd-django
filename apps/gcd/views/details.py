@@ -1215,6 +1215,8 @@ def publisher_monthly_covers(request,
            month == date.today().month:
             issues = Issue.objects.filter(series__publisher=publisher,
                                           variant_of=None, deleted=False)
+            if use_on_sale:
+                issues = issues.exclude(on_sale_date__contains='?')
             if issues.exists():
                 if use_on_sale:
                     latest_issues_date = issues.latest('on_sale_date')\
@@ -1319,6 +1321,8 @@ def publisher_monthly_covers(request,
            month == date.today().month:
             covers = Cover.objects.filter(
                 issue__series__publisher=publisher, deleted=False)
+            if use_on_sale:
+                covers = covers.exclude(issue__on_sale_date__contains='?')
             if covers.exists():
                 if use_on_sale:
                     latest_issues_date = covers.latest('issue__on_sale_date')\
