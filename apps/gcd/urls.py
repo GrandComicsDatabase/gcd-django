@@ -509,7 +509,7 @@ urlpatterns = [
       gcd_views.details.on_sale_monthly, name='on_sale_this_month'),
     url(r'^on_sale_monthly/no_variant/$',
       gcd_views.details.on_sale_monthly, {'variant': False},
-      name='on_sale_this_month'),
+      name='on_sale_this_month_no_variant'),
     url(r'^on_sale_monthly/(?P<year>\d{4})/month/(?P<month>\d{1,2})/$',
       gcd_views.details.on_sale_monthly, name='on_sale_monthly'),
     url(r'^on_sale_monthly/(?P<year>\d{4})/month/(?P<month>\d{1,2})/no_variant/$',
