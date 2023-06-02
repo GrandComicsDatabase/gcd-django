@@ -2407,7 +2407,7 @@ def do_on_sale_weekly(request, year=None, week=None):
     return issues_on_sale, vars
 
 
-def on_sale_weekly(request, year=None, week=None):
+def on_sale_weekly(request, year=None, week=None, variant=True):
     issues_on_sale, vars = do_on_sale_weekly(request, year, week)
     if vars is None:
         # MYCOMICS
@@ -2419,17 +2419,32 @@ def on_sale_weekly(request, year=None, week=None):
                                 type_id=19, deleted=False)
                                 .values('pk').order_by('-page_count')[:1]))
 
+    if not variant:
+        issues_on_sale = issues_on_sale.filter(variant_of=None)
     filter = filter_issues(request, issues_on_sale)
     issues_on_sale = filter.qs
     table = CoverIssueStoryPublisherTable(
       issues_on_sale, attrs={'class': 'sortable_listing'},
       template_name='gcd/bits/sortable_table.html', order_by=('issues'))
     vars['filter'] = filter
+    vars['variant'] = variant
+    if variant:
+        if year:
+            vars['path'] = urlresolvers.reverse("on_sale_weekly_no_variant",
+                                                kwargs={'year': year,
+                                                        'week': week})
+        else:
+            vars['path'] = urlresolvers.reverse("on_sale_this_week_no_variant")
+    else:
+        if year:
+            vars['path'] = urlresolvers.reverse("on_sale_weekly",
+                                                kwargs={'year': year,
+                                                        'week': week})
+        else:
+            vars['path'] = urlresolvers.reverse("on_sale_this_week")
+
     return generic_sortable_list(request, issues_on_sale, table,
                                  'gcd/status/issues_on_sale.html', vars, 50)
-
-    return paginate_response(request, issues_on_sale,
-                             'gcd/status/issues_on_sale.html', vars)
 
 
 def do_on_sale_monthly(request, year=None, month=None):
@@ -2489,7 +2504,7 @@ def do_on_sale_monthly(request, year=None, month=None):
     return issues_on_sale, vars
 
 
-def on_sale_monthly(request, year=None, month=None):
+def on_sale_monthly(request, year=None, month=None, variant=True):
     issues_on_sale, vars = do_on_sale_monthly(request, year, month)
     if vars is None:
         return issues_on_sale
@@ -2499,12 +2514,30 @@ def on_sale_monthly(request, year=None, month=None):
                                 type_id=19, deleted=False)
                                 .values('pk')
                                 .order_by('-page_count')[:1]))
+    if not variant:
+        issues_on_sale = issues_on_sale.filter(variant_of=None)
     filter = filter_issues(request, issues_on_sale)
     issues_on_sale = filter.qs
     table = CoverIssueStoryPublisherTable(
       issues_on_sale, attrs={'class': 'sortable_listing'},
       template_name='gcd/bits/sortable_table.html', order_by=('issues'))
     vars['filter'] = filter
+    vars['variant'] = variant
+    if variant:
+        if year:
+            vars['path'] = urlresolvers.reverse("on_sale_monthly_no_variant",
+                                                kwargs={'year': year,
+                                                        'month': month})
+        else:
+            vars['path'] = urlresolvers.reverse(
+              "on_sale_this_month_no_variant")
+    else:
+        if year:
+            vars['path'] = urlresolvers.reverse("on_sale_monthly",
+                                                kwargs={'year': year,
+                                                        'month': month})
+        else:
+            vars['path'] = urlresolvers.reverse("on_sale_this_month")
     table = CoverIssueStoryPublisherTable(
       issues_on_sale, attrs={'class': 'sortable_listing'},
       template_name='gcd/bits/sortable_table.html', order_by=('issues'))

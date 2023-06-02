@@ -36,6 +36,13 @@
   {% include "gcd/bits/pagination_bar.html" %}
   </div>
 </div>
+<div class="left" style="margin-top: 0.5em">
+  {% if variant == True %}
+  <a href="{{ path }}"><button>Show Without Variants</button></a>
+  {% else %}
+  <a href="{{ path }}"><button>Show With Variants</button></a>
+  {% endif %}
+</div>
 {% if dates %}
 <div class="right">
   {% if MYCOMICS %}
