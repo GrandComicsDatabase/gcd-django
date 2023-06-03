@@ -2674,6 +2674,36 @@ def feature_issuelist_by_id(request, feature_id):
     return generic_sortable_list(request, issues, table, template, context)
 
 
+def feature_overview(request, feature_id):
+    feature = get_gcd_object(Feature, feature_id)
+
+    if feature.feature_type.id == 1:
+        issues = Issue.objects.filter(story__feature_object=feature,
+                                      story__type__id=19,
+                                      story__deleted=False).distinct()\
+                              .select_related('series__publisher')
+        issues = issues.annotate(
+          longest_story_id=Subquery(Story.objects.filter(
+                                    feature_object=feature,
+                                    issue_id=OuterRef('pk'),
+                                    type_id=19, deleted=False)
+                                    .values('pk')
+                                    .order_by('-page_count')[:1]))
+    else:
+        issues = Issue.objects.none()
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue Overview for Feature %s' % (feature)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CoverIssueStoryTable(issues, attrs={'class': 'sortable_listing'},
+                                 template_name='gcd/bits/sortable_table.html',
+                                 order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context, 50)
+
+
 def feature_creatorlist(request, feature_id):
     # list of creators that worked on feature feature_id
     feature = get_gcd_object(Feature, feature_id)
