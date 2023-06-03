@@ -503,11 +503,14 @@ def creator_overview(request, creator_id):
                                   type_id=19, deleted=False)
                                   .values('pk')
                                   .order_by('-page_count')[:1]))
+    filter = filter_issues(request, issues)
+    issues = filter.qs
 
     context = {
         'item_name': 'issue',
         'plural_suffix': 's',
         'publisher': True,
+        'filter': filter,
         'heading': 'Issue Overview for Creator %s' % (creator)
     }
     template = 'gcd/search/issue_list_sortable.html'
@@ -2725,10 +2728,14 @@ def feature_overview(request, feature_id):
     else:
         issues = Issue.objects.none()
 
+    filter = filter_issues(request, issues)
+    issues = filter.qs
+
     context = {
         'item_name': 'issue',
         'plural_suffix': 's',
         'publisher': True,
+        'filter': filter,
         'heading': 'Issue Overview for Feature %s' % (feature)
     }
     template = 'gcd/search/issue_list_sortable.html'
