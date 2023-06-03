@@ -321,6 +321,8 @@ urlpatterns = [
     # Feature
     url(r'^feature/(?P<feature_id>\d+)/issues/$',
       gcd_views.details.feature_issuelist_by_id, name='feature_issuelist_by_id'),
+    url(r'^feature/(?P<feature_id>\d+)/overview/$',
+      gcd_views.details.feature_overview, name='feature_overview'),
     url(r'^feature/(?P<feature_id>\d+)/creators/$',
       gcd_views.details.feature_creatorlist, name='feature_creatorlist'),
     url(r'^feature/(?P<feature_id>\d+)/sequences/$',
