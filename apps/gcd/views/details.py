@@ -484,6 +484,39 @@ def creator_features(request, creator_id, country=None, language=None):
     return generic_sortable_list(request, features, table, template, context)
 
 
+def creator_overview(request, creator_id):
+    creator = get_gcd_object(Creator, creator_id)
+    creator_names = list(_get_creator_names_for_checklist(creator))
+    filter = None
+
+    issues = Issue.objects.filter(
+      story__credits__creator__in=creator_names,
+      story__type__id=19,
+      story__credits__deleted=False,
+      story__credits__credit_type__id__lt=6)\
+      .distinct().select_related('series__publisher')
+
+    issues = issues.annotate(
+        longest_story_id=Subquery(Story.objects.filter(
+                                  credits__creator__in=creator_names,
+                                  issue_id=OuterRef('pk'),
+                                  type_id=19, deleted=False)
+                                  .values('pk')
+                                  .order_by('-page_count')[:1]))
+
+    context = {
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'publisher': True,
+        'heading': 'Issue Overview for Creator %s' % (creator)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CoverIssueStoryTable(issues, attrs={'class': 'sortable_listing'},
+                                 template_name='gcd/bits/sortable_table.html',
+                                 order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context, 50)
+
+
 def creator_issues(request, creator_id, series_id,
                    country=None, language=None):
     return checklist_by_id(request, creator_id, series_id=series_id,

@@ -173,6 +173,8 @@ urlpatterns = [
       gcd_views.details.checklist_by_id, name='creator_character_issues'),
     url(r'^creator/(?P<creator_id>\d+)/feature/(?P<feature_id>\d+)/issues/$',
       gcd_views.details.checklist_by_id, name='creator_feature_issues'),
+    url(r'^creator/(?P<creator_id>\d+)/overview/$',
+      gcd_views.details.creator_overview, name='creator_overview'),
     url(r'^creator/name/(?P<creator_name>.+)/$',
       gcd_views.search.creator_by_name,
       name='creator_by_name'),
