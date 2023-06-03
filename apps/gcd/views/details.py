@@ -2695,6 +2695,7 @@ def feature_overview(request, feature_id):
     context = {
         'item_name': 'issue',
         'plural_suffix': 's',
+        'publisher': True,
         'heading': 'Issue Overview for Feature %s' % (feature)
     }
     template = 'gcd/search/issue_list_sortable.html'
