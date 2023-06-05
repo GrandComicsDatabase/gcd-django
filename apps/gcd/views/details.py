@@ -85,6 +85,7 @@ IS_NONE = '[IS_NONE]'
 
 ISSUE_CHECKLIST_DISCLAIMER = 'In the checklist results for stories, covers, '\
                              'and cartoons are shown.'
+OVERVIEW_DISCLAIMER = 'In the overview only comic stories are shown.'
 COVER_CHECKLIST_DISCLAIMER = 'In the checklist results for covers are shown.'
 MIGRATE_DISCLAIMER = ' Text credits are currently being migrated to '\
                      'links. Therefore not all credits in our '\
@@ -2725,7 +2726,7 @@ def feature_overview(request, feature_id):
                                     type_id=19, deleted=False)
                                     .values('pk')
                                     .order_by('-page_count')[:1]))
-        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER
+        result_disclaimer = OVERVIEW_DISCLAIMER
     else:
         issues = Issue.objects.none()
         result_disclaimer = 'not supported for this feature type'
