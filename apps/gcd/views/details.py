@@ -2725,13 +2725,16 @@ def feature_overview(request, feature_id):
                                     type_id=19, deleted=False)
                                     .values('pk')
                                     .order_by('-page_count')[:1]))
+        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER
     else:
         issues = Issue.objects.none()
+        result_disclaimer = 'not supported for this feature type'
 
     filter = filter_issues(request, issues)
     issues = filter.qs
 
     context = {
+        'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
         'publisher': True,
