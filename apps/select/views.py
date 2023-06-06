@@ -496,7 +496,7 @@ class CreatorName4RelationAutocomplete(LoginRequiredMixin,
         qs = CreatorNameDetail.objects.filter(deleted=False,
                                               type__id__in=[5, 8, 12, 13])
 
-        creator_id = self.forwarded.get('to_creator', None)
+        creator_id = self.forwarded.get('from_creator', None)
 
         if creator_id:
             qs = qs.filter(creator__creator_names__id=creator_id)
