@@ -312,7 +312,8 @@ class CollectionItemFilter(django_filters.FilterSet):
 
     class Meta:
         model = CollectionItem
-        fields = ['own',
+        fields = ['publisher',
+                  'own',
                   'was_read',
                   'signed',
                   'is_digital',
