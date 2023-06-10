@@ -13,7 +13,6 @@ from django.core.exceptions import PermissionDenied
 from django.conf import settings
 from django.utils.html import conditional_escape as esc
 from django.utils.html import mark_safe
-from django.utils.http import urlencode
 
 from djqscsv import render_to_csv_response
 import csv
@@ -34,7 +33,8 @@ from apps.mycomics.forms import CollectionForm, CollectionItemForm, \
 from apps.stddata.models import Date
 from apps.stddata.forms import DateForm
 from apps.mycomics.models import Collection, CollectionItem, Subscription, \
-                                 Location, PurchaseLocation, CollectionItemFilter
+                                 Location, PurchaseLocation, \
+                                 CollectionItemFilter
 from django.utils.translation import ugettext as _
 
 INDEX_TEMPLATE = 'mycomics/index.html'
@@ -104,7 +104,12 @@ def view_collection(request, collection_id):
             'base_url': base_url,
             'needed_covers_url': needed_covers_url,
             'unindexed_issues_url': unindexed_issues_url}
-    f = CollectionItemFilter(request.GET, queryset=items, collection=collection)
+    data = set(items.values_list('issue__series__publisher'))
+    publishers = []
+    for i in data:
+        publishers.append(i[0])
+    f = CollectionItemFilter(request.GET, queryset=items,
+                             collection=collection, publishers=publishers)
     vars['filter'] = f
     paginator = ResponsePaginator(f.qs, vars=vars, per_page=DEFAULT_PER_PAGE,
                                   alpha=True)
@@ -885,8 +890,8 @@ def subscribed_into_collection(request, collection_id):
     issues = Issue.objects.none()
     for subscription in collection.subscriptions.all():
         new_issues = subscription.series.active_issues()\
-                                 .filter(created__gte=subscription.last_pulled)\
-                                 .exclude(collectionitem__collections=collection)
+          .filter(created__gte=subscription.last_pulled)\
+          .exclude(collectionitem__collections=collection)
         issues |= new_issues
     return_url = HttpResponseRedirect(
       urlresolvers.reverse('subscriptions_collection',

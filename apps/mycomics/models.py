@@ -7,7 +7,7 @@ import django_filters
 
 from model_utils import Choices
 
-from apps.gcd.models import Issue, Series
+from apps.gcd.models import Issue, Series, Publisher
 from apps.stddata.models import Currency, Date, Language
 from taggit.managers import TaggableManager
 
@@ -276,9 +276,17 @@ class CollectionItemFilter(django_filters.FilterSet):
     market_value = django_filters.RangeFilter()
     rating = django_filters.RangeFilter()
     own = django_filters.ChoiceFilter(choices=OWN_CHOICES)
+    publisher = django_filters.ModelChoiceFilter(
+      field_name='issue__series__publisher',
+      label='Publisher',
+      queryset=Publisher.objects.all())
 
     def __init__(self, *args, **kwargs):
         collection = kwargs.pop('collection')
+        if 'publishers' in kwargs:
+            publishers = kwargs.pop('publishers')
+        else:
+            publishers = None
         super().__init__(*args, **kwargs)
         if not collection.price_paid_used:
             self.filters.pop('price_paid')
@@ -298,6 +306,9 @@ class CollectionItemFilter(django_filters.FilterSet):
             self.filters.pop('own')
         if not collection.digital_used:
             self.filters.pop('is_digital')
+        if publishers:
+            qs = Publisher.objects.filter(id__in=publishers)
+            self.filters['publisher'].queryset = qs
 
     class Meta:
         model = CollectionItem
