@@ -435,12 +435,12 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
                 if parent_disambiguation:
                     qs_contains = qs.filter(Q(**{
                       '%s__icontains' % field: dis_query,
-                      '%s__disambiguation__startswith' % parent_disambiguation:
+                      '%s__disambiguation__istartswith' % parent_disambiguation:
                       disambiguation}))
                 else:
                     qs_contains = qs.filter(Q(**{'%s__icontains' % field:
                                                  dis_query,
-                                                 'disambiguation__startswith':
+                                                 'disambiguation__istartswith':
                                                  disambiguation}))
                 qs_contains |= qs.filter(Q(**{'%s__icontains' % field: query}))
             else:
