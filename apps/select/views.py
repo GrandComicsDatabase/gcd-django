@@ -424,7 +424,7 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
 
 def _filter_and_sort(qs, query, field='name', creator_detail=False,
                      disambiguation=False, parent_disambiguation=None,
-                     exact_match_at_front=True):
+                     interactive=True):
     if query:
         if disambiguation or parent_disambiguation:
             if query.find(' [') > 1:
@@ -448,12 +448,12 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
         else:
             qs_contains = qs.filter(Q(**{'%s__icontains' % field: query}))
         qs_return = None
-        if query.isdigit():
+        if interactive and query.isdigit():
             qs_match_id = qs.filter(Q(**{'id': query}))
             if qs_match_id:
                 qs_return = qs_match_id.union(qs_contains)
         if not qs_return:
-            if exact_match_at_front:
+            if interactive:
                 qs_match = qs.filter(Q(**{'%s' % field: query}))
             else:
                 qs_match = None
@@ -541,7 +541,7 @@ class SchoolAutocomplete(LoginRequiredMixin,
 
 class FeatureAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
-    def get_queryset(self, exact_match_at_front=True):
+    def get_queryset(self, interactive=True):
         qs = Feature.objects.filter(deleted=False)
 
         language = self.forwarded.get('language_code', None)
@@ -564,7 +564,7 @@ class FeatureAutocomplete(LoginRequiredMixin,
                 qs = qs.exclude(feature_type__id=3)
 
         qs = _filter_and_sort(qs, self.q, disambiguation=True,
-                              exact_match_at_front=exact_match_at_front)
+                              interactive=interactive)
 
         return qs
 

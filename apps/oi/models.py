@@ -5745,7 +5745,7 @@ class StoryRevision(Revision):
                           'type': self.type_id }
         self.q = feature
         feature_object = FeatureAutocomplete.get_queryset(
-          self, exact_match_at_front=False)
+          self, interactive=False)
         if feature_object.count() > 1:
             feature_object = feature_object.filter(name=feature)
         if feature_object.count() == 1:
