@@ -28,6 +28,7 @@ from django_tables2.export.export import TableExport
 from djqscsv import render_to_csv_response
 
 from apps.indexer.views import ViewTerminationError
+from apps.indexer.models import Indexer
 
 from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
@@ -3418,15 +3419,14 @@ def show_issue(request, issue, preview=False):
     if not preview:
         res = issue.reservation_set.filter(status=3)
         for i in res:
-            oi_indexers.append(i.indexer)
+            oi_indexers.append(i.indexer.id)
 
-    res = IssueRevision.objects.filter(issue=issue)\
-                               .select_related('changeset__indexer__indexer')
-    res = res.filter(changeset__state=states.APPROVED)\
-             .exclude(changeset__indexer__username=settings.ANON_USER_NAME)
-    for i in res:
-        oi_indexers.append(i.changeset.indexer.indexer)
+    revs = issue.revisions.filter(changeset__state=states.APPROVED)\
+                .exclude(changeset__indexer__username=settings.ANON_USER_NAME)\
+                .select_related('changeset')
+    oi_indexers.append(revs.values_list('changeset__indexer_id', flat=True))
     oi_indexers = list(set(oi_indexers))
+    oi_indexers = Indexer.objects.filter(user__id__in=oi_indexers)
 
     if series.is_singleton:
         country = series.country
@@ -3453,6 +3453,8 @@ def show_issue(request, issue, preview=False):
        'preview': preview,
        'not_shown_types': not_shown_types,
        'show_sources': show_sources,
+       'among_others': issue.created.year <=
+                        settings.NEW_SITE_CREATION_DATE.year,
        'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
        })
 

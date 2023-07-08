@@ -298,7 +298,7 @@ This issue has variants:
 {% if issue.series.index_credit_set.all.select_related or oi_indexers %}
       <div id="index_credits">
   {% if oi_indexers %}
-        <div id="indexers_header">{% trans "This issue was most recently modified by:" %}</div>
+        <div id="indexers_header">This issue was modified by{% if among_others %}, among others {% endif %}</div>
         <ul>
     {% for credit in oi_indexers %}
           <li> {{ credit }}
