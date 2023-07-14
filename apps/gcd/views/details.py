@@ -534,7 +534,8 @@ def creator_edited_issues(request, creator_id, series_id=None,
 
 def _get_creator_names_for_checklist(creator):
     creator_names = creator.creator_names.filter(deleted=False)
-    if creator.official_creator_detail.type_id == NAME_TYPES['house']:
+    if creator.official_creator_detail.type_id in [NAME_TYPES['house'],
+                                                   NAME_TYPES['joint']]:
         house_names = creator.from_related_creator.filter(
             relation_type_id=4, creator_name__isnull=False)\
             .values_list('creator_name', flat=True)
@@ -3424,7 +3425,7 @@ def show_issue(request, issue, preview=False):
     revs = issue.revisions.filter(changeset__state=states.APPROVED)\
                 .exclude(changeset__indexer__username=settings.ANON_USER_NAME)\
                 .select_related('changeset')
-    oi_indexers.append(revs.values_list('changeset__indexer_id', flat=True))
+    oi_indexers.extend(revs.values_list('changeset__indexer_id', flat=True))
     oi_indexers = list(set(oi_indexers))
     oi_indexers = Indexer.objects.filter(user__id__in=oi_indexers)
 
@@ -3453,7 +3454,7 @@ def show_issue(request, issue, preview=False):
        'preview': preview,
        'not_shown_types': not_shown_types,
        'show_sources': show_sources,
-       'among_others': issue.created.year <=
+       'among_others': issue.created and issue.created.year <=
                         settings.NEW_SITE_CREATION_DATE.year,
        'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)
        })
