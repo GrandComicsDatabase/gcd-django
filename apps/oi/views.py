@@ -4258,7 +4258,8 @@ def move_story_revision(request, id):
     # Only when moving to a new variant or new issue do we need to handle
     # reprints. No reprint handling when in a change we move a sequence back,
     # which was moved in the change to the other side.
-    if not new_issue.issue or new_issue.issue != story.story.issue:
+    if story.story and (not new_issue.issue
+                        or new_issue.issue != story.story.issue):
         reprints = []
         for reprint in story.story.from_all_reprints.all():
             if _do_reserve(story.changeset.indexer,
