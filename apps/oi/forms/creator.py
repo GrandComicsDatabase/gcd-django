@@ -100,6 +100,10 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
                                                 .filter(deleted=False).count():
                 form.cleaned_data['DELETE'] = False
                 return False
+        if form.instance.creator_name_detail:
+            if form.instance.creator_name_detail.is_official_name:
+                form.cleaned_data['DELETE'] = False
+                return False
         return super(CustomInlineFormSet, self)._should_delete_form(form)
 
     def clean(self):
