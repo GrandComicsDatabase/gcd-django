@@ -1,6 +1,6 @@
 <h1>Countries used in series, creator and indexer tables</h1>
 
 {% for country in countries %}
-    <img src="{{ STATIC_URL }}/img/gcd/flags/{{ country.code|lower }}.png" alt=" " class="embedded_flag"> ({{ country.code|lower }}) {{ country }}<br/>
+    <img src="{{ STATIC_URL }}img/gcd/flags/{{ country.code|lower }}.png" alt=" " class="embedded_flag"> ({{ country.code|lower }}) {{ country }}<br/>
 {% endfor %}
 
