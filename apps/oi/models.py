@@ -8496,8 +8496,14 @@ class CreatorNameDetailRevision(Revision):
         self.creator = self.creator_revision.creator
 
     def __str__(self):
-        return '%s - %s (%s)' % (
-            str(self.creator), str(self.name), str(self.type.type))
+        if self.creator.disambiguation:
+            extra = ' [%s]' % self.creator.disambiguation
+        else:
+            extra = ''
+        if self.is_official_name:
+            return '%s%s' % (str(self.creator), extra)
+        else:
+            return '%s%s - %s' % (str(self.creator), extra, str(self.name))
 
     # #####################################################################
     # Old methods. t.b.c, if deprecated.
