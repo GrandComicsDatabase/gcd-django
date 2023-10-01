@@ -170,12 +170,12 @@ def get_story_revision_form(revision=None, user=None,
 
         def save_characters(self, instance):
             appearing_characters = self.cleaned_data['appearing_characters']
+            if self.cleaned_data['use_universe'] and \
+                self.cleaned_data['universe'].count() == 1:
+                universe = self.cleaned_data['universe'].get()
+            else:
+                universe = None
             if appearing_characters:
-                if self.cleaned_data['use_universe'] and \
-                   self.cleaned_data['universe'].count() == 1:
-                    universe = self.cleaned_data['universe'].get()
-                else:
-                    universe = None
                 for character in appearing_characters:
                     story_character = StoryCharacterRevision(
                       character=character,
@@ -189,6 +189,7 @@ def get_story_revision_form(revision=None, user=None,
                 for member in group_members:
                     story_character = StoryCharacterRevision(
                       character=member,
+                      universe=universe,
                       story_revision=instance,
                       changeset=changeset)
                     story_character.save()
