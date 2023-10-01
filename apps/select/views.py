@@ -19,7 +19,8 @@ from dal import autocomplete
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
-                            Character, CharacterNameDetail, Group, STORY_TYPES
+                            Character, CharacterNameDetail, Group, Universe, \
+                            STORY_TYPES
 from apps.stddata.models import Country, Language
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
@@ -655,6 +656,16 @@ class GroupAutocomplete(LoginRequiredMixin,
         if character_name:
             qs = qs.filter(members__character__character_names=character_name)\
                    .distinct()
+
+        qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class UniverseAutocomplete(LoginRequiredMixin,
+                           autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Universe.objects.filter(deleted=False)
 
         qs = _filter_and_sort(qs, self.q)
 

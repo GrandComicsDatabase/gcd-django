@@ -24,7 +24,7 @@ from apps.oi.models import (
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
                             Feature, FeatureLogo, CharacterNameDetail, Group,\
-                            STORY_TYPES, NON_OPTIONAL_TYPES, \
+                            Universe, STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
 from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
@@ -171,9 +171,15 @@ def get_story_revision_form(revision=None, user=None,
         def save_characters(self, instance):
             appearing_characters = self.cleaned_data['appearing_characters']
             if appearing_characters:
+                if self.cleaned_data['use_universe'] and \
+                   self.cleaned_data['universe'].count() == 1:
+                    universe = self.cleaned_data['universe'].get()
+                else:
+                    universe = None
                 for character in appearing_characters:
                     story_character = StoryCharacterRevision(
                       character=character,
+                      universe=universe,
                       story_revision=instance,
                       changeset=changeset)
                     story_character.save()
@@ -332,7 +338,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCharacterRevision
         fields = ['character', 'additional_information', 'role', 'group',
-                  'is_flashback', 'is_origin', 'is_death', 'notes']
+                  'universe', 'is_flashback', 'is_origin', 'is_death', 'notes']
         help_texts = {
             'role':
                 'You can enter what role the character played in the story',
@@ -363,6 +369,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
         instance = kwargs.get('instance', None)
         if instance:
             if instance.role or instance.group.exists() or \
+               instance.universe or \
                instance.is_flashback or instance.is_origin or \
                instance.is_death or instance.notes:
                 self.fields['additional_information'].initial = True
@@ -392,6 +399,16 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       required=False,
       help_text='Click to enter role, group, flashback, origin, death, or '
                 'notes.')
+
+    universe = forms.ModelChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universe, if any, from which the character '
+                'originates.'
+    )
 
 
 StoryCharacterRevisionFormSet = inlineformset_factory(
@@ -425,6 +442,8 @@ class StoryRevisionForm(forms.ModelForm):
         fields.insert(fields.index('no_script'), 'no_creator_help')
         fields.insert(fields.index('script'), 'creator_help')
         fields.insert(fields.index('characters'), 'character_help')
+        fields.insert(fields.index('characters'), 'universe')
+        fields.insert(fields.index('characters'), 'use_universe')
         fields.insert(fields.index('characters'), 'appearing_characters')
         fields.insert(fields.index('characters'), 'group')
         fields.insert(fields.index('group')+1, 'group_members')
@@ -471,12 +490,12 @@ class StoryRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credits_start:
-                                               characters_start-5]])
+                                               characters_start-7]])
         field_list.append(HTML('<tr><td><hr>&nbsp;<strong>Characters:</strong>'
                                '</td><th><hr></th></tr>'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start-5:
+                           for field in fields[characters_start-7:
                                                characters_start]])
         field_list.append(Formset('characters_formset'))
         characters_end = len(field_list) + 1
@@ -602,6 +621,24 @@ class StoryRevisionForm(forms.ModelForm):
         required=False,
         label_suffix='',
         label='c)')
+
+    universe = forms.ModelMultipleChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universes, if any, in which the story takes place.'
+    )
+
+    use_universe = forms.BooleanField(
+        required=False,
+        initial=True,
+        help_text='The selected universe is the universe the appearing '
+                  'characters entered in the following originate from, unless '
+                  'individually overridden. '
+                  'If more than one universe is selected above, this '
+                  'flag has no effect.')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,

@@ -51,7 +51,11 @@ class Universe(GcdData):
         return display_name
 
     def __str__(self):
-        return '%s : %s - %s' % (self.multiverse, self.name, self.designation)
+        if self.designation:
+            return '%s : %s - %s' % (self.multiverse, self.name,
+                                     self.designation)
+        else:
+            return '%s : %s' % (self.multiverse, self.name)
 
 
 class CharacterNameDetail(GcdData):
@@ -125,7 +129,8 @@ class CharacterGroupBase(GcdData):
             return '?'
         else:
             return '%d%s' % (self.year_first_published,
-                             '?' if self.year_first_published_uncertain else '')
+                             '?' if self.year_first_published_uncertain
+                             else '')
 
     @property
     def disambiguated(self):

@@ -161,6 +161,13 @@ def field_value(revision, field):
         if printers:
             printers = printers[:-2]
         return mark_safe(printers)
+    elif field == 'universe':
+        universes = ''
+        for universe in value.all():
+            universes += absolute_url(universe) + '; '
+        if universes:
+            universes = universes[:-2]
+        return mark_safe(universes)
     elif field in ['no_editing', 'no_script', 'no_pencils', 'no_inks',
                    'no_colors', 'no_letters']:
         return yesno(value, 'X, ')

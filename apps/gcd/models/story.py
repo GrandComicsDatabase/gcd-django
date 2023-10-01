@@ -11,7 +11,7 @@ import django_tables2 as tables
 
 from .gcddata import GcdData
 from .award import ReceivedAward
-from .character import CharacterNameDetail, Group
+from .character import CharacterNameDetail, Group, Universe
 from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
 
@@ -216,6 +216,8 @@ def show_characters(story, url=True, css_style=True, compare=False):
         if compare:
             disambiguation += \
               '%s' % character.character.character.disambiguated
+            if character.universe:
+                disambiguation += ' - %s' % character.universe
 
         characters += get_civilian_identity(character,
                                             appearing_characters,
@@ -246,8 +248,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
         else:
             if compare and disambiguation:
                 return mark_safe(characters +
-                                 '<br>For information, linked characters '
-                                 'with disambiguation:<br>' + disambiguation)
+                                 '<br><br>For information, linked characters '
+                                 'with disambiguation and universe:<br>' +
+                                 disambiguation)
             else:
                 return mark_safe(characters)
     else:
@@ -325,6 +328,8 @@ class StoryCharacter(GcdData):
 
     character = models.ForeignKey(CharacterNameDetail,
                                   on_delete=models.CASCADE)
+    universe = models.ForeignKey(Universe, null=True,
+                                 on_delete=models.CASCADE)
     story = models.ForeignKey('Story', on_delete=models.CASCADE,
                               related_name='appearing_characters')
     group = models.ManyToManyField(Group)
@@ -375,6 +380,7 @@ class Story(GcdData):
     feature = models.CharField(max_length=255)
     feature_object = models.ManyToManyField(Feature)
     feature_logo = models.ManyToManyField(FeatureLogo)
+    universe = models.ManyToManyField(Universe)
     type = models.ForeignKey(StoryType, on_delete=models.CASCADE)
     sequence_number = models.IntegerField()
 

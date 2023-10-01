@@ -5010,8 +5010,8 @@ def get_story_field_list():
             'job_number', 'page_count', 'page_count_uncertain',
             'script', 'no_script', 'pencils', 'no_pencils', 'inks', 'no_inks',
             'colors', 'no_colors', 'letters', 'no_letters',
-            'editing', 'no_editing',
-            'characters', 'synopsis', 'reprint_notes', 'notes', 'keywords']
+            'editing', 'no_editing', 'characters', 'universe',
+            'synopsis', 'reprint_notes', 'notes', 'keywords']
 
 
 class StoryCreditRevision(Revision):
@@ -5148,6 +5148,8 @@ class StoryCharacterRevision(Revision):
     character = models.ForeignKey(CharacterNameDetail,
                                   on_delete=models.CASCADE,
                                   related_name='story_character_revisions')
+    universe = models.ForeignKey(Universe, null=True, blank=True,
+                                 on_delete=models.CASCADE)
     story_revision = models.ForeignKey(
       'StoryRevision', on_delete=models.CASCADE,
       related_name='story_character_revisions')
@@ -5188,7 +5190,7 @@ class StoryCharacterRevision(Revision):
     # TODO old methods, t.b.c
 
     _base_field_list = ['character', 'role', 'group', 'is_flashback',
-                        'is_origin', 'is_death', 'notes']
+                        'is_origin', 'is_death', 'notes', 'universe']
 
     def _field_list(self):
         return self._base_field_list
@@ -5202,6 +5204,7 @@ class StoryCharacterRevision(Revision):
             'is_origin': False,
             'is_death': False,
             'notes': '',
+            'universe': None,
         }
 
     def _imps_for(self, field_name):
@@ -5223,6 +5226,7 @@ class StoryRevision(Revision):
     feature = models.CharField(max_length=255, blank=True)
     feature_object = models.ManyToManyField(Feature, blank=True)
     feature_logo = models.ManyToManyField(FeatureLogo, blank=True)
+    universe = models.ManyToManyField(Universe, blank=True)
     type = models.ForeignKey(StoryType, on_delete=models.CASCADE)
     sequence_number = models.IntegerField()
 
@@ -5742,7 +5746,7 @@ class StoryRevision(Revision):
         else:
             series = self.changeset.issuerevisions.get(issue=None).series
         self.forwarded = {'language_code': series.language.code,
-                          'type': self.type_id }
+                          'type': self.type_id}
         self.q = feature
         feature_object = FeatureAutocomplete.get_queryset(
           self, interactive=False)
@@ -5910,6 +5914,7 @@ class StoryRevision(Revision):
             'notes': '',
             'keywords': '',
             'synopsis': '',
+            'universe': None,
             'characters': '',
             'reprint_notes': '',
             'genre': '',
@@ -5937,7 +5942,7 @@ class StoryRevision(Revision):
         self._seen_feature = False
 
     def _imps_for(self, field_name):
-        if field_name in ('first_line', 'type',
+        if field_name in ('first_line', 'type', 'universe',
                           'characters', 'synopsis', 'job_number',
                           'reprint_notes', 'notes', 'keywords', 'issue'):
             return 1
