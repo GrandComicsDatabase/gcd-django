@@ -216,8 +216,6 @@ def show_characters(story, url=True, css_style=True, compare=False):
         if compare:
             disambiguation += \
               '%s' % character.character.character.disambiguated
-            if character.universe:
-                disambiguation += ' - %s' % character.universe
 
         characters += get_civilian_identity(character,
                                             appearing_characters,
@@ -228,6 +226,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
                                                     appearing_characters,
                                                     url=url,
                                                     compare=compare)
+            if character.universe:
+                disambiguation += ' - %s' % character.universe
+
     if story.characters:
         if url:
             text_characters = esc(story.characters)
