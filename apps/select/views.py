@@ -667,7 +667,8 @@ class UniverseAutocomplete(LoginRequiredMixin,
     def get_queryset(self):
         qs = Universe.objects.filter(deleted=False)
 
-        qs = _filter_and_sort(qs, self.q)
+        qs = qs.filter(Q(**{'name__icontains': self.q}) |
+                       Q(**{'designation__icontains': self.q}) )
 
         return qs
 
