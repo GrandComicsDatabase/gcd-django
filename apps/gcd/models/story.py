@@ -185,6 +185,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
             if compare:
                 disambiguation += get_civilian_identity(
                   member, all_appearing_characters, url=url, compare=compare)
+                if character.universe:
+                    disambiguation += ' - %s' % character.universe
+
         characters += ']; '
         if compare:
             disambiguation += ']<br>'
