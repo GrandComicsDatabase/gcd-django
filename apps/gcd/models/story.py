@@ -110,6 +110,8 @@ def character_notes(character):
 
 def get_civilian_identity(character, appearing_characters, url=True,
                           compare=False):
+    appearing_characters = appearing_characters.filter(
+      universe=character.universe)
     civilian_identity = set(
         character.character.character.to_related_character
                  .filter(relation_type__id=2).values_list('to_character',
@@ -200,8 +202,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
           character.character.character.from_related_character
                    .filter(relation_type__id=2).values_list('from_character',
                                                             flat=True))\
-                   .intersection(all_appearing_characters.values_list(
-                                 'character__character', flat=True))
+                   .intersection(all_appearing_characters.filter(
+                      universe=character.universe).values_list(
+                      'character__character', flat=True))
         if alias_identity:
             continue
         if first:

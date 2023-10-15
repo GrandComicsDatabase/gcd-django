@@ -350,6 +350,8 @@ urlpatterns = [
       name='character_search_hx'),
     url(r'^character/(?P<character_id>\d+)/issues/$',
       gcd_views.details.character_issues, name='character_issues'),
+    url(r'^character/(?P<character_id>\d+)/issues/universe/(?P<universe_id>-?\d+)/$',
+      gcd_views.details.character_issues, name='character_issues_per_universe'),
     url(r'^character/(?P<character_id>\d+)/issues/layer/up/$',
       gcd_views.details.character_issues, {'layer': 1}, name='character_issues_up'),
     url(r'^character/(?P<character_id>\d+)/issues/layer/down/$',

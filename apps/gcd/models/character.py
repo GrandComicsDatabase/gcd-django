@@ -50,12 +50,19 @@ class Universe(GcdData):
             display_name += self.designation
         return display_name
 
-    def __str__(self):
+    # TODO add queries on story/character links
+    def has_dependents(self):
+        return True
+
+    def universe_name(self):
         if self.designation:
-            return '%s : %s - %s' % (self.multiverse, self.name,
-                                     self.designation)
+            return '%s - %s' % (self.name,
+                                self.designation)
         else:
-            return '%s : %s' % (self.multiverse, self.name)
+            return '%s' % (self.name)
+
+    def __str__(self):
+        return '%s : %s' % (self.multiverse, self.universe_name())
 
 
 class CharacterNameDetail(GcdData):
@@ -158,6 +165,8 @@ class Character(CharacterGroupBase):
         verbose_name_plural = 'Characters'
 
     external_link = models.ManyToManyField(ExternalLink)
+    universe = models.ForeignKey('Universe', on_delete=models.CASCADE,
+                                 related_name='characters', null=True)
 
     def active_names(self):
         return self.character_names.exclude(deleted=True)
@@ -175,6 +184,13 @@ class Character(CharacterGroupBase):
     def active_memberships(self):
         return self.memberships.all().order_by('year_joined',
                                                'group__sort_name')
+
+    def active_universes(self):
+        from .story import StoryCharacter
+        appearances = StoryCharacter.objects.filter(character__character=self,
+                                                    deleted=False)
+        universes = appearances.values_list('universe', flat=True).distinct()
+        return Universe.objects.filter(id__in=universes)
 
     def has_dependents(self):
         if self.active_memberships().exists():
@@ -194,6 +210,14 @@ class Character(CharacterGroupBase):
         return urlresolvers.reverse(
                 'show_character',
                 kwargs={'character_id': self.id})
+
+    # TODO, should groupds have a universe ?
+    def __str__(self):
+        string = super(Character, self).__str__()
+        if self.universe:
+            return string + ' - %s' % self.universe.universe_name()
+        else:
+            return string
 
 
 class CharacterRelation(GcdLink):

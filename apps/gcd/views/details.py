@@ -1897,17 +1897,13 @@ def series_details(request, series_id, by_date=False):
       })
 
 
-def series_creatorlist(request, series_id):
-    series = get_gcd_object(Series, series_id)
+def _annotate_creator_name_detail_list(creator_names):
 
-    creators = CreatorNameDetail.objects.all()
-    creators = creators.filter(storycredit__story__issue__series=series,
-                               storycredit__story__type__id__in=CORE_TYPES,
-                               storycredit__deleted=False).distinct()\
-                       .select_related('creator')
-
-    creators = creators.annotate(
-      first_credit=Min('storycredit__story__issue__key_date'))
+    creators = creator_names.annotate(
+      first_credit=Min(Case(When(storycredit__story__issue__key_date='',
+                       then=Value('9999-99-99'),
+                                 ),
+                            default=F('storycredit__story__issue__key_date'))))
     script = Count('storycredit__story__issue',
                    filter=Q(storycredit__credit_type__id=1), distinct=True)
     pencils = Count('storycredit__story__issue',
@@ -1925,6 +1921,18 @@ def series_creatorlist(request, series_id):
       inks=inks,
       colors=colors,
       letters=letters)
+    return creators
+
+
+def series_creatorlist(request, series_id):
+    series = get_gcd_object(Series, series_id)
+
+    creators = CreatorNameDetail.objects.all()
+    creators = creators.filter(storycredit__story__issue__series=series,
+                               storycredit__story__type__id__in=CORE_TYPES,
+                               storycredit__deleted=False).distinct()\
+                       .select_related('creator')
+    creators = _annotate_creator_name_detail_list(creators)
 
     context = {
         'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
@@ -1936,7 +1944,7 @@ def series_creatorlist(request, series_id):
     table = SeriesCreatorTable(creators, attrs={'class': 'sortable_listing'},
                                series=series,
                                template_name='gcd/bits/sortable_table.html',
-                               order_by=('creator__sort_name'))
+                               order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -2774,28 +2782,7 @@ def feature_creatorlist(request, feature_id):
           storycredit__deleted=False).distinct().select_related('creator')
         result_disclaimer = MIGRATE_DISCLAIMER
 
-    creators = creators.annotate(
-      first_credit=Min(Case(When(storycredit__story__issue__key_date='',
-                       then=Value('9999-99-99'),
-                                 ),
-                            default=F('storycredit__story__issue__key_date'))))
-    script = Count('storycredit__story__issue',
-                   filter=Q(storycredit__credit_type__id=1), distinct=True)
-    pencils = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=2), distinct=True)
-    inks = Count('storycredit__story__issue',
-                 filter=Q(storycredit__credit_type__id=3), distinct=True)
-    colors = Count('storycredit__story__issue',
-                   filter=Q(storycredit__credit_type__id=4), distinct=True)
-    letters = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=5), distinct=True)
-    creators = creators.annotate(
-      credits_count=Count('storycredit__story__issue', distinct=True),
-      script=script,
-      pencils=pencils,
-      inks=inks,
-      colors=colors,
-      letters=letters)
+    creators = _annotate_creator_name_detail_list(creators)
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -2948,11 +2935,20 @@ def show_character(request, character, preview=False):
     return render(request, 'gcd/details/character.html', vars)
 
 
-def character_issues(request, character_id, layer=None):
+def character_issues(request, character_id, layer=None, universe_id=None):
     character = get_gcd_object(Character, character_id)
+    if character.universe:
+        universe_id = character.universe.id
+        if character.active_generalisations():
+            filter_character = character.active_generalisations().get()\
+                                        .from_character
+        if layer:
+            raise ValueError
+    else:
+        filter_character = character
 
     issues = Issue.objects.filter(
-      story__appearing_characters__character__character=character,
+      story__appearing_characters__character__character=filter_character,
       story__appearing_characters__deleted=False,
       story__type__id__in=CORE_TYPES,
       story__deleted=False).distinct().select_related('series__publisher')
@@ -2976,13 +2972,36 @@ def character_issues(request, character_id, layer=None):
             story__type__id__in=CORE_TYPES,
             story__deleted=False).distinct()\
                                  .select_related('series__publisher')
+    if universe_id:
+        if universe_id == '-1':
+            issues = Issue.objects.filter(
+              story__appearing_characters__character__character=  # noqa: E251
+              filter_character,
+              story__appearing_characters__universe_id__isnull=True,
+              story__appearing_characters__deleted=False,
+              story__type__id__in=CORE_TYPES,
+              story__deleted=False).distinct()\
+                     .select_related('series__publisher')
+        else:
+            issues = Issue.objects.filter(
+              story__appearing_characters__character__character=  # noqa: E251
+              filter_character,
+              story__appearing_characters__universe_id=universe_id,
+              story__appearing_characters__deleted=False,
+              story__type__id__in=CORE_TYPES,
+              story__deleted=False).distinct()\
+                     .select_related('series__publisher')
+
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    filter = filter_issues(request, issues)
+    issues = filter.qs
 
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'Issue List for Character %s' % (character)
+        'heading': 'Issue List for Character %s' % (character),
+        'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssueTable(issues, attrs={'class': 'sortable_listing'},
@@ -2993,40 +3012,43 @@ def character_issues(request, character_id, layer=None):
 
 def character_creators(request, character_id):
     character = get_gcd_object(Character, character_id)
+    filter_character = character
+    universe_id = None
 
-    creators = CreatorNameDetail.objects.all()
-    creators = creators.filter(
-      storycredit__story__appearing_characters__character__character=character,
-      storycredit__story__appearing_characters__deleted=False,
+    if character.universe:
+        universe_id = character.universe.id
+        if character.active_generalisations():
+            filter_character = character.active_generalisations().get()\
+                                        .from_character
+
+    if universe_id:
+        stories = Story.objects.filter(
+          appearing_characters__character__character=filter_character,
+          appearing_characters__universe_id=universe_id,
+          appearing_characters__deleted=False).distinct()
+    else:
+        stories = Story.objects.filter(
+          appearing_characters__character__character=filter_character,
+          appearing_characters__deleted=False).distinct()
+
+    filter = filter_sequences(request, stories)
+    stories = filter.qs
+    stories_ids = stories.values_list('id', flat=True)
+
+    creators = CreatorNameDetail.objects.filter(
+      storycredit__story__id__in=stories_ids,
       storycredit__story__type__id__in=CORE_TYPES,
-      storycredit__deleted=False).distinct().select_related('creator')
+      storycredit__deleted=False,
+      storycredit__credit_type__id__lt=6)
+    creators = _annotate_creator_name_detail_list(creators)
+
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
-
-    creators = creators.annotate(
-      first_credit=Min('storycredit__story__issue__key_date'))
-    script = Count('storycredit__story__issue',
-                   filter=Q(storycredit__credit_type__id=1), distinct=True)
-    pencils = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=2), distinct=True)
-    inks = Count('storycredit__story__issue',
-                 filter=Q(storycredit__credit_type__id=3), distinct=True)
-    colors = Count('storycredit__story__issue',
-                   filter=Q(storycredit__credit_type__id=4), distinct=True)
-    letters = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=5), distinct=True)
-    creators = creators.annotate(
-      credits_count=Count('storycredit__story__issue', distinct=True),
-      script=script,
-      pencils=pencils,
-      inks=inks,
-      colors=colors,
-      letters=letters)
-
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'creator',
         'plural_suffix': 's',
-        'heading': 'Creators Working on Character %s' % (character.name)
+        'heading': 'Creators Working on Character %s' % (character.name),
+        'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = CharacterCreatorTable(creators, attrs={'class':
@@ -3037,22 +3059,36 @@ def character_creators(request, character_id):
     return generic_sortable_list(request, creators, table, template, context)
 
 
-def character_sequences(request, character_id, country=None):
+def character_sequences(request, character_id):
     character = get_gcd_object(Character, character_id)
-    stories = Story.objects.filter(
-      appearing_characters__character__character=character,
-      appearing_characters__deleted=False,
-      deleted=False).distinct().select_related('issue__series__publisher')
-    if country:
-        country = get_object_or_404(Country, code=country)
-        stories = stories.filter(issue__series__country=country)
     heading = 'Sequences for Character %s' % (character)
+    if character.universe:
+        universe_id = character.universe.id
+        if character.active_generalisations():
+            character = character.active_generalisations().get().from_character
+    else:
+        universe_id = None
+    if universe_id:
+        stories = Story.objects.filter(
+          appearing_characters__character__character=character,
+          appearing_characters__universe_id=universe_id,
+          appearing_characters__deleted=False,
+          deleted=False).distinct().select_related('issue__series__publisher')
+    else:
+        stories = Story.objects.filter(
+          appearing_characters__character__character=character,
+          appearing_characters__deleted=False,
+          deleted=False).distinct().select_related('issue__series__publisher')
+
+    filter = filter_sequences(request, stories)
+    stories = filter.qs
 
     context = {
         'result_disclaimer': MIGRATE_DISCLAIMER,
         'item_name': 'sequence',
         'plural_suffix': 's',
-        'heading': heading
+        'heading': heading,
+        'filter': filter,
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = StoryTable(stories, attrs={'class': 'sortable_listing'},
@@ -3063,13 +3099,26 @@ def character_sequences(request, character_id, country=None):
 
 def character_covers(request, character_id):
     character = get_gcd_object(Character, character_id)
-    issues = Issue.objects.filter(
-      story__appearing_characters__character__character=character,
-      story__appearing_characters__deleted=False,
-      story__type__id=6,
-      story__deleted=False).distinct().select_related('series__publisher')
-
     heading = 'Covers with Character %s' % character.name
+    if character.universe:
+        universe_id = character.universe.id
+        if character.active_generalisations():
+            character = character.active_generalisations().get().from_character
+    else:
+        universe_id = None
+    if universe_id:
+        issues = Issue.objects.filter(
+          story__appearing_characters__character__character=character,
+          story__appearing_characters__universe_id=universe_id,
+          story__appearing_characters__deleted=False,
+          story__type__id=6,
+          story__deleted=False).distinct().select_related('series__publisher')
+    else:
+        issues = Issue.objects.filter(
+          story__appearing_characters__character__character=character,
+          story__appearing_characters__deleted=False,
+          story__type__id=6,
+          story__deleted=False).distinct().select_related('series__publisher')
 
     context = {
         'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
@@ -3149,25 +3198,7 @@ def group_creators(request, group_id):
       storycredit__deleted=False).distinct().select_related('creator')
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
-    creators = creators.annotate(
-      first_credit=Min('storycredit__story__issue__key_date'))
-    script = Count('storycredit__story__issue',
-                   filter=Q(storycredit__credit_type__id=1), distinct=True)
-    pencils = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=2), distinct=True)
-    inks = Count('storycredit__story__issue',
-                 filter=Q(storycredit__credit_type__id=3), distinct=True)
-    colors = Count('storycredit__story__issue',
-                   filter=Q(storycredit__credit_type__id=4), distinct=True)
-    letters = Count('storycredit__story__issue',
-                    filter=Q(storycredit__credit_type__id=5), distinct=True)
-    creators = creators.annotate(
-      credits_count=Count('storycredit__story__issue', distinct=True),
-      script=script,
-      pencils=pencils,
-      inks=inks,
-      colors=colors,
-      letters=letters)
+    creators = _annotate_creator_name_detail_list(creators)
 
     context = {
         'result_disclaimer': result_disclaimer,

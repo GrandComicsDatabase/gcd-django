@@ -5587,6 +5587,7 @@ class StoryRevision(Revision):
                 # no processing for deleted appearances
                 if story_character.deleted:
                     continue
+                # TODO handle universes, i.e. a superhero can appear twice
                 # Check if a superhero has a unique civilian identity.
                 if story_character.character.character.to_related_character\
                                   .filter(relation_type__id=2).count() == 1:
@@ -5597,6 +5598,7 @@ class StoryRevision(Revision):
                       .to_character
                     if not self.story_character_revisions\
                                .filter(
+                                 universe=story_character.universe,
                                  character__character=character_identity)\
                                .exists():
                         # civilian identities are not in a superhero group, so
@@ -6685,6 +6687,7 @@ class CharacterGroupRevisionBase(Revision):
             'language': None,
             'year_first_published': None,
             'year_first_published_uncertain': False,
+            'universe': None,
             'description': '',
             'notes': '',
             'keywords': '',
@@ -6717,11 +6720,19 @@ class CharacterRevision(CharacterGroupRevisionBase):
                                   on_delete=models.CASCADE,
                                   null=True,
                                   related_name='revisions')
-
+    universe = models.ForeignKey('gcd.Universe', on_delete=models.CASCADE,
+                                 null=True, blank=True,
+                                 related_name='character_revisions')
     external_link_revisions = GenericRelation(ExternalLinkRevision)
 
     source_name = 'character'
     source_class = Character
+
+    _base_field_list = ['disambiguation',
+                        'universe',
+                        'year_first_published',
+                        'year_first_published_uncertain', 'language',
+                        'description', 'notes', 'keywords']
 
     @property
     def source(self):
