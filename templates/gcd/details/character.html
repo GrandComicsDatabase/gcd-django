@@ -50,6 +50,7 @@ GCD :: Character :: {{ character.name }}
       </dl>
       <ul style="columns: 2;">
 	<li><a href='{% url "character_creators" character_id=character.id %}'>Creator Checklist (via linked story records)</a></li>
+	<li><a href='{% url "character_creator_names" character_id=character.id %}'>Creator Name Checklist (via linked story records)</a></li>
         <li><a href='{% url "character_issues" character_id=character.id %}'>Issue Checklist (via linked story records)</a></li>
   {% if character.active_specifications %}
         <li><a href='{% url "character_issues_down" character_id=character.id %}'>Issue Checklist, including specifications (via linked story records)</a></li>

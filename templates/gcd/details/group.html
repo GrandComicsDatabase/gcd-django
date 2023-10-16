@@ -41,6 +41,7 @@ GCD :: Group :: {{ group.name }}
       </dl>
       <ul style="columns: 2;">
         <li><a href='{% url "group_creators" group_id=group.id %}'>Creator Checklist (via linked story records)</a></li>
+        <li><a href='{% url "group_creator_names" group_id=group.id %}'>Creator Name Checklist (via linked story records)</a></li>
         <li><a href='{% url "group_issues" group_id=group.id %}'>Issue Checklist (via linked story records)</a></li>
         <li><a href='{% url "group_sequences" group_id=group.id %}'>Sequences List (via linked story records)</a></li>
       </ul>
