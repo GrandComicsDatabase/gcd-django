@@ -6163,10 +6163,7 @@ class PreviewStory(Story):
         story_revision._copy_fields_to(preview_story)
         preview_story.keywords = story_revision.keywords
         preview_story.revision = story_revision
-        if story_revision.source:
-            preview_story.id = story_revision.source.id
-        else:
-            preview_story.id = 0
+        preview_story.id = story_revision.id
         return preview_story
 
     @property
