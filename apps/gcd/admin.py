@@ -4,7 +4,7 @@ from .models import (MembershipType, NameType, NonComicWorkRole, CreditType,
                      NonComicWorkType, RelationType, School, SeriesBondType,
                      SourceType, FeatureType, FeatureRelationType, StoryType,
                      Degree, CodeNumberType, CharacterRelationType,
-                     CharacterRole, ExternalSite)
+                     BaseUniverse, CharacterRole, ExternalSite)
 
 
 class StoryTypeAdmin(admin.ModelAdmin):
