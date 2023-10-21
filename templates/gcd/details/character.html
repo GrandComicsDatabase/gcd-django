@@ -70,7 +70,7 @@ GCD :: Character :: {{ character.name }}
     {% endif %}
     {% for name in additional_names %}
             <li style="page-break-inside: avoid;">
-              {{ name.name }}
+              <a href='{% url "character_name_issues" character_name_id=name.id %}'>{{ name.name }}</a>
             </li>
     {% endfor %}
           </ol>

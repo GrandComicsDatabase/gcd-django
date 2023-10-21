@@ -41,7 +41,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
                             Printer, IndiciaPrinter, School, Story, \
-                            Character, Group, Universe, StoryCredit, \
+                            Character, Group, CharacterNameDetail, Universe, \
+                            StoryCredit, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable,\
                                     FeatureCreatorNameTable,\
@@ -636,8 +637,8 @@ def creator_series(request, creator_id, country=None, language=None):
 
 
 def checklist_by_id(request, creator_id, series_id=None, character_id=None,
-                    feature_id=None, co_creator_id=None, group_id=None, edits=False,
-                    country=None, language=None):
+                    feature_id=None, co_creator_id=None, group_id=None,
+                    edits=False, country=None, language=None):
     """
     Provides checklists for a Creator. These include results for all
     CreatorNames and for the overall House Name all uses of that House Name.
@@ -866,8 +867,8 @@ def checklist_by_name(request, creator, country=None, language=None,
 
 
 def creator_name_issues(request, creator_name_id, character_id=None,
-                           group_id=None, feature_id=None, series_id=None,
-                           country=None, language=None):
+                        group_id=None, feature_id=None, series_id=None,
+                        country=None, language=None):
     return creator_name_checklist(request=request,
                                   creator_name_id=creator_name_id,
                                   character_id=character_id,
@@ -877,6 +878,7 @@ def creator_name_issues(request, creator_name_id, character_id=None,
                                   country=country,
                                   language=language
                                   )
+
 
 def creator_name_checklist(request, creator_name_id, character_id=None,
                            group_id=None, feature_id=None, series_id=None,
@@ -1965,22 +1967,29 @@ def series_details(request, series_id, by_date=False):
 
 def _annotate_creator_list(creators):
     creators = creators.annotate(
-      first_credit=Min(Case(When(creator_names__storycredit__story__issue__key_date='',
-                       then=Value('9999-99-99'),
-                                 ),
-                            default=F('creator_names__storycredit__story__issue__key_date'))))
+      first_credit=Min(Case(When(
+        creator_names__storycredit__story__issue__key_date='',
+        then=Value('9999-99-99'),),
+                            default=F(
+        'creator_names__storycredit__story__issue__key_date'))))
     script = Count('creator_names__storycredit__story__issue',
-                   filter=Q(creator_names__storycredit__credit_type__id=1), distinct=True)
+                   filter=Q(creator_names__storycredit__credit_type__id=1),
+                   distinct=True)
     pencils = Count('creator_names__storycredit__story__issue',
-                    filter=Q(creator_names__storycredit__credit_type__id=2), distinct=True)
+                    filter=Q(creator_names__storycredit__credit_type__id=2),
+                    distinct=True)
     inks = Count('creator_names__storycredit__story__issue',
-                 filter=Q(creator_names__storycredit__credit_type__id=3), distinct=True)
+                 filter=Q(creator_names__storycredit__credit_type__id=3),
+                 distinct=True)
     colors = Count('creator_names__storycredit__story__issue',
-                   filter=Q(creator_names__storycredit__credit_type__id=4), distinct=True)
+                   filter=Q(creator_names__storycredit__credit_type__id=4),
+                   distinct=True)
     letters = Count('creator_names__storycredit__story__issue',
-                    filter=Q(creator_names__storycredit__credit_type__id=5), distinct=True)
+                    filter=Q(creator_names__storycredit__credit_type__id=5),
+                    distinct=True)
     creators = creators.annotate(
-      credits_count=Count('creator_names__storycredit__story__issue', distinct=True),
+      credits_count=Count('creator_names__storycredit__story__issue',
+                          distinct=True),
       script=script,
       pencils=pencils,
       inks=inks,
@@ -2021,15 +2030,16 @@ def series_creators(request, series_id, creator_names=False):
     if creator_names:
         creators = CreatorNameDetail.objects.all()
         creators = creators.filter(storycredit__story__issue__series=series,
-                                storycredit__story__type__id__in=CORE_TYPES,
-                                storycredit__deleted=False).distinct()\
-                        .select_related('creator')
+                                   storycredit__story__type__id__in=CORE_TYPES,
+                                   storycredit__deleted=False).distinct()\
+                           .select_related('creator')
         creators = _annotate_creator_name_detail_list(creators)
     else:
         creators = Creator.objects.all()
-        creators = creators.filter(creator_names__storycredit__story__issue__series=series,
-                                creator_names__storycredit__story__type__id__in=CORE_TYPES,
-                                creator_names__storycredit__deleted=False).distinct()
+        creators = creators.filter(
+          creator_names__storycredit__story__issue__series=series,
+          creator_names__storycredit__story__type__id__in=CORE_TYPES,
+          creator_names__storycredit__deleted=False).distinct()
         creators = _annotate_creator_list(creators)
 
     context = {
@@ -2040,12 +2050,14 @@ def series_creators(request, series_id, creator_names=False):
     }
     template = 'gcd/search/issue_list_sortable.html'
     if creator_names:
-        table = SeriesCreatorNameTable(creators, attrs={'class': 'sortable_listing'},
+        table = SeriesCreatorNameTable(creators,
+                                       attrs={'class': 'sortable_listing'},
                                        series=series,
                                        template_name='gcd/bits/sortable_table.html',
                                        order_by=('name'))
     else:
-        table = SeriesCreatorTable(creators, attrs={'class': 'sortable_listing'},
+        table = SeriesCreatorTable(creators,
+                                   attrs={'class': 'sortable_listing'},
                                    series=series,
                                    template_name='gcd/bits/sortable_table.html',
                                    order_by=('name'))
@@ -2909,12 +2921,14 @@ def feature_creators(request, feature_id, creator_names=False):
     }
     template = 'gcd/search/issue_list_sortable.html'
     if creator_names:
-        table = FeatureCreatorNameTable(creators, attrs={'class': 'sortable_listing'},
-                                    feature=feature,
-                                    template_name='gcd/bits/sortable_table.html',
-                                    order_by=('name'))
+        table = FeatureCreatorNameTable(creators,
+                                        attrs={'class': 'sortable_listing'},
+                                        feature=feature,
+                                        template_name='gcd/bits/sortable_table.html',
+                                        order_by=('name'))
     else:
-        table = FeatureCreatorTable(creators, attrs={'class': 'sortable_listing'},
+        table = FeatureCreatorTable(creators,
+                                    attrs={'class': 'sortable_listing'},
                                     feature=feature,
                                     template_name='gcd/bits/sortable_table.html',
                                     order_by=('name'))
@@ -3274,6 +3288,71 @@ def character_covers(request, character_id):
     return generic_sortable_list(request, issues, table, template, context)
 
 
+def character_name_issues(request, character_name_id, universe_id=None):
+    character_name = get_gcd_object(CharacterNameDetail, character_name_id)
+    character = character_name.character
+
+    # look for name at generalization
+    if not universe_id and character.universe:
+        universe_id = character.universe.id
+        if character.active_generalisations().filter(
+           from_character__character_names__name=character_name.name,
+           deleted=False):
+            filter_character = character.active_generalisations().get()\
+                                             .from_character
+            filter_character_name = filter_character.character_names\
+                                    .filter(character_names__name=
+                                            character_name.name,
+                                            deleted=False)
+        else:
+            return render(request, 'indexer/error.html',
+                          {'error_text':
+                           'Name does not exist at character generalization.'})
+    else:
+        filter_character_name = character_name
+
+    issues = Issue.objects.filter(
+      story__appearing_characters__character=filter_character_name,
+      story__appearing_characters__deleted=False,
+      story__type__id__in=CORE_TYPES,
+      story__deleted=False).distinct().select_related('series__publisher')
+    if universe_id:
+        if universe_id == '-1':
+            issues = Issue.objects.filter(
+              story__appearing_characters__character=filter_character_name,
+              story__appearing_characters__universe_id__isnull=True,
+              story__appearing_characters__deleted=False,
+              story__type__id__in=CORE_TYPES,
+              story__deleted=False).distinct()\
+                     .select_related('series__publisher')
+        else:
+            issues = Issue.objects.filter(
+              story__appearing_characters__character=filter_character_name,
+              story__appearing_characters__universe_id=universe_id,
+              story__appearing_characters__deleted=False,
+              story__type__id__in=CORE_TYPES,
+              story__deleted=False).distinct()\
+                     .select_related('series__publisher')
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    filter = filter_issues(request, issues)
+    issues = filter.qs
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for Name %s of Character %s' % (character_name,
+                                                               character),
+        'filter': filter
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
+                       template_name='gcd/bits/sortable_table.html',
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
 def character_relation(request, character_relation_id):
     character_relation = get_gcd_object(CharacterRelation,
                                         character_relation_id,
@@ -3348,7 +3427,6 @@ def group_creators(request, group_id, creator_names=False):
         result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
         creators = _annotate_creator_list(creators)
 
-
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'creator',
@@ -3357,14 +3435,14 @@ def group_creators(request, group_id, creator_names=False):
     }
     template = 'gcd/search/issue_list_sortable.html'
     if creator_names:
-        table = GroupCreatorNameTable(creators, attrs={'class':
-                                                'sortable_listing'},
+        table = GroupCreatorNameTable(creators,
+                                      attrs={'class': 'sortable_listing'},
                                       group=group,
                                       template_name='gcd/bits/sortable_table.html',
                                       order_by=('name'))
     else:
-        table = GroupCreatorTable(creators, attrs={'class':
-                                            'sortable_listing'},
+        table = GroupCreatorTable(creators,
+                                  attrs={'class': 'sortable_listing'},
                                   group=group,
                                   template_name='gcd/bits/sortable_table.html',
                                   order_by=('name'))
