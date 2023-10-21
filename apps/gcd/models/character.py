@@ -22,6 +22,8 @@ class Multiverse(GcdData):
     mainstream = models.ForeignKey('Universe', on_delete=models.CASCADE,
                                    related_name='is_mainstream')
 
+    def __str__(self):
+        return '%s' % (self.name)
 
 class Universe(GcdData):
     """
