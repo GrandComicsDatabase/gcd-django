@@ -11,7 +11,7 @@ import django_tables2 as tables
 
 from .gcddata import GcdData
 from .award import ReceivedAward
-from .character import CharacterNameDetail, Group, Universe
+from .character import CharacterNameDetail, Group, Universe, Multiverse
 from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
 
@@ -151,6 +151,20 @@ def show_characters(story, url=True, css_style=True, compare=False):
     # TODO change after migration to add all existing group entries to a story
     groups = Group.objects.filter(id__in=in_group.values_list('group'))
     groups |= Group.objects.filter(id__in=story.active_groups.values_list('group'))
+
+    reference_universe_id = None
+    if story.universe.count() == 1:
+        reference_universe_id = story.universe.get().id
+    elif story.universe.count() == 2:
+        reference_universe_id = -1
+    else:
+        if len(set(story.appearing_characters.exclude(universe__verse=None)
+                   .values_list('universe__verse', flat=True))) == 1:
+            mainstream_universe_id = set(story.appearing_characters.exclude(
+              universe__verse=None).values_list('universe__verse', flat=True))\
+              .pop()
+            reference_universe_id = Multiverse.objects.get(
+              id=mainstream_universe_id).mainstream_id
     # groups |= story.active_groups
     for group in groups:
         first = False
@@ -192,7 +206,10 @@ def show_characters(story, url=True, css_style=True, compare=False):
                   member, all_appearing_characters, url=url, compare=compare)
                 if member.universe:
                     disambiguation += ' - %s' % member.universe
-        if first_member == True:
+            if reference_universe_id and member.universe:
+                if member.universe_id != reference_universe_id:
+                    characters += ' (%s)' % member.universe.universe_name()
+        if first_member is True:
             if url:
                 characters += '<a href="%s">%s</a>; ' \
                                 % (group.get_absolute_url(), esc(group.name))
@@ -243,6 +260,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
                                                     compare=compare)
             if character.universe:
                 disambiguation += ' - %s' % character.universe
+        if reference_universe_id and character.universe:
+            if character.universe_id != reference_universe_id:
+                characters += ' (%s)' % character.universe.universe_name()
 
     if story.characters:
         if url:

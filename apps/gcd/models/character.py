@@ -25,6 +25,7 @@ class Multiverse(GcdData):
     def __str__(self):
         return '%s' % (self.name)
 
+
 class Universe(GcdData):
     """
     Characters and stories can belong to publisher universe.
