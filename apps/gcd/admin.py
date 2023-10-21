@@ -23,6 +23,7 @@ class ImpGrantAdmin(admin.ModelAdmin):
 
 # register models without editing to admin panel
 admin.site.register(StoryType, StoryTypeAdmin)
+admin.site.register(BaseUniverse)
 admin.site.register(CharacterRole)
 admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 admin.site.register(NameType)

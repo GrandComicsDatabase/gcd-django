@@ -12,17 +12,28 @@ from apps.stddata.models import Language
 from .datasource import ExternalLink
 
 
+class BaseUniverse(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        ordering = ('name',)
+        verbose_name_plural = 'Universes'
+
+    name = models.CharField(max_length=255, db_index=True)
+    mainstream = models.ForeignKey('Universe', on_delete=models.CASCADE)
+
+
 class Universe(GcdData):
     """
     Characters and stories can belong to publisher universe.
     """
-
     class Meta:
         app_label = 'gcd'
         ordering = ('multiverse', 'designation', 'name')
         verbose_name_plural = 'Universes'
 
     multiverse = models.CharField(max_length=255, db_index=True)
+    verse = models.ForeignKey('BaseUniverse', on_delete=models.CASCADE,
+                              null=True)
     name = models.CharField(max_length=255, db_index=True)
     designation = models.CharField(max_length=255, db_index=True)
 
