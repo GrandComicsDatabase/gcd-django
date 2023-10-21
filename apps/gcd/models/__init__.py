@@ -12,9 +12,9 @@ from .series import Series, SeriesPublicationType
 from .issue import Issue, IssueCredit, CodeNumberType, PublisherCodeNumber, \
                    INDEXED, VARIANT_COVER_STATUS, VCS_Codes
 from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
-                   StoryCharacter, CharacterRole, STORY_TYPES, OLD_TYPES, \
-                   NON_OPTIONAL_TYPES, CREDIT_TYPES, DEPRECATED_TYPES, CORE_TYPES, \
-                   AD_TYPES
+                   StoryCharacter, CharacterRole, StoryGroup, STORY_TYPES, \
+                   OLD_TYPES, NON_OPTIONAL_TYPES, CREDIT_TYPES, \
+                   DEPRECATED_TYPES, CORE_TYPES, AD_TYPES
 from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
                       FeatureRelationType)
 from .character import (Character, CharacterNameDetail, CharacterRelationType,

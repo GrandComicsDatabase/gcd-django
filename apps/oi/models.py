@@ -36,7 +36,7 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
     SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
     CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
-    Universe, BiblioEntry, Reprint,
+    StoryGroup, Universe, BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
     CharacterNameDetail, Group, GroupRelation, GroupMembership, ImageType,
@@ -331,6 +331,7 @@ class Changeset(models.Model):
                     self.storyrevisions.all(),
                     self.storycreditrevisions.all(),
                     self.storycharacterrevisions.all(),
+                    self.storygrouprevisions.all(),
                     self.coverrevisions.all(),
                     self.reprintrevisions.all(),
                     self.publishercodenumberrevisions.all(),
@@ -344,6 +345,7 @@ class Changeset(models.Model):
                         self.storyrevisions.all(),
                         self.storycreditrevisions.all(),
                         self.storycharacterrevisions.all(),
+                        self.storygrouprevisions.all(),
                         self.coverrevisions.all(),
                         self.reprintrevisions.all(),
                         self.publishercodenumberrevisions.all(),
@@ -931,7 +933,8 @@ class Changeset(models.Model):
                        isinstance(revision, ReprintRevision) or \
                        isinstance(revision, CreatorNameDetailRevision) or \
                        isinstance(revision, DataSourceRevision) or \
-                       isinstance(revision, StoryCharacterRevision):
+                       isinstance(revision, StoryCharacterRevision) or \
+                       isinstance(revision, StoryGroupRevision):
                         self.imps += IMP_DELETE
                     else:
                         self.imps = IMP_DELETE
@@ -4312,6 +4315,16 @@ class IssueRevision(Revision):
                 if delete:
                     character_revision.deleted = story_revision.deleted
                     character_revision.save()
+            for group in story.active_groups:
+                group_lock = _get_revision_lock(group,
+                                                changeset=self.changeset)
+                if group_lock is None:
+                    raise IntegrityError("needed Group lock not possible")
+                group_revision = StoryGroupRevision.clone(
+                  group, self.changeset, story_revision=story_revision)
+                if delete:
+                    group_revision.deleted = story_revision.deleted
+                    group_revision.save()
         for code_number in self.issue.active_code_numbers():
             code_number_lock = _get_revision_lock(code_number,
                                                   changeset=self.changeset)
@@ -5212,6 +5225,66 @@ class StoryCharacterRevision(Revision):
         return 0
 
 
+class StoryGroupRevision(Revision):
+    class Meta:
+        db_table = 'oi_story_group_revision'
+        ordering = ['group__sort_name']
+
+    story_group = models.ForeignKey(StoryGroup, null=True,
+                                    on_delete=models.CASCADE,
+                                    related_name='revisions')
+
+    group = models.ForeignKey(Group,
+                              on_delete=models.CASCADE,
+                              related_name='story_group_revisions')
+    story_revision = models.ForeignKey(
+      'StoryRevision', on_delete=models.CASCADE,
+      related_name='story_group_revisions')
+    notes = models.TextField(blank=True)
+
+    source_name = 'story_group'
+    source_class = StoryGroup
+
+    @property
+    def source(self):
+        return self.story_group
+
+    @source.setter
+    def source(self, value):
+        self.story_group = value
+
+    def _pre_save_object(self, changes):
+        self.story_group.story = self.story_revision.story
+
+    def _do_complete_added_revision(self, story_revision):
+        self.story_revision = story_revision
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        self.story_revision = kwargs['story_revision']
+
+    def __str__(self):
+        return "%s: %s" % (self.story_revision, self.group)
+
+    ######################################
+    # TODO old methods, t.b.c
+
+    _base_field_list = ['group', 'notes']
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'group': None,
+            'notes': '',
+        }
+
+    def _imps_for(self, field_name):
+        # imps already come from StoryRevision, since is_changed is True there
+        return 0
+
+
 class StoryRevision(Revision):
     class Meta:
         db_table = 'oi_story_revision'
@@ -5468,7 +5541,8 @@ class StoryRevision(Revision):
 
     def extra_forms(self, request):
         from apps.oi.forms.story import StoryRevisionFormSet, \
-                                        StoryCharacterRevisionFormSet
+                                        StoryCharacterRevisionFormSet, \
+                                        StoryGroupRevisionFormSet
         credits_formset = StoryRevisionFormSet(
           request.POST or None,
           instance=self,
@@ -5477,8 +5551,13 @@ class StoryRevision(Revision):
           request.POST or None,
           instance=self,
           queryset=self.story_character_revisions.filter(deleted=False))
+        groups_formset = StoryGroupRevisionFormSet(
+          request.POST or None,
+          instance=self,
+          queryset=self.story_group_revisions.filter(deleted=False))
         return {'credits_formset': credits_formset,
-                'characters_formset': characters_formset, }
+                'characters_formset': characters_formset,
+                'groups_formset': groups_formset}
 
     @classmethod
     def extra_forms_errors(cls, request, form, extra_forms):
@@ -5488,6 +5567,10 @@ class StoryRevision(Revision):
 
         characters_formset = extra_forms['characters_formset']
         if not characters_formset.is_valid() and request.user.indexer.use_tabs:
+            form.add_error(None, "Changes needed on the Characters tab.")
+
+        groups_formset = extra_forms['groups_formset']
+        if not groups_formset.is_valid() and request.user.indexer.use_tabs:
             form.add_error(None, "Changes needed on the Characters tab.")
 
     def process_extra_forms(self, extra_forms):
@@ -5568,6 +5651,29 @@ class StoryRevision(Revision):
                         removed_character.cleaned_data['id'].save()
                     else:
                         removed_character.cleaned_data['id'].delete()
+        groups_formset = extra_forms['groups_formset']
+        for group_form in groups_formset:
+            if group_form.is_valid() and group_form.cleaned_data:
+                cd = group_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    group_revision = group_form.save()
+                else:
+                    group_revision = group_form.save(commit=False)
+                    group_revision.save_added_revision(
+                      changeset=self.changeset, story_revision=self)
+                    group_form.save_m2m()
+            elif (not group_form.is_valid() and
+                  group_form not in groups_formset.deleted_forms):
+                raise ValueError
+        removed_groups = groups_formset.deleted_forms
+        if removed_groups:
+            for removed_group in removed_groups:
+                if removed_group.cleaned_data['id']:
+                    if removed_group.cleaned_data['id'].story_group:
+                        removed_group.cleaned_data['id'].deleted = True
+                        removed_group.cleaned_data['id'].save()
+                    else:
+                        removed_group.cleaned_data['id'].delete()
 
     def post_form_save(self):
         if self.feature_logo.count():
@@ -5822,6 +5928,10 @@ class StoryRevision(Revision):
     @property
     def active_characters(self):
         return self.story_character_revisions.exclude(deleted=True)
+
+    @property
+    def active_groups(self):
+        return self.story_group_revisions.exclude(deleted=True)
 
     def show_characters(self, url=True, css_style=True, compare=False):
         return show_characters(self, url=url, css_style=css_style,

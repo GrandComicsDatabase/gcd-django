@@ -19,7 +19,7 @@ from crispy_forms.bootstrap import (
 from apps.oi.models import (
     get_reprint_field_list, get_story_field_list,
     BiblioEntryRevision, ReprintRevision, StoryRevision,
-    StoryCreditRevision, StoryCharacterRevision)
+    StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision)
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
@@ -171,7 +171,7 @@ def get_story_revision_form(revision=None, user=None,
         def save_characters(self, instance):
             appearing_characters = self.cleaned_data['appearing_characters']
             if self.cleaned_data['use_universe'] and \
-                self.cleaned_data['universe'].count() == 1:
+               self.cleaned_data['universe'].count() == 1:
                 universe = self.cleaned_data['universe'].get()
             else:
                 universe = None
@@ -186,6 +186,10 @@ def get_story_revision_form(revision=None, user=None,
             group = self.cleaned_data['group']
             if group:
                 group_members = self.cleaned_data['group_members']
+                story_group = StoryGroupRevision(group=group,
+                                                 story_revision=instance,
+                                                 changeset=changeset)
+                story_group.save()
                 for member in group_members:
                     story_character = StoryCharacterRevision(
                       character=member,
@@ -417,6 +421,63 @@ StoryCharacterRevisionFormSet = inlineformset_factory(
     can_delete=True, extra=1)
 
 
+class StoryGroupRevisionForm(forms.ModelForm):
+    class Meta:
+        model = StoryCharacterRevision
+        fields = ['group', 'notes']
+        widgets = {
+            'notes': forms.TextInput(attrs={'class': 'wide'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(StoryGroupRevisionForm, self).__init__(*args, **kwargs)
+        # The helper is currently not used !
+        # See comments above for the StoryCreditRevisionForm
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        self.formset_helper = StoryFormSetHelper()
+        fields = list(self.fields)
+        fields.append('id')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields]
+        self.helper.layout = Layout(*(f for f in field_list))
+
+    group = forms.ModelChoiceField(
+      queryset=Group.objects.all(),
+      widget=autocomplete.ModelSelect2(url='group_autocomplete',
+                                       forward=['language_code'],
+                                       attrs={'style': 'width: 60em'}),
+      required=True,
+      help_text='By entering (any part of) a name select a group from the'
+                ' database.'
+    )
+
+
+class CustomInlineFormSet(forms.BaseInlineFormSet):
+    def _should_delete_form(self, form):
+        # TODO workaround, better to not allow the removal
+        # do we have access to deleted characters in this form ?
+        # otherwise deleted characters and groups is a two step
+        # procedure
+        if hasattr(form.instance, 'group'):
+            if form.instance.story_revision.story_character_revisions\
+                            .filter(group=form.instance.group,
+                                    deleted=False).exists():
+                form.cleaned_data['DELETE'] = False
+                return False
+        return super(CustomInlineFormSet, self)._should_delete_form(form)
+
+    def clean(self):
+        super(CustomInlineFormSet, self).clean()
+
+
+StoryGroupRevisionFormSet = inlineformset_factory(
+    StoryRevision, StoryGroupRevision, form=StoryGroupRevisionForm,
+    can_delete=True, extra=1, formset=CustomInlineFormSet)
+
+
 # check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
     def render(self, form, form_style, context, renderer=None,
@@ -499,10 +560,14 @@ class StoryRevisionForm(forms.ModelForm):
                            for field in fields[characters_start-7:
                                                characters_start]])
         field_list.append(Formset('characters_formset'))
-        characters_end = len(field_list) + 1
+        field_list.append(Field(fields[characters_start],
+                                template='oi/bits/uni_field.html'))
+        field_list.append(Formset('groups_formset'))
+        characters_end = len(field_list)
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start:]])
+                           for field in fields[characters_start+1:]])
+        # characters_end += 1
         if not user.indexer.use_tabs:
             self.helper.layout = Layout(*(f for f in field_list))
         else:
@@ -858,9 +923,7 @@ class StoryRevisionForm(forms.ModelForm):
                     raise forms.ValidationError(
                       ['Incorrect feature logo for this sequence.'])
 
-        if cd['group'] and not cd['group_members']:
-            raise forms.ValidationError(
-                ['Groups can only be entered with group members.'])
+        # TODO a group with members in the story cannot be removed
 
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
@@ -881,9 +944,9 @@ class StoryRevisionForm(forms.ModelForm):
                     elif seq_type == 'script' and credit_type in ['10', '11',
                                                                   '12', '13']:
                         seq_type_found = True
-                    elif seq_type in ['pencils', 'inks'] and \
-                      credit_type in ['7', '8', '9', '10',
-                                      '11', '12', '13', '14']:
+                    elif (seq_type in ['pencils', 'inks'] and
+                          credit_type in ['7', '8', '9', '10',
+                                          '11', '12', '13', '14']):
                         seq_type_found = True
                     elif seq_type == 'colors' and credit_type in ['8', '9',
                                                                   '11', '13']:

@@ -148,7 +148,10 @@ def show_characters(story, url=True, css_style=True, compare=False):
 
     all_appearing_characters = story.active_characters
     in_group = all_appearing_characters.exclude(group=None)
+    # TODO change after migration to add all existing group entries to a story
     groups = Group.objects.filter(id__in=in_group.values_list('group'))
+    groups |= Group.objects.filter(id__in=story.active_groups.values_list('group'))
+    # groups |= story.active_groups
     for group in groups:
         first = False
         first_member = True
@@ -189,8 +192,14 @@ def show_characters(story, url=True, css_style=True, compare=False):
                   member, all_appearing_characters, url=url, compare=compare)
                 if member.universe:
                     disambiguation += ' - %s' % member.universe
-
-        characters += ']; '
+        if first_member == True:
+            if url:
+                characters += '<a href="%s">%s</a>; ' \
+                                % (group.get_absolute_url(), esc(group.name))
+            else:
+                characters += '%s; ' % (group.name)
+        else:
+            characters += ']; '
         if compare:
             disambiguation += ']<br>'
     characters = characters[:-2]
@@ -352,6 +361,22 @@ class StoryCharacter(GcdData):
         return "%s: %s" % (self.story, self.character)
 
 
+class StoryGroup(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_group_character'
+        ordering = ['group__sort_name']
+
+    group = models.ForeignKey(Group,
+                              on_delete=models.CASCADE)
+    story = models.ForeignKey('Story', on_delete=models.CASCADE,
+                              related_name='appearing_groups')
+    notes = models.TextField()
+
+    def __str__(self):
+        return "%s: %s" % (self.story, self.group)
+
+
 class StoryTypeManager(models.Manager):
     def get_by_natural_key(self, name):
         return self.get(name=name)
@@ -463,6 +488,13 @@ class Story(GcdData):
                                       .exclude(deleted=True)\
                                       .select_related('character__character')
         return self._active_characters
+
+    @property
+    def active_groups(self):
+        if not hasattr(self, '_active_groups'):
+            self._active_groups = self.appearing_groups\
+                                      .exclude(deleted=True)
+        return self._active_groups
 
     _update_stats = True
 

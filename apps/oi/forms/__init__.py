@@ -27,7 +27,7 @@ from .issue import (    # noqa
     PublisherCodeNumberFormSet)
 from .story import (get_story_revision_form, get_biblio_revision_form,
                     get_reprint_revision_form, StoryRevisionFormSet,
-                    StoryCharacterRevisionFormSet)
+                    StoryCharacterRevisionFormSet, StoryGroupRevisionFormSet)
 from .feature import (get_feature_revision_form,
                       get_feature_logo_revision_form,
                       get_feature_relation_revision_form)
