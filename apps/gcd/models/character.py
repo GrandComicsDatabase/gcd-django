@@ -12,14 +12,15 @@ from apps.stddata.models import Language
 from .datasource import ExternalLink
 
 
-class BaseUniverse(GcdData):
+class Multiverse(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ('name',)
-        verbose_name_plural = 'Universes'
+        verbose_name_plural = 'Multiverses'
 
     name = models.CharField(max_length=255, db_index=True)
-    mainstream = models.ForeignKey('Universe', on_delete=models.CASCADE)
+    mainstream = models.ForeignKey('Universe', on_delete=models.CASCADE,
+                                   related_name='is_mainstream')
 
 
 class Universe(GcdData):
@@ -32,7 +33,7 @@ class Universe(GcdData):
         verbose_name_plural = 'Universes'
 
     multiverse = models.CharField(max_length=255, db_index=True)
-    verse = models.ForeignKey('BaseUniverse', on_delete=models.CASCADE,
+    verse = models.ForeignKey('Multiverse', on_delete=models.CASCADE,
                               null=True)
     name = models.CharField(max_length=255, db_index=True)
     designation = models.CharField(max_length=255, db_index=True)

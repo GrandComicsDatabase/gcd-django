@@ -20,7 +20,7 @@ from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
 from .character import (Character, CharacterNameDetail, CharacterRelationType,
                         CharacterRelation, Group, GroupRelation,
                         GroupMembership, GroupMembershipType, Universe,
-                        BaseUniverse)
+                        Multiverse)
 from .cover import Cover
 from .reprint import Reprint
 from .seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING, \
