@@ -36,7 +36,7 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
     SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
     CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
-    StoryGroup, Universe, BiblioEntry, Reprint,
+    StoryGroup, Universe, Multiverse, BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
     CharacterNameDetail, Group, GroupRelation, GroupMembership, ImageType,
@@ -6681,6 +6681,8 @@ class UniverseRevision(Revision):
                                  related_name='revisions')
 
     multiverse = models.CharField(max_length=255, db_index=True, blank=True)
+    verse = models.ForeignKey(Multiverse, on_delete=models.CASCADE,
+                              null=True)
     name = models.CharField(max_length=255, db_index=True, blank=True)
     designation = models.CharField(max_length=255, db_index=True, blank=True)
 
@@ -6701,7 +6703,7 @@ class UniverseRevision(Revision):
     def source(self, value):
         self.universe = value
 
-    _base_field_list = ['multiverse', 'name', 'designation',
+    _base_field_list = ['multiverse', 'verse', 'name', 'designation',
                         'year_first_published',
                         'year_first_published_uncertain',
                         'description', 'notes']
@@ -6712,6 +6714,7 @@ class UniverseRevision(Revision):
     def _get_blank_values(self):
         return {
             'multiverse': '',
+            'verse': None,
             'name': '',
             'designation': '',
             'year_first_published': None,
