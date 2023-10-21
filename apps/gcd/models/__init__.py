@@ -19,7 +19,8 @@ from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
                       FeatureRelationType)
 from .character import (Character, CharacterNameDetail, CharacterRelationType,
                         CharacterRelation, Group, GroupRelation,
-                        GroupMembership, GroupMembershipType, Universe)
+                        GroupMembership, GroupMembershipType, Universe,
+                        BaseUniverse)
 from .cover import Cover
 from .reprint import Reprint
 from .seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING, \
