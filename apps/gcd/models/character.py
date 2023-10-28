@@ -131,6 +131,8 @@ class CharacterGroupBase(GcdData):
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True, default='')
     disambiguation = models.CharField(max_length=255, db_index=True)
+    universe = models.ForeignKey('Universe', on_delete=models.CASCADE,
+                                 null=True)
 
     year_first_published = models.IntegerField(db_index=True, null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
@@ -180,8 +182,6 @@ class Character(CharacterGroupBase):
         verbose_name_plural = 'Characters'
 
     external_link = models.ManyToManyField(ExternalLink)
-    universe = models.ForeignKey('Universe', on_delete=models.CASCADE,
-                                 related_name='characters', null=True)
 
     def active_names(self):
         return self.character_names.exclude(deleted=True)

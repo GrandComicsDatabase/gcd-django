@@ -369,6 +369,9 @@ class StoryCharacter(GcdData):
     story = models.ForeignKey('Story', on_delete=models.CASCADE,
                               related_name='appearing_characters')
     group = models.ManyToManyField(Group)
+    group_universe = models.ForeignKey(Universe, null=True,
+                                       on_delete=models.CASCADE,
+                                       related_name='story_character_in_group')
     role = models.ForeignKey(CharacterRole, null=True,
                              on_delete=models.CASCADE)
     is_flashback = models.BooleanField(default=False, db_index=True)
@@ -389,6 +392,8 @@ class StoryGroup(GcdData):
 
     group = models.ForeignKey(Group,
                               on_delete=models.CASCADE)
+    universe = models.ForeignKey(Universe, null=True,
+                                 on_delete=models.CASCADE)
     story = models.ForeignKey('Story', on_delete=models.CASCADE,
                               related_name='appearing_groups')
     notes = models.TextField()

@@ -342,8 +342,9 @@ StoryRevisionFormSet = inlineformset_factory(
 class StoryCharacterRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCharacterRevision
-        fields = ['character', 'additional_information', 'role', 'group',
-                  'universe', 'is_flashback', 'is_origin', 'is_death', 'notes']
+        fields = ['character', 'additional_information', 'role', 'universe',
+                  'group', 'group_universe',
+                  'is_flashback', 'is_origin', 'is_death', 'notes']
         help_texts = {
             'role':
                 'You can enter what role the character played in the story',
@@ -415,6 +416,16 @@ class StoryCharacterRevisionForm(forms.ModelForm):
                 'originates.'
     )
 
+    group_universe = forms.ModelChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universe, if any, for the group of the character. '
+                'If left empty, the value will default to the selected '
+                'universe for the character.'
+    )
 
 StoryCharacterRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryCharacterRevision, form=StoryCharacterRevisionForm,
@@ -454,6 +465,15 @@ class StoryGroupRevisionForm(forms.ModelForm):
                 ' database.'
     )
 
+    universe = forms.ModelChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universe, if any, from which the group '
+                'originates.'
+    )
 
 class CustomInlineFormSet(forms.BaseInlineFormSet):
     def _should_delete_form(self, form):

@@ -5167,6 +5167,9 @@ class StoryCharacterRevision(Revision):
       'StoryRevision', on_delete=models.CASCADE,
       related_name='story_character_revisions')
     group = models.ManyToManyField(Group, blank=True)
+    group_universe = models.ForeignKey(
+      Universe, null=True, on_delete=models.CASCADE,
+      related_name='story_character_in_group_revision')
     role = models.ForeignKey(CharacterRole, null=True, blank=True,
                              on_delete=models.CASCADE)
     is_flashback = models.BooleanField(default=False)
@@ -5202,8 +5205,9 @@ class StoryCharacterRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['character', 'role', 'group', 'is_flashback',
-                        'is_origin', 'is_death', 'notes', 'universe']
+    _base_field_list = ['character', 'role', 'universe',
+                        'group', 'group_universe',
+                        'is_flashback', 'is_origin', 'is_death', 'notes']
 
     def _field_list(self):
         return self._base_field_list
@@ -5218,6 +5222,7 @@ class StoryCharacterRevision(Revision):
             'is_death': False,
             'notes': '',
             'universe': None,
+            'group_universe': None,
         }
 
     def _imps_for(self, field_name):
@@ -5237,6 +5242,8 @@ class StoryGroupRevision(Revision):
     group = models.ForeignKey(Group,
                               on_delete=models.CASCADE,
                               related_name='story_group_revisions')
+    universe = models.ForeignKey(Universe, null=True, blank=True,
+                                 on_delete=models.CASCADE)
     story_revision = models.ForeignKey(
       'StoryRevision', on_delete=models.CASCADE,
       related_name='story_group_revisions')
@@ -5269,7 +5276,7 @@ class StoryGroupRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['group', 'notes']
+    _base_field_list = ['group', 'universe', 'notes']
 
     def _field_list(self):
         return self._base_field_list
@@ -5277,6 +5284,7 @@ class StoryGroupRevision(Revision):
     def _get_blank_values(self):
         return {
             'group': None,
+            'universe': None,
             'notes': '',
         }
 
@@ -7091,7 +7099,7 @@ class GroupRevision(CharacterGroupRevisionBase):
         db_table = 'oi_group_revision'
         ordering = ['created', '-id']
 
-    _base_field_list = ['name', 'sort_name', 'disambiguation',
+    _base_field_list = ['name', 'sort_name', 'disambiguation', 'universe',
                         'year_first_published',
                         'year_first_published_uncertain', 'language',
                         'description', 'notes', 'keywords']
@@ -7100,6 +7108,9 @@ class GroupRevision(CharacterGroupRevisionBase):
                               on_delete=models.CASCADE,
                               null=True,
                               related_name='revisions')
+    universe = models.ForeignKey('gcd.Universe', on_delete=models.CASCADE,
+                                 null=True, blank=True,
+                                 related_name='group_revisions')
 
     source_name = 'group'
     source_class = Group
