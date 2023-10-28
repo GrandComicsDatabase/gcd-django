@@ -187,6 +187,7 @@ def get_story_revision_form(revision=None, user=None,
             if group:
                 group_members = self.cleaned_data['group_members']
                 story_group = StoryGroupRevision(group=group,
+                                                 universe=universe,
                                                  story_revision=instance,
                                                  changeset=changeset)
                 story_group.save()
@@ -194,6 +195,7 @@ def get_story_revision_form(revision=None, user=None,
                     story_character = StoryCharacterRevision(
                       character=member,
                       universe=universe,
+                      group_universe=universe,
                       story_revision=instance,
                       changeset=changeset)
                     story_character.save()
@@ -426,6 +428,16 @@ class StoryCharacterRevisionForm(forms.ModelForm):
                 'If left empty, the value will default to the selected '
                 'universe for the character.'
     )
+
+    def save(self, commit=True):
+        instance = super(StoryCharacterRevisionForm,
+                         self).save(commit=commit)
+        if instance.id and instance.group and instance.universe\
+           and not instance.group_universe:
+            instance.group_universe = instance.universe
+        instance.save()
+        return instance
+
 
 StoryCharacterRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryCharacterRevision, form=StoryCharacterRevisionForm,
