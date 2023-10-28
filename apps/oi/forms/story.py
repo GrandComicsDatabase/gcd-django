@@ -732,9 +732,8 @@ class StoryRevisionForm(forms.ModelForm):
     use_universe = forms.BooleanField(
         required=False,
         initial=True,
-        help_text='The selected universe is the universe the appearing '
-                  'characters entered in the following originate from, unless '
-                  'individually overridden. '
+        help_text='The selected universe is the universe the characters and '
+                  'groups entered under a) and b) originate from. '
                   'If more than one universe is selected above, this '
                   'flag has no effect.')
 
