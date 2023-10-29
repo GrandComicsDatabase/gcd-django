@@ -628,7 +628,7 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
     def get_queryset(self):
         qs = CharacterNameDetail.objects.filter(deleted=False)
         qs = qs.exclude(character__universe__isnull=False,
-                        character__to_related_character__isnull=False)
+                        character__from_related_character__isnull=False)
 
         language = self.forwarded.get('language_code', None)
         group = self.forwarded.get('group', None)

@@ -149,6 +149,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
     all_appearing_characters = story.active_characters
     in_group = all_appearing_characters.exclude(group=None)
     # TODO change after migration to add all existing group entries to a story
+    # TODO change then the StoryGroup to access the notes and universe
     groups = Group.objects.filter(id__in=in_group.values_list('group'))
     groups |= Group.objects.filter(id__in=story.active_groups.values_list('group'))
 
@@ -167,13 +168,12 @@ def show_characters(story, url=True, css_style=True, compare=False):
               id=mainstream_universe_id).mainstream_id
     # groups |= story.active_groups
     for group in groups:
-        first = False
         first_member = True
         for member in in_group.filter(group=group):
             if first_member:
                 first_member = False
                 if url:
-                    characters += '<a href="%s">%s</a> [<a href="%s">%s</a>' \
+                    characters += '<a href="%s"><b>%s</b></a> (<a href="%s">%s</a>' \
                                   % (group.get_absolute_url(), esc(group.name),
                                      member.character.get_absolute_url(),
                                      esc(member.character.name))
@@ -215,11 +215,13 @@ def show_characters(story, url=True, css_style=True, compare=False):
                                 % (group.get_absolute_url(), esc(group.name))
             else:
                 characters += '%s; ' % (group.name)
+            first_member = False
         else:
-            characters += ']; '
+            characters += ')<br>'
         if compare:
-            disambiguation += ']<br>'
-    characters = characters[:-2]
+            disambiguation += ')<br>'
+    if groups and first_member == True:
+        characters = characters[:-2]
 
     appearing_characters = all_appearing_characters.exclude(
       character__id__in=in_group.values_list('character'), group__isnull=False)

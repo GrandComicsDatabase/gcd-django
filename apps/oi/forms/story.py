@@ -432,11 +432,18 @@ class StoryCharacterRevisionForm(forms.ModelForm):
     def save(self, commit=True):
         instance = super(StoryCharacterRevisionForm,
                          self).save(commit=commit)
-        if instance.id and instance.group and instance.universe\
+        if instance.id and instance.group.exists() and instance.universe\
            and not instance.group_universe:
             instance.group_universe = instance.universe
         instance.save()
         return instance
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['group_universe'] and not cd['group']:
+            raise forms.ValidationError(
+              ['Cannot select a group universe without a group.'])
+
 
 
 StoryCharacterRevisionFormSet = inlineformset_factory(

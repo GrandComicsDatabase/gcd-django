@@ -70,9 +70,11 @@ class Universe(GcdData):
         return True
 
     def universe_name(self):
-        if self.designation:
+        if self.name and self.designation:
             return '%s - %s' % (self.name,
                                 self.designation)
+        elif self.designation:
+            return '%s' % (self.designation)
         else:
             return '%s' % (self.name)
 
@@ -88,7 +90,7 @@ class CharacterNameDetail(GcdData):
     class Meta:
         db_table = 'gcd_character_name_detail'
         app_label = 'gcd'
-        ordering = ['sort_name']
+        ordering = ['sort_name', 'character__disambiguation']
         verbose_name_plural = 'CharacterName Details'
 
     name = models.CharField(max_length=255, db_index=True)

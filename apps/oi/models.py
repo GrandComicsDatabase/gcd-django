@@ -6111,10 +6111,11 @@ class StoryRevision(Revision):
 
                 # Just putting in a question mark isn't worth an IMP.
                 # Note that the input data is already whitespace-stripped.
-                # StoryCredits give also positive is_changed and corresponding
-                # IMP here.
+                # Changed StoryCredits give also positive is_changed and
+                # therefore corresponding IMP here.
                 if field_name == name and getattr(self, field_name) == '?':
-                    return 0
+                    if self.story_credit_revisions.exists() == 0:
+                        return 0
                 return 1
         return 0
 
@@ -6295,6 +6296,10 @@ class PreviewStory(Story):
     @property
     def active_characters(self):
         return self.revision.story_character_revisions.exclude(deleted=True)
+
+    @property
+    def active_groups(self):
+        return self.revision.story_group_revisions.exclude(deleted=True)
 
     def has_credits(self):
         """
