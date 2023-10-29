@@ -668,9 +668,17 @@ class UniverseAutocomplete(LoginRequiredMixin,
                            autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Universe.objects.filter(deleted=False)
+        if self.q.lower().startswith('marvel'):
+            qs = qs.filter(verse__id=2)
+            query = self.q[6:].strip()
+        elif self.q.lower().startswith('dc'):
+            qs = qs.filter(verse__id=1)
+            query = self.q[2:].strip()
+        else:
+            query = self.q
 
-        qs = qs.filter(Q(**{'name__icontains': self.q}) |
-                       Q(**{'designation__icontains': self.q}) )
+        qs = qs.filter(Q(**{'name__icontains': query}) |
+                       Q(**{'designation__icontains': query}) )
 
         return qs
 
