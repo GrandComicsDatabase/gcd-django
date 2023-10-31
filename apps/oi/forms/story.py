@@ -435,7 +435,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
         if instance.id and instance.group.exists() and instance.universe\
            and not instance.group_universe:
             instance.group_universe = instance.universe
-        instance.save()
+        if commit:
+            instance.save()
         return instance
 
     def clean(self):
