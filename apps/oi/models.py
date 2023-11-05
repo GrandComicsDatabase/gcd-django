@@ -49,7 +49,7 @@ from apps.gcd.models import (
 from apps.gcd.models.gcddata import GcdData, GcdLink
 
 from apps.gcd.models.issue import issue_descriptor
-from apps.gcd.models.story import show_feature, show_feature_as_text,\
+from apps.gcd.models.story import show_feature, show_feature_as_text, \
                                   show_characters
 
 from apps.indexer.views import ErrorWithMessage
@@ -2137,7 +2137,7 @@ class Revision(models.Model):
         self._prev_rev = self.previous_revision
 
         # prev_rev is self.previous_revision, unless it is a variant issue add
-        if self.added and type(self) == IssueRevision and self.variant_of:
+        if self.added and type(self) is IssueRevision and self.variant_of:
             # for variant adds compare against base issue
             self._prev_rev = self.variant_of.revisions \
                                  .filter(committed=True,
@@ -2195,7 +2195,7 @@ class Revision(models.Model):
         for field_name in self.field_list():
             old = get_prev_value(field_name)
             new = getattr(self, field_name)
-            if type(new) == str:
+            if type(new) is str:
                 field_changed = old.strip() != new.strip()
             elif isinstance(old, Manager):
                 old = old.all().values_list('id', flat=True)
@@ -3411,7 +3411,8 @@ class SeriesRevision(Revision):
 
     def _pre_initial_save(self, fork=False, fork_source=None,
                           exclude=frozenset(), **kwargs):
-        self.leading_article = self.series.name != self.series.sort_name
+        if fork is False:
+            self.leading_article = self.series.name != self.series.sort_name
 
     def _do_complete_added_revision(self, publisher):
         """
@@ -6337,7 +6338,8 @@ class FeatureRevision(Revision):
 
     def _pre_initial_save(self, fork=False, fork_source=None,
                           exclude=frozenset(), **kwargs):
-        self.leading_article = self.feature.name != self.feature.sort_name
+        if fork is False:
+            self.leading_article = self.feature.name != self.feature.sort_name
 
     def _post_assign_fields(self, changes):
         if self.leading_article:
@@ -6426,8 +6428,9 @@ class FeatureLogoRevision(Revision):
 
     def _pre_initial_save(self, fork=False, fork_source=None,
                           exclude=frozenset(), **kwargs):
-        self.leading_article = (self.feature_logo.name !=
-                                self.feature_logo.sort_name)
+        if fork is False:
+            self.leading_article = (self.feature_logo.name !=
+                                    self.feature_logo.sort_name)
 
     def _post_assign_fields(self, changes):
         if self.leading_article:
