@@ -166,7 +166,7 @@ INSTALLED_APPS = (
     'imagekit',
     'haystack',
     'bootstrap3',
-    'contact_form',
+    'django_contact_form',
     'captcha',
     'crispy_forms',
     'pagedown.apps.PagedownConfig',
