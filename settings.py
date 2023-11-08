@@ -239,8 +239,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # 3rd-party app settings
 #################################################################################
 
-COMPRESS_FILTERS = {'css': ['compressor.filters.css_default.CssAbsoluteFilter',
-                            'compressor.filters.cssmin.rCSSMinFilter'],}
+# COMPRESS_FILTERS = {'css': ['compressor.filters.css_default.CssAbsoluteFilter',
+#                             'compressor.filters.cssmin.rCSSMinFilter'],
+#                     'js': ['compressor.filters.jsmin.rJSMinFilter']}
 
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
