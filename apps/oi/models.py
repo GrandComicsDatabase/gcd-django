@@ -5631,6 +5631,7 @@ class StoryRevision(Revision):
         removed_credits = credits_formset.deleted_forms
         if removed_credits:
             for removed_credit in removed_credits:
+                # can get key error here, so check on 'id' in ?
                 if removed_credit.cleaned_data['id']:
                     if removed_credit.cleaned_data['id'].story_credit:
                         removed_credit.cleaned_data['id'].deleted = True
@@ -5641,6 +5642,7 @@ class StoryRevision(Revision):
         for character_form in characters_formset:
             if character_form.is_valid() and character_form.cleaned_data:
                 cd = character_form.cleaned_data
+                # TODO check for missing story_revision_id, not sure how this happens, but it does, we can from self though
                 if 'id' in cd and cd['id']:
                     character_revision = character_form.save()
                 else:

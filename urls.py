@@ -97,6 +97,8 @@ elif settings.MYCOMICS:
                     [path('', include('apps.stats.urls'))] + \
                     [path('', include('apps.indexer.urls'))] + \
                     [path('', include('apps.select.urls'))] + \
+                    [path('admin/', include('loginas.urls'))] + \
+                    [path('admin/', admin.site.urls)] + \
                     read_only_patterns
 else:
     urlpatterns = basic_patterns + \
@@ -107,6 +109,7 @@ else:
                     [path('', include('apps.oi.urls'))] + \
                     [path('voting/', include('apps.voting.urls'))] + \
                     [path('admin/templatesadmin/', include('templatesadmin.urls'))] + \
+                    [path('admin/', include('loginas.urls'))] + \
                     [path('admin/', admin.site.urls)] + \
                     [path('projects/', include('apps.projects.urls'))]
 
@@ -118,3 +121,10 @@ if 'rosetta' in settings.INSTALLED_APPS:
 
 # This only has any effect when DEBUG is True.
 urlpatterns += staticfiles_urlpatterns()
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns = [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ] + urlpatterns
+

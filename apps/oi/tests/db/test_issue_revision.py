@@ -114,9 +114,9 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
     with mock.patch(UPDATE_ALL) as updater:
         rev.commit_to_display()
 
-    updater.has_calls([
+    updater.assert_has_calls([
       mock.call({}, language=None, country=None, negate=True),
-      mock.call({'issues': 1}, 
+      mock.call({'covers': 0, 'stories': 0, 'series issues': 1, 'issues': 1},
                 language=rev.series.language, country=rev.series.country),
     ])
 
@@ -174,9 +174,9 @@ def test_commit_variant_added_revision(any_added_variant_rev,
     with mock.patch(UPDATE_ALL) as updater:
         rev.commit_to_display()
 
-    updater.has_calls([
+    updater.assert_has_calls([
       mock.call({}, language=None, country=None, negate=True),
-      mock.call({'variant issues': 1}, 
+      mock.call({'covers': 0, 'stories': 0, 'variant issues': 1},
                 language=rev.series.language, country=rev.series.country),
     ])
 
@@ -341,9 +341,9 @@ def test_noncomics_counts(any_added_series_rev,
     with mock.patch(UPDATE_ALL) as updater:
         s_rev.commit_to_display()
 
-    updater.has_calls([
+    updater.assert_has_calls([
       mock.call({}, language=None, country=None, negate=True),
-      mock.call({'series': 1}, 
+      mock.call({'covers': 0, 'stories': 0, 'publisher series': 1},
                 language=s_rev.series.language, country=s_rev.series.country),
     ])
 
@@ -372,9 +372,9 @@ def test_noncomics_counts(any_added_series_rev,
     i_rev.changeset.state = states.APPROVED
     i_rev.changeset.save()
 
-    updater.has_calls([
+    updater.assert_has_calls([
       mock.call({}, language=None, country=None, negate=True),
-      mock.call({'stories': 0, 'covers': 0}, 
+      mock.call({'stories': 0, 'covers': 0, 'series issues': 1},
                 language=i_rev.series.language, country=i_rev.series.country),
     ])
 
@@ -415,10 +415,10 @@ def test_noncomics_counts(any_added_series_rev,
     v_rev.changeset.state = states.APPROVED
     v_rev.changeset.save()
 
-    updater.has_calls([
-      mock.call({'stories': 0, 'covers': 0}, language=None, country=None,
+    updater.assert_has_calls([
+      mock.call({}, language=None, country=None,
                 negate=True),
-      mock.call({'stories': 0, 'covers': 0}, 
+      mock.call({'stories': 0, 'covers': 0},
                 language=i_rev.series.language, country=i_rev.series.country),
     ])
 
@@ -449,11 +449,10 @@ def test_noncomics_counts(any_added_series_rev,
 
     del_v_rev = IssueRevision.objects.get(pk=del_v_rev.pk)
 
-    updater.has_calls([
-      mock.call({'stories': 0, 'covers': 0}, language=None, country=None,
-                negate=True),
-      mock.call({'stories': 0, 'covers': 0}, 
-                language=i_rev.series.language, country=i_rev.series.country),
+    updater.assert_has_calls([
+      mock.call({'stories': 0, 'covers': 0},
+                language=i_rev.series.language, country=i_rev.series.country, negate=True),
+      mock.call({}, language=None, country=None),
     ])
     assert updater.call_count == 2
 
@@ -483,11 +482,11 @@ def test_noncomics_counts(any_added_series_rev,
         del_i_rev.commit_to_display()
 
     del_i_rev = IssueRevision.objects.get(pk=del_v_rev.pk)
-    updater.has_calls([
-      mock.call({'stories': 0, 'covers': 0}, language=None, country=None,
+    updater.assert_has_calls([
+      mock.call({'stories': 0, 'covers': 0, 'series issues': 1},
+                language=i_rev.series.language, country=i_rev.series.country,
                 negate=True),
-      mock.call({'stories': 0, 'covers': 0}, 
-                language=i_rev.series.language, country=i_rev.series.country),
+      mock.call({}, language=None, country=None),
     ])
     assert updater.call_count == 2
     s = Series.objects.get(pk=del_i_rev.series.pk)
