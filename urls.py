@@ -9,7 +9,7 @@ from django.views.generic.base import TemplateView
 from django.views.i18n import JavaScriptCatalog
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
-from contact_form.views import ContactFormView
+from django_contact_form.views import ContactFormView
 
 from apps.indexer.views import error_view
 from apps.gcd.views import read_only

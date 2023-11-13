@@ -1114,6 +1114,7 @@ class CreatorCreatorTable(CreatorTable):
 
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')
+        self.resolve_name = 'creator'
         super(CreatorTable, self).__init__(*args, **kwargs)
 
     class Meta:

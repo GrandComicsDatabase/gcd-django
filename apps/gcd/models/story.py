@@ -622,6 +622,21 @@ class Story(GcdData):
     def show_feature_logo(self):
         return self._show_feature_logo(self)
 
+    def show_universe(self):
+        from apps.gcd.templatetags.display import absolute_url
+        universes = ''
+        for universe in self.universe.all():
+            universes += absolute_url(universe) + '; '
+        if universes:
+            universes = universes[:-2]
+        dt = '<dt class="credit_tag"><span class="credit_label">' \
+                 'Universe</span></dt>'
+        return mark_safe(
+              dt + '<dd class="credit_def"><span class="credit_value">'
+              + universes + '</span></dd>')
+
+        return mark_safe(universes)
+
     def show_title(self, use_first_line=False):
         """
         Return a properly formatted title.

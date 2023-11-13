@@ -15,7 +15,7 @@ from django.conf import settings
 from django.core.mail import EmailMessage
 from django.urls import reverse
 
-from contact_form.forms import ContactForm
+from django_contact_form.forms import ContactForm
 
 from apps.stddata.models import Country, Language
 from apps.legacy.models import Reservation, IndexCredit
