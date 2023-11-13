@@ -114,7 +114,7 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
         </div>
         <!-- Left Column end -->
 <h3>Creators Calendar</h3>
-<iframe src="/daily_creators/" style="border-width:0" width="100%" height="600" frameborder="0" id="daily_creators"></iframe>
+<iframe src="/daily_creators/" style="border-width:0; visibility:hidden" width="100%" height="600" frameborder="0" id="daily_creators"></iframe>
 {% if USE_TEMPLATESADMIN and ADVERTISING and not BETA %}
   {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
 {% endif %}
@@ -222,11 +222,12 @@ http://matthewjamestaylor.com/blog/ultimate-3-column-holy-grail-ems.htm -->
 </div>
 
 </div><!-- id="sizing_base" -->
-</body>
 <script>
     document.getElementById("daily_creators").addEventListener("load", function() {
-        var top = this.contentWindow.document.getElementsByName('today')[0].getBoundingClientRect().top;
+        var top = this.contentWindow.document.getElementById("today").getBoundingClientRect().top;
+        this.style.visibility = "visible";
         this.contentWindow.scrollTo(0, top);
     });
 </script>
+</body>
 </html>
