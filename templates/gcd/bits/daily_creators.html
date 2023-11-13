@@ -1,3 +1,8 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>GCD Daily Creators</title>
 {% load display %}
 {% load compress %}
 {% load static %}
@@ -5,12 +10,9 @@
   <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default.css" %}"/>
 {% endcompress %}
-{% compress js %}
-<script type="text/javascript"
-        src="{% static "js/infinite_scroll.js" %}"></script>
-{% endcompress %}
-
 <base target="_parent">
+</head>
+<body>
 
 <div style="font-size: 0.9em;">
 
@@ -31,21 +33,21 @@
   <div id="bottom-sentinel">...</div>
 </div>
 
+{% compress js %}
+<script type="text/javascript"
+        src="{% static "js/infinite_scroll.js" %}"></script>
 <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    let sentinel = document.querySelector("#bottom-sentinel");
-    let scrollElement = document.querySelector("#bottom-scroll-element");
+  window.addEventListener("load", () => {
     let baseUrl = "{% url 'daily_creators' %}";
     let addUrl = "offset/";
-    let direction = 1;
-    attachInfiniteScroll(sentinel, scrollElement, baseUrl, addUrl, direction);
-  })
-  document.addEventListener("DOMContentLoaded", () => {
-    let sentinel = document.querySelector("#top-sentinel");
-    let scrollElement = document.querySelector("#top-scroll-element");
-    let baseUrl = "{% url 'daily_creators' %}";
-    let addUrl = "offset/";
-    let direction = -1;
-    attachInfiniteScroll(sentinel, scrollElement, baseUrl, addUrl, direction);
+    let topSentinel = document.getElementById("top-sentinel");
+    let topScrollElement = document.getElementById("top-scroll-element");
+    let bottomSentinel = document.getElementById("bottom-sentinel");
+    let bottomScrollElement = document.getElementById("bottom-scroll-element");
+    attachInfiniteScroll(topSentinel, topScrollElement, baseUrl, addUrl, -1);
+    attachInfiniteScroll(bottomSentinel, bottomScrollElement, baseUrl, addUrl, 1);
   })
 </script>
+{% endcompress %}
+</body>
+</html>
