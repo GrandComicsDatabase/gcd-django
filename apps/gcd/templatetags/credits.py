@@ -414,7 +414,7 @@ def show_cover_contributor(cover_revision):
 
 @register.filter
 def show_country_info_by_code(code, name):
-    src = 'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
+    src = 'src="%simg/gcd/flags/%s.png"' % (settings.STATIC_URL,
                                              code.lower())
     alt = 'alt="%s"' % esc(code.upper())
     title = 'title="%s"' % esc(name)
