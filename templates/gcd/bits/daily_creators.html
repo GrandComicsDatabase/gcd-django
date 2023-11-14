@@ -21,8 +21,7 @@
     {% include "gcd/bits/_daily_creators.html" with creators=creators_yesterday day=yesterday %}
   </div>
 
-  <a name="today"></a>
-  <p><b>{{ today|date:"l, jS F" }}</b></p>
+  <p id="today"><b>{{ today|date:"l, jS F" }}</b></p>
   {% for creator in creators_today %}
     {{ creator|absolute_url }}<br>
   {% endfor %}
