@@ -19,7 +19,6 @@ which variables you can or must override.
 
 # disable on production!
 DEBUG          = True
-# DEBUG          = False
 
 ALLOWED_HOSTS = [
     '.comics.org',

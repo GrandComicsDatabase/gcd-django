@@ -14,7 +14,6 @@ from taggit.managers import TaggableManager
 from apps.oi import states
 from .gcddata import GcdData, GcdLink
 from .image import Image
-from .datasource import ExternalLink
 
 def _display_year(year, flag):
     if year:
@@ -84,8 +83,6 @@ class Publisher(BasePublisher):
     indicia_publisher_count = models.IntegerField(default=0, db_index=True)
     series_count = models.IntegerField(default=0)
     issue_count = models.IntegerField(default=0)
-
-    external_link = models.ManyToManyField(ExternalLink)
 
     def active_brand_groups(self):
         return self.brandgroup_set.exclude(deleted=True)
