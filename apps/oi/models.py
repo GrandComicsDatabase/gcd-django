@@ -5720,6 +5720,7 @@ class StoryRevision(Revision):
                                .exists():
                         # civilian identities are not in a superhero group, so
                         # we don't need to copy this data via adds
+                        # need to reset some fields not to be copied
                         story_character.pk = None
                         story_character._state.adding = True
                         story_character.previous_revision_id = None
@@ -5727,6 +5728,8 @@ class StoryRevision(Revision):
                         story_character.character = character_identity\
                                        .character_names.get(
                                          is_official_name=True)
+                        story_character.group_universe = None
+                        story_character.notes = ''
                         story_character.save()
 
     def old_credits(self):
