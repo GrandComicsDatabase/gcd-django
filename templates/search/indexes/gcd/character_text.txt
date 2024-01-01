@@ -1,5 +1,5 @@
 {% load credits %}
-{{ object.name|safe }}
+{{ object.disambiguated|safe }}
 {{ object.description|safe }}
 {{ object.notes|safe }}
 {{ object|show_keywords|safe }}
