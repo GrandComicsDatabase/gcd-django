@@ -15,6 +15,7 @@ GCD :: {{ user.indexer }} :: Editing Queue
 {% endblock %}
 
 {% block view_body %}
+<div style="display: flex;">
 <div class="left">
   <div class="queues">
     <h1> Records You Are Editing </h1>
@@ -32,6 +33,7 @@ GCD :: {{ user.indexer }} :: Editing Queue
 {% else %}
   {% include "gcd/bits/managed_content_dev_notice.html" %}
 {% endif %}
+</div>
 </div>
 {% endblock %}
 
