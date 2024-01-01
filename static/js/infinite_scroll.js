@@ -31,7 +31,7 @@ const attachInfiniteScroll = (sentinel, scrollElement, baseUrl, addUrl, directio
         if (direction < 0){
           scrollElement.innerHTML = body + scrollElement.innerHTML;
           let elements = document.getElementById('top-scroll-element').getElementsByTagName('p');
-          elements[1].scrollIntoView();
+          window.scrollTo(0, elements[1].offsetTop);
         } else {
           scrollElement.innerHTML += body ;
         }
@@ -43,3 +43,4 @@ const attachInfiniteScroll = (sentinel, scrollElement, baseUrl, addUrl, directio
   })
   observer.observe(sentinel);
 };
+

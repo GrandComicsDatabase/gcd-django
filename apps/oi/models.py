@@ -2194,7 +2194,6 @@ class Revision(models.Model):
         else:
             get_prev_value = lambda field: getattr(prev_rev,  # noqa: E731
                                                    field)
-
         for field_name in self.field_list():
             old = get_prev_value(field_name)
             new = getattr(self, field_name)
@@ -4084,7 +4083,14 @@ class IssueRevision(Revision):
         if not self.deleted and not self.changed['editing']:
             credits = self.issue_credit_revisions.filter(
                            credit_type__id=6)
-            if credits:
+            if not compare_revision:
+                compare_revision = self.previous()
+            if not credits and compare_revision.issue_credit_revisions.filter(
+              credit_type__id=6).exists():
+                # compare against other issue, either we get it or we fetch it
+                self.changed['editing'] = True
+                self.is_changed = True
+            elif credits:
                 for credit in credits:
                     credit.compare_changes()
                     if credit.is_changed:
@@ -5719,6 +5725,7 @@ class StoryRevision(Revision):
                                .exists():
                         # civilian identities are not in a superhero group, so
                         # we don't need to copy this data via adds
+                        # need to reset some fields not to be copied
                         story_character.pk = None
                         story_character._state.adding = True
                         story_character.previous_revision_id = None
@@ -5726,6 +5733,8 @@ class StoryRevision(Revision):
                         story_character.character = character_identity\
                                        .character_names.get(
                                          is_official_name=True)
+                        story_character.group_universe = None
+                        story_character.notes = ''
                         story_character.save()
 
     def old_credits(self):

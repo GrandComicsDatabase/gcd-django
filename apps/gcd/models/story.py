@@ -173,7 +173,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
             if first_member:
                 first_member = False
                 if url:
-                    characters += '<a href="%s"><b>%s</b></a> (<a href="%s">%s</a>' \
+                    characters += '<a href="%s"><b>%s</b></a>: <a href="%s">%s</a>' \
                                   % (group.get_absolute_url(), esc(group.name),
                                      member.character.get_absolute_url(),
                                      esc(member.character.name))
@@ -217,9 +217,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
                 characters += '%s; ' % (group.name)
             first_member = False
         else:
-            characters += ')<br>'
+            characters += '<br>'
         if compare:
-            disambiguation += ')<br>'
+            disambiguation += '<br>'
     if groups and first_member == True:
         characters = characters[:-2]
 

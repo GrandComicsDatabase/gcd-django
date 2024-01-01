@@ -14,7 +14,7 @@
   <li> Show links to the wiki documentation: {{ profile_user.indexer.show_wiki_links|yesno }}
   <li> Use tabbed view while editing stories: {{ profile_user.indexer.use_tabs|yesno }}
 {% endif %}
-  <li> Country: <img src="{{ STATIC_URL }}/img/gcd/flags/{{ profile_user.indexer.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
+  <li> Country: <img src="{{ STATIC_URL }}img/gcd/flags/{{ profile_user.indexer.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
        {{ profile_user.indexer.country }} <br>
   <li> Languages:
     {% with profile_user.indexer.languages.all as languages %}
