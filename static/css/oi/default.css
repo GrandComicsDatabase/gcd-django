@@ -170,17 +170,21 @@ dl.tech_contact dd {
 div.indexer_right_box {
     float: right;
     width: 25em;
-    margin-top: 0;
+    margin-top: 3em;
+    margin-left: 1em;
 }
 
 div.indexer_right_box h2 {
     background-color: #ebf3ff;
     margin-bottom: 0em;
     padding-left: 0.4em;
+    border: 1px solid #DDD;
+    border-bottom: none;
 }
 
 div.indexer_notice {
     background-color: #f6fbff;
     padding: 1em 0.4em;
     margin-bottom: 1em;
+    border: 1px solid #DDD;
 }
