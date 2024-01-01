@@ -77,7 +77,7 @@ Data last updated:
   <li> {{ name }}: <span class="important">{{ timestamp }}</span>
 {% endfor %}
 </ul>
-<form method="POST" action="{% url 'download' %}" class="download">
+<form method="POST" action="{% url "download" %}" class="download">
   {% csrf_token %}
   <p>
     <label for="purpose">{{ form.purpose.label }}</label>
@@ -99,6 +99,8 @@ Data last updated:
     </label>
   </p>
   <input type="submit" name="mysqldump" value="Download MySQL Dump">
+  <input type="submit" name="name-value" value="Download Name-Value Dump">
+  <input type="submit" name="sqlite" value="Download SQLite Dump">
 </form>
 {% endblock %}
 
