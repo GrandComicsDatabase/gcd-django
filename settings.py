@@ -413,6 +413,8 @@ VOTING_DIR = abspath(join(dirname(__file__), 'voting'))
 DUMP_DIR = 'dumps'
 MYSQL_DUMP = 'current.zip'
 POSTGRES_DUMP = 'pg-current.zip'
+NAME_VALUE_DUMP = 'current_name_value.zip'
+SQLITE_DUMP = 'current_sqlite.zip'
 
 # Amount of time that must pass before a user can download the same
 # dump (or similar) file again, in minutes.
