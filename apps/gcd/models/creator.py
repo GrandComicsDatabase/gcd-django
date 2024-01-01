@@ -496,7 +496,8 @@ class Creator(GcdData):
                                       awards__isnull=False).distinct()
         content_type = ContentType.objects.get(model='Issue')
         awards = ReceivedAward.objects.filter(content_type=content_type,
-                                              object_id__in=issues)
+                                              object_id__in=issues,
+                                              deleted=False)
         return awards
 
     def active_awards_for_stories(self):
@@ -505,7 +506,8 @@ class Creator(GcdData):
                                        awards__isnull=False).distinct()
         content_type = ContentType.objects.get(model='Story')
         awards = ReceivedAward.objects.filter(content_type=content_type,
-                                              object_id__in=stories)
+                                              object_id__in=stories,
+                                              deleted=False)
         return awards
 
     def active_degrees(self):
