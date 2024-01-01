@@ -5631,7 +5631,8 @@ class StoryRevision(Revision):
         removed_credits = credits_formset.deleted_forms
         if removed_credits:
             for removed_credit in removed_credits:
-                if removed_credit.cleaned_data['id']:
+                cd = removed_credit.cleaned_data
+                if 'id' in cd and cd['id']:
                     if removed_credit.cleaned_data['id'].story_credit:
                         removed_credit.cleaned_data['id'].deleted = True
                         removed_credit.cleaned_data['id'].save()
