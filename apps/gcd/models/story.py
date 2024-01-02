@@ -217,7 +217,10 @@ def show_characters(story, url=True, css_style=True, compare=False):
                 characters += '%s; ' % (group.name)
             first_member = False
         else:
-            characters += '<br>'
+            if url:
+                characters += '<br>'
+            else:
+                characters += ']; '
         if compare:
             disambiguation += '<br>'
     if groups and first_member == True:
