@@ -27,7 +27,7 @@ GCD :: Character :: {{ character.name }}
         <p><strong>Disambiguation:</strong> {{ character.disambiguation }}</p>
 {% endif %}
 {% if character.universe %}
-        <p><strong>Universe:</strong> {{ character.universe }}</p>
+        <p><strong>Universe:</strong> {{ character.universe|absolute_url }}</p>
 {% endif %}
 {% if character.year_first_published %}
         <p><strong>First published in:</strong> {{ character.display_year_first_published }}</p>
