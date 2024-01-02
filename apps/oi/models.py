@@ -4085,8 +4085,9 @@ class IssueRevision(Revision):
                            credit_type__id=6)
             if not compare_revision:
                 compare_revision = self.previous()
-            if not credits and compare_revision.issue_credit_revisions.filter(
-              credit_type__id=6).exists():
+            if not credits and compare_revision and \
+               compare_revision.issue_credit_revisions.filter(
+                  credit_type__id=6).exists():
                 # compare against other issue, either we get it or we fetch it
                 self.changed['editing'] = True
                 self.is_changed = True
