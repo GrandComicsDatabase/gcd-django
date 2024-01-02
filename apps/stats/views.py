@@ -29,8 +29,10 @@ def download(request):
 
             # Note that the submit input is never present in the cleaned data.
             file = settings.MYSQL_DUMP
-            if ('postgres' in request.POST):
-                file = settings.POSTGRES_DUMP
+            if ('name-value' in request.POST):
+                file = settings.NAME_VALUE_DUMP
+            if ('sqlite' in request.POST):
+                file = settings.SQLITE_DUMP
             path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR, file)
 
             delta = settings.DOWNLOAD_DELTA
@@ -65,13 +67,15 @@ def download(request):
 
     m_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
                           settings.MYSQL_DUMP)
-    p_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
-                          settings.POSTGRES_DUMP)
+    mv_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
+                           settings.NAME_VALUE_DUMP)
+    sqlite_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
+                               settings.SQLITE_DUMP)
 
     # Use a list of tuples because we want the MySQL dump (our primary format)
     # to be first.
     timestamps = []
-    for dump_info in (('MySQL', m_path), ):
+    for dump_info in (('MySQL', m_path), ('Name-Value', nv_path), ('SQLite', sqlite_path), ):
         try:
             timestamps.append(
                 (dump_info[0],

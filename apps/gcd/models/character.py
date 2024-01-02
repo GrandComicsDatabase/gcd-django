@@ -12,17 +12,32 @@ from apps.stddata.models import Language
 from .datasource import ExternalLink
 
 
+class Multiverse(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        ordering = ('name',)
+        verbose_name_plural = 'Multiverses'
+
+    name = models.CharField(max_length=255, db_index=True)
+    mainstream = models.ForeignKey('Universe', on_delete=models.CASCADE,
+                                   related_name='is_mainstream')
+
+    def __str__(self):
+        return '%s' % (self.name)
+
+
 class Universe(GcdData):
     """
     Characters and stories can belong to publisher universe.
     """
-
     class Meta:
         app_label = 'gcd'
         ordering = ('multiverse', 'designation', 'name')
         verbose_name_plural = 'Universes'
 
     multiverse = models.CharField(max_length=255, db_index=True)
+    verse = models.ForeignKey('Multiverse', on_delete=models.CASCADE,
+                              null=True)
     name = models.CharField(max_length=255, db_index=True)
     designation = models.CharField(max_length=255, db_index=True)
 
@@ -50,8 +65,21 @@ class Universe(GcdData):
             display_name += self.designation
         return display_name
 
+    # TODO add queries on story/character links
+    def has_dependents(self):
+        return True
+
+    def universe_name(self):
+        if self.name and self.designation:
+            return '%s - %s' % (self.name,
+                                self.designation)
+        elif self.designation:
+            return '%s' % (self.designation)
+        else:
+            return '%s' % (self.name)
+
     def __str__(self):
-        return '%s : %s - %s' % (self.multiverse, self.name, self.designation)
+        return '%s : %s' % (self.multiverse, self.universe_name())
 
 
 class CharacterNameDetail(GcdData):
@@ -62,7 +90,7 @@ class CharacterNameDetail(GcdData):
     class Meta:
         db_table = 'gcd_character_name_detail'
         app_label = 'gcd'
-        ordering = ['sort_name']
+        ordering = ['sort_name', 'character__disambiguation']
         verbose_name_plural = 'CharacterName Details'
 
     name = models.CharField(max_length=255, db_index=True)
@@ -105,6 +133,8 @@ class CharacterGroupBase(GcdData):
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True, default='')
     disambiguation = models.CharField(max_length=255, db_index=True)
+    universe = models.ForeignKey('Universe', on_delete=models.CASCADE,
+                                 null=True)
 
     year_first_published = models.IntegerField(db_index=True, null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
@@ -125,7 +155,8 @@ class CharacterGroupBase(GcdData):
             return '?'
         else:
             return '%d%s' % (self.year_first_published,
-                             '?' if self.year_first_published_uncertain else '')
+                             '?' if self.year_first_published_uncertain
+                             else '')
 
     @property
     def disambiguated(self):
@@ -171,6 +202,13 @@ class Character(CharacterGroupBase):
         return self.memberships.all().order_by('year_joined',
                                                'group__sort_name')
 
+    def active_universes(self):
+        from .story import StoryCharacter
+        appearances = StoryCharacter.objects.filter(character__character=self,
+                                                    deleted=False)
+        universes = appearances.values_list('universe', flat=True).distinct()
+        return Universe.objects.filter(id__in=universes)
+
     def has_dependents(self):
         if self.active_memberships().exists():
             return True
@@ -189,6 +227,14 @@ class Character(CharacterGroupBase):
         return urlresolvers.reverse(
                 'show_character',
                 kwargs={'character_id': self.id})
+
+    # TODO, should groupds have a universe ?
+    def __str__(self):
+        string = super(Character, self).__str__()
+        if self.universe:
+            return string + ' - %s' % self.universe.universe_name()
+        else:
+            return string
 
 
 class CharacterRelation(GcdLink):

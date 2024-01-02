@@ -496,7 +496,8 @@ class Creator(GcdData):
                                       awards__isnull=False).distinct()
         content_type = ContentType.objects.get(model='Issue')
         awards = ReceivedAward.objects.filter(content_type=content_type,
-                                              object_id__in=issues)
+                                              object_id__in=issues,
+                                              deleted=False)
         return awards
 
     def active_awards_for_stories(self):
@@ -505,7 +506,8 @@ class Creator(GcdData):
                                        awards__isnull=False).distinct()
         content_type = ContentType.objects.get(model='Story')
         awards = ReceivedAward.objects.filter(content_type=content_type,
-                                              object_id__in=stories)
+                                              object_id__in=stories,
+                                              deleted=False)
         return awards
 
     def active_degrees(self):
@@ -1000,21 +1002,19 @@ class NonComicWorkYear(models.Model):
 
 
 class CreatorTable(tables.Table):
-    name = tables.Column(accessor='creator__gcd_official_name',
+    name = tables.Column(accessor='gcd_official_name',
                          verbose_name='Creator Name')
-    detail_name = tables.Column(accessor='name', verbose_name='Used Name')
     first_credit = tables.Column(verbose_name='First Credit')
     credits_count = tables.Column(accessor='credits_count',
                                   verbose_name='# Issues',
                                   initial_sort_descending=True)
     role = tables.Column(accessor='script', orderable=False)
 
-    def order_name(self, query_set, is_descending):
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'creator__sort_name')
-        return (query_set, True)
+    class Meta:
+        model = Creator
+        fields = ('name', 'first_credit', 'credits_count', 'role')
 
-    def order_detail_name(self, query_set, is_descending):
+    def order_name(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name')
         return (query_set, True)
@@ -1024,15 +1024,12 @@ class CreatorTable(tables.Table):
 
     def render_name(self, record):
         from apps.gcd.templatetags.display import absolute_url
-        return absolute_url(record.creator)
-
-    def value_name(self, record):
-        return str(record.creator)
+        return absolute_url(record)
 
     def render_credits_count(self, record):
         url = urlresolvers.reverse(
-                'creator_name_checklist',
-                kwargs={'creator_name_id': record.id,
+                '%s_creator_issues' % self.resolve_name,
+                kwargs={'creator_id': record.id,
                         '%s_id' % self.resolve_name:
                         getattr(self, self.resolve_name).id})
         return mark_safe('<a href="%s">%s</a>' % (url, record.credits_count))
@@ -1055,6 +1052,46 @@ class CreatorTable(tables.Table):
         return role[:-2]
 
 
+class CreatorNameTable(CreatorTable):
+    name = tables.Column(accessor='creator__gcd_official_name',
+                         verbose_name='Creator Name')
+    detail_name = tables.Column(accessor='name', verbose_name='Used Name')
+
+    def __init__(self, *args, **kwargs):
+        super(CreatorTable, self).__init__(*args, **kwargs)
+        self.resolve_name = 'creator_name'
+
+    class Meta(CreatorTable.Meta):
+        model = CreatorNameDetail
+        fields = ('name', 'detail_name', 'first_credit', 'credits_count',
+                  'role')
+
+    def order_name(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'creator__sort_name')
+        return (query_set, True)
+
+    def order_detail_name(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'sort_name')
+        return (query_set, True)
+
+    def render_credits_count(self, record):
+        url = urlresolvers.reverse(
+                '%s_creator_name_issues' % self.resolve_name,
+                kwargs={'creator_name_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url, record.credits_count))
+
+    def render_name(self, record):
+        from apps.gcd.templatetags.display import absolute_url
+        return absolute_url(record.creator)
+
+    def value_name(self, record):
+        return str(record.creator)
+
+
 class CharacterCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         self.character = kwargs.pop('character')
@@ -1062,23 +1099,25 @@ class CharacterCreatorTable(CreatorTable):
         super(CreatorTable, self).__init__(*args, **kwargs)
 
 
+class CharacterCreatorNameTable(CreatorNameTable):
+    def __init__(self, *args, **kwargs):
+        self.character = kwargs.pop('character')
+        self.resolve_name = 'character'
+        super(CreatorNameTable, self).__init__(*args, **kwargs)
+
+    class Meta(CreatorNameTable.Meta):
+        pass
+
+
 class CreatorCreatorTable(CreatorTable):
-    name = tables.Column(accessor='gcd_official_name',
-                         verbose_name='Creator Name')
     credits_count = tables.Column(accessor='issue_credits_count',
                                   verbose_name='# Issues',
                                   initial_sort_descending=True)
-    detail_name = None
 
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')
         self.resolve_name = 'creator'
         super(CreatorTable, self).__init__(*args, **kwargs)
-
-    def order_name(self, query_set, is_descending):
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'sort_name')
-        return (query_set, True)
 
     class Meta:
         model = Creator
@@ -1112,6 +1151,16 @@ class GroupCreatorTable(CreatorTable):
         super(CreatorTable, self).__init__(*args, **kwargs)
 
 
+class GroupCreatorNameTable(CreatorNameTable):
+    def __init__(self, *args, **kwargs):
+        self.group = kwargs.pop('group')
+        self.resolve_name = 'group'
+        super(CreatorNameTable, self).__init__(*args, **kwargs)
+
+    class Meta(CreatorNameTable.Meta):
+        pass
+
+
 class FeatureCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         self.feature = kwargs.pop('feature')
@@ -1119,8 +1168,28 @@ class FeatureCreatorTable(CreatorTable):
         super(CreatorTable, self).__init__(*args, **kwargs)
 
 
+class FeatureCreatorNameTable(CreatorNameTable):
+    def __init__(self, *args, **kwargs):
+        self.feature = kwargs.pop('feature')
+        self.resolve_name = 'feature'
+        super(CreatorNameTable, self).__init__(*args, **kwargs)
+
+    class Meta(CreatorNameTable.Meta):
+        pass
+
+
 class SeriesCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         self.series = kwargs.pop('series')
         self.resolve_name = 'series'
         super(CreatorTable, self).__init__(*args, **kwargs)
+
+
+class SeriesCreatorNameTable(CreatorNameTable):
+    def __init__(self, *args, **kwargs):
+        self.series = kwargs.pop('series')
+        self.resolve_name = 'series'
+        super(CreatorNameTable, self).__init__(*args, **kwargs)
+
+    class Meta(CreatorNameTable.Meta):
+        pass

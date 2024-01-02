@@ -11,7 +11,7 @@ import django_tables2 as tables
 
 from .gcddata import GcdData
 from .award import ReceivedAward
-from .character import CharacterNameDetail, Group
+from .character import CharacterNameDetail, Group, Universe, Multiverse
 from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
 
@@ -110,6 +110,8 @@ def character_notes(character):
 
 def get_civilian_identity(character, appearing_characters, url=True,
                           compare=False):
+    appearing_characters = appearing_characters.filter(
+      universe=character.universe)
     civilian_identity = set(
         character.character.character.to_related_character
                  .filter(relation_type__id=2).values_list('to_character',
@@ -146,15 +148,32 @@ def show_characters(story, url=True, css_style=True, compare=False):
 
     all_appearing_characters = story.active_characters
     in_group = all_appearing_characters.exclude(group=None)
+    # TODO change after migration to add all existing group entries to a story
+    # TODO change then the StoryGroup to access the notes and universe
     groups = Group.objects.filter(id__in=in_group.values_list('group'))
+    groups |= Group.objects.filter(id__in=story.active_groups.values_list('group'))
+
+    reference_universe_id = None
+    if story.universe.count() == 1:
+        reference_universe_id = story.universe.get().id
+    elif story.universe.count() == 2:
+        reference_universe_id = -1
+    else:
+        if len(set(story.appearing_characters.exclude(universe__verse=None)
+                   .values_list('universe__verse', flat=True))) == 1:
+            mainstream_universe_id = set(story.appearing_characters.exclude(
+              universe__verse=None).values_list('universe__verse', flat=True))\
+              .pop()
+            reference_universe_id = Multiverse.objects.get(
+              id=mainstream_universe_id).mainstream_id
+    # groups |= story.active_groups
     for group in groups:
-        first = False
         first_member = True
         for member in in_group.filter(group=group):
             if first_member:
                 first_member = False
                 if url:
-                    characters += '<a href="%s">%s</a> [<a href="%s">%s</a>' \
+                    characters += '<a href="%s"><b>%s</b></a>: <a href="%s">%s</a>' \
                                   % (group.get_absolute_url(), esc(group.name),
                                      member.character.get_absolute_url(),
                                      esc(member.character.name))
@@ -185,10 +204,24 @@ def show_characters(story, url=True, css_style=True, compare=False):
             if compare:
                 disambiguation += get_civilian_identity(
                   member, all_appearing_characters, url=url, compare=compare)
-        characters += ']; '
+                if member.universe:
+                    disambiguation += ' - %s' % member.universe
+            if reference_universe_id and member.universe:
+                if member.universe_id != reference_universe_id:
+                    characters += ' (%s)' % member.universe.universe_name()
+        if first_member is True:
+            if url:
+                characters += '<a href="%s">%s</a>; ' \
+                                % (group.get_absolute_url(), esc(group.name))
+            else:
+                characters += '%s; ' % (group.name)
+            first_member = False
+        else:
+            characters += '<br>'
         if compare:
-            disambiguation += ']<br>'
-    characters = characters[:-2]
+            disambiguation += '<br>'
+    if groups and first_member == True:
+        characters = characters[:-2]
 
     appearing_characters = all_appearing_characters.exclude(
       character__id__in=in_group.values_list('character'), group__isnull=False)
@@ -197,8 +230,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
           character.character.character.from_related_character
                    .filter(relation_type__id=2).values_list('from_character',
                                                             flat=True))\
-                   .intersection(all_appearing_characters.values_list(
-                                 'character__character', flat=True))
+                   .intersection(all_appearing_characters.filter(
+                      universe=character.universe).values_list(
+                      'character__character', flat=True))
         if alias_identity:
             continue
         if first:
@@ -226,6 +260,12 @@ def show_characters(story, url=True, css_style=True, compare=False):
                                                     appearing_characters,
                                                     url=url,
                                                     compare=compare)
+            if character.universe:
+                disambiguation += ' - %s' % character.universe
+        if reference_universe_id and character.universe:
+            if character.universe_id != reference_universe_id:
+                characters += ' (%s)' % character.universe.universe_name()
+
     if story.characters:
         if url:
             text_characters = esc(story.characters)
@@ -246,8 +286,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
         else:
             if compare and disambiguation:
                 return mark_safe(characters +
-                                 '<br>For information, linked characters '
-                                 'with disambiguation:<br>' + disambiguation)
+                                 '<br><br>For information, linked characters '
+                                 'with disambiguation and universe:<br>' +
+                                 disambiguation)
             else:
                 return mark_safe(characters)
     else:
@@ -325,9 +366,14 @@ class StoryCharacter(GcdData):
 
     character = models.ForeignKey(CharacterNameDetail,
                                   on_delete=models.CASCADE)
+    universe = models.ForeignKey(Universe, null=True,
+                                 on_delete=models.CASCADE)
     story = models.ForeignKey('Story', on_delete=models.CASCADE,
                               related_name='appearing_characters')
     group = models.ManyToManyField(Group)
+    group_universe = models.ForeignKey(Universe, null=True,
+                                       on_delete=models.CASCADE,
+                                       related_name='story_character_in_group')
     role = models.ForeignKey(CharacterRole, null=True,
                              on_delete=models.CASCADE)
     is_flashback = models.BooleanField(default=False, db_index=True)
@@ -338,6 +384,24 @@ class StoryCharacter(GcdData):
 
     def __str__(self):
         return "%s: %s" % (self.story, self.character)
+
+
+class StoryGroup(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_group_character'
+        ordering = ['group__sort_name']
+
+    group = models.ForeignKey(Group,
+                              on_delete=models.CASCADE)
+    universe = models.ForeignKey(Universe, null=True,
+                                 on_delete=models.CASCADE)
+    story = models.ForeignKey('Story', on_delete=models.CASCADE,
+                              related_name='appearing_groups')
+    notes = models.TextField()
+
+    def __str__(self):
+        return "%s: %s" % (self.story, self.group)
 
 
 class StoryTypeManager(models.Manager):
@@ -375,6 +439,7 @@ class Story(GcdData):
     feature = models.CharField(max_length=255)
     feature_object = models.ManyToManyField(Feature)
     feature_logo = models.ManyToManyField(FeatureLogo)
+    universe = models.ManyToManyField(Universe)
     type = models.ForeignKey(StoryType, on_delete=models.CASCADE)
     sequence_number = models.IntegerField()
 
@@ -450,6 +515,13 @@ class Story(GcdData):
                                       .exclude(deleted=True)\
                                       .select_related('character__character')
         return self._active_characters
+
+    @property
+    def active_groups(self):
+        if not hasattr(self, '_active_groups'):
+            self._active_groups = self.appearing_groups\
+                                      .exclude(deleted=True)
+        return self._active_groups
 
     _update_stats = True
 
@@ -549,6 +621,21 @@ class Story(GcdData):
 
     def show_feature_logo(self):
         return self._show_feature_logo(self)
+
+    def show_universe(self):
+        from apps.gcd.templatetags.display import absolute_url
+        universes = ''
+        for universe in self.universe.all():
+            universes += absolute_url(universe) + '; '
+        if universes:
+            universes = universes[:-2]
+        dt = '<dt class="credit_tag"><span class="credit_label">' \
+                 'Universe</span></dt>'
+        return mark_safe(
+              dt + '<dd class="credit_def"><span class="credit_value">'
+              + universes + '</span></dd>')
+
+        return mark_safe(universes)
 
     def show_title(self, use_first_line=False):
         """

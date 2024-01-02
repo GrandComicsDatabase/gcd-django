@@ -1,36 +1,36 @@
 Django<4.0
 mysqlclient<2.1
-Pillow<9.0,>=8.2
+Pillow<11.0
 PyICU<2.13
 PyYAML<6.1
-django-autocomplete-light<3.8.2
+django-autocomplete-light<3.10
 diff-match-patch==20181111
 django-appconf<1.1
-django-bootstrap3<16
-django-compressor<2.5
-django-contact-form<1.10
-django-crispy-forms<1.13
-django-filter<22
+django-bootstrap3<24
+django-compressor<4.5
+django-contact-form<2.2
+django-crispy-forms<1.15
+django-filter<24
 django-haystack<3.1
-django-imagekit<4.1
-django-markdownx<3.1
-django-pagedown<2.2
+django-imagekit<5.1
+django-markdownx<4.1
+django-pagedown<2.3
 django-queryset-csv<1.2
-django-recaptcha<2.1
+django-recaptcha<3.1
 django-rosetta
-django-tables2<2.5
-django-model-utils<4.2
+django-tables2<2.7
+django-model-utils<4.4
 git+https://github.com/GrandComicsDatabase/django-taggit.git@django32
 git+https://github.com/GrandComicsDatabase/django-templatesadmin.git@python3
-chardet<3.1
+chardet<5.3
 elasticsearch<3.0
 python-memcached<1.60
-python-stdnum<1.17
+python-stdnum<1.20
 python3-vote-core==20170329.0
 python-graph-core<1.9
-requests<2.27
-simplejson<3.18
-tablib<3.1
+requests<2.32
+simplejson<3.20
+tablib<3.6
 
 # These packages are used in development and testing.
 flake8
@@ -45,10 +45,8 @@ ipython
 # the Debian package redis-server in addition to the other software
 # needed to use elasticsearch.
 #
-# Note that django-rq 2.2 requires django>=2.0, so it is pinned
-# to a lower version.
-django-extensions<3.2
-redis<3.6
+django-extensions<3.3
+redis<4.2
 rq<2.0
-django-rq<2.5
+django-rq<2.9
 git+https://github.com/mandx/haystack-rqueue.git

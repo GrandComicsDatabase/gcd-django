@@ -75,6 +75,9 @@
             {{ story|show_credit:"feature_logo" }}
             {{ story|show_credit:"genre" }}
             {{ story.show_characters|linebreaksbr }}
+            {% if story.universe.exists %}
+            {{ story.show_universe }}
+            {% endif %}
             {{ story|show_credit:"synopsis"|linebreaksbr }}
             {{ story|show_credit:"show_awards" }}
             {{ story|show_reprints|linebreaksbr }}

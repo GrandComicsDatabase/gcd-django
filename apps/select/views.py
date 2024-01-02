@@ -19,7 +19,8 @@ from dal import autocomplete
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
-                            Character, CharacterNameDetail, Group, STORY_TYPES
+                            Character, CharacterNameDetail, Group, Universe, \
+                            STORY_TYPES
 from apps.stddata.models import Country, Language
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
@@ -626,6 +627,8 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
                                 autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = CharacterNameDetail.objects.filter(deleted=False)
+        qs = qs.exclude(character__universe__isnull=False,
+                        character__from_related_character__isnull=False)
 
         language = self.forwarded.get('language_code', None)
         group = self.forwarded.get('group', None)
@@ -657,6 +660,25 @@ class GroupAutocomplete(LoginRequiredMixin,
                    .distinct()
 
         qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class UniverseAutocomplete(LoginRequiredMixin,
+                           autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Universe.objects.filter(deleted=False)
+        if self.q.lower().startswith('marvel'):
+            qs = qs.filter(verse__id=2)
+            query = self.q[6:].strip()
+        elif self.q.lower().startswith('dc'):
+            qs = qs.filter(verse__id=1)
+            query = self.q[2:].strip()
+        else:
+            query = self.q
+
+        qs = qs.filter(Q(**{'name__icontains': query}) |
+                       Q(**{'designation__icontains': query}) )
 
         return qs
 

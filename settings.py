@@ -166,7 +166,7 @@ INSTALLED_APPS = (
     'imagekit',
     'haystack',
     'bootstrap3',
-    'contact_form',
+    'django_contact_form',
     'captcha',
     'crispy_forms',
     'pagedown.apps.PagedownConfig',
@@ -239,8 +239,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # 3rd-party app settings
 #################################################################################
 
-COMPRESS_FILTERS = {'css': ['compressor.filters.css_default.CssAbsoluteFilter',
-                            'compressor.filters.cssmin.rCSSMinFilter'],}
+# COMPRESS_FILTERS = {'css': ['compressor.filters.css_default.CssAbsoluteFilter',
+#                             'compressor.filters.cssmin.rCSSMinFilter'],
+#                     'js': ['compressor.filters.jsmin.rJSMinFilter']}
 
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
@@ -412,6 +413,8 @@ VOTING_DIR = abspath(join(dirname(__file__), 'voting'))
 DUMP_DIR = 'dumps'
 MYSQL_DUMP = 'current.zip'
 POSTGRES_DUMP = 'pg-current.zip'
+NAME_VALUE_DUMP = 'current_name_value.zip'
+SQLITE_DUMP = 'current_sqlite.zip'
 
 # Amount of time that must pass before a user can download the same
 # dump (or similar) file again, in minutes.

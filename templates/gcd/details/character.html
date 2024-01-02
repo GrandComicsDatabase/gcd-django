@@ -26,6 +26,9 @@ GCD :: Character :: {{ character.name }}
 {% if character.disambiguation %}
         <p><strong>Disambiguation:</strong> {{ character.disambiguation }}</p>
 {% endif %}
+{% if character.universe %}
+        <p><strong>Universe:</strong> {{ character.universe }}</p>
+{% endif %}
 {% if character.year_first_published %}
         <p><strong>First published in:</strong> {{ character.display_year_first_published }}</p>
 {% endif %}
@@ -47,11 +50,12 @@ GCD :: Character :: {{ character.name }}
       </dl>
       <ul style="columns: 2;">
 	<li><a href='{% url "character_creators" character_id=character.id %}'>Creator Checklist (via linked story records)</a></li>
+	<li><a href='{% url "character_creator_names" character_id=character.id %}'>Creator Name Checklist (via linked story records)</a></li>
         <li><a href='{% url "character_issues" character_id=character.id %}'>Issue Checklist (via linked story records)</a></li>
   {% if character.active_specifications %}
         <li><a href='{% url "character_issues_down" character_id=character.id %}'>Issue Checklist, including specifications (via linked story records)</a></li>
   {% endif %}
-  {% if character.active_generalisations %}
+  {% if character.active_generalisations and not character.universe %}
         <li><a href='{% url "character_issues_up" character_id=character.id %}'>Issue Checklist, including generalisations (via linked story records)</a></li>
   {% endif %}
         <li><a href='{% url "character_covers" character_id=character.id %}'>Cover List (via linked story records)</a></li>
@@ -66,12 +70,25 @@ GCD :: Character :: {{ character.name }}
     {% endif %}
     {% for name in additional_names %}
             <li style="page-break-inside: avoid;">
-              {{ name.name }}
+              <a href='{% url "character_name_issues" character_name_id=name.id %}'>{{ name.name }}</a>
             </li>
     {% endfor %}
           </ol>
   {% endif %}
 
+  {% if character.active_universes %}
+        <hr>
+        <h3>Appeared in Universes:</h3>
+        <table style="border-collapse: collapse;">
+          <tr><td style="padding: 0"><ul style="margin: 0">
+            <li><a href='{% url "character_issues_per_universe" character_id=character.id universe_id=-1 %}'>without a universe</a></li>
+          {% for universe in character.active_universes %}
+          <tr><td style="padding: 0"><ul style="margin: 0">
+            <li><a href='{% url "character_issues_per_universe" character_id=character.id universe_id=universe.id %}'>{{ universe }}</a></li></td>
+            <td style="padding:0 0 0 2em">{{ character|character_for_universe:universe.id }}</td></tr>
+          {% endfor %}
+        </table>
+  {% endif %}
   {% if character.active_relations %}
         <hr>
         <h3>Relations:</h3>

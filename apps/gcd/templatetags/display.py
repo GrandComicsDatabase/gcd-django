@@ -526,3 +526,14 @@ def short_pub_type(publication_type):
 @register.filter
 def pre_process_relation(relation, creator):
     return relation.pre_process_relation(creator)
+
+
+@register.filter
+def character_for_universe(character, universe):
+    if character.active_specifications().filter(
+       to_character__universe=universe).count() == 1:
+        return mark_safe(absolute_url(
+          character.active_specifications()
+          .get(to_character__universe=universe).to_character))
+    else:
+        return ''

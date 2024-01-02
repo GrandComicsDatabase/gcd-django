@@ -1894,6 +1894,7 @@ def search_stories(data, op):
                                data['issue_editing']}) |
                           Q(**{'issue__credits__creator__name__%s' % op:
                                data['issue_editing'],
+                               'issue__credits__deleted': False,
                                'issue__credits__credit_type__id':
                                    CREDIT_TYPES['editing']}))
         else:  # cut off 'story__'
@@ -1902,6 +1903,7 @@ def search_stories(data, op):
                           Q(**{'%scredits__creator__name__%s' % (prefix[:-7],
                                                                  op):
                                data['issue_editing'],
+                               '%scredits__deleted' % (prefix[:-7]): False,
                                '%scredits__credit_type__id' % (prefix[:-7]):
                                    CREDIT_TYPES['editing']}))
 

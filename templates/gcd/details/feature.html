@@ -42,7 +42,8 @@ GCD :: Feature :: {{ feature.name }}
 <p>{{ feature|show_credit:'keywords' }}</P>
       </dl>
       <ul style="columns: 2;">
-        <li><a href='{% url "feature_creatorlist" feature_id=feature.id %}'>Creator Checklist (via linked story records)</a></li>
+        <li><a href='{% url "feature_creators" feature_id=feature.id %}'>Creator Checklist (via linked story records)</a></li>
+        <li><a href='{% url "feature_creator_names" feature_id=feature.id %}'>Creator Name Checklist (via linked story records)</a></li>
 {% if feature.feature_type.id == 1%}
         <li><a href='{% url "feature_overview" feature_id=feature.id %}'>Issue Overview (via linked story records)</a></li>
 {% endif %}

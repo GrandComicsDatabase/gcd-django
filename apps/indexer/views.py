@@ -29,7 +29,7 @@ from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 from django.utils.translation import ugettext as _
 
-from contact_form.views import ContactFormView
+from django_contact_form.views import ContactFormView
 
 from apps.indexer.models import Indexer, Error
 from apps.indexer.forms import ProfileForm, RegistrationForm, \

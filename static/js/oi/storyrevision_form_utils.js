@@ -55,7 +55,7 @@ $(document).on('change', 'input[type=checkbox]', function () {
 
     if (match) {
         if (match[2] == 'additional_information'){
-            var fields = ['role', 'group', 'is_flashback', 'is_origin', 'is_death', 'notes'];
+            var fields = ['role', 'group', 'universe', 'group_universe', 'is_flashback', 'is_origin', 'is_death', 'notes'];
             for (var i=0; i<fields.length; i++){
                 var inputRow = $('#id_story_character_revisions-' + match[1] + '-' + fields[i])
                             .parent().parent();

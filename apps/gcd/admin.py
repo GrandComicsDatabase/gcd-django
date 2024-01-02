@@ -4,7 +4,7 @@ from .models import (MembershipType, NameType, NonComicWorkRole, CreditType,
                      NonComicWorkType, RelationType, School, SeriesBondType,
                      SourceType, FeatureType, FeatureRelationType, StoryType,
                      Degree, CodeNumberType, CharacterRelationType,
-                     CharacterRole, ExternalSite)
+                     Multiverse, CharacterRole, ExternalSite)
 
 
 class StoryTypeAdmin(admin.ModelAdmin):
@@ -23,6 +23,7 @@ class ImpGrantAdmin(admin.ModelAdmin):
 
 # register models without editing to admin panel
 admin.site.register(StoryType, StoryTypeAdmin)
+admin.site.register(Multiverse)
 admin.site.register(CharacterRole)
 admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 admin.site.register(NameType)

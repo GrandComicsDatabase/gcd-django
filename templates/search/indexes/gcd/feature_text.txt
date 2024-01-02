@@ -1,5 +1,5 @@
 {% load credits %}
-{{ object.name|safe }}
+{{ object.name_with_disambiguation|safe }}
 {{ object.notes|safe }}
 {% for feature_logo in object.active_logos %}
     {{ feature_logo.name|safe }}

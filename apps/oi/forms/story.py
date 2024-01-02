@@ -19,12 +19,12 @@ from crispy_forms.bootstrap import (
 from apps.oi.models import (
     get_reprint_field_list, get_story_field_list,
     BiblioEntryRevision, ReprintRevision, StoryRevision,
-    StoryCreditRevision, StoryCharacterRevision)
+    StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision)
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
                             Feature, FeatureLogo, CharacterNameDetail, Group,\
-                            STORY_TYPES, NON_OPTIONAL_TYPES, \
+                            Universe, STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
 from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
@@ -170,19 +170,32 @@ def get_story_revision_form(revision=None, user=None,
 
         def save_characters(self, instance):
             appearing_characters = self.cleaned_data['appearing_characters']
+            if self.cleaned_data['use_universe'] and \
+               self.cleaned_data['universe'].count() == 1:
+                universe = self.cleaned_data['universe'].get()
+            else:
+                universe = None
             if appearing_characters:
                 for character in appearing_characters:
                     story_character = StoryCharacterRevision(
                       character=character,
+                      universe=universe,
                       story_revision=instance,
                       changeset=changeset)
                     story_character.save()
             group = self.cleaned_data['group']
             if group:
                 group_members = self.cleaned_data['group_members']
+                story_group = StoryGroupRevision(group=group,
+                                                 universe=universe,
+                                                 story_revision=instance,
+                                                 changeset=changeset)
+                story_group.save()
                 for member in group_members:
                     story_character = StoryCharacterRevision(
                       character=member,
+                      universe=universe,
+                      group_universe=universe,
                       story_revision=instance,
                       changeset=changeset)
                     story_character.save()
@@ -331,7 +344,8 @@ StoryRevisionFormSet = inlineformset_factory(
 class StoryCharacterRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCharacterRevision
-        fields = ['character', 'additional_information', 'role', 'group',
+        fields = ['character', 'additional_information', 'role', 'universe',
+                  'group', 'group_universe',
                   'is_flashback', 'is_origin', 'is_death', 'notes']
         help_texts = {
             'role':
@@ -363,6 +377,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
         instance = kwargs.get('instance', None)
         if instance:
             if instance.role or instance.group.exists() or \
+               instance.universe or \
                instance.is_flashback or instance.is_origin or \
                instance.is_death or instance.notes:
                 self.fields['additional_information'].initial = True
@@ -393,10 +408,114 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       help_text='Click to enter role, group, flashback, origin, death, or '
                 'notes.')
 
+    universe = forms.ModelChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universe, if any, from which the character '
+                'originates.'
+    )
+
+    group_universe = forms.ModelChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universe, if any, for the group of the character. '
+                'If left empty, the value will default to the selected '
+                'universe for the character.'
+    )
+
+    def save(self, commit=True):
+        instance = super(StoryCharacterRevisionForm,
+                         self).save(commit=commit)
+        if instance.id and instance.group.exists() and instance.universe\
+           and not instance.group_universe:
+            instance.group_universe = instance.universe
+        if commit:
+            instance.save()
+        return instance
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['group_universe'] and not cd['group']:
+            raise forms.ValidationError(
+              ['Cannot select a group universe without a group.'])
+
+
 
 StoryCharacterRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryCharacterRevision, form=StoryCharacterRevisionForm,
     can_delete=True, extra=1)
+
+
+class StoryGroupRevisionForm(forms.ModelForm):
+    class Meta:
+        model = StoryCharacterRevision
+        fields = ['group', 'notes']
+        widgets = {
+            'notes': forms.TextInput(attrs={'class': 'wide'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(StoryGroupRevisionForm, self).__init__(*args, **kwargs)
+        # The helper is currently not used !
+        # See comments above for the StoryCreditRevisionForm
+        self.helper = FormHelper()
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        self.formset_helper = StoryFormSetHelper()
+        fields = list(self.fields)
+        fields.append('id')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields]
+        self.helper.layout = Layout(*(f for f in field_list))
+
+    group = forms.ModelChoiceField(
+      queryset=Group.objects.all(),
+      widget=autocomplete.ModelSelect2(url='group_autocomplete',
+                                       forward=['language_code'],
+                                       attrs={'style': 'width: 60em'}),
+      required=True,
+      help_text='By entering (any part of) a name select a group from the'
+                ' database.'
+    )
+
+    universe = forms.ModelChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universe, if any, from which the group '
+                'originates.'
+    )
+
+class CustomInlineFormSet(forms.BaseInlineFormSet):
+    def _should_delete_form(self, form):
+        # TODO workaround, better to not allow the removal
+        # do we have access to deleted characters in this form ?
+        # otherwise deleted characters and groups is a two step
+        # procedure
+        if hasattr(form.instance, 'group'):
+            if form.instance.story_revision.story_character_revisions\
+                            .filter(group=form.instance.group,
+                                    deleted=False).exists():
+                form.cleaned_data['DELETE'] = False
+                return False
+        return super(CustomInlineFormSet, self)._should_delete_form(form)
+
+    def clean(self):
+        super(CustomInlineFormSet, self).clean()
+
+
+StoryGroupRevisionFormSet = inlineformset_factory(
+    StoryRevision, StoryGroupRevision, form=StoryGroupRevisionForm,
+    can_delete=True, extra=1, formset=CustomInlineFormSet)
 
 
 # check with crispy 2.0, why here and in custom_layout ?
@@ -425,6 +544,8 @@ class StoryRevisionForm(forms.ModelForm):
         fields.insert(fields.index('no_script'), 'no_creator_help')
         fields.insert(fields.index('script'), 'creator_help')
         fields.insert(fields.index('characters'), 'character_help')
+        fields.insert(fields.index('characters'), 'universe')
+        fields.insert(fields.index('characters'), 'use_universe')
         fields.insert(fields.index('characters'), 'appearing_characters')
         fields.insert(fields.index('characters'), 'group')
         fields.insert(fields.index('group')+1, 'group_members')
@@ -471,18 +592,22 @@ class StoryRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credits_start:
-                                               characters_start-5]])
+                                               characters_start-7]])
         field_list.append(HTML('<tr><td><hr>&nbsp;<strong>Characters:</strong>'
                                '</td><th><hr></th></tr>'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start-5:
+                           for field in fields[characters_start-7:
                                                characters_start]])
         field_list.append(Formset('characters_formset'))
-        characters_end = len(field_list) + 1
+        field_list.append(Field(fields[characters_start],
+                                template='oi/bits/uni_field.html'))
+        field_list.append(Formset('groups_formset'))
+        characters_end = len(field_list)
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start:]])
+                           for field in fields[characters_start+1:]])
+        # characters_end += 1
         if not user.indexer.use_tabs:
             self.helper.layout = Layout(*(f for f in field_list))
         else:
@@ -602,6 +727,23 @@ class StoryRevisionForm(forms.ModelForm):
         required=False,
         label_suffix='',
         label='c)')
+
+    universe = forms.ModelMultipleChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universes, if any, in which the story takes place.'
+    )
+
+    use_universe = forms.BooleanField(
+        required=False,
+        initial=True,
+        help_text='The selected universe is the universe the characters and '
+                  'groups entered under a) and b) originate from. '
+                  'If more than one universe is selected above, this '
+                  'flag has no effect.')
 
     script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
                              required=False,
@@ -820,9 +962,7 @@ class StoryRevisionForm(forms.ModelForm):
                     raise forms.ValidationError(
                       ['Incorrect feature logo for this sequence.'])
 
-        if cd['group'] and not cd['group_members']:
-            raise forms.ValidationError(
-                ['Groups can only be entered with group members.'])
+        # TODO a group with members in the story cannot be removed
 
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
@@ -843,9 +983,9 @@ class StoryRevisionForm(forms.ModelForm):
                     elif seq_type == 'script' and credit_type in ['10', '11',
                                                                   '12', '13']:
                         seq_type_found = True
-                    elif seq_type in ['pencils', 'inks'] and \
-                      credit_type in ['7', '8', '9', '10',
-                                      '11', '12', '13', '14']:
+                    elif (seq_type in ['pencils', 'inks'] and
+                          credit_type in ['7', '8', '9', '10',
+                                          '11', '12', '13', '14']):
                         seq_type_found = True
                     elif seq_type == 'colors' and credit_type in ['8', '9',
                                                                   '11', '13']:

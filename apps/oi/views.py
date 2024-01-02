@@ -88,6 +88,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            get_story_revision_form,
                            StoryRevisionFormSet,
                            StoryCharacterRevisionFormSet,
+                           StoryGroupRevisionFormSet,
                            get_feature_logo_revision_form,
                            get_feature_relation_revision_form,
                            get_date_revision_form,
@@ -2958,6 +2959,8 @@ def add_story(request, issue_revision_id, changeset_id):
         credits_formset = StoryRevisionFormSet(request.POST or None)
         characters_formset = StoryCharacterRevisionFormSet(
           request.POST or None)
+        groups_formset = StoryGroupRevisionFormSet(
+          request.POST or None)
 
         if not form.is_valid() or not credits_formset.is_valid() or \
            not characters_formset.is_valid():
@@ -2970,7 +2973,9 @@ def add_story(request, issue_revision_id, changeset_id):
             if hasattr(form, 'cleaned_data'):
                 StoryRevision.extra_forms_errors(
                   request, form, {'credits_formset': credits_formset,
-                                  'characters_formset': characters_formset, })
+                                  'characters_formset': characters_formset,
+                                  'groups_formset': groups_formset
+                                  })
 
             return oi_render(
                 request, 'oi/edit/add_frame.html',
@@ -2982,6 +2987,7 @@ def add_story(request, issue_revision_id, changeset_id):
                     'settings': settings,
                     'credits_formset': credits_formset,
                     'characters_formset': characters_formset,
+                    'groups_formset': groups_formset
                 })
 
         revision = form.save(commit=False)
@@ -3002,7 +3008,8 @@ def add_story(request, issue_revision_id, changeset_id):
                                      new_state=changeset.state)
 
         extra_forms = {'credits_formset': credits_formset,
-                       'characters_formset': characters_formset, }
+                       'characters_formset': characters_formset,
+                       'groups_formset': groups_formset}
         revision.process_extra_forms(extra_forms)
         form.save_m2m()
         revision.post_form_save()
