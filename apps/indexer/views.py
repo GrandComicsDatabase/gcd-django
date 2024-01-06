@@ -750,4 +750,4 @@ class CustomContactFormView(ContactFormView):
         return super(CustomContactFormView, self).get(request=request)
 
     def get_success_url(self):
-        return urlresolvers.reverse('user_contact_form_sent')
+        return urlresolvers.reverse('django_contact_form_sent')

@@ -50,7 +50,7 @@ basic_patterns = [
         name='contact_form'),
     url(r'^contact/sent/$',
         TemplateView.as_view(
-            template_name='contact_form/contact_form_sent.html'
+            template_name='django_contact_form/contact_form_sent.html'
         ),
         name='contact_form_sent'),
 ]

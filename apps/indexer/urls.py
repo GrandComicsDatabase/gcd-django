@@ -75,10 +75,10 @@ urlpatterns = [
             form_class=UserContactForm,
             template_name='indexer/user_contact_form.html',
         ),
-        name='user_contact_form'),
+        name='django_contact_form'),
     url(r'^accounts/contact/sent/$',
         TemplateView.as_view(
             template_name='indexer/user_contact_form_sent.html'
         ),
-        name='user_contact_form_sent'),
+        name='django_contact_form_sent'),
 ]

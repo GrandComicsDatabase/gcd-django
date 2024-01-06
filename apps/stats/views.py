@@ -67,7 +67,7 @@ def download(request):
 
     m_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
                           settings.MYSQL_DUMP)
-    mv_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
+    nv_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
                            settings.NAME_VALUE_DUMP)
     sqlite_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
                                settings.SQLITE_DUMP)
