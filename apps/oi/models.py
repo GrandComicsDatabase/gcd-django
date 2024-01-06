@@ -4075,6 +4075,7 @@ class IssueRevision(Revision):
             ('indicia_publisher',),
             ('brand',),
             ('brand', 'group'),
+            ('indicia_printer',),
         })
 
     def compare_changes(self, compare_revision=None):

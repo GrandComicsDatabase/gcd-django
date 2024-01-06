@@ -240,24 +240,6 @@ class BrandGroup(BasePublisher):
         return Issue.objects.filter(brand__in=emblems_id,
                                     deleted=False)
 
-    def update_cached_counts(self, deltas, negate=False):
-        """
-        Updates the database fields that cache child object counts.
-
-        Expects a deltas object in the form returned by stat_counts()
-        methods, and also expected by CountStats.update_all_counts().
-        """
-        if negate:
-            deltas = deltas.copy()
-            for k, v in deltas.items():
-                deltas[k] = -v
-
-        # Don't apply F() if delta is 0, because we don't want
-        # a lazy evaluation F-object result in a count field
-        # if we don't absolutely need it.
-        if deltas.get('issues', 0):
-            self.issue_count = F('issue_count') + deltas['issues']
-
     def stat_counts(self):
         """
         Returns all count values relevant to this brand group.
@@ -403,8 +385,6 @@ class Printer(BasePublisher):
         if deltas.get('issues', 0):
             self.issue_count = F('issue_count') + deltas['issues']
 
-    _update_stats = True
-
     def show_issue_count(self):
         from .issue import Issue
         return Issue.objects.filter(indicia_printer__parent=self,
@@ -433,6 +413,28 @@ class IndiciaPrinter(BasePublisher):
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.items():
+                deltas[k] = -v
+
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('issues', 0):
+            self.issue_count = F('issue_count') + deltas['issues']
+
+        if deltas.get('issues', 0):
+            self.parent.issue_count = F('issue_count') + deltas['issues']
+            self.parent.save()
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
