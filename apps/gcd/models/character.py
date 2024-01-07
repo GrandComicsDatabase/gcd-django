@@ -207,8 +207,7 @@ class Character(CharacterGroupBase):
         return self.from_related_character.filter(relation_type_id=6)
 
     def active_memberships(self):
-        return self.memberships.all().order_by('year_joined',
-                                               'group__sort_name')
+        return self.memberships.all()
 
     def active_universes(self):
         from .story import StoryCharacter
@@ -236,7 +235,7 @@ class Character(CharacterGroupBase):
                 'show_character',
                 kwargs={'character_id': self.id})
 
-    # TODO, should groupds have a universe ?
+    # TODO, should groups have a universe ?
     def __str__(self):
         string = super(Character, self).__str__()
         if self.universe:
@@ -295,8 +294,7 @@ class Group(CharacterGroupBase):
                self.to_related_group.all()
 
     def active_members(self):
-        return self.members.all().order_by('year_joined',
-                                           'character__sort_name')
+        return self.members.all()
 
     def has_dependents(self):
         if self.active_members().exists():
@@ -390,7 +388,7 @@ class GroupMembership(GcdLink):
     class Meta:
         db_table = 'gcd_group_membership'
         app_label = 'gcd'
-        ordering = ('character', 'group', 'membership_type')
+        ordering = ('character__sort_name', 'group__sort_name', 'year_joined')
         verbose_name_plural = 'Group Memberships'
 
     character = models.ForeignKey(Character, on_delete=models.CASCADE,
