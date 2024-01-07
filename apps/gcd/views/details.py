@@ -42,7 +42,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
                             Feature, FeatureLogo, FeatureRelation, \
                             Printer, IndiciaPrinter, School, Story, \
                             Character, Group, CharacterNameDetail, Universe, \
-                            StoryCredit, \
+                            Multiverse, StoryCredit, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import FeatureCreatorTable,\
                                     FeatureCreatorNameTable,\
@@ -3040,6 +3040,21 @@ def show_feature_relation(request, feature_relation, preview=False):
     return render(request, 'gcd/details/feature_relation.html', vars)
 
 
+def multiverse(request, multiverse_id):
+    """
+    Display the details page for a Universe.
+    """
+    multiverse = get_gcd_object(Multiverse, multiverse_id)
+    return show_multiverse(request, multiverse)
+
+
+def show_multiverse(request, multiverse, preview=False):
+    vars = {'multiverse': multiverse,
+            'error_subject': '%s' % multiverse,
+            'preview': preview}
+    return render(request, 'gcd/details/multiverse.html', vars)
+
+
 def universe(request, universe_id):
     """
     Display the details page for a Universe.
@@ -3050,7 +3065,7 @@ def universe(request, universe_id):
 
 def show_universe(request, universe, preview=False):
     vars = {'universe': universe,
-            'error_subject': '%s' % feature,
+            'error_subject': '%s' % universe,
             'preview': preview}
     return render(request, 'gcd/details/universe.html', vars)
 

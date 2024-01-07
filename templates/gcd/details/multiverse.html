@@ -1,0 +1,44 @@
+{% extends "gcd/base_content.html" %}
+
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Multiverse :: {{ multiverse.name }}
+{% endblock %}
+
+{% block content_header %}
+<h1 class="item_id">
+  <div class="left">
+    {{ multiverse.name }}
+  </div>
+</h1>
+{% endblock content_header %}
+
+{% block control %}
+<div class="control_body">
+    <div id="control_container">
+        <div id="control_center">
+            <h3>Universes</h3>
+            <table id="publisher_detail_listing" class="listing">
+            <tr>
+                <th> Name</th>
+                <th> Designation</th>
+                <th> First Published </th>
+            </tr>
+            {% for universe in multiverse.active_universes %}
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+                <td> <a href ="{{ universe.get_absolute_url }}">{{ universe.name }}</a> </td>
+                <td> <a href ="{{ universe.get_absolute_url }}">{{ universe.designation }}</a> </td>
+                <td> {{ universe.year_first_published|default:"" }} </td>
+            </tr>
+            {% endfor %}
+            </table>
+        </div> <!-- control_center -->
+    </div> <!-- control_container -->
+</div>
+{% endblock control %}
+
+
+

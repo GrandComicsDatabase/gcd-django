@@ -18,6 +18,7 @@ GCD :: Universe :: {{ universe.name }}
 
 {% block content %}
       <dl class="pub_data">
+        <p><strong>Multiverse:</strong> <a href="{{ universe.verse.get_absolute_url }}">{{ universe.verse }}</a></p>
 {% if universe.year_first_published %}
         <p><strong>First published in:</strong> {{ universe.year_first_published }}</p>
 {% endif %}

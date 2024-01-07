@@ -22,6 +22,14 @@ class Multiverse(GcdData):
     mainstream = models.ForeignKey('Universe', on_delete=models.CASCADE,
                                    related_name='is_mainstream')
 
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_multiverse',
+                kwargs={'multiverse_id': self.id})
+
+    def active_universes(self):
+        return self.universe_set.exclude(deleted=True)
+
     def __str__(self):
         return '%s' % (self.name)
 
@@ -32,7 +40,7 @@ class Universe(GcdData):
     """
     class Meta:
         app_label = 'gcd'
-        ordering = ('multiverse', 'designation', 'name')
+        ordering = ('verse', 'designation', 'name')
         verbose_name_plural = 'Universes'
 
     multiverse = models.CharField(max_length=255, db_index=True)
@@ -53,8 +61,8 @@ class Universe(GcdData):
 
     @property
     def display_name(self):
-        if self.multiverse:
-            display_name = self.multiverse + ': '
+        if self.verse:
+            display_name = self.verse.name + ': '
         else:
             display_name = ''
         if self.name:
@@ -79,7 +87,7 @@ class Universe(GcdData):
             return '%s' % (self.name)
 
     def __str__(self):
-        return '%s : %s' % (self.multiverse, self.universe_name())
+        return '%s : %s' % (self.verse, self.universe_name())
 
 
 class CharacterNameDetail(GcdData):

@@ -359,6 +359,8 @@ urlpatterns = [
     url(r'^feature_relation/(?P<feature_relation_id>\d+)/$',
       gcd_views.details.feature_relation, name='show_feature_relation'),
 
+    url(r'^multiverse/(?P<multiverse_id>\d+)/$',
+      gcd_views.details.multiverse, name='show_multiverse'),
     url(r'^universe/(?P<universe_id>\d+)/$',
       gcd_views.details.universe, name='show_universe'),
     # Character
