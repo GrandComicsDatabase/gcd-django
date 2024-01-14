@@ -211,7 +211,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
                     characters += ' (%s)' % member.universe.universe_name()
         if first_member is True:
             if url:
-                characters += '<a href="%s">%s</a>; ' \
+                characters += '<a href="%s"><b>%s</b></a><br> ' \
                                 % (group.get_absolute_url(), esc(group.name))
             else:
                 characters += '%s; ' % (group.name)
@@ -275,7 +275,10 @@ def show_characters(story, url=True, css_style=True, compare=False):
         else:
             text_characters = story.characters
         if characters:
-            characters += '; %s' % text_characters
+            if first:
+                characters += '%s' % text_characters
+            else:
+                characters += '; %s' % text_characters
         else:
             characters = text_characters
 
