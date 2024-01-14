@@ -44,10 +44,8 @@
           <dt> Indicia Printers:
           <dd> {{ printer.indicia_printer_count }}
 {% endif %}
-          <p>
-	  <ul style="columns: 2;">
-          <li><a href='{% url "printer_issues" printer_id=printer.id %}'>Issue List</a></li>
-          </ul>
+          <dt> Total Number of Issues:
+          <dd> <a href='{% url "printer_issues" printer_id=printer.id %}'>{{ printer.issue_count }} (Issue List)</a>
 
 {% if printer.url or printer.notes or printer.has_keywords %}
         </dl>
@@ -109,12 +107,14 @@
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Indicia Printer </th>
+    <th> Issues </th>
     <th> Year Began</th>
     <th> Year Ended</th>
   </tr>
 {% for indicia_printer in indicia_printers %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ indicia_printer.get_absolute_url }}">{{ indicia_printer.name }}</a> </td>
+    <td> {{ indicia_printer.issue_count }} </td>
     <td> {{ indicia_printer.year_began|default:"" }} </td>
     <td> {{ indicia_printer.year_ended|default:"" }} </td>
   </tr>

@@ -44,9 +44,11 @@ GCD :: Indicia Printer :: {{ indicia_printer.name }}
       <dl class="pub_data">
         <dt> Country:</dt>
         <dd> {{ indicia_printer.country.name }}</dd>
-          <ul style="columns: 2;">
+        <ul style="columns: 2;">
           <li><a href='{% url "indicia_printer_issues" indicia_printer_id=indicia_printer.id %}'>Issue List</a></li>
-          </ul>
+        </ul>
+        <dt> Total Number of Issues:
+        <dd> <a href="{{ publisher.get_absolute_url }}issues/">{{ indicia_printer.issue_count }} (Issue List)</a>
 {% if indicia_printer.url %}
         <dt> Web Site:
         <dd> <a href="{{ indicia_printer.url }}">{{ indicia_printer.url }}</a>
