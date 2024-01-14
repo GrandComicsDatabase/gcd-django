@@ -232,14 +232,14 @@ def generate_sizes(cover, im):
                    int(width / full_cover.size[0] * full_cover.size[1])
             if size[1] < 400:
                 size = int(full_cover.size[0]*400./full_cover.size[1]), 400
-            scaled = full_cover.resize(size, pyImage.ANTIALIAS)
+            scaled = full_cover.resize(size, pyImage.LANCZOS)
         else:
             if width == 400 and im.size[0] > im.size[1]:
                 # for landscape covers use height as base size
                 size = int(float(width)/im.size[1]*im.size[0]), width
             else:
                 size = width, int(float(width)/im.size[0]*im.size[1])
-            scaled = im.resize(size, pyImage.ANTIALIAS)
+            scaled = im.resize(size, pyImage.LANCZOS)
         scaled.save(scaled_name, subsampling='4:4:4')
 
 

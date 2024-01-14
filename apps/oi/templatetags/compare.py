@@ -162,7 +162,7 @@ def field_value(revision, field):
             printers = printers[:-2]
         return mark_safe(printers)
     elif field == 'universe':
-        if type(revision).__name__ == 'CharacterRevision':
+        if type(revision).__name__ in ['CharacterRevision', 'GroupRevision']:
             return mark_safe(absolute_url(value))
         universes = ''
         for universe in value.all():
