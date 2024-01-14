@@ -5711,7 +5711,19 @@ class StoryRevision(Revision):
                 # no processing for deleted appearances
                 if story_character.deleted:
                     continue
-                # TODO handle universes, i.e. a superhero can appear twice
+                # make sure groups with the group universe exist for each
+                # character appearance that has a group
+                if story_character.group.count():
+                    for group in story_character.group.all():
+                        story_group = self.story_group_revisions.filter(
+                          group=group, universe=story_character.group_universe,
+                          deleted=False)
+                        if not story_group.exists():
+                            story_group = StoryGroupRevision.objects.create(
+                              group=group,
+                              universe=story_character.group_universe,
+                              story_revision=self,
+                              changeset=self.changeset)
                 # Check if a superhero has a unique civilian identity.
                 if story_character.character.character.to_related_character\
                                   .filter(relation_type__id=2).count() == 1:
@@ -5738,6 +5750,16 @@ class StoryRevision(Revision):
                         story_character.group_universe = None
                         story_character.notes = ''
                         story_character.save()
+            # check for extra groups with same universe added
+            for story_group in self.story_group_revisions\
+                                   .filter(deleted=False,
+                                           notes='',
+                                           story_group_id=None):
+                other_group_rev = self.story_group_revisions.filter(
+                  group=story_group.group, universe=story_group.universe)\
+                  .exclude(id=story_group.id)
+                if other_group_rev.exists():
+                    story_group.delete()
 
     def old_credits(self):
         for credit_type in ('script', 'pencils', 'inks', 'colors', 'letters',

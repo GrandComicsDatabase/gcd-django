@@ -23,7 +23,7 @@ from apps.oi.models import (
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
-                            Feature, FeatureLogo, CharacterNameDetail, Group,\
+                            Feature, FeatureLogo, CharacterNameDetail, Group, \
                             Universe, STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
@@ -415,7 +415,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
                           attrs={'style': 'width: 60em'}),
       required=False,
       help_text='Select the universe, if any, from which the character '
-                'originates.'
+                'originates. Use "mainstream" for the principal universe '
+                'of a publisher.'
     )
 
     group_universe = forms.ModelChoiceField(
@@ -446,7 +447,6 @@ class StoryCharacterRevisionForm(forms.ModelForm):
               ['Cannot select a group universe without a group.'])
 
 
-
 StoryCharacterRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryCharacterRevision, form=StoryCharacterRevisionForm,
     can_delete=True, extra=1)
@@ -455,7 +455,7 @@ StoryCharacterRevisionFormSet = inlineformset_factory(
 class StoryGroupRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCharacterRevision
-        fields = ['group', 'notes']
+        fields = ['group', 'universe', 'notes']
         widgets = {
             'notes': forms.TextInput(attrs={'class': 'wide'}),
         }
@@ -492,30 +492,14 @@ class StoryGroupRevisionForm(forms.ModelForm):
                           attrs={'style': 'width: 60em'}),
       required=False,
       help_text='Select the universe, if any, from which the group '
-                'originates.'
+                'originates. Use "mainstream" for the principal universe '
+                'of a publisher.'
     )
-
-class CustomInlineFormSet(forms.BaseInlineFormSet):
-    def _should_delete_form(self, form):
-        # TODO workaround, better to not allow the removal
-        # do we have access to deleted characters in this form ?
-        # otherwise deleted characters and groups is a two step
-        # procedure
-        if hasattr(form.instance, 'group'):
-            if form.instance.story_revision.story_character_revisions\
-                            .filter(group=form.instance.group,
-                                    deleted=False).exists():
-                form.cleaned_data['DELETE'] = False
-                return False
-        return super(CustomInlineFormSet, self)._should_delete_form(form)
-
-    def clean(self):
-        super(CustomInlineFormSet, self).clean()
 
 
 StoryGroupRevisionFormSet = inlineformset_factory(
     StoryRevision, StoryGroupRevision, form=StoryGroupRevisionForm,
-    can_delete=True, extra=1, formset=CustomInlineFormSet)
+    can_delete=True, extra=1)
 
 
 # check with crispy 2.0, why here and in custom_layout ?
@@ -735,6 +719,7 @@ class StoryRevisionForm(forms.ModelForm):
                           attrs={'style': 'width: 60em'}),
       required=False,
       help_text='Select the universes, if any, in which the story takes place.'
+                ' Use "mainstream" for the principal universe of a publisher.'
     )
 
     use_universe = forms.BooleanField(
@@ -961,8 +946,6 @@ class StoryRevisionForm(forms.ModelForm):
                                          .count():
                     raise forms.ValidationError(
                       ['Incorrect feature logo for this sequence.'])
-
-        # TODO a group with members in the story cannot be removed
 
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
