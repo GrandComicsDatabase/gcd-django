@@ -133,8 +133,9 @@ GCD :: Character :: {{ character.name }}
         {% endif %}
     {% for membership in character.active_memberships %}
         <li style="page-break-inside: avoid;">
-		<a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group }}</a> (<a href="{% url 'show_group_membership' group_membership_id=membership.id %}">{{ membership.membership_type }}</a>)
-        {{ membership.display_years }}
+          <a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group }}</a>
+          <br>
+          <a href="{% url 'show_group_membership' group_membership_id=membership.id %}">{{ membership.display_years }} ({{ membership.membership_type }}</a>)
         {% if membership.notes %}
           <br><strong>Notes: </strong>{{ membership.notes }}
         {% endif %}

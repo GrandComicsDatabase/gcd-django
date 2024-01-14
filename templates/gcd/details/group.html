@@ -26,6 +26,9 @@ GCD :: Group :: {{ group.name }}
 {% if group.disambiguation %}
         <p><strong>Disambiguation:</strong> {{ group.disambiguation }}</p>
 {% endif %}
+{% if group.universe %}
+        <p><strong>Universe:</strong> {{ group.universe|absolute_url }}</p>
+{% endif %}
 {% if group.year_first_published %}
         <p><strong>First published in:</strong> {{ group.display_year_first_published }}</p>
 {% endif %}
@@ -76,8 +79,9 @@ GCD :: Group :: {{ group.name }}
         {% endif %}
     {% for member in group.active_members %}
         <li style="page-break-inside: avoid;">
-		<a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character }}</a> (<a href="{% url 'show_group_membership' group_membership_id=member.id %}">{{ member.membership_type }}</a>)
-        {{ member.display_years }}
+          <a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character }}</a>
+          <br>
+          <a href="{% url 'show_group_membership' group_membership_id=member.id %}">{{ member.display_years }} ({{ member.membership_type }}</a>)
         {% if member.notes %}
           <br><strong>Notes: </strong>{{ member.notes }}
         {% endif %}
