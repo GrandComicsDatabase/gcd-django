@@ -3097,6 +3097,9 @@ def character_issues(request, character_id, layer=None, universe_id=None,
         if character.active_generalisations():
             filter_character = character.active_generalisations().get()\
                                         .from_character
+        else:
+            filter_character = character
+            universe_id = None
     else:
         filter_character = character
 
@@ -3167,10 +3170,10 @@ def character_creators(request, character_id, creator_names=False):
     universe_id = None
 
     if character.universe:
-        universe_id = character.universe.id
         if character.active_generalisations():
             filter_character = character.active_generalisations().get()\
                                         .from_character
+            universe_id = character.universe.id
 
     if universe_id:
         stories = Story.objects.filter(
@@ -3228,13 +3231,14 @@ def character_creators(request, character_id, creator_names=False):
 
 def character_sequences(request, character_id):
     character = get_gcd_object(Character, character_id)
+    universe_id = None
     heading = 'Sequences for Character %s' % (character)
+
     if character.universe:
-        universe_id = character.universe.id
         if character.active_generalisations():
+            universe_id = character.universe.id
             character = character.active_generalisations().get().from_character
-    else:
-        universe_id = None
+
     if universe_id:
         stories = Story.objects.filter(
           appearing_characters__character__character=character,
@@ -3266,13 +3270,14 @@ def character_sequences(request, character_id):
 
 def character_covers(request, character_id):
     character = get_gcd_object(Character, character_id)
+    universe_id = None
     heading = 'Covers with Character %s' % character.name
+
     if character.universe:
-        universe_id = character.universe.id
         if character.active_generalisations():
+            universe_id = character.universe.id
             character = character.active_generalisations().get().from_character
-    else:
-        universe_id = None
+
     if universe_id:
         issues = Issue.objects.filter(
           story__appearing_characters__character__character=character,
@@ -3310,14 +3315,11 @@ def character_name_issues(request, character_name_id, universe_id=None):
     if not universe_id and character.universe:
         universe_id = character.universe.id
         if character.active_generalisations().filter(
-           from_character__character_names__name=character_name.name,
-           deleted=False):
+           from_character__character_names__name=character_name.name):
             filter_character = character.active_generalisations().get()\
                                              .from_character
             filter_character_name = filter_character.character_names\
-                                    .filter(character_names__name=
-                                            character_name.name,
-                                            deleted=False)
+                                    .get(name=character_name.name)
         else:
             return render(request, 'indexer/error.html',
                           {'error_text':
