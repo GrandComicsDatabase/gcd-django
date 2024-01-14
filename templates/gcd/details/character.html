@@ -76,16 +76,29 @@ GCD :: Character :: {{ character.name }}
           </ol>
   {% endif %}
 
-  {% if character.active_universes %}
+  {% if character.active_universe_origins %}
         <hr>
-        <h3>Appeared in Universes:</h3>
+        <h3>Appearances With Character Universe:</h3>
         <table style="border-collapse: collapse;">
           <tr><td style="padding: 0"><ul style="margin: 0">
             <li><a href='{% url "character_issues_per_universe" character_id=character.id universe_id=-1 %}'>without a universe</a></li>
-          {% for universe in character.active_universes %}
+          {% for universe in character.active_universe_origins %}
           <tr><td style="padding: 0"><ul style="margin: 0">
             <li><a href='{% url "character_issues_per_universe" character_id=character.id universe_id=universe.id %}'>{{ universe }}</a></li></td>
             <td style="padding:0 0 0 2em">{{ character|character_for_universe:universe.id }}</td></tr>
+          {% endfor %}
+        </table>
+  {% endif %}
+  {% if character.active_universe_appearances %}
+        <hr>
+        <h3>Appearances With Story Universe:</h3>
+        <table style="border-collapse: collapse;">
+          <tr><td style="padding: 0"><ul style="margin: 0">
+            <li><a href='{% url "character_story_issues_per_universe" character_id=character.id story_universe_id=-1 %}'>without a universe</a></li>
+          {% for universe in character.active_universe_appearances %}
+          <tr><td style="padding: 0"><ul style="margin: 0">
+            <li><a href='{% url "character_story_issues_per_universe" character_id=character.id story_universe_id=universe.id %}'>{{ universe }}</a></li></td>
+          </tr>
           {% endfor %}
         </table>
   {% endif %}

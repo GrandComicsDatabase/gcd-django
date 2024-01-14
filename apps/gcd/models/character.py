@@ -209,11 +209,28 @@ class Character(CharacterGroupBase):
     def active_memberships(self):
         return self.memberships.all()
 
-    def active_universes(self):
+    def active_universe_origins(self):
         from .story import StoryCharacter
         appearances = StoryCharacter.objects.filter(character__character=self,
                                                     deleted=False)
-        universes = appearances.values_list('universe', flat=True).distinct()
+        universes = set(appearances.values_list('universe',
+                                                flat=True).distinct())
+        return Universe.objects.filter(id__in=universes)
+
+    def active_universe_appearances(self):
+        from .story import Story
+        if self.universe and self.active_generalisations().exists():
+            character = self.active_generalisations().get().from_character
+            appearances = Story.objects.filter(
+              appearing_characters__character__character=character,
+              appearing_characters__universe=self.universe,
+              deleted=False)
+        else:
+            appearances = Story.objects.filter(
+              appearing_characters__character__character=self,
+              deleted=False)
+        universes = set(appearances.values_list('universe',
+                                                flat=True).distinct())
         return Universe.objects.filter(id__in=universes)
 
     def has_dependents(self):

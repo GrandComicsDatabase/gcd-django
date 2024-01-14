@@ -33,36 +33,37 @@ from apps.indexer.models import Indexer
 from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
 
-from apps.gcd.models import Publisher, Series, Issue, StoryType, Image,\
-                            IndiciaPublisher, Brand, BrandGroup, Cover,\
-                            SeriesBond, Award, Creator, CreatorMembership,\
-                            ReceivedAward, CreatorDegree, CreatorArtInfluence,\
-                            CreatorRelation, CreatorSchool, CreatorNameDetail,\
+from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
+                            IndiciaPublisher, Brand, BrandGroup, Cover, \
+                            SeriesBond, Award, Creator, CreatorMembership, \
+                            ReceivedAward, CreatorDegree, \
+                            CreatorArtInfluence, CreatorRelation, \
+                            CreatorSchool, CreatorNameDetail, \
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
                             Printer, IndiciaPrinter, School, Story, \
                             Character, Group, CharacterNameDetail, Universe, \
                             Multiverse, StoryCredit, \
                             CharacterRelation, GroupRelation, GroupMembership
-from apps.gcd.models.creator import FeatureCreatorTable,\
-                                    FeatureCreatorNameTable,\
-                                    SeriesCreatorTable,\
-                                    SeriesCreatorNameTable,\
-                                    CharacterCreatorTable,\
-                                    CharacterCreatorNameTable,\
-                                    GroupCreatorTable,\
-                                    GroupCreatorNameTable,\
+from apps.gcd.models.creator import FeatureCreatorTable, \
+                                    FeatureCreatorNameTable, \
+                                    SeriesCreatorTable, \
+                                    SeriesCreatorNameTable, \
+                                    CharacterCreatorTable, \
+                                    CharacterCreatorNameTable, \
+                                    GroupCreatorTable, \
+                                    GroupCreatorNameTable, \
                                     CreatorCreatorTable, NAME_TYPES
 from apps.gcd.models.character import CharacterTable
 from apps.gcd.models.feature import FeatureTable
-from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable,\
-                                  BrandEmblemIssueTable,\
-                                  IndiciaPublisherIssueTable,\
+from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
+                                  BrandEmblemIssueTable, \
+                                  IndiciaPublisherIssueTable, \
                                   IssuePublisherTable, PublisherIssueTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
                                   StoryTable
-from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO,\
+from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO, \
                            ResponsePaginator
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
@@ -75,8 +76,9 @@ from apps.gcd.forms import get_generic_select_form
 from apps.oi import states
 from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, CoverRevision, \
-                           IndiciaPublisherRevision, ImageRevision, Changeset,\
-                           SeriesBondRevision, CreatorRevision, CTYPES
+                           IndiciaPublisherRevision, ImageRevision, \
+                           Changeset, SeriesBondRevision, CreatorRevision, \
+                           CTYPES
 from apps.select.views import SeriesFilter, filter_issues, filter_sequences
 
 KEY_DATE_REGEXP = \
@@ -3087,23 +3089,25 @@ def show_character(request, character, preview=False):
     return render(request, 'gcd/details/character.html', vars)
 
 
-def character_issues(request, character_id, layer=None, universe_id=None):
+def character_issues(request, character_id, layer=None, universe_id=None,
+                     story_universe_id=None):
     character = get_gcd_object(Character, character_id)
     if character.universe:
         universe_id = character.universe.id
         if character.active_generalisations():
             filter_character = character.active_generalisations().get()\
                                         .from_character
-        if layer:
-            raise ValueError
     else:
         filter_character = character
 
-    issues = Issue.objects.filter(
-      story__appearing_characters__character__character=filter_character,
-      story__appearing_characters__deleted=False,
-      story__type__id__in=CORE_TYPES,
-      story__deleted=False).distinct().select_related('series__publisher')
+    query = {'story__appearing_characters__character__character':
+             filter_character,
+             'story__appearing_characters__deleted': False,
+             'story__type__id__in': CORE_TYPES,
+             'story__deleted': False}
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
     if layer == -1 and character.active_specifications().exists():
         characters = character.active_specifications()\
                               .values_list('to_character_id', flat=True)
@@ -3114,7 +3118,7 @@ def character_issues(request, character_id, layer=None, universe_id=None):
             story__type__id__in=CORE_TYPES,
             story__deleted=False).distinct()\
                                  .select_related('series__publisher')
-    if layer == 1 and character.active_generalisations().exists():
+    elif layer == 1 and character.active_generalisations().exists():
         characters = character.active_generalisations()\
                               .values_list('from_character_id', flat=True)
         issues |= Issue.objects.filter(
@@ -3124,25 +3128,20 @@ def character_issues(request, character_id, layer=None, universe_id=None):
             story__type__id__in=CORE_TYPES,
             story__deleted=False).distinct()\
                                  .select_related('series__publisher')
-    if universe_id:
-        if universe_id == '-1':
-            issues = Issue.objects.filter(
-              story__appearing_characters__character__character=  # noqa: E251
-              filter_character,
-              story__appearing_characters__universe_id__isnull=True,
-              story__appearing_characters__deleted=False,
-              story__type__id__in=CORE_TYPES,
-              story__deleted=False).distinct()\
-                     .select_related('series__publisher')
-        else:
-            issues = Issue.objects.filter(
-              story__appearing_characters__character__character=  # noqa: E251
-              filter_character,
-              story__appearing_characters__universe_id=universe_id,
-              story__appearing_characters__deleted=False,
-              story__type__id__in=CORE_TYPES,
-              story__deleted=False).distinct()\
-                     .select_related('series__publisher')
+    else:
+        if universe_id:
+            if universe_id == '-1':
+                query['story__appearing_characters__universe_id__isnull'] = \
+                  True
+            else:
+                query['story__appearing_characters__universe_id'] = universe_id
+        if story_universe_id:
+            if story_universe_id == '-1':
+                query['story__universe__isnull'] = True
+            else:
+                query['story__universe__in'] = [story_universe_id,]
+        issues = Issue.objects.filter(Q(**query)).distinct()\
+                              .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
     filter = filter_issues(request, issues)
