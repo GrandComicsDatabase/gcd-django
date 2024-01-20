@@ -5657,6 +5657,13 @@ class StoryRevision(Revision):
                     character_revision.save_added_revision(
                       changeset=self.changeset, story_revision=self)
                     character_form.save_m2m()
+                # Change this, if we ever edit character appearances elsewhere
+                if character_revision.group.exists() and \
+                   character_revision.universe and not \
+                   character_revision.group_universe:
+                    character_revision.group_universe = \
+                      character_revision.universe
+                    character_revision.save()
             elif (not character_form.is_valid() and
                   character_form not in characters_formset.deleted_forms):
                 raise ValueError

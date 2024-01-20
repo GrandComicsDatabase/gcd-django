@@ -430,16 +430,6 @@ class StoryCharacterRevisionForm(forms.ModelForm):
                 'universe for the character.'
     )
 
-    def save(self, commit=True):
-        instance = super(StoryCharacterRevisionForm,
-                         self).save(commit=commit)
-        if instance.id and instance.group.exists() and instance.universe\
-           and not instance.group_universe:
-            instance.group_universe = instance.universe
-        if commit:
-            instance.save()
-        return instance
-
     def clean(self):
         cd = self.cleaned_data
         if cd['group_universe'] and not cd['group']:
