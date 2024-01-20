@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 from dal import autocomplete
 
-from apps.gcd.models import Character, Group, CharacterRelationType
+from apps.gcd.models import Character, Group, CharacterRelationType, Universe
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -157,6 +157,16 @@ class CharacterRevisionForm(BaseForm):
                   "or a maiden vs. a married name). One name is marked "
                   "as the official name.",
         label='')
+
+    universe = forms.ModelChoiceField(
+      queryset=Universe.objects.all(),
+      widget=autocomplete.ModelSelect2(
+                          url='universe_autocomplete',
+                          attrs={'style': 'width: 60em'}),
+      required=False,
+      help_text='Select the universe, if any, from which the character '
+                'originates.'
+    )
 
 
 def get_group_revision_form(revision=None, user=None):

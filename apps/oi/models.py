@@ -5949,6 +5949,10 @@ class StoryRevision(Revision):
             for story_credit_revision in self.story_credit_revisions.all():
                 story_credit_revision.deleted = self.deleted
                 story_credit_revision.save()
+        if bool(self.story_character_revisions.all()):
+            for story_character_revision in self.story_character_revisions.all():
+                story_character_revision.deleted = self.deleted
+                story_character_revision.save()
         self.save()
 
     def get_absolute_url(self):
