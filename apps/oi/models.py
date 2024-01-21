@@ -6470,6 +6470,10 @@ class PreviewStory(Story):
     def show_characters(self):
         return self._show_characters(self)
 
+    @property
+    def universe(self):
+        return self.revision.universe.all()
+
     def has_feature(self):
         return self.revision.feature or self.revision.feature_object.count()
 
