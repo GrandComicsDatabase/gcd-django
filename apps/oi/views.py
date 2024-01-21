@@ -2910,17 +2910,13 @@ def add_story(request, issue_revision_id, changeset_id):
     # check if this is a request to add a copy of a sequence
     if 'copy' in request.GET or 'copy_cover' in request.GET:
         issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
-        if issue_revision.issue:
-            issue_id = issue_revision.issue_id
-        else:
-            raise NotImplementedError
         seq = request.GET.get('added_sequence_number')
         initial = _get_initial_add_story_data(request, issue_revision, seq)
         if 'copy_cover' in request.GET:
             cover = True
         else:
             cover = False
-        return copy_sequence(request, changeset_id, issue_id,
+        return copy_sequence(request, issue_revision_id,
                              sequence_number=initial['sequence_number'],
                              cover=cover)
 
@@ -3097,38 +3093,61 @@ def _get_initial_add_story_data(request, issue_revision, seq):
 
 
 @permission_required('indexer.can_reserve')
-def copy_story_revision(request, issue_revision_id, changeset_id):
-    changeset = get_object_or_404(Changeset, id=changeset_id)
+def copy_story_revision(request, issue_revision_id, changeset_id=None,
+                        story_revision_id=None):
+    if request.method != 'POST':
+        changeset = get_object_or_404(Changeset, id=changeset_id)
+        issue_revision = changeset.issuerevisions.get()
+        if issue_revision.id != int(issue_revision_id):
+            raise ViewTerminationError(render_error(
+                                       request,
+                                       'Error in accessing this routine.',
+                                       redirect=False))
+    else:
+        issue_revision = IssueRevision.objects.get(id=issue_revision_id)
+        changeset = issue_revision.changeset
     if request.user != changeset.indexer:
         raise ViewTerminationError(
           render_error(request,
                        'Only the reservation holder may add stories.',
                        redirect=False))
-    issue_revision = changeset.issuerevisions.get()
-    if issue_revision.id != int(issue_revision_id):
-        raise ViewTerminationError(render_error(
-                                   request,
-                                   'Error in accessing this routine.',
-                                   redirect=False))
-    try:
-        sequence_number = int(request.GET['copied_sequence_number'])
-    except ValueError:
-        raise ViewTerminationError(render_error(
-                                   request,
-                                   "Sequence number must be a number.",
-                                   redirect=False))
-    try:
-        story_revision = changeset.storyrevisions.get(
-          sequence_number=sequence_number)
-    except StoryRevision.DoesNotExist:
-        raise ViewTerminationError(render_error(
-                                   request,
-                                   "Sequence with this number does not exist.",
-                                   redirect=False))
-    StoryRevision.clone_revision(story_revision, changeset,
-                                 issue_revision=issue_revision)
-    return HttpResponseRedirect(urlresolvers.reverse(
-      'edit', kwargs={'id': changeset.id}))
+    if request.method != 'POST':
+        # pick sequence to copy
+        try:
+            sequence_number = int(request.GET['copied_sequence_number'])
+        except ValueError:
+            raise ViewTerminationError(render_error(
+                                    request,
+                                    "Sequence number must be a number.",
+                                    redirect=False))
+        try:
+            story_revision = changeset.storyrevisions.get(
+              sequence_number=sequence_number)
+        except StoryRevision.DoesNotExist:
+            raise ViewTerminationError(render_error(
+              request,
+              "Sequence with this number does not exist.",
+              redirect=False))
+        story = PreviewStory.init(story_revision)
+        return oi_render(request, 'oi/edit/confirm_copy_sequence.html',
+                         {'issue_revision': issue_revision,
+                          'story': story,
+                          'story_revision': story_revision
+                          })
+    else:
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'edit', kwargs={'id': changeset.id}))
+        story_revision = changeset.storyrevisions.get(id=story_revision_id)
+        copy_credit_info = request.POST.get('copy_credit_info', False)
+        copy_characters = request.POST.get('copy_characters', False)
+        StoryRevision.clone_revision(story_revision, changeset,
+                                     issue_revision=issue_revision,
+                                     copy_credit_info=copy_credit_info,
+                                     copy_characters=copy_characters)
+
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit', kwargs={'id': changeset.id}))
 
 ##############################################################################
 # Series Bond Editing
@@ -3720,25 +3739,24 @@ def _selected_copy_sequence(request, data, object_type, selected_id):
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
           'edit', kwargs={'id': data['changeset_id']}))
-
-    return copy_sequence(request, data['changeset_id'], data['issue_id'],
-                         story_id=selected_id,
-                         sequence_number=data['sequence_number'])
+    issue_revision = get_object_or_404(IssueRevision,
+                                       id=data['issue_revision_id'])
+    story = get_object_or_404(Story, id=selected_id)
+    return oi_render(request, 'oi/edit/confirm_copy_sequence.html',
+                     {
+                      'issue_revision': issue_revision,
+                      'story': story,
+                     })
 
 
 @permission_required('indexer.can_reserve')
-def copy_sequence(request, changeset_id, issue_id, story_id=None,
+def copy_sequence(request, issue_revision_id, story_id=None,
                   sequence_number=None, cover=False):
-    changeset = get_object_or_404(Changeset, id=changeset_id)
-    if request.user != changeset.indexer:
+    issue_revision = get_object_or_404(IssueRevision, id=issue_revision_id)
+    if request.user != issue_revision.changeset.indexer:
         return render_error(
           request,
           'Only the reservation holder may access this page.')
-
-    issue = get_object_or_404(Issue, id=issue_id)
-    if issue_id not in changeset.issuerevisions.values_list('issue_id',
-                                                            flat=True):
-        return _cant_get(request)
 
     if cover:
         story = False
@@ -3746,9 +3764,9 @@ def copy_sequence(request, changeset_id, issue_id, story_id=None,
         story = True
 
     if request.method != 'POST':
-        heading = 'Select story to copy into %s' % (esc(issue))
-        data = {'issue_id': issue_id,
-                'changeset_id': changeset_id,
+        heading = 'Select story to copy into %s' % (esc(issue_revision))
+        data = {'issue_revision_id': issue_revision_id,
+                'changeset_id': issue_revision.changeset_id,
                 'story': story,
                 'cover': cover,
                 'initial': {},
@@ -3756,21 +3774,27 @@ def copy_sequence(request, changeset_id, issue_id, story_id=None,
                 'target': 'a story',
                 'return': _selected_copy_sequence,
                 'sequence_number': sequence_number,
-                'cancel': HttpResponseRedirect(urlresolvers.reverse('edit',
-                                               kwargs={'id': changeset_id}))}
+                'cancel': HttpResponseRedirect(urlresolvers.reverse(
+                  'edit', kwargs={'id': issue_revision.changeset_id}))}
         select_key = store_select_data(request, None, data)
         return HttpResponseRedirect(urlresolvers.reverse('select_object',
                                     kwargs={'select_key': select_key}))
     else:
+        issue_revision = get_object_or_404(IssueRevision, id=issue_revision_id)
+        if 'cancel' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'edit', kwargs={'id': issue_revision.changeset_id}))
         story = get_object_or_404(Story, id=story_id)
-        story_revision = StoryRevision.copied_revision(story, changeset,
-                                                       issue=issue)
+        copy_credit_info = request.POST.get('copy_credit_info', False)
+        copy_characters = request.POST.get('copy_characters', False)
+        story_revision = StoryRevision.copied_revision(
+          story, issue_revision.changeset, issue_revision=issue_revision,
+          copy_credit_info=copy_credit_info, copy_characters=copy_characters)
         # sequence number should be determined in add_story
         # but this routine could be called differently as well
         if sequence_number:
             story_revision.sequence_number = sequence_number
             story_revision.save()
-            issue_revision = changeset.issuerevisions.get(issue_id=issue_id)
             stories = issue_revision.active_stories()\
                                     .exclude(id=story_revision.id)
             _reorder_children(request, issue_revision, stories,
@@ -3784,7 +3808,7 @@ def copy_sequence(request, changeset_id, issue_id, story_id=None,
 
 @permission_required('indexer.can_reserve')
 def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
-                             edit=False):
+                             edit=False, qualifier=False):
     story = get_object_or_404(Story, id=story_id)
     issue = get_object_or_404(Issue, id=issue_id)
     reprint_revision = get_object_or_404(ReprintRevision,
@@ -3807,8 +3831,22 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
           {'issue': issue, 'story': story,
            'reprint_revision': reprint_revision, 'direction': direction})
     else:
-        story_revision = StoryRevision.copied_revision(story, changeset,
-                                                       issue=issue)
+        # we have two ways to get here, without edit it comes from the
+        # reprint overview page, which has a confirm page and the
+        # selection of what to copy in the POST
+        if qualifier:
+            copy_credit_info = True
+        elif edit:
+            copy_credit_info = False
+        else:
+            copy_credit_info = request.POST.get('copy_credit_info', False)
+        if edit:
+            copy_characters = True
+        else:
+            copy_characters = request.POST.get('copy_characters', False)
+        story_revision = StoryRevision.copied_revision(
+          story, changeset, issue_revision=changeset_issue,
+          copy_credit_info=copy_credit_info, copy_characters=copy_characters)
         if reprint_revision.origin:
             reprint_revision.target_revision = story_revision
             reprint_revision.target_issue = None
@@ -3996,7 +4034,8 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         return HttpResponseRedirect(urlresolvers.reverse(
           'list_issue_reprints',
           kwargs={'id': changeset.issuerevisions.get().id}))
-    if 'matching_sequence' in request.POST:
+    if 'matching_sequence' in request.POST or \
+       'matching_sequence_with_qualifiers' in request.POST:
         if revision.origin:
             story = revision.origin
             issue = revision.target_issue
@@ -4005,11 +4044,18 @@ def save_reprint(request, reprint_revision_id, changeset_id,
             issue = revision.origin_issue
         if issue != changeset.issuerevisions.get().issue:
             return _cant_get(request)
-        return HttpResponseRedirect(
-          urlresolvers.reverse('create_edit_matching_sequence',
-                               kwargs={'reprint_revision_id': revision.id,
-                                       'story_id': story.id,
-                                       'issue_id': issue.id}))
+        if 'matching_sequence_with_qualifiers' in request.POST:
+            return HttpResponseRedirect(
+              urlresolvers.reverse('create_edit_matching_sequence_qualifier',
+                                   kwargs={'reprint_revision_id': revision.id,
+                                           'story_id': story.id,
+                                           'issue_id': issue.id}))
+        else:
+            return HttpResponseRedirect(
+              urlresolvers.reverse('create_edit_matching_sequence',
+                                   kwargs={'reprint_revision_id': revision.id,
+                                           'story_id': story.id,
+                                           'issue_id': issue.id}))
     else:
         return HttpResponseRedirect(urlresolvers.reverse(
           'edit', kwargs={'id': changeset_id}))

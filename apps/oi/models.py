@@ -5373,14 +5373,15 @@ class StoryRevision(Revision):
                 revision.delete()
 
     @classmethod
-    def copied_revision(cls, story, changeset, issue):
+    def copied_revision(cls, story, changeset, issue_revision,
+                        copy_credit_info=False,
+                        copy_characters=False):
         """
         Given an existing story, create a new revision based on it for a
         new story with the copied data. 'fork' is set to true in such a case.
         """
         revision = StoryRevision.clone(story, changeset, fork=True)
-        issue_revision = changeset.issuerevisions.get(issue=issue)
-        revision.issue = issue
+        revision.issue = issue_revision.issue
         revision.sequence_number = issue_revision.next_sequence_number()
         credits = story.active_credits
         if revision.issue.series.language != story.issue.series.language:
@@ -5392,17 +5393,69 @@ class StoryRevision(Revision):
             credits = credits.exclude(credit_type_id=CREDIT_TYPES['letters'])
             revision.feature_object.clear()
             revision.feature_logo.clear()
+        if not copy_characters:
+            revision.characters = ''
         revision.save()
+        if copy_credit_info:
+            exclude = {'is_sourced', 'sourced_by'}
+        else:
+            exclude = {'is_credited', 'credited_as', 'is_signed', 'signed_as',
+                       'signature', 'is_sourced', 'sourced_by', 'credit_name'}
         for credit in credits:
             StoryCreditRevision.clone(credit, revision.changeset,
                                       fork=True, story_revision=revision,
-                                      exclude={'is_credited', 'credited_as',
-                                               'is_signed', 'signed_as',
-                                               'signature', 'credit_name'})
+                                      exclude=exclude)
+        if copy_characters:
+            if issue_revision.series.language == story.issue.series.language:
+                same_language = True
+            else:
+                same_language = False
+            for character in story.active_characters:
+                if same_language:
+                    StoryCharacterRevision.clone(character,
+                                                 revision.changeset,
+                                                 fork=True,
+                                                 story_revision=revision)
+                else:
+                    translations = character.character.character.translations(
+                      issue_revision.series.language)
+                    if translations.count() == 1:
+                        character.character = translations.get()\
+                                                          .official_name()
+                        new_character_revision = StoryCharacterRevision.clone(
+                          character, revision.changeset, fork=True,
+                          story_revision=revision)
+                        if new_character_revision.group.exists():
+                            for group in new_character_revision.group.all():
+                                new_character_revision.group.remove(group)
+                                translations = group.translations(
+                                  issue_revision.series.language)
+                                if translations.count() == 1:
+                                    new_character_revision.group.add(
+                                      translations.get())
+
+            for group in story.active_groups:
+                if same_language:
+                    StoryGroupRevision.clone(group,
+                                             revision.changeset,
+                                             fork=True,
+                                             story_revision=revision)
+                else:
+                    translations = group.group.translations(
+                      issue_revision.series.language)
+                    if translations.count() == 1:
+                        new_character_revision.add(
+                            translations.get())
+                        group.group = translations.get().official_name()
+                        StoryGroupRevision.clone(
+                          group, revision.changeset, fork=True,
+                          story_revision=revision)
         return revision
 
     @classmethod
-    def clone_revision(cls, story_revision, changeset, issue_revision):
+    def clone_revision(cls, story_revision, changeset, issue_revision,
+                       copy_credit_info=False,
+                       copy_characters=False):
         """
         Given an existing story revision of the changeset, create a new
         revision based on it for a new story with the copied data.
@@ -5414,9 +5467,28 @@ class StoryRevision(Revision):
         new_revision.sequence_number = issue_revision.next_sequence_number()
         new_revision.save()
         credits = story_revision.story_credit_revisions.filter(deleted=False)
+        if copy_credit_info:
+            exclude = {'is_sourced', 'sourced_by'}
+        else:
+            exclude = {'is_credited', 'credited_as', 'is_signed', 'signed_as',
+                       'signature', 'is_sourced', 'sourced_by', 'credit_name'}
         for credit in credits:
             StoryCreditRevision.clone(credit, changeset,
-                                      fork=True, story_revision=new_revision)
+                                      fork=True, story_revision=new_revision,
+                                      exclude=exclude)
+        if copy_characters:
+            for character in story_revision.story_character_revisions.filter(
+              deleted=False):
+                StoryCharacterRevision.clone(character, changeset, fork=True,
+                                             story_revision=new_revision)
+
+            for group in story_revision.story_group_revisions.filter(
+              deleted=False):
+                StoryGroupRevision.clone(group, changeset, fork=True,
+                                         story_revision=new_revision)
+        else:
+            new_revision.characters = ''
+            new_revision.save()
         return new_revision
 
     def _get_major_changes(self, extra_field_tuples=frozenset()):
@@ -5957,7 +6029,8 @@ class StoryRevision(Revision):
                 story_credit_revision.deleted = self.deleted
                 story_credit_revision.save()
         if bool(self.story_character_revisions.all()):
-            for story_character_revision in self.story_character_revisions.all():
+            for story_character_revision in self.story_character_revisions\
+                                                .all():
                 story_character_revision.deleted = self.deleted
                 story_character_revision.save()
         self.save()

@@ -150,6 +150,12 @@ urlpatterns = [
     url(r'^issue/revision/(?P<issue_revision_id>\d+)/copy_story_revision/(?P<changeset_id>\d+)$',
         oi_views.copy_story_revision,
         name='copy_story_revision'),
+    url(r'^issue/revision/(?P<issue_revision_id>\d+)/confirm_copy_story/(?P<story_id>\d+)$',
+        oi_views.copy_sequence,
+        name='confirm_copy_story'),
+    url(r'^issue/revision/(?P<issue_revision_id>\d+)/confirm_copy_story_revision/(?P<story_revision_id>\d+)$',
+        oi_views.copy_story_revision,
+        name='confirm_copy_story_revision'),
     url(r'^issue/(?P<issue_id>\d+)/import_stories/(?P<changeset_id>\d+)/$',
         oi_import.import_sequences_from_file,
         name='import_stories'),
@@ -311,7 +317,9 @@ urlpatterns = [
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
       oi_views.create_matching_sequence, name='create_matching_sequence'),
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_edit_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
-      oi_views.create_matching_sequence, {'edit' : 'True'}, name='create_edit_matching_sequence'),
+      oi_views.create_matching_sequence, {'edit' : 'True', 'qualifier': 'False'}, name='create_edit_matching_sequence'),
+    url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_edit_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
+      oi_views.create_matching_sequence, {'edit' : 'True', 'qualifier': 'True'}, name='create_edit_matching_sequence_qualifier'),
 
     # Generic URLs
     url(r'^(?P<model_name>\w+)/(?P<id>\d+)/reserve/$', oi_views.reserve,

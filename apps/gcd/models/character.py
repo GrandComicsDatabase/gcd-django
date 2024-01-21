@@ -233,6 +233,25 @@ class Character(CharacterGroupBase):
                                                 flat=True).distinct())
         return Universe.objects.filter(id__in=universes)
 
+    # what is with translation over character records ?
+    # German . English - French, copying from first to last ?
+    def translations(self, language):
+        relations = self.active_relations().filter(relation_type_id=1)
+        if relations.filter(to_character__language=language).count():
+            return Character.objects.filter(
+              language=language,
+              from_related_character__from_character=self,
+              deleted=False)
+        if relations.filter(from_character__language=language).count():
+            return Character.objects.filter(
+              language=language,
+              to_related_character__to_character=self,
+              deleted=False)
+        return Character.objects.none()
+
+    def official_name(self):
+        return self.active_names().get(is_official_name=True)
+
     def has_dependents(self):
         if self.active_memberships().exists():
             return True
@@ -312,6 +331,22 @@ class Group(CharacterGroupBase):
 
     def active_members(self):
         return self.members.all()
+
+    # what is with translation over character records ?
+    # German . English - French, copying from first to last ?
+    def translations(self, language):
+        relations = self.active_relations().filter(relation_type_id=1)
+        if relations.filter(to_group__language=language).count():
+            return Group.objects.filter(
+              language=language,
+              from_related_group__from_group=self,
+              deleted=False)
+        if relations.filter(from_group__language=language).count():
+            return Group.objects.filter(
+              language=language,
+              to_related_group__to_group=self,
+              deleted=False)
+        return Group.objects.none()
 
     def has_dependents(self):
         if self.active_members().exists():
