@@ -318,7 +318,7 @@ urlpatterns = [
       oi_views.create_matching_sequence, name='create_matching_sequence'),
     url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_edit_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
       oi_views.create_matching_sequence, {'edit' : True, 'qualifier': False}, name='create_edit_matching_sequence'),
-    url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_edit_sequence/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
+    url(r'^reprint/revision/(?P<reprint_revision_id>.+)/create_edit_sequence_qualifier/issue/(?P<issue_id>\d+)/story/(?P<story_id>\d+)/$',
       oi_views.create_matching_sequence, {'edit' : True, 'qualifier': True}, name='create_edit_matching_sequence_qualifier'),
 
     # Generic URLs
