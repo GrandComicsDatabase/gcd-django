@@ -24,7 +24,7 @@
   {% if story_revision %}
   <form id="confirm" action="{% url "confirm_copy_story_revision" story_revision_id=story.revision.id issue_revision_id=issue_revision.id %}" method="POST">
   {% else %}
-  <form id="confirm" action="{% url "confirm_copy_story" story_id=story.id issue_revision_id=issue_revision.id %}" method="POST">
+  <form id="confirm" action="{% url "confirm_copy_story" story_id=story.id issue_revision_id=issue_revision.id sequence_number=sequence_number %}" method="POST">
   {% endif %}
   {% csrf_token %}
   <table id="sequence-details" class="editing">

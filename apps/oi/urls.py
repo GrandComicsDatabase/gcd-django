@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-import django.urls as urlresolvers
+from django.urls import path
 from django.conf.urls import url
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.views.generic import base as bv
 
@@ -150,10 +149,10 @@ urlpatterns = [
     url(r'^issue/revision/(?P<issue_revision_id>\d+)/copy_story_revision/(?P<changeset_id>\d+)$',
         oi_views.copy_story_revision,
         name='copy_story_revision'),
-    url(r'^issue/revision/(?P<issue_revision_id>\d+)/confirm_copy_story/(?P<story_id>\d+)$',
+    path('issue/revision/<int:issue_revision_id>/confirm_copy_story/<int:story_id>/<int:sequence_number>/',
         oi_views.copy_sequence,
         name='confirm_copy_story'),
-    url(r'^issue/revision/(?P<issue_revision_id>\d+)/confirm_copy_story_revision/(?P<story_revision_id>\d+)$',
+    url(r'^issue/revision/(?P<issue_revision_id>\d+)/confirm_copy_story_revision/(?P<story_revision_id>\d+)/$',
         oi_views.copy_story_revision,
         name='confirm_copy_story_revision'),
     url(r'^issue/(?P<issue_id>\d+)/import_stories/(?P<changeset_id>\d+)/$',

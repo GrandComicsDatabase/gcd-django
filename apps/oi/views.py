@@ -3746,6 +3746,7 @@ def _selected_copy_sequence(request, data, object_type, selected_id):
                      {
                       'issue_revision': issue_revision,
                       'story': story,
+                      'sequence_number': data['sequence_number'],
                      })
 
 
