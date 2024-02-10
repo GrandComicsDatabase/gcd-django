@@ -167,7 +167,7 @@ INSTALLED_APPS = (
     'haystack',
     'bootstrap3',
     'django_contact_form',
-    'captcha',
+    'django_recaptcha',
     'crispy_forms',
     'pagedown.apps.PagedownConfig',
     'rosetta',

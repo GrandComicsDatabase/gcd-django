@@ -5,7 +5,7 @@ pieces, this should probably be moved out of the gcd app.
 """
 
 from datetime import date, timedelta
-from captcha.fields import ReCaptchaField
+from django_recaptcha.fields import ReCaptchaField
 
 from django import forms
 from django.forms.utils import ErrorList
