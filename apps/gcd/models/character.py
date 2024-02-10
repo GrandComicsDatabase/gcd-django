@@ -259,9 +259,14 @@ class Character(CharacterGroupBase):
         return self.active_names().get(is_official_name=True)
 
     def has_dependents(self):
-        if self.active_memberships().exists():
+        if super(Character, self).has_dependents() or \
+          self.active_memberships().exists():
             return True
-        return super(Character, self).has_dependents()
+        from .story import StoryCharacter
+        if StoryCharacter.objects.filter(character__character=self,
+                                         deleted=False).exists():
+            return True
+        return False
 
     # def stat_counts(self):
     #     """
@@ -355,9 +360,14 @@ class Group(CharacterGroupBase):
         return Group.objects.none()
 
     def has_dependents(self):
-        if self.active_members().exists():
+        if super(Group, self).has_dependents() or \
+          self.active_members().exists():
             return True
-        return super(Group, self).has_dependents()
+        from .story import StoryGroup
+        if StoryGroup.objects.filter(character__character=self,
+                                     deleted=False).exists():
+            return True
+        return False
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
