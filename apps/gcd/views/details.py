@@ -54,7 +54,8 @@ from apps.gcd.models.creator import FeatureCreatorTable, \
                                     GroupCreatorTable, \
                                     GroupCreatorNameTable, \
                                     CreatorCreatorTable, NAME_TYPES
-from apps.gcd.models.character import CharacterTable
+from apps.gcd.models.character import CreatorCharacterTable, \
+                                      UniverseCharacterTable
 from apps.gcd.models.feature import FeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   BrandEmblemIssueTable, \
@@ -101,6 +102,7 @@ MIGRATE_DISCLAIMER = ' Text credits are currently being migrated to '\
                      'links. Therefore not all credits in our '\
                      'database are shown here.'
 
+SORT_TABLE_TEMPLATE = 'gcd/bits/sortable_table.html'
 
 # For ad purposes, we need to be able to identify adult cover images,
 # right now we do it by publisher.
@@ -314,7 +316,7 @@ def creator_sequences(request, creator_id, series_id=None,
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = StoryTable(stories, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
 
@@ -325,6 +327,7 @@ def creator_characters(request, creator_id, country=None):
 
     characters = Character.objects.filter(
       character_names__storycharacter__story__credits__creator__in=names,
+      character_names__storycharacter__story__type__id__in=CORE_TYPES,
       character_names__storycharacter__story__credits__deleted=False)\
         .distinct()
 
@@ -367,10 +370,11 @@ def creator_characters(request, creator_id, country=None):
         'heading': 'Characters for Creator %s' % (creator)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = CharacterTable(characters, attrs={'class': 'sortable_listing'},
-                           creator=creator,
-                           template_name='gcd/bits/sortable_table.html',
-                           order_by=('character'))
+    table = CreatorCharacterTable(characters,
+                                  attrs={'class': 'sortable_listing'},
+                                  creator=creator,
+                                  template_name=SORT_TABLE_TEMPLATE,
+                                  order_by=('character'))
     return generic_sortable_list(request, characters, table, template, context)
 
 
@@ -435,7 +439,7 @@ def creator_creators(request, creator_id):
     template = 'gcd/search/issue_list_sortable.html'
     table = CreatorCreatorTable(creators, attrs={'class': 'sortable_listing'},
                                 creator=creator,
-                                template_name='gcd/bits/sortable_table.html',
+                                template_name=SORT_TABLE_TEMPLATE,
                                 order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
@@ -490,7 +494,7 @@ def creator_features(request, creator_id, country=None, language=None):
     template = 'gcd/search/issue_list_sortable.html'
     table = FeatureTable(features, attrs={'class': 'sortable_listing'},
                          creator=creator,
-                         template_name='gcd/bits/sortable_table.html',
+                         template_name=SORT_TABLE_TEMPLATE,
                          order_by=('feature'))
     return generic_sortable_list(request, features, table, template, context)
 
@@ -524,7 +528,7 @@ def creator_overview(request, creator_id):
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = CoverIssueStoryTable(issues, attrs={'class': 'sortable_listing'},
-                                 template_name='gcd/bits/sortable_table.html',
+                                 template_name=SORT_TABLE_TEMPLATE,
                                  order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context, 50)
 
@@ -633,7 +637,7 @@ def creator_series(request, creator_id, country=None, language=None):
     template = 'gcd/search/issue_list_sortable.html'
     table = CreatorSeriesTable(series, attrs={'class': 'sortable_listing'},
                                creator=creator,
-                               template_name='gcd/bits/sortable_table.html',
+                               template_name=SORT_TABLE_TEMPLATE,
                                order_by=('name'))
     return generic_sortable_list(request, series, table, template, context)
 
@@ -748,7 +752,7 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
         context['result_disclaimer'] = MIGRATE_DISCLAIMER
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
-                                template_name='gcd/bits/sortable_table.html',
+                                template_name=SORT_TABLE_TEMPLATE,
                                 order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -786,11 +790,10 @@ def cover_checklist_by_id(request, creator_id, series_id=None,
         'filter': filter,
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = CoverIssuePublisherTable(
-      issues,
-      attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html',
-      order_by=('publication_date'))
+    table = CoverIssuePublisherTable(issues,
+                                     attrs={'class': 'sortable_listing'},
+                                     template_name=SORT_TABLE_TEMPLATE,
+                                     order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -858,7 +861,7 @@ def checklist_by_name(request, creator, country=None, language=None,
 
     template = 'gcd/search/issue_list_sortable.html'
     table = IssuePublisherTable(issues, attrs={'class': 'sortable_listing'},
-                                template_name='gcd/bits/sortable_table.html',
+                                template_name=SORT_TABLE_TEMPLATE,
                                 order_by=('publication_date'))
     if not to_be_migrated:
         context['result_disclaimer'] = ISSUE_CHECKLIST_DISCLAIMER
@@ -949,7 +952,7 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -1145,7 +1148,7 @@ def show_publisher(request, publisher, preview=False):
         extra_string = ''
 
     table = SeriesTable(publisher_series, attrs={'class': 'sortable_listing'},
-                        template_name='gcd/bits/sortable_table.html',
+                        template_name=SORT_TABLE_TEMPLATE,
                         order_by=('name'))
     RequestConfig(request, paginate={'per_page': 100,
                                      'page': page_number}).configure(table)
@@ -1166,9 +1169,10 @@ def show_publisher_issues(request, publisher_id):
                'description': 'showing all issues'
                }
 
-    table = PublisherIssueTable(
-      issues, attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    table = PublisherIssueTable(issues,
+                                attrs={'class': 'sortable_listing'},
+                                template_name=SORT_TABLE_TEMPLATE,
+                                order_by=('issues'))
     return generic_sortable_list(request, issues, table,
                                  'gcd/bits/generic_list.html', context)
 
@@ -1182,7 +1186,7 @@ def show_publisher_current_series(request, publisher_id):
                'description': 'showing current series'
                }
     table = SeriesTable(current_series, attrs={'class': 'sortable_listing'},
-                        template_name='gcd/bits/sortable_table.html',
+                        template_name=SORT_TABLE_TEMPLATE,
                         order_by=('name'))
     return generic_sortable_list(request, current_series, table,
                                  'gcd/bits/generic_list.html', context)
@@ -1388,11 +1392,10 @@ def publisher_monthly_covers(request,
           'choose_url_before': choose_url_before,
         }
         template = 'gcd/search/issue_list_sortable.html'
-        table = CoverIssueStoryTable(
-          issues,
-          attrs={'class': 'sortable_listing'},
-          template_name='gcd/bits/sortable_table.html',
-          order_by=('issues'))
+        table = CoverIssueStoryTable(issues,
+                                     attrs={'class': 'sortable_listing'},
+                                     template_name=SORT_TABLE_TEMPLATE,
+                                     order_by=('issues'))
         return generic_sortable_list(request, issues, table, template,
                                      context, 50)
     else:
@@ -1507,9 +1510,10 @@ def show_indicia_publisher(request, indicia_publisher, preview=False):
                'error_subject': '%s' % indicia_publisher,
                'preview': preview}
 
-    table = IndiciaPublisherIssueTable(
-      indicia_publisher_issues, attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    table = IndiciaPublisherIssueTable(indicia_publisher_issues,
+                                       attrs={'class': 'sortable_listing'},
+                                       template_name=SORT_TABLE_TEMPLATE,
+                                       order_by=('issues'))
     return generic_sortable_list(request, indicia_publisher_issues, table,
                                  'gcd/details/indicia_publisher.html', context)
 
@@ -1535,9 +1539,11 @@ def show_brand_group(request, brand_group, preview=False):
                'preview': preview
                }
 
-    table = BrandGroupIssueTable(
-      brand_issues, attrs={'class': 'sortable_listing'}, brand=brand_group,
-      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    table = BrandGroupIssueTable(brand_issues,
+                                 attrs={'class': 'sortable_listing'},
+                                 brand=brand_group,
+                                 template_name=SORT_TABLE_TEMPLATE,
+                                 order_by=('issues'))
     return generic_sortable_list(request, brand_issues, table,
                                  'gcd/details/brand_group.html', context)
 
@@ -1561,9 +1567,10 @@ def show_brand(request, brand, preview=False):
                'preview': preview
                }
 
-    table = BrandEmblemIssueTable(
-      brand_issues, attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    table = BrandEmblemIssueTable(brand_issues,
+                                  attrs={'class': 'sortable_listing'},
+                                  template_name=SORT_TABLE_TEMPLATE,
+                                  order_by=('issues'))
     return generic_sortable_list(request, brand_issues, table,
                                  'gcd/details/brand.html', context)
 
@@ -1709,8 +1716,9 @@ def printer_issues(request, printer_id):
         'heading': 'Issue List for Printer %s' % (printer)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -1743,8 +1751,9 @@ def indicia_printer_issues(request, indicia_printer_id):
         'heading': 'Issue List for Indicia Printer %s' % (indicia_printer)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -1860,11 +1869,10 @@ def series_overview(request, series_id):
         'heading': heading,
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = CoverIssueStoryTable(
-      issues,
-      attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html',
-      order_by=('issues'))
+    table = CoverIssueStoryTable(issues,
+                                 attrs={'class': 'sortable_listing'},
+                                 template_name=SORT_TABLE_TEMPLATE,
+                                 order_by=('issues'))
     return generic_sortable_list(request, issues, table, template, context, 50)
 
 
@@ -2055,13 +2063,13 @@ def series_creators(request, series_id, creator_names=False):
         table = SeriesCreatorNameTable(creators,
                                        attrs={'class': 'sortable_listing'},
                                        series=series,
-                                       template_name='gcd/bits/sortable_table.html',
+                                       template_name=SORT_TABLE_TEMPLATE,
                                        order_by=('name'))
     else:
         table = SeriesCreatorTable(creators,
                                    attrs={'class': 'sortable_listing'},
                                    series=series,
-                                   template_name='gcd/bits/sortable_table.html',
+                                   template_name=SORT_TABLE_TEMPLATE,
                                    order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
@@ -2076,8 +2084,9 @@ def series_issues_to_migrate(request, series_id):
         'heading': 'Issues with Text Credits to Migrate for %s' % (series)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html')
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE)
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -2095,15 +2104,16 @@ def keyword(request, keyword, model_name='story'):
     objs = DISPLAY_CLASSES[model_name].objects.filter(keywords__name=keyword,
                                                       deleted=False)
     if model_name == 'story':
-        table = StoryTable(objs, attrs={'class': 'sortable_listing'},
-                           template_name='gcd/bits/sortable_table.html',
+        table = StoryTable(objs,
+                           attrs={'class': 'sortable_listing'},
+                           template_name=SORT_TABLE_TEMPLATE,
                            order_by=('name'))
         description = 'showing %d stories for keyword' % objs.count()
     elif model_name == 'issue':
-        table = IssuePublisherTable(
-          objs, attrs={'class': 'sortable_listing'},
-          template_name='gcd/bits/sortable_table.html',
-          order_by=('name'))
+        table = IssuePublisherTable(objs,
+                                    attrs={'class': 'sortable_listing'},
+                                    template_name=SORT_TABLE_TEMPLATE,
+                                    order_by=('name'))
         description = 'showing %d issues for keyword' % objs.count()
     context = {'object': keyword,
                'description': description
@@ -2594,9 +2604,10 @@ def on_sale_weekly(request, year=None, week=None, variant=True):
         issues_on_sale = issues_on_sale.filter(variant_of=None)
     filter = filter_issues(request, issues_on_sale)
     issues_on_sale = filter.qs
-    table = CoverIssueStoryPublisherTable(
-      issues_on_sale, attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    table = CoverIssueStoryPublisherTable(issues_on_sale,
+                                          attrs={'class': 'sortable_listing'},
+                                          template_name=SORT_TABLE_TEMPLATE,
+                                          order_by=('issues'))
     vars['filter'] = filter
     vars['variant'] = variant
     if variant:
@@ -2689,9 +2700,10 @@ def on_sale_monthly(request, year=None, month=None, variant=True):
         issues_on_sale = issues_on_sale.filter(variant_of=None)
     filter = filter_issues(request, issues_on_sale)
     issues_on_sale = filter.qs
-    table = CoverIssueStoryPublisherTable(
-      issues_on_sale, attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    table = CoverIssueStoryPublisherTable(issues_on_sale,
+                                          attrs={'class': 'sortable_listing'},
+                                          template_name=SORT_TABLE_TEMPLATE,
+                                          order_by=('issues'))
     vars['filter'] = filter
     vars['variant'] = variant
     if variant:
@@ -2709,9 +2721,10 @@ def on_sale_monthly(request, year=None, month=None, variant=True):
                                                         'month': month})
         else:
             vars['path'] = urlresolvers.reverse("on_sale_this_month")
-    table = CoverIssueStoryPublisherTable(
-      issues_on_sale, attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html', order_by=('issues'))
+    table = CoverIssueStoryPublisherTable(issues_on_sale,
+                                          attrs={'class': 'sortable_listing'},
+                                          template_name=SORT_TABLE_TEMPLATE,
+                                          order_by=('issues'))
     return generic_sortable_list(request, issues_on_sale, table,
                                  'gcd/status/issues_on_sale.html', vars, 50)
 
@@ -2811,8 +2824,9 @@ def feature_sequences(request, feature_id, country=None):
         'heading': heading
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = StoryTable(stories,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
 
@@ -2839,8 +2853,9 @@ def feature_issuelist_by_id(request, feature_id):
         'heading': 'Issue List for Feature %s' % (feature)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -2877,8 +2892,9 @@ def feature_overview(request, feature_id):
         'heading': 'Issue Overview for Feature %s' % (feature)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = CoverIssueStoryTable(issues, attrs={'class': 'sortable_listing'},
-                                 template_name='gcd/bits/sortable_table.html',
+    table = CoverIssueStoryTable(issues,
+                                 attrs={'class': 'sortable_listing'},
+                                 template_name=SORT_TABLE_TEMPLATE,
                                  order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context, 50)
 
@@ -2926,13 +2942,13 @@ def feature_creators(request, feature_id, creator_names=False):
         table = FeatureCreatorNameTable(creators,
                                         attrs={'class': 'sortable_listing'},
                                         feature=feature,
-                                        template_name='gcd/bits/sortable_table.html',
+                                        template_name=SORT_TABLE_TEMPLATE,
                                         order_by=('name'))
     else:
         table = FeatureCreatorTable(creators,
                                     attrs={'class': 'sortable_listing'},
                                     feature=feature,
-                                    template_name='gcd/bits/sortable_table.html',
+                                    template_name=SORT_TABLE_TEMPLATE,
                                     order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
@@ -2953,11 +2969,10 @@ def feature_covers(request, feature_id):
         'heading': heading
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = CoverIssuePublisherTable(
-      issues,
-      attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html',
-      order_by=('publication_date'))
+    table = CoverIssuePublisherTable(issues,
+                                     attrs={'class': 'sortable_listing'},
+                                     template_name=SORT_TABLE_TEMPLATE,
+                                     order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -2995,8 +3010,9 @@ def feature_logo_sequences(request, feature_logo_id, country=None):
         'heading': heading
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = StoryTable(stories,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
 
@@ -3023,8 +3039,9 @@ def feature_logo_issuelist_by_id(request, feature_logo_id):
         'heading': 'Issue List for Feature Logo %s' % (feature_logo)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -3070,6 +3087,87 @@ def show_universe(request, universe, preview=False):
             'error_subject': '%s' % universe,
             'preview': preview}
     return render(request, 'gcd/details/universe.html', vars)
+
+
+def universe_sequences(request, universe_id):
+    universe = get_gcd_object(Universe, universe_id)
+    heading = 'Sequences in Universe %s' % (universe)
+
+    stories = Story.objects.filter(universe=universe, deleted=False)\
+                   .distinct().select_related('issue__series__publisher')
+
+    filter = filter_sequences(request, stories)
+    stories = filter.qs
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'sequence',
+        'plural_suffix': 's',
+        'heading': heading,
+        'filter': filter,
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = StoryTable(stories,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
+                       order_by=('issue'))
+    return generic_sortable_list(request, stories, table, template, context)
+
+
+def universe_issues(request, universe_id):
+    universe = get_gcd_object(Universe, universe_id)
+    heading = 'Issues in Universe %s' % (universe)
+
+    issues = Issue.objects.filter(
+      story__universe=universe,
+      deleted=False).distinct().select_related('series__publisher')
+
+    filter = filter_issues(request, issues)
+    issues = filter.qs
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': heading,
+        'filter': filter,
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
+                       order_by=('issue'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def universe_characters(request, universe_id):
+    universe = get_gcd_object(Universe, universe_id)
+    characters = Character.objects.filter(
+      character_names__storycharacter__universe=universe,
+      character_names__storycharacter__story__type__id__in=CORE_TYPES,
+      deleted=False).distinct()
+
+    characters = characters.annotate(issue_count=Count(
+      'character_names__storycharacter__story__issue', distinct=True))
+    characters = characters.annotate(first_appearance=Min(
+      Case(When(character_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('character_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'character',
+        'plural_suffix': 's',
+        'heading': 'Characters from Universe %s' % (universe)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = UniverseCharacterTable(characters,
+                                   attrs={'class': 'sortable_listing'},
+                                   universe=universe,
+                                   template_name=SORT_TABLE_TEMPLATE,
+                                   order_by=('character'))
+    return generic_sortable_list(request, characters, table, template, context)
 
 
 def character(request, character_id):
@@ -3158,8 +3256,9 @@ def character_issues(request, character_id, layer=None, universe_id=None,
         'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -3213,19 +3312,17 @@ def character_creators(request, character_id, creator_names=False):
     }
     template = 'gcd/search/issue_list_sortable.html'
     if creator_names:
-        table = CharacterCreatorNameTable(
-          creators,
-          attrs={'class': 'sortable_listing'},
-          character=character,
-          template_name='gcd/bits/sortable_table.html',
-          order_by=('name'))
+        table = CharacterCreatorNameTable(creators,
+                                          attrs={'class': 'sortable_listing'},
+                                          character=character,
+                                          template_name=SORT_TABLE_TEMPLATE,
+                                          order_by=('name'))
     else:
-        table = CharacterCreatorTable(
-          creators,
-          attrs={'class': 'sortable_listing'},
-          character=character,
-          template_name='gcd/bits/sortable_table.html',
-          order_by=('name'))
+        table = CharacterCreatorTable(creators,
+                                      attrs={'class': 'sortable_listing'},
+                                      character=character,
+                                      template_name=SORT_TABLE_TEMPLATE,
+                                      order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -3262,8 +3359,9 @@ def character_sequences(request, character_id):
         'filter': filter,
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = StoryTable(stories,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
 
@@ -3299,11 +3397,10 @@ def character_covers(request, character_id):
         'heading': heading
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = CoverIssuePublisherTable(
-      issues,
-      attrs={'class': 'sortable_listing'},
-      template_name='gcd/bits/sortable_table.html',
-      order_by=('publication_date'))
+    table = CoverIssuePublisherTable(issues,
+                                     attrs={'class': 'sortable_listing'},
+                                     template_name=SORT_TABLE_TEMPLATE,
+                                     order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -3319,7 +3416,8 @@ def character_name_issues(request, character_name_id, universe_id=None):
             filter_character = character.active_generalisations().get()\
                                              .from_character
             filter_character_name = filter_character.character_names\
-                                    .get(name=character_name.name)
+                                                    .get(name=
+                                                         character_name.name)
         else:
             return render(request, 'indexer/error.html',
                           {'error_text':
@@ -3363,8 +3461,9 @@ def character_name_issues(request, character_name_id, universe_id=None):
         'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -3415,8 +3514,9 @@ def group_issues(request, group_id):
         'heading': 'Issue List for Group %s' % (group)
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = IssueTable(issues, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
@@ -3454,13 +3554,13 @@ def group_creators(request, group_id, creator_names=False):
         table = GroupCreatorNameTable(creators,
                                       attrs={'class': 'sortable_listing'},
                                       group=group,
-                                      template_name='gcd/bits/sortable_table.html',
+                                      template_name=SORT_TABLE_TEMPLATE,
                                       order_by=('name'))
     else:
         table = GroupCreatorTable(creators,
                                   attrs={'class': 'sortable_listing'},
                                   group=group,
-                                  template_name='gcd/bits/sortable_table.html',
+                                  template_name=SORT_TABLE_TEMPLATE,
                                   order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
@@ -3484,7 +3584,7 @@ def group_sequences(request, group_id, country=None):
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = StoryTable(stories, attrs={'class': 'sortable_listing'},
-                       template_name='gcd/bits/sortable_table.html',
+                       template_name=SORT_TABLE_TEMPLATE,
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
 

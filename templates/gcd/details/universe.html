@@ -30,8 +30,13 @@ GCD :: Universe :: {{ universe.name }}
         <dt> Notes:
         <dd><br> {{ universe.notes|markdown }}
 {% endif %}
+<hr>
+<ul style="margin: 0">
+    <li><a href='{% url "universe_characters" universe_id=universe.id %}'>Characters from this universe</a></li>
+    <li><a href='{% url "universe_issues" universe_id=universe.id %}'>Issues in this universe</a></li>
+    <li><a href='{% url "universe_sequences" universe_id=universe.id %}'>Sequences in this universe</a></li>
+</ul>
 {% endblock content %}
-
 {% block edit_box %}
  {% if not preview %}
    {% with object=universe object_class='universe' object_name='Universe' %}

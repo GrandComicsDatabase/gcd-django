@@ -363,6 +363,12 @@ urlpatterns = [
       gcd_views.details.multiverse, name='show_multiverse'),
     url(r'^universe/(?P<universe_id>\d+)/$',
       gcd_views.details.universe, name='show_universe'),
+    url(r'^universe/(?P<universe_id>\d+)/sequences/$',
+      gcd_views.details.universe_sequences, name='universe_sequences'),
+    url(r'^universe/(?P<universe_id>\d+)/issues/$',
+      gcd_views.details.universe_issues, name='universe_issues'),
+    url(r'^universe/(?P<universe_id>\d+)/characters/$',
+      gcd_views.details.universe_characters, name='universe_characters'),
     # Character
     url(r'^character/search/$',
       gcd_views.search.character_search_hx,

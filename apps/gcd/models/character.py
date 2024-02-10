@@ -73,9 +73,15 @@ class Universe(GcdData):
             display_name += self.designation
         return display_name
 
-    # TODO add queries on story/character links
     def has_dependents(self):
-        return True
+        from .story import Story
+        if Story.objects.filter(universe=self, deleted=False).exists():
+            return True
+        if Character.objects.filter(
+          character_names__storycharacter__universe=self,
+          deleted=False).exists():
+            return True
+        return False
 
     def universe_name(self):
         if self.name and self.designation:
@@ -482,10 +488,19 @@ class GroupMembership(GcdLink):
 
 
 class CharacterTable(tables.Table):
-    credits_count = tables.Column(accessor='issue_credits_count',
-                                  verbose_name='Issues')
     character = tables.Column(accessor='name',
                               verbose_name='Character')
+
+    def render_character(self, record):
+        name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
+                                                  esc(record.name),
+                                                  record.language.name)
+        return mark_safe(name_link)
+
+
+class CreatorCharacterTable(CharacterTable):
+    credits_count = tables.Column(accessor='issue_credits_count',
+                                  verbose_name='Issues')
     first_credit = tables.Column(verbose_name='First Credit')
     role = tables.Column(accessor='script', orderable=False)
 
@@ -495,13 +510,7 @@ class CharacterTable(tables.Table):
 
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')
-        super(CharacterTable, self).__init__(*args, **kwargs)
-
-    def render_character(self, record):
-        name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
-                                                  esc(record.name),
-                                                  record.language.name)
-        return mark_safe(name_link)
+        super(CreatorCharacterTable, self).__init__(*args, **kwargs)
 
     def render_first_credit(self, value):
         return value[:4]
@@ -530,3 +539,31 @@ class CharacterTable(tables.Table):
         if record.letters:
             role += 'letters (%d); ' % record.letters
         return role[:-2]
+
+
+class UniverseCharacterTable(CharacterTable):
+    appearances_count = tables.Column(accessor='issue_count',
+                                      verbose_name='Issues')
+    first_appearance = tables.Column(verbose_name='First Appearance')
+
+    class Meta:
+        model = Character
+        fields = ('character', 'first_appearance')
+
+    def __init__(self, *args, **kwargs):
+        self.universe = kwargs.pop('universe')
+        super(UniverseCharacterTable, self).__init__(*args, **kwargs)
+
+    def render_first_appearance(self, value):
+        return value[:4]
+
+    def render_appearances_count(self, record):
+        url = urlresolvers.reverse(
+                'character_issues_per_universe',
+                kwargs={'universe_id': self.universe.id,
+                        'character_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
+
+    def value_appearances_count(self, record):
+        return record.issue_count
