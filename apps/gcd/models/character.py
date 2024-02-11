@@ -501,9 +501,17 @@ class CharacterTable(tables.Table):
     character = tables.Column(accessor='name',
                               verbose_name='Character')
 
+
+    def order_character(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'sort_name',
+                                       'year_first_published',
+                                       'language__code')
+        return (query_set, True)
+
     def render_character(self, record):
         name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
-                                                  esc(record.name),
+                                                  esc(record.disambiguated),
                                                   record.language.name)
         return mark_safe(name_link)
 

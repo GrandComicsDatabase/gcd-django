@@ -3120,6 +3120,7 @@ def universe_issues(request, universe_id):
 
     issues = Issue.objects.filter(
       story__universe=universe,
+      story__deleted=False,
       deleted=False).distinct().select_related('series__publisher')
 
     filter = filter_issues(request, issues)
@@ -3145,6 +3146,7 @@ def universe_characters(request, universe_id):
     characters = Character.objects.filter(
       character_names__storycharacter__universe=universe,
       character_names__storycharacter__story__type__id__in=CORE_TYPES,
+      character_names__storycharacter__deleted=False,
       deleted=False).distinct()
 
     characters = characters.annotate(issue_count=Count(
