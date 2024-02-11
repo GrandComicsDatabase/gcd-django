@@ -519,7 +519,8 @@ class CharacterTable(tables.Table):
 
 class CreatorCharacterTable(CharacterTable):
     credits_count = tables.Column(accessor='issue_credits_count',
-                                  verbose_name='Issues')
+                                  verbose_name='Issues',
+                                  initial_sort_descending=True)
     first_credit = tables.Column(verbose_name='First Credit')
     role = tables.Column(accessor='script', orderable=False)
 
@@ -562,7 +563,8 @@ class CreatorCharacterTable(CharacterTable):
 
 class UniverseCharacterTable(CharacterTable):
     appearances_count = tables.Column(accessor='issue_count',
-                                      verbose_name='Issues')
+                                      verbose_name='Issues',
+                                      initial_sort_descending=True)
     first_appearance = tables.Column(verbose_name='First Appearance')
 
     class Meta:

@@ -208,7 +208,8 @@ class FeatureRelation(GcdLink):
 
 class FeatureTable(tables.Table):
     credits_count = tables.Column(accessor='issue_credits_count',
-                                  verbose_name='Issues')
+                                  verbose_name='Issues',
+                                  initial_sort_descending=True)
     feature = tables.Column(accessor='name',
                             verbose_name='Feature')
     first_credit = tables.Column(verbose_name='First Credit')
