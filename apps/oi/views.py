@@ -3141,13 +3141,13 @@ def copy_story_revision(request, issue_revision_id, changeset_id=None,
         story_revision = changeset.storyrevisions.get(id=story_revision_id)
         copy_credit_info = request.POST.get('copy_credit_info', False)
         copy_characters = request.POST.get('copy_characters', False)
-        StoryRevision.clone_revision(story_revision, changeset,
-                                     issue_revision=issue_revision,
-                                     copy_credit_info=copy_credit_info,
-                                     copy_characters=copy_characters)
+        rev = StoryRevision.clone_revision(story_revision, changeset,
+                                           issue_revision=issue_revision,
+                                           copy_credit_info=copy_credit_info,
+                                           copy_characters=copy_characters)
 
         return HttpResponseRedirect(urlresolvers.reverse(
-          'edit', kwargs={'id': changeset.id}))
+          'edit_revision', kwargs={'id': rev.id, 'model_name': 'story'}))
 
 ##############################################################################
 # Series Bond Editing

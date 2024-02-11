@@ -59,6 +59,7 @@ GCD :: Character :: {{ character.name }}
         <li><a href='{% url "character_issues_up" character_id=character.id %}'>Issue Checklist, including generalisations (via linked story records)</a></li>
   {% endif %}
         <li><a href='{% url "character_covers" character_id=character.id %}'>Cover List (via linked story records)</a></li>
+        <li><a href='{% url "character_series" character_id=character.id %}'>Series List (via linked story records)</a></li>
         <li><a href='{% url "character_sequences" character_id=character.id %}'>Sequences List (via linked story records)</a></li>
       </ul>
   {% if additional_names %}

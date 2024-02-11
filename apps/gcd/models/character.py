@@ -94,7 +94,8 @@ class Universe(GcdData):
             return '%s' % (self.name)
 
     def __str__(self):
-        return '%s : %s' % (self.verse, self.universe_name())
+        verse = str(self.verse) + ' : ' if self.verse else ''
+        return '%s%s' % (verse, self.universe_name())
 
 
 class CharacterNameDetail(GcdData):
@@ -502,7 +503,6 @@ class CharacterTable(tables.Table):
     character = tables.Column(accessor='name',
                               verbose_name='Character')
 
-
     def order_character(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name',
@@ -575,8 +575,24 @@ class UniverseCharacterTable(CharacterTable):
         self.universe = kwargs.pop('universe')
         super(UniverseCharacterTable, self).__init__(*args, **kwargs)
 
+    def order_first_appearance(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'first_appearance',
+                                       '-issue_count',
+                                       'sort_name',
+                                       'language__code')
+        return (query_set, True)
+
     def render_first_appearance(self, value):
         return value[:4]
+
+    def order_appearances_count(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue_count',
+                                       'sort_name',
+                                       'first_appearance',
+                                       'language__code')
+        return (query_set, True)
 
     def render_appearances_count(self, record):
         url = urlresolvers.reverse(
@@ -588,3 +604,17 @@ class UniverseCharacterTable(CharacterTable):
 
     def value_appearances_count(self, record):
         return record.issue_count
+
+
+class SeriesCharacterTable(UniverseCharacterTable):
+    def __init__(self, *args, **kwargs):
+        self.series = kwargs.pop('series')
+        super(UniverseCharacterTable, self).__init__(*args, **kwargs)
+
+    def render_appearances_count(self, record):
+        url = urlresolvers.reverse(
+                'character_issues_per_series',
+                kwargs={'series_id': self.series.id,
+                        'character_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))

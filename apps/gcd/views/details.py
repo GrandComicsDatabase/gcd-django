@@ -55,13 +55,15 @@ from apps.gcd.models.creator import FeatureCreatorTable, \
                                     GroupCreatorNameTable, \
                                     CreatorCreatorTable, NAME_TYPES
 from apps.gcd.models.character import CreatorCharacterTable, \
-                                      UniverseCharacterTable
+                                      UniverseCharacterTable, \
+                                      SeriesCharacterTable
 from apps.gcd.models.feature import FeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   BrandEmblemIssueTable, \
                                   IndiciaPublisherIssueTable, \
                                   IssuePublisherTable, PublisherIssueTable
-from apps.gcd.models.series import SeriesTable, CreatorSeriesTable
+from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
+                                   CharacterSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
                                   StoryTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO, \
@@ -2074,6 +2076,37 @@ def series_creators(request, series_id, creator_names=False):
     return generic_sortable_list(request, creators, table, template, context)
 
 
+def series_characters(request, series_id):
+    series = get_gcd_object(Series, series_id)
+    characters = Character.objects.filter(
+      character_names__storycharacter__story__issue__series=series,
+      character_names__storycharacter__story__type__id__in=CORE_TYPES,
+      character_names__storycharacter__deleted=False,
+      deleted=False).distinct()
+
+    characters = characters.annotate(issue_count=Count(
+      'character_names__storycharacter__story__issue', distinct=True))
+    characters = characters.annotate(first_appearance=Min(
+      Case(When(character_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('character_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'character',
+        'plural_suffix': 's',
+        'heading': 'Characters in Series %s' % (series)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = SeriesCharacterTable(characters,
+                                 attrs={'class': 'sortable_listing'},
+                                 series=series,
+                                 template_name=SORT_TABLE_TEMPLATE,
+                                 order_by=('character'))
+    return generic_sortable_list(request, characters, table, template, context)
+
+
 def series_issues_to_migrate(request, series_id):
     series = get_gcd_object(Series, series_id)
     issues = series.issues_to_migrate
@@ -3263,6 +3296,76 @@ def character_issues(request, character_id, layer=None, universe_id=None,
                        template_name=SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
+
+
+def character_issues_series(request, character_id, series_id):
+    character = get_gcd_object(Character, character_id)
+    series = get_gcd_object(Series, series_id)
+    query = {'story__appearing_characters__character__character': character,
+             'story__appearing_characters__deleted': False,
+             'story__type__id__in': CORE_TYPES,
+             'series__id': series_id,
+             'story__deleted': False}
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for %s in  %s' % (character, series),
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def character_series(request, character_id):
+    character = get_gcd_object(Character, character_id)
+    universe_id = None
+    heading = 'Series with %s' % (character)
+
+    if character.universe:
+        if character.active_generalisations():
+            universe_id = character.universe.id
+            character = character.active_generalisations().get().from_character
+
+    if universe_id:
+        series = Series.objects.filter(
+          issue__story__appearing_characters__character__character=character,
+          issue__story__appearing_characters__universe_id=universe_id,
+          issue__story__appearing_characters__deleted=False,
+          issue__story__type__id__in=CORE_TYPES,
+          deleted=False).distinct().select_related('publisher')
+    else:
+        series = Series.objects.filter(
+          issue__story__appearing_characters__character__character=character,
+          issue__story__appearing_characters__deleted=False,
+          issue__story__type__id__in=CORE_TYPES,
+          deleted=False).distinct().select_related('publisher')
+
+    series = series.annotate(appearances_count=Count('issue', distinct=True))
+    series = series.annotate(first_appearance=Min('issue__key_date'))
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'series',
+        'plural_suffix': '',
+        'heading': heading,
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CharacterSeriesTable(series,
+                       character=character,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
+                       order_by=('issue'))
+    return generic_sortable_list(request, series, table, template, context)
 
 
 def character_creators(request, character_id, creator_names=False):

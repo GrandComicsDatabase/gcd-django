@@ -544,10 +544,9 @@ class SeriesPublisherTable(SeriesTable):
 
     def order_publisher(self, query_set, is_descending):
         query_set = query_set.annotate(publisher_name=F('publisher__name'))
-        query_set = query_set.annotate(series_name=F('sort_name'))
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'publisher_name',
-                                       direction + 'series_name')
+                                       'sort_name')
         return (query_set, True)
 
     def render_publisher(self, value):
@@ -560,7 +559,50 @@ class SeriesPublisherTable(SeriesTable):
         return str(value)
 
 
-class CreatorSeriesTable(SeriesTable):
+class CharacterSeriesTable(SeriesPublisherTable):
+    appearances_count = tables.Column(accessor='appearances_count',
+                                      verbose_name='Issues',
+                                      initial_sort_descending=True)
+    covers = None
+    published = None
+    first_appearance = tables.Column(verbose_name='First Appearance')
+    issue_count = None
+
+    def __init__(self, *args, **kwargs):
+        self.character = kwargs.pop('character')
+        self.resolve_name = 'character'
+        super(SeriesTable, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Series
+        fields = ('name', 'year', 'publisher', 'first_appearance')
+
+    def order_appearances_count(self, QuerySet, is_descending):
+        if is_descending:
+            QuerySet = QuerySet.order_by('-appearances_count', 'sort_name',
+                                         'year_began')
+        else:
+            QuerySet = QuerySet.order_by('appearances_count', 'sort_name',
+                                         'year_began')
+        return (QuerySet, True)
+
+    def render_first_appearance(self, value):
+        return value[:4]
+
+    def render_appearances_count(self, record):
+        url = urlresolvers.reverse(
+                'character_issues_per_series',
+                kwargs={'series_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.appearances_count))
+
+    def value_appearances_count(self, record):
+        return record.appearances_count
+
+
+class CreatorSeriesTable(SeriesPublisherTable):
     credits_count = tables.Column(accessor='issue_credits_count',
                                   verbose_name='Issues',
                                   initial_sort_descending=True)
@@ -602,15 +644,6 @@ class CreatorSeriesTable(SeriesTable):
 
     def value_credits_count(self, record):
         return record.issue_credits_count
-
-    def render_publisher(self, value):
-        from apps.gcd.templatetags.display import absolute_url
-        from apps.gcd.templatetags.credits import show_country_info
-        display_publisher = "<img %s>" % (show_country_info(value.country))
-        return mark_safe(display_publisher) + absolute_url(value)
-
-    def value_publisher(self, value):
-        return str(value)
 
     def render_role(self, record):
         role = ''

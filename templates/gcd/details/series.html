@@ -92,6 +92,7 @@
             <li><a href='{% url "series_overview" series_id=series.id %}'>Cover and Main Story Overview</a></li>
             <li><a href='{% url "series_creators" series_id=series.id %}'>Creator Checklist (via linked story records)</a></li>
             <li><a href='{% url "series_creator_names" series_id=series.id %}'>Creator Name Checklist (via linked story records)</a></li>
+            <li><a href='{% url "series_characters" series_id=series.id %}'>Character List (via linked story records)</a></li>
             {% if series.issues_to_migrate.count %}<li>Approximately <a href='{% url "series_migrate" series_id=series.id %}'>{{ series.issues_to_migrate.count }} issues</a> with text credits to migrate.</li>{% endif %}
 	  </ul>
 {% endif %}
