@@ -79,6 +79,7 @@ class Universe(GcdData):
             return True
         if Character.objects.filter(
           character_names__storycharacter__universe=self,
+          character_names__storycharacter__deleted=False,
           deleted=False).exists():
             return True
         return False
