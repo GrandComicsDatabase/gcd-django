@@ -5835,7 +5835,8 @@ class StoryRevision(Revision):
                                            notes='',
                                            story_group_id=None):
                 other_group_rev = self.story_group_revisions.filter(
-                  group=story_group.group, universe=story_group.universe)\
+                  group=story_group.group, universe=story_group.universe,
+                  deleted=False)\
                   .exclude(id=story_group.id)
                 if other_group_rev.exists():
                     story_group.delete()

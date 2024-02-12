@@ -148,10 +148,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
 
     all_appearing_characters = story.active_characters
     in_group = all_appearing_characters.exclude(group=None)
-    # TODO change after migration to add all existing group entries to a story
-    # TODO change then the StoryGroup to access the notes and universe
-    groups = Group.objects.filter(id__in=in_group.values_list('group'))
-    groups |= Group.objects.filter(id__in=story.active_groups.values_list('group'))
+    groups = story.active_groups
 
     reference_universe_id = None
     if story.universe.count() == 1:
@@ -166,23 +163,33 @@ def show_characters(story, url=True, css_style=True, compare=False):
               .pop()
             reference_universe_id = Multiverse.objects.get(
               id=mainstream_universe_id).mainstream_id
-    # groups |= story.active_groups
     for group in groups:
         first_member = True
-        for member in in_group.filter(group=group):
+        group_universe_name = ''
+        if reference_universe_id and group.universe:
+            if group.universe_id != reference_universe_id:
+                group_universe_name = group.universe.universe_name()
+        for member in in_group.filter(group=group.group_id,
+                                      group_universe=group.universe_id):
             if first_member:
                 first_member = False
                 if url:
-                    characters += '<a href="%s"><b>%s</b></a>: <a href="%s">%s</a>' \
-                                  % (group.get_absolute_url(), esc(group.name),
+                    characters += '<a href="%s"><b>%s</b></a>%s%s: ' \
+                                  '<a href="%s">%s</a>' \
+                                  % (group.group.get_absolute_url(),
+                                     esc(group.group.name),
+                                     ' (%s)' % group.notes if group.notes else '',
+                                     ' (%s)' % group_universe_name
+                                       if group_universe_name else '',
                                      member.character.get_absolute_url(),
                                      esc(member.character.name))
                 else:
-                    characters += '%s [%s' % (group.name,
+                    characters += '%s [%s' % (group.group.name,
                                               member.character.name)
                 if compare:
-                    disambiguation += '%s [<br>&nbsp;&nbsp; %s' % (
-                      group.disambiguated,
+                    disambiguation += '%s%s: <br>&nbsp;&nbsp; %s' % (
+                      group.group.disambiguated,
+                      ' - %s' % group.universe.universe_name() if group.universe else '',
                       member.character.character.disambiguated)
             else:
                 characters += '; '
@@ -212,9 +219,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
         if first_member is True:
             if url:
                 characters += '<a href="%s"><b>%s</b></a><br> ' \
-                                % (group.get_absolute_url(), esc(group.name))
+                                % (group.group.get_absolute_url(), esc(group.group.name))
             else:
-                characters += '%s; ' % (group.name)
+                characters += '%s; ' % (group.group.name)
             first_member = False
         else:
             if url:
@@ -225,6 +232,8 @@ def show_characters(story, url=True, css_style=True, compare=False):
             disambiguation += '<br>'
     if groups and first_member == True:
         characters = characters[:-2]
+    if compare:
+        disambiguation += '<br>'
 
     appearing_characters = all_appearing_characters.exclude(
       character__id__in=in_group.values_list('character'), group__isnull=False)

@@ -3606,8 +3606,8 @@ def group_issues(request, group_id):
     group = get_gcd_object(Group, group_id)
 
     issues = Issue.objects.filter(
-      story__appearing_characters__group=group,
-      story__appearing_characters__deleted=False,
+      story__appearing_groups__group=group,
+      story__appearing_groups__deleted=False,
       story__type__id__in=CORE_TYPES,
       story__deleted=False).distinct().select_related('series__publisher')
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -3632,8 +3632,8 @@ def group_creators(request, group_id, creator_names=False):
     if creator_names:
         creators = CreatorNameDetail.objects.all()
         creators = creators.filter(
-          storycredit__story__appearing_characters__group=group,
-          storycredit__story__appearing_characters__deleted=False,
+          storycredit__story__appearing_groups__group=group,
+          storycredit__story__appearing_groups__deleted=False,
           storycredit__story__type__id__in=CORE_TYPES,
           storycredit__deleted=False).distinct()
         result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -3641,8 +3641,8 @@ def group_creators(request, group_id, creator_names=False):
     else:
         creators = Creator.objects.all()
         creators = creators.filter(
-          creator_names__storycredit__story__appearing_characters__group=group,
-          creator_names__storycredit__story__appearing_characters__deleted=False,
+          creator_names__storycredit__story__appearing_groups__group=group,
+          creator_names__storycredit__story__appearing_groups__deleted=False,
           creator_names__storycredit__story__type__id__in=CORE_TYPES,
           creator_names__storycredit__deleted=False).distinct()
         result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -3673,8 +3673,8 @@ def group_creators(request, group_id, creator_names=False):
 def group_sequences(request, group_id, country=None):
     group = get_gcd_object(Group, group_id)
     stories = Story.objects.filter(
-      appearing_characters__group=group,
-      appearing_characters__deleted=False,
+      appearing_groups__group=group,
+      appearing_groups__deleted=False,
       deleted=False).distinct().select_related('issue__series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
