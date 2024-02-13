@@ -366,7 +366,7 @@ class Group(CharacterGroupBase):
           self.active_members().exists():
             return True
         from .story import StoryGroup
-        if StoryGroup.objects.filter(character__character=self,
+        if StoryGroup.objects.filter(group=self,
                                      deleted=False).exists():
             return True
         return False
