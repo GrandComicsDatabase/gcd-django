@@ -5,7 +5,7 @@ from haystack.forms import FacetedSearchForm
 
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Q, Value, IntegerField, F
 import django.urls as urlresolvers
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
@@ -425,7 +425,7 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
 
 def _filter_and_sort(qs, query, field='name', creator_detail=False,
                      disambiguation=False, parent_disambiguation=None,
-                     interactive=True):
+                     interactive=True, chrono_sort=''):
     if query:
         if disambiguation or parent_disambiguation:
             if query.find(' [') > 1:
@@ -459,7 +459,23 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
             else:
                 qs_match = None
             if qs_match:
-                qs_return = qs_match.union(qs_contains)
+                if chrono_sort:
+                    qs_contains = qs_contains.exclude(Q(**{'%s' % field:
+                                                           query}))
+                    qs_match = qs_match.annotate(chrono=F(chrono_sort))\
+                                       .annotate(qs_order=Value(1,
+                                                 IntegerField()))
+                    # remove items from qs_match since due to annotate
+                    # duplicates are not filtered out by union
+                    qs_contains = qs_contains.annotate(chrono=F(chrono_sort))\
+                                             .annotate(qs_order=Value(2,
+                                                       IntegerField()))
+                    qs_return = qs_match.union(qs_contains)\
+                                        .order_by('qs_order',
+                                                  'sort_name',
+                                                  'chrono')
+                else:
+                    qs_return = qs_match.union(qs_contains)
             else:
                 if creator_detail:
                     qs_return = qs_contains.select_related('creator')
@@ -618,7 +634,7 @@ class CharacterAutocomplete(LoginRequiredMixin,
         if language:
             qs = qs.filter(language__code__in=[language, 'zxx'])
 
-        qs = _filter_and_sort(qs, self.q)
+        qs = _filter_and_sort(qs, self.q, chrono_sort='year_first_published')
 
         return qs
 
@@ -639,7 +655,8 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
         if group:
             qs = qs.filter(character__memberships__group=group)\
                    .distinct()
-        qs = _filter_and_sort(qs, self.q, parent_disambiguation='character')
+        qs = _filter_and_sort(qs, self.q, parent_disambiguation='character',
+                              chrono_sort='character__year_first_published')
 
         return qs
 
@@ -679,7 +696,7 @@ class UniverseAutocomplete(LoginRequiredMixin,
             query = self.q
 
         qs = qs.filter(Q(**{'name__icontains': query}) |
-                       Q(**{'designation__icontains': query}) )
+                       Q(**{'designation__icontains': query}))
 
         return qs
 
