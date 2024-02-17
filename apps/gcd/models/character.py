@@ -106,7 +106,8 @@ class CharacterNameDetail(GcdData):
     class Meta:
         db_table = 'gcd_character_name_detail'
         app_label = 'gcd'
-        ordering = ['sort_name', 'character__disambiguation']
+        ordering = ['sort_name', 'character__year_first_published',
+                    'character__disambiguation']
         verbose_name_plural = 'CharacterName Details'
 
     name = models.CharField(max_length=255, db_index=True)
@@ -145,6 +146,8 @@ class CharacterRelationType(models.Model):
 class CharacterGroupBase(GcdData):
     class Meta:
         abstract = True
+        ordering = ('sort_name', 'year_first_published',
+                    'disambiguation',)
 
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True, default='')
@@ -196,7 +199,6 @@ class CharacterGroupBase(GcdData):
 class Character(CharacterGroupBase):
     class Meta:
         app_label = 'gcd'
-        ordering = ('sort_name', 'created',)
         verbose_name_plural = 'Characters'
 
     external_link = models.ManyToManyField(ExternalLink)
@@ -335,7 +337,6 @@ class CharacterRelation(GcdLink):
 class Group(CharacterGroupBase):
     class Meta:
         app_label = 'gcd'
-        ordering = ('sort_name', 'created',)
         verbose_name_plural = 'Groups'
 
     def active_relations(self):
@@ -344,6 +345,30 @@ class Group(CharacterGroupBase):
 
     def active_members(self):
         return self.members.all()
+
+    def active_universe_origins(self):
+        from .story import StoryGroup
+        appearances = StoryGroup.objects.filter(group=self,
+                                                deleted=False)
+        universes = set(appearances.values_list('universe',
+                                                flat=True).distinct())
+        return Universe.objects.filter(id__in=universes)
+
+    def active_universe_appearances(self):
+        from .story import Story
+        if self.universe and self.active_generalisations().exists():
+            group = self.active_generalisations().get().from_group
+            appearances = Story.objects.filter(
+              appearing_groups__group=group,
+              appearing_groups__universe=self.universe,
+              deleted=False)
+        else:
+            appearances = Story.objects.filter(
+              appearing_groups__group=self,
+              deleted=False)
+        universes = set(appearances.values_list('universe',
+                                                flat=True).distinct())
+        return Universe.objects.filter(id__in=universes)
 
     # what is with translation over character records ?
     # German . English - French, copying from first to last ?

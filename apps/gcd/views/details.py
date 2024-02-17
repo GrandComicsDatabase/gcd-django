@@ -3602,14 +3602,28 @@ def show_group(request, group, preview=False):
     return render(request, 'gcd/details/group.html', vars)
 
 
-def group_issues(request, group_id):
+def group_issues(request, group_id, universe_id=None, story_universe_id=None):
     group = get_gcd_object(Group, group_id)
 
-    issues = Issue.objects.filter(
-      story__appearing_groups__group=group,
-      story__appearing_groups__deleted=False,
-      story__type__id__in=CORE_TYPES,
-      story__deleted=False).distinct().select_related('series__publisher')
+    query = {'story__appearing_groups__group': group,
+             'story__appearing_groups__deleted': False,
+             'story__type__id__in': CORE_TYPES,
+             'story__deleted': False}
+
+    if universe_id:
+        if universe_id == '-1':
+            query['story__appearing_groups__universe_id__isnull'] = \
+                True
+        else:
+            query['story__appearing_groups__universe_id'] = universe_id
+    if story_universe_id:
+        if story_universe_id == '-1':
+            query['story__universe__isnull'] = True
+        else:
+            query['story__universe__in'] = [story_universe_id,]
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                            .select_related('series__publisher')
+
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
     context = {

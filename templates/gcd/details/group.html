@@ -48,6 +48,33 @@ GCD :: Group :: {{ group.name }}
         <li><a href='{% url "group_issues" group_id=group.id %}'>Issue Checklist (via linked story records)</a></li>
         <li><a href='{% url "group_sequences" group_id=group.id %}'>Sequences List (via linked story records)</a></li>
       </ul>
+{% if group.active_universe_origins %}
+      <hr>
+      <h3>Appearances With a Group Universe:</h3>
+      <table style="border-collapse: collapse;">
+        <tr><td style="padding: 0"><ul style="margin: 0">
+          <li><a href='{% url "group_issues_per_universe" group_id=group.id universe_id=-1 %}'>without a universe</a></li>
+        {% for universe in group.active_universe_origins %}
+        <tr><td style="padding: 0"><ul style="margin: 0">
+          <li><a href='{% url "group_issues_per_universe" group_id=group.id universe_id=universe.id %}'>{{ universe }}</a></li></td>
+          {% comment %} <td style="padding:0 0 0 2em">{{ character|group_for_universe:universe.id }}</td></tr> {% endcomment %}
+        {% endfor %}
+      </table>
+{% endif %}
+{% if group.active_universe_appearances %}
+      <hr>
+      <h3>Appearances With a Story Universe:</h3>
+      <table style="border-collapse: collapse;">
+        <tr><td style="padding: 0"><ul style="margin: 0">
+          <li><a href='{% url "group_story_issues_per_universe" group_id=group.id story_universe_id=-1 %}'>without a universe</a></li>
+        {% for universe in group.active_universe_appearances %}
+        <tr><td style="padding: 0"><ul style="margin: 0">
+          <li><a href='{% url "group_story_issues_per_universe" group_id=group.id story_universe_id=universe.id %}'>{{ universe }}</a></li></td>
+        </tr>
+        {% endfor %}
+      </table>
+{% endif %}
+
   {% if group.active_relations %}
         <hr>
         <h3>Relations:</h3>
