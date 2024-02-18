@@ -146,6 +146,7 @@ class CharacterRelationType(models.Model):
 class CharacterGroupBase(GcdData):
     class Meta:
         abstract = True
+        app_label = 'gcd'
         ordering = ('sort_name', 'year_first_published',
                     'disambiguation',)
 
@@ -197,8 +198,7 @@ class CharacterGroupBase(GcdData):
 
 
 class Character(CharacterGroupBase):
-    class Meta:
-        app_label = 'gcd'
+    class Meta(CharacterGroupBase.Meta):
         verbose_name_plural = 'Characters'
 
     external_link = models.ManyToManyField(ExternalLink)
@@ -335,8 +335,7 @@ class CharacterRelation(GcdLink):
 
 
 class Group(CharacterGroupBase):
-    class Meta:
-        app_label = 'gcd'
+    class Meta(CharacterGroupBase.Meta):
         verbose_name_plural = 'Groups'
 
     def active_relations(self):
