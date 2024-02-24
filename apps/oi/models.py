@@ -279,12 +279,12 @@ def _check_year(year):
 
 def _imps_for_years(revision, field_name, year_began, year_ended):
     if field_name in (year_began, year_began + '_uncertain'):
-        if not revision._seen_year_began and revision.__dict__['year_began']:
+        if not revision._seen_year_began and revision.__dict__[year_began]:
             revision._seen_year_began = True
             return True, 1
         return True, 0
     elif field_name in (year_ended, year_ended + '_uncertain'):
-        if not revision._seen_year_ended and revision.__dict__['year_ended']:
+        if not revision._seen_year_ended and revision.__dict__[year_ended]:
             revision._seen_year_ended = True
             return True, 1
         return True, 0
