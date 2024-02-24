@@ -1092,23 +1092,6 @@ class CreatorNameTable(CreatorTable):
         return str(record.creator)
 
 
-class CharacterCreatorTable(CreatorTable):
-    def __init__(self, *args, **kwargs):
-        self.character = kwargs.pop('character')
-        self.resolve_name = 'character'
-        super(CreatorTable, self).__init__(*args, **kwargs)
-
-
-class CharacterCreatorNameTable(CreatorNameTable):
-    def __init__(self, *args, **kwargs):
-        self.character = kwargs.pop('character')
-        self.resolve_name = 'character'
-        super(CreatorNameTable, self).__init__(*args, **kwargs)
-
-    class Meta(CreatorNameTable.Meta):
-        pass
-
-
 class CreatorCreatorTable(CreatorTable):
     credits_count = tables.Column(accessor='issue_credits_count',
                                   verbose_name='# Issues',
@@ -1144,52 +1127,15 @@ class CreatorCreatorTable(CreatorTable):
         return str(record)
 
 
-class GroupCreatorTable(CreatorTable):
+class GenericCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):
-        self.group = kwargs.pop('group')
-        self.resolve_name = 'group'
+        self.resolve_name = kwargs.pop('resolve_name')
+        setattr(self, self.resolve_name, kwargs.pop('object'))
         super(CreatorTable, self).__init__(*args, **kwargs)
 
 
-class GroupCreatorNameTable(CreatorNameTable):
+class GenericCreatorNameTable(CreatorNameTable):
     def __init__(self, *args, **kwargs):
-        self.group = kwargs.pop('group')
-        self.resolve_name = 'group'
+        self.resolve_name = kwargs.pop('resolve_name')
+        setattr(self, self.resolve_name, kwargs.pop('object'))
         super(CreatorNameTable, self).__init__(*args, **kwargs)
-
-    class Meta(CreatorNameTable.Meta):
-        pass
-
-
-class FeatureCreatorTable(CreatorTable):
-    def __init__(self, *args, **kwargs):
-        self.feature = kwargs.pop('feature')
-        self.resolve_name = 'feature'
-        super(CreatorTable, self).__init__(*args, **kwargs)
-
-
-class FeatureCreatorNameTable(CreatorNameTable):
-    def __init__(self, *args, **kwargs):
-        self.feature = kwargs.pop('feature')
-        self.resolve_name = 'feature'
-        super(CreatorNameTable, self).__init__(*args, **kwargs)
-
-    class Meta(CreatorNameTable.Meta):
-        pass
-
-
-class SeriesCreatorTable(CreatorTable):
-    def __init__(self, *args, **kwargs):
-        self.series = kwargs.pop('series')
-        self.resolve_name = 'series'
-        super(CreatorTable, self).__init__(*args, **kwargs)
-
-
-class SeriesCreatorNameTable(CreatorNameTable):
-    def __init__(self, *args, **kwargs):
-        self.series = kwargs.pop('series')
-        self.resolve_name = 'series'
-        super(CreatorNameTable, self).__init__(*args, **kwargs)
-
-    class Meta(CreatorNameTable.Meta):
-        pass

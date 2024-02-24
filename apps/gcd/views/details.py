@@ -45,14 +45,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
                             Character, Group, CharacterNameDetail, Universe, \
                             Multiverse, StoryCredit, \
                             CharacterRelation, GroupRelation, GroupMembership
-from apps.gcd.models.creator import FeatureCreatorTable, \
-                                    FeatureCreatorNameTable, \
-                                    SeriesCreatorTable, \
-                                    SeriesCreatorNameTable, \
-                                    CharacterCreatorTable, \
-                                    CharacterCreatorNameTable, \
-                                    GroupCreatorTable, \
-                                    GroupCreatorNameTable, \
+from apps.gcd.models.creator import GenericCreatorTable, \
+                                    GenericCreatorNameTable, \
                                     CreatorCreatorTable, NAME_TYPES
 from apps.gcd.models.character import CreatorCharacterTable, \
                                       UniverseCharacterTable, \
@@ -537,11 +531,11 @@ def creator_overview(request, creator_id):
 
 
 def creator_issues(request, creator_id, series_id=None, feature_id=None,
-                   character_id=None, group_id=None,
+                   character_id=None, group_id=None, publisher_id=None,
                    country=None, language=None):
     return checklist_by_id(request, creator_id, series_id=series_id,
                            feature_id=feature_id, character_id=character_id,
-                           group_id=group_id,
+                           group_id=group_id, publisher_id=publisher_id,
                            country=country, language=language)
 
 
@@ -647,7 +641,7 @@ def creator_series(request, creator_id, country=None, language=None):
 
 def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                     feature_id=None, co_creator_id=None, group_id=None,
-                    edits=False, country=None, language=None):
+                    publisher_id=None, edits=False, country=None, language=None):
     """
     Provides checklists for a Creator. These include results for all
     CreatorNames and for the overall House Name all uses of that House Name.
@@ -678,6 +672,11 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
         issues = issues.filter(series__id=series_id)
         heading = 'Issues for Creator %s in Series %s' % (creator,
                                                           series)
+    elif publisher_id:
+        publisher = get_gcd_object(Publisher, publisher_id)
+        issues = issues.filter(series__publisher__id=publisher_id)
+        heading = 'Issues for Creator %s for Publisher %s' % (creator,
+                                                              publisher)
     elif character_id:
         character = get_gcd_object(Character, character_id)
         if character.universe:
@@ -2069,6 +2068,48 @@ def _annotate_creator_name_detail_list(creator_names):
     return creators
 
 
+def publisher_creators(request, publisher_id, creator_names=False):
+    publisher = get_gcd_object(Publisher, publisher_id)
+
+    if creator_names:
+        creators = CreatorNameDetail.objects.all()
+        creators = creators.filter(storycredit__story__issue__series__publisher=publisher,
+                                   storycredit__story__type__id__in=CORE_TYPES,
+                                   storycredit__deleted=False).distinct()\
+                           .select_related('creator')
+        creators = _annotate_creator_name_detail_list(creators)
+    else:
+        creators = Creator.objects.all()
+        creators = creators.filter(
+          creator_names__storycredit__story__issue__series__publisher=publisher,
+          creator_names__storycredit__story__type__id__in=CORE_TYPES,
+          creator_names__storycredit__deleted=False).distinct()
+        creators = _annotate_creator_list(creators)
+
+    context = {
+        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'item_name': 'creator',
+        'plural_suffix': 's',
+        'heading': 'Creators Working for %s' % (publisher)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    if creator_names:
+        table = GenericCreatorNameTable(creators,
+                                        attrs={'class': 'sortable_listing'},
+                                        resolve_name='publisher',
+                                        object=publisher,
+                                        template_name=SORT_TABLE_TEMPLATE,
+                                        order_by=('name'))
+    else:
+        table = GenericCreatorTable(creators,
+                                    attrs={'class': 'sortable_listing'},
+                                    resolve_name='publisher',
+                                    object=publisher,
+                                    template_name=SORT_TABLE_TEMPLATE,
+                                    order_by=('name'))
+    return generic_sortable_list(request, creators, table, template, context)
+
+
 def series_creators(request, series_id, creator_names=False):
     series = get_gcd_object(Series, series_id)
 
@@ -2095,17 +2136,19 @@ def series_creators(request, series_id, creator_names=False):
     }
     template = 'gcd/search/issue_list_sortable.html'
     if creator_names:
-        table = SeriesCreatorNameTable(creators,
-                                       attrs={'class': 'sortable_listing'},
-                                       series=series,
-                                       template_name=SORT_TABLE_TEMPLATE,
-                                       order_by=('name'))
+        table = GenericCreatorNameTable(creators,
+                                        attrs={'class': 'sortable_listing'},
+                                        object=series,
+                                        resolve_name='series',
+                                        template_name=SORT_TABLE_TEMPLATE,
+                                        order_by=('name'))
     else:
-        table = SeriesCreatorTable(creators,
-                                   attrs={'class': 'sortable_listing'},
-                                   series=series,
-                                   template_name=SORT_TABLE_TEMPLATE,
-                                   order_by=('name'))
+        table = GenericCreatorTable(creators,
+                                    attrs={'class': 'sortable_listing'},
+                                    object=series,
+                                    resolve_name='series',
+                                    template_name=SORT_TABLE_TEMPLATE,
+                                    order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -3005,15 +3048,17 @@ def feature_creators(request, feature_id, creator_names=False):
     }
     template = 'gcd/search/issue_list_sortable.html'
     if creator_names:
-        table = FeatureCreatorNameTable(creators,
+        table = GenericCreatorNameTable(creators,
                                         attrs={'class': 'sortable_listing'},
-                                        feature=feature,
+                                        resolve_name='feature',
+                                        object=feature,
                                         template_name=SORT_TABLE_TEMPLATE,
                                         order_by=('name'))
     else:
-        table = FeatureCreatorTable(creators,
+        table = GenericCreatorTable(creators,
                                     attrs={'class': 'sortable_listing'},
-                                    feature=feature,
+                                    resolve_name='feature',
+                                    object=feature,
                                     template_name=SORT_TABLE_TEMPLATE,
                                     order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
@@ -3450,17 +3495,19 @@ def character_creators(request, character_id, creator_names=False):
     }
     template = 'gcd/search/issue_list_sortable.html'
     if creator_names:
-        table = CharacterCreatorNameTable(creators,
-                                          attrs={'class': 'sortable_listing'},
-                                          character=character,
-                                          template_name=SORT_TABLE_TEMPLATE,
-                                          order_by=('name'))
+        table = GenericCreatorNameTable(creators,
+                                        attrs={'class': 'sortable_listing'},
+                                        object=character,
+                                        resolve_name='character',
+                                        template_name=SORT_TABLE_TEMPLATE,
+                                        order_by=('name'))
     else:
-        table = CharacterCreatorTable(creators,
-                                      attrs={'class': 'sortable_listing'},
-                                      character=character,
-                                      template_name=SORT_TABLE_TEMPLATE,
-                                      order_by=('name'))
+        table = GenericCreatorTable(creators,
+                                    attrs={'class': 'sortable_listing'},
+                                    object=character,
+                                    resolve_name='character',
+                                    template_name=SORT_TABLE_TEMPLATE,
+                                    order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -3703,17 +3750,19 @@ def group_creators(request, group_id, creator_names=False):
     }
     template = 'gcd/search/issue_list_sortable.html'
     if creator_names:
-        table = GroupCreatorNameTable(creators,
-                                      attrs={'class': 'sortable_listing'},
-                                      group=group,
-                                      template_name=SORT_TABLE_TEMPLATE,
-                                      order_by=('name'))
+        table = GenericCreatorNameTable(creators,
+                                        attrs={'class': 'sortable_listing'},
+                                        object=group,
+                                        resolve_name='group',
+                                        template_name=SORT_TABLE_TEMPLATE,
+                                        order_by=('name'))
     else:
-        table = GroupCreatorTable(creators,
-                                  attrs={'class': 'sortable_listing'},
-                                  group=group,
-                                  template_name=SORT_TABLE_TEMPLATE,
-                                  order_by=('name'))
+        table = GenericCreatorTable(creators,
+                                    attrs={'class': 'sortable_listing'},
+                                    object=group,
+                                    resolve_name='group',
+                                    template_name=SORT_TABLE_TEMPLATE,
+                                    order_by=('name'))
     return generic_sortable_list(request, creators, table, template, context)
 
 

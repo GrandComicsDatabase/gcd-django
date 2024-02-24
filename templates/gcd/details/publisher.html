@@ -28,66 +28,69 @@
             <dt>Publishing Began:</dt><dd>{{ publisher.year_overall_began }}</dd>
             <dt>Comics Publishing Began:</dt><dd>{{ publisher.year_began }}</dd>
           {% endif %}
-          {% if publisher.year_overall_endedpy %}
+          {% if publisher.year_overall_ended %}
             <dt> Publishing Ended:</dt><dd>{{ publisher.year_overall_ended }}</dd>
             <dt> Comics Publishing Ended:</dt><dd>{{ publisher.year_ended }}</dd>
           {% endif %}
         </dl>
 {% endif %}
         <dl style="columns: 2" class="pub_data">
-          <dt> Country:
-          <dd> {{ publisher.country.name }}
+          <dt> Country:</dt>
+          <dd> {{ publisher.country.name }}</dd>
 {% if publisher.indicia_publisher_count %}
-          <dt> Indicia / Colophon Publishers:
+          <dt> Indicia / Colophon Publishers:</dt>
   {% if preview %}
-          <dd> {{ publisher.indicia_publisher_count }}
+          <dd> {{ publisher.indicia_publisher_count }}</dd>
   {% else %}
-          <dd> <a href="{{ publisher.get_absolute_url }}indicia_publishers/">{{ publisher.indicia_publisher_count }}</a>
+          <dd> <a href="{{ publisher.get_absolute_url }}indicia_publishers/">{{ publisher.indicia_publisher_count }}</a></dd>
   {% endif %}
 {% endif %}
 {% if publisher.brand_count %}
-          <dt> Brand Groups:
+          <dt> Brand Groups:</dt>
   {% if preview %}
-          <dd> {{ publisher.brand_count }}
+          <dd> {{ publisher.brand_count }}</dd>
   {% else %}
-          <dd> <a href="{{ publisher.get_absolute_url }}brands/">{{ publisher.brand_count }}</a>
+          <dd> <a href="{{ publisher.get_absolute_url }}brands/">{{ publisher.brand_count }}</a></dd>
   {% endif %}
 {% endif %}
 {% if publisher.branduse_set.count %}
-          <dt> Brand Emblems in Use:
+          <dt> Brand Emblems in Use:</dt>
   {% if preview %}
-          <dd> {{ publisher.branduse_set.count }}
+          <dd> {{ publisher.branduse_set.count }}</dd>
   {% else %}
-          <dd> <a href="{{ publisher.get_absolute_url }}brand_uses/">{{ publisher.branduse_set.count }}</a>
+          <dd> <a href="{{ publisher.get_absolute_url }}brand_uses/">{{ publisher.branduse_set.count }}</a></dd>
   {% endif %}
 {% endif %}
-          <p>
-          <dt> Total Number of Series:
-          <dd> {{ publisher.series_count }}
-          <dt> Total Number of Issues:
-          <dd> <a href="{{ publisher.get_absolute_url }}issues/">{{ publisher.issue_count }}</a>
+          <dt> Total Number of Series:</dt>
+          <dd> {{ publisher.series_count }}</dd>
+          <dt> Total Number of Issues:</dt>
+          <dd> <a href="{{ publisher.get_absolute_url }}issues/">{{ publisher.issue_count }}</a></dd>
 {% if not publisher.year_ended %}
-          <dt> Number of Current Series:
-          <dd> <a href="{{ publisher.get_absolute_url }}current_series/">{{ current.count }}</a>
+          <dt> Number of Current Series:</dt>
+          <dd> <a href="{{ publisher.get_absolute_url }}current_series/">{{ current.count }}</a></dd>
 {% endif %}
-          <dt> Show Covers by Month:
-          <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
-          <dt> Show Issues by Month:
-            <dd> <a href='{% url "publisher_monthly_issues_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_issues_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
-{% if publisher.url or publisher.notes or publisher.has_keywords %}
         </dl>
+        <dl style="columns:2; margin-top: -1em;" class="pub_data">
+          <dt> Show Covers by Month:</dt>
+          <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
+          <dt> Show Issues by Month:</dt>
+          <dd style="margin: 0em 0em 1em 0em;"> <a href='{% url "publisher_monthly_issues_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_issues_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
+          <dt>Creator Checklist:</dt>
+          <dd><a href='{% url "publisher_creators" publisher_id=publisher.id %}'>via linked story records</a></dd>
+        </dl>
+{% if publisher.url or publisher.notes or publisher.has_keywords %}
         <dl style="margin-top: -0.5em" class="pub_data">
   {% if publisher.url %}
-          <dt> Web Site:
-          <dd> <a href="{{ publisher.url }}">{{ publisher.url }}</a>
+          <dt> Web Site:</dt>
+          <dd> <a href="{{ publisher.url }}">{{ publisher.url }}</a></dd>
   {% endif %}
   {% if publisher.notes and page.number == 1 %}
-          <dt> Notes:
-          <dd> {{ publisher.notes|urlizetrunc:75|linebreaksbr }}
+          <dt> Notes:</dt>
+          <dd> {{ publisher.notes|urlizetrunc:75|linebreaksbr }}</dd>
   {% endif %}
   {{ publisher|show_credit:'keywords' }}
-{% endif %}
         </dl>
+{% endif %}
   </div>
 {% endblock content %}
 

@@ -5,7 +5,6 @@
 
 {% ifnotequal paginate_only 1 %}
 <h1 class="item_id">
-  <div class="left">
   {% if publisher.parent %}
     <a href="{{ publisher.parent.get_absolute_url }}">{{ publisher.parent.name }}</a> :
   {% endif %}
@@ -23,7 +22,6 @@
       {% endif %}
     {% endifnotequal %}
   {% endif %}
-  </div>
 </h1>
 {% endifnotequal %}
 
