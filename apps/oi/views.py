@@ -249,6 +249,10 @@ def delete(request, id, model_name):
             return HttpResponseRedirect(urlresolvers.reverse('edit_covers',
                                         kwargs={'issue_id':
                                                 display_obj.issue.id}))
+        if model_name == 'series_bond':
+            return HttpResponseRedirect(urlresolvers.reverse('show_series',
+                                        kwargs={'series_id':
+                                                display_obj.origin_id}))
         return HttpResponseRedirect(
           urlresolvers.reverse('show_%s' % model_name,
                                kwargs={'%s_id' % model_name: id}))
