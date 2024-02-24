@@ -752,7 +752,7 @@ class BrandEmblemIssueTable(IssueTable):
         return (query_set, True)
 
     def render_indicia_publisher(self, record):
-        from apps.gcd.templatetags.display import absolute_url,\
+        from apps.gcd.templatetags.display import absolute_url, \
                                                   show_indicia_pub
         from apps.gcd.templatetags.credits import get_country_flag
         return_val = show_indicia_pub(record)
@@ -772,7 +772,7 @@ class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
         super(BrandEmblemIssueTable, self).__init__(*args, **kwargs)
 
     def render_indicia_publisher(self, record):
-        from apps.gcd.templatetags.display import absolute_url,\
+        from apps.gcd.templatetags.display import absolute_url, \
                                                   show_indicia_pub
         from apps.gcd.templatetags.credits import get_country_flag
         return_val = show_indicia_pub(record)
@@ -794,3 +794,46 @@ class PublisherIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
 
     def value_indicia_publisher(self, value):
         return str(value)
+
+
+class SeriesDetailsIssueTable(PublisherIssueTable):
+    def __init__(self, *args, **kwargs):
+        self.base_columns['indicia_frequency'].verbose_name = 'Frequency'
+        self.base_columns['isbn'].verbose_name = 'ISBN'
+        self.base_columns['issue'].verbose_name = 'Number'
+        self.base_columns['key_date'].verbose_name = 'Key Date'
+        self.base_columns['page_count'].verbose_name = 'Pages'
+        self.base_columns['rating'].verbose_name = "Publisher's Age Guidelines"
+        exclude_columns = kwargs.pop('exclude_columns')
+        # not sure about the following, in the dev environment it is needed
+        for column in self.base_columns:
+            self.base_columns[column].visible = True
+        for column in exclude_columns:
+            self.base_columns[column].visible = False
+            self.base_columns[column].exclude_from_export = True
+        super(PublisherIssueTable, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Issue
+        fields = ('key_date', 'publication_date', 'on_sale_date', 'volume',
+                  'issue', 'title', 'indicia_publisher', 'brand', 'page_count',
+                  'price', 'indicia_frequency', 'isbn', 'barcode', 'rating')
+        attrs = {'th': {'class': "non_visited"}}
+
+    def render_issue(self, record):
+        from apps.gcd.templatetags.display import absolute_url
+        return absolute_url(record, descriptor=self.value_issue(record))
+
+    def value_issue(self, record):
+        number = "%s" % record.number
+        if record.variant_name:
+            number += ' [%s]' % record.variant_name
+        return number
+
+    def render_title(self, record):
+        from apps.gcd.templatetags.display import absolute_url
+        return absolute_url(record, descriptor=record.title)
+
+    def render_page_count(self, record):
+        from apps.gcd.templatetags.credits import show_page_count
+        return show_page_count(record)

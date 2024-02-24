@@ -61,7 +61,8 @@ from apps.gcd.models.feature import FeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   BrandEmblemIssueTable, \
                                   IndiciaPublisherIssueTable, \
-                                  IssuePublisherTable, PublisherIssueTable
+                                  IssuePublisherTable, PublisherIssueTable, \
+                                  SeriesDetailsIssueTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
                                    CharacterSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
@@ -1957,6 +1958,38 @@ def series_details(request, series_id, by_date=False):
     rating_present = (series.has_rating and
                       series.active_issues().filter(no_rating=False)
                                             .exclude(rating='').exists())
+
+    if not by_date:
+        exclude_columns = []
+        if not volume_present:
+            exclude_columns.append('volume')
+        if not brand_present:
+            exclude_columns.append('brand')
+        if not frequency_present:
+            exclude_columns.append('indicia_frequency')
+        if not isbn_present:
+            exclude_columns.append('isbn')
+        if not barcode_present:
+            exclude_columns.append('barcode')
+        if not title_present:
+            exclude_columns.append('title')
+        if not on_sale_date_present:
+            exclude_columns.append('on_sale_date')
+        if not rating_present:
+            exclude_columns.append('rating')
+
+        context = {
+            'series': series,
+            'by_date': by_date,
+        }
+        template = 'gcd/details/series_details_sortable.html'
+        issues = series.active_issues()
+        table = SeriesDetailsIssueTable(issues,
+                                    attrs={'class': 'sortable_listing'},
+                                    template_name=SORT_TABLE_TEMPLATE,
+                                    order_by=('sort_code'),
+                                    exclude_columns=exclude_columns)
+        return generic_sortable_list(request, issues, table, template, context, 500)
 
     return render(
       request, 'gcd/details/series_details.html',
