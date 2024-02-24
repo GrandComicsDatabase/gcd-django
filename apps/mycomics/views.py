@@ -48,6 +48,12 @@ MESSAGE_TEMPLATE = 'mycomics/message.html'
 SETTINGS_TEMPLATE = 'mycomics/settings.html'
 DEFAULT_PER_PAGE = 25
 
+EXPORT_OWN_VALUES = {
+    None: '',
+    True: 'I own',
+    False: 'I want',
+}
+
 
 def index(request):
     """Generates the front index page."""
@@ -230,12 +236,17 @@ def export_collection(request, collection_id):
                             (lambda x:
                              "%s" % show_keywords_comma(CollectionItem
                                                         .objects.get(id=x))),
+                            "own":
+                            (lambda x:
+                             "%s" % EXPORT_OWN_VALUES[x]),
                             "acquisition_date":
                             (lambda x: "%s" % Date.objects.get(id=x)),
                             "sell_date":
                             (lambda x: "%s" % Date.objects.get(id=x)), }
     if collection.condition_used:
         export_data.append("grade")
+    if collection.own_used:
+        export_data.append("own")
     if collection.acquisition_date_used:
         export_data.append("acquisition_date")
     if collection.sell_date_used:
