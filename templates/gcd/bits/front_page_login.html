@@ -12,8 +12,8 @@
         {% endif %}
         <form action="{% url "logout" %}" method="POST" class="login_form">
             {% csrf_token %}
-            <input type="submit" name="logout" value="{% trans 'Logout' %}" />
-            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+            <input type="submit" name="logout" value="{% trans 'Logout' %}">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
         </form>
     {% else %}
         <form method="post" action="{% url "login" %}">
@@ -21,9 +21,9 @@
             {% trans 'email' %}
             <input type="text" name="username" id="username"/><br>
             {% trans 'password' %}
-            <input type="password" name="password" id="password"/>
-            <input type="submit" value="{% trans 'Login' %}" />
-            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+            <input type="password" name="password" id="password">
+            <input type="submit" value="{% trans 'Login' %}">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
         </form>
         <div id="forgot_password">
             <a href="{% url "forgot_password" %}">{% trans 'Forgot password?' %}</a>

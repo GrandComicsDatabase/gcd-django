@@ -28,18 +28,18 @@
   <li>
   <form action="{% url "logout" %}" method="POST">
     {% csrf_token %}
-    <input type="submit" name="logout" value="Log Out" />
-    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+    <input type="submit" name="logout" value="Log Out">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
   </form>
   </li>
 {% else %}
   <li>
   <form action="{% url "login" %}" method="GET">
-    <input type="submit" name="login" value="Log In" />
-    <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+    <input type="submit" name="login" value="Log In">
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
   </form>
   </li>
-  <li class="donate_link"><a method="post" href="{% url "donate" %}">Donate</a></li>
+  <li class="donate_link"><a href="{% url "donate" %}">Donate</a></li>
 {% endif %}
 </ul>
 </div>
