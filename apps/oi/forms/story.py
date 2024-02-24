@@ -572,6 +572,15 @@ class StoryRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[characters_start-7:
+                                               characters_start-1]])
+        field_list.append(HTML(
+          '<tr><th><input type="submit" name="save_and_set_universe"'
+          ' value="Set Character Universe"></th>'
+          '<td>Set the above universe for the characters below that '
+          'do not already have an assigned universe.</td></tr>'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[characters_start-1:
                                                characters_start]])
         field_list.append(Formset('characters_formset'))
         field_list.append(Field(fields[characters_start],
