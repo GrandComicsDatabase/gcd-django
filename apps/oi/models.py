@@ -4954,6 +4954,9 @@ class PreviewIssue(Issue):
             active_stories.append(preview_story)
         return active_stories
 
+    def active_code_numbers(self):
+        return self.revision.code_number_revisions()
+
     def shown_stories(self):
         if self.variant_of:
             if self.issuerevisions.filter(issue=self.variant_of).exists():

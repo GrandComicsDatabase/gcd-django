@@ -531,14 +531,25 @@ class Issue(GcdData):
             kwargs={'issue_id': self.id})
 
     @property
-    def full_descriptor(self):
-        if self.variant_name:
-            return "%s [%s]" % (self.issue_descriptor, self.variant_name)
+    def descriptor_addon(self):
+        add_on = ''
+        code_number = ''
         if self.active_code_numbers().filter(number_type__id=1):
-            return "%s (%s)" % (self.issue_descriptor,
-                                self.active_code_numbers()
-                                .get(number_type__id=1).number)
-        return self.issue_descriptor
+            code_number = "(%s)" % (self.active_code_numbers()
+                                    .get(number_type__id=1).number)
+        if self.variant_name:
+            add_on = "[%s]" % (self.variant_name)
+        if add_on and code_number:
+            code_number = " " + code_number
+        return "%s%s" % (add_on, code_number)
+
+    @property
+    def full_descriptor(self):
+        add_on = self.descriptor_addon
+        issue_descriptor = self.issue_descriptor
+        if issue_descriptor and add_on:
+            add_on = ' ' + add_on
+        return "%s%s" % (issue_descriptor, add_on)
 
     @property
     def issue_descriptor(self):
@@ -546,11 +557,14 @@ class Issue(GcdData):
 
     @property
     def display_full_descriptor(self):
-        number = self.full_descriptor
+        number = self.issue_descriptor
         if number:
-            return '#' + number
+            if self.descriptor_addon:
+                return "#%s %s" % (number, self.descriptor_addon)
+            else:
+                return "#%s" % number
         else:
-            return ''
+            return self.descriptor_addon
 
     @property
     def display_number(self):
@@ -561,15 +575,9 @@ class Issue(GcdData):
             return ''
 
     def full_name(self, variant_name=True):
-        if variant_name and self.variant_name:
-            return '%s %s [%s]' % (self.series.full_name(),
-                                   self.display_number,
-                                   self.variant_name)
-        if self.active_code_numbers().filter(number_type__id=1):
-            return "%s %s (%s)" % (
-              self.series.full_name(),
-              self.display_number,
-              self.active_code_numbers().get(number_type__id=1).number)
+        if variant_name:
+            return "%s %s" % (self.series.full_name(),
+                              self.display_full_descriptor)
         return '%s %s' % (self.series.full_name(), self.display_number)
 
     def full_name_with_link(self, publisher=False):
@@ -579,12 +587,7 @@ class Issue(GcdData):
                                                      esc(self.display_number)))
 
     def show_series_and_issue_link(self):
-        if self.display_number:
-            issue_number = '%s' % (esc(self.display_number))
-        else:
-            issue_number = ''
-        if self.variant_name:
-            issue_number = '%s [%s]' % (issue_number, esc(self.variant_name))
+        issue_number = self.display_full_descriptor
         if issue_number:
             issue_number = '<a href="%s">%s</a>' % (self.get_absolute_url(),
                                                     issue_number)
