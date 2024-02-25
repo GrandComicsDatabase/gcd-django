@@ -8,6 +8,8 @@ def gcd(request):
 
     if hasattr(settings, 'BETA'):
         stuff['BETA'] = settings.BETA
+    if hasattr(settings, 'FAKE_IMAGES'):
+        stuff['FAKE_IMAGES'] = settings.FAKE_IMAGES
     if hasattr(settings, 'ADVERTISING'):
         stuff['ADVERTISING'] = settings.ADVERTISING
     if hasattr(settings, 'MYCOMICS'):

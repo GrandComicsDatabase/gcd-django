@@ -107,15 +107,35 @@ GCD :: Character :: {{ character.name }}
           {% endfor %}
         </table>
   {% endif %}
-  {% if character.active_relations %}
+  {% if character.active_relations_own %}
         <hr>
         <h3>Relations:</h3>
-        {% if character.active_relations.count > 1 %}
+        {% if character.active_relations_own.count > 1 %}
         <ol style="columns: 2;">
         {% else %}
         <ol>
         {% endif %}
-    {% for relation in character.active_relations %}
+    {% for relation in character.active_relations_own %}
+      {% with relation_info=relation|pre_process_relation:character %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0.descriptor }}</a>
+        {% if relation.notes %}
+          <br><strong>Notes: </strong>{{ relation.notes }}
+        {% endif %}
+        </li>
+      {% endwith %}
+    {% endfor %}
+          </ol>
+  {% endif %}
+  {% if character.active_translations %}
+        <hr>
+        <h3>Translations:</h3>
+        {% if character.active_translations.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for relation in character.active_translations %}
       {% with relation_info=relation|pre_process_relation:character %}
         <li style="page-break-inside: avoid;">
           <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
@@ -138,7 +158,7 @@ GCD :: Character :: {{ character.name }}
         {% endif %}
     {% for membership in character.active_memberships %}
         <li style="page-break-inside: avoid;">
-          <a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group }}</a>
+          <a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group.descriptor }}</a>
           <br>
           <a href="{% url 'show_group_membership' group_membership_id=membership.id %}">{{ membership.display_years }} ({{ membership.membership_type }}</a>)
         {% if membership.notes %}

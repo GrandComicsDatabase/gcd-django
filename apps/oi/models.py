@@ -2150,7 +2150,7 @@ class Revision(models.Model):
         elif self.committed is False and self.source:
             self._prev_rev = self.source.revisions \
                                  .filter(committed=True,
-                                         created__lt=self.created) \
+                                         created__lte=self.created) \
                                  .latest('created')
         return self._prev_rev
 

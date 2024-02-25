@@ -23,23 +23,23 @@ GCD :: Group :: {{ group.name }}
 
 {% block content %}
       <dl class="pub_data">
-{% if group.disambiguation %}
+  {% if group.disambiguation %}
         <p><strong>Disambiguation:</strong> {{ group.disambiguation }}</p>
-{% endif %}
-{% if group.universe %}
+  {% endif %}
+  {% if group.universe %}
         <p><strong>Universe:</strong> {{ group.universe|absolute_url }}</p>
-{% endif %}
-{% if group.year_first_published %}
+  {% endif %}
+  {% if group.year_first_published %}
         <p><strong>First published in:</strong> {{ group.display_year_first_published }}</p>
-{% endif %}
-{% if group.description %}
+  {% endif %}
+  {% if group.description %}
         <dt> Description:
         <dd> {{ group.description|urlizetrunc:75|linebreaksbr }}
-{% endif %}
-{% if group.notes %}
+  {% endif %}
+  {% if group.notes %}
         <dt> Notes:
         <dd> {{ group.notes|urlizetrunc:75|linebreaksbr }}
-{% endif %}
+  {% endif %}
 <p>{{ group|show_credit:'keywords' }}</P>
       </dl>
       <ul style="columns: 2;">
@@ -75,47 +75,68 @@ GCD :: Group :: {{ group.name }}
       </table>
 {% endif %}
 
-  {% if group.active_relations %}
-        <hr>
-        <h3>Relations:</h3>
-        {% if group.active_relations.count > 1 %}
-        <ol style="columns: 2;">
-        {% else %}
-        <ol>
-        {% endif %}
-    {% for relation in group.active_relations %}
-      {% with relation_info=relation|pre_process_relation:group %}
-        <li style="page-break-inside: avoid;">
-          <a href="{% url 'show_group_relation' group_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_group' group_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
-        {% if relation.notes %}
-          <br><strong>Notes: </strong>{{ relation.notes }}
-        {% endif %}
-        </li>
-      {% endwith %}
-    {% endfor %}
-          </ol>
-  {% endif %}
+{% if group.active_relations_own %}
+      <hr>
+      <h3>Relations:</h3>
+      {% if group.active_relations_own.count > 1 %}
+      <ol style="columns: 2;">
+      {% else %}
+      <ol>
+      {% endif %}
+  {% for relation in group.active_relations_own %}
+    {% with relation_info=relation|pre_process_relation:group %}
+      <li style="page-break-inside: avoid;">
+        <a href="{% url 'show_group_relation' group_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_group' group_id=relation_info.0.id %}">{{ relation_info.0.descriptor }}</a>
+      {% if relation.notes %}
+        <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+      </li>
+    {% endwith %}
+  {% endfor %}
+        </ol>
+{% endif %}
 
-  {% if group.active_members %}
-        <hr>
-        <h3>Group Members:</h3>
-        {% if group.active_members.count > 1 %}
-        <ol style="columns: 2;">
-        {% else %}
-        <ol>
-        {% endif %}
-    {% for member in group.active_members %}
-        <li style="page-break-inside: avoid;">
-          <a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character }}</a>
-          <br>
-          <a href="{% url 'show_group_membership' group_membership_id=member.id %}">{{ member.display_years }} ({{ member.membership_type }}</a>)
-        {% if member.notes %}
-          <br><strong>Notes: </strong>{{ member.notes }}
-        {% endif %}
-        </li>
-    {% endfor %}
-          </ol>
-  {% endif %}
+{% if group.active_translations %}
+      <hr>
+      <h3>Translations:</h3>
+      {% if group.active_translations.count > 1 %}
+      <ol style="columns: 2;">
+      {% else %}
+      <ol>
+      {% endif %}
+  {% for relation in group.active_translations %}
+    {% with relation_info=relation|pre_process_relation:group %}
+      <li style="page-break-inside: avoid;">
+        <a href="{% url 'show_group_relation' group_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_group' group_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
+      {% if relation.notes %}
+        <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+      </li>
+    {% endwith %}
+  {% endfor %}
+        </ol>
+{% endif %}
+
+{% if group.active_members %}
+      <hr>
+      <h3>Group Members:</h3>
+      {% if group.active_members.count > 1 %}
+      <ol style="columns: 2;">
+      {% else %}
+      <ol>
+      {% endif %}
+  {% for member in group.active_members %}
+      <li style="page-break-inside: avoid;">
+        <a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character.descriptor }}</a>
+        <br>
+        <a href="{% url 'show_group_membership' group_membership_id=member.id %}">{{ member.display_years }} ({{ member.membership_type }}</a>)
+      {% if member.notes %}
+        <br><strong>Notes: </strong>{{ member.notes }}
+      {% endif %}
+      </li>
+  {% endfor %}
+        </ol>
+{% endif %}
 
 {% endblock content %}
 

@@ -185,16 +185,26 @@ class CharacterGroupBase(GcdData):
         else:
             return self.name
 
-    def __str__(self):
+    def descriptor(self, language=False):
+        if self.universe:
+            universe = ' - %s' % self.universe.universe_name()
+        else:
+            universe = ''
         if self.year_first_published:
-            year = '(p. %s)' % self.year_first_published
+            year = ' (p. %s)' % self.year_first_published
         else:
             year = ''
         if self.disambiguation:
             name = '%s [%s]' % (self.name, self.disambiguation)
         else:
             name = self.name
-        return '%s %s (%s)' % (name, year, self.language.name)
+        if language:
+            return '%s%s%s (%s)' % (name, year, universe, self.language.name)
+        else:
+            return '%s%s%s' % (name, year, universe)
+
+    def __str__(self):
+        return self.descriptor(language=True)
 
 
 class Character(CharacterGroupBase):
@@ -209,6 +219,12 @@ class Character(CharacterGroupBase):
     def active_relations(self):
         return self.from_related_character.all() | \
                self.to_related_character.all()
+
+    def active_relations_own(self):
+        return self.active_relations().exclude(relation_type_id=1)
+
+    def active_translations(self):
+        return self.active_relations().filter(relation_type_id=1)
 
     def active_specifications(self):
         return self.to_related_character.filter(relation_type_id=6)
@@ -246,7 +262,7 @@ class Character(CharacterGroupBase):
     # what is with translation over character records ?
     # German . English - French, copying from first to last ?
     def translations(self, language):
-        relations = self.active_relations().filter(relation_type_id=1)
+        relations = self.active_translations()
         if relations.filter(to_character__language=language).count():
             return Character.objects.filter(
               language=language,
@@ -285,14 +301,6 @@ class Character(CharacterGroupBase):
         return urlresolvers.reverse(
                 'show_character',
                 kwargs={'character_id': self.id})
-
-    # TODO, should groups have a universe ?
-    def __str__(self):
-        string = super(Character, self).__str__()
-        if self.universe:
-            return string + ' - %s' % self.universe.universe_name()
-        else:
-            return string
 
 
 class CharacterRelation(GcdLink):
@@ -342,6 +350,12 @@ class Group(CharacterGroupBase):
         return self.from_related_group.all() | \
                self.to_related_group.all()
 
+    def active_relations_own(self):
+        return self.active_relations().exclude(relation_type_id=1)
+
+    def active_translations(self):
+        return self.active_relations().filter(relation_type_id=1)
+
     def active_members(self):
         return self.members.all()
 
@@ -372,7 +386,7 @@ class Group(CharacterGroupBase):
     # what is with translation over character records ?
     # German . English - French, copying from first to last ?
     def translations(self, language):
-        relations = self.active_relations().filter(relation_type_id=1)
+        relations = self.active_translations()
         if relations.filter(to_group__language=language).count():
             return Group.objects.filter(
               language=language,

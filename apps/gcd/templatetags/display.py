@@ -5,6 +5,7 @@ from stdnum import isbn as stdisbn
 
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+from django.conf import settings
 
 from django import template
 from django.template.defaultfilters import title
@@ -16,8 +17,9 @@ from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
                                     CreatorDegree, CreatorRelation, \
                                     CreatorSchool, CreatorSignature, Award
-from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup,\
-                            Series, Issue, Cover, Image, Feature, FeatureLogo,\
+from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup, \
+                            Series, Issue, Cover, Image, \
+                            Feature, FeatureLogo, \
                             Character, Group, CharacterRelation, \
                             GroupRelation, GroupMembership, Universe, \
                             INDEXED, SeriesBond, BOND_TRACKING, \
@@ -43,7 +45,7 @@ def absolute_url(item, popup=None, descriptor=''):
     if item is not None and hasattr(item, 'get_absolute_url'):
         if descriptor == '':
             descriptor = esc(item)
-        if popup:
+        if popup and not settings.FAKE_IMAGES:
             image_link = '<span class="image_popup"><img src="%s"></span>' \
                          % popup.thumbnail.url
             return mark_safe('<a href="%s" class="popup">%s%s</a>' %
@@ -532,8 +534,9 @@ def pre_process_relation(relation, creator):
 def character_for_universe(character, universe):
     if character.active_specifications().filter(
        to_character__universe=universe).count() == 1:
-        return mark_safe(absolute_url(
-          character.active_specifications()
-          .get(to_character__universe=universe).to_character))
+        to_character = character.active_specifications()\
+          .get(to_character__universe=universe).to_character
+        return mark_safe(absolute_url(to_character,
+                                      descriptor=to_character.descriptor()))
     else:
         return ''
