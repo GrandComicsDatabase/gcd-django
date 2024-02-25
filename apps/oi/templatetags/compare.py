@@ -169,6 +169,17 @@ def field_value(revision, field):
             universes += absolute_url(universe) + '; '
         if universes:
             universes = universes[:-2]
+            if type(revision).__name__ == 'StoryRevision':
+                key_date = revision.issue.key_date
+            else:
+                key_date = ''
+        if universes and key_date:
+            for universe in value.all():
+                if universe.year_first_published and \
+                  int(key_date[:4]) < universe.year_first_published:
+                    universes += '<br><br>Note: Universe "%s" used ' \
+                        'before its year first published %d.' % (
+                         universe, universe.year_first_published)
         return mark_safe(universes)
     elif field in ['no_editing', 'no_script', 'no_pencils', 'no_inks',
                    'no_colors', 'no_letters']:
@@ -267,16 +278,16 @@ def field_value(revision, field):
     elif field == 'indicia_printer':
         features = "; ".join(value.all().values_list('name', flat=True))
         return features
-    elif field == 'feature' and \
-      revision._meta.model_name == 'featurelogorevision':
+    elif (field == 'feature' and
+          revision._meta.model_name == 'featurelogorevision'):
         features = ''
         for feature in value.all():
             features += absolute_url(feature) + '; '
         if features:
             features = features[:-2]
         return mark_safe(features)
-    elif field == 'name' and \
-      revision._meta.model_name == 'creatorsignaturerevision':
+    elif (field == 'name' and
+          revision._meta.model_name == 'creatorsignaturerevision'):
         if revision.source:
             return absolute_url(revision.source, descriptor=value)
     elif field == 'variant_cover_status':
@@ -315,12 +326,13 @@ def diff_list(prev_rev, revision, field):
             if di[1].find('<a href="/creator/') >= 0 and \
                di[1].find('/">', di[1].rfind('<a href="/creator/')) < 0:
                 splitted_link = True
-            elif di[1].find('<a href="/creator_signature/') >= 0 and \
-              di[1].rfind('/">',
-                          di[1].rfind('<a href="/creator_signature/')) < 0:
+            elif (di[1].find('<a href="/creator_signature/') >= 0 and
+                  di[1].rfind('/">',
+                              di[1].rfind('<a href="/creator_signature/'))
+                  < 0):
                 splitted_signature_link = True
-            elif di[1].find('<a href="/character/') >= 0 and \
-              di[1].find('/">', di[1].rfind('<a href="/character/')) < 0:
+            elif (di[1].find('<a href="/character/') >= 0 and
+                  di[1].find('/">', di[1].rfind('<a href="/character/')) < 0):
                 splitted_link = True
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
@@ -374,7 +386,7 @@ def compare_current_reprints(object_type, changeset):
             return ''
         active = ReprintRevision.objects.filter(
           next_revision__in=changeset.reprintrevisions.all())
-        if type(object_type) == StoryRevision:
+        if type(object_type) is StoryRevision:
             active_origin = active.filter(origin=object_type.source)
             active_target = active.filter(target=object_type.source)
         else:
@@ -393,7 +405,7 @@ def compare_current_reprints(object_type, changeset):
                 .filter(changeset=changeset)
             active_target = object_type.source.target_reprint_revisions\
                 .filter(changeset=changeset)
-    if type(object_type) == IssueRevision:
+    if type(object_type) is IssueRevision:
         active_origin = active_origin.filter(origin=None, origin_revision=None)
         active_target = active_target.filter(target=None, target_revision=None)
 
@@ -412,7 +424,7 @@ def compare_current_reprints(object_type, changeset):
           .exclude(changeset=changeset)\
           .filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True)
-        if type(object_type) == IssueRevision:
+        if type(object_type) is IssueRevision:
             kept_origin = kept_origin.filter(origin=None, origin_revision=None)
             kept_target = kept_target.filter(target=None, target_revision=None)
 

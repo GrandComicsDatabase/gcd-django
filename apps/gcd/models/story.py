@@ -178,9 +178,11 @@ def show_characters(story, url=True, css_style=True, compare=False):
                                   '<a href="%s">%s</a>' \
                                   % (group.group.get_absolute_url(),
                                      esc(group.group.name),
-                                     ' (%s)' % group.notes if group.notes else '',
-                                     ' (%s)' % group_universe_name
-                                       if group_universe_name else '',
+                                     ' <i>(%s)</i>' %
+                                     group_universe_name if
+                                     group_universe_name else '',
+                                     ' (%s)' %
+                                     group.notes if group.notes else '',
                                      member.character.get_absolute_url(),
                                      esc(member.character.name))
                 else:
@@ -189,7 +191,8 @@ def show_characters(story, url=True, css_style=True, compare=False):
                 if compare:
                     disambiguation += '%s%s: <br>&nbsp;&nbsp; %s' % (
                       group.group.disambiguated,
-                      ' - %s' % group.universe.universe_name() if group.universe else '',
+                      ' - %s' % group.universe.universe_name()
+                      if group.universe else '',
                       member.character.character.disambiguated)
             else:
                 characters += '; '
@@ -207,7 +210,6 @@ def show_characters(story, url=True, css_style=True, compare=False):
             characters += get_civilian_identity(member,
                                                 all_appearing_characters,
                                                 url=url)
-            characters += character_notes(member)
             if compare:
                 disambiguation += get_civilian_identity(
                   member, all_appearing_characters, url=url, compare=compare)
@@ -215,25 +217,31 @@ def show_characters(story, url=True, css_style=True, compare=False):
                     disambiguation += ' - %s' % member.universe
             if reference_universe_id and member.universe:
                 if member.universe_id != reference_universe_id:
-                    characters += ' (%s)' % member.universe.universe_name()
+                    characters += ' (<i>%s</i>)' % member.universe\
+                                                         .universe_name()
+            characters += character_notes(member)
         if first_member is True:
             if url:
                 characters += '<a href="%s"><b>%s</b></a><br> ' \
-                                % (group.group.get_absolute_url(), esc(group.group.name))
+                                % (group.group.get_absolute_url(),
+                                   esc(group.group.name))
             else:
                 characters += '%s; ' % (group.group.name)
             first_member = False
+            if compare:
+                disambiguation += '%s%s' % (
+                  group.group.disambiguated,
+                  ' - %s' % group.universe.universe_name()
+                  if group.universe else '')
         else:
             if url:
                 characters += '<br>'
             else:
                 characters += ']; '
         if compare:
-            disambiguation += '<br>'
-    if groups and first_member == True:
+            disambiguation += '<br><br>'
+    if groups and first_member is True:
         characters = characters[:-2]
-    if compare:
-        disambiguation += '<br>'
 
     appearing_characters = all_appearing_characters.exclude(
       character__id__in=in_group.values_list('character'), group__isnull=False)
@@ -266,7 +274,6 @@ def show_characters(story, url=True, css_style=True, compare=False):
         characters += get_civilian_identity(character,
                                             appearing_characters,
                                             url=url)
-        characters += character_notes(character)
         if compare:
             disambiguation += get_civilian_identity(character,
                                                     appearing_characters,
@@ -276,7 +283,9 @@ def show_characters(story, url=True, css_style=True, compare=False):
                 disambiguation += ' - %s' % character.universe
         if reference_universe_id and character.universe:
             if character.universe_id != reference_universe_id:
-                characters += ' (%s)' % character.universe.universe_name()
+                characters += ' <i>(%s)</i>' % character.universe\
+                                                        .universe_name()
+        characters += character_notes(character)
 
     if story.characters:
         if url:
@@ -290,6 +299,20 @@ def show_characters(story, url=True, css_style=True, compare=False):
                 characters += '; %s' % text_characters
         else:
             characters = text_characters
+
+    if compare and disambiguation:
+        universes = story.appearing_characters.exclude(universe=None)\
+                         .order_by('universe')\
+                         .values_list('universe', flat=True).distinct()
+        key_date = story.issue.key_date
+        if universes.exists() and key_date:
+            for universe_id in universes:
+                universe = Universe.objects.get(id=universe_id)
+                if universe.year_first_published and \
+                   int(key_date[:4]) < universe.year_first_published:
+                    disambiguation += '<br><br>Note: Universe "%s" used ' \
+                      'before its year first published %d.' % (
+                        universe, universe.year_first_published)
 
     if characters and url:
         if css_style:
@@ -645,7 +668,7 @@ class Story(GcdData):
         if universes:
             universes = universes[:-2]
         dt = '<dt class="credit_tag"><span class="credit_label">' \
-                 'Universe</span></dt>'
+             'Universe</span></dt>'
         return mark_safe(
               dt + '<dd class="credit_def"><span class="credit_value">'
               + universes + '</span></dd>')
