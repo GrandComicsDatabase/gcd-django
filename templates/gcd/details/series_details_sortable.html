@@ -25,6 +25,7 @@
 
 <div style="clear: both;"></div>
   <h3> Series {% if by_date %}Timeline{% else %}Details{% endif %} </h3>
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} issue{{ page.paginator.count|pluralize:'s' }}.
   {% if by_date %}
   <a href="{% url "series_details" series_id=series.id %}">See series details by issue</a> (displays one row per issue with no gaps, by the regular issue sort order)
 {% else %}

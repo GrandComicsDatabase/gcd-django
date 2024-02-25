@@ -16,7 +16,7 @@
 {{ object|search_creator_credit:"editing" }}
 {{ object.genre }}
 {{ object.job_number|safe }}
-{{ object.characters|safe }}
+{{ object.show_characters_as_text|safe }}
 {{ object.synopsis|safe }}
 {{ object.notes|safe }}
 {{ object|show_keywords|safe }}
