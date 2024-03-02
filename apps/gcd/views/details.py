@@ -641,7 +641,8 @@ def creator_series(request, creator_id, country=None, language=None):
 
 def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                     feature_id=None, co_creator_id=None, group_id=None,
-                    publisher_id=None, edits=False, country=None, language=None):
+                    publisher_id=None, edits=False, country=None,
+                    language=None):
     """
     Provides checklists for a Creator. These include results for all
     CreatorNames and for the overall House Name all uses of that House Name.
@@ -1984,11 +1985,12 @@ def series_details(request, series_id, by_date=False):
         template = 'gcd/details/series_details_sortable.html'
         issues = series.active_issues()
         table = SeriesDetailsIssueTable(issues,
-                                    attrs={'class': 'sortable_listing'},
-                                    template_name=SORT_TABLE_TEMPLATE,
-                                    order_by=('sort_code'),
-                                    exclude_columns=exclude_columns)
-        return generic_sortable_list(request, issues, table, template, context, 500)
+                                        attrs={'class': 'sortable_listing'},
+                                        template_name=SORT_TABLE_TEMPLATE,
+                                        order_by=('sort_code'),
+                                        exclude_columns=exclude_columns)
+        return generic_sortable_list(request, issues, table, template,
+                                     context, 500)
 
     return render(
       request, 'gcd/details/series_details.html',
@@ -2073,10 +2075,11 @@ def publisher_creators(request, publisher_id, creator_names=False):
 
     if creator_names:
         creators = CreatorNameDetail.objects.all()
-        creators = creators.filter(storycredit__story__issue__series__publisher=publisher,
-                                   storycredit__story__type__id__in=CORE_TYPES,
-                                   storycredit__deleted=False).distinct()\
-                           .select_related('creator')
+        creators = creators.filter(
+          storycredit__story__issue__series__publisher=publisher,
+          storycredit__story__type__id__in=CORE_TYPES,
+          storycredit__deleted=False).distinct()\
+                                     .select_related('creator')
         creators = _annotate_creator_name_detail_list(creators)
     else:
         creators = Creator.objects.all()
@@ -3379,11 +3382,24 @@ def character_issues(request, character_id, layer=None, universe_id=None,
 def character_issues_series(request, character_id, series_id):
     character = get_gcd_object(Character, character_id)
     series = get_gcd_object(Series, series_id)
-    query = {'story__appearing_characters__character__character': character,
+
+    filter_character = character
+    universe_id = None
+    if character.universe:
+        if character.active_generalisations():
+            universe_id = character.universe.id
+            filter_character = character.active_generalisations()\
+                                        .get().from_character
+
+    query = {'story__appearing_characters__character__character':
+             filter_character,
              'story__appearing_characters__deleted': False,
              'story__type__id__in': CORE_TYPES,
              'series__id': series_id,
              'story__deleted': False}
+
+    if universe_id:
+        query['story__appearing_characters__universe_id'] = universe_id
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
@@ -3408,22 +3424,26 @@ def character_series(request, character_id):
     character = get_gcd_object(Character, character_id)
     universe_id = None
     heading = 'Series with %s' % (character)
+    filter_character = character
 
     if character.universe:
         if character.active_generalisations():
             universe_id = character.universe.id
-            character = character.active_generalisations().get().from_character
+            filter_character = character.active_generalisations()\
+                                        .get().from_character
 
     if universe_id:
         series = Series.objects.filter(
-          issue__story__appearing_characters__character__character=character,
+          issue__story__appearing_characters__character__character=
+          filter_character,
           issue__story__appearing_characters__universe_id=universe_id,
           issue__story__appearing_characters__deleted=False,
           issue__story__type__id__in=CORE_TYPES,
           deleted=False).distinct().select_related('publisher')
     else:
         series = Series.objects.filter(
-          issue__story__appearing_characters__character__character=character,
+          issue__story__appearing_characters__character__character=
+          filter_character,
           issue__story__appearing_characters__deleted=False,
           issue__story__type__id__in=CORE_TYPES,
           deleted=False).distinct().select_related('publisher')
@@ -3439,10 +3459,10 @@ def character_series(request, character_id):
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = CharacterSeriesTable(series,
-                       character=character,
-                       attrs={'class': 'sortable_listing'},
-                       template_name=SORT_TABLE_TEMPLATE,
-                       order_by=('issue'))
+                                 character=character,
+                                 attrs={'class': 'sortable_listing'},
+                                 template_name=SORT_TABLE_TEMPLATE,
+                                 order_by=('issue'))
     return generic_sortable_list(request, series, table, template, context)
 
 
@@ -3702,7 +3722,7 @@ def group_issues(request, group_id, universe_id=None, story_universe_id=None):
         else:
             query['story__universe__in'] = [story_universe_id,]
     issues = Issue.objects.filter(Q(**query)).distinct()\
-                            .select_related('series__publisher')
+                          .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
