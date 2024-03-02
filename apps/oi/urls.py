@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.urls import path
+from django.urls import path, register_converter
 from django.conf.urls import url
 from django.contrib.auth.decorators import login_required
 from django.views.generic import base as bv
@@ -8,7 +8,20 @@ from apps.oi import views as oi_views
 from apps.oi import covers as oi_covers
 from apps.oi import import_export as oi_import
 from apps.oi import coordinators as oi_coordinators
-from apps.oi import states
+
+
+class SignedIntConverter:
+    regex = '-?\\d+'
+
+    def to_python(self, value):
+        return int(value)
+
+    def to_url(self, value):
+        return '%d' % value
+
+
+register_converter(SignedIntConverter, 'signed_int')
+
 
 urlpatterns = [
     # General-purpose new record add page.
@@ -149,7 +162,7 @@ urlpatterns = [
     url(r'^issue/revision/(?P<issue_revision_id>\d+)/copy_story_revision/(?P<changeset_id>\d+)$',
         oi_views.copy_story_revision,
         name='copy_story_revision'),
-    path('issue/revision/<int:issue_revision_id>/confirm_copy_story/<int:story_id>/<int:sequence_number>/',
+    path('issue/revision/<int:issue_revision_id>/confirm_copy_story/<int:story_id>/<signed_int:sequence_number>/',
         oi_views.copy_sequence,
         name='confirm_copy_story'),
     url(r'^issue/revision/(?P<issue_revision_id>\d+)/confirm_copy_story_revision/(?P<story_revision_id>\d+)/$',

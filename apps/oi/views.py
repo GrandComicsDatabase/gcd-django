@@ -3809,11 +3809,14 @@ def copy_sequence(request, issue_revision_id, story_id=None,
           copy_credit_info=copy_credit_info, copy_characters=copy_characters)
         # sequence number should be determined in add_story
         # but this routine could be called differently as well
-        if sequence_number:
+        if sequence_number is not None:
             story_revision.sequence_number = sequence_number
             story_revision.save()
             stories = issue_revision.active_stories()\
                                     .exclude(id=story_revision.id)
+            if sequence_number < 0:
+                story_revision.sequence_number = 0
+                story_revision.save()
             _reorder_children(request, issue_revision, stories,
                               'sequence_number',
                               stories, commit=True, unique=False,
