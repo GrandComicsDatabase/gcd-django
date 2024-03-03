@@ -375,8 +375,8 @@ def __format_keywords(keywords, join_on='; ', model_name='story'):
         for i in keywords.all().order_by('name'):
             if model_name in ['story', 'issue']:
                 keyword_list.append('<a href="%s%s/">%s</a>' % (
-                                    urlresolvers.reverse('show_keyword',
-                                                         kwargs={'keyword': i}),
+                                    urlresolvers.reverse(
+                                      'show_keyword', kwargs={'keyword': i}),
                                     esc(model_name), esc(i)))
             else:
                 keyword_list.append(esc(i))
@@ -415,7 +415,7 @@ def show_cover_contributor(cover_revision):
 @register.filter
 def show_country_info_by_code(code, name):
     src = 'src="%simg/gcd/flags/%s.png"' % (settings.STATIC_URL,
-                                             code.lower())
+                                            code.lower())
     alt = 'alt="%s"' % esc(code.upper())
     title = 'title="%s"' % esc(name)
     return mark_safe('%s %s %s' % (src, alt, title))
@@ -476,7 +476,7 @@ def show_page_count(story, show_page=False):
 @register.filter
 def format_page_count(page_count):
     if page_count is not None and page_count != '':
-        return f'{float(page_count):.10g}'
+        return f'{float(page_count): .10g}'
     else:
         return ''
 
@@ -524,9 +524,16 @@ def generate_reprint_link_sequence(story, issue, from_to, notes=None, li=True,
                                    only_number=False):
     ''' generate reprint link to story'''
     if only_number:
-        link = ', <a href="%s#%d">%s</a>' % (issue.get_absolute_url(),
-                                             story.id,
-                                             esc(issue.display_number))
+        if story.sequence_number == 0 and \
+           story.issue.variant_cover_status == 3:
+            link = ', <a href="%s#%d">%s</a>' % (
+              issue.get_absolute_url(),
+              story.id,
+              esc(issue.display_full_descriptor))
+        else:
+            link = ', <a href="%s#%d">%s</a>' % (issue.get_absolute_url(),
+                                                 story.id,
+                                                 esc(issue.display_number))
     elif story.sequence_number == 0:
         link = '%s %s <a href="%s#%d">%s</a>' % \
           (get_country_flag(issue.series.country), from_to,
