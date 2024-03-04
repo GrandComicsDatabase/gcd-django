@@ -334,7 +334,7 @@ def show_creator_credit(story, credit_type, url=True,
                                   show_sources)
     if credit_value and url:
         val = '<dt class="credit_tag"><span class="credit_label">'
-        if type(story) == Story:
+        if type(story) is Story:
             val += '<a hx-get="/story/%d/%s/history/" ' % (story.id,
                                                            credit_type) + \
                    'hx-target="body" hx-swap="beforeend" ' +\
@@ -368,7 +368,7 @@ def markdown(value):
 
 
 def __format_keywords(keywords, join_on='; ', model_name='story'):
-    if type(keywords) == str:
+    if type(keywords) is str:
         credit_value = keywords
     else:
         keyword_list = list()
@@ -441,7 +441,7 @@ def get_country_flag(country):
 @register.filter
 def get_country_flag_by_name(country_name):
     try:
-        return(get_country_flag(Country.objects.get(name=country_name)))
+        return get_country_flag(Country.objects.get(name=country_name))
     except Country.DoesNotExist:
         return country_name
 
@@ -476,7 +476,7 @@ def show_page_count(story, show_page=False):
 @register.filter
 def format_page_count(page_count):
     if page_count is not None and page_count != '':
-        return f'{float(page_count): .10g}'
+        return f'{float(page_count):.10g}'
     else:
         return ''
 
@@ -677,7 +677,7 @@ def follow_reprint_link(reprint, direction, level=0):
         return ''
     reprint_note = ''
     if direction == 'from':
-        if type(reprint.origin) == Story:
+        if type(reprint.origin) is Story:
             further_reprints = reprint.origin.from_all_reprints \
               .select_related('origin_issue__series__publisher')\
               .order_by('origin_issue__key_date',
@@ -693,7 +693,7 @@ def follow_reprint_link(reprint, direction, level=0):
                 if string.lower().startswith('from '):
                     reprint_note += '<li> ' + esc(string) + ' </li>'
     else:
-        if type(reprint.target) == Story:
+        if type(reprint.target) is Story:
             further_reprints = reprint.target.to_all_reprints\
               .select_related('target_issue__series__publisher')\
               .order_by('target_issue__key_date',
