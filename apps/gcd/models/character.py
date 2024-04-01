@@ -342,9 +342,39 @@ class CharacterRelation(GcdLink):
                                            )
 
 
+class GroupNameDetail(GcdData):
+    """
+    Indicates the additional names of a group.
+    """
+
+    class Meta:
+        db_table = 'gcd_group_name_detail'
+        app_label = 'gcd'
+        ordering = ['sort_name', 'group__year_first_published',
+                    'group__disambiguation']
+        verbose_name_plural = 'GroupName Details'
+
+    name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True, default='')
+    group = models.ForeignKey('Group', on_delete=models.CASCADE,
+                              related_name='group_names')
+    is_official_name = models.BooleanField(default=False)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_group',
+                kwargs={'group_id': self.group.id})
+
+    def __str__(self):
+        return '%s - %s' % (str(self.group), str(self.name))
+
+
 class Group(CharacterGroupBase):
     class Meta(CharacterGroupBase.Meta):
         verbose_name_plural = 'Groups'
+
+    def active_names(self):
+        return self.group_names.exclude(deleted=True)
 
     def active_relations(self):
         return self.from_related_group.all() | \
@@ -398,6 +428,9 @@ class Group(CharacterGroupBase):
               to_related_group__to_group=self,
               deleted=False)
         return Group.objects.none()
+
+    def official_name(self):
+        return self.active_names().get(is_official_name=True)
 
     def has_dependents(self):
         if super(Group, self).has_dependents() or \

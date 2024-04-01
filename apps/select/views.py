@@ -19,7 +19,8 @@ from dal import autocomplete
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
-                            Character, CharacterNameDetail, Group, Universe, \
+                            Character, CharacterNameDetail, Group, \
+                            GroupNameDetail, Universe, \
                             STORY_TYPES
 from apps.stddata.models import Country, Language
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
@@ -648,14 +649,14 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
                         character__from_related_character__relation_type__id=6)
 
         language = self.forwarded.get('language_code', None)
-        group = self.forwarded.get('group', None)
+        group_name = self.forwarded.get('group_name', None)
 
         if language:
             qs = qs.filter(character__language__code__in=[language, 'zxx'])
 
-        if group:
-            qs = qs.filter(character__memberships__group=group)\
-                   .distinct()
+        if group_name:
+            qs = qs.filter(
+              character__memberships__group__group_names=group_name).distinct()
         qs = _filter_and_sort(qs, self.q, parent_disambiguation='character',
                               chrono_sort='character__year_first_published')
 
@@ -676,6 +677,28 @@ class GroupAutocomplete(LoginRequiredMixin,
 
         if character_name:
             qs = qs.filter(members__character__character_names=character_name)\
+                   .distinct()
+
+        qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class GroupNameAutocomplete(LoginRequiredMixin,
+                            autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = GroupNameDetail.objects.filter(deleted=False)
+        # qs = qs.exclude(group__universe__isnull=False)
+
+        language = self.forwarded.get('language_code', None)
+        character_name = self.forwarded.get('character_name', None)
+
+        if language:
+            qs = qs.filter(group__language__code__in=[language, 'zxx'])
+
+        if character_name:
+            qs = qs.filter(
+              group__members__character__character_names=character_name)\
                    .distinct()
 
         qs = _filter_and_sort(qs, self.q)

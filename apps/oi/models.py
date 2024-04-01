@@ -39,8 +39,8 @@ from apps.gcd.models import (
     StoryGroup, Universe, Multiverse, BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
-    CharacterNameDetail, Group, GroupRelation, GroupMembership, ImageType,
-    Printer, IndiciaPrinter,
+    CharacterNameDetail, Group, GroupNameDetail, GroupRelation,
+    GroupMembership, ImageType, Printer, IndiciaPrinter,
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
     CreatorNameDetail, CreatorNonComicWork, CreatorSchool, CreatorRelation,
     CreatorSignature, NonComicWorkYear, Award, ReceivedAward, DataSource,
@@ -384,7 +384,8 @@ class Changeset(models.Model):
             return (self.characterrelationrevisions.all(),)
 
         if self.change_type == CTYPES['group']:
-            return (self.grouprevisions.all(),)
+            return (self.grouprevisions.all(),
+                    self.groupnamedetailrevisions.all(),)
 
         if self.change_type == CTYPES['group_relation']:
             return (self.grouprelationrevisions.all(),)
@@ -5179,6 +5180,7 @@ class StoryCharacterRevision(Revision):
       'StoryRevision', on_delete=models.CASCADE,
       related_name='story_character_revisions')
     group = models.ManyToManyField(Group, blank=True)
+    group_name = models.ManyToManyField(GroupNameDetail, blank=True)
     group_universe = models.ForeignKey(
       Universe, null=True, on_delete=models.CASCADE,
       related_name='story_character_in_group_revision')
@@ -5218,7 +5220,7 @@ class StoryCharacterRevision(Revision):
     # TODO old methods, t.b.c
 
     _base_field_list = ['character', 'role', 'universe',
-                        'group', 'group_universe',
+                        'group_name', 'group_universe',
                         'is_flashback', 'is_origin', 'is_death', 'notes']
 
     def _field_list(self):
@@ -5228,7 +5230,7 @@ class StoryCharacterRevision(Revision):
         return {
             'character': None,
             'role': None,
-            'group': None,
+            'group_name': None,
             'is_flashback': False,
             'is_origin': False,
             'is_death': False,
@@ -5251,9 +5253,11 @@ class StoryGroupRevision(Revision):
                                     on_delete=models.CASCADE,
                                     related_name='revisions')
 
-    group = models.ForeignKey(Group,
+    group = models.ForeignKey(Group, null=True, blank=True,
                               on_delete=models.CASCADE,
                               related_name='story_group_revisions')
+    group_name = models.ForeignKey(GroupNameDetail, null=True,
+                                   on_delete=models.CASCADE)
     universe = models.ForeignKey(Universe, null=True, blank=True,
                                  on_delete=models.CASCADE)
     story_revision = models.ForeignKey(
@@ -5288,14 +5292,14 @@ class StoryGroupRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['group', 'universe', 'notes']
+    _base_field_list = ['group_name', 'universe', 'notes']
 
     def _field_list(self):
         return self._base_field_list
 
     def _get_blank_values(self):
         return {
-            'group': None,
+            'group_name': None,
             'universe': None,
             'notes': '',
         }
@@ -5795,14 +5799,15 @@ class StoryRevision(Revision):
                     continue
                 # make sure groups with the group universe exist for each
                 # character appearance that has a group
-                if story_character.group.count():
-                    for group in story_character.group.all():
+                if story_character.group_name.count():
+                    for group_name in story_character.group_name.all():
                         story_group = self.story_group_revisions.filter(
-                          group=group, universe=story_character.group_universe,
+                          group_name=group_name,
+                          universe=story_character.group_universe,
                           deleted=False)
                         if not story_group.exists():
                             story_group = StoryGroupRevision.objects.create(
-                              group=group,
+                              group_name=group_name,
                               universe=story_character.group_universe,
                               story_revision=self,
                               changeset=self.changeset)
@@ -5838,7 +5843,8 @@ class StoryRevision(Revision):
                                            notes='',
                                            story_group_id=None):
                 other_group_rev = self.story_group_revisions.filter(
-                  group=story_group.group, universe=story_group.universe,
+                  group_name=story_group.group_name,
+                  universe=story_group.universe,
                   deleted=False)\
                   .exclude(id=story_group.id)
                 if other_group_rev.exists():
@@ -7086,6 +7092,11 @@ class PreviewCharacter(Character):
     class Meta:
         proxy = True
 
+    @property
+    def official_name(self):
+        return self.revision.character_name_revisions.get(
+          is_official_name=True)
+
 
 class CharacterNameDetailRevision(Revision):
     """
@@ -7233,7 +7244,7 @@ class GroupRevision(CharacterGroupRevisionBase):
         db_table = 'oi_group_revision'
         ordering = ['created', '-id']
 
-    _base_field_list = ['name', 'sort_name', 'disambiguation', 'universe',
+    _base_field_list = ['disambiguation', 'universe',
                         'year_first_published',
                         'year_first_published_uncertain', 'language',
                         'description', 'notes', 'keywords']
@@ -7257,10 +7268,154 @@ class GroupRevision(CharacterGroupRevisionBase):
     def source(self, value):
         self.group = value
 
+    def _do_create_dependent_revisions(self, delete=False):
+        name_details = self.group.active_names()
+        for name_detail in name_details:
+            name_lock = _get_revision_lock(name_detail,
+                                           changeset=self.changeset)
+            if name_lock is None:
+                raise IntegrityError("needed Name lock not possible")
+            group_name = GroupNameDetailRevision.clone(name_detail,
+                                                       self.changeset)
+            group_name.save_added_revision(changeset=self.changeset,
+                                           group_revision=self)
+
+            if delete:
+                group_name.deleted = True
+                group_name.save()
+
+    def extra_forms(self, request):
+        from apps.oi.forms import GroupRevisionFormSet
+        # from apps.oi.forms.support import CREATOR_HELP_LINKS
+
+        group_names_formset = GroupRevisionFormSet(
+          request.POST or None, instance=self,
+          queryset=self.group_name_revisions.filter(deleted=False))
+
+        return {'group_names_formset': group_names_formset,
+                }
+
+    def process_extra_forms(self, extra_forms):
+        group_names_formset = extra_forms['group_names_formset']
+        for group_name_form in group_names_formset:
+            if group_name_form.is_valid() and \
+               group_name_form.cleaned_data:
+                cd = group_name_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    group_revision = group_name_form.save()
+                else:
+                    group_revision = group_name_form.save(commit=False)
+                    group_revision.save_added_revision(
+                      changeset=self.changeset, group_revision=self)
+                if cd['is_official_name']:
+                    self.name = cd['name']
+                    self.save()
+            elif (
+              not group_name_form.is_valid() and
+              group_name_form not in group_names_formset.deleted_forms
+            ):
+                raise ValueError
+
+        removed_names = group_names_formset.deleted_forms
+        for removed_name in removed_names:
+            if removed_name.cleaned_data['id']:
+                if removed_name.cleaned_data['id'].group_name_detail:
+                    removed_name.cleaned_data['id'].deleted = True
+                    removed_name.cleaned_data['id'].save()
+                else:
+                    removed_name.cleaned_data['id'].delete()
+
+    def _pre_save_object(self, changes):
+        name = self.changeset.groupnamedetailrevisions\
+                             .get(is_official_name=True)
+        self.group.name = name.name
+        self.group.sort_name = name.sort_name
+
+    def _handle_dependents(self, changes):
+        # for new group, we need to save the record_id in the name revisions
+        if self.added:
+            for name in self.changeset.groupnamedetailrevisions.all():
+                name.group = self.group
+                name.save()
+
     def get_absolute_url(self):
         if self.group is None:
             return "/group/revision/%i/preview" % self.id
         return self.group.get_absolute_url()
+
+
+class GroupNameDetailRevision(Revision):
+    """
+    record of the group's name
+    """
+
+    class Meta:
+        db_table = 'oi_group_name_detail_revision'
+        ordering = ['sort_name', ]
+        verbose_name_plural = 'Group Name Detail Revisions'
+
+    group_name_detail = models.ForeignKey('gcd.GroupNameDetail',
+                                          on_delete=models.CASCADE,
+                                          null=True,
+                                          related_name='revisions')
+    group_revision = models.ForeignKey(
+      GroupRevision,
+      on_delete=models.CASCADE,
+      related_name='group_name_revisions',
+      null=True)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE,
+                              related_name='name_revisions', null=True)
+    name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, default='')
+    is_official_name = models.BooleanField(default=False)
+
+    source_name = 'group_name_detail'
+    source_class = GroupNameDetail
+
+    @property
+    def source(self):
+        return self.group_name_detail
+
+    @source.setter
+    def source(self, value):
+        self.group_name_detail = value
+
+    def _do_complete_added_revision(self, group_revision):
+        self.group_revision = group_revision
+
+    def _post_create_for_add(self, changes):
+        self.group = self.group_revision.group
+
+    def __str__(self):
+        return '%s - %s' % (
+            str(self.group), str(self.name))
+
+    # #####################################################################
+    # Old methods. t.b.c, if deprecated.
+
+    _base_field_list = ['name', 'sort_name', 'is_official_name']
+
+    def _field_list(self):
+        # for some reason, if we use self._base_field_list an additional
+        # field 'character_revision' gets added, but don't know where and why.
+        return ['name', 'sort_name', 'is_official_name']
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'sort_name': '',
+            'is_official_name': False,
+        }
+
+    def _imps_for(self, field_name):
+        if field_name == 'sort_name':
+            if self.sort_name == self.name:
+                return 0
+            else:
+                return 1
+        if field_name in self._field_list():
+            return 1
+        return 0
 
 
 class GroupRelationRevision(Revision):

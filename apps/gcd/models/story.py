@@ -11,7 +11,8 @@ import django_tables2 as tables
 
 from .gcddata import GcdData
 from .award import ReceivedAward
-from .character import CharacterNameDetail, Group, Universe, Multiverse
+from .character import CharacterNameDetail, Group, GroupNameDetail, \
+                       Universe, Multiverse
 from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
 
@@ -169,15 +170,15 @@ def show_characters(story, url=True, css_style=True, compare=False):
         if reference_universe_id and group.universe:
             if group.universe_id != reference_universe_id:
                 group_universe_name = group.universe.universe_name()
-        for member in in_group.filter(group=group.group_id,
+        for member in in_group.filter(group_name=group.group_name_id,
                                       group_universe=group.universe_id):
             if first_member:
                 first_member = False
                 if url:
                     characters += '<a href="%s"><b>%s</b></a>%s%s: ' \
                                   '<a href="%s">%s</a>' \
-                                  % (group.group.get_absolute_url(),
-                                     esc(group.group.name),
+                                  % (group.group_name.group.get_absolute_url(),
+                                     esc(group.group_name.name),
                                      ' <i>(%s)</i>' %
                                      group_universe_name if
                                      group_universe_name else '',
@@ -186,11 +187,11 @@ def show_characters(story, url=True, css_style=True, compare=False):
                                      member.character.get_absolute_url(),
                                      esc(member.character.name))
                 else:
-                    characters += '%s [%s' % (group.group.name,
+                    characters += '%s [%s' % (group.group_name.name,
                                               member.character.name)
                 if compare:
                     disambiguation += '%s%s: <br>&nbsp;&nbsp; %s' % (
-                      group.group.disambiguated,
+                      group.group_name.group.disambiguated,
                       ' - %s' % group.universe.universe_name()
                       if group.universe else '',
                       member.character.character.disambiguated)
@@ -223,14 +224,14 @@ def show_characters(story, url=True, css_style=True, compare=False):
         if first_member is True:
             if url:
                 characters += '<a href="%s"><b>%s</b></a><br> ' \
-                                % (group.group.get_absolute_url(),
-                                   esc(group.group.name))
+                                % (group.group_name.group.get_absolute_url(),
+                                   esc(group.group_name.name))
             else:
-                characters += '%s; ' % (group.group.name)
+                characters += '%s; ' % (group.group_name.name)
             first_member = False
             if compare:
                 disambiguation += '%s%s' % (
-                  group.group.disambiguated,
+                  group.group_name.group.disambiguated,
                   ' - %s' % group.universe.universe_name()
                   if group.universe else '')
         else:
@@ -408,7 +409,9 @@ class StoryCharacter(GcdData):
                                  on_delete=models.CASCADE)
     story = models.ForeignKey('Story', on_delete=models.CASCADE,
                               related_name='appearing_characters')
+    # TODO: remove group, rename group_name to group
     group = models.ManyToManyField(Group)
+    group_name = models.ManyToManyField(GroupNameDetail)
     group_universe = models.ForeignKey(Universe, null=True,
                                        on_delete=models.CASCADE,
                                        related_name='story_character_in_group')
@@ -430,8 +433,12 @@ class StoryGroup(GcdData):
         db_table = 'gcd_group_character'
         ordering = ['group__sort_name']
 
+    # TODO: remove group, remove null=True from group_name
+    # rename group_name to group
     group = models.ForeignKey(Group,
                               on_delete=models.CASCADE)
+    group_name = models.ForeignKey(GroupNameDetail, null=True,
+                                   on_delete=models.CASCADE)
     universe = models.ForeignKey(Universe, null=True,
                                  on_delete=models.CASCADE)
     story = models.ForeignKey('Story', on_delete=models.CASCADE,

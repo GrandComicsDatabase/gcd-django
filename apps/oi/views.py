@@ -63,7 +63,7 @@ from apps.oi.models import (
     FeatureRevision, FeatureLogoRevision, UniverseRevision,
     CharacterRevision, CharacterRelationRevision, GroupRevision,
     GroupRelationRevision, GroupMembershipRevision,
-    PreviewBrand, PreviewIssue, PreviewStory,
+    PreviewBrand, PreviewIssue, PreviewStory, PreviewCharacter,
     PreviewReceivedAward, PreviewCreator, PreviewCreatorArtInfluence,
     PreviewCreatorDegree, PreviewCreatorMembership, PreviewCreatorNonComicWork,
     PreviewCreatorSchool, _get_creator_sourced_fields, on_sale_date_as_string,
@@ -5354,6 +5354,10 @@ def compare(request, id):
         character_name_revisions = changeset.characternamedetailrevisions.all()
         for character_name_revision in character_name_revisions:
             revisions_before.append(character_name_revision)
+    elif changeset.change_type == CTYPES['group']:
+        group_name_revisions = changeset.groupnamedetailrevisions.all()
+        for group_name_revision in group_name_revisions:
+            revisions_before.append(group_name_revision)
     for revision_before in revisions_before:
         revision_before.compare_changes()
     for revision_after in revisions_after:
@@ -5607,6 +5611,9 @@ def preview(request, id, model_name):
             # on preview show all story types
             request.GET = request.GET.copy()
             request.GET['issue_detail'] = 2
+        elif model_name == 'character':
+            model_object = PreviewCharacter()
+            model_object.revision = revision
         elif model_name == 'creator':
             model_object = PreviewCreator()
             model_object.revision = revision

@@ -71,6 +71,11 @@ urlpatterns = [
         name='group_autocomplete',
     ),
     url(
+        r'^autocomplete/group_name/$',
+        select_views.GroupNameAutocomplete.as_view(),
+        name='group_name_autocomplete',
+    ),
+    url(
         r'^autocomplete/universe/$',
         select_views.UniverseAutocomplete.as_view(),
         name='universe_autocomplete',

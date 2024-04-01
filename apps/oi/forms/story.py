@@ -23,7 +23,8 @@ from apps.oi.models import (
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
-                            Feature, FeatureLogo, CharacterNameDetail, Group, \
+                            Feature, FeatureLogo, CharacterNameDetail, \
+                            GroupNameDetail, \
                             Universe, STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
@@ -183,10 +184,10 @@ def get_story_revision_form(revision=None, user=None,
                       story_revision=instance,
                       changeset=changeset)
                     story_character.save()
-            group = self.cleaned_data['group']
-            if group:
+            group_name = self.cleaned_data['group_name']
+            if group_name:
                 group_members = self.cleaned_data['group_members']
-                story_group = StoryGroupRevision(group=group,
+                story_group = StoryGroupRevision(group_name=group_name,
                                                  universe=universe,
                                                  story_revision=instance,
                                                  changeset=changeset)
@@ -199,7 +200,7 @@ def get_story_revision_form(revision=None, user=None,
                       story_revision=instance,
                       changeset=changeset)
                     story_character.save()
-                    story_character.group.add(group)
+                    story_character.group_name.add(group_name)
 
         def clean_type(self):
             if queryset:
@@ -345,12 +346,12 @@ class StoryCharacterRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCharacterRevision
         fields = ['character', 'additional_information', 'role', 'universe',
-                  'group', 'group_universe',
+                  'group_name', 'group_universe',
                   'is_flashback', 'is_origin', 'is_death', 'notes']
         help_texts = {
             'role':
                 'You can enter what role the character played in the story',
-            'group':
+            'group_name':
                 'Character is appearing as a member of these groups.',
         }
         labels = {'is_flashback': 'Flashback',
@@ -376,7 +377,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
         self.helper.layout = Layout(*(f for f in field_list))
         instance = kwargs.get('instance', None)
         if instance:
-            if instance.role or instance.group.exists() or \
+            if instance.role or instance.group_name.exists() or \
                instance.universe or \
                instance.is_flashback or instance.is_origin or \
                instance.is_death or instance.notes:
@@ -392,10 +393,10 @@ class StoryCharacterRevisionForm(forms.ModelForm):
                 ' database.'
     )
 
-    group = forms.ModelMultipleChoiceField(
-      queryset=Group.objects.all(),
+    group_name = forms.ModelMultipleChoiceField(
+      queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
-        url='group_autocomplete',
+        url='group_name_autocomplete',
         attrs={'data-html': True, 'style': 'min-width: 60em'},
         forward=[forward.Field('character', 'character_name'),
                  'language_code']),
@@ -432,7 +433,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
 
     def clean(self):
         cd = self.cleaned_data
-        if cd['group_universe'] and not cd['group']:
+        if cd['group_universe'] and not cd['group_name']:
             raise forms.ValidationError(
               ['Cannot select a group universe without a group.'])
 
@@ -445,7 +446,7 @@ StoryCharacterRevisionFormSet = inlineformset_factory(
 class StoryGroupRevisionForm(forms.ModelForm):
     class Meta:
         model = StoryCharacterRevision
-        fields = ['group', 'universe', 'notes']
+        fields = ['group_name', 'universe', 'notes']
         widgets = {
             'notes': forms.TextInput(attrs={'class': 'wide'}),
         }
@@ -465,9 +466,9 @@ class StoryGroupRevisionForm(forms.ModelForm):
                       for field in fields]
         self.helper.layout = Layout(*(f for f in field_list))
 
-    group = forms.ModelChoiceField(
-      queryset=Group.objects.all(),
-      widget=autocomplete.ModelSelect2(url='group_autocomplete',
+    group_name = forms.ModelChoiceField(
+      queryset=GroupNameDetail.objects.all(),
+      widget=autocomplete.ModelSelect2(url='group_name_autocomplete',
                                        forward=['language_code'],
                                        attrs={'style': 'width: 60em'}),
       required=True,
@@ -521,8 +522,8 @@ class StoryRevisionForm(forms.ModelForm):
         fields.insert(fields.index('characters'), 'universe')
         fields.insert(fields.index('characters'), 'use_universe')
         fields.insert(fields.index('characters'), 'appearing_characters')
-        fields.insert(fields.index('characters'), 'group')
-        fields.insert(fields.index('group')+1, 'group_members')
+        fields.insert(fields.index('characters'), 'group_name')
+        fields.insert(fields.index('group_name')+1, 'group_members')
         fields.insert(fields.index('characters'), 'one_character_help')
         widgets = {
             'feature': forms.TextInput(attrs={'class': 'wide'}),
@@ -793,10 +794,10 @@ class StoryRevisionForm(forms.ModelForm):
                   'that may be copyrighted, such as solicitation or other '
                   'promotional text.')
 
-    group = forms.ModelChoiceField(
-      queryset=Group.objects.all(),
+    group_name = forms.ModelChoiceField(
+      queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(
-        url='group_autocomplete',
+        url='group_name_autocomplete',
         attrs={'data-html': True, 'style': 'width: 60em'},
         forward=['language_code']),
       help_text='Select a group and enter its characters.',
@@ -809,7 +810,7 @@ class StoryRevisionForm(forms.ModelForm):
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
         attrs={'data-html': True, 'style': 'width: 60em'},
-        forward=['language_code', 'group']),
+        forward=['language_code', 'group_name']),
       help_text='Select the appearing members of the group.',
       required=False,
     )

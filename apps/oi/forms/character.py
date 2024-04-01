@@ -15,6 +15,7 @@ from .custom_layout_object import Formset, BaseField
 
 from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
                             CharacterRelationRevision, GroupRevision,
+                            GroupNameDetailRevision,
                             GroupMembershipRevision, GroupRelationRevision,
                             UniverseRevision)
 
@@ -169,6 +170,41 @@ class CharacterRevisionForm(BaseForm):
     )
 
 
+class GroupNameDetailRevisionForm(forms.ModelForm):
+    class Meta:
+        model = GroupNameDetailRevision
+        fields = model._base_field_list
+
+
+class GroupInlineFormSet(forms.BaseInlineFormSet):
+    def _should_delete_form(self, form):
+        # TODO workaround, better to not allow the removal, see above
+        if form.instance.group_name_detail:
+            if form.instance.group_name_detail.storygroup_set\
+                            .filter(deleted=False).count():
+                form.cleaned_data['DELETE'] = False
+                return False
+        return super(GroupInlineFormSet, self)._should_delete_form(form)
+
+    def clean(self):
+        super(GroupInlineFormSet, self).clean()
+        gcd_official_count = 0
+        for form in self.forms:
+            cd = form.cleaned_data
+            if 'is_official_name' in cd and cd['is_official_name'] and \
+               not cd['DELETE']:
+                gcd_official_count += 1
+        if gcd_official_count != 1:
+            raise forms.ValidationError(
+              "Exactly one name needs to selected as the gcd_official_name.")
+
+
+GroupRevisionFormSet = inlineformset_factory(
+    GroupRevision, GroupNameDetailRevision,
+    form=GroupNameDetailRevisionForm, can_delete=True, extra=1,
+    formset=GroupInlineFormSet)
+
+
 def get_group_revision_form(revision=None, user=None):
     class RuntimeGroupRevisionForm(GroupRevisionForm):
         def as_table(self):
@@ -183,6 +219,37 @@ class GroupRevisionForm(CharacterRevisionForm):
     class Meta:
         model = GroupRevision
         fields = model._base_field_list
+
+    def __init__(self, *args, **kwargs):
+        super(GroupRevisionForm, self).__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.form_tag = False
+        ordering = list(self.fields)
+        # in django 1.9 there is Form.order_fields
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
+        fields = list(self.fields)
+        field_list = [BaseField(Field('additional_names_help',
+                                      template='oi/bits/uni_field.html'))]
+        field_list.append(Formset('group_names_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[:-1]])
+        self.helper.layout = Layout(*(f for f in field_list))
+
+    additional_names_help = forms.CharField(
+        widget=HiddenInputWithHelp,
+        required=False,
+        help_text="Several names for the group can be entered "
+                  "(for example a common name vs. a formal name, "
+                  "or different translations). One name is marked "
+                  "as the official name.",
+        label='')
 
 
 def get_group_membership_revision_form(revision=None, user=None):

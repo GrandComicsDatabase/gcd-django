@@ -18,9 +18,9 @@ from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
 from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
                       FeatureRelationType)
 from .character import (Character, CharacterNameDetail, CharacterRelationType,
-                        CharacterRelation, Group, GroupRelation,
-                        GroupMembership, GroupMembershipType, Universe,
-                        Multiverse)
+                        CharacterRelation, Group, GroupNameDetail,
+                        GroupRelation, GroupMembership, GroupMembershipType,
+                        Universe, Multiverse)
 from .cover import Cover
 from .reprint import Reprint
 from .seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING, \
