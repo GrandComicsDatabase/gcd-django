@@ -304,7 +304,10 @@ def show_characters(story, url=True, css_style=True, compare=False):
         universes = story.appearing_characters.exclude(universe=None)\
                          .order_by('universe')\
                          .values_list('universe', flat=True).distinct()
-        key_date = story.issue.key_date
+        if story.issue:
+            key_date = story.issue.key_date
+        else:
+            key_date = None
         if universes.exists() and key_date:
             for universe_id in universes:
                 universe = Universe.objects.get(id=universe_id)
