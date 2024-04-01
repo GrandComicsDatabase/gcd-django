@@ -470,10 +470,18 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
                     qs_contains = qs_contains.annotate(chrono=F(chrono_sort))\
                                              .annotate(qs_order=Value(2,
                                                        IntegerField()))
-                    qs_return = qs_match.union(qs_contains)\
-                                        .order_by('qs_order',
-                                                  'sort_name',
-                                                  'chrono')
+                    # right now special case for CharacterNameDetail
+                    if parent_disambiguation:
+                        qs_return = qs_match.union(qs_contains)\
+                                            .order_by('qs_order',
+                                                      'sort_name',
+                                                      'chrono',
+                                                      parent_disambiguation)
+                    else:
+                        qs_return = qs_match.union(qs_contains)\
+                                            .order_by('qs_order',
+                                                      'sort_name',
+                                                      'chrono')
                 else:
                     qs_return = qs_match.union(qs_contains)
             else:
