@@ -19,7 +19,10 @@ def migrate_reserve(display, label, comment=''):
           old_state=states.UNRESERVED, new_state=states.OPEN)
         return changeset
     else:
-        print("%s %s is reserved" % (label.capitalize(), display))
+        changeset = display.revisions.latest('modified').changeset
+        print("%s %s is reserved in Changeet %d" % (label.capitalize(),
+                                                    display,
+                                                    changeset.id))
         return None
 
 def do_auto_approve(liste, comment):
