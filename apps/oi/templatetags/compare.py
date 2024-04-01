@@ -169,7 +169,7 @@ def field_value(revision, field):
             universes += absolute_url(universe) + '; '
         if universes:
             universes = universes[:-2]
-            if type(revision).__name__ == 'StoryRevision':
+            if type(revision).__name__ == 'StoryRevision' and revision.issue:
                 key_date = revision.issue.key_date
             else:
                 key_date = ''
