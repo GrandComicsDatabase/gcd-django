@@ -148,7 +148,7 @@ def show_characters(story, url=True, css_style=True, compare=False):
     disambiguation = ''
 
     all_appearing_characters = story.active_characters
-    in_group = all_appearing_characters.exclude(group=None)
+    in_group = all_appearing_characters.exclude(group_name=None)
     groups = story.active_groups
 
     reference_universe_id = None
@@ -245,7 +245,8 @@ def show_characters(story, url=True, css_style=True, compare=False):
         characters = characters[:-2]
 
     appearing_characters = all_appearing_characters.exclude(
-      character__id__in=in_group.values_list('character'), group__isnull=False)
+      character__id__in=in_group.values_list('character'),
+      group_name__isnull=False)
     for character in appearing_characters:
         alias_identity = set(
           character.character.character.from_related_character
