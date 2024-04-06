@@ -17,7 +17,7 @@
 {% if issue_revision.can_add_reprints %}
   <form class="changeset" method="GET"
         action="{% url "add_issue_reprint" issue_id=issue_revision.id changeset_id=changeset.id %}">
-  <input type="submit" value="Add reprint">
+  <input type="submit" value="Add Reprint">
   </form>
 {% endif %}
 </h1>
@@ -90,7 +90,7 @@
   <form class="story_button" method="GET"
             action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id %}">
         <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
-               value="Add reprint">
+               value="Add Reprint">
   </form>
   {% endif %}
 </h2>
@@ -104,7 +104,7 @@
     <form class="story_button" method="GET"
             action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id reprint_note=reprint %}">
         <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
-               value="Add reprint">
+               value="Add Reprint">
     </form>
       {% endif %}
   </li>
