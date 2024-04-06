@@ -5213,6 +5213,38 @@ class StoryCharacterRevision(Revision):
                           exclude=frozenset(), **kwargs):
         self.story_revision = kwargs['story_revision']
 
+    @classmethod
+    def copied_translation(cls, character, story_revision):
+        """
+        Given an existing character appearance, create a new revision based
+        on it for a new character appearance with the copied character and data
+        but a different translation.
+        """
+        language = story_revision.issue.series.language
+        translations = character.character.character.translations(
+            language)
+        if translations.count() == 1:
+            character.character = translations.get()\
+                                                .official_name()
+            new_character = StoryCharacterRevision.clone(
+                character,
+                story_revision.changeset,
+                fork=True,
+                story_revision=story_revision)
+            if new_character.group_name.exists():
+                for group_name in new_character.group_name.all():
+                    new_character.group_name.remove(group_name)
+                    translations = group_name.group.translations(
+                        language)
+                    if translations.count() == 1:
+                        new_character.group_name.add(
+                            translations.get().official_name())
+                    else:
+                        new_character.group_universe = None
+                        new_character.save()
+            return new_character
+        return None
+
     def __str__(self):
         return "%s: %s" % (self.story_revision, self.character)
 
@@ -5424,22 +5456,8 @@ class StoryRevision(Revision):
                                                  fork=True,
                                                  story_revision=revision)
                 else:
-                    translations = character.character.character.translations(
-                      issue_revision.series.language)
-                    if translations.count() == 1:
-                        character.character = translations.get()\
-                                                          .official_name()
-                        new_character_revision = StoryCharacterRevision.clone(
-                          character, revision.changeset, fork=True,
-                          story_revision=revision)
-                        if new_character_revision.group.exists():
-                            for group in new_character_revision.group.all():
-                                new_character_revision.group.remove(group)
-                                translations = group.translations(
-                                  issue_revision.series.language)
-                                if translations.count() == 1:
-                                    new_character_revision.group.add(
-                                      translations.get())
+                    StoryCharacterRevision.copied_translation(character,
+                                                              revision)
 
             for group in story.active_groups:
                 if same_language:
@@ -5448,12 +5466,10 @@ class StoryRevision(Revision):
                                              fork=True,
                                              story_revision=revision)
                 else:
-                    translations = group.group.translations(
+                    translations = group.group_name.group.translations(
                       issue_revision.series.language)
                     if translations.count() == 1:
-                        new_character_revision.add(
-                            translations.get())
-                        group.group = translations.get().official_name()
+                        group.group_name = translations.get().official_name()
                         StoryGroupRevision.clone(
                           group, revision.changeset, fork=True,
                           story_revision=revision)
@@ -5512,19 +5528,44 @@ class StoryRevision(Revision):
         return super(StoryRevision, self)._get_major_changes(
             extra_field_tuples=extras)
 
-    def compare_changes(self):
-        super(StoryRevision, self).compare_changes()
+    def compare_changes(self, compare_revision=None):
+        super(StoryRevision, self).compare_changes(
+          compare_revision=compare_revision)
         for credit_type in CREDIT_TYPES:
             if not self.deleted and not self.changed[credit_type]:
                 credits = self.story_credit_revisions.filter(
                                credit_type__name=credit_type)
-                if credits:
-                    for credit in credits:
-                        credit.compare_changes()
-                        if credit.is_changed:
+                if not compare_revision:
+                    compare_revision = self.previous()
+                if not credits and compare_revision and \
+                    compare_revision.story_credit_revisions.filter(
+                      credit_type_id=CREDIT_TYPES[credit_type]).exists():
+                    self.changed[credit_type] = True
+                    self.is_changed = True
+                elif credits:
+                    if compare_revision == self.previous():
+                        for credit in credits:
+                            credit.compare_changes()
+                            if credit.is_changed:
+                                self.changed[credit_type] = True
+                                self.is_changed = True
+                                break
+                    else:
+                        # fall back to text comparison since no
+                        # credit_revisions correspond
+                        from apps.gcd.templatetags.credits import \
+                          show_creator_credit
+                        self_story = PreviewStory.init(self)
+                        self_credit_text = show_creator_credit(self_story,
+                                                               credit_type,
+                                                               url=False)
+                        compare_story = PreviewStory.init(compare_revision)
+                        compare_revision_credit_text = show_creator_credit(
+                          compare_story, credit_type, url=False)
+                        if self_credit_text != compare_revision_credit_text:
                             self.changed[credit_type] = True
                             self.is_changed = True
-                            break
+
         if 'characters' not in self.changed or not self.changed['characters']:
             for story_character in self.story_character_revisions.all():
                 story_character.compare_changes()
@@ -6084,7 +6125,8 @@ class StoryRevision(Revision):
         """
         Re-implement locally instead of using self.story because it may change.
         """
-        return '%s (%s: %s)' % (self.feature, self.type, self.page_count)
+        from apps.gcd.templatetags.display import show_story_short
+        return show_story_short(self, no_number=True, markup=False)
 
     ######################################
     # TODO old methods, t.b.c.

@@ -32,7 +32,7 @@ from apps.gcd.models import (
     CreatorRelation, CreatorSchool, CreatorNameDetail,
     STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
     IndiciaPrinter, CreatorSignature, Character, CharacterRelation, Group,
-    GroupRelation, GroupMembership, Universe)
+    GroupRelation, GroupMembership, Universe, CREDIT_TYPES)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import (  # noqa: F401
@@ -47,7 +47,8 @@ from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM
 from apps.oi.templatetags.editing import show_revision_short
-from apps.select.views import store_select_data
+from apps.select.views import store_select_data, get_cached_stories, \
+                              get_cached_covers
 
 from apps.oi.models import (
     Changeset, BrandGroupRevision, BrandRevision, BrandUseRevision,
@@ -57,6 +58,7 @@ from apps.oi.models import (
     _get_revision_lock, _free_revision_lock, CTYPES,
     get_issue_field_list, set_series_first_last,
     AwardRevision, ReceivedAwardRevision, IssueCreditRevision,
+    StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision,
     CreatorRevision, CreatorMembershipRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision, CreatorRelationRevision,
@@ -2592,7 +2594,7 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
             field_list.remove('after')
         field_list.remove('number')
         return oi_render(
-          request, 'oi/edit/compare_issues_copy.html',
+          request, 'oi/edit/compare_and_copy.html',
           {
            'prev_rev': compare_revision,
            'revision': revision,
@@ -2625,15 +2627,30 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
 
     if 'editing' in selected_fields:
         credits = compare_revision.issue_credit_revisions.exclude(deleted=True)
+        existing_credits = revision.issue_credit_revisions\
+                                   .exclude(deleted=True)
         for credit in credits:
             q_vals = {}
             for field in credit._get_single_value_fields():
                 q_vals[field] = getattr(credit, field)
             credit_revision = revision.issue_credit_revisions.filter(
                                        Q(**q_vals), deleted=False)
-            if not credit_revision:
-                IssueCreditRevision.clone(credit, revision.changeset,
-                                          fork=True, issue_revision=revision)
+            if credit_revision:
+                existing_credits = existing_credits.exclude(
+                  id=credit_revision[0].id)
+            else:
+                new_credit = IssueCreditRevision.clone(
+                  credit, revision.changeset,
+                  fork=True, issue_revision=revision)
+                existing_credits = existing_credits.exclude(
+                  id=new_credit.id)
+
+        for existing_credit in existing_credits:
+            if existing_credit.issue_credit:
+                existing_credit.deleted = True
+                existing_credit.save()
+            else:
+                existing_credit.delete()
 
     return HttpResponseRedirect(
         urlresolvers.reverse('edit_revision',
@@ -3164,6 +3181,200 @@ def copy_story_revision(request, issue_revision_id, changeset_id=None,
 
         return HttpResponseRedirect(urlresolvers.reverse(
           'edit_revision', kwargs={'id': rev.id, 'model_name': 'story'}))
+
+
+@permission_required('indexer.can_reserve')
+def story_select_compare(request, story_revision_id):
+    revision = get_object_or_404(StoryRevision, id=story_revision_id)
+    if request.user != revision.changeset.indexer:
+        return render_error(
+          request,
+          'Only the reservation holder may access this page.')
+    cached_stories = get_cached_stories(request)
+    cached_covers = get_cached_covers(request)
+    return oi_render(
+        request, 'oi/edit/select_story_for_copy.html',
+        {'revision': revision, 'cached_stories': cached_stories,
+         'cached_covers': cached_covers})
+
+
+@permission_required('indexer.can_reserve')
+def compare_stories_copy(request, story_revision_id, story_id):
+    revision = get_object_or_404(StoryRevision, id=story_revision_id)
+    if request.user != revision.changeset.indexer:
+        return render_error(
+          request,
+          'Only the reservation holder may access this page.')
+    story = get_object_or_404(Story, id=story_id)
+    compare_revision = story.revisions.filter(
+      changeset__state=5,
+      next_revision=None) | story.revisions.filter(
+      changeset__state=5,
+      next_revision__changeset__state__lt=5)
+    compare_revision = compare_revision.get()
+    if request.method != 'POST':
+        revision.compare_changes(compare_revision=compare_revision)
+        field_list = revision.field_list()
+        field_list.remove('sequence_number')
+        return oi_render(
+          request, 'oi/edit/compare_and_copy.html',
+          {
+           'prev_rev': compare_revision,
+           'revision': revision,
+           'field_list': field_list,
+           'is_story': True
+          }
+        )
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit', kwargs={'id': revision.changeset_id}))
+
+    selected_fields = request.POST.getlist('field_to_copy')
+    fields_to_copy = revision._get_single_value_fields().copy()
+    fields_to_copy.update(revision._get_meta_fields())
+    fields_to_set = revision._get_multi_value_fields()
+    for field in selected_fields:
+        # single value fields
+        if field in fields_to_copy:
+            setattr(revision, field, getattr(compare_revision, field))
+        # m2m fields
+        if field in fields_to_set:
+            getattr(revision, field).add(*list(getattr(compare_revision,
+                                                       field).all()))
+    revision.save()
+
+    if 'copy_select_with_qualifiers' in request.POST:
+        exclude = {'is_sourced', 'sourced_by'}
+    else:
+        exclude = {'is_credited', 'credited_as', 'is_signed', 'signed_as',
+                   'signature', 'is_sourced', 'sourced_by', 'credit_name'}
+
+    for credit_type in CREDIT_TYPES:
+        if credit_type in selected_fields:
+            credit_type_id = CREDIT_TYPES[credit_type]
+            credits = compare_revision.story_credit_revisions\
+                                      .filter(credit_type_id=credit_type_id)\
+                                      .exclude(deleted=True)
+            existing_credits = revision.story_credit_revisions\
+                                       .filter(credit_type_id=credit_type_id)\
+                                       .exclude(deleted=True)
+            # following is similar to process_extra_forms
+            for credit in credits:
+                blank_values = credit._get_blank_values()
+                q_vals = {}
+                # match depends on copy_select_with_qualifiers
+                for field in credit._get_single_value_fields():
+                    if field in exclude:
+                        q_vals[field] = blank_values[field]
+                    else:
+                        q_vals[field] = getattr(credit, field)
+                credit_revision = revision.story_credit_revisions.filter(
+                                        Q(**q_vals), deleted=False)
+                if credit_revision:
+                    existing_credits = existing_credits.exclude(
+                      id=credit_revision[0].id)
+                else:
+                    new_credit = StoryCreditRevision.clone(
+                      credit,
+                      revision.changeset,
+                      fork=True,
+                      story_revision=revision,
+                      exclude=exclude)
+                    existing_credits = existing_credits.exclude(
+                      id=new_credit.id)
+            for existing_credit in existing_credits:
+                if existing_credit.story_credit:
+                    existing_credit.deleted = True
+                    existing_credit.save()
+                else:
+                    existing_credit.delete()
+    if revision.issue and (compare_revision.issue.series.language ==
+                           revision.issue.series.language):
+        same_language = True
+    else:
+        same_language = False
+
+    if 'characters' in selected_fields:
+        characters = compare_revision.story_character_revisions\
+                                     .exclude(deleted=True)
+        existing_characters = revision.story_character_revisions\
+                                      .exclude(deleted=True)
+
+        for character in characters:
+            if same_language:
+                q_vals = {}
+                for field in character._get_single_value_fields():
+                    q_vals[field] = getattr(character, field)
+                character_revision = revision.story_character_revisions.filter(
+                                        Q(**q_vals), deleted=False)
+                if character_revision:
+                    existing_characters = existing_characters.exclude(
+                      id=character_revision[0].id)
+                else:
+                    new_character = StoryCharacterRevision.clone(
+                      character,
+                      revision.changeset,
+                      fork=True,
+                      story_revision=revision)
+                    existing_characters = existing_characters.exclude(
+                      id=new_character.id)
+            else:
+                new_character_revision = \
+                  StoryCharacterRevision.copied_translation(character,
+                                                            revision)
+                if new_character_revision:
+                    existing_characters = existing_characters.exclude(
+                      id=new_character_revision.id)
+
+        for existing_character in existing_characters:
+            if existing_character.story_character:
+                existing_character.deleted = True
+                existing_character.save()
+            else:
+                existing_character.delete()
+
+        groups = compare_revision.story_group_revisions\
+                                 .exclude(deleted=True)
+        existing_groups = revision.story_group_revisions\
+                                  .exclude(deleted=True)
+        for group in groups:
+            if same_language:
+                q_vals = {}
+                for field in group._get_single_value_fields():
+                    q_vals[field] = getattr(group, field)
+                group_revision = revision.story_group_revisions.filter(
+                                          Q(**q_vals), deleted=False)
+                if group_revision:
+                    existing_groups = existing_groups.exclude(
+                      id=group_revision[0].id)
+                else:
+                    new_group = StoryGroupRevision.clone(
+                      group, revision.changeset, fork=True,
+                      story_revision=revision)
+                    existing_groups = existing_groups.exclude(
+                      id=new_group.id)
+            else:
+                translations = group.group.translations(
+                  revision.issue.series.language)
+                if translations.count() == 1:
+                    group.group_name = translations.get().official_name()
+                    new_group = StoryGroupRevision.clone(
+                      group, revision.changeset, fork=True,
+                      story_revision=revision)
+                    existing_groups = existing_groups.exclude(
+                      id=new_group.id)
+
+        for existing_group in existing_groups:
+            if existing_group.story_group:
+                existing_group.deleted = True
+                existing_group.save()
+            else:
+                existing_group.delete()
+
+    return HttpResponseRedirect(
+        urlresolvers.reverse('edit_revision',
+                             kwargs={'model_name': 'story',
+                                     'id': revision.id}))
 
 ##############################################################################
 # Series Bond Editing

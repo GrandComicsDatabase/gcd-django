@@ -186,6 +186,9 @@
         <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
                value="Edit">
       </form>
+      <a style="padding-left: 2em" href="{% url 'story_select_compare' story_revision_id=story.id  %}">
+        <button type="button">Compare & Copy</button>
+      </a>
         {% if changeset.change_type == CTYPES.issue %}
       <form class="story_button" method="GET"
             action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id reprint_note=story.reprint_notes|default:" "|urlencode %}">

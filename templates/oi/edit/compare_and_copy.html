@@ -43,6 +43,9 @@ Comparing :: {{ revision }}
       </table>
       <div style="clear: both;"></div>
       <input type="submit" name="copy_select" value="Copy Selected Values">
+      {% if is_story %}
+      <input type="submit" name="copy_select_with_qualifiers" value="Copy Selected Values With Credit Qualifiers">
+      {% endif %}
       <input type="submit" name="cancel" value="Cancel">
     </form>
   </div>

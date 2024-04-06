@@ -198,6 +198,10 @@ urlpatterns = [
     url(r'^story/revision/(?P<id>\d+)/migrate/$',
         oi_views.migrate_story_revision,
         name='migrate_story_revision'),
+    url(r'^story/revision/(?P<story_revision_id>\d+)/compare/(?P<story_id>\d+)/$',
+        oi_views.compare_stories_copy, name='compare_stories_copy'),
+    url(r'^story/revision/(?P<story_revision_id>\d+)/select_compare/$',
+        oi_views.story_select_compare, name='story_select_compare'),
 
     # Feature URLs
     url(r'^feature/add/$',
