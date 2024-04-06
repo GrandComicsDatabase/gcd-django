@@ -232,6 +232,13 @@ class Character(CharacterGroupBase):
     def active_generalisations(self):
         return self.from_related_character.filter(relation_type_id=6)
 
+    def active_alternate_universe_versions(self):
+        if self.universe:
+            return self.active_generalisations().get().from_character\
+                       .active_specifications().exclude(to_character=self)
+        else:
+            return None
+
     def active_memberships(self):
         return self.memberships.all()
 

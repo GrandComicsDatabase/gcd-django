@@ -147,6 +147,24 @@ GCD :: Character :: {{ character.name }}
     {% endfor %}
           </ol>
   {% endif %}
+  {% if character.active_alternate_universe_versions %}
+        <hr>
+        <h3>Alternate Universe Version:</h3>
+        {% if character.active_alternate_universe_versions.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for relation in character.active_alternate_universe_versions %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_character' character_id=relation.to_character.id %}">{{ relation.to_character }}</a>
+      {% if relation.notes %}
+          <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+        </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
 
   {% if character.active_memberships %}
         <hr>
