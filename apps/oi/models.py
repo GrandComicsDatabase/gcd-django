@@ -5231,6 +5231,8 @@ class StoryCharacterRevision(Revision):
                 story_revision.changeset,
                 fork=True,
                 story_revision=story_revision)
+            for group in new_character.group.all():
+                new_character.group.remove(group)
             if new_character.group_name.exists():
                 for group_name in new_character.group_name.all():
                     new_character.group_name.remove(group_name)
@@ -5778,7 +5780,7 @@ class StoryRevision(Revision):
                       changeset=self.changeset, story_revision=self)
                     character_form.save_m2m()
                 # Change this, if we ever edit character appearances elsewhere
-                if character_revision.group.exists() and \
+                if character_revision.group_name.exists() and \
                    character_revision.universe and not \
                    character_revision.group_universe:
                     character_revision.group_universe = \
