@@ -349,7 +349,9 @@ class Series(GcdData):
                                         .filter(deleted=False)
         issues = self.active_issues().filter(id__in=set(stories.values_list(
                                                         'issue', flat=True)))
-        return issues
+        issue_edits = self.active_issues().exclude(Q(editing='') |
+                                                   Q(editing__startswith='?'))
+        return issues | issue_edits
 
     def _date_uncertain(self, flag):
         return ' ?' if flag else ''
