@@ -704,7 +704,7 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
         group = get_gcd_object(Group, group_id)
         issues = issues.filter(
           story__credits__creator__creator=creator,
-          story__appearing_characters__group=group,
+          story__appearing_characters__group_name__group=group,
           story__type__id__in=CORE_TYPES,
           story__appearing_characters__deleted=False).distinct()
         heading = 'Issues for Creator %s for Group %s' % (creator,
@@ -927,7 +927,7 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
         issues = issues.filter(
           story__credits__creator=creator,
           story__type__id__in=CORE_TYPES,
-          story__appearing_characters__group=group,
+          story__appearing_characters__group_name__group=group,
           story__appearing_characters__deleted=False)
         heading_addon = 'Group %s' % (group)
     if feature_id:
