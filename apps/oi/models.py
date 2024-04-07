@@ -5576,6 +5576,14 @@ class StoryRevision(Revision):
                     self.is_changed = True
                     break
 
+        if 'characters' not in self.changed or not self.changed['characters']:
+            for story_group in self.story_group_revisions.all():
+                story_group.compare_changes()
+                if story_group.is_changed:
+                    self.changed['characters'] = True
+                    self.is_changed = True
+                    break
+
     def _do_complete_added_revision(self, issue):
         """
         Do the necessary processing to complete the fields of a new
@@ -5903,7 +5911,7 @@ class StoryRevision(Revision):
                     if not stripped.startswith('?') \
                        and stripped not in ['various', 'typeset', 'gesetzt',
                                             'tryckstil', 'formatadas',
-                                            'typographie',
+                                            'typographie', 'Maschinenschrift',
                                             'composición tipográfica']:
                         return True
         return False

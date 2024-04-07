@@ -406,16 +406,9 @@ class Group(CharacterGroupBase):
 
     def active_universe_appearances(self):
         from .story import Story
-        if self.universe and self.active_generalisations().exists():
-            group = self.active_generalisations().get().from_group
-            appearances = Story.objects.filter(
-              appearing_groups__group=group,
-              appearing_groups__universe=self.universe,
-              deleted=False)
-        else:
-            appearances = Story.objects.filter(
-              appearing_groups__group=self,
-              deleted=False)
+        appearances = Story.objects.filter(
+          appearing_groups__group=self,
+          deleted=False)
         universes = set(appearances.values_list('universe',
                                                 flat=True).distinct())
         return Universe.objects.filter(id__in=universes)

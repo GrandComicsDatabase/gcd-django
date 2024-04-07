@@ -1238,6 +1238,14 @@ def process_advanced(request, export_csv=False):
     display_target, method, logic, used_search_terms = used_search(get_copy)
     query_string = urlencode(parse_qsl(query_string))
 
+    if items.count() > 50000:
+        return render_error(
+          request,
+          'More than 50,000 results, please limit the search range. '
+          '<a href="%s?%s">Return to Advanced Search</a>' % (
+            urlresolvers.reverse(advanced_search),query_string),
+          redirect=False, is_safe=True)
+
     if target == 'sequence':
         table = StoryTable(items, attrs={'class': 'sortable_listing'},
                            template_name='gcd/bits/sortable_table.html',
