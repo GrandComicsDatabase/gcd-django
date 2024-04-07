@@ -7128,7 +7128,7 @@ class CharacterRevision(CharacterGroupRevisionBase):
         self.character.sort_name = name.sort_name
 
     def _handle_dependents(self, changes):
-        # for new creator, we need to save the record_id in the name revisions
+        # for new character, we need to save the record_id in the name revisions
         if self.added:
             for name in self.changeset.characternamedetailrevisions.all():
                 name.creator = self.character
