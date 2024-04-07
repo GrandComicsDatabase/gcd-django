@@ -42,8 +42,9 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
                             CreatorNonComicWork, CreatorSignature, \
                             Feature, FeatureLogo, FeatureRelation, \
                             Printer, IndiciaPrinter, School, Story, \
-                            Character, Group, CharacterNameDetail, Universe, \
-                            Multiverse, StoryCredit, \
+                            Character, CharacterNameDetail, Group, \
+                            GroupNameDetail, Universe, Multiverse, \
+                            StoryCredit, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import GenericCreatorTable, \
                                     GenericCreatorNameTable, \
@@ -3698,6 +3699,8 @@ def group(request, group_id):
 def show_group(request, group, preview=False):
     vars = {'group': group,
             'error_subject': '%s' % group,
+            'additional_names': group.active_names()
+                                     .filter(is_official_name=False),
             'preview': preview}
     return render(request, 'gcd/details/group.html', vars)
 
@@ -3705,7 +3708,7 @@ def show_group(request, group, preview=False):
 def group_issues(request, group_id, universe_id=None, story_universe_id=None):
     group = get_gcd_object(Group, group_id)
 
-    query = {'story__appearing_groups__group': group,
+    query = {'story__appearing_groups__group_name__group': group,
              'story__appearing_groups__deleted': False,
              'story__type__id__in': CORE_TYPES,
              'story__deleted': False}
@@ -3740,13 +3743,47 @@ def group_issues(request, group_id, universe_id=None, story_universe_id=None):
     return generic_sortable_list(request, issues, table, template, context)
 
 
+def group_name_issues(request, group_name_id, universe_id=None):
+    group_name = get_gcd_object(GroupNameDetail, group_name_id)
+    group = group_name.group
+
+    query = {'story__appearing_groups__group_name': group_name,
+             'story__appearing_groups__deleted': False,
+             'story__type__id__in': CORE_TYPES,
+             'story__deleted': False}
+
+    if universe_id:
+        if universe_id == '-1':
+            query['story__appearing_groups__universe_id__isnull'] = \
+                True
+        else:
+            query['story__appearing_groups__universe_id'] = universe_id
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for Name %s of Group %s' % (group_name, group)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
 def group_creators(request, group_id, creator_names=False):
     group = get_gcd_object(Group, group_id)
 
     if creator_names:
         creators = CreatorNameDetail.objects.all()
         creators = creators.filter(
-          storycredit__story__appearing_groups__group=group,
+          storycredit__story__appearing_groups__group_name__group=group,
           storycredit__story__appearing_groups__deleted=False,
           storycredit__story__type__id__in=CORE_TYPES,
           storycredit__deleted=False).distinct()
@@ -3755,7 +3792,7 @@ def group_creators(request, group_id, creator_names=False):
     else:
         creators = Creator.objects.all()
         creators = creators.filter(
-          creator_names__storycredit__story__appearing_groups__group=group,
+          creator_names__storycredit__story__appearing_groups__group_name__group=group,
           creator_names__storycredit__story__appearing_groups__deleted=False,
           creator_names__storycredit__story__type__id__in=CORE_TYPES,
           creator_names__storycredit__deleted=False).distinct()
@@ -3789,7 +3826,7 @@ def group_creators(request, group_id, creator_names=False):
 def group_sequences(request, group_id, country=None):
     group = get_gcd_object(Group, group_id)
     stories = Story.objects.filter(
-      appearing_groups__group=group,
+      appearing_groups__group_name__group=group,
       appearing_groups__deleted=False,
       deleted=False).distinct().select_related('issue__series__publisher')
     if country:

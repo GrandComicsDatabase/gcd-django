@@ -48,6 +48,26 @@ GCD :: Group :: {{ group.name }}
         <li><a href='{% url "group_issues" group_id=group.id %}'>Issue Checklist (via linked story records)</a></li>
         <li><a href='{% url "group_sequences" group_id=group.id %}'>Sequences List (via linked story records)</a></li>
       </ul>
+
+      <h3>Name:</h3>
+      <ol>
+        <a href='{% url "group_name_issues" group_name_id=group.official_name.id %}'>{{ group.official_name.name }}</a>
+      </ol>
+  {% if additional_names %}
+          <h3>Additional Names:</h3>
+    {% if additional_names.count > 1 %}
+          <ol style="columns: 2;">
+    {% else %}
+          <ol>
+    {% endif %}
+    {% for name in additional_names %}
+            <li style="page-break-inside: avoid;">
+              <a href='{% url "group_name_issues" group_name_id=name.id %}'>{{ name.name }}</a>
+            </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
+
 {% if group.active_universe_origins %}
       <hr>
       <h3>Appearances With a Group Origin Universe:</h3>
