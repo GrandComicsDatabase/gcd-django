@@ -188,7 +188,7 @@ div.stats_header {
     margin-bottom: 1em;
 }
 
-.item_id :link, .stats :link {
+.item_id :link, .stats :link, .stats :visited {
     color: white;
     text-decoration: underline;
 }
