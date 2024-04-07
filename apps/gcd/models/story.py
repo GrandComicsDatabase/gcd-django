@@ -439,9 +439,9 @@ class StoryGroup(GcdData):
 
     # TODO: remove group, remove null=True from group_name
     # rename group_name to group
-    group = models.ForeignKey(Group,
+    group = models.ForeignKey(Group, null=True,
                               on_delete=models.CASCADE)
-    group_name = models.ForeignKey(GroupNameDetail, null=True,
+    group_name = models.ForeignKey(GroupNameDetail,
                                    on_delete=models.CASCADE)
     universe = models.ForeignKey(Universe, null=True,
                                  on_delete=models.CASCADE)
