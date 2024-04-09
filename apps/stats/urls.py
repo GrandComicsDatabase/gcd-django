@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 
-from django.conf.urls import url
+from django.urls import path, re_path
 
 from apps.stats import views
 
 
 app_name = 'stats'
-urlpatterns = [url(r'^download/', views.download, {}, name='download'),
-               url(r'^countries/$', views.countries_in_use),
+urlpatterns = [re_path(r'^download/', views.download, {}, name='download'),
+               path('countries/', views.countries_in_use),
 ]

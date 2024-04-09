@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.urls import include, path
 from django.conf import settings
-from django.conf.urls import url
+from django.urls import path, re_path
 from django.contrib import admin
 from django.views.generic import base as bv
 from django.shortcuts import redirect
@@ -29,26 +29,26 @@ js_info_dict = {
 
 basic_patterns = [
     # Read-only URLS: basic messages and the gcd display pages.
-    url(r'^privacy/$',
+    path('privacy/',
         bv.TemplateView.as_view(template_name='gcd/privacy.html'),
         name='privacy'),
 
-    url(r'gcd-error/$', error_view, name='error'),
+    path('gcd-error/', error_view, name='error'),
 
-    url(r'^donate/$',
+    path('donate/',
         bv.TemplateView.as_view(template_name='gcd/donate/donate.html'),
         name='donate'),
-    url(r'^donate/thanks/$',
+    path('donate/thanks/',
         bv.TemplateView.as_view(template_name='gcd/donate/thanks.html'),
         name='donate_thanks'),
-    url(r'^jsi18n/$', JavaScriptCatalog.as_view(**js_info_dict),
+    path('jsi18n/', JavaScriptCatalog.as_view(**js_info_dict),
         name='javascript-catalog'),
-    url(r'^contact/$',
+    path('contact/',
         ContactFormView.as_view(
             form_class=CustomContactForm
         ),
         name='contact_form'),
-    url(r'^contact/sent/$',
+    path('contact/sent/',
         TemplateView.as_view(
             template_name='django_contact_form/contact_form_sent.html'
         ),
@@ -56,19 +56,19 @@ basic_patterns = [
 ]
 
 read_only_patterns = [
-    url(r'^queues/editing/$', read_only.dummy,
+    path('queues/editing/', read_only.dummy,
         name='editing'),
-    url(r'^upload_cover/(?P<issue_id>\d+)/$', read_only.dummy,
+    path('upload_cover/<int:issue_id>/', read_only.dummy,
         name='upload_cover'),
-    url(r'^edit_covers/(?P<issue_id>\d+)/$', read_only.dummy,
+    path('edit_covers/<int:issue_id>/', read_only.dummy,
         name='edit_covers'),
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', 
+    re_path(r'^(?P<model_name>\w+)/(?P<id>\d+)/upload_image/(?P<image_type>\w+)/$', 
         read_only.dummy, name='upload_image'),
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$', 
+    re_path(r'^(?P<model_name>\w+)/(?P<id>\d+)/replace_image/(?P<image_id>\d+)/$', 
         read_only.dummy, name='replace_image'),
-    url(r'^(?P<model_name>\w+)/(?P<id>\d+)/delete/$', read_only.dummy,
+    re_path(r'^(?P<model_name>\w+)/(?P<id>\d+)/delete/$', read_only.dummy,
         name='delete_revision'),
-    url(r'^changeset/(?P<id>\d+)/compare/$', read_only.dummy, name='compare'),
+    path('changeset/<int:id>/compare/', read_only.dummy, name='compare'),
 ]
 
 if settings.SITE_DOWN:
@@ -79,9 +79,9 @@ if settings.SITE_DOWN:
             return context
 
     urlpatterns = [
-        url(r'^site-down/$',  SiteDownTemplateView.as_view(
+        path('site-down/',  SiteDownTemplateView.as_view(
             template_name= 'site_down.html')),
-        url(r'^.*$', lambda request: redirect('/site-down/')),
+        re_path(r'^.*$', lambda request: redirect('/site-down/')),
     ]
 
 elif settings.NO_OI:
