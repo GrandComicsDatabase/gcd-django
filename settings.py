@@ -197,7 +197,7 @@ ABSOLUTE_URL_OVERRIDES = {
 # in your settings_local.py as an override.
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
         'LOCATION': '127.0.0.1:11211',
     }
 }
