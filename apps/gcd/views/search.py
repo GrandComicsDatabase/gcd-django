@@ -15,7 +15,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
 from django.shortcuts import render
-from django.utils.http import urlquote
+from urllib.parse import quote
 
 from djqscsv import render_to_csv_response
 from haystack.query import SearchQuerySet
@@ -855,8 +855,8 @@ def search(request):
     if 'query' not in request.GET or not request.GET['query'] or \
        request.GET['query'].isspace():
         # if no query, but a referer page
-        if 'HTTP_REFERER' in request.META:
-            return HttpResponseRedirect(request.META['HTTP_REFERER'])
+        if 'referer' in request.headers:
+            return HttpResponseRedirect(request.headers['referer'])
         else:  # rare, but possible
             return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
 
@@ -866,7 +866,7 @@ def search(request):
         sort = ORDER_ALPHA
 
     if request.GET['search_type'].find("haystack") >= 0:
-        quoted_query = urlquote(request.GET['query'])
+        quoted_query = quote(request.GET['query'])
 
     if request.GET['search_type'] == "mycomics_haystack":
         if sort == ORDER_CHRONO:
