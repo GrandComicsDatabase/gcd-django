@@ -27,7 +27,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from django_contact_form.views import ContactFormView
 

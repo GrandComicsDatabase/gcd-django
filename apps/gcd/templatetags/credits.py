@@ -6,8 +6,8 @@ import markdown as md
 from django import template
 from django.conf import settings
 from django.template.defaultfilters import stringfilter
-from django.utils.translation import ugettext as _
-from django.utils.translation import ungettext
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 import django.urls as urlresolvers
@@ -469,7 +469,7 @@ def show_page_count(story, show_page=False):
     if story.page_count_uncertain:
         p = '%s ?' % p
     if show_page:
-        p = p + ' ' + ungettext('page', 'pages', story.page_count)
+        p = p + ' ' + ngettext('page', 'pages', story.page_count)
     return p
 
 

@@ -3,7 +3,7 @@ from django.db import models
 import django.urls as urlresolvers
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
-from django.utils.translation import ungettext
+from django.utils.translation import ngettext
 
 from taggit.managers import TaggableManager
 
@@ -712,7 +712,7 @@ class Story(GcdData):
         if self.page_count_uncertain:
             p = '%s ?' % p
         if show_page:
-            p = p + ' ' + ungettext('page', 'pages', self.page_count)
+            p = p + ' ' + ngettext('page', 'pages', self.page_count)
         return p
 
     def get_absolute_url(self):
