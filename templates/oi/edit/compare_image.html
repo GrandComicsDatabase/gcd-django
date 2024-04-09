@@ -74,23 +74,23 @@ Reviewing :: {{ revision }}
   {% endif %}
 {% if revision.marked %}
   <p><span class="comparison_highlight">image is marked for replacement</span></p>
-  {% ifequal changeset.state states.REVIEWING %}
-    {% ifequal user changeset.approver %}
+  {% if changeset.state == states.REVIEWING %}
+    {% if user == changeset.approver %}
   <form action="{% url "unmark_image_revision" revision_id=revision.id %}" method="POST">
     {% csrf_token %}
     <input type="submit" value="Remove mark for replacement">
   </form>
-    {% endifequal %}
-  {% endifequal %}
+    {% endif %}
+  {% endif %}
 {% else %}
-  {% ifequal changeset.state states.REVIEWING %}
-    {% ifequal user changeset.approver %}
+  {% if changeset.state == states.REVIEWING %}
+    {% if user == changeset.approver %}
   <form action="{% url "mark_image_revision" revision_id=revision.id %}" method="POST">
     {% csrf_token %}
     <input type="submit" value="Mark for replacement">
   </form>
-    {% endifequal %}
-  {% endifequal %}
+    {% endif %}
+  {% endif %}
 {% endif %}
 </div>
 

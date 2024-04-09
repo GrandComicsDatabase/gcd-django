@@ -79,11 +79,11 @@ will not work.
   {% if new_sort_code %}
                 value="{{ new_sort_code }}"
   {% else %}
-    {% ifequal new_sort_code 0 %}
+    {% if new_sort_code == 0 %}
                 value="{{ new_sort_code }}"
     {% else %}
                 value="{{ issue.sort_code }}"
-    {% endifequal %}
+    {% endif %}
   {% endif %}
          > </td>
     <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a> </td>

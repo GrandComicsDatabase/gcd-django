@@ -16,7 +16,7 @@
 <p><a href="{% url "mentoring" %}">New Indexers Mentoring Overview</a></p> 
 
 {% if indexer.mentor %}
-  {% ifequal indexer.mentor user %}
+  {% if indexer.mentor == user %}
     <p class="message">
     You are mentoring this Indexer
     </p>
@@ -24,7 +24,7 @@
     <p class="message">
     This Indexer is being mentored by {{ indexer.mentor.indexer }}
     </p>
-  {% endifequal %}
+  {% endif %}
 {% else %}
   {% if indexer.is_new %}
     <form action="{% url "mentor" indexer_id=indexer.id %}" method="POST">

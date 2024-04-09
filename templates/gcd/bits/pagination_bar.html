@@ -32,7 +32,7 @@
     </li>
   {% for number in page.page_range %}
     <li>
-    {% ifequal number page.number %}
+    {% if number == page.number %}
       <span class="btn btn-default btn-sm btn-selected" style="text-decoration: none">{{ number }}</span>
     {% else %}
     {% if not number %}<span class="btn btn-default btn-sm"> ... {# literally dots #}</span>
@@ -43,7 +43,7 @@
       <a class="btn btn-default btn-sm" href="?page={{ number }}">{{ number }}</a>
         {% endif %}
       {% endif %}
-    {% endifequal %}
+    {% endif %}
     </li>
   {% endfor %}
     <li>

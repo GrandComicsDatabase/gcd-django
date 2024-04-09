@@ -37,15 +37,15 @@
   {% endif %}
   {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"|make_list %}
   |
-  {% ifequal letter starts_with %}
+  {% if letter == starts_with %}
   {{ letter }}
   {% else %}
-  {% if starts_with %}
+    {% if starts_with %}
   <a href="../{{ letter }}">{{ letter }}</a>
-  {% else %}
+    {% else %}
   <a href="with/{{ letter }}">{{ letter }}</a>  
+    {% endif %}
   {% endif %}
-  {% endifequal %}
   {% endfor %}
   </div>
 </div>
@@ -85,15 +85,15 @@
   {% endif %}
   {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"|make_list %}
   |
-  {% ifequal letter starts_with %}
-  {{ letter }}
+  {% if letter == starts_with %}
+    {{ letter }}
   {% else %}
-  {% if starts_with %}
+    {% if starts_with %}
   <a href="../{{ letter }}">{{ letter }}</a>
-  {% else %}
+    {% else %}
   <a href="with/{{ letter }}">{{ letter }}</a>  
+    {% endif %}
   {% endif %}
-  {% endifequal %}
   {% endfor %}
   </div>
 </div>

@@ -93,23 +93,23 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 {{ revision|show_cover_contributor }}.
 {% if revision.marked %}
     <p><span class="comparison_highlight">cover is marked for replacement</span></p>
-  {% ifequal changeset.state states.REVIEWING %}
-    {% ifequal user changeset.approver %}
+  {% if changeset.state == states.REVIEWING %}
+    {% if user == changeset.approver %}
     <form action="{% url "unmark_cover_revision" revision_id=revision.id %}" method="POST">
       {% csrf_token %}
       <input type="submit" value="Remove mark for replacement">
     </form>
-    {% endifequal %}
-  {% endifequal %}
+    {% endif %}
+  {% endif %}
 {% else %}
-  {% ifequal changeset.state states.REVIEWING %}
-    {% ifequal user changeset.approver %}
+  {% if changeset.state == states.REVIEWING %}
+    {% if user == changeset.approver %}
     <form action="{% url "mark_cover_revision" revision_id=revision.id %}" method="POST">
       {% csrf_token %}
       <input type="submit" value="Mark for replacement">
     </form>
-    {% endifequal %}
-  {% endifequal %}
+    {% end %}
+  {% end %}
 {% endif %}
 {% if changeset.issuerevisions.count %}
   <p>

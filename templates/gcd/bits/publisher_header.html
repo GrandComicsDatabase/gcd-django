@@ -3,7 +3,7 @@
 <!-- Probably needs to be refactored with the series_issue_header.html file
      somehow, but deal with that later. -->
 
-{% ifnotequal paginate_only 1 %}
+{% if paginate_only != 1 %}
 <h1 class="item_id">
   <span class="left">
   {% if publisher.parent %}
@@ -15,21 +15,21 @@
     {{ publisher.name }}
   {% endif %}
   {% if description %}
-    {% ifnotequal description 'Publisher' %}
+    {% if description != 'Publisher' %}
       {% if description == 'Brand Emblem' %}
     ({{ description }})
       {% else %}
     (<a href="{{ publisher.parent.get_absolute_url }}{{ url_suffix }}/">{{ description }}</a>)
       {% endif %}
-    {% endifnotequal %}
+    {% endif %}
   {% endif %}
   </span>
 </h1>
-{% endifnotequal %}
+{% endif %}
 
-<div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
+<div {% if paginate_only == 1 %} id="item_id_footer" {% endif %}
      class="item_id">
-{% ifnotequal paginate_only 1 %}
+{% if paginate_only != 1 %}
   <div class="flex_left">
     <!-- Each of these things should have one space between them, currently
          done via newline, but if they are put on one line please preserve
@@ -40,7 +40,7 @@
     {{ publisher.year_ended|default:'' }}
     {% if publisher.year_ended_uncertain %}?{% endif %}
   </div>
-{% endifnotequal %}
+{% endif %}
   <div class="flex_right">
   {% include "gcd/bits/pagination_bar.html" %}
   </div>

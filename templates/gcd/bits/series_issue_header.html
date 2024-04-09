@@ -2,7 +2,7 @@
 {% load credits %}
 {% load display %}
 
-{% ifnotequal paginate_only 1 %}
+{% if paginate_only != 1 %}
 <h1 class="item_id">
 <div class="left" id="series_and_issue">
   <span id="series_name">
@@ -29,12 +29,12 @@
 </div>
   {% endif %}
 </h1>
-{% endifnotequal %}
+{% endif %}
 
-<div {% ifequal paginate_only 1 %} id="item_id_footer" {% endifequal %}
+<div {% if paginate_only == 1 %} id="item_id_footer" {% endif %}
      class="item_id" style="min-height: 2em">
 
-{% ifnotequal paginate_only 1 %}
+{% if paginate_only != 1 %}
   <div class="item_data flex_left">
   {{ series.publisher|absolute_url }},
   {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} Series
@@ -48,7 +48,7 @@
     <img src="{{ STATIC_URL }}img/gcd/flags/{{ series.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
   </div>
   {% endif %}
-{% endifnotequal %}
+{% endif %}
 
 {% if issue_number and series.issue_count > 1 %}
   <div class="prev_next right">

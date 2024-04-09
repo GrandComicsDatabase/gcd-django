@@ -28,14 +28,14 @@
 
 <div class="edit">
 <p>
-{% ifequal changeset.state states.BASELINE %}
+{% if changeset.state == states.BASELINE %}
   This changeset is stored for future data migration, and is not intended
   to be user-visibile.  This is not the changeset you are looking for.
   Move along :-)
-{% endifequal %}
-{% ifequal changeset.state states.PENDING %}
+{% endif %}
+{% if changeset.state == states.PENDING %}
   This change has been submitted for approval, but is not yet under review.
-  {% ifequal changeset.indexer user %}
+  {% if changeset.indexer == user %}
     {% if changeset.editable %}
   <form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
@@ -46,25 +46,25 @@
     {% else %}
   This type of changeset may not be retracted for further edit.
     {% endif %}
-  {% endifequal %}
-{% endifequal %}
-{% ifequal changeset.state states.REVIEWING %}
+  {% endif %}
+{% endif %}
+{% if changeset.state == states.REVIEWING %}
   This change has been submitted for approval, and is being reviewed by
   GCD editor {{ changeset.approver.indexer }}.
-{% endifequal %}
-{% ifequal changeset.state states.APPROVED %}
+{% endif %}
+{% if changeset.state == states.APPROVED %}
   This change has been approved.  If you would like to make further
   changes, please reserve the record again.
-{% endifequal %}
-{% ifequal changeset.state states.DISCARDED %}
+{% endif %}
+{% if changeset.state == states.DISCARDED %}
   This change has been discarded.  This means that the changes have
   <strong>not</strong> been applied to the original record.
   If you would like to make changes, please reserve the record again.
-{% endifequal %}
+{% endif %}
 </p>
 
-{% ifequal changeset.state states.OPEN %}
-  {% ifequal changeset.indexer user %}
+{% if changeset.state == states.OPEN %}
+  {% if changeset.indexer == user %}
     {% if changeset.inline %}
       {% if changeset.change_type == CTYPES.series_bond %}
         {% include 'oi/edit/series_bond_changeset.html' %}
@@ -129,13 +129,13 @@
 
   {% else %}
 This change is being edited by {{ changeset.indexer.indexer }}.
-  {% endifequal %}
+  {% endif %}
 
 {% else %} <!--- change is not OPEN --->
 <p>
   <a href="{% url "compare" id=changeset.id %}">Compare Changes</a>
 </p>
-{% endifequal %}
+{% endif %}
 </div>
 {% endblock %}
 
