@@ -495,11 +495,11 @@ StoryGroupRevisionFormSet = inlineformset_factory(
 
 # check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
-    def render(self, form, form_style, context, renderer=None,
+    def render(self, form, context, renderer=None,
                template_pack=None):
         fields = ''
         for field in self.fields:
-            fields += render_field(field, form, form_style, context,
+            fields += render_field(field, form, context,
                                    template_pack=template_pack)
         return fields
 

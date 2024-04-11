@@ -7,14 +7,12 @@ from crispy_forms.utils import render_field
 # from:
 # ###### https://stackoverflow.com/questions/15157262/django-crispy-forms-nesting-a-formset-within-a-form/22053952#22053952
 
-# TODO remove form_style with crispy_forms 2.0
-
 class BaseField(Field):
-    def render(self, form, form_style, context, template_pack=None):
+    def render(self, form, context, template_pack=None):
         fields = ''
 
         for field in self.fields:
-            fields += render_field(field, form, form_style, context,
+            fields += render_field(field, form, context,
                                    template_pack=template_pack)
         return fields
 
@@ -45,7 +43,7 @@ class FormAsField(LayoutObject):
         if template:
             self.template = template
 
-    def render(self, form, form_style, context, renderer=None, **kwargs):
+    def render(self, form, context, renderer=None, **kwargs):
         form = context.get(self.form_context_name)
         helper = context.get(self.helper_context_name)
         # closes form prematurely if this isn't explicitly stated
@@ -82,7 +80,7 @@ class Formset(LayoutObject):
         if template:
             self.template = template
 
-    def render(self, form, form_style, context, renderer=None, **kwargs):
+    def render(self, form, context, renderer=None, **kwargs):
         formset = context.get(self.formset_context_name)
         helper = context.get(self.helper_context_name)
         # closes form prematurely if this isn't explicitly stated
