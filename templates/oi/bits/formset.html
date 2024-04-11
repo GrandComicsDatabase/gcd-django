@@ -48,7 +48,7 @@ function getSelectValue(event) {
     {% comment %} // if we use the button with HTML in Layout between Creator and CreditType, use instead
     const $next_select = $(event.target.activeElement).next().find('select');
     {% endcomment %}
-    if ($next_select.val())
+    if (event.originalTarget.activeElement.firstChild && $next_select.val())
         return $next_select.val();
     else
         return -1;
