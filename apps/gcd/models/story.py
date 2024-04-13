@@ -794,7 +794,7 @@ class StoryTable(tables.Table):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue__on_sale_date',
                                        direction + 'issue__key_date',
-                                       direction + 'issue__series_name',
+                                       direction + 'issue__series__sort_name',
                                        direction + 'issue__sort_code')
         return (query_set, True)
 
