@@ -329,6 +329,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['signature'] and not cd['is_signed']:
             cd['signature'] = None
 
+        if cd['signature'] and 'creator' in cd:
+            if cd['signature'].creator != cd['creator'].creator:
+                raise forms.ValidationError(
+                ['Creator of selected signature differs from selected '
+                 'creator.']
+                )
 
 class StoryFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
