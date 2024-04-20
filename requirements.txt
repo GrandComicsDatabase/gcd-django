@@ -50,4 +50,4 @@ django-extensions<3.3
 redis<5.1
 rq<2.0
 django-rq<2.11
-git+https://github.com/mandx/haystack-rqueue.git
+git+https://github.com/GrandComicsDatabase/haystack-rqueue.git
