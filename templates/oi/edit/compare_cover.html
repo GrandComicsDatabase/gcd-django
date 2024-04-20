@@ -108,8 +108,8 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
       {% csrf_token %}
       <input type="submit" value="Mark for replacement">
     </form>
-    {% end %}
-  {% end %}
+    {% endif %}
+  {% endif %}
 {% endif %}
 {% if changeset.issuerevisions.count %}
   <p>
