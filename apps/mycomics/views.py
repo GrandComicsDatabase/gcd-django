@@ -35,7 +35,7 @@ from apps.stddata.forms import DateForm
 from apps.mycomics.models import Collection, CollectionItem, Subscription, \
                                  Location, PurchaseLocation, \
                                  CollectionItemFilter
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 INDEX_TEMPLATE = 'mycomics/index.html'
 COLLECTION_TEMPLATE = 'mycomics/collection.html'
