@@ -198,8 +198,10 @@ urlpatterns = [
     path('story/revision/<int:id>/migrate/',
         oi_views.migrate_story_revision,
         name='migrate_story_revision'),
-    path('story/revision/<int:story_revision_id>/compare/<int:story_id>/',
+    path('story/revision/<int:story_revision_id>/compare_story/<int:story_id>/',
         oi_views.compare_stories_copy, name='compare_stories_copy'),
+    path('story/revision/<int:story_revision_id>/compare_revision/<int:other_revision_id>/',
+        oi_views.compare_stories_copy, name='compare_revisions_copy'),
     path('story/revision/<int:story_revision_id>/select_compare/',
         oi_views.story_select_compare, name='story_select_compare'),
 

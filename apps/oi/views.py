@@ -3221,26 +3221,34 @@ def story_select_compare(request, story_revision_id):
           'Only the reservation holder may access this page.')
     cached_stories = get_cached_stories(request)
     cached_covers = get_cached_covers(request)
+    other_revisions = revision.changeset.storyrevisions.exclude(id=revision.id)
     return oi_render(
         request, 'oi/edit/select_story_for_copy.html',
         {'revision': revision, 'cached_stories': cached_stories,
-         'cached_covers': cached_covers})
+         'cached_covers': cached_covers, 'other_revisions': other_revisions})
 
 
 @permission_required('indexer.can_reserve')
-def compare_stories_copy(request, story_revision_id, story_id):
+def compare_stories_copy(request, story_revision_id, story_id=None,
+                         other_revision_id=None):
     revision = get_object_or_404(StoryRevision, id=story_revision_id)
     if request.user != revision.changeset.indexer:
         return render_error(
           request,
           'Only the reservation holder may access this page.')
-    story = get_object_or_404(Story, id=story_id)
-    compare_revision = story.revisions.filter(
-      changeset__state=5,
-      next_revision=None) | story.revisions.filter(
-      changeset__state=5,
-      next_revision__changeset__state__lt=5)
-    compare_revision = compare_revision.get()
+    if story_id:
+        story = get_object_or_404(Story, id=story_id)
+        compare_revision = story.revisions.filter(
+          changeset__state=5,
+          next_revision=None) | story.revisions.filter(
+          changeset__state=5,
+          next_revision__changeset__state__lt=5)
+        compare_revision = compare_revision.get()
+    if other_revision_id:
+        changeset_id = revision.changeset_id
+        compare_revision = get_object_or_404(StoryRevision,
+                                             id=other_revision_id,
+                                             changeset__id=changeset_id)
     if request.method != 'POST':
         revision.compare_changes(compare_revision=compare_revision)
         field_list = revision.field_list()
