@@ -696,7 +696,7 @@ class GroupNameAutocomplete(LoginRequiredMixin,
                             autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = GroupNameDetail.objects.filter(deleted=False)
-        # qs = qs.exclude(group__universe__isnull=False)
+        qs = qs.exclude(group__universe__isnull=False)
 
         language = self.forwarded.get('language_code', None)
         character_name = self.forwarded.get('character_name', None)
