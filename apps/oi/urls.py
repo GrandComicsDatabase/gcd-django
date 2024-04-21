@@ -300,25 +300,15 @@ urlpatterns = [
     path('issue/revision/<int:issue_id>/add_reprint/<int:changeset_id>/',
       oi_views.add_reprint, name='add_issue_reprint'),
 
-    path('reprint/revision/<int:reprint_revision_id>/storyrevision/<int:story_revision_id>/confirm_reprint/<int:changeset_id>/story/<int:story_two_id>/',
-      oi_views.save_reprint, name='save_revision_story_reprint'),
-    path('reprint/revision/<int:reprint_revision_id>/storyrevision/<int:story_revision_id>/confirm_reprint/<int:changeset_id>/issue/<int:issue_two_id>/',
-      oi_views.save_reprint, name='save_revision_issue_reprint'),
-
     path('reprint/revision/<path:reprint_revision_id>/storyrevision/<int:story_revision_id>/confirm_reprint/<int:changeset_id>/story/<int:story_two_id>/',
       oi_views.save_reprint, name='save_revision_story_reprint'),
     path('reprint/revision/<path:reprint_revision_id>/storyrevision/<int:story_revision_id>/confirm_reprint/<int:changeset_id>/issue/<int:issue_two_id>/',
       oi_views.save_reprint, name='save_revision_issue_reprint'),
 
-    path('reprint/revision/<int:reprint_revision_id>/story/<int:story_one_id>/confirm_reprint/<int:changeset_id>/story/<int:story_two_id>/',
+    path('reprint/revision/<path:reprint_revision_id>/story/<int:story_one_id>/confirm_reprint/<int:changeset_id>/story/<int:story_two_id>/',
       oi_views.save_reprint, name='save_story_story_reprint'),
-    path('reprint/revision/<int:reprint_revision_id>/story/<int:story_one_id>/confirm_reprint/<int:changeset_id>/issue/<int:issue_two_id>/',
+    path('reprint/revision/<path:reprint_revision_id>/story/<int:story_one_id>/confirm_reprint/<int:changeset_id>/issue/<int:issue_two_id>/',
       oi_views.save_reprint, name='save_story_issue_reprint'),
-
-    path('reprint/revision/<int:reprint_revision_id>/issue/<int:issue_one_id>/confirm_reprint/<int:changeset_id>/story/<int:story_two_id>/',
-      oi_views.save_reprint, name='save_issue_story_reprint'),
-    path('reprint/revision/<int:reprint_revision_id>/issue/<int:issue_one_id>/confirm_reprint/<int:changeset_id>/issue/<int:issue_two_id>/',
-      oi_views.save_reprint, name='save_issue_issue_reprint'),
 
     path('reprint/revision/<path:reprint_revision_id>/issue/<int:issue_one_id>/confirm_reprint/<int:changeset_id>/story/<int:story_two_id>/',
       oi_views.save_reprint, name='save_issue_story_reprint'),

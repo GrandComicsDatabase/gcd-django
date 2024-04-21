@@ -3247,8 +3247,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
     if other_revision_id:
         changeset_id = revision.changeset_id
         compare_revision = get_object_or_404(StoryRevision,
-                                             id=other_revision_id,
-                                             changeset__id=changeset_id)
+                                             id=other_revision_id)
     if request.method != 'POST':
         revision.compare_changes(compare_revision=compare_revision)
         field_list = revision.field_list()
@@ -3565,7 +3564,7 @@ def parse_reprint(reprints):
 
             # italian and spanish from/in
             if from_to in ['da ', 'in ', 'de ', 'en ']:
-                if year.isdigit() is not True:
+                if year.isdecimal() is not True:
                     position = string.find(')')
                     year = string[position-4:position]
             string = string[4:]
@@ -3583,7 +3582,7 @@ def parse_reprint(reprints):
                     if position > 0:  # if found ignore later
                         pass
                 volume = None
-                if string.isdigit():  # in this case we are fine
+                if string.isdecimal():  # in this case we are fine
                     number = string
                 elif string[0].lower() == 'v' and string.find('#') > 0:
                     n_pos = string.find('#')
@@ -3595,8 +3594,8 @@ def parse_reprint(reprints):
                 else:
                     hyphen = string.find(' -')
                     # following issue title after number
-                    if hyphen > 0 and string[:hyphen].isdigit() and \
-                       not string[hyphen+2:].strip()[0].isdigit():
+                    if hyphen > 0 and string[:hyphen].isdecimal() and \
+                       not string[hyphen+2:].strip()[0].isdecimal():
                         number = string[:hyphen]
                     else:
                         if position > 0:
@@ -4216,7 +4215,7 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         return _cant_get(request)
     if story_two_id and issue_two_id:
         return _cant_get(request)
-    if reprint_revision_id.isdigit():
+    if reprint_revision_id.isdecimal():
         revision = get_object_or_404(ReprintRevision, id=reprint_revision_id)
         if revision.changeset.id != int(changeset_id):
             return _cant_get(request)
