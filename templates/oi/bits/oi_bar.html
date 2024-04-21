@@ -1,8 +1,8 @@
 {% if user.is_authenticated %}
 <div class="oi_bar">
  <ul>
-  <li class="oi_bar_title" style="margin-left: -2em; padding-left: 2em"><a href="http://docs.comics.org/wiki/Formatting_Documentation">Help</a> </li>
-  <li class="oi_bar_title"><a href="http://docs.comics.org/wiki/OI_Tutorial">Tutorial</a></li>
+  <li class="oi_bar_title" style="margin-left: -2em; padding-left: 2em"><a href="https://docs.comics.org/wiki/Formatting_Documentation">Help</a> </li>
+  <li class="oi_bar_title"><a href="https://docs.comics.org/wiki/OI_Tutorial">Tutorial</a></li>
   <li><a href="{% url "editing" %}">Editing</a> </li>
   <li><a href="{% url "pending" %}">Pending</a> </li>
   <li><a href="{% url "pending_covers" %}">Covers</a> </li>
@@ -11,6 +11,7 @@
   <li><a href="{% url "editor_log" %}">Editor Log</a> </li>
   {% endif %}
   <li><a href="{% url "approved" %}">Approved</a> </li>
+  <li><a href="{% url "commented" %}">Commented</a> </li>
   <li><a href="{% url "add" %}">Add New</a> </li>
   {% if perms.indexer.can_mentor %}
   <li><a href="{% url "mentoring" %}">Mentoring</a> </li>
@@ -23,9 +24,13 @@
   <li><a href="/admin/">Admin</a> </li>
   {% endif %}
 <a name="{{ position }}"></a>
-<li class="oi_bar_nav"><a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
-<img src="{{ STATIC_URL }}/img/gcd/icons/{{ ICON_SET }}/19x19/actions/go-{{ link_direction }}.png">
-</a></li>
+  <li class="oi_bar_nav">
+    <a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
+      <svg style="height: 1em; width: 1em; fill: currentColor;">
+        <use xlink:href="#go-{{ link_direction }}"></use>
+      </svg>
+    </a>
+  </li>
 </ul>
 </div>
 {% endif %}

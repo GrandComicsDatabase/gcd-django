@@ -1,15 +1,15 @@
 from django.conf import settings
 from django.shortcuts import render_to_response
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 def index(request):
     """Generates the front index page."""
 
     style = 'default'
-    if request.GET.has_key('style'):
+    if 'style' in request.GET:
         style = request.GET['style']
 
-    print reverse('apps.inducks.views.index')
+    print(reverse('apps.inducks.views.index'))
     vars = {
         'style' : style,
         'base_url' : reverse('apps.inducks.views.index')

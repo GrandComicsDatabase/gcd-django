@@ -1,0 +1,56 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+{% load display %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h2>Select for <i>{{ revision }}</i> a story to compare with & copy from</h2>
+{% if cached_stories %}
+<p>
+  Select a story from the data cache:
+  <ul>
+  {% for story in cached_stories %}
+    <li>{{ story.issue }}: <a href="{% url 'compare_stories_copy' story_revision_id=revision.id story_id=story.id %}">{{ story }}</a></li>
+  {% endfor %}
+  </ul>
+</p>
+{% endif %}
+{% if cached_covers %}
+<p>
+  Select a cover from the data cache:
+  <ul>
+  {% for story in cached_covers %}
+    <li>{{ story.issue }}: <a href="{% url 'compare_stories_copy' story_revision_id=revision.id story_id=story.id %}">{{ story }}</a></li>
+  {% endfor %}
+  </ul>
+</p>
+{% endif %}
+{% if revision.story and revision.story.from_story_reprints.count or revision.story and revision.story.to_story_reprints.count %}
+  Select a story linked via reprint:
+  <ul>
+  {% for story in revision.story.from_story_reprints %}    
+    <li>{{ story.origin.issue }}: <a href="{% url 'compare_stories_copy' story_revision_id=revision.id story_id=story.origin.id %}">{{ story.origin }}</a></li>
+  {% endfor %}
+  {% for story in revision.story.to_story_reprints %}    
+    <li>{{ story.target.issue }}: <a href="{% url 'compare_stories_copy' story_revision_id=revision.id story_id=story.target.id %}">{{ story.target }}</a></li>
+  {% endfor %}
+  </ul>
+{% endif %}
+
+{% if other_revisions %}
+Select a story from the current changeset:
+<ul>
+{% for story in other_revisions %}
+  <li>{{ story }}: <a href="{% url 'compare_revisions_copy' story_revision_id=revision.id other_revision_id=story.id %}">{{ story }}</a></li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% endblock %}

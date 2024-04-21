@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models, migrations
 from django.conf import settings
+import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
@@ -56,10 +57,10 @@ class Migration(migrations.Migration):
                 ('notify_on_approve', models.BooleanField(default=True, db_index=True)),
                 ('collapse_compare_view', models.BooleanField(default=False, db_index=True)),
                 ('show_wiki_links', models.BooleanField(default=True, db_index=True)),
-                ('country', models.ForeignKey(related_name='indexers', to='stddata.Country')),
-                ('languages', models.ManyToManyField(related_name='indexers', db_table='gcd_indexer_languages', to='stddata.Language')),
-                ('mentor', models.ForeignKey(related_name='mentees', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
-                ('user', models.OneToOneField(to=settings.AUTH_USER_MODEL)),
+                ('country', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='indexers', to='stddata.Country')),
+                ('languages', models.ManyToManyField(db_table='gcd_indexer_languages', related_name='indexers', to='stddata.Language')),
+                ('mentor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='mentees', to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'ordering': ['user__last_name', 'user__first_name'],
@@ -70,7 +71,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='impgrant',
             name='indexer',
-            field=models.ForeignKey(related_name='imp_grant_set', to='indexer.Indexer'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='imp_grant_set', to='indexer.Indexer'),
             preserve_default=True,
         ),
     ]

@@ -1,6 +1,6 @@
 {% extends "oi/base_view.html" %}
 
-{% load staticfiles %}
+{% load static %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -19,8 +19,8 @@
 {% block view_body %}
 
 <div class="item_id" id="item_id_footer_replace_top">
-  <div class="left">
-  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} covers pending for approval.
+  <div class="flex_left">
+  Showing covers {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} covers pending for approval.
   </div>
   {% if page %}
   {% include "gcd/bits/pagination_bar.html" %}
@@ -35,7 +35,7 @@
       <br/>
       <div class="cover_caption">
         <span class="{{ cover.changeset.changeset_action }}">{{ cover|show_revision_type }}</span><br>
-        {{ issue.series.name }} {{ issue.display_number }}<br>
+        {{ issue.series.name }} {{ issue.display_full_descriptor }}<br>
         ({{ issue.series.publisher }}, {{ issue.series.year_began }}) <br>
         {% if issue.publication_date %}
         <span class="cover_date">{{ issue.publication_date }}</span><br>

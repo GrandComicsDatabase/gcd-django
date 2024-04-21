@@ -188,7 +188,7 @@ div.stats_header {
     margin-bottom: 1em;
 }
 
-.item_id :link, .stats :link {
+.item_id :link, .stats :link, .stats :visited {
     color: white;
     text-decoration: underline;
 }
@@ -210,8 +210,41 @@ div.stats_header {
     font-weight: normal;
 }
 
+.pagination ul {
+    list-style-type: none;
+    margin: 0;
+    overflow: hidden;
+}
+
+.pagination li {
+    line-height: 1.8em;
+    float: left;
+}
+
+
+.btn {
+    border: 1px solid black;
+    display: block;
+    margin-left: -1px;
+    padding: 0 0.4em;
+}
+
+a.btn:link {
+    text-decoration: none;
+}
+
+.btn-selected {
+    background-color: DarkGray;
+}
+
+a.btn:hover {
+    background-color: DarkGray;
+    color: DarkSlateGray;
+    text-decoration: none;
+}
+
 div.item_id {
-    background-color: #EEE;
+    background-color: #ebf3ff;
     color: black;
     float: left;
     clear: both;
@@ -237,7 +270,10 @@ a:link, h1 a:visited {
 
 a:visited {
     text-decoration: None;
-    color: #0645ad;
+}
+
+.no_visited a:visited, a.no_visited:visited {
+   color: blue;
 }
 
 a:hover {
@@ -354,6 +390,49 @@ h1.search_id {
     margin-top: 1em;
 }
 
+.active_search {
+    margin-left: -8px;
+    padding-left: 8px;
+    clear: both;
+    background-color: #ebf3ff;
+    color: black;
+    margin-bottom: 0em;
+    vertical-align: middle;
+    font-weight: bold;
+    width: 100%;
+}
+
+.active_search ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #ebf3ff;
+}
+
+.active_search li {
+    float: left;
+}
+
+.active_search li a {
+    display: block;
+    color: black;
+    text-align: center;
+    padding: 0.6em 0.6em 0.6em 0.6em;
+    text-decoration: none;
+}
+
+.active_search li a:hover {
+    background-color: #b3cff8;
+    color: DarkSlateGray;
+    text-decoration: none;
+}
+
+.active_search_selected {
+    background-color: #b3cff8;
+}
+
+
 /* for two columns on the pages with control box on the right */
 
 .control_body{
@@ -373,8 +452,8 @@ h1.search_id {
 }
 #control_rail{
 	float:right;
-	width:15.25em;
-	margin-right:-15.25em;
+	width:15.5em;
+	margin-right:-15.5em;
 	position:relative;
 }
 #control_header, #control_footer{
@@ -388,7 +467,7 @@ h1.search_id {
     font-size: 0.9em;
 }
 
-.edit_box form {
+.edit_box form, .edit_box p {
     margin: 2px;
 }
 
@@ -908,4 +987,22 @@ form#comments textarea {
 .portrait{
 	max-width: 150px;
 	max-height: 150px;
+}
+
+.popup {
+    position: relative;
+}
+
+.popup .image_popup {
+    position: absolute;
+    visibility:hidden;
+    opacity: 0;
+}
+
+.popup:hover .image_popup {
+    visibility:visible;
+    left:105%;
+    z-index:1;
+    opacity: 1;
+    transition: opacity .6s;
 }

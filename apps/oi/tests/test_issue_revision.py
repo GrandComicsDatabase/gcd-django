@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import mock
 import pytest
@@ -36,6 +36,7 @@ def test_classification():
         'display_volume_with_number': gf('display_volume_with_number'),
         'variant_of': gf('variant_of'),
         'variant_name': gf('variant_name'),
+        'variant_cover_status': gf('variant_cover_status'),
         'isbn': gf('isbn'),
         'no_isbn': gf('no_isbn'),
         'barcode': gf('barcode'),
@@ -59,13 +60,17 @@ def test_classification():
         'indicia_pub_not_printed': gf('indicia_pub_not_printed'),
         'brand': gf('brand'),
         'no_brand': gf('no_brand'),
+        'no_indicia_printer': gf('no_indicia_printer'),
+        'indicia_printer': gf('indicia_printer'),
     }
 
     irregular_fields = {
+        'awards': gf('awards'),
         'valid_isbn': gf('valid_isbn'),
         'on_sale_date': gf('on_sale_date'),
         'sort_code': gf('sort_code'),
         'is_indexed': gf('is_indexed'),
+        'external_link': gf('external_link'),
     }
 
     assert IssueRevision._get_regular_fields() == regular_fields
@@ -73,9 +78,10 @@ def test_classification():
 
     single_value_fields = regular_fields.copy()
     del single_value_fields['keywords']
+    del single_value_fields['indicia_printer']
     assert IssueRevision._get_single_value_fields() == single_value_fields
 
-    assert IssueRevision._get_multi_value_fields() == {}
+    assert IssueRevision._get_multi_value_fields() == {'indicia_printer': gf('indicia_printer'),}
 
 
 def test_conditional_field_mapping():
@@ -92,6 +98,8 @@ def test_conditional_field_mapping():
         'valid_isbn': ('series', 'has_isbn'),
         'indicia_frequency': ('series', 'has_indicia_frequency'),
         'no_indicia_frequency': ('series', 'has_indicia_frequency'),
+        'indicia_printer': ('series', 'has_indicia_printer'),
+        'no_indicia_printer': ('series', 'has_indicia_printer'),
     }
 
 
@@ -149,7 +157,7 @@ def test_pre_initial_save_no_date():
     assert rev.day_on_sale is None
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def pre_commit_rev():
     with mock.patch('%s._same_series_revisions' % IREV), \
             mock.patch('%s._same_series_open_with_after' % IREV):
@@ -192,16 +200,11 @@ def test_pre_commit_check_success(pre_commit_rev):
         mock.call().filter().order_by('revision_sort_code'),
         mock.call().filter().order_by().first()])
 
-    # Note that the __nonzero__ call represents the result of exists()
-    # being evaluated in a boolean expression.  __nonzero__ is the method
-    # used to evaluate truthiness.  I wouldn't bother to check for it
-    # but the only options are to include it, or to make the assertion
-    # order-insensitive which is too loose of a check.
     pre_commit_rev._same_series_open_with_after.assert_has_calls([
         mock.call(),
         mock.call().count(),
         mock.call().exists(),
-        mock.call().exists().__nonzero__(),
+        mock.call().exists().__bool__(),
         mock.call().first()])
 
 
@@ -226,7 +229,7 @@ def test_pre_commit_check_too_many_afters(pre_commit_rev):
         pre_commit_rev._pre_commit_check()
 
     assert ("Only one IssueRevision per series within a changeset can have "
-            "'after' set.") in unicode(excinfo.value)
+            "'after' set.") in str(excinfo.value)
 
 
 def test_pre_commit_check_after_not_first(pre_commit_rev):
@@ -249,10 +252,10 @@ def test_pre_commit_check_after_not_first(pre_commit_rev):
         pre_commit_rev._pre_commit_check()
 
     assert ("The IssueRevision that specifies an 'after' must have "
-            "the lowest revision_sort_code.") in unicode(excinfo.value)
+            "the lowest revision_sort_code.") in str(excinfo.value)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def multiple_issue_revs():
     with mock.patch('apps.oi.models.Issue.objects') as obj_mock, \
             mock.patch('%s._same_series_revisions' % IREV) as same_mock, \
@@ -294,7 +297,7 @@ def _set_up_sort_code_query_sets(revision_list, later_issue_list,
     later_mock = mock.MagicMock(spec=models.QuerySet)
     later_mock.exists.return_value = bool(later_issue_list)
     later_mock.count.return_value = len(later_issue_list)
-    
+
     # later_issues are sorted by reverse sort_code
     try:
         later_mock.last.return_value = later_issue_list[0]
@@ -414,7 +417,7 @@ def test_handle_prerequisites_non_move_edit():
         assert not open_mock.called
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def multiple_issue_revs_pre_stats(multiple_issue_revs):
     # While multiple_issue_revs has a few things the pre_stats_measurement
     # tests don't need, those things are harmless, and otherwise the
@@ -497,14 +500,14 @@ def test_handle_prerequisites_exit_infinite_loop(
         # Deletes work last to first, so rev3 is a prereq of rev2.
         rev2._handle_prerequisites({})
 
-    assert "did not reduce" in unicode(excinfo.value)
+    assert "did not reduce" in str(excinfo.value)
 
     # As a delete, we should not have messed with sort_codes.
     assert not sort_mock.called
     rev3.commit_to_display.assert_called_once_with()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patch_for_optional_move():
     with mock.patch('%s.set_first_last_issues' % SERIES), \
             mock.patch('%s.scan_count' % SERIES), \
@@ -531,7 +534,7 @@ def test_post_save_no_series_changed(patch_for_optional_move):
     s.set_first_last_issues.assert_called_once_with()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patch_for_move(patch_for_optional_move):
     patch_for_optional_move.return_value = True
 
@@ -634,7 +637,7 @@ def story_revs():
             mock.MagicMock(spec=StoryRevision)]
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_edit(story_revs):
     with mock.patch(RECENT) as recent_mock, mock.patch(SAVE), \
             mock.patch('%s.storyrevisions' % CSET) as story_mock:

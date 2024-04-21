@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import re
 import django
@@ -82,7 +82,7 @@ def keydate_migration(issues):
                     ir.save()
                     changes.append((c, True))
                 else:
-                    print "%s is reserved" % i
+                    print("%s is reserved" % i)
         if len(changes) > 25:
             with transaction.commit_on_success():
                 do_auto_approve(changes,
@@ -95,7 +95,7 @@ def keydate_migration(issues):
 
 def main():
     issues = Issue.objects.filter(deleted=False, key_date='').exclude(publication_date='').distinct()
-    print issues.count()
+    print(issues.count())
     keydate_migration(issues)
 
 if __name__ == '__main__':

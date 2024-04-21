@@ -7,22 +7,17 @@ This file contains the front page view, plus utilities for working with
 requests, responses and errors.
 """
 
-import hashlib
-from random import random
+from datetime import datetime
 
 from django.conf import settings
-from django.core import urlresolvers
-from django.http import HttpResponseRedirect
-from django.template import RequestContext
 from django.shortcuts import render
-from django.utils.safestring import mark_safe
 
 from .pagination import DiggPaginator
 from .alpha_pagination import AlphaPaginator
 
 from apps.stddata.models import Language
 from apps.stats.models import CountStats
-from apps.indexer.models import Error
+from apps.gcd.models import Creator
 
 ORDER_ALPHA = "alpha"
 ORDER_CHRONO = "chrono"
@@ -59,11 +54,23 @@ def index(request):
                      'fb_feed'):
         template_vars[template] = '%s/%s.html' % (base_path, template)
 
+    today = datetime.today()
+    day = '%0.2d' % (today).day
+    month = '%0.2d' % (today).month
+    creators = Creator.objects.filter(birth_date__day__lte=day,
+                                      birth_date__month__lte=month,
+                                      deleted=False)\
+                              .exclude(birth_date__day='')\
+                              .exclude(birth_date__month__lte='')\
+                              .exclude(bio='').order_by('-birth_date__month',
+                                                        '-birth_date__day',
+                                                        'sort_name')
+
     template_vars.update({
         'stats': stats,
         'language': language,
         'stats_for_language': stats_for_language,
-        'CALENDAR': settings.CALENDAR,
+        'creators': creators[:10]
     })
     return render(request, 'gcd/index.html', template_vars)
 

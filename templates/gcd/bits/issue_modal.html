@@ -1,0 +1,53 @@
+{% load static %}
+{% load credits %}
+
+<script src="https://unpkg.com/hyperscript.org"></script>
+<link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/modal.css" %}"/>
+<link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/issue.css" %}"/>
+<link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/listing.css" %}"/>
+
+<div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
+  <div class="modal-underlay" _="on click trigger closeModal"></div>
+  <div class="modal-content">
+    <h2 class="item_id">
+      <span id="series_name"><a href="{{ issue.get_absolute_url }}">{{ issue.full_name }}</a></span>
+    </h2>
+    <div class="left" style="max-width:200px;">
+      {{ issue.publication_date }}<br><a href="{{ issue.get_absolute_url }}">{{ image_tag }}</a>
+      <br><div class="right"><p><button _="on click trigger closeModal">Close</button></p></div>
+    </div>
+    <div class="right">
+      <table class="sortable_listing" style="max-width:600px; font-size: 0.9em;">
+        <tr>
+          <th> Table of Contents </th>
+        </tr>
+{% if cover_story %}
+        <tr>
+          <td>
+            0. <span class="toc_story_title">
+              <a name="toc_{{ cover_story.id }}" href="{{ issue.get_absolute_url }}#{{ cover_story.id }}">{{ cover_story|show_title:1 }}</a></span><br/>
+            <span class="toc_story_feature">{{ cover_story.show_feature}}</span>
+          </td>
+        </tr>
+{% endif %}
+{% for story in stories %}
+  {% if story.type.id not in not_shown_types %}
+        <tr>
+        <td>
+          {{ forloop.counter }}.
+          <span class="toc_story_title">
+            <a name="toc_{{ story.id }}" href="{{ issue.get_absolute_url }}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
+          <span class="toc_story_feature">{{ story.show_feature}}</span>
+        </td>
+      </tr>
+  {% endif %}
+{% endfor %}
+      </table>
+    </div>
+  </div>
+</div>

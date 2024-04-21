@@ -1,6 +1,6 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/base_content.html" %}
 
-{% load staticfiles %}
+{% load static %}
 {% load i18n %}
 {% load credits %}
 {% load django_tables2 %}
@@ -12,124 +12,127 @@
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
 {% endblock %}
 
-{% block view_body %}
+{% block content_header %}
+  {% include "gcd/bits/publisher_header.html" %}
+{% endblock content_header %}
 
-{% include "gcd/bits/publisher_header.html" %}
-
-<div class="control_body">
-  <div id="control_container">
-    <div id="control_center">
-      <div class="pub_data">
-        <dl class="pub_data">
-          <dt> Country:
-          <dd> {{ publisher.country.name }}
+{% block content %}
+  <div class="pub_data">
+{% if publisher.year_overall_began or publisher.year_overall_ended %}
+        <dl style="columns:2; margin-bottom: -1em" class="pub_data">
+          {% if publisher.year_overall_began %}
+            <dt>Publishing Began:</dt><dd>{{ publisher.year_overall_began }}</dd>
+            <dt>Comics Publishing Began:</dt><dd>{{ publisher.year_began }}</dd>
+          {% endif %}
+          {% if publisher.year_overall_ended %}
+            <dt> Publishing Ended:</dt><dd>{{ publisher.year_overall_ended }}</dd>
+            <dt> Comics Publishing Ended:</dt><dd>{{ publisher.year_ended }}</dd>
+          {% endif %}
+        </dl>
+{% endif %}
+        <dl style="columns: 2" class="pub_data">
+          <dt> Country:</dt>
+          <dd> {{ publisher.country.name }}</dd>
 {% if publisher.indicia_publisher_count %}
-          <dt> Indicia / Colophon Publishers:
+          <dt> Indicia / Colophon Publishers:</dt>
   {% if preview %}
-          <dd> {{ publisher.indicia_publisher_count }}
+          <dd> {{ publisher.indicia_publisher_count }}</dd>
   {% else %}
-          <dd> <a href="{{ publisher.get_absolute_url }}indicia_publishers/">{{ publisher.indicia_publisher_count }}</a>
+          <dd> <a href="{{ publisher.get_absolute_url }}indicia_publishers/">{{ publisher.indicia_publisher_count }}</a></dd>
   {% endif %}
 {% endif %}
 {% if publisher.brand_count %}
-          <dt> Brand Groups:
+          <dt> Brand Groups:</dt>
   {% if preview %}
-          <dd> {{ publisher.brand_count }}
+          <dd> {{ publisher.brand_count }}</dd>
   {% else %}
-          <dd> <a href="{{ publisher.get_absolute_url }}brands/">{{ publisher.brand_count }}</a>
+          <dd> <a href="{{ publisher.get_absolute_url }}brands/">{{ publisher.brand_count }}</a></dd>
   {% endif %}
 {% endif %}
 {% if publisher.branduse_set.count %}
-          <dt> Brand Emblems in Use:
+          <dt> Brand Emblems in Use:</dt>
   {% if preview %}
-          <dd> {{ publisher.branduse_set.count }}
+          <dd> {{ publisher.branduse_set.count }}</dd>
   {% else %}
-          <dd> <a href="{{ publisher.get_absolute_url }}brand_uses/">{{ publisher.branduse_set.count }}</a>
+          <dd> <a href="{{ publisher.get_absolute_url }}brand_uses/">{{ publisher.branduse_set.count }}</a></dd>
   {% endif %}
 {% endif %}
-          <p>
-          <dt> Total Number of Series:
-          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode }}">{{ publisher.series_count }}</a>
-          <dt> Total Number of Issues:
-          <dd> <a href="/search/advanced/process/?target=issue&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode }}">{{ publisher.issue_count }}</a>
+          <dt> Total Number of Series:</dt>
+          <dd> {{ publisher.series_count }}</dd>
+          <dt> Total Number of Issues:</dt>
+          <dd> <a href="{{ publisher.get_absolute_url }}issues/">{{ publisher.issue_count }}</a></dd>
 {% if not publisher.year_ended %}
-          <dt> Number of Current Series:
-          <dd> <a href="/search/advanced/process/?target=series&method=iexact&logic=False&order1=series&order2=date&order3=&pub_name={{ publisher.name|urlencode  }}&is_current=on">{{ current.count }}</a>
-{% endif %}
-          <dt> Show Covers by Month:
-          <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a>
-{% if publisher.url or publisher.notes or publisher.has_keywords %}
-          <p>
-  {% if publisher.url %}
-          <dt> Web Site:
-          <dd> <a href="{{ publisher.url }}">{{ publisher.url }}</a>
-  {% endif %}
-  {% if publisher.notes and page.number == 1 %}
-          <dt> Notes:
-          <dd> {{ publisher.notes|urlizetrunc:75|linebreaksbr }}
-  {% endif %}
-  {{ publisher|show_credit:'keywords' }}
+          <dt> Number of Current Series:</dt>
+          <dd> <a href="{{ publisher.get_absolute_url }}current_series/">{{ current.count }}</a></dd>
 {% endif %}
         </dl>
-      </div> <!-- pub_data -->
-    </div> <!-- control_center -->
-
-{% if not preview or publisher.source %}
-    <div id="control_rail">
-      <div class="edit_box">
-  {% if MYCOMICS %}
-        <div class="edit_header">
-          <div>my.comics.org</div>
-        </div>
-  {% else %}
-        <div class="edit_header">Editing</div>
-    {% if not preview %}
-      {% with publisher as object %}
-      {% with 'publisher' as object_class %}
-      {% with 'Publisher' as object_name %}
-        {% include "gcd/bits/status_banner.html" %}
-      {% endwith %}
-      {% endwith %}
-      {% endwith %}
-      {% if user.is_authenticated and not publisher.pending_deletion %}
-        <form method="GET"
-              action="{% url "add_indicia_publisher" parent_id=publisher.id %}">
-          <input id="add" name="add" type="submit" value="Add indicia / colophon pub." />
-        </form>
-        <form method="GET"
-              action="{% url "add_brand_group" parent_id=publisher.id %}">
-          <input id="add" name="add" type="submit" value="Add brand group" />
-        </form>
-        <form method="GET"
-              action="{% url "add_brand_via_publisher" publisher_id=publisher.id %}">
-          <input id="add" name="add" type="submit" value="Add brand emblem" />
-        </form>
-        <form method="GET"
-              action="{% url "add_series" publisher_id=publisher.id %}">
-          <input id="add" name="add" type="submit" value="Add series" />
-        </form>
-      {% endif %} <!-- logged in -->
-    {% endif %} <!-- not preview -->
+        <dl style="columns:2; margin-top: -1em;" class="pub_data">
+          <dt> Show Covers by Month:</dt>
+          <dd> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
+          <dt> Show Issues by Month:</dt>
+          <dd style="margin: 0em 0em 1em 0em;"> <a href='{% url "publisher_monthly_issues_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <a href='{% url "publisher_monthly_issues_pub_date" publisher_id=publisher.id %}'>using publication date</a></dd>
+          <dt>Creator Checklist:</dt>
+          <dd><a href='{% url "publisher_creators" publisher_id=publisher.id %}'>via linked story records</a></dd>
+        </dl>
+{% if publisher.url or publisher.notes or publisher.has_keywords %}
+        <dl style="margin-top: -0.5em" class="pub_data">
+  {% if publisher.url %}
+          <dt> Web Site:</dt>
+          <dd> <a href="{{ publisher.url }}">{{ publisher.url }}</a></dd>
   {% endif %}
-      </div> <!-- edit_box -->
-      <div id="change_history" class="edit_footer">
-  {% if preview %}
-        <a href="{% url "change_history" model_name='publisher' id=publisher.source.id %}">View Change History</a>
-  {% else %}
-        <a href="{% url "change_history" model_name='publisher' id=publisher.id %}">View Change History</a>
+  {% if publisher.notes and page.number == 1 %}
+          <dt> Notes:</dt>
+          <dd> {{ publisher.notes|urlizetrunc:75|linebreaksbr }}</dd>
   {% endif %}
-      </div>
-    </div> <!-- control_rail -->
+  {{ publisher|show_credit:'keywords' }}
+        </dl>
 {% endif %}
-  </div> <!-- control_container -->
-</div> <!-- control_body -->
+  </div>
+{% endblock content %}
 
+{% block edit_box %}
+{% if not preview or publisher.source %}
+  {% if not preview %}
+    {% with publisher as object %}
+    {% with 'publisher' as object_class %}
+    {% with 'Publisher' as object_name %}
+      {% include "gcd/bits/status_banner.html" %}
+    {% endwith %}
+    {% endwith %}
+    {% endwith %}
+    {% if user.is_authenticated and not publisher.pending_deletion %}
+      <p style="margin:2px;"><a href="{% url "add_indicia_publisher" parent_id=publisher.id %}">
+            <button>Add indicia / colophon pub.</button>
+      </a></p>
+      <p style="margin:2px;"><a href="{% url "add_brand_group" parent_id=publisher.id %}">
+            <button>Add brand group</button>
+      </a></p>
+      <p style="margin:2px;"><a href="{% url "add_brand_via_publisher" publisher_id=publisher.id %}">
+            <button>Add brand emblem</button>
+      </a></p>
+      <p style="margin:2px;"><a href="{% url "add_series" publisher_id=publisher.id %}">
+            <button>Add series</button>
+      </a></p>
+    {% endif %} <!-- logged in -->
+  {% endif %} <!-- not preview -->
+{% endif %}
+{% endblock edit_box %}
+
+{% block change_history %}
+  <a href="{% url "change_history" model_name='publisher' id=publisher.id %}">View Change History</a>
+{% endblock change_history %}
+
+{% block listing %}
+<div style="clear: both;"></div>
 {% render_table table %}
+{% endblock listing %}
 
-{% with 1 as paginate_only %}
-{% include "gcd/bits/publisher_header.html" %}
-{% endwith %}
-
-{% endblock %}
+{% block content_footer %}
+  {% with 1 as paginate_only %}
+  {% include "gcd/bits/publisher_header.html" %}
+  {% endwith %}
+{% endblock content_footer %}

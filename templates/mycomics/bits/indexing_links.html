@@ -1,0 +1,16 @@
+{% load i18n %}
+
+{% if request.user.collector == collection.collector %}
+  <div class="btn-group pull-right">
+    <a href="{% url "advanced_search" %}?target=issue&in_collection={{ collection.id }}&in_selected_collection=on">
+      <button type="button" class="btn btn-primary">{% trans "Search Inside Collection" %}
+    </button></a>
+    <a href="{{ unindexed_issues_url }}">
+      <button type="button" class="btn btn-primary">{% trans "Unindexed Issues" %}
+    </button></a>
+    <a href="{{ needed_covers_url }}">
+      <button type="button" class="btn btn-primary">{% trans "Needed Covers" %}
+    </button></a>
+  </div>
+{% endif %}
+

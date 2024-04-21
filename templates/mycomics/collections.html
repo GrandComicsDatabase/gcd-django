@@ -55,12 +55,28 @@
           </div>
           <div class="modal-body">
             {% blocktrans %}
-            Import a csv-file, where each line has tab-separated entries for an issue. First entry is the series name, second entry the issue number. Optionally a third entry for the publisher name, and fourth entry for the language code.
+              <p>On the following page you get a list of candidate issues based on the uploaded file.
+              From that, mark those issues which you want to import into a collection, e.g. for
+              variants you likely will only want to add one. After clicking 'Select issues' you
+              can choose a collection and confirm the import.</p>
+
+              <p>For computational reasons, do not import more than 500 lines per file.
+              Larger files need to be split beforehand.</p>
+
+              <p>One can import a csv-file, where each line has tab-separated entries for an issue.
+              First entry is the series name, second entry the issue number.
+              Optionally a third entry for the publisher name, and a fourth entry for the language code.</p>
+
+              <p>One can also try to import an exported file from comicbookdb.com that will be identified by a first line starting with "Title,Issue Number,Issue Name".
+              The series name, issue number, publisher name, and the year the series began will be determined from the exported lists.
+              Note that publisher names might need a search-and-replace before an import, some publishers (e.g. DC, Image) are handled by the code.
+              Some series names need a search-and-replace in the to be imported file, Annuals do as well as.</p>
             {% endblocktrans %}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
-            <input type="submit" class="btn btn-primary" name="import_my_issues" value="{% trans "Import" %}">
+            <input type="submit" class="btn btn-primary" name="import_my_issues_base_only" value="{% trans "Import No Variants" %}">
+	    <input type="submit" class="btn btn-primary" name="import_my_issues" value="{% trans "Import" %}">
           </div>
         </form>
       </div><!-- /.modal-content -->

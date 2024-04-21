@@ -401,3 +401,30 @@ $(function() {
     // Add brand emblem images
     $("#id_brand").msDropDown({addToWidth: $("#id_brand").addToOptionWidth()});
 });
+
+$(document).on('change', 'input[type=checkbox]', function () {
+    var id = $(this).attr('id'),
+        match = id.match(/issue_credit_revisions-(\d+)-(is_credited|is_sourced)/)
+
+    if (match) {
+        if (match[2] == 'is_sourced'){
+            var inputRow = $('#id_issue_credit_revisions-' + match[1] + '-sourced_by')
+                        .parent().parent();
+            if ($(this).is(':checked')) {
+                inputRow.show()
+            } else {
+                inputRow.hide()
+            }
+            return;
+        }
+        var inputRow = $('#id_issue_credit_revisions-' + match[1] + '-credited_as')
+                         .parent().parent();
+        if ($(this).is(':checked')) {
+            inputRow.show()
+        } else {
+            inputRow.hide()
+        }
+    }
+})
+
+$('input[type=checkbox]').change()

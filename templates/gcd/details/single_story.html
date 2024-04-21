@@ -6,21 +6,29 @@
     <div class="single_story">
       <a name="{{ story.id }}"></a>
       <h2 class="sequence header title">
-        <span class="title left">{{ story|show_title }}</span>
+        <span class="title left">
+        {% if modal %}
+          <a style="color: white; text-decoration: underline;" href="{% url "show_issue" issue_id=story.issue.id %}#{{ story.id }}">{{ story|show_title }}</a>
+        {% else %}
+          {{ story|show_title }}
+        {% endif %}
+        </span>
+        {% if not modal %}
         <span class="right single_story_navigation"><a class="toc" href="#toc_{{ story.id }}">(Table of Contents{% if forloop.counter %}: {{ forloop.counter }}{% endif %})</a></span>
-        {% if story.type.id in not_shown_types %}
+          {% if story.type.id in not_shown_types %}
         <span class="right single_story_navigation"><a class="toc" href="?issue_detail=2">(Expand)</a> / </span>
+          {% endif %}
         {% endif %}
       </h2>
       <h3 class="sequence_header feature">
         <span class="left">
-        {% if story.feature %}
-          <span class="feature">{{ story.feature }}</span>
+        {% if story.has_feature %}
+          <span class="feature">{{ story.show_feature }}</span>
         {% endif %}
         {% if story.type or story.page_count %}
           <span class="type">
           <!-- needs to be stuck together to get display spacing right. -->
-          {% if story.feature %} / {% endif %}
+          {% if story.has_feature %} / {% endif %}
           {% if story.type %}{{ story.type }} / {% endif %}
           {{ story|show_page_count }}
           {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
@@ -29,7 +37,7 @@
           </span>
         {%endif %}
         </span>
-        {% if not preview %}
+        {% if not preview and not modal %}
           {% if user.is_authenticated and story and not MYCOMICS %}
             {% if is_cover %}
         <span class="right single_story_navigation"><a href="{% url "cache_cover" cover_story_id=story.id %}">(remember cover)</a></span>
@@ -44,12 +52,18 @@
       {% if not not_shown_types or story.type.id not in not_shown_types %}
         {% if story.has_credits %}
       <dl class="credits">
-          {{ story|show_credit:"script" }}
-          {{ story|show_credit:"pencils" }}
-          {{ story|show_credit:"inks" }}
-          {{ story|show_credit:"colors" }}
-          {{ story|show_credit:"letters" }}
-          {{ story|show_credit:"editing" }}
+          {% with full_path=request.get_full_path %}
+            {% show_full_credits story "script" show_sources %}
+            {% show_full_credits story "pencils" show_sources %}
+            {% show_full_credits story "inks" show_sources %}
+            {% show_full_credits story "colors" show_sources %}
+	  {% if is_cover and not preview and user.is_authenticated and user.indexer.cover_letterer_creator_only %}
+            {{ story|show_cover_letterer_credit }}
+	  {% else %}
+            {% show_full_credits story "letters" show_sources %}
+	  {% endif %}
+            {% show_full_credits story "editing" show_sources %}
+          {% endwith %}
       </dl>
         {% endif %}
 
@@ -58,8 +72,12 @@
         <dl class="contents">
             {{ story|show_credit:"job_number" }}
             {{ story|show_credit:"first_line" }}
+            {{ story|show_credit:"feature_logo" }}
             {{ story|show_credit:"genre" }}
-            {{ story|show_credit:"characters"|linebreaksbr }}
+            {{ story.show_characters|linebreaksbr }}
+            {% if story.universe.exists %}
+            {{ story.show_universe }}
+            {% endif %}
             {{ story|show_credit:"synopsis"|linebreaksbr }}
             {{ story|show_credit:"show_awards" }}
             {{ story|show_reprints|linebreaksbr }}

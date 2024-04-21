@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
-import re
 import icu
-from decimal import Decimal, InvalidOperation
+
+import markdown as md
 
 from django import template
 from django.conf import settings
-from django.utils.translation import ugettext as _
-from django.utils.translation import ungettext
+from django.template.defaultfilters import stringfilter
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+import django.urls as urlresolvers
 
 from apps.stddata.models import Country, Language
+from apps.gcd.models.story import AD_TYPES, Story
 from apps.gcd.models.support import GENRES
-from apps.gcd.models import STORY_TYPES
+from apps.gcd.models import STORY_TYPES, CREDIT_TYPES
 
 register = template.Library()
 
@@ -144,30 +147,45 @@ def show_credit(story, credit):
             if search.first() != -1:
                 formatted_credit += __format_credit(story, 'feature')
         return formatted_credit
-    elif credit == 'genre' and getattr(story, credit) and story.issue:
+    elif credit == 'genre':
         genres = story.genre.lower()
-        language = story.issue.series.language.code
-        if language == 'en' and story.issue.series.country.code != 'us':
-            genres = genres.replace('humor', 'humour')
-            genres = genres.replace('sports', 'sport')
-            genres = genres.replace('math & science', 'maths & science')
-        if language == 'en' or story.issue.series.language.code not in GENRES:
-            story.genre = genres.replace('fantasy', 'fantasy-supernatural')
-        else:
-            display_genre = u''
-            for genre in genres.split(';'):
+        for feature in story.feature_object.all():
+            for genre in feature.genre.split(';'):
                 genre = genre.strip()
-                if genre in GENRES['en']:
-                    translation = GENRES[language][GENRES['en'].index(genre)]
-                else:
-                    translation = ''
-                if translation:
-                    display_genre += u'%s (%s); ' % (translation, genre)
-                else:
-                    display_genre += genre + '; '
-            display_genre = display_genre.replace('(fantasy)',
-                                                  '(fantasy-supernatural)')
-            story.genre = display_genre[:-2]
+                if genre not in genres:
+                    if genres == '':
+                        genres = genre
+                    else:
+                        genres += '; %s' % genre
+        if genres and getattr(story, 'issue', None):
+            language = story.issue.series.language.code
+            if language == 'en' and story.issue.series.country.code != 'us':
+                genres = genres.replace('humor', 'humour')
+                genres = genres.replace('sports', 'sport')
+                genres = genres.replace('math & science', 'maths & science')
+            if language == 'en' or story.issue.series.language.code \
+                           not in GENRES:
+                display_genre = genres.replace('fantasy',
+                                               'fantasy-supernatural')
+            else:
+                display_genre = ''
+                for genre in genres.split(';'):
+                    genre = genre.strip()
+                    if genre in GENRES['en']:
+                        translation = GENRES[language][
+                                             GENRES['en'].index(genre)]
+                    else:
+                        translation = ''
+                    if translation:
+                        display_genre += '%s (%s); ' % (translation, genre)
+                    else:
+                        display_genre += genre + '; '
+                display_genre = display_genre.replace('(fantasy)',
+                                                      '(fantasy-supernatural)')
+                display_genre = display_genre[:-2]
+        else:
+            display_genre = genres
+        story.genre = display_genre
         return __format_credit(story, credit)
     elif credit == 'pages':
         if story.page_began:
@@ -200,7 +218,10 @@ def __credit_visible(value):
 
 
 def __format_credit(story, credit):
-    credit_value = getattr(story, credit)
+    if credit in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
+        credit_value = __credit_value(story, credit, url=True)
+    else:
+        credit_value = getattr(story, credit)
     if not __credit_visible(credit_value):
         return ''
 
@@ -223,14 +244,25 @@ def __format_credit(story, credit):
             credit_value += '<li>' + esc(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
-        credit_value = __format_keywords(story.keywords)
+        model_name = story._meta.model_name
+        if model_name == 'issue' and story.series.is_singleton:
+            keywords = story.keywords.all() | story.series.keywords.all()
+        else:
+            keywords = story.keywords
+        credit_value = __format_keywords(keywords,
+                                         model_name=model_name)
+        if credit_value == '':
+            return ''
+    elif credit == 'feature_logo':
+        label = _('Feature Logo')
+        credit_value = esc(story.show_feature_logo())
         if credit_value == '':
             return ''
     else:  # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     dt = '<dt class="credit_tag'
     dd = '<dd class="credit_def'
-    if credit == 'genre' or credit == 'first_line' or credit == 'job_number':
+    if credit in ['genre', 'job_number', 'feature_logo']:
         dt += ' short'
         dd += ' short'
     dt += '">'
@@ -241,13 +273,115 @@ def __format_credit(story, credit):
            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
 
-def __format_keywords(keywords, join_on='; '):
-    if type(keywords) == unicode:
+@register.filter
+def search_creator_credit(story, credit_type):
+    credits = story.active_credits.filter(
+              credit_type_id=CREDIT_TYPES[credit_type])
+    if not credits:
+        return ''
+    credit_value = '%s' % credits[0].creator.display_credit(credits[0],
+                                                            search=True)
+
+    for credit in credits[1:]:
+        credit_value = '%s; %s' % (credit_value,
+                                   credit.creator.display_credit(credit,
+                                                                 search=True))
+
+    return mark_safe(credit_value)
+
+
+def __credit_value(story, credit_type, url, show_sources=False):
+    # We use .credits.all() to allow prefetching of the credits when the
+    # story is fetched from the db, otherwise the filter would invalidated
+    # the prefetched data. Prefetching is done by
+    # - issue.shown_stories for show_issue
+    # - the name-value export script
+    #
+    # For results from elasticsearch we need to go to the object.
+    if '_object' in story.__dict__:
+        credits = story.objects.credits.all()
+    else:
+        credits = story.credits.all()
+    credit_value = ''
+    for credit in credits:
+        if credit.credit_type_id == CREDIT_TYPES[credit_type] and \
+           not credit.deleted:
+            displayed_credit = credit.creator.display_credit(
+              credit, url=url, show_sources=show_sources)
+            if credit_value:
+                credit_value += '; %s' % displayed_credit
+            else:
+                credit_value = displayed_credit
+    old_credit_field = getattr(story, credit_type)
+    if old_credit_field:
+        if credit_value:
+            credit_value = '%s; %s' % (credit_value, esc(old_credit_field))
+        else:
+            credit_value = esc(old_credit_field)
+    return mark_safe(credit_value)
+
+
+@register.simple_tag
+def show_full_credits(story, credit_type, show_sources):
+    return show_creator_credit(story, credit_type,
+                               show_sources=show_sources)
+
+
+@register.filter
+def show_creator_credit(story, credit_type, url=True,
+                        show_sources=False):
+    credit_value = __credit_value(story, credit_type, url,
+                                  show_sources)
+    if credit_value and url:
+        val = '<dt class="credit_tag"><span class="credit_label">'
+        if type(story) is Story:
+            val += '<a hx-get="/story/%d/%s/history/" ' % (story.id,
+                                                           credit_type) + \
+                   'hx-target="body" hx-swap="beforeend" ' +\
+                   'style="cursor: pointer; color: #00e;">'
+        val += credit_type.capitalize() + '</a></span></dt>' + \
+            '<dd class="credit_def"><span class="credit_value">' + \
+            credit_value + '</span></dd>'
+        return mark_safe(val)
+    else:
+        return credit_value
+
+
+@register.filter
+def show_creator_credit_bare(story, credit_type):
+    credit_value = __credit_value(story, credit_type, url=True)
+    return credit_value
+
+
+@register.filter
+def show_cover_letterer_credit(story):
+    if (story.letters == 'typeset' or story.letters == '?') and not\
+      story.active_credits.filter(credit_type_id=CREDIT_TYPES['letters']):
+        return ''
+    return show_creator_credit(story, 'letters')
+
+
+@register.filter()
+@stringfilter
+def markdown(value):
+    return mark_safe(md.markdown(value))
+
+
+def __format_keywords(keywords, join_on='; ', model_name='story'):
+    if type(keywords) is str:
         credit_value = keywords
     else:
-        credit_value = esc(
-            join_on.join(str(i) for i in keywords.all().order_by('name')))
-    return credit_value
+        keyword_list = list()
+        for i in keywords.all().order_by('name'):
+            if model_name in ['story', 'issue']:
+                keyword_list.append('<a href="%s%s/">%s</a>' % (
+                                    urlresolvers.reverse(
+                                      'show_keyword', kwargs={'keyword': i}),
+                                    esc(model_name), esc(i)))
+            else:
+                keyword_list.append(esc(i))
+        credit_value = join_on.join(str(i) for i in keyword_list)
+    return mark_safe(credit_value)
 
 
 @register.filter
@@ -257,56 +391,13 @@ def show_keywords(object):
 
 @register.filter
 def show_keywords_comma(object):
-    return __format_keywords(object.keywords, u', ')
-
-
-@register.filter
-def show_credit_status(story):
-    """
-    Display a set of letters indicating which of the required credit fields
-    have been filled out.  Technically, the editing field is not required but
-    it has historically been displayed as well.  The required editing field
-    is now directly on the issue record.
-    """
-    status = []
-    required_remaining = 5
-
-    if story.script or story.no_script:
-        status.append('S')
-        required_remaining -= 1
-
-    if story.pencils or story.no_pencils:
-        status.append('P')
-        required_remaining -= 1
-
-    if story.inks or story.no_inks:
-        status.append('I')
-        required_remaining -= 1
-
-    if story.colors or story.no_colors:
-        status.append('C')
-        required_remaining -= 1
-
-    if story.letters or story.no_letters:
-        status.append('L')
-        required_remaining -= 1
-
-    if story.editing or story.no_editing:
-        status.append('E')
-
-    completion = 'complete'
-    if required_remaining:
-        completion = 'incomplete'
-    snippet = '[<span class="%s">' % completion
-    snippet += ' '.join(status)
-    snippet += '</span>]'
-    return mark_safe(snippet)
+    return __format_keywords(object.keywords, ', ')
 
 
 @register.filter
 def show_cover_contributor(cover_revision):
     if cover_revision.file_source:
-        if cover_revision.changeset.indexer.id == 381:  # anon user
+        if cover_revision.changeset.indexer_id == 381:  # anon user
             # filter away '( email@domain.part )' for old contributions
             text = cover_revision.file_source
             bracket = text.rfind('(')
@@ -315,7 +406,7 @@ def show_cover_contributor(cover_revision):
             else:
                 return text
         else:
-            return unicode(cover_revision.changeset.indexer.indexer) + \
+            return str(cover_revision.changeset.indexer.indexer) + \
               ' (from ' + cover_revision.file_source + ')'
     else:
         return cover_revision.changeset.indexer.indexer
@@ -323,11 +414,11 @@ def show_cover_contributor(cover_revision):
 
 @register.filter
 def show_country_info_by_code(code, name):
-    src = u'src="%s/img/gcd/flags/%s.png"' % (settings.STATIC_URL,
-                                              code.lower())
-    alt = u'alt="%s"' % esc(code.upper())
-    title = u'title="%s"' % esc(name)
-    return mark_safe(u'%s %s %s' % (src, alt, title))
+    src = 'src="%simg/gcd/flags/%s.png"' % (settings.STATIC_URL,
+                                            code.lower())
+    alt = 'alt="%s"' % esc(code.upper())
+    title = 'title="%s"' % esc(name)
+    return mark_safe('%s %s %s' % (src, alt, title))
 
 
 @register.filter
@@ -343,13 +434,16 @@ def show_country_info(country):
 
 @register.filter
 def get_country_flag(country):
-    return mark_safe(u'<img %s class="embedded_flag">'
+    return mark_safe('<img %s class="embedded_flag">'
                      % show_country_info(country))
 
 
 @register.filter
 def get_country_flag_by_name(country_name):
-    return(get_country_flag(Country.objects.get(name=country_name)))
+    try:
+        return get_country_flag(Country.objects.get(name=country_name))
+    except Country.DoesNotExist:
+        return country_name
 
 
 @register.filter
@@ -364,31 +458,27 @@ def show_page_count(story, show_page=False):
     Return a properly formatted page count, with "?" as needed.
     """
     if story is None:
-        return u''
+        return ''
 
     if story.page_count is None:
         if story.page_count_uncertain:
-            return u'?'
-        return u''
+            return '?'
+        return ''
 
     p = format_page_count(story.page_count)
     if story.page_count_uncertain:
-        p = u'%s ?' % p
+        p = '%s ?' % p
     if show_page:
-        p = p + u' ' + ungettext('page', 'pages', story.page_count)
+        p = p + ' ' + ngettext('page', 'pages', story.page_count)
     return p
 
 
 @register.filter
 def format_page_count(page_count):
-    if page_count is not None:
-        try:
-            return re.sub(r'\.?0+$', '', unicode(Decimal(page_count)
-                                                 .quantize(Decimal(10)**-3)))
-        except InvalidOperation:
-            return page_count
+    if page_count is not None and page_count != '':
+        return f'{float(page_count):.10g}'
     else:
-        return u''
+        return ''
 
 
 @register.filter
@@ -397,14 +487,14 @@ def show_title(story, use_first_line=False):
     Return a properly formatted title.
     """
     if story is None:
-        return u''
+        return ''
     if story.title == '':
         if use_first_line and story.first_line:
-            return u'["%s"]' % story.first_line
+            return '["%s"]' % story.first_line
         else:
-            return u'[no title indexed]'
+            return '[no title indexed]'
     if story.title_inferred:
-        return u'[%s]' % story.title
+        return '[%s]' % story.title
     return story.title
 
 
@@ -413,10 +503,10 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
     ''' generate reprint link to_issue'''
 
     if only_number:
-        link = u', <a href="%s">%s</a>' % (issue.get_absolute_url(),
-                                           esc(issue.display_number))
+        link = ', <a href="%s">%s</a>' % (issue.get_absolute_url(),
+                                          esc(issue.display_number))
     else:
-        link = u'%s %s <a href="%s">%s</a>' % \
+        link = '%s %s <a href="%s">%s</a>' % \
           (get_country_flag(issue.series.country), from_to,
            issue.get_absolute_url(), esc(issue.full_name()))
 
@@ -430,25 +520,32 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
         return link
 
 
-def generate_reprint_link_sequence(story, from_to, notes=None, li=True,
+def generate_reprint_link_sequence(story, issue, from_to, notes=None, li=True,
                                    only_number=False):
     ''' generate reprint link to story'''
     if only_number:
-        link = u', <a href="%s#%d">%s</a>' % (story.issue.get_absolute_url(),
-                                              story.id,
-                                              esc(story.issue.display_number))
+        if story.sequence_number == 0 and \
+           story.issue.variant_cover_status == 3:
+            link = ', <a href="%s#%d">%s</a>' % (
+              issue.get_absolute_url(),
+              story.id,
+              esc(issue.display_full_descriptor))
+        else:
+            link = ', <a href="%s#%d">%s</a>' % (issue.get_absolute_url(),
+                                                 story.id,
+                                                 esc(issue.display_number))
     elif story.sequence_number == 0:
-        link = u'%s %s <a href="%s#%d">%s</a>' % \
-          (get_country_flag(story.issue.series.country), from_to,
-           story.issue.get_absolute_url(), story.id,
-           esc(story.issue.full_name()))
+        link = '%s %s <a href="%s#%d">%s</a>' % \
+          (get_country_flag(issue.series.country), from_to,
+           issue.get_absolute_url(), story.id,
+           esc(issue.full_name()))
     else:
-        link = u'%s %s <a href="%s#%d">%s</a>' % \
-          (get_country_flag(story.issue.series.country), from_to,
-           story.issue.get_absolute_url(), story.id,
-           esc(story.issue.full_name(variant_name=False)))
-    if story.issue.publication_date:
-        link = "%s (%s)" % (link, esc(story.issue.publication_date))
+        link = '%s %s <a href="%s#%d">%s</a>' % \
+          (get_country_flag(issue.series.country), from_to,
+           issue.get_absolute_url(), story.id,
+           esc(issue.full_name(variant_name=False)))
+    if issue.publication_date:
+        link = "%s (%s)" % (link, esc(issue.publication_date))
     if notes:
         link = '%s [%s]' % (link, esc(notes))
     if li and not only_number:
@@ -467,7 +564,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
     last_follow = None
     same_issue_cnt = 0
     for from_reprint in from_reprints:
-        if hasattr(from_reprint, 'origin_issue') and from_reprint.origin_issue:
+        if not from_reprint.origin:
             follow_info = ''
             if last_series == from_reprint.origin_issue.series and \
                last_follow == follow_info:
@@ -491,10 +588,11 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
         else:
             follow_info = follow_reprint_link(from_reprint, 'from',
                                               level=level+1)
-            if last_series == from_reprint.origin.issue.series and \
+            if last_series == from_reprint.origin_issue.series and \
                last_follow == follow_info:
                 reprint += generate_reprint_link_sequence(
-                             from_reprint.origin, "from ",
+                             from_reprint.origin, from_reprint.origin_issue,
+                             "from ",
                              notes=from_reprint.notes, only_number=True)
                 same_issue_cnt += 1
             else:
@@ -504,11 +602,11 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                                                           'which are', 1)
                     reprint += '</li>' + last_follow
                 same_issue_cnt = 0
-                last_series = from_reprint.origin.issue.series
+                last_series = from_reprint.origin_issue.series
 
                 reprint += generate_reprint_link_sequence(
-                             from_reprint.origin, "from ",
-                             notes=from_reprint.notes)
+                             from_reprint.origin, from_reprint.origin_issue,
+                             "from ", notes=from_reprint.notes)
             last_follow = follow_info
 
     if last_follow:
@@ -520,7 +618,7 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
     same_issue_cnt = 0
 
     for to_reprint in to_reprints:
-        if hasattr(to_reprint, 'target_issue') and to_reprint.target_issue:
+        if not to_reprint.target:
             follow_info = ''
             if last_series == to_reprint.target_issue.series and \
                last_follow == follow_info:
@@ -541,17 +639,17 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                              notes=to_reprint.notes)
                 last_follow = follow_info
         else:
-            if no_promo and (to_reprint.target.type.id ==
-                             STORY_TYPES['preview']):
+            if no_promo and to_reprint.target.type_id in AD_TYPES:
                 pass
             else:
                 follow_info = follow_reprint_link(to_reprint, 'in',
                                                   level=level+1)
-                if last_series == to_reprint.target.issue.series and \
+                if last_series == to_reprint.target_issue.series and \
                    last_follow == follow_info:
                     reprint += generate_reprint_link_sequence(
-                                 to_reprint.target, "in ",
-                                 notes=to_reprint.notes, only_number=True)
+                                 to_reprint.target, to_reprint.target_issue,
+                                 "in ", notes=to_reprint.notes,
+                                 only_number=True)
                     same_issue_cnt += 1
                 else:
                     if last_follow:
@@ -560,11 +658,11 @@ def generate_reprint_notes(from_reprints=[], to_reprints=[], level=0,
                                                               'which are', 1)
                         reprint += '</li>' + last_follow
                     same_issue_cnt = 0
-                    last_series = to_reprint.target.issue.series
+                    last_series = to_reprint.target_issue.series
 
                     reprint += generate_reprint_link_sequence(
-                                 to_reprint.target, "in ",
-                                 notes=to_reprint.notes)
+                                 to_reprint.target, to_reprint.target_issue,
+                                 "in ", notes=to_reprint.notes)
                 last_follow = follow_info
     if last_follow:
         if same_issue_cnt > 0:
@@ -579,12 +677,14 @@ def follow_reprint_link(reprint, direction, level=0):
         return ''
     reprint_note = ''
     if direction == 'from':
-        further_reprints = list(reprint.origin.from_reprints.select_related()
-                                .all())
-        further_reprints.extend(list(reprint.origin.from_issue_reprints
-                                            .select_related().all()))
-        further_reprints = sorted(further_reprints,
-                                  key=lambda a: a.origin_sort)
+        if type(reprint.origin) is Story:
+            further_reprints = reprint.origin.from_all_reprints \
+              .select_related('origin_issue__series__publisher')\
+              .order_by('origin_issue__key_date',
+                        'origin_issue__series',
+                        'origin_issue__sort_code')
+        else:
+            further_reprints = list(reprint.origin.from_reprints.all())
         reprint_note += generate_reprint_notes(from_reprints=further_reprints,
                                                level=level)
         if reprint.origin.reprint_notes:
@@ -593,12 +693,14 @@ def follow_reprint_link(reprint, direction, level=0):
                 if string.lower().startswith('from '):
                     reprint_note += '<li> ' + esc(string) + ' </li>'
     else:
-        further_reprints = list(reprint.target.to_reprints.select_related()
-                                                          .all())
-        further_reprints.extend(list(reprint.target.to_issue_reprints
-                                            .select_related().all()))
-        further_reprints = sorted(further_reprints,
-                                  key=lambda a: a.target_sort)
+        if type(reprint.target) is Story:
+            further_reprints = reprint.target.to_all_reprints\
+              .select_related('target_issue__series__publisher')\
+              .order_by('target_issue__key_date',
+                        'target_issue__series',
+                        'target_issue__sort_code')
+        else:
+            further_reprints = list(reprint.target.to_reprints.all())
         reprint_note += generate_reprint_notes(to_reprints=further_reprints,
                                                level=level)
         if reprint.target.reprint_notes:
@@ -615,22 +717,25 @@ def follow_reprint_link(reprint, direction, level=0):
 @register.filter
 def show_reprints(story):
     """ Filter for our reprint line on the story level."""
-
-    reprint = ""
-
-    from_reprints = list(story.from_reprints.select_related().all())
-    from_reprints.extend(list(story.from_issue_reprints.select_related()
-                                                       .all()))
-    from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+    from_reprints = story.from_all_reprints \
+                         .select_related('origin_issue__series__publisher',
+                                         'origin')\
+                         .order_by('origin_issue__key_date',
+                                   'origin_issue__series',
+                                   'origin_issue__sort_code')
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
-    if story.type.id != STORY_TYPES['preview']:
+    if story.type_id not in [STORY_TYPES['preview'],
+                             STORY_TYPES['comics-form ad']]:
         no_promo = True
     else:
         no_promo = False
-    to_reprints = list(story.to_reprints.select_related().all())
-    to_reprints.extend(list(story.to_issue_reprints.select_related().all()))
-    to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
+    to_reprints = story.to_all_reprints\
+                       .select_related('target_issue__series__publisher',
+                                       'target')\
+                       .order_by('target_issue__key_date',
+                                 'target_issue__series',
+                                 'target_issue__sort_code')
     reprint += generate_reprint_notes(to_reprints=to_reprints,
                                       no_promo=no_promo)
 
@@ -654,16 +759,14 @@ def show_reprints(story):
 def show_reprints_for_issue(issue):
     """ show reprints stored on the issue level. """
 
-    reprint = ""
-    from_reprints = list(issue.from_reprints.select_related().all())
-    from_reprints.extend(list(issue.from_issue_reprints.select_related()
-                                                       .all()))
-    from_reprints = sorted(from_reprints, key=lambda a: a.origin_sort)
+    from_reprints = issue.from_reprints\
+                         .select_related('origin_issue__series__publisher')\
+                         .order_by('origin_issue__sort_code')
     reprint = generate_reprint_notes(from_reprints=from_reprints)
 
-    to_reprints = list(issue.to_reprints.select_related().all())
-    to_reprints.extend(list(issue.to_issue_reprints.select_related().all()))
-    to_reprints = sorted(to_reprints, key=lambda a: a.target_sort)
+    to_reprints = issue.to_reprints\
+                       .select_related('target_issue__series__publisher')\
+                       .order_by('target_issue__sort_code')
     reprint += generate_reprint_notes(to_reprints=to_reprints,
                                       no_promo=True)
 

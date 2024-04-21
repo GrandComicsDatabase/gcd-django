@@ -1,48 +1,38 @@
-{% extends "gcd/base_view.html" %}
-{% load staticfiles %}
-{% load i18n %}
+{% extends "gcd/base_content.html" %}
 
 {% block title %}
   GCD :: Received Award :: {{ received_award.award_name }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-    href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
+{% block content_header %}
+  {% with first_object=received_award.recipient second_object=received_award %}
+    {% include "gcd/bits/generic_header.html" %}
+  {% endwith %}
+{% endblock content_header %}
 
-{% block view_body %}
+{% block content %}
+  <dl class="pub_data">
+  {% if received_award.award %}
+    <dt> Award:
+    <dd> <a href="{{ received_award.award.get_absolute_url }}">{{ received_award.award }}</a>
+  {% endif %}
+    <dt> Award Name:
+    <dd> {{ received_award.display_name }}
+  {% if received_award.award_year %}
+    <dt> Award Year:
+    <dd> {{ received_award.award_year }}
+  {% endif %}
+  {% if received_award.notes %}
+    <dt>Notes:
+    <dd>{{ received_award.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% with received_award.data_source.all as data_sources %}
+    {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+  </dl>
+{% endblock content %}
 
-{% with first_object=received_award.recipient second_object=received_award %}
- {% include "gcd/bits/generic_header.html" %}
-{% endwith %}
- <div class="control_body">
-  <div id="control_container">
-    <div id="control_center">
-      <dl class="pub_data">
-{% if received_award.award %}
-        <dt> Award:
-        <dd> <a href="{{ received_award.award.get_absolute_url }}">{{ received_award.award }}</a>
-{% endif %}
-        <dt> Award Name:
-        <dd> {{ received_award.display_name }}
-{% if received_award.award_year %}
-        <dt> Award Year:
-        <dd> {{ received_award.award_year }}
-{% endif %}
-        {% if received_award.notes %}
-        <dt>Notes:
-        <dd>{{ received_award.notes }}
-        {% endif %}
-        {% with received_award.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-        {% endwith %}
-      </dl>
-    </div> <!-- control_center -->
-  {% if not preview or creator_award.source %}
-    <div id="control_rail">
-      <div class="edit_box">
-        <div class="edit_header">Editing</div>
+{% block edit_box %}
   {% if not preview %}
     {% with received_award as object %}
     {% with 'received_award' as object_class %}
@@ -51,20 +41,15 @@
     {% endwith %}
     {% endwith %}
     {% endwith %}
-
-  {% endif %} <!-- not preview -->
-      </div> <!-- edit_box -->
-      <div id="change_history" class="edit_footer">
-  {% if preview %}
-        <a href="{% url "change_history" model_name='creator_award' id=received_award.source.id %}">View Change History</a>
-  {% else %}
-        <a href="{% url "change_history" model_name='received_award' id=received_award.id %}">View Change History</a>
   {% endif %}
-      </div>
-        </div> <!-- control_rail -->
-{% endif %}
-  </div> <!-- control_container -->
-</div> <!-- control_body -->
+{% endblock edit_box %}
 
-
-{% endblock %}
+{% block change_history %}
+  {% if preview %}
+    {% if received_award.revision.source %}
+      <a href="{% url "change_history" model_name='received_award' id=received_award.revision.source.id %}">View Change History</a>
+    {% endif %}
+  {% else %}
+    <a href="{% url "change_history" model_name='received_award' id=received_award.id %}">View Change History</a>
+  {% endif %}
+{% endblock change_history %}

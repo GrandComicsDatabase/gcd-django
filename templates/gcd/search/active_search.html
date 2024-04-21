@@ -1,0 +1,18 @@
+{% extends "gcd/base_view.html" %}
+
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
+{% endblock %}
+
+
+{% block view_body %}
+<div id="tabs" hx-get="/creator/search/" hx-trigger="load after:100ms" hx-target="#tabs" hx-swap="innerHTML"></div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% load credits %}
+{% load display %}
+{% load mathfilter %}
+{% load static %}
+<div class="credits_table_view">
+  <a hx-get="{% url "show_issue_modal" issue_id=value %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
+<img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img></a>
+{% if publisher %}
+  {{ record.full_name_with_link }}
+{% else %}
+  {{ record.show_series_and_issue_link }}
+{% endif %}
+</div>
+{{ record.price|default:"?" }} /
+{{ record|show_page_count|default:"?" }}
+{% with record.page_count|default:0|ceil|pluralize as suffix %}
+page{{ suffix }}
+{% endwith %}
+{% with story=record.get_cover_sequence modal=True is_cover=True %}
+  {% include "gcd/bits/single_story_credits.html" %}
+{% endwith %}

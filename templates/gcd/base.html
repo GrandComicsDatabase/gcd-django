@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {% load compress %}
-{% load staticfiles %}
+{% load static %}
 <html>
 <head>
   <title>{% block title %}{% endblock %}</title>
@@ -21,6 +21,9 @@ For now, just a simple single block for all CSS, despite redundancy.
 </head>
 
 <body>
+{% if USE_TEMPLATESADMIN and ADVERTISING and not EDITING%}
+  {% include "managed_content/gcd/ads/ad_top.html" %}
+{% endif %}
 <div id="sizing_base" {% if preview %} class="preview" {% endif %}>
 {% if BETA %}
   {% include "gcd/bits/beta_banner.html" %}

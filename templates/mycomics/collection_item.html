@@ -129,6 +129,9 @@
       {% if collection.own_used and request.user.collector == collection.collector %}
         {{ item.own|yesno:"I own this comic.<br>,I want this comic.<br>,"|safe }}
       {% endif %}
+      {% if collection.digital_used and item.is_digital %}
+        {% trans "Issue is in digital form." %}<br>
+      {% endif %}
       {% if item.notes %}{{ item.notes }}<hr>{% endif %}
       {% if item.keywords.count %}{% trans "Tags: " %}{{ item|show_keywords_comma }}<hr>{% endif %}
       {% if collection.location_used %}
@@ -163,6 +166,9 @@
       {% endif %}
       {% if collection.sell_date_used %}
         {% trans "Sell date: " %}{{ item.sell_date|default:'-'|force_escape|default:'-' }}<br>
+      {% endif %}
+      {% if collection.rating_used %}
+        {% trans "My rating: " %}{{ item.show_rating }}<br>
       {% endif %}
     </div>
   </div>

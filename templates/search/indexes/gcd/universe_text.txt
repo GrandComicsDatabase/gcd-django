@@ -1,0 +1,4 @@
+{% load credits %}
+{{ object.display_name|safe }}
+{{ object.description|safe }}
+{{ object.notes|safe }}

@@ -1,6 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
-{% load staticfiles %}
+{% load static %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -10,13 +10,10 @@
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default.css" %}">
-</link>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/series.css" %}">
-</link>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default/status.css" %}">
-</link>
 {% endblock %}
 
 {% block view_body %}
@@ -47,7 +44,7 @@
             <dd id="publication_dates"> {{ series.display_publication_dates }}
 {% if series.issue_count %}
             <dt> Number of Issues Published:
-            <dd id="issues_published"> {{ series.issue_count }} 
+            <dd id="issues_published"> {{ series.issue_count }}
   {% if series.issue_count > 1 %}
             ({{ series.first_issue.display_number }} - {{ series.last_issue.display_number}})
   {% endif %}
@@ -88,22 +85,27 @@
           <div class="series_detail_header">Series Details:</div>
           <ul class="series_detail_info"><li>
   {% if series.has_gallery %}
-            <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/devices/camera-photo.png">Cover Gallery</a>&nbsp;
+            <a href="{{ series.get_absolute_url }}covers"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/camera-photo-symbolic.svg" %}">Cover Gallery</a>&nbsp;
   {% endif %}
-            <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/actions/document-properties.png">Details by Issue</a>&nbsp;
-            <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{{ STATIC_URL}}img/gcd/icons/{{ ICON_SET }}/16x16/mimetypes/x-office-calendar.png">Series Timeline</a>
+            <a href="{% url "series_details" series_id=series.id %}"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/columns-symbolic.svg" %}">Details by Issue</a>&nbsp;
+            <a href="{% url "series_timeline" series_id=series.id %}"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/month-symbolic.svg" %}">Series Timeline</a>
+            <li><a href='{% url "series_overview" series_id=series.id %}'>Cover and Main Story Overview</a></li>
+            <li><a href='{% url "series_creators" series_id=series.id %}'>Creator Checklist (via linked story records)</a></li>
+            <li><a href='{% url "series_creator_names" series_id=series.id %}'>Creator Name Checklist (via linked story records)</a></li>
+            <li><a href='{% url "series_characters" series_id=series.id %}'>Character List (via linked story records)</a></li>
+            {% if series.issues_to_migrate.count %}<li>Approximately <a href='{% url "series_migrate" series_id=series.id %}'>{{ series.issues_to_migrate.count }} issues</a> with text credits to migrate.</li>{% endif %}
+	  </ul>
 {% endif %}
-          </ul>
-
 {% if brand_counts.no_brand != series.active_issues.count %}
+          <div style="  columns: 2; margin-bottom: 1em">
           <div class="series_detail_header">Publisher's Brands:</div>
-          <ul class="series_detail_info">
+          <ul style="page-break-inside: avoid;" class="series_detail_info">
   {% for brand in brands %}
             <li> {{ brand|absolute_url }}
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ brand|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.used_issue_count }} issue{{ brand.used_issue_count|pluralize }}</a>)
   {% endfor %}
   {% if brand_counts.no_brand %}
-            <li> no publisher's brand 
+            <li> no publisher's brand
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_none }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }}</a>)
   {% endif %}
   {% if brand_counts.unknown %}
@@ -111,9 +113,11 @@
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }}</a>)
   {% endif %}
           </ul>
+{% else %}
+          <div style="margin-bottom: 1em">
 {% endif %}
-
 {% if series.active_issues.count %}
+          <div style="page-break-inside: avoid;">
           <div class="series_detail_header">Indicia Publishers:</div>
           <ul class="series_detail_info">
   {% for ip in series.ordered_indicia_publishers %}
@@ -124,9 +128,9 @@
             <li> without indicia publisher information
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)
   {% endif %}
-        </ul>
+	 </ul></div>
 {% endif %}
-
+</div>
           <div class="series_notes">
 {% if series.active_awards.count %}
             <div class="series_detail_header"> Awards: </div>
@@ -260,6 +264,12 @@ comics sequences are indexed and cover scans are accepted only if the issue has 
 <h3> Cover Status </h3>
     {% include "gcd/bits/scan_tables.html" %}
   {% endif %}
+<hr>
+  <a name="image_resources_status"></a>
+<h3> Image Resources Status </h3>
+
+  {% include "gcd/bits/image_resources_tables.html" %}
+
 {% endif %}
 
 {% endwith %}

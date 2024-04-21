@@ -36,9 +36,9 @@ def move_issues(issues, series, reserve_text, approve_text):
                 issue_revision.save()
                 changes.append((changeset, True))
             else:
-                print "Issue %s could not be reserved" % issue
+                print("Issue %s could not be reserved" % issue)
         else:
-            print "Issue %s is reserved" % issue
+            print("Issue %s is reserved" % issue)
 
         if len(changes) > 100:
             do_auto_approve(changes, approve_text)
@@ -48,7 +48,7 @@ def move_issues(issues, series, reserve_text, approve_text):
 
 
 def main():
-    print sys.argv, len(sys.argv)
+    print(sys.argv, len(sys.argv))
 
     old_series_id = int(sys.argv[1])
     old_series = Series.objects.get(id=old_series_id)
@@ -60,12 +60,12 @@ def main():
                                       deleted=False, reserved=False)
 
     if len(sys.argv) >= 4:
-        num_range = range(int(sys.argv[3]), int(sys.argv[4])+1)
+        num_range = list(range(int(sys.argv[3]), int(sys.argv[4])+1))
         issue_list = issue_list.filter(number__in=num_range)
 
     # issue_list = issue_list[:10]
 
-    answer = raw_input(
+    answer = input(
         'Move the %d (of %d total) issues from series %s to series %s (y/n):' %
         (issue_list.count(), old_series.issue_count, old_series, new_series))
     if answer.startswith('y'):

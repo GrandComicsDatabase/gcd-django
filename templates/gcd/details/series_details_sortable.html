@@ -1,0 +1,43 @@
+{% extends "gcd/base_view.html" %}
+
+{% load static %}
+{% load credits %}
+{% load display %}
+{% load django_tables2 %}
+
+{% block title %} GCD :: Series :: {{ series.name }} :: {% if by_date %}Timeline{% else %}Details{% endif %} {% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
+{% endblock %}
+
+{% block view_body %}
+
+{% with description=True %}
+{% include "gcd/bits/series_issue_header.html" %}
+{% endwith %}
+
+<div style="clear: both;"></div>
+  <h3> Series {% if by_date %}Timeline{% else %}Details{% endif %} </h3>
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} issue{{ page.paginator.count|pluralize:'s' }}.
+  {% if by_date %}
+  <a href="{% url "series_details" series_id=series.id %}">See series details by issue</a> (displays one row per issue with no gaps, by the regular issue sort order)
+{% else %}
+  <a href="{% url "series_timeline" series_id=series.id %}">See series timeline</a>
+  (depends on key dates being set correctly)
+{% endif %}
+{% render_table table %}
+
+<div class="right">
+  {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
+    {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
+  {% endif %}
+</div>
+
+{% endblock %}

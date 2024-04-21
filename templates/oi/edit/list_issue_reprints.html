@@ -17,7 +17,7 @@
 {% if issue_revision.can_add_reprints %}
   <form class="changeset" method="GET"
         action="{% url "add_issue_reprint" issue_id=issue_revision.id changeset_id=changeset.id %}">
-  <input type="submit" value="Add reprint">
+  <input type="submit" value="Add Reprint">
   </form>
 {% endif %}
 </h1>
@@ -27,13 +27,13 @@
 </p>
 <p>With the left 'change' button one can reposition a reprint link inside this issue, with the right 'change' button one can edit the other side of the reprint link. </p>
 {% with issue_revision as issue %}
-  {% if issue.from_reprints_oi.count %}
+  {% if issue.from_story_reprints_oi.count %}
 <h3>parts of this issue are reprinted <i>from</i> the sequence</h3>
 <table class="story_list">
     {% with 0 as is_source %}
     {% with 1 as create_sequence %}
     {% with 'reprint_to_issue' as reprint_type %}
-      {% for reprint in issue.from_reprints_oi.all %}
+      {% for reprint in issue.from_story_reprints_oi.all %}
         {% include 'oi/bits/reprint_type_list.html' %}
       {% endfor %}
     {% endwith %}
@@ -55,13 +55,13 @@
 </table>
   {% endif %}
 
-  {% if issue.to_reprints_oi.count %}
+  {% if issue.to_story_reprints_oi.count %}
 <h3>parts of this issue are reprinted <i>in</i> the sequence</h3>
 <table class="story_list">
     {% with 1 as is_source %}
     {% with 1 as create_sequence %}
     {% with 'reprint_from_issue' as reprint_type %}
-      {% for reprint in issue.to_reprints_oi.all %}
+      {% for reprint in issue.to_story_reprints_oi.all %}
         {% include 'oi/bits/reprint_type_list.html' %}
       {% endfor %}
     {% endwith %}
@@ -90,7 +90,7 @@
   <form class="story_button" method="GET"
             action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id %}">
         <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
-               value="Add reprint">
+               value="Add Reprint">
   </form>
   {% endif %}
 </h2>
@@ -104,7 +104,7 @@
     <form class="story_button" method="GET"
             action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id reprint_note=reprint %}">
         <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
-               value="Add reprint">
+               value="Add Reprint">
     </form>
       {% endif %}
   </li>
@@ -114,12 +114,12 @@
 
     {% with story_revision as story %}
 
-      {% if story.from_reprints_oi.count %}
+      {% if story.from_story_reprints_oi.count %}
 <h3>sequence reprinted <i>from</i> the sequence:</h3>
 <table class="story_list">
         {% with 0 as is_source %}
         {% with 'reprint' as reprint_type %}
-          {% for reprint in story.from_reprints_oi.all %}
+          {% for reprint in story.from_story_reprints_oi.all %}
             {% include 'oi/bits/reprint_type_list.html' %}
           {% endfor %}
         {% endwith %}
@@ -140,12 +140,12 @@
 </table>
       {% endif %}
 
-      {% if story.to_reprints_oi.count %}
+      {% if story.to_story_reprints_oi.count %}
 <h3>sequence reprinted <i>in</i> the sequence:</h3>
 <table class="story_list">
         {% with 1 as is_source %}
         {% with 'reprint' as reprint_type %}
-          {% for reprint in story.to_reprints_oi.all %}
+          {% for reprint in story.to_story_reprints_oi.all %}
             {% include 'oi/bits/reprint_type_list.html' %}
           {% endfor %}
         {% endwith %}

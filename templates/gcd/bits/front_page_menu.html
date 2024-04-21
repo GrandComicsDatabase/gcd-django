@@ -1,18 +1,19 @@
 {% load i18n %}
-{% load staticfiles %}
+{% load static %}
 
 <div id="front_page_menu">
   <div id="front_page_menu_header">
     <img src="{% static "img/gcd_logo.png" %}" alt="GCD">
   <br>
-  <a href="http://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a>
+  <a href="https://docs.comics.org/wiki/General_FAQ">{% trans "About the GCD" %}</a>
+  <p><a href="https://docs.comics.org/wiki/Search_Tutorial">How to Search</a></p>
   <p>
-  <a href="http://docs.comics.org/wiki/How_To_Contribute_FAQ">{% trans "How To Help" %}</a> |
-  <a href="http://docs.comics.org/wiki/OI_Tutorial"> Tutorial</a><br>
-  <a href="http://docs.comics.org/">{% trans "Documentation Wiki" %}</a><br>
+  <a href="https://docs.comics.org/wiki/How_To_Contribute_FAQ">{% trans "How to Help" %}</a> |
+  <a href="https://docs.comics.org/wiki/OI_Tutorial"> Tutorial</a><br>
+  <a href="https://docs.comics.org/">{% trans "Documentation Wiki" %}</a><br>
   </p>
   <p>
-  <a href="http://docs.comics.org/wiki/Email_Lists_FAQ">{% trans "Mailing Lists" %}</a> |
+  <a href="https://docs.comics.org/wiki/Email_Lists_FAQ">{% trans "Mailing Lists" %}</a> |
   <a href="{% url "contact_form" %}">{% trans "Contact Us" %}</a>
   </p>
   <span class="advanced_link"><a method="post" href="{% url "donate" %}">{% trans "Donate" %}</a></span>

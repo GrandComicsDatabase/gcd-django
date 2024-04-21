@@ -4,7 +4,6 @@ from decimal import Decimal, InvalidOperation
 
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from django.conf import settings
 
 from apps.stddata.models import Country, Language
 from apps.indexer.models import Indexer
@@ -39,6 +38,7 @@ DATE_FORMATS = ['%Y.%m.%d', '%Y-%m-%d',
 PAGE_RANGE_REGEXP = r'(?P<begin>(?:\d|\.)+)\s*-\s*(?P<end>(?:\d|\.)+)$'
 COUNT_RANGE_REGEXP = r'(?P<min>\d+)?\s*-\s*(?P<max>\d+)?$'
 
+
 class AdvancedSearch(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -50,8 +50,8 @@ class AdvancedSearch(forms.Form):
                    for c in Country.objects.order_by('name')))
         self.fields['language'] = forms.MultipleChoiceField(
           required=False,
-          choices=([l.code, l.name]
-                   for l in Language.objects.order_by('name')),
+          choices=([L.code, L.name]
+                   for L in Language.objects.order_by('name')),
           widget=FilteredSelectMultiple('Languages', False))
         if user and user.is_authenticated:
             self.fields['in_collection'] = forms.ModelMultipleChoiceField(
@@ -65,9 +65,12 @@ class AdvancedSearch(forms.Form):
               initial=True)
 
     target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
-                                        ['brand_group', 'Publisher Brand Group'],
-                                        ['brand_emblem', 'Publisher Brand Emblem'],
-                                        ['indicia_publisher', 'Indicia / Colophon Publisher'],
+                                        ['brand_group',
+                                         'Publisher Brand Group'],
+                                        ['brand_emblem',
+                                         'Publisher Brand Emblem'],
+                                        ['indicia_publisher',
+                                         'Indicia / Colophon Publisher'],
                                         ['series', 'Series'],
                                         ['issue', 'Issues'],
                                         ['issue_cover', 'Covers for Issues'],
@@ -78,27 +81,30 @@ class AdvancedSearch(forms.Form):
 
     method_help = "All methods case-insensitive."
     method = forms.ChoiceField(choices=[
-                                 ['iexact', 'Matches Exactly'],
-                                 ['istartswith', 'Starts With'],
-                                 ['icontains', 'Contains'],
-                                 ['exact', 'Matches Exactly (case sensitive)'],
-                                 ['startswith', 'Starts With (case sensitive)'],
-                                 ['contains', 'Contains (case sensitive)'],
+                               ['iexact', 'Matches Exactly'],
+                               ['istartswith', 'Starts With'],
+                               ['icontains', 'Contains'],
+                               ['exact', 'Matches Exactly (case sensitive)'],
+                               ['startswith', 'Starts With (case sensitive)'],
+                               ['contains', 'Contains (case sensitive)'],
                                ],
                                initial='icontains',
                                label='Search Method',
-                               help_text = method_help)
+                               help_text=method_help)
 
     logic_help = "This option applies primarily to the story credit fields." \
                  "It will eventually be replaced by more powerful options."
-    logic = forms.ChoiceField(choices=[[False, 'AND all fields'],
-                                       [True, 'OR credits, AND other fields']],
-                              initial=False,
-                              label='Behavior',
-                              help_text=logic_help)
+    logic = forms.BooleanField(widget=forms.Select(choices=(
+                                   (False, 'AND all fields'),
+                                   (True, 'OR credits, AND other fields'),
+                                   )),
+                               initial=False,
+                               required=False,
+                               label='Behavior',
+                               help_text=logic_help)
 
     keywords = forms.CharField(required=False)
-                              
+
     order1 = forms.ChoiceField(choices=ORDERINGS,
                                required=False,
                                initial='series',
@@ -114,7 +120,7 @@ class AdvancedSearch(forms.Form):
     start_date = forms.DateField(label='Start Date', required=False,
                                  input_formats=DATE_FORMATS)
     end_date = forms.DateField(label='End Date', required=False,
-                                 input_formats=DATE_FORMATS)
+                               input_formats=DATE_FORMATS)
     use_on_sale_date = forms.BooleanField(label="Use On-Sale Date",
                                           required=False)
     updated_since = forms.DateField(label='Updated Since', required=False,
@@ -130,7 +136,8 @@ class AdvancedSearch(forms.Form):
     indicia_publisher = forms.CharField(label='Indicia / Colophon Publisher',
                                         required=False)
     ind_pub_notes = forms.CharField(label='Notes', required=False)
-    is_surrogate = forms.NullBooleanField(label='Is Surrogate?', required=False,
+    is_surrogate = forms.NullBooleanField(
+      label='Is Surrogate?', required=False,
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
@@ -144,10 +151,10 @@ class AdvancedSearch(forms.Form):
                                     required=False)
     issue_count = forms.CharField(label='Issue Count',
                                   required=False)
-    series_year_began = forms.IntegerField(required=False, 
+    series_year_began = forms.IntegerField(required=False,
                                            label='Series Year Began')
-    is_comics = forms.NullBooleanField(label="Comics Publication, "
-      "i.e. 50+x% comics", required=False,
+    is_comics = forms.NullBooleanField(
+      label="Comics Publication, i.e. 50+x% comics", required=False,
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
@@ -156,8 +163,10 @@ class AdvancedSearch(forms.Form):
     dimensions = forms.CharField(label='Dimensions', required=False)
     paper_stock = forms.CharField(label='Paper Stock', required=False)
     binding = forms.CharField(label='Binding', required=False)
-    publishing_format = forms.CharField(label='Publishing Format', required=False)
-    publication_type = forms.ModelMultipleChoiceField(label='Publication Type',
+    publishing_format = forms.CharField(label='Publishing Format',
+                                        required=False)
+    publication_type = forms.ModelMultipleChoiceField(
+                             label='Publication Type',
                              queryset=SeriesPublicationType.objects.all(),
                              required=False)
 
@@ -165,13 +174,14 @@ class AdvancedSearch(forms.Form):
     volume = forms.CharField(label='Volume', required=False)
     issue_title = forms.CharField(label='Title', required=False)
     variant_name = forms.CharField(label='Variant Name', required=False)
-    is_variant = forms.NullBooleanField(label='Is a Variant', required=False,
+    is_variant = forms.NullBooleanField(
+      label='Is a Variant', required=False,
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
     price = forms.CharField(required=False)
     issue_pages = forms.CharField(label='Issue Pages', required=False)
-    issue_pages_uncertain = forms.NullBooleanField(\
+    issue_pages_uncertain = forms.NullBooleanField(
       label='Page count uncertain', required=False,
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
@@ -185,43 +195,56 @@ class AdvancedSearch(forms.Form):
                              required=False)
     indicia_frequency = forms.CharField(label='Indicia Frequency',
                                         required=False)
-    issue_reprinted = forms.NullBooleanField(label="Reprinted", required=False,
-      widget=forms.Select(choices=((None, ""),
-                                   (True, "has issue level sources"),
-                                   (False, "has issue level targets"))))
+    issue_reprinted = forms.ChoiceField(
+      label="Reprinted", required=False,
+      choices=[(None, ""),
+               ('has_reprints', "parts of the issue are reprints"),
+               ('is_reprinted', "parts of the issue are reprinted"),
+               ('issue_level_reprints', "issue level reprints from sequences"),
+               ('issue_level_reprinted', "issue level reprinted in sequences")])
 
     cover_needed = forms.BooleanField(label="Cover is Needed",
-                                       required=False)
-    is_indexed = forms.NullBooleanField(label="Is Indexed", required=False,
+                                      required=False)
+    is_indexed = forms.NullBooleanField(
+      label="Is Indexed", required=False,
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
-    image_resources = forms.MultipleChoiceField(label='Image Resources',
+    image_resources = forms.MultipleChoiceField(
+      label='Image Resources',
       widget=FilteredSelectMultiple('Image Resources', False),
       choices=(('has_soo', 'Has Statement of Ownership Scan'),
                ('needs_soo', 'Needs Statement of Ownership Scan'),
                ('has_indicia', 'Has Indicia Scan'),
                ('needs_indicia', 'Needs Indicia Scan')),
       required=False)
-    indexer = forms.ModelMultipleChoiceField(required=False, label='',
-      queryset=Indexer.objects.filter(imps__gt=0).\
+    indexer = forms.ModelMultipleChoiceField(
+      required=False, label='',
+      queryset=Indexer.objects.filter(imps__gt=0).
       order_by('user__first_name', 'user__last_name').select_related('user'),
       widget=FilteredSelectMultiple('Indexers', False, attrs={'size': '6'}))
 
     feature = forms.CharField(required=False)
-    type = forms.ModelMultipleChoiceField(queryset=StoryType.objects\
-      .exclude(name__in=[i for i in OLD_TYPES]),
-      widget=FilteredSelectMultiple('Story Types', False, attrs={'size' : '6'}),
+    type = forms.ModelMultipleChoiceField(
+      queryset=StoryType.objects.exclude(name__in=[i for i in OLD_TYPES]),
+      widget=FilteredSelectMultiple('Story Types', False,
+                                    attrs={'size': '6'}),
       required=False)
 
     title = forms.CharField(required=False)
     pages = forms.CharField(required=False)
-    pages_uncertain = forms.NullBooleanField(label='Page count uncertain',
+    pages_uncertain = forms.NullBooleanField(
+      label='Page count uncertain',
       required=False,
       widget=forms.Select(choices=((None, ""),
                                    (True, "yes"),
                                    (False, "no"))))
 
+    credit_is_linked = forms.NullBooleanField(
+      label="Linked and Text Credits", required=False,
+      widget=forms.Select(choices=((None, "both linked and text credits"),
+                                   (True, "linked credits only"),
+                                   (False, "text credits only"))))
     script = forms.CharField(required=False)
     pencils = forms.CharField(required=False)
     inks = forms.CharField(required=False)
@@ -231,13 +254,15 @@ class AdvancedSearch(forms.Form):
     job_number = forms.CharField(label='Job Number', required=False)
 
     first_line = forms.CharField(required=False)
-    genre = forms.MultipleChoiceField(required=False,
+    genre = forms.MultipleChoiceField(
+      required=False,
       widget=FilteredSelectMultiple('Genres', False),
       choices=([c, c] for c in GENRES['en']))
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
-    story_reprinted = forms.ChoiceField(label="Reprinted", required=False,
+    story_reprinted = forms.ChoiceField(
+      label="Reprinted", required=False,
       choices=[('', ""),
                ('from', "is a linked reprint"),
                ('in', "has linked reprints"),
@@ -289,18 +314,18 @@ class AdvancedSearch(forms.Form):
                           "range reparated by a hyphen (e.g. 100-200, "
                           "100-, -200).")
         return issue_count_data
-        
+
     def clean_keywords(self):
         keywords = self.cleaned_data['keywords']
-        if keywords != None:
+        if keywords is not None:
             not_allowed = False
-            for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@' , ',']:
+            for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',']:
                 if c in keywords:
                     not_allowed = True
                     break
             if not_allowed:
                 raise forms.ValidationError('The following characters are '
-                'not allowed in a keyword: < > { } : / \ | @ ,')
+                  'not allowed in a keyword: < > { } : / \\ | @ ,')
 
         return keywords
 
@@ -334,14 +359,12 @@ class AdvancedSearch(forms.Form):
                       "searches.")
             if cleaned_data['start_date'] or cleaned_data['end_date']:
                 if (cleaned_data['start_date'] and
-                    len(self.data['start_date'])<=4) or \
-                  (cleaned_data['end_date'] and len(self.data['end_date'])<=4):
+                    len(self.data['start_date']) <= 4) or \
+                  (cleaned_data['end_date'] and
+                   len(self.data['end_date']) <= 4):
                     if cleaned_data['target'] in ['issue', 'issue_cover',
                                                   'sequence', 'cover']:
                         raise forms.ValidationError(
                           "For issue-level search targets please use full "
-                          "dates. To get everything from a year/month you need"
-                          " to use the last day of the preceding year/month, "
-                          "e.g. 1989-12-31 will find all comics we have "
-                          "recorded with a publication date 1990 and later.")
+                          "dates.")
         return cleaned_data

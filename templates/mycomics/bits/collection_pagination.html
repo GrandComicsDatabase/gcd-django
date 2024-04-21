@@ -6,10 +6,10 @@
           {% if pagination_type == 'num' %}
     <li class="active"><span>{{ number }}</span></li>
           {% else %}
-    <li class="active"><a href="{% url "view_collection" collection.id %}?page={{ number }}">{{ number }}</a></li>
+    <li class="active"><a href="{{ base_url }}?page={{ number }}{{ extra_query_string }}">{{ number }}</a></li>
           {% endif %}
         {% else %}
-    <li><a href="{% url "view_collection" collection.id %}?page={{ number }}">{{ number }}</a></li>
+    <li><a href="{{ base_url }}?page={{ number }}{{ extra_query_string }}">{{ number }}</a></li>
         {% endif %}
       {% else %}
     <li><a>...</a></li>
@@ -24,7 +24,7 @@
         {% if a_page == alpha_page %}
     <li class="active"><span>{{ a_page }}</span></li>
         {% else %}
-    <li><a href="{% url "view_collection" collection.id %}?page=a_{{ a_page.number }}">{{ a_page }}</a></li>
+    <li><a href="{{ base_url }}?page=a_{{ a_page.number }}{{ extra_query_string }}">{{ a_page }}</a></li>
         {% endif %}
       {% else %}
     <li><a>...</a></li>

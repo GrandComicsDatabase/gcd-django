@@ -45,12 +45,10 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.template.context_processors.static',
                 'django.contrib.messages.context_processors.messages',
-                'django_mobile.context_processors.flavour',
                 'apps.gcd.context_processors.gcd',
             ],
             'loaders': [
                 # insert your TEMPLATE_LOADERS here
-                'django_mobile.loader.Loader',
                 'django.template.loaders.filesystem.Loader',
                 'django.template.loaders.app_directories.Loader',
             ],
@@ -112,22 +110,24 @@ DATABASES = {
 }
 
 # middleware settings, LocalMiddleware is for internationalisation
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
    'django.middleware.csrf.CsrfViewMiddleware',
    'django.middleware.clickjacking.XFrameOptionsMiddleware',
    'django.contrib.sessions.middleware.SessionMiddleware',
    'django.contrib.messages.middleware.MessageMiddleware',
    'django.contrib.auth.middleware.AuthenticationMiddleware',
    'django.middleware.common.CommonMiddleware',
-   'django_mobile.middleware.MobileDetectionMiddleware',
-   'django_mobile.middleware.SetFlavourMiddleware',
    'apps.gcd.locale_query.LocaleQueryMiddleware',
-   'apps.middleware.errorhandling.ErrorHandlingMiddleware'
+   'apps.middleware.errorhandling.ErrorHandlingMiddleware',
 )
 
 LANGUAGES = (
   ('de', 'German'),
   ('en', 'English'),
+  ('nl', 'Dutch'),
+  ('pt', 'Portuguese'),
+  ('it', 'Italian'),
+  ('sv', 'Swedish')
 )
 
 # The router where all our site URLs is defined.
@@ -144,12 +144,13 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'dal',
+    'dal_select2',
     'django.contrib.admin',
     'django.contrib.humanize',
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_mobile',
     'django_tables2',
     'apps.indexer',
     'apps.gcd',
@@ -164,11 +165,15 @@ INSTALLED_APPS = (
     'taggit',
     'imagekit',
     'haystack',
-    'elasticstack',
     'bootstrap3',
     'rest_framework',
-    'contact_form',
-    'captcha',
+    'django_contact_form',
+    'django_recaptcha',
+    'crispy_forms',
+    'crispy_bootstrap3',
+    'pagedown.apps.PagedownConfig',
+    'rosetta',
+    'django_filters',
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -194,7 +199,7 @@ ABSOLUTE_URL_OVERRIDES = {
 # in your settings_local.py as an override.
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
         'LOCATION': '127.0.0.1:11211',
     }
 }
@@ -226,29 +231,45 @@ DATETIME_FORMAT = 'Y-m-d H:i:s'
 # this line is here.  The false positive warning is removed in Django 1.9.
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
+# for series reorders with many issues
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 5120
+
+# type of implicitly generated primary key
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 #################################################################################
 # 3rd-party app settings
 #################################################################################
 
-COMPRESS_CSS_FILTERS = ['compressor.filters.css_default.CssAbsoluteFilter',
-                        'compressor.filters.cssmin.rCSSMinFilter']
+# COMPRESS_FILTERS = {'css': ['compressor.filters.css_default.CssAbsoluteFilter',
+#                             'compressor.filters.cssmin.rCSSMinFilter'],
+#                     'js': ['compressor.filters.jsmin.rJSMinFilter']}
 
 # for front page editing and policy and other messages to indexers/editors
 TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
                                        'templates/managed_content/')),]
 TEMPLATESADMIN_GROUP = 'templateadmin'
 
+CRISPY_TEMPLATE_PACK = 'bootstrap3'
+
 #################################################################################
 # Haystack and search
 #################################################################################
+# we use a copy of ConfigurableElasticBackend from elasticstack, to be
+# able to work with elasticsearch2. Will need to redo all this at some
+# point and move away from haystack.
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': 'elasticstack.backends.ConfigurableElasticSearchEngine',
+        'ENGINE': 'apps.gcd.elastic_backend_configurable.ConfigurableElasticSearchEngine',
         'URL': 'http://127.0.0.1:9200/',
         'INDEX_NAME': 'haystack',
         'INCLUDE_SPELLING': True,
     },
 }
+
+# This processes the updates inline, and shouldn't be used in production.
+# Comment out on a dev-setup with running ElasticSearch / Haystack
+# HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 # assumingly this needs elasticstack
 ELASTICSEARCH_INDEX_SETTINGS = {
@@ -269,6 +290,17 @@ ELASTICSEARCH_INDEX_SETTINGS = {
 ELASTICSEARCH_DEFAULT_ANALYZER = 'default'
 
 USE_ELASTICSEARCH = False
+
+# override on production
+RQ_QUEUES = {
+    'default': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+        'PASSWORD': 'some-password',
+        'DEFAULT_TIMEOUT': 360,
+    },
+}
 
 #################################################################################
 # REST-API
@@ -322,7 +354,7 @@ NO_OI = False
 ###
 # General GCD site settings
 
-FRONT_PAGE_LANGUAGES = ('en', 'de', 'nl', 'sv')
+FRONT_PAGE_LANGUAGES = ('en', 'de', 'it', 'nl', 'sv')
 
 DEFAULT_FROM_EMAIL = 'GCD Contact <contact@comics.org>'
 EMAIL_NEW_ACCOUNTS_FROM = 'GCD New Accounts <new.accounts@comics.org>'
@@ -330,7 +362,7 @@ EMAIL_EDITORS = 'gcd-editor@googlegroups.com'
 EMAIL_PRTEAM = 'pr-team@comics.org'
 EMAIL_CONTACT = 'contact@comics.org'
 EMAIL_INDEXING = 'GCD Online Indexing <no-reply@comics.org>'
-CHAIRMAN = 'Lionel English'
+CHAIRMAN = 'Donald Dale Milne'
 EMAIL_CHAIRMAN = '%s <chair@comics.org>' % CHAIRMAN
 
 # Number of days for which a registraton confirmation token is valid.
@@ -354,7 +386,7 @@ LIMIT_SYNOPSIS_LENGTH = 600
 
 RECENTS_COUNT = 5
 
-SITE_URL = 'http://www.comics.org/'
+SITE_URL = 'https://www.comics.org/'
 SITE_NAME = 'Grand Comics Database'
 
 # image directories
@@ -367,6 +399,7 @@ NEW_GENERIC_IMAGE_DIR = 'img/gcd/new_generic_images/'
 # Name of the directory in the gcd/icons tree under the media root
 # to use for icons within the app.
 ICON_SET = "gnome"
+ICON_SET_SYMBOLIC = "adwaita"
 
 BLOCKED_DOMAINS = ('mailinator.com', 'mintemail.com', 'trash-mail.com')
 
@@ -405,6 +438,8 @@ VOTING_DIR = abspath(join(dirname(__file__), 'voting'))
 DUMP_DIR = 'dumps'
 MYSQL_DUMP = 'current.zip'
 POSTGRES_DUMP = 'pg-current.zip'
+NAME_VALUE_DUMP = 'current_name_value.zip'
+SQLITE_DUMP = 'current_sqlite.zip'
 
 # Amount of time that must pass before a user can download the same
 # dump (or similar) file again, in minutes.
@@ -417,7 +452,7 @@ DOWNLOAD_DELTA = 5
 # get local settings, will override settings from here
 try:
     from settings_local import *
-except ImportError, exp:
+except ImportError as exp:
     pass
 try:
     import settings_local
@@ -434,6 +469,6 @@ except ImportError:
 GCD_OFFICIAL_NAME_FIELDNAME = 'GCD Official'
 
 if READ_ONLY or NO_OI:
-    MIDDLEWARE_CLASSES += \
+    MIDDLEWARE += \
       ('apps.middleware.read_only.ReadOnlyMiddleware',)
 

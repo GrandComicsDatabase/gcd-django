@@ -1,5 +1,5 @@
 {% extends "oi/base_view.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block title %}
 GCD :: Add Data Objects
@@ -14,17 +14,44 @@ GCD :: Add Data Objects
 
 {% block view_body %}
 
-<form action="{% url "add_publisher" %}" method="GET">
-<input type="submit" value="Add Publisher"></input>
-</form>
+<p>
+<a href="{% url "add_award" %}">
+<button type="button">Add Award</button>
+</a>
+</p>
+<p>
+<a href="{% url "add_character" %}">
+<button type="button">Add Character</button>
+</a>
+</p>
 <p>
 <a href="{% url "add_creator" %}">
 <button type="button">Add Creator</button>
 </a>
 </p>
 <p>
-<a href="{% url "add_award" %}">
-<button type="button">Add Award</button>
+<a href="{% url "add_feature" %}">
+<button type="button">Add Feature</button>
+</a>
+</p>
+<p>
+<a href="{% url "add_group" %}">
+<button type="button">Add Group</button>
+</a>
+</p>
+<p>
+<a href="{% url "add_printer" %}">
+<button type="button">Add Printer</button>
+</a>
+</p>
+<p>
+<a href="{% url "add_publisher" %}">
+<button type="button">Add Publisher</button>
+</a>
+</p>
+<p>
+<a href="{% url "add_universe" %}">
+<button type="button">Add Universe</button>
 </a>
 </p>
 <p>

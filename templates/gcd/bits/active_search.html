@@ -1,0 +1,42 @@
+{% load static %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
+{% endblock %}
+
+
+{% block view_body %}
+<div class="active_search">
+  <ul>
+	<li><a {% if object_name == "Barcode" %}class="active_search_selected"{% endif %} hx-get="/barcode/search/">Barcode</a></li>
+	<li><a {% if object_name == "Characters" %}class="active_search_selected"{% endif %} hx-get="/character/search/">Characters</a></li>
+	<li><a {% if object_name == "Creators" %}class="active_search_selected"{% endif %}hx-get="/creator/search/" class="selected">Creators</a></li>
+	<li><a {% if object_name == "Groups" %}class="active_search_selected"{% endif %}hx-get="/group/search/">Groups</a></li>
+	<li><a {% if object_name == "ISBN" %}class="active_search_selected"{% endif %}hx-get="/isbn/search/">ISBN</a></li>
+	<li><a {% if object_name == "Printers" %}class="active_search_selected"{% endif %}hx-get="/printer/search/">Printers</a></li>
+	<li><a {% if object_name == "Publishers" %}class="active_search_selected"{% endif %}hx-get="/publisher/search/">Publishers</a></li>
+  </ul>
+</div>
+<h4>  Search: &nbsp;
+<input class="form-control" type="text"
+       name="search" placeholder="Begin Typing To Search..."
+       hx-post="/{{ object_type }}/search/"
+       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+       hx-trigger="keyup changed delay:500ms"
+       hx-target="#search-results"
+       hx-indicator=".htmx-indicator">
+  <span class="htmx-indicator">
+    <img src="{% static "img/bars.svg" %}"> Searching...
+   </span>
+</h4>
+<table class="table">
+    <tbody id="search-results">
+    </tbody>
+</table>
+{% endblock %}

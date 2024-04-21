@@ -42,6 +42,9 @@
     <h1>{% trans "Collection details" %}: {{ collection.name }}
     {% if request.user.collector == collection.collector %}
       <div class="btn-group pull-right">
+        <a href="{% url "view_collection_series" collection.id %}">
+          <button type="button" class="btn btn-primary">{% trans "Series" %}
+        </button></a>
         <a href="{% url "export_collection" collection.id %}">
           <button type="button" class="btn" style="display: inline-block;">
           <span class="glyphicon glyphicon-download"></span>
@@ -60,6 +63,13 @@
 
   <div class="row">
     <div class="col-md-2 hidden-xs">
+      <h3>{% trans "Filters" %}:</h3>
+      <div class="list-group">
+        <form method="get">
+            {% bootstrap_form filter.form %}
+            <input type="submit" />
+        </form>
+      </div>
       <h3>{% trans "Collections" %}:</h3>
       <div class="list-group">
         {% for col_item in collection_list %}
@@ -103,6 +113,7 @@
           {% endif %}
         {% endfor %}
       </div>
+      {% include "mycomics/bits/indexing_links.html" %}
       {% include "mycomics/bits/collection_pagination.html" %}
     </div>
   </div>

@@ -18,9 +18,9 @@
     {% if profile_user.indexer.mentor %}
     <span class="data_value"><a href="{% url "view_profile" user_id=profile_user.indexer.mentor.id %}">
       {{ profile_user.indexer.mentor.indexer }}</a></span>
-    {% ifequal user profile_user %}
+    {% if user == profile_user %}
     (<a href="mailto:{{ profile_user.indexer.mentor.email }}">{{ profile_user.indexer.mentor.email }}</a>)
-    {% endifequal %}
+    {% endif %}
     {% else %}
     <span class="data_value">None</span>
     {% endif %}
@@ -28,7 +28,7 @@
   <li> Index Measurement Points (IMPs):
     <span class="data_value">{{ profile_user.indexer.imps }}</span>
   </li>
-  {% ifequal user profile_user %}
+  {% if user == profile_user %}
   <li> National Rank:
     <span class="data_value">{{ ranking.national|ordinal }}</span> place
     {% if ranking.national_levelup %}
@@ -47,13 +47,13 @@
     (IMPs ahead of following level: <span class="data_value">{{ ranking.global_leveldown }}</span>)
     {% endif %}
   </li>
-  {% endifequal %}
+  {% endif %}
 </ul>
-{% ifequal user profile_user %}
+{% if user == profile_user %}
 <p>
 Index Measurement Points, or IMPs, are granted for contributions to the database,
 most often indexing comics or otherwise adding or correcting data.  Once you
 have accrued {{ settings.MEMBERSHIP_IMPS }} IMPs, you may vote in GCD elections.
 </p>
-{% endifequal %}
+{% endif %}
 {% endif %}

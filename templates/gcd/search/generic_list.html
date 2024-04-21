@@ -1,0 +1,68 @@
+{% extends "gcd/base_view.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+{% load editing %}
+{% load django_tables2 %}
+
+{% block title %}
+GCD
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
+{% endblock %}
+
+{% block view_body %}
+<div>
+  <h1 class="item_id search_id">
+    <div class="left">
+  {{ heading }}: {{ search_item }}
+    </div>
+  </h1>
+
+  <div class="item_id">
+    <div class="flex_left" class="item_data">
+  Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}
+  matching your {% if used_search_terms %}<a href="#search_terms">query</a>{% else %}query{% endif %}{% if search_term %} for '{{ search_term }}'{% endif %}.
+    </div>
+  {% with query_string as extra_string %}
+  {% include "gcd/bits/pagination_bar.html" %}
+  {% endwith %}
+  </div>
+</div>
+<div id="search_reminder">
+  Refine your query using an <a href="{% url 'advanced_search' %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>.
+</div>
+  {% if bulk_edit %}
+<div id="bulk_change_info">
+    {% if page.paginator.num_pages == 1 %}
+  &nbsp;Use this search result for a <a href="{{ bulk_edit }}?{{ query_string }}">bulk change</a>.
+    {% else %}
+  &nbsp;Note that for a bulk change the number of {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }} cannot be larger than 100.
+    {% endif %}
+</div>
+  {% endif %}
+
+<div style="clear: both;"></div>
+{% render_table table %}
+
+  {% if used_search_terms %}
+    {% include "gcd/bits/search_terms.html" %}
+  {% endif %}
+
+  <div id="item_id_footer" class="item_id">
+  {% with query_string as extra_string %}
+  <div class="flex_right">{% include "gcd/bits/pagination_bar.html" %}</div>
+  {% endwith %}
+  </div>
+{% endblock %}
+

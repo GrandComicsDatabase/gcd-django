@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django import forms
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.contrib.contenttypes.forms import generic_inlineformset_factory
 
-from apps.oi.models import OngoingReservation
+from apps.oi.models import OngoingReservation, ExternalLinkRevision
 from apps.gcd.models import Series
 from apps.stddata.forms import DateForm
 
@@ -16,12 +17,27 @@ from .publisher import (get_publisher_revision_form,
                         get_indicia_publisher_revision_form,
                         get_brand_group_revision_form,
                         get_brand_revision_form,
-                        get_brand_use_revision_form)
+                        get_brand_use_revision_form,
+                        get_printer_revision_form,
+                        get_indicia_printer_revision_form)
 from .series import get_series_revision_form, get_series_bond_revision_form
 from .issue import (    # noqa
-    get_issue_revision_form, get_bulk_issue_revision_form)
+    get_issue_revision_form, get_bulk_issue_revision_form,
+    IssueRevisionFormSet, get_issue_revision_form_set_extra,
+    PublisherCodeNumberFormSet)
 from .story import (get_story_revision_form, get_biblio_revision_form,
-                    get_reprint_revision_form)
+                    get_reprint_revision_form, StoryRevisionFormSet,
+                    StoryCharacterRevisionFormSet, StoryGroupRevisionFormSet)
+from .feature import (get_feature_revision_form,
+                      get_feature_logo_revision_form,
+                      get_feature_relation_revision_form)
+from .character import (get_universe_revision_form,
+                        get_character_revision_form, get_group_revision_form,
+                        get_group_membership_revision_form,
+                        get_character_relation_revision_form,
+                        get_group_relation_revision_form,
+                        GroupMembershipRevisionForm, CharacterRevisionFormSet,
+                        GroupRevisionFormSet)
 from .image import (get_cover_revision_form,
                     UploadScanForm,
                     UploadVariantScanForm,
@@ -32,15 +48,18 @@ from .award import (get_award_revision_form,
                     ReceivedAwardRevisionForm)
 from .creator import (    # noqa
     CreatorRevisionForm, CreatorArtInfluenceRevisionForm,
-    CreatorMembershipRevisionForm,
-    CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm, 
+    CreatorMembershipRevisionForm, CreatorRevisionFormSet,
+    CreatorNonComicWorkRevisionForm, CreatorRelationRevisionForm,
     CreatorSchoolRevisionForm, CreatorDegreeRevisionForm,
+    CreatorSignatureRevisionForm,
     get_creator_art_influence_revision_form,
     get_creator_membership_revision_form, get_creator_revision_form,
-    get_creator_non_comic_work_revision_form, get_creator_relation_revision_form,
+    get_creator_non_comic_work_revision_form,
+    get_creator_relation_revision_form, get_creator_signature_revision_form,
     get_creator_school_revision_form, get_creator_degree_revision_form)
 from .support import (add_data_source_fields, init_data_source_fields,
-    _set_help_labels)
+                      _set_help_labels)
+
 
 def get_revision_form(revision=None, model_name=None, **kwargs):
     if revision is not None and model_name is None:
@@ -67,12 +86,24 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
     if model_name == 'brand_use':
         return get_brand_use_revision_form(**kwargs)
 
+    if model_name == 'printer':
+        source = None
+        if revision is not None:
+            source = revision.source
+        return get_printer_revision_form(source=source, **kwargs)
+
+    if model_name == 'indicia_printer':
+        source = None
+        if revision is not None:
+            source = revision.source
+        return get_indicia_printer_revision_form(source=source, **kwargs)
+
     if model_name == 'series':
         if revision is None:
             return get_series_revision_form(**kwargs)
         if 'publisher' not in kwargs:
             kwargs['publisher'] = revision.publisher
-        return get_series_revision_form(source=revision.source, **kwargs)
+        return get_series_revision_form(revision=revision, **kwargs)
 
     if model_name == 'series_bond':
         return get_series_bond_revision_form(**kwargs)
@@ -84,6 +115,33 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'story':
         return get_story_revision_form(revision, **kwargs)
+
+    if model_name == 'feature':
+        return get_feature_revision_form(revision, **kwargs)
+
+    if model_name == 'feature_logo':
+        return get_feature_logo_revision_form(revision, **kwargs)
+
+    if model_name == 'feature_relation':
+        return get_feature_relation_revision_form(revision, **kwargs)
+
+    if model_name == 'universe':
+        return get_universe_revision_form(revision, **kwargs)
+
+    if model_name == 'character':
+        return get_character_revision_form(revision, **kwargs)
+
+    if model_name == 'character_relation':
+        return get_character_relation_revision_form(revision, **kwargs)
+
+    if model_name == 'group':
+        return get_group_revision_form(revision, **kwargs)
+
+    if model_name == 'group_relation':
+        return get_group_relation_revision_form(revision, **kwargs)
+
+    if model_name == 'group_membership':
+        return get_group_membership_revision_form(revision, **kwargs)
 
     if model_name == 'biblio_entry':
         return get_biblio_revision_form(revision, **kwargs)
@@ -117,6 +175,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'creator_school':
         return get_creator_school_revision_form(revision, **kwargs)
+
+    if model_name == 'creator_signature':
+        return get_creator_signature_revision_form(revision, **kwargs)
 
     if model_name == 'creator_degree':
         return get_creator_degree_revision_form(revision, **kwargs)
@@ -164,6 +225,7 @@ def get_date_revision_form(revision=None, user=None, date_help_links=[]):
             super(RuntimeDateRevisionForm, self).__init__(*args, **kwargs)
             if revision:
                 init_data_source_fields(self.prefix, revision, self.fields)
+
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
                 _set_help_labels(self, date_help_links)
@@ -189,3 +251,22 @@ class DateRevisionForm(DateForm):
                     '%s_source_description' % self.prefix,
                     'Source description and source type must both be set.')
         return cd
+
+
+class ExternalLinkRevisionForm(forms.ModelForm):
+    class Meta:
+        model = ExternalLinkRevision
+        fields = ['site', 'link']
+
+    def clean(self):
+        cd = self.cleaned_data
+        if 'link' in cd and cd['link'] and 'site' in cd and \
+           cd['site'].matching not in cd['link']:
+            raise forms.ValidationError(
+              ['Matching phrase "%s" from "%s" is not in "%s".' % (
+                cd['site'].matching, cd['site'], cd['link'])])
+
+
+ExternalLinkRevisionFormSet = generic_inlineformset_factory(
+  ExternalLinkRevision, form=ExternalLinkRevisionForm,
+  can_delete=True, extra=1)

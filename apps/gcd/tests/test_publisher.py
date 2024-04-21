@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+
 
 import mock
 import pytest
@@ -107,7 +107,7 @@ def test_pub_has_no_dependents(pub_dep_mocks):
     assert has is False
 
     # Check calls on this test case because it should hit all of them.
-    for m in pub_dep_mocks.values():
+    for m in list(pub_dep_mocks.values()):
         m.return_value.exists.assert_called_once_with()
 
 
@@ -185,7 +185,7 @@ def test_group_has_no_dependents(group_dep_mocks):
     has = group.has_dependents()
     assert has is False
 
-    for m in group_dep_mocks.values():
+    for m in list(group_dep_mocks.values()):
         m.return_value.exists.assert_called_once_with()
 
 

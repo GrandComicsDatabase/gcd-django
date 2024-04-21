@@ -1,0 +1,40 @@
+{% load i18n %}
+{% load credits %}
+{% load display %}
+{% load mathfilter %}
+
+    <div class="single_story_table_view">
+        {% if not not_shown_types or story.type.id not in not_shown_types %}
+        {% if story.has_credits %}
+      <dl class="credits_table_view">
+        {% if is_cover %}
+        <b>Cover credits:</b><br>
+        {% else %}
+        <div class="credits_table_view">
+        {% if story.has_feature %}
+          {{ story.show_feature }}
+             /
+        {% endif %}
+        {{ story|show_page_count }}
+        {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
+          page{{ suffix }}
+        {% endblocktrans %}
+        </div>
+              {% endif %}
+        {% with full_path=request.get_full_path %}
+            {% show_full_credits story "script" show_sources %}
+            {% show_full_credits story "pencils" show_sources %}
+            {% show_full_credits story "inks" show_sources %}
+            {% show_full_credits story "colors" show_sources %}
+	  {% if is_cover and not preview and user.is_authenticated and user.indexer.cover_letterer_creator_only %}
+            {{ story|show_cover_letterer_credit }}
+	  {% else %}
+            {% show_full_credits story "letters" show_sources %}
+	  {% endif %}
+            {% show_full_credits story "editing" show_sources %}
+          {% endwith %}
+      </dl>
+        {% endif %}
+      {% endif %} <!-- shown_types -->
+    </div>
+

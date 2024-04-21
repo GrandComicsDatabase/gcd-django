@@ -1,5 +1,5 @@
 {% extends "oi/base_view.html" %}
-{% load staticfiles %}
+{% load static %}
 
 <!--
 Account organization is messed up, leading to this template reaching over
@@ -34,7 +34,7 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
 
 <h1  style="margin-bottom: 0">{{ profile_user.indexer }}</h1>
 {% if user != profile_user %}
-<h3 style="margin-top: 0"><a href="{% url "user_contact_form" user_id=profile_user.id %}"><img alt="email" src="{% static "img/gcd/social/email_32.png" %}" height="22" width="22"> Send E-Mail</a></h3>
+<h3 style="margin-top: 0"><a href="{% url "django_contact_form" user_id=profile_user.id %}"><img alt="email" src="{% static "img/gcd/social/email_32.png" %}" height="22" width="22"> Send E-Mail</a></h3>
 {% endif %}
 
 {% include 'indexer/bits/profile_limits.html' %}
@@ -61,10 +61,13 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
       {{ form.seen_privacy_policy|show_form_as_row }}
       {{ form.opt_in_email|show_form_as_row }}
       {{ form.issue_detail|show_form_as_row }}
+      {{ form.no_show_sequences|show_form_as_row }}
+      {{ form.cover_letterer_creator_only|show_form_as_row }}
       {{ form.from_where|show_form_as_row }}
       {{ form.notify_on_approve|show_form_as_row }}
       {{ form.collapse_compare_view|show_form_as_row }}
       {{ form.show_wiki_links|show_form_as_row }}
+      {{ form.use_tabs|show_form_as_row }}
     </table>
   </fieldset>
   <fieldset>

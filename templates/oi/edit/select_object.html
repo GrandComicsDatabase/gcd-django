@@ -61,8 +61,10 @@ Search for {{ target }} by entering the relevant information here:
   </table>
 {% if story %}
   <input type="submit" name="search_story" value="Search for stories"></input>
+{% endif %}
+{% if story or cover %}
   <input type="submit" name="search_cover" value="Search for covers"></input>
-{% endif %}  
+{% endif %}
 {% if issue or story %}
   <input type="submit" name="search_issue" value="Search for issues"></input>
 {% endif %}

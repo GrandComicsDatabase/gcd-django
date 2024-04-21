@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import os
 import os.path
@@ -15,7 +15,9 @@ from django.contrib.auth.decorators import login_required
 from apps.indexer.views import render_error
 from apps.stats.models import Download
 from apps.stats.forms import DownloadForm
-
+from apps.gcd.models import Creator, Publisher, Series
+from apps.indexer.models import Indexer
+from apps.stddata.models import Country
 
 @login_required
 def download(request):
@@ -27,8 +29,10 @@ def download(request):
 
             # Note that the submit input is never present in the cleaned data.
             file = settings.MYSQL_DUMP
-            if ('postgres' in request.POST):
-                file = settings.POSTGRES_DUMP
+            if ('name-value' in request.POST):
+                file = settings.NAME_VALUE_DUMP
+            if ('sqlite' in request.POST):
+                file = settings.SQLITE_DUMP
             path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR, file)
 
             delta = settings.DOWNLOAD_DELTA
@@ -63,19 +67,21 @@ def download(request):
 
     m_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
                           settings.MYSQL_DUMP)
-    p_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
-                          settings.POSTGRES_DUMP)
+    nv_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
+                           settings.NAME_VALUE_DUMP)
+    sqlite_path = os.path.join(settings.MEDIA_ROOT, settings.DUMP_DIR,
+                               settings.SQLITE_DUMP)
 
     # Use a list of tuples because we want the MySQL dump (our primary format)
     # to be first.
     timestamps = []
-    for dump_info in (('MySQL', m_path), ('PostgreSQL-compatible', p_path)):
+    for dump_info in (('MySQL', m_path), ('Name-Value', nv_path), ('SQLite', sqlite_path), ):
         try:
             timestamps.append(
                 (dump_info[0],
                  datetime.utcfromtimestamp(
                     os.stat(dump_info[1])[stat.ST_MTIME])))
-        except OSError, ose:
+        except OSError as ose:
             if ose.errno == errno.ENOENT:
                 timestamps.append((dump_info[0], 'never'))
             else:
@@ -85,3 +91,39 @@ def download(request):
                   {'method': request.method,
                    'timestamps': timestamps,
                    'form': form, })
+
+
+def countries_in_use(request):
+    """
+    Show list of countries with name and flag.
+    Main use is to find missing names and flags.
+    """
+
+    if request.user.is_authenticated and \
+       request.user.groups.filter(name='admin'):
+        countries_from_series = set(
+                Series.objects.exclude(deleted=True).
+                values_list('country', flat=True))
+        countries_from_indexers = set(
+                Indexer.objects.filter(user__is_active=True).
+                values_list('country', flat=True))
+        countries_from_publishers = set(
+                Publisher.objects.exclude(deleted=True).
+                values_list('country', flat=True))
+        countries_from_creators = set(
+                country for tuple in
+                Creator.objects.exclude(deleted=True).
+                values_list('birth_country', 'death_country')
+                for country in tuple)
+        used_ids = list(countries_from_indexers |
+                        countries_from_series |
+                        countries_from_publishers |
+                        countries_from_creators)
+        used_countries = Country.objects.filter(id__in=used_ids)
+
+        return render(request, 'gcd/admin/countries.html',
+                      {'countries': used_countries})
+    else:
+        return render(request, 'indexer/error.html',
+                      {'error_text':
+                       'You are not allowed to access this page.'})

@@ -1,22 +1,15 @@
-{% extends "gcd/base_view.html" %}
-{% load staticfiles %}
-{% load i18n %}
+{% extends "gcd/base_content.html" %}
 
 {% block title %}
   GCD :: Creator Art Influence :: {{ creator_art_influence.influence_name }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-    href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
-
-{% block view_body %}
+{% block content_header %}
  {% include "gcd/bits/creator_header.html" %}
-<div class="control_body">
-  <div id="control_container">
-    <div id="control_center">
-      <dl class="pub_data">
+{% endblock content_header %}
+
+{% block content %}
+  <dl class="pub_data">
         {% if creator_art_influence.influence_name %}
         <dt> Influence Name:
         <dd> {{ creator_art_influence.influence_name }}
@@ -27,17 +20,15 @@
         {% endif %}
         {% if creator_art_influence.notes %}
         <dt>Notes
-        <dd>{{ creator_art_influence.notes }}
+        <dd>{{ creator_art_influence.notes|urlizetrunc:75|linebreaksbr }}
         {% endif %}
         {% with creator_art_influence.data_source.all as data_sources %}
         {% include "gcd/bits/show_sources.html" %}
         {% endwith %}
       </dl>
-    </div> <!-- control_center -->
-  {% if not preview or creator_art_influence.source %}
-    <div id="control_rail">
-      <div class="edit_box">
-        <div class="edit_header">Editing</div>
+{% endblock content %}
+
+{% block edit_box %}
   {% if not preview %}
     {% with creator_art_influence as object %}
     {% with 'creator_art_influence' as object_class %}
@@ -46,20 +37,15 @@
     {% endwith %}
     {% endwith %}
     {% endwith %}
-
   {% endif %} <!-- not preview -->
-      </div> <!-- edit_box -->
-      <div id="change_history" class="edit_footer">
+{% endblock edit_box %}
+
+{% block change_history %}
   {% if preview %}
-        <a href="{% url "change_history" model_name='creator_art_influence' id=creator_art_influence.source.id %}">View Change History</a>
+    {% if creator_art_influence.revision.source %}
+        <a href="{% url "change_history" model_name='creator_art_influence' id=creator_art_influence.revision.source.id %}">View Change History</a>
+  {% endif %}
   {% else %}
         <a href="{% url "change_history" model_name='creator_art_influence' id=creator_art_influence.id %}">View Change History</a>
   {% endif %}
-      </div>
-        </div> <!-- control_rail -->
-{% endif %}
-  </div> <!-- control_container -->
-</div> <!-- control_body -->
-
-
-{% endblock %}
+{% endblock change_history %}

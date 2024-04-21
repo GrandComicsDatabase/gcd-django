@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import re
 from collections import OrderedDict
@@ -8,15 +8,25 @@ from math import log10
 from django import forms
 from django.db.models import Q
 from django.forms.widgets import HiddenInput
+from django.forms.models import inlineformset_factory
 
+from dal import autocomplete
+
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, HTML
+
+from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
-                      VARIANT_NAME_HELP_TEXT, ISSUE_LABELS, ISSUE_HELP_TEXTS,
+                      VARIANT_NAME_HELP_TEXT, VARIANT_COVER_STATUS_HELP_TEXT,
+                      ISSUE_LABELS, ISSUE_HELP_TEXTS,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
 
-from apps.oi.models import CTYPES, IssueRevision, get_issue_field_list
-from apps.gcd.models import Issue, Brand, IndiciaPublisher
+from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision,\
+                           PublisherCodeNumberRevision, get_issue_field_list
+from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType,\
+                            CreatorNameDetail, IndiciaPrinter
 
 
 def get_issue_revision_form(publisher, series=None, revision=None,
@@ -36,6 +46,10 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
+            position = self.helper['editing'].slice[0].positions[0]
+            self.helper.layout[position].append(
+              HTML('<th></th><td><input type="submit" name="save_migrate"'
+                   ' value="save and migrate editing"  /></td>'))
 
             issue_year = None
             if revision and revision.key_date:
@@ -44,10 +58,14 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     int(log10(revision.year_on_sale)) + 1 == 4:
                 issue_year = revision.year_on_sale
             if issue_year:
-                started_before = Q(in_use__year_began__lte=issue_year)
-                no_start = Q(in_use__year_began=None)
-                not_ended_before = (Q(in_use__year_ended__gte=issue_year) |
-                                    Q(in_use__year_ended=None))
+                started_before = Q(in_use__year_began__lte=issue_year,
+                                   in_use__publisher=series.publisher)
+                no_start = Q(in_use__year_began=None,
+                             in_use__publisher=series.publisher)
+                not_ended_before = (Q(in_use__year_ended__gte=issue_year,
+                                      in_use__publisher=series.publisher) |
+                                    Q(in_use__year_ended=None,
+                                      in_use__publisher=series.publisher))
 
                 brands = self.fields['brand'].queryset \
                              .filter(in_use__publisher=series.publisher) \
@@ -118,6 +136,15 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                                                 required=False)
             turned_off_list += 'indicia_frequency, '
 
+        if not series.has_indicia_printer:
+            no_indicia_printer = forms.BooleanField(widget=forms.HiddenInput,
+                                                    required=False)
+            indicia_printer = forms.ModelMultipleChoiceField(
+              widget=forms.MultipleHiddenInput,
+              queryset=IndiciaPrinter.objects.all(),
+              required=False)
+            turned_off_list += 'indicia_printer, '
+
         if not series.has_isbn:
             no_isbn = forms.BooleanField(widget=forms.HiddenInput,
                                          required=False)
@@ -141,8 +168,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 widget=HiddenInputWithHelp,
                 required=False,
                 label='Deactivated fields',
-                help_text='The fields "%s" are deactivated for this series. '
-                          'To enter a value for one of these the '
+                help_text='The fields <i>%s</i> are deactivated for this '
+                          'series. To enter a value for one of these the '
                           'corresponding series setting has to be changed.' %
                           turned_off_list)
 
@@ -150,14 +177,16 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             year_on_sale = self.cleaned_data['year_on_sale']
             year_string = str(year_on_sale)[:2]
             if year_on_sale is not None and (year_string < '18' or
-                                             year_string > '20'):
+                                             year_string > '20' or
+                                             len(str(year_on_sale)) > 4):
                 raise forms.ValidationError('Unreasonable year entered.')
             return year_on_sale
 
         def clean_month_on_sale(self):
             month_on_sale = self.cleaned_data['month_on_sale']
 
-            if month_on_sale is not None and month_on_sale not in range(1, 13):
+            if month_on_sale is not None and \
+               month_on_sale not in list(range(1, 13)):
                 raise forms.ValidationError(
                     'If entered, month needs to be between 1 and 12.')
             return month_on_sale
@@ -165,7 +194,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         def clean_day_on_sale(self):
             day_on_sale = self.cleaned_data['day_on_sale']
 
-            if day_on_sale is not None and day_on_sale not in range(1, 32):
+            if day_on_sale is not None and \
+               day_on_sale not in list(range(1, 32)):
                 raise forms.ValidationError(
                     'If entered, day needs to be between 1 and 31.')
             return day_on_sale
@@ -198,6 +228,15 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             if 'variant_name' in cd:
                 cd['variant_name'] = cd['variant_name'].strip()
 
+            if 'variant_cover_status' in cd and cd['variant_cover_status'] < 3:
+                if revision and revision.changeset.storyrevisions.filter(
+                  issue=revision.issue, deleted=False).exists():
+                    raise forms.ValidationError(
+                        'A cover sequence exists for this variant. Before '
+                        'changing the variant cover status please first mark '
+                        'it for delete or remove it.')
+
+
             if cd['volume'] != "" and cd['no_volume']:
                 raise forms.ValidationError(
                     'You cannot specify a volume and check "no volume" at '
@@ -208,10 +247,30 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     'You cannot specify a title and check "no title" at the '
                     'same time.')
 
-            if cd['editing'] != "" and cd['no_editing']:
-                raise forms.ValidationError(
-                    'You cannot specify an editing '
-                    'credit and check "no editing" at the same time')
+            if cd['no_editing']:
+                nr_credit_forms = self.data['issue_credit_revisions-TOTAL_FORMS']
+                seq_type_found = False
+                for i in range(int(nr_credit_forms)):
+                    delete_i = 'issue_credit_revisions-%d-DELETE' % i
+                    form_deleted = False
+                    if delete_i in self.data:
+                        if self.data[delete_i]:
+                            form_deleted = True
+                    if not form_deleted:
+                        credit_type = \
+                            self.data['issue_credit_revisions-%d-credit_type'
+                                      % i]
+                        if credit_type == '6':
+                            seq_type_found = True
+                        elif credit_type:
+                            raise forms.ValidationError(
+                              ['Unsupported credit type.'])
+
+                # no_editing is present, no need to check here again
+                if cd['editing'] != "" or seq_type_found:
+                    raise forms.ValidationError(
+                        ['%s field and No %s checkbox cannot both be filled'
+                         ' in.' % ("Editing", "Editing")])
 
             if cd['no_brand'] and cd['brand'] is not None:
                 raise forms.ValidationError(
@@ -222,6 +281,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 raise forms.ValidationError(
                     'You cannot specify an indicia frequency and check '
                     '"no indicia frequency" at the same time.')
+
+            if cd['no_indicia_printer'] and cd['indicia_printer']:
+                raise forms.ValidationError(
+                    'You cannot specify an indicia printer and check '
+                    '"no indicia printer" at the same time.')
 
             if cd['no_isbn'] and cd['isbn']:
                 raise forms.ValidationError(
@@ -279,31 +343,35 @@ def get_issue_revision_form(publisher, series=None, revision=None,
         class RuntimeAddVariantIssueRevisionForm(RuntimeIssueRevisionForm):
             class Meta(RuntimeIssueRevisionForm.Meta):
                 fields = RuntimeIssueRevisionForm.Meta.fields
-                fields = fields[0:1] + ['variant_name'] + fields[1:]
+                fields = fields[0:1] + ['variant_name'] \
+                                     + ['variant_cover_status'] + fields[1:]
 
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
                 widgets['variant_name'] = \
                     forms.TextInput(attrs={'class': 'wide'})
                 help_texts = RuntimeIssueRevisionForm.Meta.help_texts
                 help_texts['variant_name'] = VARIANT_NAME_HELP_TEXT
+                help_texts['variant_cover_status'] = \
+                    VARIANT_COVER_STATUS_HELP_TEXT
+
                 labels = RuntimeIssueRevisionForm.Meta.labels
 
                 if revision is None or revision.source is None:
                     fields = ['after'] + fields
                     labels['after'] = 'Add this issue after'
 
-                if not edit_with_base:
-                    fields = ['reservation_requested'] + fields
+                    if not edit_with_base:
+                        fields = ['reservation_requested'] + fields
 
-                    help_texts = RuntimeIssueRevisionForm.Meta.help_texts
-                    help_texts.update(
-                      reservation_requested='Check this box to have this '
-                                            'issue reserved to you '
-                                            'automatically when it is '
-                                            'approved, unless someone '
-                                            "has acquired the series' "
-                                            'ongoing reservation before '
-                                            'then.')
+                        help_texts = RuntimeIssueRevisionForm.Meta.help_texts
+                        help_texts.update(
+                          reservation_requested='Check this box to have this '
+                                                'issue reserved to you '
+                                                'automatically when it is '
+                                                'approved, unless someone '
+                                                "has acquired the series' "
+                                                'ongoing reservation before '
+                                                'then.')
 
             def __init__(self, *args, **kwargs):
                 super(RuntimeAddVariantIssueRevisionForm,
@@ -314,7 +382,6 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                         variant_of.variant_set.filter(deleted=False) |
                         Issue.objects.filter(id=variant_of.id))
                     self.fields['after'].empty_label = None
-
 
         return RuntimeAddVariantIssueRevisionForm
 
@@ -366,6 +433,97 @@ def get_issue_revision_form(publisher, series=None, revision=None,
     return RuntimeIssueRevisionForm
 
 
+class IssueCreditRevisionForm(forms.ModelForm):
+    class Meta:
+        model = IssueCreditRevision
+        fields = ['creator', 'credit_type', 'is_credited', 'credited_as',
+                  'uncertain', 'is_sourced', 'sourced_by', 'credit_name']
+        help_texts = {
+            'credit_name':
+                'Enter here additional specifications for the credit, for '
+                'example <i>associate editor</i>, or <i>design</i>.',
+            'is_credited':
+                'Check in case the creator is credited. If the credited name '
+                'is not the selected creator name, enter the credited name'
+                ' in the unfolded credited as field.',
+            'credited_as':
+                'Enter a name if the credited name is unusual and '
+                'therefore not a creator name record.',
+            'is_sourced':
+                'Check in case the entered credit has external sources.',
+            'sourced_by':
+                'A concise and clear description of the external source of '
+                'the credit.'
+        }
+        labels = {'credit_name': 'Credit description'}
+
+    def __init__(self, *args, **kwargs):
+        super(IssueCreditRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+        self.fields['credit_type'].queryset = CreditType.objects \
+            .filter(id=6)
+        if self.instance.id:
+            self.fields['credit_type'].empty_label = None
+
+    creator = forms.ModelChoiceField(
+      queryset=CreatorNameDetail.objects.all(),
+      widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
+                                       attrs={'style': 'min-width: 60em'}),
+      required=True,
+      help_text='By entering (any part of) a name select a creator from the'
+                ' database.'
+    )
+
+    def clean(self):
+        cd = self.cleaned_data
+        if cd['credited_as'] and not cd['is_credited']:
+            raise forms.ValidationError(
+              ['Is credited needs to be selected when entering a name as '
+               'credited.'])
+
+        if cd['credited_as'] and 'creator' in cd and \
+           cd['credited_as'] == cd['creator'].name:
+            raise forms.ValidationError(
+              ['Name entered as "credited as" is identicial to creator name.']
+            )
+
+
+IssueRevisionFormSet = inlineformset_factory(
+    IssueRevision, IssueCreditRevision, form=IssueCreditRevisionForm,
+    can_delete=True, extra=1)
+
+
+# not sure why we need this, the docs say that extra would be on top
+# of the number of forms initialized, but that doesn't work, or is
+# meant differently
+def get_issue_revision_form_set_extra(extra=1):
+    return inlineformset_factory(
+        IssueRevision, IssueCreditRevision, form=IssueCreditRevisionForm,
+        can_delete=True, extra=extra)
+
+
+class PublisherCodeNumberRevisionForm(forms.ModelForm):
+    class Meta:
+        model = PublisherCodeNumberRevision
+        fields = ['number', 'number_type']
+
+    def __init__(self, *args, **kwargs):
+        super(PublisherCodeNumberRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+        if self.instance.id:
+            self.fields['number_type'].empty_label = None
+
+
+PublisherCodeNumberFormSet = inlineformset_factory(
+    IssueRevision, PublisherCodeNumberRevision,
+    form=PublisherCodeNumberRevisionForm,
+    can_delete=True, extra=1)
+
+
 class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
@@ -391,6 +549,41 @@ class IssueRevisionForm(forms.ModelForm):
         }
         labels = ISSUE_LABELS
         help_texts = ISSUE_HELP_TEXTS
+
+    def __init__(self, *args, **kwargs):
+        super(IssueRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.form_tag = False
+        fields = list(self.fields)
+        credit_start = fields.index('editing')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields[:credit_start]]
+        field_list.append(Formset('credits_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[credit_start:-4]])
+        field_list.append(Formset('code_number_formset'))
+        field_list.append(Formset('external_link_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[-4:]])
+        self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = ISSUE_HELP_LINKS
+
+    indicia_printer = forms.ModelMultipleChoiceField(
+        queryset=IndiciaPrinter.objects.all(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url='indicia_printer_autocomplete',
+            attrs={'style': 'min-width: 60em'}),
+        required=False,
+        help_text='The exact printer listed in the indicia or colophon, '
+                  'if any.'
+    )
 
     comments = _get_comments_form_field()
     turned_off_help = forms.CharField(widget=HiddenInputWithHelp,
@@ -622,7 +815,7 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
 
         basics = (cd['first_number'], cd['first_volume'])
         if None in basics and cd['after'] is not None:
-            if filter(lambda x: x is not None, basics):
+            if [x for x in basics if x is not None]:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, both '
                     'of "first number" and "first volume" must be specified, '
@@ -695,7 +888,7 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
 
         basics = (cd['first_number'], cd['first_year'])
         if None in basics and cd['after'] is not None:
-            if filter(lambda x: x is not None, basics):
+            if [x for x in basics if x is not None]:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, '
                     'both of "first number" and "first year" must be '
@@ -760,7 +953,7 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
 
         basics = (cd['first_number'], cd['first_volume'], cd['first_year'])
         if None in basics and cd['after'] is not None:
-            if filter(lambda x: x is not None, basics):
+            if [x for x in basics if x is not None]:
                 raise forms.ValidationError(
                     'When adding issues following an existing issue, all '
                     'of "first number", "first volume" and "first year" must '

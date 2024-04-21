@@ -1,0 +1,30 @@
+{% load static %}
+<script src="https://unpkg.com/hyperscript.org"></script>
+<link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/modal.css" %}"/>
+        <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default.css" %}"/>
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/issue.css" %}"/>
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default/single_story.css" %}"/>
+<div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
+  <div class="modal-underlay" _="on click trigger closeModal"></div>
+  <div class="modal-content">
+{% if image_tag %}
+    <div class="left" style="max-width:200px;">
+      <a href="{{ story.issue.get_absolute_url }}">{{ image_tag }}</a>
+      <button _="on click trigger closeModal">Close</button>
+    </div>
+    <div class="right" style="max-width:600px;">
+{% endif %}
+{% with modal=True %}
+  {% include "gcd/details/single_story.html" %}
+{% endwith %}
+{% if image_tag %}
+    </div>
+{% else %}
+    <button _="on click trigger closeModal">Close</button>
+{% endif %}
+  </div>
+</div>

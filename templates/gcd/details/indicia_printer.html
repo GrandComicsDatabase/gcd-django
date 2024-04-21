@@ -1,0 +1,102 @@
+{% extends "gcd/base_view.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Indicia Printer :: {{ indicia_printer.name }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+
+{% with indicia_printer as publisher %}
+{% with "Indicia Printer" as description %}
+{% with "indicia_printers" as url_suffix %}
+  {% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+{% endwith %}
+{% endwith %}
+
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+{% if indicia_printer.year_overall_began or indicia_printer.year_overall_ended %}
+      <dl style="columns: 2; margin-bottom: -1em" class="pub_data">
+  {% if indicia_printer.year_overall_began %}
+        <dt> Printing Began:</dt><dd>{{ indicia_printer.year_overall_began }}</dd>
+        <dt> Comics Printing Began:</dt><dd>{{ indicia_printer.year_began }}</dd>
+  {% endif %}
+  {% if indicia_printer.year_overall_ended %}
+        <dt> Printing Ended:</dt><dd>{{ indicia_printer.year_overall_ended }}</dd>
+        <dt> Comics Printing Ended:</dt><dd>{{ indicia_printer.year_ended }}</dd>
+  {% endif %}
+      </dl>
+{% endif %}
+      <dl class="pub_data">
+        <dt> Country:</dt>
+        <dd> {{ indicia_printer.country.name }}</dd>
+        <ul style="columns: 2;">
+          <li><a href='{% url "indicia_printer_issues" indicia_printer_id=indicia_printer.id %}'>Issue List</a></li>
+        </ul>
+        <dt> Total Number of Issues:
+        <dd> <a href="{{ publisher.get_absolute_url }}issues/">{{ indicia_printer.issue_count }} (Issue List)</a>
+{% if indicia_printer.url %}
+        <dt> Web Site:
+        <dd> <a href="{{ indicia_printer.url }}">{{ indicia_printer.url }}</a>
+{% endif %}
+{% if indicia_printer.notes %}
+        <dt> Notes:
+        <dd> {{ indicia_printer.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+{{ indicia_printer|show_credit:'keywords' }}
+      </dl>
+    </div> <!-- control_center -->
+
+{% if not preview or indicia_printer.source %}
+    <div id="control_rail">
+      <div class="edit_box">
+  {% if MYCOMICS %}
+        <div class="edit_header">
+          <div>my.comics.org</div>
+        </div>
+  {% else %}
+        <div class="edit_header">Editing</div>
+     {% if not preview %}
+       {% with indicia_printer as object %}
+       {% with 'indicia_printer' as object_class %}
+       {% with 'Indicia / Colophon Publisher' as object_name %}
+         {% include "gcd/bits/status_banner.html" %}
+       {% endwith %}
+       {% endwith %}
+       {% endwith %}
+     {% endif %}
+      </div>
+  {% endif %} <!-- MYCOMICS -->
+      <div id="change_history" class="edit_footer">
+  {% if preview %}
+        <a href="{% url "change_history" model_name='indicia_printer' id=indicia_printer.source.id %}">View Change History</a>
+  {% else %}
+        <a href="{% url "change_history" model_name='indicia_printer' id=indicia_printer.id %}">View Change History</a>
+  {% endif %}
+      </div>
+    </div> <!-- control_rail -->
+{% endif %} <!-- not preview or brand.source -->
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+
+{% with 1 as paginate_only %}
+{% with indicia_printer as publisher %}
+{% include "gcd/bits/publisher_header.html" %}
+{% endwith %}
+{% endwith %}
+
+{% endblock %}

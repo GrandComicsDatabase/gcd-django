@@ -13,6 +13,8 @@
       href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}.css"/>
 <link rel="stylesheet" type="text/css"
       href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+      <link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}/widgets.css"/>
 {% endblock %}
 
 {% block view_body %}
@@ -22,6 +24,20 @@ Do you want to create a new sequence in {{ issue }} which is reprinted {{ direct
 </h2>
 
 <h3>The new sequence will have a copy of the following sequence data:</h3>
+<form style="display:inline;" method="POST"
+    action="{% url "create_matching_sequence" issue_id=issue.id story_id=story.id reprint_revision_id=reprint_revision.id %}">
+  <table id="sequence-details" class="editing">
+    <th>
+    <tr> <th><label>
+      Copy credits with credited/signed/etc. qualifiers:
+      </label> </th> <td><input type="checkbox" name="copy_credit_info" value=True></td>
+    </tr> 
+    <tr> <th><label>
+      Copy characters:
+      </label> </th> <td>  <input type="checkbox" name="copy_characters" value=True checked></td>
+    </tr>
+  </table>
+{% csrf_token %}
 
 {% with 1 as preview %}
   <div id="story_data">
@@ -30,9 +46,6 @@ Do you want to create a new sequence in {{ issue }} which is reprinted {{ direct
   <hr class="divider">
 {% endwith %}
 <hr class="divider">
-<form style="display:inline;" method="POST"
-    action="{% url "create_matching_sequence" issue_id=issue.id story_id=story.id reprint_revision_id=reprint_revision.id %}">
-{% csrf_token %}
 <input type="submit" name="create" value="Yes">
 </input>
 </form>

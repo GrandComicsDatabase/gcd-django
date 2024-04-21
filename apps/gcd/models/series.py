@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 
 from django.db import models
 from django.contrib.contenttypes.fields import GenericRelation
-from django.core import urlresolvers
-from django.db.models import Count, Case, When, F
+import django.urls as urlresolvers
+from django.db.models import Count, Case, When, F, Q
 from django.template.defaultfilters import pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -16,15 +15,11 @@ from taggit.managers import TaggableManager
 from apps.stddata.models import Country, Language
 from .gcddata import GcdData
 from .publisher import Publisher, Brand, IndiciaPublisher
-from .story import Story
+from .story import Story, AD_TYPES
 from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
 from .award import ReceivedAward
-
-# TODO: should not be importing oi app into gcd app, dependency should be
-# the other way around.  Probably.
-from apps.oi import states
 
 
 class SeriesPublicationType(models.Model):
@@ -36,7 +31,7 @@ class SeriesPublicationType(models.Model):
     name = models.CharField(max_length=255, db_index=True)
     notes = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -51,14 +46,16 @@ class Series(GcdData):
 
     # The "format" field is a legacy field that is being split into
     # color, dimensions, paper_stock, binding, and publishing_format
-    format = models.CharField(max_length=255, default=u'')
-    color = models.CharField(max_length=255, default=u'')
-    dimensions = models.CharField(max_length=255, default=u'')
-    paper_stock = models.CharField(max_length=255, default=u'')
-    binding = models.CharField(max_length=255, default=u'')
-    publishing_format = models.CharField(max_length=255, default=u'')
+    format = models.CharField(max_length=255, default='')
+    color = models.CharField(max_length=255, default='')
+    dimensions = models.CharField(max_length=255, default='')
+    paper_stock = models.CharField(max_length=255, default='')
+    binding = models.CharField(max_length=255, default='')
+    publishing_format = models.CharField(max_length=255, default='')
 
-    publication_type = models.ForeignKey(SeriesPublicationType, null=True,
+    publication_type = models.ForeignKey(SeriesPublicationType,
+                                         on_delete=models.CASCADE,
+                                         null=True,
                                          blank=True)
     notes = models.TextField()
     keywords = TaggableManager()
@@ -70,9 +67,13 @@ class Series(GcdData):
     is_current = models.BooleanField(default=False, db_index=True)
     publication_dates = models.CharField(max_length=255)
 
-    first_issue = models.ForeignKey('Issue', null=True,
+    first_issue = models.ForeignKey('Issue',
+                                    on_delete=models.CASCADE,
+                                    null=True,
                                     related_name='first_issue_series_set')
-    last_issue = models.ForeignKey('Issue', null=True,
+    last_issue = models.ForeignKey('Issue',
+                                   on_delete=models.CASCADE,
+                                   null=True,
                                    related_name='last_issue_series_set')
     issue_count = models.IntegerField(default=0)
 
@@ -84,11 +85,13 @@ class Series(GcdData):
     # Fields for handling the presence of certain issue fields
     has_barcode = models.BooleanField(default=False)
     has_indicia_frequency = models.BooleanField(default=False)
+    has_indicia_printer = models.BooleanField(default=False)
     has_isbn = models.BooleanField(default=False)
     has_issue_title = models.BooleanField(default=False)
     has_volume = models.BooleanField(default=False)
     has_rating = models.BooleanField(default=False)
     has_about_comics = models.BooleanField(default=False)
+    has_publisher_code_number = models.BooleanField(default=False)
 
     is_comics_publication = models.BooleanField(default=False)
     is_singleton = models.BooleanField(default=False)
@@ -97,11 +100,11 @@ class Series(GcdData):
     has_gallery = models.BooleanField(default=False, db_index=True)
 
     # Country and Language info.
-    country = models.ForeignKey(Country)
-    language = models.ForeignKey(Language)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
 
     # Fields related to the publishers table.
-    publisher = models.ForeignKey(Publisher)
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
 
     def has_tracking(self):
         return self.tracking_notes or self.has_series_bonds()
@@ -130,7 +133,8 @@ class Series(GcdData):
         #      all variants ?
         # return ((not self.is_singleton and self.active_issues().exists()) or
         return (self.active_issues().exists() or
-                self.issue_revisions.active_set().exists())
+                self.issue_revisions.active_set().exists() or
+                self.has_series_bonds())
 
     def active_issues(self):
         return self.issue_set.exclude(deleted=True)
@@ -149,10 +153,9 @@ class Series(GcdData):
         return self.active_issues().exclude(variant_of__series=self)
 
     def active_base_issues_variant_count(self):
-        issues = self.active_base_issues()
-        issues = issues.annotate(variant_count=
-                                 Count(Case(When(variant_set__deleted=False,
-                                                 then=1))))
+        issues = self.active_base_issues().order_by('sort_code')
+        issues = issues.annotate(
+          variant_count=Count(Case(When(variant_set__deleted=False, then=1))))
         return issues
 
     def active_non_base_variants(self):
@@ -231,7 +234,7 @@ class Series(GcdData):
         """
         if negate:
             deltas = deltas.copy()
-            for k, v in deltas.iteritems():
+            for k, v in deltas.items():
                 deltas[k] = -v
 
         # Don't apply F() if delta is 0, because we don't want
@@ -329,55 +332,76 @@ class Series(GcdData):
         return self.active_base_issues()\
                    .exclude(is_indexed=INDEXED['skeleton']).count()
 
+    @cached_property
+    def issues_to_migrate(self):
+        stories = Story.objects.exclude(Q(script='')
+                                        | Q(script__startswith='?'),
+                                        Q(pencils='')
+                                        | Q(pencils__startswith='?')
+                                        | Q(pencils__startswith='various'),
+                                        Q(inks='') | Q(inks__startswith='?')
+                                        | Q(inks__startswith='various'),
+                                        Q(colors='')
+                                        | Q(colors__startswith='?')
+                                        | Q(colors__startswith='various'),)\
+                                        .filter(issue__series__id=self.id)\
+                                        .exclude(type__in=AD_TYPES)\
+                                        .filter(deleted=False)
+        issues = self.active_issues().filter(id__in=set(stories.values_list(
+                                                        'issue', flat=True)))
+        issue_edits = self.active_issues().exclude(Q(editing='') |
+                                                   Q(editing__startswith='?'))
+        return issues | issue_edits
+
     def _date_uncertain(self, flag):
-        return u' ?' if flag else u''
+        return ' ?' if flag else ''
 
     def display_publication_dates(self):
         if not self.issue_count:
-            return u'%s%s' % (unicode(self.year_began),
-                              self._date_uncertain(self.year_began_uncertain))
+            return '%s%s' % (str(self.year_began),
+                             self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:
             if self.first_issue.publication_date:
                 return self.first_issue.publication_date
             else:
-                return u'%s%s' % (unicode(self.year_began),
-                                  self._date_uncertain(
-                                    self.year_began_uncertain))
+                return '%s%s' % (str(self.year_began),
+                                 self._date_uncertain(
+                                   self.year_began_uncertain))
         else:
             if self.first_issue.publication_date:
-                date = u'%s - ' % self.first_issue.publication_date
+                date = '%s - ' % self.first_issue.publication_date
             else:
-                date = u'%s%s - ' % (self.year_began,
-                                     self._date_uncertain(
-                                       self.year_began_uncertain))
+                date = '%s%s - ' % (self.year_began,
+                                    self._date_uncertain(
+                                      self.year_began_uncertain))
             if self.is_current:
-                date += 'Present'
+                date += 'present'
             elif self.last_issue.publication_date:
                 date += self.last_issue.publication_date
             elif self.year_ended:
-                date += u'%s%s' % (unicode(self.year_ended),
-                                   self._date_uncertain(
-                                     self.year_ended_uncertain))
+                date += '%s%s' % (str(self.year_ended),
+                                  self._date_uncertain(
+                                    self.year_ended_uncertain))
             else:
-                date += u'?'
+                date += '?'
             return date
 
     def search_result_name(self):
         if self.issue_count <= 1 and not self.is_current:
-            date = u'%s%s' % (unicode(self.year_began),
-                              self._date_uncertain(self.year_began_uncertain))
+            date = '%s%s' % (str(self.year_began),
+                             self._date_uncertain(self.year_began_uncertain))
         else:
-            date = u'%s%s - ' % (self.year_began,
-                                 self._date_uncertain(
-                                   self.year_began_uncertain))
+            date = '%s%s - ' % (self.year_began,
+                                self._date_uncertain(
+                                  self.year_began_uncertain))
             if self.is_current:
                 date += 'Present'
             elif self.year_ended:
-                date += u'%s%s' % (unicode(self.year_ended),
-                                   self._date_uncertain(
-                                     self.year_ended_uncertain))
+                date += '%s%s' % (str(self.year_ended),
+                                  self._date_uncertain(
+                                    self.year_ended_uncertain))
             else:
-                date += u'?'
+                date += '?'
 
         if self.is_singleton:
             issues = ''
@@ -385,7 +409,14 @@ class Series(GcdData):
             issues = '%d issue%s in' % (self.issue_count,
                                         pluralize(self.issue_count))
 
-        return '%s (%s) %s %s' % (self.name, self.publisher, issues, date)
+        return '%s %s (%s) %s %s' % (self.name, self.short_pub_type(),
+                                     self.publisher, issues, date)
+
+    def short_pub_type(self):
+        if self.publication_type:
+            return '[' + self.publication_type.name[0] + ']'
+        else:
+            return ''
 
     def full_name(self):
         return '%s (%s, %s%s series)' % (self.name, self.publisher,
@@ -395,7 +426,8 @@ class Series(GcdData):
 
     def full_name_with_link(self, publisher=False):
         if publisher:
-            name_link = '<a href="%s">%s</a> (<a href="%s">%s</a>, %s%s series)' \
+            name_link = '<a href="%s">%s</a> (<a href="%s">%s</a>,' \
+                        ' %s%s series)' \
               % (self.get_absolute_url(), esc(self.name),
                  self.publisher.get_absolute_url(), self.publisher,
                  self.year_began,
@@ -425,7 +457,7 @@ class Series(GcdData):
             else:
                 return mark_safe('<a href="%s">Add</a>' % (table_url))
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s (%s%s series)' % (self.name, self.year_began,
                                      self._date_uncertain(
                                        self.year_began_uncertain))
@@ -435,6 +467,9 @@ class CoversColumn(tables.Column):
     def render(self, record):
         return record.cover_status_info()
 
+    def value(self, record):
+        return record.scan_count
+
 
 class PublishedColumn(tables.Column):
     def render(self, record):
@@ -443,8 +478,9 @@ class PublishedColumn(tables.Column):
 
 class NameColumn(tables.Column):
     def render(self, record):
-        name_link = '<a href="%s">%s</a>' % (record.get_absolute_url(),
-                                             esc(record.name))
+        name_link = '<a href="%s">%s</a> %s' % (record.get_absolute_url(),
+                                                esc(record.name),
+                                                record.short_pub_type())
         return mark_safe(name_link)
 
     def order(self, QuerySet, is_descending):
@@ -457,9 +493,11 @@ class SeriesTable(tables.Table):
     name = NameColumn(verbose_name='Series')
     year = tables.Column(accessor='year_began', verbose_name='Year')
     issue_count = tables.Column(attrs={'td': {'style': "text-align: right"}},
-                                verbose_name='# Issues')
-    covers = CoversColumn(accessor='scan_count', orderable=False,
-                          attrs={'td': {'style': "text-align: right"}})
+                                verbose_name='Issues',
+                                initial_sort_descending=True)
+    covers = CoversColumn(accessor='scan_count',
+                          attrs={'td': {'style': "text-align: right"}},
+                          initial_sort_descending=True)
     published = PublishedColumn(accessor='year_began',
                                 attrs={'td': {'style': "text-align: right"}},
                                 orderable=False,
@@ -468,6 +506,15 @@ class SeriesTable(tables.Table):
     class Meta:
         model = Series
         fields = ('name', 'year', 'issue_count', 'covers', 'published')
+
+    def order_covers(self, query_set, is_descending):
+        query_set = query_set.annotate(
+          covers=Count('issue__cover', filter=Q(issue__cover__deleted=False)))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'covers',
+                                       'sort_name',
+                                       'year_began')
+        return (query_set, True)
 
     def order_year(self, QuerySet, is_descending):
         QuerySet = QuerySet.order_by(('-' if is_descending else '')
@@ -483,3 +530,133 @@ class SeriesTable(tables.Table):
     def render_issue_count(self, record):
         return '%d issues (%d indexed)' % (record.issue_count,
                                            record.issue_indexed_count)
+
+    def value_name(self, value):
+        return str(value)
+
+
+class SeriesPublisherTable(SeriesTable):
+    publisher = tables.Column(accessor='publisher',
+                              verbose_name='Publisher')
+
+    class Meta:
+        model = Series
+        fields = ('publisher', 'name', 'year', 'issue_count', 'covers',
+                  'published')
+
+    def order_publisher(self, query_set, is_descending):
+        query_set = query_set.annotate(publisher_name=F('publisher__name'))
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'publisher_name',
+                                       'sort_name')
+        return (query_set, True)
+
+    def render_publisher(self, value):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        display_publisher = "<img %s>" % (show_country_info(value.country))
+        return mark_safe(display_publisher) + absolute_url(value)
+
+    def value_publisher(self, value):
+        return str(value)
+
+
+class CharacterSeriesTable(SeriesPublisherTable):
+    appearances_count = tables.Column(accessor='appearances_count',
+                                      verbose_name='Issues',
+                                      initial_sort_descending=True)
+    covers = None
+    published = None
+    first_appearance = tables.Column(verbose_name='First Appearance')
+    issue_count = None
+
+    def __init__(self, *args, **kwargs):
+        self.character = kwargs.pop('character')
+        self.resolve_name = 'character'
+        super(SeriesTable, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Series
+        fields = ('name', 'year', 'publisher', 'first_appearance')
+
+    def order_appearances_count(self, QuerySet, is_descending):
+        if is_descending:
+            QuerySet = QuerySet.order_by('-appearances_count', 'sort_name',
+                                         'year_began')
+        else:
+            QuerySet = QuerySet.order_by('appearances_count', 'sort_name',
+                                         'year_began')
+        return (QuerySet, True)
+
+    def render_first_appearance(self, value):
+        return value[:4]
+
+    def render_appearances_count(self, record):
+        url = urlresolvers.reverse(
+                'character_issues_per_series',
+                kwargs={'series_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.appearances_count))
+
+    def value_appearances_count(self, record):
+        return record.appearances_count
+
+
+class CreatorSeriesTable(SeriesPublisherTable):
+    credits_count = tables.Column(accessor='issue_credits_count',
+                                  verbose_name='Issues',
+                                  initial_sort_descending=True)
+    covers = None
+    published = None
+    first_credit = tables.Column(verbose_name='First Credit')
+    issue_count = None
+    role = tables.Column(accessor='script', orderable=False)
+
+    def __init__(self, *args, **kwargs):
+        self.creator = kwargs.pop('creator')
+        self.resolve_name = 'creator'
+        super(SeriesTable, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Series
+        fields = ('name', 'year', 'publisher', 'first_credit')
+
+    def order_credits_count(self, QuerySet, is_descending):
+        if is_descending:
+            QuerySet = QuerySet.order_by('-issue_credits_count', 'sort_name',
+                                         'year_began')
+        else:
+            QuerySet = QuerySet.order_by('issue_credits_count', 'sort_name',
+                                         'year_began')
+        return (QuerySet, True)
+
+    def render_first_credit(self, value):
+        return value[:4]
+
+    def render_credits_count(self, record):
+        url = urlresolvers.reverse(
+                'creator_series_issues',
+                kwargs={'series_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_credits_count))
+
+    def value_credits_count(self, record):
+        return record.issue_credits_count
+
+    def render_role(self, record):
+        role = ''
+        if record.script:
+            role = 'script (%d); ' % record.script
+        if record.pencils:
+            role += 'pencils (%d); ' % record.pencils
+        if record.inks:
+            role += 'inks (%d); ' % record.inks
+        if record.colors:
+            role += 'colors (%d); ' % record.colors
+        if record.letters:
+            role += 'letters (%d); ' % record.letters
+        return role[:-2]

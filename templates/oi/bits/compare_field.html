@@ -10,6 +10,9 @@
 {% else %}
 <tr class="added">
 {% endif %}
+    {% if select_for_copy %}
+    <td><input type="checkbox" name="field_to_copy" value="{{ field }}"></td>
+    {% endif %}
     <td class="field_name"> {{ field|field_name }} </td>
       {% if revision.changed|check_changed:field and prev_rev and not revision.deleted %}
         {% diff_list prev_rev revision field as diff_list %}

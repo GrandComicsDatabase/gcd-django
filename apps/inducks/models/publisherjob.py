@@ -1,7 +1,7 @@
 from django.db import models
 
-from issue import Issue
-from publisher import Publisher
+from .issue import Issue
+from .publisher import Publisher
 
 class PublisherJob(models.Model):
     class Meta:

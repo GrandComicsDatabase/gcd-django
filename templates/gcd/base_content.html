@@ -1,0 +1,46 @@
+{% extends "gcd/base_view.html" %}
+{% load static %}
+{% load i18n %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+    href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+  {% block content_header %}
+  {% endblock content_header %}
+  {% block control %}
+<div class="control_body">
+  <div id="control_container">
+    <div id="control_center">
+    {% block content %}
+    {% endblock content %}
+    </div> <!-- control_center -->
+
+    <div id="control_rail">
+      <div class="edit_box">
+    {% if MYCOMICS %}
+        <div class="edit_header">
+          <div>my.comics.org</div>
+        </div>
+    {% else %}
+        <div class="edit_header">Editing</div>
+      {% block edit_box %}
+      {% endblock edit_box %}
+    {% endif %}
+      </div> <!-- edit_box -->
+      <div id="change_history" class="edit_footer">
+    {% block change_history %}
+    {% endblock change_history %}
+      </div>
+    </div> <!-- control_rail -->
+
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
+  {% endblock control %}
+  {% block listing %}
+  {% endblock listing %}
+  {% block content_footer %}
+  {% endblock content_footer %}
+{% endblock view_body %}

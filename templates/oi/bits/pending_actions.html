@@ -6,7 +6,11 @@
   <input type="hidden" name="comments" class="comments" />
 </form>
   {% else %}
+    {% if changeset.state == states.REVIEWING and perms.indexer.can_approve and changeset.review_is_overdue %}
+  Review is overdue
+    {% else %}
   No actions available
+    {% endif %}
   {% endif %}
 {% else %}
   {% if perms.indexer.can_approve and changeset.indexer != user or changeset.indexer == user and changeset.editable and section.object_type != 'cover' %}
@@ -16,13 +20,13 @@
     {% if changeset.indexer != user %}
   <input type="submit" name="assign"
     {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and section.object_type != "cover" %}
-    value="Assign and mentor"
+    value="Assign And Mentor"
     {% else %}
     value="Assign"
     {% endif %}
   ></input>
     {% else %}
-  <input type="submit" name="retract" value="Retract and edit further">
+  <input type="submit" name="retract" value="Retract And Edit Further">
     {% endif %}
 </form>
   {% else %}

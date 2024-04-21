@@ -2,7 +2,7 @@
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm, CharField
 from apps.stddata.models import Date
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 
 class DateForm(ModelForm):
@@ -18,7 +18,7 @@ class DateForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super(DateForm, self).__init__(*args, **kwargs)
         if self.instance:
-            self.initial['date'] = unicode(self.instance)
+            self.initial['date'] = str(self.instance)
 
     def clean_date(self):
         date = self.cleaned_data['date']

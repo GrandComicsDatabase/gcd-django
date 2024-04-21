@@ -1,5 +1,5 @@
 {% load i18n %}
-{% load staticfiles %}
+{% load static %}
 
 <div class="footer_disclaimer">
   {% if error_link %}
@@ -15,7 +15,7 @@
     {% trans 'Cover thumbnails are used for identification purposes only.' %}
     {% trans 'All rights to cover images reserved by the respective copyright holders.' %}
   </div>
-  <div class="footer_item">
+  <div class="no_visited footer_item">
     <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">
       <img alt="Creative Commons License" src="{% static "img/cc_sa_license88x31.png" %}"></a>
     {% blocktrans %}
@@ -23,7 +23,7 @@ All portions of <a href="http://www.comics.org/" rel="cc:attributionURL">the {{ 
 copyrighted by the GCD and are licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>. This includes but is not necessarily limited to our database schema and data distribution format.
     {% endblocktrans %}
   </div>
-  <div class="footer_item">
+  <div class="no_visited footer_item">
     The GCD <a href="{% url "privacy" %}">{% trans 'Privacy Policy' %}</a>.
     {% trans 'The GCD Web Site code is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>' %}.
   </div>

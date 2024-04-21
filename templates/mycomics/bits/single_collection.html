@@ -14,14 +14,12 @@
   {% endif %}
     </div>
     <div class="btn-group pull-right">
-      <button type="button" class="btn btn-primary btn-sm"
-              style="display: inline-block;" onclick="window.location.href='{% url "edit_collection" collection.id %}'">
+      <a class="btn btn-primary btn-sm" href="{% url "edit_collection" collection.id %}">
         <span class="glyphicon glyphicon-pencil"></span>
-      </button>
+      </a>
       {% if not collection|is_default_collection %}
       <button type="button" class="btn btn-primary btn-sm"
-              style="display: inline-block;" data-toggle="modal"
-              onclick="remove_collection({{ collection.id }}, '{{ collection.name }}', {{ collection.items.count }})">
+              onclick="remove_collection({{ collection.id }}, '{{ collection.name|escapejs }}', {{ collection.items.count }})">
         <span class="glyphicon glyphicon-remove"></span>
       </button>
       {% endif %}

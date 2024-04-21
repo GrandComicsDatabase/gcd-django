@@ -33,11 +33,11 @@ def main(use_earlier_data=False):
 if __name__ == "__main__":
     django.setup()
     if len(sys.argv) != 2:
-        print "give 1 (earliest) / 2 latest"
+        print("give 1 (earliest) / 2 latest")
         sys.exit()
     if sys.argv[1] == '1':
         main(use_earlier_data=False)
     elif sys.argv[1] == '2':
         main(use_earlier_data=True)
     else:
-        print "not valid: %s" % sys.argv[1]
+        print("not valid: %s" % sys.argv[1])

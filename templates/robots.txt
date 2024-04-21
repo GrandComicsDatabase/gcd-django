@@ -126,8 +126,9 @@ Crawl-delay: 1
 
 # Google AdSense bot.  We no longer use AdSense.
 # Note that Google's regular search indexing bot is different.
-User-agent: Mediapartners-Google
-Disallow: /
+# Allowed again, other ad networks might use it indirectly.
+# User-agent: Mediapartners-Google
+# Disallow: /
 
 ## crawler should forget old URLs
 User-agent: *
@@ -148,16 +149,19 @@ Disallow: /select_object/
 Disallow: /issue/revision/
 Disallow: /reprint/revision/
 Disallow: /story/revision/
-Disallow: /*history/$
+Disallow: /*history/
+Disallow: /cover/1/
+Disallow: /cover/2/
 ## expensive searches
 Disallow: /character/name/
 Disallow: /credit/name/
 Disallow: /search/advanced/process/
+Disallow: /search/advanced/process/csv/
 ## data withheld from search sites by individual requests
 Disallow: /issue/711094/
 Disallow: /issue/213575/
 
-Sitemap: https://www.comics.org/sitemap.xml
+# Sitemap: https://www.comics.org/sitemap.xml
 
 User-agent: Yandex
 Crawl-delay: 1 # sets a 1 second time-out

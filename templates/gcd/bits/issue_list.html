@@ -1,7 +1,7 @@
 {% load credits %}
 {% load display %}
 {% load compress %}
-{% load staticfiles %}
+{% load static %}
 
 {% comment %}
 Either confirm_selection and select_key can be used. 
@@ -26,7 +26,7 @@ the selected issues to your
 {% if select_key and multiple_selects %}
 <form action="{% url "process_multiple_selects" select_key=select_key %}" method="POST" class="before_listing">
   {% csrf_token %}
-  <input type="submit" name="search_select" value="Select issues">
+  <input type="submit" name="search_select" value="Select issues"> Note that you can use click and shift-click to select ranges.
   <div style="clear: both;"></div>
 {% endif %}
 <table class="listing">

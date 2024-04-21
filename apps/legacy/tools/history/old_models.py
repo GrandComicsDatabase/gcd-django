@@ -3,9 +3,9 @@ from decimal import Decimal
 
 from django.db import models
 
-from series import Series
-from issue import Issue
-from story import Story
+from .series import Series
+from .issue import Issue
+from .story import Story
 from apps.oi.models import IssueRevision, StoryRevision, StoryType
 from apps.legacy.tools.history.story import MigratoryStoryRevision
 from apps.legacy.tools.history.issue import MigratoryIssueRevision

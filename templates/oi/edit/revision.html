@@ -1,9 +1,10 @@
 {% extends "oi/base_view.html" %}
 
-{% load staticfiles %}
+{% load static %}
 
 {% load credits %}
 {% load editing %}
+{% load crispy_forms_tags %}
 
 {% block title %}
 {{ changeset }}
@@ -23,9 +24,13 @@
 <link rel="stylesheet" type="text/css"
       href="{% static "jquery/css/msdropdown/dd.css" %}"/>
 {% endif %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}
+{% include "oi/bits/jquery.html" %}
+{{ credits_formset.media }}
+{{ form.media }}
 {% include "oi/bits/multi_selector.html" %}
 <h1>
 {{ changeset|header_link }}
@@ -35,16 +40,23 @@
 <form action="{% url "process_revision" model_name=revision.source_name id=revision.id %}" method="POST">
   {% csrf_token %}
   <table class="editing">
-  {{ form.as_table }}
+  {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
+    {% crispy form %}
+  {% else %}
+    {{ form.as_table }}
+  {% endif %}
   </table>
   {% with changeset.comments as comments %}
   {% include 'oi/bits/comments.html' %}
   {% endwith %}
 
-<input type="submit" name="save" value="Save and continue editing"></input>
-<input type="submit" name="save_return" value="Save and return to changeset"></input>
+<input type="submit" name="save" value="Save And Continue Editing">
+<input type="submit" name="save_return" value="Save And Return To Changeset">
 <input type="submit" name="cancel_return"
-       value="Return to changeset without saving"></input>
+       value="Return To Changeset Without Saving">
+{% if revision.source_name == 'story' and revision.old_credits %}
+  <input type="submit" name="save_migrate" value="Save And Migrate Credits">
+{% endif %}
 </form>
 </div>
 {% endblock %}

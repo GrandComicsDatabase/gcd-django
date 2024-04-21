@@ -1,6 +1,5 @@
-{% load display %}
 {% load editing %}
-<tr colspan="2" align="left" {% if reprint.deleted %} class="deleted" {% endif %} {% if reprint.changeset and reprint.in_type == None and reprint.out_type == None %} class="added" {% endif %}>
+<tr colspan="2" align="left" {% if reprint.deleted %} class="deleted" {% endif %} {% if reprint.changeset == changeset and reprint.previous_revision == None %} class="added" {% endif %}>
   {% if reprint.changeset and not reprint.changeset == changeset and reprint.source %}
   <td> {{ reprint.source|link_other_reprint:is_source }}</td>
   {% else %}
@@ -8,32 +7,32 @@
   {% endif %}
   <td>
 {% if not reprint|is_locked and not reprint.changeset %}
-<form action="{% url "reserve_reprint" reprint_id=reprint.id changeset_id=changeset.id reprint_type=reprint_type %}" method="POST">
+<form action="{% url "reserve_reprint" reprint_id=reprint.id changeset_id=changeset.id %}" method="POST">
   {% csrf_token %}
   {% if not is_source %}
-    <input type="submit" name="edit_target_internal" value="Change target">
-    <input type="submit" name="edit_origin" value="Change origin">
-    <input type="submit" name="edit_note_target" value="Edit note">
+    <input type="submit" name="edit_target_internal" value="Change Target">
+    <input type="submit" name="edit_origin" value="Change Origin">
+    <input type="submit" name="edit_note_target" value="Edit Note">
   {% else %}
-    <input type="submit" name="edit_origin_internal" value="Change origin">
-    <input type="submit" name="edit_target" value="Change target">
-    <input type="submit" name="edit_note_origin" value="Edit note">
+    <input type="submit" name="edit_origin_internal" value="Change Origin">
+    <input type="submit" name="edit_target" value="Change Target">
+    <input type="submit" name="edit_note_origin" value="Edit Note">
   {% endif %}
   {% comment %}
   keep this as an alternative, with this we could make a reprint point out of the current issue
   but this might make things more complicated for indexer and editor
   {% if not is_source %}
-    <input type="submit" name="edit_target" value="Change target">
-    <input type="submit" name="edit_target_internal" value="Change target internally">
+    <input type="submit" name="edit_target" value="Change Target">
+    <input type="submit" name="edit_target_internal" value="Change Target Internally">
   {% endif %}
-    <input type="submit" name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_origin" value="Change Origin">
   {% if is_source %}
-    <input type="submit" name="edit_origin_internal" value="Change origin internally">
-    <input type="submit" name="edit_target" value="Change target">
+    <input type="submit" name="edit_origin_internal" value="Change Origin Internally">
+    <input type="submit" name="edit_target" value="Change Target">
   {% endif %}
   {% endcomment %}
-    <input type="submit" name="flip_direction" value="Flip reprint direction">
-    <input type="submit" name="delete" value="Mark to Delete">
+    <input type="submit" name="flip_direction" value="Flip Reprint Direction">
+    <input type="submit" name="delete" value="Mark To Delete">
   {% if create_sequence %}
     <input type="submit" name="matching_sequence" value="Create Corresponding Sequence">
   {% endif %}
@@ -46,30 +45,30 @@
     <input type="submit" name="restore" value="Restore">
       {% else %}
         {% if not is_source %}
-    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target_internal" value="Change target">
-    <input type="submit" name="edit_origin" value="Change origin">
-    <input type="submit" name="edit_note_target" value="Edit note">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target_internal" value="Change Target">
+    <input type="submit" name="edit_origin" value="Change Origin">
+    <input type="submit" name="edit_note_target" value="Edit Note">
         {% else %}
-    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin_internal" value="Change origin">
-    <input type="submit" name="edit_target" value="Change target">
-    <input type="submit" name="edit_note_origin" value="Edit note">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin_internal" value="Change Origin">
+    <input type="submit" name="edit_target" value="Change Target">
+    <input type="submit" name="edit_note_origin" value="Edit Note">
         {% endif %}
         {% comment %}
         keep this as an alternativ, with this we could make a reprint point out of the current issue
         but this might make things more complicated for indexer and editor
         {% if not is_source %}
-    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target" value="Change target">
-    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target_internal" value="Change target internally">
-    <input type="submit" name="edit_origin" value="Change origin">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target" value="Change Target">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target_internal" value="Change Target Internally">
+    <input type="submit" name="edit_origin" value="Change Origin">
         {% else %}
-    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin" value="Change origin">
-    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin_internal" value="Change origin internally">
-    <input type="submit" name="edit_target" value="Change target">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin" value="Change Origin">
+    <input type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin_internal" value="Change Origin Internally">
+    <input type="submit" name="edit_target" value="Change Target">
         {% endif %}
         {% endcomment %}
-    <input type="submit" name="flip_direction" value="Flip reprint direction">
+    <input type="submit" name="flip_direction" value="Flip Reprint Direction">
         {% if reprint.source %}
-    <input type="submit" name="delete" value="Mark to Delete">
+    <input type="submit" name="delete" value="Mark To Delete">
         {% else %}
     <input type="submit" name="remove" value="Remove">
         {% endif %}
@@ -80,32 +79,32 @@
 </form>
     {% else %}
       {% if reprint.changeset.state == states.APPROVED %}
-<form action="{% url "reserve_reprint" reprint_id=reprint.source.id changeset_id=changeset.id reprint_type=reprint_type %}" method="POST">
+<form action="{% url "reserve_reprint" reprint_id=reprint.source.id changeset_id=changeset.id %}" method="POST">
         {% csrf_token %}
         {% if not is_source %}
-    <input type="submit" name="edit_target_internal" value="Change target">
-    <input type="submit" name="edit_origin" value="Change origin">
-    <input type="submit" name="edit_note_target" value="Edit note">
+    <input type="submit" name="edit_target_internal" value="Change Target">
+    <input type="submit" name="edit_origin" value="Change Origin">
+    <input type="submit" name="edit_note_target" value="Edit Note">
         {% else %}
-    <input type="submit" name="edit_origin_internal" value="Change origin">
-    <input type="submit" name="edit_target" value="Change target">
-    <input type="submit" name="edit_note_origin" value="Edit note">
+    <input type="submit" name="edit_origin_internal" value="Change Origin">
+    <input type="submit" name="edit_target" value="Change Target">
+    <input type="submit" name="edit_note_origin" value="Edit Note">
         {% endif %}
         {% comment %}
         keep this as an alternativ, with this we could make a reprint point out of the current issue
         but this might make things more complicated for indexer and editor
         {% if not is_source %}
-    <input type="submit" name="edit_target" value="Change target">
-    <input type="submit" name="edit_target_internal" value="Change target internally">
+    <input type="submit" name="edit_target" value="Change Target">
+    <input type="submit" name="edit_target_internal" value="Change Target Internally">
         {% endif %}
-    <input type="submit" name="edit_origin" value="Change origin">
+    <input type="submit" name="edit_origin" value="Change Origin">
         {% if is_source %}
-    <input type="submit" name="edit_origin_internal" value="Change origin internally">
-    <input type="submit" name="edit_target" value="Change target">
+    <input type="submit" name="edit_origin_internal" value="Change Origin Internally">
+    <input type="submit" name="edit_target" value="Change Target">
         {% endif %}
         {% endcomment %}
-    <input type="submit" name="flip_direction" value="Flip reprint direction">
-    <input type="submit" name="delete" value="Mark to Delete">
+    <input type="submit" name="flip_direction" value="Flip Reprint Direction">
+    <input type="submit" name="delete" value="Mark To Delete">
   {% if create_sequence %}
     <input type="submit" name="matching_sequence" value="Create Corresponding Sequence">
   {% endif %}

@@ -26,6 +26,34 @@
     notify_on_approve: False
     collapse_compare_view: True
 
+- model: mycomics.collector
+  pk: 200000
+  fields:
+    user: 200000
+    grade_system: 1
+    default_language: 25 # English
+
+- model: mycomics.collection
+  pk: 200000
+  fields:
+    collector: 200000
+    name: 'Default have collection'
+    condition_used: True
+    acquisition_date_used: True
+    location_used: True
+    purchase_location_used: True
+    was_read_used: True
+    for_sale_used: True
+    signed_used: True
+    price_paid_used: True
+
+- model: mycomics.collection
+  pk: 200002
+  fields:
+    collector: 200000
+    name: 'Default want collection'
+    market_value_used: True
+
 - model: auth.user
   pk: 300000
   fields:
@@ -53,6 +81,34 @@
     imps: 100
     notify_on_approve: True
     collapse_compare_view: False
+
+- model: mycomics.collector
+  pk: 300000
+  fields:
+    user: 300000
+    grade_system: 1
+    default_language: 25 # English
+
+- model: mycomics.collection
+  pk: 300000
+  fields:
+    collector: 300000
+    name: 'Default have collection'
+    condition_used: True
+    acquisition_date_used: True
+    location_used: True
+    purchase_location_used: True
+    was_read_used: True
+    for_sale_used: True
+    signed_used: True
+    price_paid_used: True
+
+- model: mycomics.collection
+  pk: 300003
+  fields:
+    collector: 300000
+    name: 'Default want collection'
+    market_value_used: True
 
 - model: auth.user_groups
   pk: 200000

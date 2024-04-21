@@ -1,18 +1,23 @@
 import hashlib
+from random import random
 import os.path
 from datetime import datetime
-from pyvotecore.schulze_method import SchulzeMethod
+from py3votecore.schulze_method import SchulzeMethod
+from py3votecore.condorcet import CondorcetHelper
 
 from django.conf import settings
 from django.db.models import Q
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from django.core.mail import send_mail
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import User
 
 from apps.indexer.views import render_error
-from apps.voting.models import *
+from apps.voting.models import Agenda, Option, Receipt, Topic, Vote, \
+                               TYPE_CHARTER, TYPE_PASS_FAIL
+from functools import reduce
 
 EMAIL_RESULT = """
 All ballots have been received for the following topic from the %s agenda:
@@ -46,7 +51,7 @@ vote id:
 
 def _classify_topics(topics, user):
     # Permissions are returned as appname.codename by get_all_permissions().
-    if user.is_anonymous():
+    if user.is_anonymous:
         my_topics = ()
         forbidden_topics = topics
     elif user.is_superuser:
@@ -56,14 +61,15 @@ def _classify_topics(topics, user):
         forbidden_topics = ()
     else:
         q_list = []
-        # You can't actually get a query_set of the user's permissions, just this
-        # list of strings that stuff the app label and code name together.  So
-        # we have to build queries that match each of the actual permissions, and
-        # then OR those all together.
+        # You can't actually get a query_set of the user's permissions, just
+        # this list of strings that stuff the app label and code name together.
+        # So we have to build queries that match each of the actual
+        # permissions, and then OR those all together.
         for p in user.get_all_permissions():
             app_label, code_name = p.split('.', 1)
-            q_list.append(Q(agenda__permission__codename=code_name,
-                            agenda__permission__content_type__app_label=app_label))
+            q_list.append(
+              Q(agenda__permission__codename=code_name,
+                agenda__permission__content_type__app_label=app_label))
 
         can_vote = reduce(lambda x, y: x | y, q_list)
         my_topics = topics.filter(can_vote)
@@ -83,9 +89,10 @@ def dashboard(request):
     topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True,
                                   result_calculated=False)
 
-    # We ignore the forbidden topics on the dashboard and only show relevant topics.
-    pending_topics, voted_topics, forbidden_topics = \
-      _classify_topics(topics, request.user)
+    # We ignore the forbidden topics on the dashboard and only show relevant
+    # topics.
+    pending_topics, voted_topics, forbidden_topics = _classify_topics(
+      topics, request.user)
     return render(request, 'voting/dashboard.html',
                   {'voted_topics': voted_topics,
                    'pending_topics': pending_topics,
@@ -134,8 +141,8 @@ def _calculate_results(unresolved):
                 against_option.result = True
                 against_option.save()
 
-            # It's not possible for this sort of measure to tie- it either reaches
-            # the two-thirds threshold or it does not.
+            # It's not possible for this sort of measure to tie- it either
+            # reaches the two-thirds threshold or it does not.
             topic.invalid = False
             topic.result_calculated = True
             topic.save()
@@ -164,8 +171,10 @@ def _calculate_results(unresolved):
                     vote.save()
                 ballot = {'ballot': ordered_votes}
                 ballots.append(ballot)
-            result = SchulzeMethod(ballots, ballot_notation = "grouping")
-            if hasattr(result,'tied_winners'):
+            result = SchulzeMethod(
+              ballots,
+              ballot_notation=CondorcetHelper.BALLOT_NOTATION_GROUPING)
+            if hasattr(result, 'tied_winners'):
                 # Schulze method can be tied as well, treat as other ties
                 options = Option.objects.filter(id__in=result.tied_winners)
                 for option in options:
@@ -197,8 +206,8 @@ def _calculate_results(unresolved):
                 topic.invalid = True
 
                 # Note that setting options[i].result = True and then
-                # saving options[i] does not work, probably as a side effect
-                # of evaluationg the options queryset (it's not actualy an array)
+                # saving options[i] does not work, probably as a side effect of
+                # evaluationg the options queryset (it's not actualy an array)
                 option = options[i]
                 option.result = True
                 option.save()
@@ -242,7 +251,8 @@ def _send_result_email(topic, extra=''):
 
             result += extra
             email_body = EMAIL_RESULT % (topic.agenda, topic.text, result,
-              settings.SITE_URL.rstrip('/') + topic.get_absolute_url())
+                                         settings.SITE_URL.rstrip('/') +
+                                         topic.get_absolute_url())
 
             list_config.send_mail(subject="GCD Vote Result: %s" % topic,
                                   message=email_body)
@@ -253,8 +263,8 @@ def topic(request, id):
     topic = get_object_or_404(Topic, id=id)
 
     if not request.user.has_perm('indexer.can_vote'):
-        return render_error(request,
-                            'You do not have permission to vote on this topic.')
+        return render_error(
+          request, 'You do not have permission to vote on this topic.')
     # Note that if this was a secret ballot, this will be an empty
     # queryset.  That is OK, the UI won't look at it in that case.
     # But this is why "voted" is not just a check for at least one vote here.
@@ -264,16 +274,16 @@ def topic(request, id):
                   {'topic': topic,
                    'voted': topic.has_vote_from(request.user),
                    'votes': votes,
-                   'closed': topic.deadline < datetime.now() \
-                             or topic.result_calculated,
+                   'closed': topic.deadline < datetime.now() or
+                      topic.result_calculated,
                    'settings': settings})
 
 
 @permission_required('indexer.can_vote')
 def vote(request):
     if request.method != 'POST':
-        return render_error(request,
-                            'Please access this page through the correct form.')
+        return render_error(
+          request, 'Please access this page through the correct form.')
 
     first = True
     topic = None
@@ -282,22 +292,24 @@ def vote(request):
     ranks = {}
     if not option_params:
         # ranked_choice, collect all ranks
-        values = request.POST.keys()
+        values = list(request.POST)
         for value in values:
             if value.startswith('option'):
                 if request.POST[value]:
                     try:
                         ranks[int(value[7:])] = int(request.POST[value])
                     except ValueError:
-                        return render_error(request,
-                        'You must enter a full number for the ranking.')
+                        return render_error(
+                          request,
+                          'You must enter a full number for the ranking.')
                 else:
                     ranks[int(value[7:])] = None
-        options = Option.objects.filter(id__in=ranks.keys())
+        options = Option.objects.filter(id__in=list(ranks))
     else:
         options = Option.objects.filter(id__in=option_params)
         # Get all of these now because we may need to iterate twice.
-        options = options.select_related('topic__agenda', 'topic__vote_type').all()
+        options = options.select_related('topic__agenda',
+                                         'topic__vote_type').all()
     if not options:
         return render_error(request,
                             'You must choose at least one option to vote.')
@@ -305,47 +317,53 @@ def vote(request):
         if first is True:
             first = False
             topic = option.topic
-            if not request.user.has_perm('%s.%s' %
+            if not request.user.has_perm(
+                '%s.%s' %
                 (topic.agenda.permission.content_type.app_label,
                  topic.agenda.permission.codename)):
-                return render_error(request,
+                return render_error(
+                  request,
                   'We are sorry, but you do not have permission to vote '
                   'on this ballot.  You must have the "%s" permission.' %
-                   topic.agenda.permission.name)
+                  topic.agenda.permission.name)
 
             if topic.token is not None and \
                request.POST['token'].strip() != topic.token:
-                return render_error(request,
+                return render_error(
+                  request,
                   'You must supply an authorization token in order '
                   'to vote on this topic.')
 
             if topic.vote_type.max_votes is not None and \
                len(option_params) > topic.vote_type.max_votes:
                 plural = 's' if len(option_params) > 1 else ''
-                return render_error(request,
+                return render_error(
+                  request,
                   'You may not vote for more than %d option%s' %
                   (topic.vote_type.max_votes, plural))
 
             if topic.agenda.secret_ballot:
-                receipts = Receipt.objects.filter(topic=topic, voter=request.user)
+                receipts = Receipt.objects.filter(topic=topic,
+                                                  voter=request.user)
                 already_voted = receipts.count() > 0
             else:
                 voter = request.user
-                already_voted = Vote.objects.filter(option__topic=topic,
-                                                    voter=request.user).count() > 0
+                already_voted = Vote.objects.filter(
+                  option__topic=topic, voter=request.user).count() > 0
 
             if already_voted:
-                return render_error(request,
-                  'You have already voted on this ballot.  If you wish to change '
-                  'your vote, please contact the voting administrator at ' +
-                  settings.EMAIL_VOTING_ADMIN)
+                return render_error(
+                  request,
+                  'You have already voted on this ballot.  If you wish to '
+                  'change your vote, please contact the voting administrator '
+                  'at ' + settings.EMAIL_VOTING_ADMIN)
 
         if not option_params:
             # for ranked choice options can be empty, set these last in ranking
             if option.id in ranks:
                 rank = ranks[option.id]
             if not rank:
-                rank = max(ranks.values()) + 1
+                rank = max(v for v in ranks.values() if v is not None) + 1
         else:
             rank = None
         vote = Vote(option=option, voter=voter, rank=rank)
@@ -357,8 +375,8 @@ def vote(request):
         # they voted a particular way by sending us back those two values,
         # and repair or change a vote.
         vote_ids = ', '.join(option_params)
-        salt = hashlib.sha1(str(random())).hexdigest()[:5]
-        key = hashlib.sha1(salt + vote_ids).hexdigest()
+        salt = hashlib.sha1(str(random()).encode('ASCII')).hexdigest()[:5]
+        key = hashlib.sha1((salt + vote_ids).encode('ASCII')).hexdigest()
 
         receipt = Receipt(voter=request.user,
                           topic=option.topic,
@@ -373,12 +391,12 @@ def vote(request):
         # Use unbuffered appends because we don't want concurrent writes to get
         # spliced due to buffering.
         path = os.path.join(settings.VOTING_DIR, 'vote_record_%d' % topic.id)
-        voting_record = open(path, 'a', 0)
-        voting_record.write('%d | %s | %s | %s\n' %
-                            (request.user.id, salt, vote_ids, key))
+        voting_record = open(path, 'ab', 0)
+        voting_record.write(('%d | %s | %s | %s\n' %
+                            (request.user.id, salt, vote_ids, key)).encode('ASCII'))
         voting_record.close()
 
-        vote_values = "\n".join([unicode(o) for o in options])
+        vote_values = "\n".join([str(o) for o in options])
         send_mail(from_email=settings.EMAIL_VOTING_FROM,
                   recipient_list=[request.user.email],
                   subject="GCD secret ballot receipt",
@@ -388,10 +406,10 @@ def vote(request):
                   fail_silently=(not settings.BETA))
 
     if topic.expected_voters().count() > 0 and len(topic.absent_voters()) == 0:
-        _calculate_results([topic,])
+        _calculate_results([topic, ])
 
     return HttpResponseRedirect(urlresolvers.reverse('ballot',
-                                kwargs={ 'id': option.topic.id }))
+                                kwargs={'id': option.topic.id}))
 
 
 def agenda(request, id):
@@ -399,9 +417,10 @@ def agenda(request, id):
 
     # The "open" field on the topic object is somewhat misleading.
     # It means that the topic has been approved for an active ballot.
-    # Ballots that are complete still have open=True, and ballots that were never
-    # approved (much less completed) still have open=False.  This translates
-    # the conditions into what you would expect for open or closed ballots.
+    # Ballots that are complete still have open=True, and ballots that were
+    # never approved (much less completed) still have open=False.  This
+    # translates the conditions into what you would expect for open or closed
+    # ballots.
     past_due = Q(deadline__lte=datetime.now())
     open = agenda.topics.exclude(past_due | Q(open=False))\
                         .filter(result_calculated=False)
@@ -413,8 +432,8 @@ def agenda(request, id):
 
     _calculate_results(closed.filter(result_calculated=False))
 
-    pending_topics, voted_topics, forbidden_topics = \
-      _classify_topics(open.order_by('-deadline'), request.user)
+    pending_topics, voted_topics, forbidden_topics = _classify_topics(
+      open.order_by('-deadline'), request.user)
 
     # result_counts = map(lambda t: (t.name, t.results().count()), closed)
     # raise Exception, result_counts

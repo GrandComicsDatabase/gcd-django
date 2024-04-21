@@ -1,0 +1,34 @@
+[
+    {
+        "pk": 1,
+        "model": "gcd.grouprelationtype",
+        "fields": {
+            "type": "republished as",
+            "reverse_type": "originally published as"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "gcd.grouprelationtype",
+        "fields": {
+            "type": "alternate universe version of",
+            "reverse_type": "alternate universe version of"
+        }
+    },
+    {
+        "pk": 3,
+        "model": "gcd.grouprelationtype",
+        "fields": {
+            "type": "subgroup of",
+            "reverse_type": "supergroup of"
+        }
+    },
+    {
+        "pk": 4,
+        "model": "gcd.grouprelationtype",
+        "fields": {
+            "type": "previous group",
+            "reverse_type": "successive group"
+        }
+    }
+]

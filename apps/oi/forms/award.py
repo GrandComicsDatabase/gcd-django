@@ -4,7 +4,7 @@ from collections import OrderedDict
 from django import forms
 
 from apps.oi.models import AwardRevision, ReceivedAwardRevision, \
-                           DataSourceRevision, _check_year, CreatorAwardRevision
+                           DataSourceRevision, _check_year
 
 from .support import (GENERIC_ERROR_MESSAGE, AWARD_HELP_LINKS,
                       CREATOR_AWARD_HELP_LINKS, _set_help_labels,
@@ -63,7 +63,7 @@ class ReceivedAwardRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ReceivedAwardRevisionForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         insert_data_source_fields('', ordering, self.fields,
                                   'notes')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])

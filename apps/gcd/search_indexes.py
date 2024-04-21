@@ -3,7 +3,8 @@ from haystack import indexes
 from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
-    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork
+    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature, Printer,\
+    Character, Group, Universe
 
 from apps.oi.models import on_sale_date_fields
 
@@ -144,7 +145,8 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                      indexed=False)
     sequence_number = indexes.IntegerField(model_attr='sequence_number',
                                            indexed=False)
-    type = indexes.CharField(model_attr='type__name', indexed=False)
+    type = indexes.CharField(model_attr='type__name', faceted=True,
+                             indexed=False)
     year = indexes.IntegerField()
     date = indexes.DateField(faceted=True)
     country = indexes.CharField(model_attr='issue__series__country__name',
@@ -197,6 +199,15 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def _prepare_credit(self, obj, field):
         return_val = [(val.strip()) for val in getattr(obj, field).split(';')]
+        credits = obj.active_credits.filter(credit_type__name=field)
+        if credits:
+            if return_val == ['']:
+                return_val = [val.creator.display_credit(val, url=False)
+                              for val in credits]
+            else:
+                return_val.extend([val.creator.display_credit(val,
+                                                              url=False)
+                                   for val in credits])
         if return_val == ['']:
             return None
         else:
@@ -222,18 +233,158 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                       getattr(obj, 'editing').split(';')]
         return_val.extend([(val.strip()) for val in
                           getattr(obj.issue, 'editing').split(';')])
+
+        credits = obj.active_credits.filter(credit_type__name='editing')
+        if credits:
+            if return_val == ['']:
+                return_val = [val.creator.display_credit(val, url=False)
+                              for val in credits]
+            else:
+                return_val.extend([val.creator.display_credit(val,
+                                                              url=False)
+                                   for val in credits])
+
+        credits = obj.issue.active_credits.filter(credit_type__name='editing')
+        if credits:
+            if return_val == ['']:
+                return_val = [val.creator.display_credit(val, url=False)
+                              for val in credits]
+            else:
+                return_val.extend([val.creator.display_credit(val,
+                                                              url=False)
+                                   for val in credits])
+
         if return_val == ['']:
             return None
         else:
             return return_val
 
     def prepare_feature(self, obj):
-        return self._prepare_credit(obj, 'feature')
+        return_val = [(val.strip()) for val in
+                      getattr(obj, 'feature').split(';')]
+        features = obj.feature_object.all()
+        if features:
+            if return_val == ['']:
+                return_val = [val.name for val in features]
+            else:
+                return_val.extend([val.name for val in features])
+        if return_val == ['']:
+            return None
+        else:
+            return return_val
 
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
         return super(ObjectIndex, self).index_queryset(using).exclude(
             type=STORY_TYPES['blank']).filter(deleted=False)
+
+
+class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/feature_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
+    year = indexes.IntegerField()
+    language = indexes.CharField(model_attr='language__code',
+                                 faceted=True, indexed=False)
+
+    def prepare_year(self, obj):
+        if obj.year_created:
+            return obj.year_created
+        else:
+            return 9999
+
+    def get_model(self):
+        return Feature
+
+    def prepare_facet_model_name(self, obj):
+        return "feature"
+
+
+class UniverseIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/universe_text.txt')
+    name = indexes.CharField(boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(indexed=False)
+    year = indexes.IntegerField()
+
+    def prepare_name(self, obj):
+        return obj.display_name
+
+    def prepare_sort_name(self, obj):
+        return obj.display_name
+
+    def prepare_year(self, obj):
+        if obj.year_first_published:
+            return obj.year_first_published
+        else:
+            return 9999
+
+    def get_model(self):
+        return Universe
+
+    def prepare_facet_model_name(self, obj):
+        return "universe"
+
+
+class CharacterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/character_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
+    year = indexes.IntegerField()
+    language = indexes.CharField(model_attr='language__code',
+                                 faceted=True, indexed=False)
+
+    def prepare_year(self, obj):
+        if obj.year_first_published:
+            return obj.year_first_published
+        else:
+            return 9999
+
+    def get_model(self):
+        return Character
+
+    def prepare_facet_model_name(self, obj):
+        return "character"
+
+
+class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/group_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
+    year = indexes.IntegerField()
+    language = indexes.CharField(model_attr='language__code',
+                                 faceted=True, indexed=False)
+
+    def prepare_year(self, obj):
+        if obj.year_first_published:
+            return obj.year_first_published
+        else:
+            return 9999
+
+    def get_model(self):
+        return Group
+
+    def prepare_facet_model_name(self, obj):
+        return "group"
 
 
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -326,6 +477,26 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "brand group"
 
 
+class PrinterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr='name', indexed=False)
+    year = indexes.IntegerField()
+    country = indexes.CharField(model_attr='country__name', faceted=True,
+                                indexed=False)
+
+    def get_model(self):
+        return Printer
+
+    def prepare_facet_model_name(self, obj):
+        return "printer"
+
+
 class AwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
@@ -402,7 +573,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_name(self, obj):
         return [(creator_name.name) for creator_name in
-                obj.creator_names.all()]
+                obj.active_names()]
 
     def prepare_year(self, obj):
         if obj.birth_date.year and '?' not in obj.birth_date.year:
@@ -443,7 +614,7 @@ class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,
 class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
                                indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True,
-             template_name='search/indexes/gcd/creator_art_influence_text.txt')
+           template_name='search/indexes/gcd/creator_art_influence_text.txt')
     name = indexes.CharField(model_attr="influence", boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 

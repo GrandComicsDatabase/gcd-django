@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from collections import OrderedDict
 
 from django import forms
-from django.core import urlresolvers
+import django.urls as urlresolvers
 
 from apps.oi.models import CoverRevision, ImageRevision
 
@@ -92,7 +92,7 @@ class UploadScanForm(forms.Form):
 class UploadVariantScanForm(UploadScanForm):
     def __init__(self, *args, **kwargs):
         super(UploadVariantScanForm, self).__init__(*args, **kwargs)
-        ordering = self.fields.keys()
+        ordering = list(self.fields)
         ordering.remove('variant_name')
         ordering.remove('variant_artwork')
         ordering.remove('reservation_requested')

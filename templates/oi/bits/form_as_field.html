@@ -1,0 +1,16 @@
+{% load crispy_forms_tags %}
+{% load static %}
+{{ form.management_form|crispy }}
+
+                <td colspan="2"><table class="editing">
+                {{ form.non_field_errors }} 
+                {% for field in form.visible_fields %}
+                    {# Include the hidden fields in the form #}
+                    {% if forloop.first %}
+                        {% for hidden in form.hidden_fields %}
+                            {{ hidden }}
+                        {% endfor %}
+                    {% endif %}
+                    {% include "oi/bits/uni_field.html" %}
+                {% endfor %}
+                </table></td>

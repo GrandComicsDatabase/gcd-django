@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django import forms
 
@@ -15,8 +15,8 @@ from apps.stddata.models import Country
 from apps.gcd.models import BOND_TRACKING, SeriesBondType
 
 
-def get_series_revision_form(publisher=None, source=None, user=None):
-    if source is None:
+def get_series_revision_form(publisher=None, revision=None, user=None):
+    if revision is None:
         if user is not None and user.indexer.can_reserve_another_ongoing():
             can_request = True
         else:
@@ -29,6 +29,13 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                 if can_request:
                     fields = SeriesRevisionForm.Meta.fields
                     fields = ['reservation_requested'] + fields
+
+            def __init__(self, *args, **kwargs):
+                super(RuntimeAddSeriesRevisionForm, self).__init__(*args,
+                                                                **kwargs)
+                self.fields['is_singleton'].help_text += \
+                  ' Series notes for an added singleton series will be '\
+                  'copied to the added issue.'
 
             if can_request:
                 reservation_requested = forms.BooleanField(
@@ -59,6 +66,10 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                                                                 **kwargs)
                 self.fields['country'].empty_label = None
                 self.fields['language'].empty_label = None
+                if revision.added:
+                    self.fields['is_singleton'].help_text += \
+                      ' Series notes for an added singleton series will be '\
+                      'copied to the added issue.'
 
             if user.has_perm('indexer.can_approve'):
                 move_to_publisher_with_id = forms.IntegerField(
@@ -69,6 +80,15 @@ def get_series_revision_form(publisher=None, source=None, user=None):
                               "The move of a series is only possible if no "
                               "issues are reserved. Brand and indicia "
                               "publisher entries of the issues will be reset.")
+
+            def clean(self):
+                cd = super(RuntimeSeriesRevisionForm, self).clean()
+                if not revision.added:
+                    if cd['is_singleton'] and cd['notes']:
+                        raise forms.ValidationError(
+                            'Notes for singleton series are stored on the '
+                            'issue level.')
+                return cd
 
             def as_table(self):
                 if not user or user.indexer.show_wiki_links:
@@ -136,9 +156,6 @@ class SeriesRevisionForm(forms.ModelForm):
         if cd['is_singleton'] and cd['has_issue_title']:
             raise forms.ValidationError(
                 'Singleton series cannot have an issue title.')
-        if cd['is_singleton'] and cd['notes']:
-            raise forms.ValidationError(
-                'Notes for singleton series are stored on the issue level.')
         if cd['is_singleton'] and cd['tracking_notes']:
             raise forms.ValidationError(
                 'Singleton series cannot have tracking notes.')
@@ -146,11 +163,6 @@ class SeriesRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
                 'Singleton series do not continue and therefore cannot be '
                 'current in our sense.')
-        if (cd['is_singleton'] and 'reservation_requested' in cd and
-                cd['reservation_requested']):
-            raise forms.ValidationError(
-                'Reservations for the created issue of a singleton series '
-                'are not supported for technical reasons.')
 
         # TODO How to get to series ?
         # Then we could check the number of issues for singletons

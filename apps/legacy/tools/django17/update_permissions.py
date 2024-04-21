@@ -14,14 +14,14 @@ def update():
                                     ('gcd', 'legacy', 'indexcredit'),
                                     ('gcd', 'legacy', 'reservation'),
                                     ('gcd', 'legacy', 'migrationstorystatus')):
-        print 'Moving %s from %s to %s' % (model, old_app, new_app)
+        print('Moving %s from %s to %s' % (model, old_app, new_app))
         try:
             old_type = ContentType.objects.get(app_label=old_app, model=model)
             old_type.app_label = new_app
             old_type.save()
         except ContentType.DoesNotExist:
             # If it's not there, we don't need to move it.
-            print '   skipping...'
+            print('   skipping...')
 
 
 if __name__ == '__main__':

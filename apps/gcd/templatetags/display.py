@@ -5,24 +5,25 @@ from stdnum import isbn as stdisbn
 
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+from django.conf import settings
 
 from django import template
 from django.template.defaultfilters import title
 
 from apps.oi import states
-from apps.oi.models import StoryRevision, CTYPES, INDEXED
+from apps.oi.models import CTYPES
 from apps.gcd.templatetags.credits import show_page_count, show_title
 from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
-                                    CreatorDegree, Award
-from apps.gcd.models import IndiciaPublisher, Brand, BrandGroup, \
-                                      Publisher
-from apps.gcd.models import Series
-from apps.gcd.models import Issue
-from apps.gcd.models import Cover
-from apps.gcd.models import Image
-from apps.gcd.models.seriesbond import SeriesBond, BOND_TRACKING, \
-                                       SUBNUMBER_TRACKING, MERGE_TRACKING
+                                    CreatorDegree, CreatorRelation, \
+                                    CreatorSchool, CreatorSignature, Award
+from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup, \
+                            Series, Issue, Cover, Image, \
+                            Feature, FeatureLogo, \
+                            Character, Group, CharacterRelation, \
+                            GroupRelation, GroupMembership, Universe, \
+                            INDEXED, SeriesBond, BOND_TRACKING, \
+                            SUBNUMBER_TRACKING, MERGE_TRACKING
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
@@ -40,14 +41,18 @@ STATE_CSS_NAME = {
 
 
 @register.filter
-def absolute_url(item, additional=''):
+def absolute_url(item, popup=None, descriptor=''):
     if item is not None and hasattr(item, 'get_absolute_url'):
-        if additional:
-            return mark_safe(u'<a href="%s" %s>%s</a>' %
-                             (item.get_absolute_url(), additional, esc(item)))
+        if descriptor == '':
+            descriptor = esc(item)
+        if popup and not settings.FAKE_IMAGES:
+            image_link = '<span class="image_popup"><img src="%s"></span>' \
+                         % popup.thumbnail.url
+            return mark_safe('<a href="%s" class="popup">%s%s</a>' %
+                             (item.get_absolute_url(), image_link, descriptor))
         else:
-            return mark_safe(u'<a href="%s">%s</a>' %
-                             (item.get_absolute_url(), esc(item)))
+            return mark_safe('<a href="%s">%s</a>' %
+                             (item.get_absolute_url(), descriptor))
     return ''
 
 
@@ -60,30 +65,34 @@ def cover_image_tag(cover, size_alt_text):
 @register.filter
 def show_story_short(story, no_number=False, markup=True):
     if no_number:
-        story_line = u''
+        story_line = ''
     else:
-        story_line = u'%s.' % story.sequence_number
+        story_line = '%s.' % story.sequence_number
 
     if story.title or story.first_line:
         title = show_title(story, True)
     else:
         if markup:
-            title = '<span class="no_data">no title</span>'
+            title = mark_safe('<span class="no_data">no title</span>')
         else:
             title = 'no title'
-    if story.feature:
-        story_line = u'%s %s (%s)' % (esc(story_line), title,
-                                      esc(story.feature))
+    if story.has_feature():
+        if markup:
+            story_line = '%s %s (%s)' % (esc(story_line), esc(title),
+                                         esc(story.show_feature()))
+        else:
+            story_line = '%s %s (%s)' % (story_line, title,
+                                         story.show_feature_as_text())
     else:
         if markup:
-            story_line = u'%s %s (%s)' % (
+            story_line = '%s %s (%s)' % (
               esc(story_line),
               title,
               '<span class="no_data">no feature</span>')
         else:
-            story_line = u'%s %s (no feature)' % (esc(story_line), title)
+            story_line = '%s %s (no feature)' % (esc(story_line), title)
 
-    story_line = u'%s %s' % (story_line, story.type)
+    story_line = '%s %s' % (story_line, story.type)
     page_count = show_page_count(story)
     if page_count:
         story_line += ', %sp' % page_count
@@ -92,26 +101,20 @@ def show_story_short(story, no_number=False, markup=True):
             story_line += '<span class="no_data"> no page count</span>'
         else:
             story_line += 'no page count'
-    return mark_safe(story_line)
-
-
-@register.filter
-def show_revision_short(revision, markup=True):
-    if revision is None:
-        return u''
-    if isinstance(revision, StoryRevision):
-        return show_story_short(revision, markup=markup)
-    return unicode(revision)
+    if markup:
+        return mark_safe(story_line)
+    else:
+        return story_line
 
 
 @register.filter
 def show_volume(issue):
     if issue.no_volume:
-        return u''
+        return ''
     if issue.volume == '':
-        return u'?'
+        return '?'
     if issue.volume_not_printed:
-        return u'[%s]' % issue.volume
+        return '[%s]' % issue.volume
     return issue.volume
 
 
@@ -120,8 +123,8 @@ def show_issue_number(issue_number):
     """
     Return issue number.
     """
-    return mark_safe('<span class="issue_number">' + esc(issue_number)
-                     + '</span>')
+    return mark_safe('<span class="issue_number">' + esc(issue_number) +
+                     '</span>')
 
 
 def show_one_barcode(_barcode):
@@ -175,25 +178,12 @@ def show_isbn(_isbn):
 
 @register.filter
 def show_issue(issue):
-    if issue.display_number:
-        issue_number = '%s' % (esc(issue.display_number))
-    else:
-        issue_number = ''
-    if issue.variant_name:
-        issue_number = '%s [%s]' % (issue_number, esc(issue.variant_name))
-    if issue_number:
-        issue_number = '<a href="%s">%s</a>' % (issue.get_absolute_url(),
-                                                issue_number)
-    return mark_safe('<a href="%s">%s</a> (%s series) %s' %
-                     (issue.series.get_absolute_url(),
-                      esc(issue.series.name),
-                      esc(issue.series.year_began),
-                      issue_number))
+    return issue.show_series_and_issue_link()
 
 
 @register.filter
 def show_series_tracking(series):
-    tracking_line = u""
+    tracking_line = ""
     if not series.has_series_bonds():
         return mark_safe(tracking_line)
 
@@ -211,16 +201,16 @@ def show_series_tracking(series):
 
     for srbond in srbonds:
         if series == srbond.bond.target:
-            near_issue_preposition = u"with"
-            far_issue_preposition = u"from"
-            far_preposition = u"from"
+            near_issue_preposition = "with"
+            far_issue_preposition = "from"
+            far_preposition = "from"
         elif series == srbond.bond.origin:
-            near_issue_preposition = u"after"
-            far_issue_preposition = u"with"
-            far_preposition = u"in"
+            near_issue_preposition = "after"
+            far_issue_preposition = "with"
+            far_preposition = "in"
             if srbond.bond.bond_type.id in MERGE_TRACKING:
-                far_issue_preposition = u"into"
-                far_preposition = u"into"
+                far_issue_preposition = "into"
+                far_preposition = "into"
         else:
             # Wait, why are we here?  Should we assert on this?
             continue
@@ -256,14 +246,14 @@ def show_series_tracking(series):
 def show_indicia_pub(issue):
     if issue.indicia_publisher is None:
         if issue.indicia_pub_not_printed:
-            ip_url = u'[none printed]'
+            ip_url = '[none printed]'
         else:
-            ip_url = u'?'
+            ip_url = '?'
     else:
-        ip_url = u'<a href=\"%s\">%s</a>' % \
+        ip_url = '<a href=\"%s\">%s</a>' % \
           (issue.indicia_publisher.get_absolute_url(), issue.indicia_publisher)
         if issue.indicia_pub_not_printed:
-            ip_url += u' [not printed on item]'
+            ip_url += ' [not printed on item]'
     return mark_safe(ip_url)
 
 
@@ -287,34 +277,34 @@ def index_status_css(issue):
 
 
 @register.filter
+def issue_image_status_css(issue):
+    """
+    Text form of issue image resources status.
+    """
+    if issue.num_scans == 1:
+        return 'partial'
+    elif issue.num_scans is None:
+        return 'available'
+    elif issue.num_scans == 2:
+        return 'pending'
+    else:
+        return 'approved'
+
+
+@register.filter
 def show_revision_type(cover):
     if cover.deleted:
-        return u'[DELETED]'
+        return '[DELETED]'
     if cover.cover:
         if cover.cover.marked:
-            return u'[REPLACEMENT]'
+            return '[REPLACEMENT]'
         else:
-            return u'[SUGGESTED REPLACEMENT]'
+            return '[SUGGESTED REPLACEMENT]'
     if cover.changeset.issuerevisions.count():
-        return u'[VARIANT]'
+        return '[VARIANT]'
     if cover.issue.has_covers():
-        return u'[ADDITIONAL]'
-    return u'[ADDED]'
-
-
-def compare_field_between_revs(field, rev, prev_rev):
-    old = getattr(prev_rev, field)
-    new = getattr(rev, field)
-    if type(new) == unicode:
-        field_changed = old.strip() != new.strip()
-    else:
-        # TODO should be not hard-coded
-        import apps.stddata.models
-        if type(old) == apps.stddata.models.Date:
-            field_changed = str(old) != str(new)
-        else:
-            field_changed = old != new
-    return field_changed
+        return '[ADDITIONAL]'
+    return '[ADDED]'
 
 
 @register.filter
@@ -338,10 +328,30 @@ def changed_fields(changeset, object):
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
+    elif object_class is Feature:
+        revision = changeset.featurerevisions.get(feature=object.id)
+    elif object_class is FeatureLogo:
+        revision = changeset.featurelogorevisions.get(feature_logo=object.id)
+    elif object_class is Universe:
+        revision = changeset.universerevisions.get(universe=object.id)
+    elif object_class is Character:
+        revision = changeset.characterrevisions.get(character=object.id)
+    elif object_class is Group:
+        revision = changeset.grouprevisions.get(group=object.id)
+    elif object_class is CharacterRelation:
+        revision = changeset.characterrelationrevisions\
+                            .get(character_relation=object.id)
+    elif object_class is GroupRelation:
+        revision = changeset.grouprelationrevisions\
+                            .get(group_relation=object.id)
+    elif object_class is GroupMembership:
+        revision = changeset.groupmembershiprevisions\
+                            .get(group_membership=object.id)
     elif object_class is Award:
         revision = changeset.awardrevisions.get(award=object.id)
     elif object_class is ReceivedAward:
-        revision = changeset.receivedawardrevisions.get(received_award=object.id)
+        revision = changeset.receivedawardrevisions\
+                            .get(received_award=object.id)
     elif object_class is Creator:
         revision = changeset.creatorrevisions.get(creator=object.id)
     elif object_class is CreatorMembership:
@@ -356,28 +366,31 @@ def changed_fields(changeset, object):
     elif object_class is CreatorNonComicWork:
         revision = changeset.creatornoncomicworkrevisions\
                             .get(creator_non_comic_work=object.id)
+    elif object_class is CreatorRelation:
+        revision = changeset.creatorrelationrevisions\
+                            .get(creator_relation=object.id)
+    elif object_class is CreatorSchool:
+        revision = changeset.creatorschoolrevisions\
+                            .get(creator_school=object.id)
+    elif object_class is CreatorSignature:
+        revision = changeset.creatorsignaturerevisions\
+                            .get(creator_signature=object.id)
     elif object_class in [Cover, Image]:
         return ""
 
-    prev_rev = revision.previous()
     changed_list = []
-    if prev_rev is None:
-        # There was no previous revision so only list the initial add of
-        # the object. Otherwise too many fields to list.
-        changed_list = [u'%s added' % title(revision.source_name
-                                                    .replace('_', ' '))]
+    if revision.added:
+        # Only list the initial add of the object.
+        # Otherwise too many fields to list.
+        changed_list = ['%s added' % title(revision.source_name
+                                                   .replace('_', ' '))]
     elif revision.deleted:
-        changed_list = [u'%s deleted' %
+        changed_list = ['%s deleted' %
                         title(revision.source_name.replace('_', ' '))]
     else:
+        revision.compare_changes()
         for field in revision._field_list():
-            if field == 'after':
-                # most ignorable fields handled in oi/view.py/compare()
-                # but this one should also be ignored on the initial change
-                # history page. the only time it's relevant the line will
-                # read "issue added"
-                continue
-            if compare_field_between_revs(field, revision, prev_rev):
+            if revision.changed[field]:
                 changed_list.append(field_name(field))
     return ", ".join(changed_list)
 
@@ -388,33 +401,33 @@ def changed_story_list(changeset):
     get a bulleted list of changes at the sequence level
     """
     if changeset.issuerevisions.count() and \
-       changeset.change_type != CTYPES['issue_bulk']:
+       changeset.change_type not in [CTYPES['series'],
+                                     CTYPES['issue_bulk']]:
         # only relevant for single issue changesets
         story_revisions = changeset.storyrevisions.all()\
                                    .order_by('sequence_number')
     else:
-        return u''
+        return ''
 
-    output = u''
+    output = ''
     if story_revisions.count() > 0:
         for story_revision in story_revisions:
-            prev_story_rev = story_revision.previous()
             story_changed_list = []
-            if prev_story_rev is None:
-                story_changed_list = [u'Sequence added']
+            if story_revision.added:
+                story_changed_list = ['Sequence added']
             elif story_revision.deleted:
-                story_changed_list = [u'Sequence deleted']
+                story_changed_list = ['Sequence deleted']
             else:
+                story_revision.compare_changes()
                 for field in story_revision._field_list():
-                    if compare_field_between_revs(field, story_revision,
-                                                  prev_story_rev):
+                    if story_revision.changed[field]:
                         story_changed_list.append(field_name(field))
             if story_changed_list:
-                output += u'<li>Sequence %s : %s' % \
+                output += '<li>Sequence %s : %s' % \
                           (story_revision.sequence_number,
                            ", ".join(story_changed_list))
-        if output is not u'':
-            output = u'<ul>%s</ul>' % output
+        if output != '':
+            output = '<ul>%s</ul>' % output
     return mark_safe(output)
 
 
@@ -435,44 +448,30 @@ def field_name(field):
     translate field name into more human friendly name
     """
     if field in ['is_current', 'is_surrogate']:
-        return u'%s?' % title(field.replace(u'is_', u''))
+        return '%s?' % title(field.replace('is_', ''))
     elif field in ['url', 'isbn']:
         return field.upper()
     elif field == 'after':
-        return u'Add Issue After'
+        return 'Add Issue After'
     elif field == 'indicia_pub_not_printed':
-        return u'Indicia Publisher Not Printed'
+        return 'Indicia Publisher Not Printed'
     elif field == 'title_inferred':
-        return u'Unofficial Title?'
+        return 'Unofficial Title?'
     elif field == 'cr_creator_names':
-        return u'Creator Names'
+        return 'Creator Names'
     else:
         return title(field.replace('_', ' '))
 
 
 @register.filter
-def link_other_reprint(reprint, is_source):
-    if is_source:
-        if hasattr(reprint, 'target'):
-            text = '<a href="%s">%s</a> <br> of %s' % \
-                     (reprint.target.get_absolute_url(),
-                      show_story_short(reprint.target),
-                      reprint.target.issue.full_name())
-        else:
-            text = '<a href="%s">%s</a>' % \
-                     (reprint.target_issue.get_absolute_url(),
-                      reprint.target_issue.full_name())
-    else:
-        if hasattr(reprint, 'origin'):
-            text = '<a href="%s">%s</a> <br> of %s' % \
-                     (reprint.origin.get_absolute_url(),
-                      show_story_short(reprint.origin),
-                      reprint.origin.issue.full_name())
-        else:
-            text = '<a href="%s">%s</a>' % \
-                     (reprint.origin_issue.get_absolute_url(),
-                      reprint.origin_issue.full_name())
-    return mark_safe(text)
+def uncertain_year(object, field_name):
+    """
+    display year with uncertain information
+    """
+    year = object.__dict__[field_name] if object.__dict__[field_name] else ''
+    if object.__dict__[field_name + '_uncertain']:
+        year = '%s ?' % (year)
+    return year
 
 
 @register.filter
@@ -522,5 +521,22 @@ def current_search(selected, search):
 def short_pub_type(publication_type):
     if publication_type:
         return '[' + publication_type.name[0] + ']'
+    else:
+        return ''
+
+
+@register.filter
+def pre_process_relation(relation, creator):
+    return relation.pre_process_relation(creator)
+
+
+@register.filter
+def character_for_universe(character, universe):
+    if character.active_specifications().filter(
+       to_character__universe=universe).count() == 1:
+        to_character = character.active_specifications()\
+          .get(to_character__universe=universe).to_character
+        return mark_safe(absolute_url(to_character,
+                                      descriptor=to_character.descriptor()))
     else:
         return ''

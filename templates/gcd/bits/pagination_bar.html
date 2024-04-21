@@ -1,69 +1,77 @@
 {% load i18n %}
 
+<div class="flex_right">
 <div class="right pagination">
+  <ul>
 {% if alpha_paginator.count > 1 %}
+  {% spaceless %}
     {% for a_page in alpha_paginator.page_range %}
+    <li>
       {% if a_page %}
         {% if a_page == alpha_page %}
-    <span>{{ a_page }}</span>
+      <span class="btn btn-default btn-sm btn-selected">{{ a_page }}</span>
         {% else %}
-    <a href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
+      <a class="btn btn-default btn-sm" href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
         {% endif %}
       {% else %}
-    <a>...</a>
+      <a>...</a>
       {% endif %}
+    </li>
     {% endfor %}
+    <li>&nbsp;&nbsp;</li>
+  {% endspaceless %}
 {% endif %}
 {% if page.has_other_pages %}
+  {% spaceless %}
+    <li>
   {% if page.has_previous %}
-    {% if extra_string %}
-  <a href="?{{ extra_string }}&amp;page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
-    {% else %}
-  <a href="?page={{ page.previous_page_number }}">&lt; {% trans "Previous" %}</a>
-    {% endif %}
+      <a class="btn btn-default btn-sm" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
   {% else %}
-    &lt; {% trans "Previous" %}
+      <span class="btn btn-default btn-sm" style="text-decoration: none">&#5176;</span>
   {% endif %} <!-- has_previous -->
-    |
+    </li>
   {% for number in page.page_range %}
-    {% ifequal number page.number %}
-  <span style="text-decoration: none">{{ number }}</span>
+    <li>
+    {% if number == page.number %}
+      <span class="btn btn-default btn-sm btn-selected" style="text-decoration: none">{{ number }}</span>
     {% else %}
-      {% if not number %}
-  ...  {# literally dots #}
+    {% if not number %}<span class="btn btn-default btn-sm"> ... {# literally dots #}</span>
       {% else %}{# pagelink num #}
         {% if extra_string %}
-  <a href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
+      <a class="btn btn-default btn-sm" href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
         {% else %}
-  <a href="?page={{ number }}">{{ number }}</a>
+      <a class="btn btn-default btn-sm" href="?page={{ number }}">{{ number }}</a>
         {% endif %}
       {% endif %}
-    {% endifequal %}
-  |
-  {% endfor %}
-  {% if page.has_next %}
-    {% if extra_string %}
-  <a href="?{{ extra_string }}&amp;page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
-    {% else %}
-  <a href="?page={{ page.next_page_number }}">{% trans "Next" %} &gt;</a>
     {% endif %}
+    </li>
+  {% endfor %}
+    <li>
+  {% if page.has_next %}
+    <a class="btn btn-default btn-sm" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
   {% else %}
-    {% trans "Next" %} &gt;
+      <span class="btn btn-default btn-sm" style="text-decoration: none">&#5171;</span>
   {% endif %} <!-- has_next -->
+    </li>
+  {% endspaceless %}
 {% else %}
-  &lt; {% trans "Previous" %} | {{ page.number }} | {% trans "Next" %} &gt;
+    <li> <span class="btn btn-default btn-sm" style="text-decoration: none">{{ page.number }}</span> </li>
 {% endif %}
-  <form method="GET" style="display:inline">
-    <label for="page">#</label>:
-    <input type="text" name="page" size="3">
-    <input type="submit" value="{% trans 'Go' %}">
+    <li>
+      <form method="GET" style="display:inline">
+        <label for="page">#</label>:
+        <input type="text" name="page" size="3">
+        <input type="submit" value="{% trans 'Go' %}">
 {% if advanced_search %}
   {% for field, value in request.GET.items %}
     {% if field != "page" and field != "submit" %}
-    <input type="hidden" name="{{ field }}" value="{{ value|default:'' }}">
-    </input>
+        <input type="hidden" name="{{ field }}" value="{{ value|default:'' }}">
+        </input>
     {% endif %}
   {% endfor %}
 {% endif %}
-  </form>
+      </form>
+    </li>
+  </ul>
+</div>
 </div>

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import pytest
 import mock
@@ -29,7 +29,7 @@ def test_excluded_fields():
     } | Revision._get_excluded_field_names()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_series_class():
     """ Patches foreign keys to prevent database access. """
     with mock.patch('%s.previous_revision' % SREV) as pr, \
@@ -43,7 +43,7 @@ def patched_series_class():
             mock.patch('%s.publisher' % SREV):
         # previous_revision needs to read as False by default so that the
         # Revision.added property behaves normally be default.
-        pr.__nonzero__.return_value = False
+        pr.return_value = False
         yield
 
 
@@ -135,7 +135,8 @@ def test_get_major_changes_added(patched_series_class):
                          publisher=PUBLISHER_TWO,
                          is_comics_publication=True,
                          is_current=True,
-                         is_singleton=False)
+                         is_singleton=False,
+                         previous_revision=None)
     c = new._get_major_changes()
     assert c == {
         'publisher changed': True,
@@ -200,7 +201,7 @@ def test_get_major_changes_deleted(patched_series_class):
     }
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def series_and_revision():
     """
     Tuple of series, series revision, and a mock of update_all_counts.
@@ -334,7 +335,7 @@ def test_post_assign_fields_leading_article(leading_article, name, sort_name):
     assert s.sort_name == sort_name
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def pre_save_mocks():
     with mock.patch('%s.get_ongoing_reservation' % SERIES) as get_ongoing, \
       mock.patch('apps.gcd.models.series.Series.scan_count',
@@ -397,6 +398,9 @@ def test_handle_dependents_to_singleton(year_began, key_date):
             'after': None,
             'number': '[nn]',
             'publication_date': year_began,
+            'notes': '',
+            'reservation_requested': False,
+            'keywords': '',
         }
         ir = IssueRevision(**ir_params)
 

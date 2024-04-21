@@ -1,0 +1,135 @@
+{% extends "gcd/base_content.html" %}
+
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Feature :: {{ feature.name }}
+{% endblock %}
+
+{% block content_header %}
+<h1 class="item_id">
+  <div class="left">
+    {{ feature.name }}
+  </div>
+</h1>
+<div class="item_id">
+  <div class="flex_left">
+    {{ feature.language }}
+  </div>
+</div>
+{% endblock content_header %}
+
+{% block content %}
+      <dl class="pub_data">
+{% if feature.disambiguation %}
+        <br><strong>Disambiguation:</strong> {{ feature.disambiguation }}
+{% endif %}
+{% if feature.genre %}
+        <p><strong>Genre:</strong> {{ feature.genre }}</p>
+{% endif %}
+{% if not feature.feature_type.id == 1 %}
+        <p><strong>Type:</strong> {{ feature.feature_type }}</p>
+{% endif %}
+{% if feature.year_created %}
+        <p><strong>Created in:</strong> {{ feature.display_year_created }}</p>
+{% endif %}
+{% if feature.notes %}
+        <dt> Notes:
+        <dd> {{ feature.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+<p>{{ feature|show_credit:'keywords' }}</P>
+      </dl>
+      <ul style="columns: 2;">
+        <li><a href='{% url "feature_creators" feature_id=feature.id %}'>Creator Checklist (via linked story records)</a></li>
+        <li><a href='{% url "feature_creator_names" feature_id=feature.id %}'>Creator Name Checklist (via linked story records)</a></li>
+{% if feature.feature_type.id == 1%}
+        <li><a href='{% url "feature_overview" feature_id=feature.id %}'>Issue Overview (via linked story records)</a></li>
+{% endif %}
+        <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue Checklist (via linked story records)</a></li>
+        <li><a href='{% url "feature_covers" feature_id=feature.id %}'>Cover List (via linked story records)</a></li>
+        <li><a href='{% url "feature_sequences" feature_id=feature.id %}'>Sequences List (via linked story records)</a></li>
+      </ul>
+{% endblock content %}
+
+{% block listing %}
+{% if page.object_list.count %}
+<hr>
+  {% if feature.feature_type.id == 1 %}
+<h2> Feature Logos</h2>
+  {%  else %}
+<h2> {{ feature.feature_type.name|title }} Logos</h2>
+  {% endif %}
+<table id="publisher_detail_listing" class="listing">
+  <tr>
+    <th> Logo</th>
+    <th> Name </th>
+    <th> Year Began </th>
+    <th> Year Ended </th>
+  </tr>
+  {% for logo in page.object_list %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> {% if not FAKE_IMAGES and logo.logo %} <a href="{{ logo.get_absolute_url }}"> <img src="{{ logo.logo.thumbnail.url }}"> {% endif %} </a> </td>
+    <td> <a href="{{ logo.get_absolute_url }}">{{ logo.name }}</a> </td>
+    <td> {{ logo|uncertain_year:"year_began"|default:"" }} </td>
+    <td> {{ logo|uncertain_year:"year_ended"|default:"" }} </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% if feature.from_related_feature.count or feature.to_related_feature.count %}
+<hr>
+<h2> Feature Relations </h2>
+<table id="publisher_detail_listing" class="listing">
+  {% for relation in feature.from_related_feature.all %}
+  <tr>
+    <td><a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.reverse_description }}</a>:</td>
+    <td>{{ relation.from_feature|absolute_url }}</td>
+  </tr>
+  {% endfor %}
+  {% if feature.other_translations %}
+    {% for relation in feature.other_translations %}
+    <tr>
+      <td>other {{ feature.language }} translation:</td>
+      <td>{{ relation.to_feature|absolute_url }}</td>
+    </tr>
+    {% endfor %}
+  {% endif  %}
+  {% for relation in feature.to_related_feature.all %}
+  <tr>
+  <td><a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.description }}</a>:</td>
+    <td>{{ relation.to_feature|absolute_url }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock listing %}
+
+{% block edit_box %}
+ {% if not preview %}
+   {% with object=feature object_class='feature' object_name='Feature' %}
+     {% include "gcd/bits/status_banner.html" %}
+   {% endwith %}
+ {% endif %}
+ {% if request.user.is_authenticated %}
+  <form method="GET"
+        action="{% url "add_feature_logo" feature_id=feature.id %}">
+      <input name="add_feature_logo" type="submit" value="Add Feature Logo"/>
+  </form>
+  {% endif %}
+ {% if request.user.is_authenticated %}
+  <form method="GET"
+        action="{% url "add_feature_relation" feature_id=feature.id %}">
+      <input name="add_feature_relation" type="submit" value="Add Feature Relation"/>
+  </form>
+  {% endif %}
+{% endblock edit_box %}
+
+{% block change_history %}
+  {% if preview %}
+    <a href="{% url "change_history" model_name='feature' id=feature.source.id %}">View Change History</a>
+  {% else %}
+    <a href="{% url "change_history" model_name='feature' id=feature.id %}">View Change History</a>
+  {% endif %}
+{% endblock change_history %}

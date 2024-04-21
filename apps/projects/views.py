@@ -1,12 +1,10 @@
 from django.db.models import Count, Sum
-from django.shortcuts import render_to_response
-from django.template import RequestContext
 from django.db.models import F
 
-from apps.stddata.models import Country, Language
-from apps.gcd.models import Publisher, Issue, StoryType, Series, Story
+# from apps.stddata.models import Country, Language
+from apps.gcd.models import Publisher, Issue, StoryType, Series, Story, Creator
 from apps.gcd.views import paginate_response
-from apps.projects.forms import IssuesWithCoversForm, ReprintInspectionForm
+from apps.projects.forms import IssuesWithCoversForm
 
 
 def issues_with_several_covers(request):
@@ -49,7 +47,7 @@ def issues_with_several_covers(request):
         # for the pagination bar and select box
         vars['query_string'] = 'publisher=709'
         get_copy = request.GET.copy()
-        get_copy['items'] = [(u'publisher', 709),]
+        get_copy['items'] = [('publisher', 709),]
         request.GET = get_copy
     issues = issues.filter(**qargs).order_by(*qorder)
     vars['form'] = form

@@ -8,16 +8,20 @@ from django.utils.html import conditional_escape as esc
 
 from stdnum import ean as stdean
 
-from apps.gcd.templatetags.display import absolute_url, field_name, \
+from apps.gcd.templatetags.display import absolute_url, \
                                           sum_page_counts, show_barcode, \
                                           show_isbn
-from apps.gcd.templatetags.credits import format_page_count, split_reprint_string
+from apps.gcd.templatetags.credits import format_page_count, \
+                                          split_reprint_string
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, \
-                           ReprintRevision, StoryRevision
+                           ReprintRevision, StoryRevision, IssueRevision
+from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
+from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
+
 
 def valid_barcode(barcode):
     '''
@@ -40,6 +44,7 @@ def valid_barcode(barcode):
 
     return stdean.is_valid(barcode)
 
+
 # check to return True for yellow css compare highlighting
 @register.filter
 def check_changed(changed, field):
@@ -47,15 +52,41 @@ def check_changed(changed, field):
         return changed[field]
     return False
 
+
 # display certain similar fields' data in the same way
 @register.filter
 def field_value(revision, field):
     value = getattr(revision, field)
+    if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
+        value = esc(value)
+        if type(revision).__name__ == 'IssueRevision':
+            credits = revision.issue_credit_revisions.filter(
+                credit_type__id=CREDIT_TYPES[field],
+                deleted=False)
+        else:
+            credits = revision.story_credit_revisions.filter(
+                               credit_type__id=CREDIT_TYPES[field],
+                               deleted=False)
+        if value and credits:
+            value += '; '
+        for credit in credits:
+            value += credit.creator.display_credit(credit, url=True,
+                                                   compare=True,
+                                                   show_sources=True) + '; '
+        if credits:
+            value = value[:-2]
+        return mark_safe(value)
+    if field == 'characters':
+        return mark_safe(revision.show_characters(css_style=False,
+                                                  compare=True))
     if field in ['is_surrogate', 'no_volume', 'display_volume_with_number',
                  'no_brand', 'page_count_uncertain', 'title_inferred',
                  'no_barcode', 'no_indicia_frequency', 'no_isbn',
-                 'year_began_uncertain', 'year_ended_uncertain',
-                 'on_sale_date_uncertain', 'is_comics_publication']:
+                 'year_began_uncertain', 'year_overall_began_uncertain',
+                 'year_ended_uncertain', 'year_overall_ended_uncertain',
+                 'on_sale_date_uncertain', 'is_comics_publication',
+                 'no_indicia_printer', 'has_indicia_printer',
+                 'has_about_comics' 'has_publisher_code_number']:
         return yesno(value, 'Yes,No')
     elif field in ['is_current']:
         res_holder_display = ''
@@ -64,10 +95,13 @@ def field_value(revision, field):
             if revision.previous().is_current and not value and reservation:
                 res_holder = reservation.indexer
                 res_holder_display = ' (ongoing reservation held by %s %s)' % \
-                  (res_holder.first_name, res_holder.last_name)
+                                     (res_holder.first_name,
+                                      res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
     elif field in ['publisher', 'indicia_publisher', 'series',
-                   'origin_issue', 'target_issue', 'award']:
+                   'origin_issue', 'target_issue', 'award',
+                   'from_feature', 'to_feature', 'character',
+                   'from_group', 'to_group', 'from_character', 'to_character']:
         return absolute_url(value)
     elif field in ['origin', 'target']:
         return value.full_name_with_link()
@@ -76,11 +110,26 @@ def field_value(revision, field):
             if settings.FAKE_IMAGES:
                 return absolute_url(value)
             else:
-                return mark_safe('<img src="' + value.emblem.icon.url + '"> ' \
+                return mark_safe('<img src="' + value.emblem.icon.url + '"> '
                                  + absolute_url(value))
         return absolute_url(value)
+    elif field in ['feature_object', 'feature_logo']:
+        first = True
+        features = ''
+        for feature in value.all():
+            if first:
+                first = False
+            else:
+                features += '; '
+            if field == 'feature_object':
+                features += '<a href="%s">%s</a>' % (
+                  feature.get_absolute_url(),
+                  esc(feature.name_with_disambiguation()))
+            else:
+                features += absolute_url(feature, feature.logo)
+        return mark_safe(features)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
-                   'characters', 'synopsis']:
+                   'synopsis']:
         return linebreaksbr(value)
     elif field == 'reprint_notes':
         reprint = ''
@@ -96,12 +145,42 @@ def field_value(revision, field):
     elif field in ['indicia_pub_not_printed']:
         return yesno(value, 'Not Printed,Printed')
     elif field == 'group':
-        brand_groups = ''
-        for brand in value.all():
-            brand_groups += absolute_url(brand) + '; '
-        if brand_groups:
-            brand_groups = brand_groups[:-2]
-        return mark_safe(brand_groups)
+        if revision.source_name == 'brand':
+            brand_groups = ''
+            for brand in value.all():
+                brand_groups += absolute_url(brand) + '; '
+            if brand_groups:
+                brand_groups = brand_groups[:-2]
+            return mark_safe(brand_groups)
+        else:
+            return absolute_url(value)
+    elif field == 'indicia_printer':
+        printers = ''
+        for printer in value.all():
+            printers += absolute_url(printer) + '; '
+        if printers:
+            printers = printers[:-2]
+        return mark_safe(printers)
+    elif field == 'universe':
+        if type(revision).__name__ in ['CharacterRevision', 'GroupRevision']:
+            return mark_safe(absolute_url(value))
+        universes = ''
+        for universe in value.all():
+            universes += absolute_url(universe) + '; '
+        if universes:
+            universes = universes[:-2]
+            if type(revision).__name__ == 'StoryRevision' and revision.issue:
+                key_date = revision.issue.key_date
+            else:
+                key_date = ''
+        if universes and key_date:
+            for universe in value.all():
+                if universe.year_first_published and \
+                  int(key_date[:4]) < universe.year_first_published:
+                    universes += '<br><br>Note: Universe "%s" used ' \
+                        'before its year first published %d.' % (
+                         universe, universe.year_first_published)
+        return mark_safe(universes)
     elif field in ['no_editing', 'no_script', 'no_pencils', 'no_inks',
                    'no_colors', 'no_letters']:
         return yesno(value, 'X, ')
@@ -125,39 +204,40 @@ def field_value(revision, field):
                     total_pages = sum_page_counts(stories)
             sum_story_pages = format_page_count(total_pages)
 
-            return u'%s (note: total sum of story page counts is %s)' % \
+            return '%s (note: total sum of story page counts is %s)' % \
                    (format_page_count(value), sum_story_pages)
         return format_page_count(value)
     elif field == 'isbn':
         if value:
             if validated_isbn(value):
-                return u'%s (note: valid ISBN)' % show_isbn(value)
+                return '%s (note: valid ISBN)' % show_isbn(value)
             elif len(value.split(';')) > 1:
                 return_val = show_isbn(value) + ' (note: '
                 for isbn in value.split(';'):
-                    return_val = return_val + u'%s; ' % ("valid ISBN" \
-                                   if validated_isbn(isbn) else "invalid ISBN")
+                    return_val = return_val + '%s; ' % (
+                      "valid ISBN" if validated_isbn(isbn) else "invalid ISBN")
                 return return_val + 'ISBNs are inequal)'
             elif value:
-                return u'%s (note: invalid ISBN)' % value
+                return '%s (note: invalid ISBN)' % value
     elif field == 'barcode':
         if value:
             barcodes = value.split(';')
             return_val = show_barcode(value) + ' (note: '
             for barcode in barcodes:
-                return_val = return_val + u'%s; ' % ("valid UPC/EAN part" \
-                             if valid_barcode(barcode) \
-                             else "invalid UPC/EAN part or non-standard")
+                return_val = return_val + '%s; ' % (
+                  "valid UPC/EAN part" if valid_barcode(barcode)
+                  else "invalid UPC/EAN part or non-standard")
             return return_val[:-2] + ')'
     elif field == 'leading_article':
-        if value == True:
-            return u'Yes (sorted as: %s)' % remove_leading_article(revision.name)
+        if value is True:
+            return 'Yes (sorted as: %s)' % remove_leading_article(
+              revision.name)
         else:
-            return u'No'
+            return 'No'
     elif field in ['has_barcode', 'has_isbn', 'has_issue_title',
                    'has_indicia_frequency', 'has_volume', 'has_rating']:
         if hasattr(revision, 'changed'):
-            if revision.changed[field] and value == False:
+            if revision.changed[field] and value is False:
                 kwargs = {field[4:]: ''}
                 if field[4:] == 'issue_title':
                     kwargs = {'title': ''}
@@ -165,37 +245,99 @@ def field_value(revision, field):
                     value_count = revision.series.active_issues()\
                                                  .exclude(**kwargs).count()
                     if value_count:
-                        return 'No (note: %d issues have a non-empty %s value)' % \
-                                (value_count, field[4:])
+                        return 'No (note: %d issues have a non-empty %s '\
+                               'value)' % (value_count, field[4:])
         return yesno(value, 'Yes,No')
     elif field == 'is_singleton':
         if hasattr(revision, 'changed'):
-            if revision.changed[field] and value == True:
-                 if revision.series:
-                     value_count = revision.series.active_base_issues().count()
-                     if value_count != 1:
+            if revision.changed[field] and value is True:
+                if revision.series:
+                    value_count = revision.series.active_base_issues().count()
+                    if value_count != 1:
                         return 'Yes (note: the series has %d issue%s)' % \
-                                (value_count, pluralize(value_count))
-                     elif revision.series.active_issues()\
-                                  .exclude(indicia_frequency='').count():
+                               (value_count, pluralize(value_count))
+                    elif revision.series.active_issues()\
+                                 .exclude(indicia_frequency='').count():
                         return 'Yes (note: the issue has an indicia frequency)'
         return yesno(value, 'Yes,No')
     elif field == 'after' and not hasattr(revision, 'changed'):
         # for previous revision (no attr changed) display empty string
         return ''
-
     elif field == 'cr_creator_names':
-        creator_names = ", ".join(revision.cr_creator_names.all().values_list('name', flat=True))
+        creator_names = ", ".join(value.all().values_list('name', flat=True))
         return creator_names
-
+    elif field == 'creator_name':
+        creator_names = "; ".join(value.all().values_list('name', flat=True))
+        return creator_names
+    elif field == 'feature_object':
+        features = "; ".join(value.all().values_list('name', flat=True))
+        return features
+    elif field == 'feature_logo':
+        features = "; ".join(value.all().values_list('name', flat=True))
+        return features
+    elif field == 'indicia_printer':
+        features = "; ".join(value.all().values_list('name', flat=True))
+        return features
+    elif (field == 'feature' and
+          revision._meta.model_name == 'featurelogorevision'):
+        features = ''
+        for feature in value.all():
+            features += absolute_url(feature) + '; '
+        if features:
+            features = features[:-2]
+        return mark_safe(features)
+    elif (field == 'name' and
+          revision._meta.model_name == 'creatorsignaturerevision'):
+        if revision.source:
+            return absolute_url(revision.source, descriptor=value)
+    elif field == 'variant_cover_status':
+        return VARIANT_COVER_STATUS[value]
     return value
 
-@register.assignment_tag
+
+@register.simple_tag
 def diff_list(prev_rev, revision, field):
     """Generates an array which describes the change in text fields"""
+    if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing',
+                 'characters']:
+        diff = diff_match_patch().diff_main(field_value(prev_rev, field),
+                                            field_value(revision, field))
+        diff_match_patch().diff_cleanupSemantic(diff)
+        new_diff = []
+        splitted_link = False
+        splitted_signature_link = False
+        for di in diff:
+            if splitted_link or splitted_signature_link:
+                if di[1].find('/">') >= 0 and di[0] != 0:
+                    pos = di[1].find('/">') + len('/">')
+                    if di[0] == 1:
+                        di = (2, di[1][:pos] + "<span class='added'>"
+                              + di[1][pos:])
+                        splitted_link = False
+                        splitted_signature_link = False
+                    else:
+                        di = (-2, di[1][:pos] + "<span class='deleted'>"
+                              + di[1][pos:])
+                elif di[1].find('/">') >= 0 and di[0] == 0:
+                    splitted_link = False
+                    splitted_signature_link = False
+                else:
+                    di = (3 * di[0], di[1])
+            if di[1].find('<a href="/creator/') >= 0 and \
+               di[1].find('/">', di[1].rfind('<a href="/creator/')) < 0:
+                splitted_link = True
+            elif (di[1].find('<a href="/creator_signature/') >= 0 and
+                  di[1].rfind('/">',
+                              di[1].rfind('<a href="/creator_signature/'))
+                  < 0):
+                splitted_signature_link = True
+            elif (di[1].find('<a href="/character/') >= 0 and
+                  di[1].find('/">', di[1].rfind('<a href="/character/')) < 0):
+                splitted_link = True
+            new_diff.append((di[0], mark_safe(di[1])))
+        return new_diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
-                 'characters', 'synopsis', 'script', 'pencils', 'inks',
-                 'colors', 'letters', 'editing', 'feature', 'title',
+                 'synopsis', 'title', 'first_line',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name',
                  'price', 'indicia_frequency', 'variant_name',
@@ -211,7 +353,7 @@ def diff_list(prev_rev, revision, field):
 @register.filter
 def show_diff(diff_list, change):
     """show changes in diff with markings for add/delete"""
-    compare_string = u""
+    compare_string = ""
     span_tag = "<span class='%s'>%s</span>"
     if change == "orig":
         for i in diff_list:
@@ -219,12 +361,20 @@ def show_diff(diff_list, change):
                 compare_string += esc(i[1])
             elif i[0] == -1:
                 compare_string += span_tag % ("deleted", esc(i[1]))
+            elif i[0] == -2:
+                compare_string += esc(i[1]) + "</span>"
+            elif i[0] == -3:
+                compare_string += esc(i[1])
     else:
         for i in diff_list:
             if i[0] == 0:
                 compare_string += esc(i[1])
             elif i[0] == 1:
                 compare_string += span_tag % ("added", esc(i[1]))
+            elif i[0] == 2:
+                compare_string += esc(i[1]) + "</span>"
+            elif i[0] == 3:
+                compare_string += esc(i[1])
     return mark_safe(compare_string)
 
 
@@ -234,14 +384,16 @@ def compare_current_reprints(object_type, changeset):
     if object_type.changeset_id != changeset.id:
         if not object_type.source:
             return ''
-        active = ReprintRevision.objects.filter(next_revision__in= \
-                                         changeset.reprintrevisions.all())
-        if type(object_type) == StoryRevision:
-            active_origin = active.filter(origin_story=object_type.source)
-            active_target = active.filter(target_story=object_type.source)
+        active = ReprintRevision.objects.filter(
+          next_revision__in=changeset.reprintrevisions.all())
+        if type(object_type) is StoryRevision:
+            active_origin = active.filter(origin=object_type.source)
+            active_target = active.filter(target=object_type.source)
         else:
-            active_origin = active.filter(origin_issue=object_type.source)
-            active_target = active.filter(target_issue=object_type.source)
+            active_origin = active.filter(origin_issue=object_type.source,
+                                          origin=None)
+            active_target = active.filter(target_issue=object_type.source,
+                                          target=None)
     else:
         if not object_type.source:
             active_origin = object_type.origin_reprint_revisions\
@@ -253,6 +405,9 @@ def compare_current_reprints(object_type, changeset):
                 .filter(changeset=changeset)
             active_target = object_type.source.target_reprint_revisions\
                 .filter(changeset=changeset)
+    if type(object_type) is IssueRevision:
+        active_origin = active_origin.filter(origin=None, origin_revision=None)
+        active_target = active_target.filter(target=None, target_revision=None)
 
     if not object_type.source:
         kept_origin = ReprintRevision.objects.none()
@@ -260,23 +415,18 @@ def compare_current_reprints(object_type, changeset):
     else:
         kept_origin = object_type.source.origin_reprint_revisions\
           .filter(changeset__modified__lte=changeset.modified)\
-          .filter(next_revision=None).exclude(changeset=changeset)\
+          .exclude(changeset=changeset)\
           .filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True)
-        kept_origin = kept_origin | object_type.source.origin_reprint_revisions\
-          .filter(changeset__modified__lte=changeset.modified)\
-          .exclude(changeset=changeset).filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True).exclude(next_revision=None)
 
         kept_target = object_type.source.target_reprint_revisions\
           .filter(changeset__modified__lte=changeset.modified)\
-          .filter(next_revision=None).exclude(changeset=changeset)\
+          .exclude(changeset=changeset)\
           .filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True)
-        kept_target = kept_target | object_type.source.target_reprint_revisions\
-          .filter(changeset__modified__lte=changeset.modified)\
-          .exclude(changeset=changeset).filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True).exclude(next_revision=None)
+        if type(object_type) is IssueRevision:
+            kept_origin = kept_origin.filter(origin=None, origin_revision=None)
+            kept_target = kept_target.filter(target=None, target_revision=None)
 
     if active_origin.exists() or active_target.exists():
         if object_type.changeset_id != changeset.id:
@@ -286,37 +436,34 @@ def compare_current_reprints(object_type, changeset):
             reprint_string = '<ul>The following reprint links are edited ' \
                              'in this changeset.'
 
-        active_target = list(active_target.select_related(\
-                             'origin_issue__series__publisher',
-                             'origin_story__issue__series__publisher',
-                             'origin_revision__issue__series__publisher',
-                             'target_issue',
-                             'target_story__issue',
-                             'target_revision__issue'))
-        active_target = sorted(active_target, key=lambda a: a.origin_sort)
+        active_target = active_target.select_related(
+                        'origin_issue__series__publisher',
+                        'origin_revision__issue__series__publisher',
+                        'target_issue',
+                        'target_revision__issue')
+        active_target = active_target.order_by('origin_issue__key_date')
 
-        active_origin = list(active_origin.select_related(\
-                            'target_issue__series__publisher',
-                            'target_story__issue__series__publisher',
-                            'target_revision__issue__series__publisher',
-                            'origin_issue',
-                            'origin_story__issue',
-                            'origin_revision__issue'))
-        active_origin = sorted(active_origin, key=lambda a: a.target_sort)
+        active_origin = active_origin.select_related(
+                        'target_issue__series__publisher',
+                        'target_revision__issue__series__publisher',
+                        'origin_issue',
+                        'origin_revision__issue')
+        active_origin = active_origin.order_by('target_issue__key_date')
 
-        for reprint in active_target + active_origin:
+        for reprint in (active_origin | active_target):
             if object_type.changeset_id != changeset.id:
                 do_compare = False
                 action = ''
             else:
                 do_compare = True
-                if reprint.in_type == None:
+                if reprint.previous_revision is None:
                     action = " <span class='added'>[ADDED]</span>"
                 elif reprint.deleted:
                     action = " <span class='deleted'>[DELETED]</span>"
                 else:
                     action = ""
-            reprint_string = '%s<li>%s%s</li>' % (reprint_string,
+            reprint_string = '%s<li>%s%s</li>' % (
+              reprint_string,
               reprint.get_compare_string(object_type.issue,
                                          do_compare=do_compare),
               action)
@@ -326,35 +473,20 @@ def compare_current_reprints(object_type, changeset):
 
     if kept_origin.exists() or kept_target.exists():
         kept_string = ''
-        kept_target = list(kept_target.select_related(\
-                           'origin_issue__series__publisher',
-                           'origin_story__issue__series__publisher',
-                           'origin_revision__issue__series__publisher',
-                           'target_issue',
-                           'target_story__issue',
-                           'target_revision__issue'))
-        kept_target = sorted(kept_target, key=lambda a: a.origin_sort)
+        kept_target = kept_target.order_by('origin_issue__key_date')
+        kept_origin = kept_origin.order_by('target_issue__key_date')
 
-        kept_origin = list(kept_origin.select_related(\
-                           'target_issue__series__publisher',
-                           'target_story__issue__series__publisher',
-                           'target_revision__issue__series__publisher',
-                           'origin_issue',
-                           'origin_story__issue',
-                           'origin_revision__issue'))
-        kept_origin = sorted(kept_origin, key=lambda a: a.target_sort)
-
-        for reprint in kept_target + kept_origin:
+        for reprint in kept_origin.union(kept_target):
             # the checks for nex_revision.changeset seemingly cannot be done
             # in the filter/exclude process above. next_revision does not need
             # to exists and makes problems in that.
             if not hasattr(reprint, 'next_revision') or \
-              ( reprint.next_revision.changeset != changeset and not
-                ( reprint.next_revision.changeset.state == states.APPROVED and
-                  reprint.next_revision.changeset.modified <= changeset.modified)):
-                kept_string = '%s<li>%s' % (kept_string,
-                  reprint.get_compare_string(object_type.issue))
-                if reprint.source and reprint.source.reserved:
+              (reprint.next_revision.changeset != changeset and not
+                (reprint.next_revision.changeset.state == states.APPROVED and
+                 reprint.next_revision.changeset.modified <= changeset.modified)):
+                kept_string = '%s<li>%s' % (
+                  kept_string, reprint.get_compare_string(object_type.issue))
+                if reprint.source and is_locked(reprint.source):
                     kept_string += '<br>reserved in a different changeset'
                 kept_string += '</li>'
         if kept_string != '':
@@ -362,6 +494,61 @@ def compare_current_reprints(object_type, changeset):
                 'part of this change.<ul>' + kept_string
 
     return mark_safe(reprint_string)
+
+
+@register.filter
+def show_credit_status(story):
+    """
+    Display a set of letters indicating which of the required credit fields
+    have been filled out.  Technically, the editing field is not required but
+    it has historically been displayed as well.  The required editing field
+    is now directly on the issue record.
+    """
+    status = []
+    required_remaining = 5
+
+    if story.script or story.no_script or \
+       story.story_credit_revisions.filter(credit_type__name='script')\
+                                   .exists():
+        status.append('S')
+        required_remaining -= 1
+
+    if story.pencils or story.no_pencils or \
+       story.story_credit_revisions.filter(credit_type__name='pencils')\
+                                   .exists():
+        status.append('P')
+        required_remaining -= 1
+
+    if story.inks or story.no_inks or \
+       story.story_credit_revisions.filter(credit_type__name='inks')\
+                                   .exists():
+        status.append('I')
+        required_remaining -= 1
+
+    if story.colors or story.no_colors or \
+       story.story_credit_revisions.filter(credit_type__name='colors')\
+                                   .exists():
+        status.append('C')
+        required_remaining -= 1
+
+    if story.letters or story.no_letters or \
+       story.story_credit_revisions.filter(credit_type__name='letters')\
+                                   .exists():
+        status.append('L')
+        required_remaining -= 1
+
+    if story.editing or story.no_editing or \
+       story.story_credit_revisions.filter(credit_type__name='editing')\
+                                   .exists():
+        status.append('E')
+
+    completion = 'complete'
+    if required_remaining:
+        completion = 'incomplete'
+    snippet = '[<span class="%s">' % completion
+    snippet += ' '.join(status)
+    snippet += '</span>]'
+    return mark_safe(snippet)
 
 
 @register.filter

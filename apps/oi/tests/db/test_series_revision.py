@@ -24,7 +24,7 @@ def test_create_add_revision(any_added_series_rev, series_add_values,
                              any_adding_changeset):
     rev = any_added_series_rev
 
-    for k, v in series_add_values.iteritems():
+    for k, v in series_add_values.items():
         assert getattr(rev, k) == v
 
     assert rev.series is None
@@ -68,9 +68,10 @@ def test_commit_added_revision(any_added_series_rev, series_add_values,
     assert rev.series is not None
     assert rev.source is rev.series
 
-    for k, v in series_add_values.iteritems():
+    for k, v in series_add_values.items():
         if k == 'keywords':
-            kws = [k for k in rev.publisher.keywords.names()]
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            kws = [k.name for k in rev.series.keywords.all()]
             kws.sort()
             assert kws == keywords['list']
         else:
@@ -131,7 +132,10 @@ def test_commit_add_rev_singleton(any_added_series_rev):
                                      series=rev.series,
                                      after=None,
                                      number='[nn]',
-                                     publication_date=rev.year_began)
+                                     publication_date=rev.year_began,
+                                     notes='blah blah whatever',
+                                     keywords='Bar; bar; foo',
+                                     reservation_requested=False)
     assert ir.key_date == '%d-00-00' % rev.year_began
     ir.save.assert_called_once_with()
     assert not ir.commit_to_display.called
@@ -186,7 +190,10 @@ def test_commit_add_rev_non_comics_singleton(any_added_series_rev):
                                      series=rev.series,
                                      after=None,
                                      number='[nn]',
-                                     publication_date=rev.year_began)
+                                     publication_date=rev.year_began,
+                                     notes='blah blah whatever',
+                                     keywords='Bar; bar; foo',
+                                     reservation_requested=False)
     assert ir.key_date == '%d-00-00' % rev.year_began
     ir.save.assert_called_once_with()
     assert not ir.commit_to_display.called
@@ -194,7 +201,7 @@ def test_commit_add_rev_non_comics_singleton(any_added_series_rev):
 
 @pytest.mark.django_db
 def test_create_edit_revision(any_added_series, series_add_values,
-                              any_editing_changeset):
+                              any_editing_changeset, keywords):
     # Simple version of this for mocking.  Real article testing elsewhere.
     sort_name = any_added_series.name[any_added_series.name.index(' ') + 1:]
     with mock.patch('apps.oi.models.remove_leading_article') as remover:
@@ -202,8 +209,14 @@ def test_create_edit_revision(any_added_series, series_add_values,
         rev = SeriesRevision.clone(data_object=any_added_series,
                                    changeset=any_editing_changeset)
 
-    for k, v in series_add_values.iteritems():
-        assert getattr(rev, k) == v
+    for k, v in series_add_values.items():
+        if k == 'keywords':
+            # rev.###.keywords.names() gives wrong result for 'Bar', 'bar'
+            kws = [k.name for k in rev.series.keywords.all()]
+            kws.sort()
+            assert kws == keywords['list']
+        else:
+            assert getattr(rev, k) == v
 
     assert rev.series is any_added_series
 

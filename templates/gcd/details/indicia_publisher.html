@@ -1,9 +1,10 @@
 {% extends "gcd/base_view.html" %}
 
-{% load staticfiles %}
+{% load static %}
 {% load i18n %}
 {% load display %}
 {% load credits %}
+{% load django_tables2 %}
 
 {% block title %}
 GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
@@ -12,6 +13,11 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 {% block css %}
 <link rel="stylesheet" type="text/css"
       href="{% static "css/gcd/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}
@@ -27,17 +33,29 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 <div class="control_body">
   <div id="control_container">
     <div id="control_center">
+{% if indicia_publisher.year_overall_began or indicia_publisher.year_overall_ended %}
+      <dl style="columns: 2; margin-bottom: -1em" class="pub_data">
+  {% if indicia_publisher.year_overall_began %}
+        <dt> Publishing Began:</dt><dd>{{ indicia_publisher.year_overall_began }}</dd>
+        <dt> Comics Publishing Began:</dt><dd>{{ indicia_publisher.year_began }}</dd>
+  {% endif %}
+  {% if indicia_publisher.year_overall_ended %}
+        <dt> Publishing Ended:</dt><dd>{{ indicia_publisher.year_overall_ended }}</dd>
+        <dt> Comics Publishing Ended:</dt><dd>{{ indicia_publisher.year_ended }}</dd>
+  {% endif %}
+      </dl>
+{% endif %}
       <dl class="pub_data">
 {% if indicia_publisher.is_surrogate %}
-        <dt> Surrogate:
-        <dd> This company was a surrogate for {{ indicia_publisher.parent }}, meaning that it 
+        <dt> Surrogate:</dt>
+        <dd> This company was a surrogate for {{ indicia_publisher.parent }}, meaning that it
              published material on behalf of {{ indicia_publisher.parent }} but was not
-             directly associated with it.
+             directly associated with it.</dd>
 {% endif %}
-        <dt> Country:
-        <dd> {{ indicia_publisher.country.name }}
-        <dt> Number of Issues:
-        <dd> {{ indicia_publisher.issue_count }}
+        <dt> Country:</dt>
+        <dd> {{ indicia_publisher.country.name }}</dd>
+        <dt> Number of Issues:</dt>
+        <dd> {{ indicia_publisher.issue_count }}</dd>
 {% if indicia_publisher.url %}
         <dt> Web Site:
         <dd> <a href="{{ indicia_publisher.url }}">{{ indicia_publisher.url }}</a>
@@ -48,18 +66,17 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 {% endif %}
 {{ indicia_publisher|show_credit:'keywords' }}
       </dl>
-    </div>
-  </div>
+    </div> <!-- control_center -->
 
 {% if not preview or indicia_publisher.source %}
-  <div id="control_rail">
-    <div class="edit_box">
+    <div id="control_rail">
+      <div class="edit_box">
   {% if MYCOMICS %}
-      <div class="edit_header">
-        <div>my.comics.org</div>
-      </div>
+        <div class="edit_header">
+          <div>my.comics.org</div>
+        </div>
   {% else %}
-      <div class="edit_header">Editing</div>
+        <div class="edit_header">Editing</div>
      {% if not preview %}
        {% with indicia_publisher as object %}
        {% with 'indicia_publisher' as object_class %}
@@ -69,37 +86,22 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
        {% endwith %}
        {% endwith %}
      {% endif %}
-    </div>
+      </div>
   {% endif %} <!-- MYCOMICS -->
-    <div id="change_history" class="edit_footer">
+      <div id="change_history" class="edit_footer">
   {% if preview %}
-      <a href="{% url "change_history" model_name='indicia_publisher' id=indicia_publisher.source.id %}">View Change History</a>
+        <a href="{% url "change_history" model_name='indicia_publisher' id=indicia_publisher.source.id %}">View Change History</a>
   {% else %}
-      <a href="{% url "change_history" model_name='indicia_publisher' id=indicia_publisher.id %}">View Change History</a>
+        <a href="{% url "change_history" model_name='indicia_publisher' id=indicia_publisher.id %}">View Change History</a>
   {% endif %}
-    </div>
-  </div>
-{% endif %}
-</div>
+      </div>
+    </div> <!-- control_rail -->
+{% endif %} <!-- not preview or brand.source -->
+  </div> <!-- control_container -->
+</div> <!-- control_body -->
 
-{% if items %}
-<table id="publisher_detail_listing" class="listing">
-  <tr>
-    <th> Issue </th>
-    <th> Publication Date </th>
-    <th> Brand </th>
-  </tr>
-  {% for issue in items %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td> {{ issue|show_issue }} </td>
-    <td> {{ issue.publication_date }} </td>
-    <td> {% if not issue.no_brand %}
-           {{ issue.brand|absolute_url|default:"?" }}
-         {% endif %} </td>
-  </tr>
-  {% endfor %}
-</table>
-{% endif %}
+<div style="clear: both;"></div>
+{% render_table table %}
 
 {% with 1 as paginate_only %}
 {% with indicia_publisher as publisher %}

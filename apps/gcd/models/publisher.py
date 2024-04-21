@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models
 from django.db.models import F
-from django.core import urlresolvers
+import django.urls as urlresolvers
 from apps.stddata.models import Country
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
@@ -17,7 +17,7 @@ from .image import Image
 
 def _display_year(year, flag):
     if year:
-        return str(year) + (u' ?' if flag else u'')
+        return str(year) + (' ?' if flag else '')
     else:
         return '?'
 
@@ -32,9 +32,13 @@ class BasePublisher(GcdData):
     year_ended = models.IntegerField(null=True)
     year_began_uncertain = models.BooleanField(default=False, db_index=True)
     year_ended_uncertain = models.BooleanField(default=False, db_index=True)
+    year_overall_began = models.IntegerField(db_index=True, null=True)
+    year_overall_ended = models.IntegerField(null=True)
+    year_overall_began_uncertain = models.BooleanField(default=False, db_index=True)
+    year_overall_ended_uncertain = models.BooleanField(default=False, db_index=True)
     notes = models.TextField()
     keywords = TaggableManager()
-    url = models.URLField(max_length=255, blank=True, default=u'')
+    url = models.URLField(max_length=255, blank=True, default='')
 
     def update_cached_counts(self, deltas, negate=False):
         """
@@ -48,7 +52,7 @@ class BasePublisher(GcdData):
         """
         if negate:
             deltas = deltas.copy()
-            for k, v in deltas.iteritems():
+            for k, v in deltas.items():
                 deltas[k] = -v
 
         # TODO: Reconsider use of F() objects due to undesired behavior
@@ -61,9 +65,9 @@ class BasePublisher(GcdData):
             self.issue_count = F('issue_count') + deltas['issues']
 
     def full_name(self):
-        return unicode(self)
+        return str(self)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -72,7 +76,7 @@ class Publisher(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    country = models.ForeignKey(Country)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
     # Cached counts.
     brand_count = models.IntegerField(default=0, db_index=True)
@@ -115,7 +119,7 @@ class Publisher(BasePublisher):
         """
         if negate:
             deltas = deltas.copy()
-            for k, v in deltas.iteritems():
+            for k, v in deltas.items():
                 deltas[k] = -v
 
         # Don't apply F() if delta is 0, because we don't want
@@ -182,9 +186,9 @@ class IndiciaPublisher(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    parent = models.ForeignKey(Publisher)
+    parent = models.ForeignKey(Publisher, on_delete=models.CASCADE)
     is_surrogate = models.BooleanField(default=False, db_index=True)
-    country = models.ForeignKey(Country)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
 
     issue_count = models.IntegerField(default=0)
 
@@ -218,7 +222,7 @@ class BrandGroup(BasePublisher):
         ordering = ['name']
         app_label = 'gcd'
 
-    parent = models.ForeignKey(Publisher)
+    parent = models.ForeignKey(Publisher, on_delete=models.CASCADE)
 
     issue_count = models.IntegerField(default=0)
 
@@ -235,24 +239,6 @@ class BrandGroup(BasePublisher):
         emblems_id = list(self.active_emblems().values_list('id', flat=True))
         return Issue.objects.filter(brand__in=emblems_id,
                                     deleted=False)
-
-    def update_cached_counts(self, deltas, negate=False):
-        """
-        Updates the database fields that cache child object counts.
-
-        Expects a deltas object in the form returned by stat_counts()
-        methods, and also expected by CountStats.update_all_counts().
-        """
-        if negate:
-            deltas = deltas.copy()
-            for k, v in deltas.iteritems():
-                deltas[k] = -v
-
-        # Don't apply F() if delta is 0, because we don't want
-        # a lazy evaluation F-object result in a count field
-        # if we don't absolutely need it.
-        if deltas.get('issues', 0):
-            self.issue_count = F('issue_count') + deltas['issues']
 
     def stat_counts(self):
         """
@@ -279,7 +265,7 @@ class Brand(BasePublisher):
     group = models.ManyToManyField(BrandGroup, blank=True,
                                    db_table='gcd_brand_emblem_group')
     issue_count = models.IntegerField(default=0)
-
+    generic = models.BooleanField(default=False)
     image_resources = GenericRelation(Image)
 
     @property
@@ -318,14 +304,20 @@ class Brand(BasePublisher):
             'show_brand',
             kwargs={'brand_id': self.id } )
 
+    def __str__(self):
+        if self.generic:
+            return "%s [generic]" % self.name
+        return self.name
+
 
 class BrandUse(GcdLink):
     class Meta:
         db_table = 'gcd_brand_use'
         app_label = 'gcd'
 
-    publisher = models.ForeignKey(Publisher)
-    emblem = models.ForeignKey(Brand, related_name='in_use')
+    publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
+    emblem = models.ForeignKey(Brand, on_delete=models.CASCADE,
+                               related_name='in_use')
 
     year_began = models.IntegerField(db_index=True, null=True)
     year_ended = models.IntegerField(null=True)
@@ -347,8 +339,104 @@ class BrandUse(GcdLink):
             'show_brand',
             kwargs={'brand_id': self.emblem.id } )
 
-    def __unicode__(self):
-        return u'emblem %s was used from %s to %s by %s.' % (self.emblem,
+    def __str__(self):
+        return 'emblem %s was used from %s to %s by %s.' % (self.emblem,
           _display_year(self.year_began, self.year_began_uncertain),
           _display_year(self.year_ended, self.year_ended_uncertain),
           self.publisher)
+
+
+class Printer(BasePublisher):
+    class Meta:
+        ordering = ['name']
+        app_label = 'gcd'
+
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+
+    # Cached counts.
+    indicia_printer_count = models.IntegerField(default=0, db_index=True)
+    issue_count = models.IntegerField(default=0)
+
+    def active_indicia_printers(self):
+        return self.indiciaprinter_set.exclude(deleted=True)
+
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.indicia_printer_revisions.active_set().exists())
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.items():
+                deltas[k] = -v
+
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('indicia printers', 0):
+            self.indicia_printer_count = (F('indicia_printer_count') +
+                                          deltas['indicia printers'])
+        if deltas.get('issues', 0):
+            self.issue_count = F('issue_count') + deltas['issues']
+
+    def show_issue_count(self):
+        from .issue import Issue
+        return Issue.objects.filter(indicia_printer__parent=self,
+                                    deleted=False).count()
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_printer',
+            kwargs={'printer_id': self.id } )
+
+
+class IndiciaPrinter(BasePublisher):
+    class Meta:
+        db_table = 'gcd_indicia_printer'
+        ordering = ['name']
+        app_label = 'gcd'
+
+    parent = models.ForeignKey(Printer, on_delete=models.CASCADE)
+    country = models.ForeignKey(Country, on_delete=models.CASCADE)
+
+    issue_count = models.IntegerField(default=0)
+
+    def has_dependents(self):
+        return bool(self.issue_count or
+                    self.issue_revisions.active_set().exists())
+
+    def active_issues(self):
+        return self.issue_set.exclude(deleted=True)
+
+    def update_cached_counts(self, deltas, negate=False):
+        """
+        Updates the database fields that cache child object counts.
+
+        Expects a deltas object in the form returned by stat_counts()
+        methods, and also expected by CountStats.update_all_counts().
+        """
+        if negate:
+            deltas = deltas.copy()
+            for k, v in deltas.items():
+                deltas[k] = -v
+
+        # Don't apply F() if delta is 0, because we don't want
+        # a lazy evaluation F-object result in a count field
+        # if we don't absolutely need it.
+        if deltas.get('issues', 0):
+            self.issue_count = F('issue_count') + deltas['issues']
+
+        if deltas.get('issues', 0):
+            self.parent.issue_count = F('issue_count') + deltas['issues']
+            self.parent.save()
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_indicia_printer',
+            kwargs={'indicia_printer_id': self.id } )

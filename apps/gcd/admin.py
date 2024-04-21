@@ -1,8 +1,11 @@
 from django.contrib import admin
 
-from .models import (MembershipType, NameType, NonComicWorkRole,
+from .models import (MembershipType, NameType, NonComicWorkRole, CreditType,
                      NonComicWorkType, RelationType, School, SeriesBondType,
-                     SourceType, StoryType, Degree)
+                     SourceType, FeatureType, FeatureRelationType, StoryType,
+                     Degree, CodeNumberType, CharacterRelationType,
+                     Multiverse, CharacterRole, ExternalSite)
+
 
 class StoryTypeAdmin(admin.ModelAdmin):
     list_display = ('sort_code', 'name')
@@ -18,14 +21,22 @@ class ImpGrantAdmin(admin.ModelAdmin):
     raw_id_fields = ('indexer',)
 
 
-#register models without editing to admin panel
+# register models without editing to admin panel
 admin.site.register(StoryType, StoryTypeAdmin)
+admin.site.register(Multiverse)
+admin.site.register(CharacterRole)
 admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 admin.site.register(NameType)
 admin.site.register(SourceType)
+admin.site.register(CreditType)
+admin.site.register(CodeNumberType)
+admin.site.register(FeatureType)
+admin.site.register(FeatureRelationType)
 admin.site.register(RelationType)
 admin.site.register(MembershipType)
 admin.site.register(NonComicWorkType)
 admin.site.register(NonComicWorkRole)
 admin.site.register(School)
 admin.site.register(Degree)
+admin.site.register(CharacterRelationType)
+admin.site.register(ExternalSite)

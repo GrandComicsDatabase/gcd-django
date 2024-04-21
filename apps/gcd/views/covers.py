@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from urllib import quote
+from urllib.parse import quote
 
 from django.conf import settings
 from django.utils.safestring import mark_safe
@@ -21,6 +21,8 @@ def get_generic_image_tag(image, alt_text):
 
 def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     img_class = 'cover_img'
+    css_width = ''
+
     if zoom_level == ZOOM_SMALL:
         width = 100
         size = 'small'
@@ -34,6 +36,10 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     elif zoom_level == ZOOM_LARGE:
         width = 400
         size = 'large'
+    elif zoom_level == 1.5:
+        width = 200
+        css_width = 'width="150px"'
+        size = 'medium'
 
     if not can_have_cover:
         return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
@@ -54,7 +60,7 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     if settings.FAKE_IMAGES:
         return mark_safe('<img src="' +settings.STATIC_URL + \
                'img/placeholder_' + size + '.jpg"' + \
-               'class="cover_img">')
+               'class="cover_img"' + css_width + '>')
 
     img_url = cover.get_base_url()+("/w%d/%d.jpg" % (width, cover.id))
 
@@ -64,12 +70,13 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     img_url = img_url + '?' + str(hash(cover.last_upload))
 
     return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) + \
-           '" ' + ' class="' + img_class + '"/>')
+           '" ' + ' class="' + img_class + '"' + css_width + '/>')
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
                              variants=False, exclude_ids=None):
-    if issue.has_covers() or (variants and issue.variant_covers().count()):
+    if issue.has_covers() or (variants and issue.variant_covers().count()) \
+      or (issue.variant_of and issue.variant_cover_status == 1):
         covers = issue.active_covers()
         if variants:
             covers = covers | issue.variant_covers()
@@ -82,13 +89,13 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
         covers = covers.exclude(id__in=exclude_ids)
     if as_list:
         cover_tags = []
-        alt_string = u'Cover for %s' % issue.full_name()
     else:
         tag = ''
 
     for cover in covers:
         if as_list:
             active = cover.revisions.filter(changeset__state__in=states.ACTIVE)
+            alt_string = 'Cover for %s' % cover.issue.full_name()
             cover_tags.append([cover, issue,
                                get_image_tag(cover, alt_string, zoom_level),
                                active.count()])
@@ -113,7 +120,7 @@ def get_image_tags_per_page(page, series=None):
         if series is None:
             cover_series = cover.issue.series
         issue = cover.issue
-        alt_string = u'Cover for %s' % issue.full_name()
+        alt_string = 'Cover for %s' % issue.full_name()
         cover_tags.append([cover, issue, get_image_tag(cover,
                                                        alt_string,
                                                        ZOOM_SMALL)])

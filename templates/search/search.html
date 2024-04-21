@@ -1,5 +1,5 @@
 {% extends "gcd/base_view.html" %}
-{% load staticfiles %}
+{% load static %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
@@ -7,11 +7,14 @@
   <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
+{% block css_raw %}
+<script src="https://unpkg.com/htmx.org@1.6.0" integrity="sha384-G4dtlRlMBrk5fEiRXDsLjriPo8Qk5ZeHVVxS8KhX6D7I9XXJlNqbdvRlp9/glk5D" crossorigin="anonymous"></script>
+{% endblock %}
 {% block view_body %}
   <form method="get" action=".">
       <p>
         <label for="id_q">Search for:</label>
-        {{ form.q }} in 
+        {{ form.q }} in
         <select name="search_object" size="1">
             <option value="all"> All </option>
             <option value="story" {% if 'facet_model_name_exact:story' in form.selected_facets %}selected{% endif %}> Story </option>
@@ -21,6 +24,7 @@
             <option value="brand group" {% if 'facet_model_name_exact:brand group' in form.selected_facets %}selected{% endif %}> Publisher Brand Group </option>
             <option value="brand emblem" {% if 'facet_model_name_exact:brand emblem' in form.selected_facets %}selected{% endif %}> Publisher Brand Emblem </option>
             <option value="indicia publisher" {% if 'facet_model_name_exact:indicia publisher' in form.selected_facets %}selected{% endif %}> Indicia Publisher </option>
+            <option value="printer" {% if 'facet_model_name_exact:printer' in form.selected_facets %}selected{% endif %}> Printer </option>
             <option value="creator" {% if 'facet_model_name_exact:creator' in form.selected_facets %}selected{% endif %}> Creator </option>
             <option value="creator membership" {% if 'facet_model_name_exact:creator membership' in form.selected_facets %}selected{% endif %}> Creator Membership</option>
             <option value="creator art influence" {% if 'facet_model_name_exact:creator art influence' in form.selected_facets %}selected{% endif %}> Creator Art Influence</option>
@@ -48,11 +52,10 @@
         {% endif %}
         </div>
       </h1>
-      <div class="item_id">
+      <div class="flex_left item_id">
         {% if request.GET.q %}
           Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} results matching your search for '{{ request.GET.q }}'.
         {% endif %}
-
         {% with extra_string=query|add:facet_page|add:sort %}
           {% with advanced_search=1 %}
             {% include "gcd/bits/pagination_bar.html" %}
@@ -61,7 +64,7 @@
       </div>
       <div style="clear: both;"></div>
       {% if facets.fields.facet_model_name %}
-        <ul>
+        <ul style="columns: 3;">
           {% for model in facets.fields.facet_model_name %}
             <li><a href="?{{ query }}{{ facet_page }}{% if not is_model_selected %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}{% endif %}">{{ model.0 }}</a> ({{ model.1 }})</li>
           {% endfor %}
@@ -115,16 +118,28 @@
         </table>
       </details>
       <details {% if is_date_selected %} open="open" {% endif %} class="facet_listing left">
-        <summary>Year ({{ facets.dates.date|length }})</summary>
+        <summary>Year</summary>
         <table class="facet_listing left">
       {% for year in facets.dates.date %}
+        {% if year.1 %}
             <tr class="{% cycle 'listing_even' 'listing_odd' %}">
           <td><a href="?{{ query }}{{ facet_page }}{% if not is_date_selected or forloop.counter > 1 %}&amp;date_facet={{ year.0 }}{% endif %}">{{ year.0|date:"Y" }} ({{ year.1}})</a>
+          </td></tr>
+	{% endif %}
+      {% endfor %}
+        </table>
+      </details>
+      <details {% if is_type_selected %} open="open" {% endif %} class="facet_listing left">
+        <summary>Sequence ({{ facets.fields.type|length }})</summary>
+        <table class="facet_listing left">
+      {% for type in facets.fields.type %}
+            <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_type_selected or forloop.counter > 1 %}&amp;selected_facets=type_exact:{{ type.0|urlencode }}{% endif %}">{{ type.0 }} ({{ type.1}})</a>
           </td></tr>
       {% endfor %}
         </table>
       </details>
-       <details {% if is_feature_selected %} open="open" {% endif %} class="facet_listing left">
+      <details {% if is_feature_selected %} open="open" {% endif %} class="facet_listing left">
         <summary>Feature ({{ facets.fields.feature|length }})</summary>
         <table class="facet_listing left">
       {% for feature in facets.fields.feature %}
@@ -138,13 +153,16 @@
       <div id="RightSearchColumn">
       <div class="left">
         <table class="listing left">
+          <thead>
           <tr>
       {% if select_key %}
             <th> Selection </th>
       {% endif %}
-            <th>Type</th>
+            <th style="width: 170px;">Type</th>
             <th>Name</th>
           </tr>
+          </thead>
+          <tbody>
         {% for result in page.object_list %}
             <tr class="{% cycle 'listing_even' 'listing_odd' %}">
             {% if select_key %}
@@ -167,19 +185,35 @@
                 <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'issue' %}
-                <td>[ISSUE]</td>
+                <td><a hx-get="{% url "show_issue_modal" issue_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;" title="preview"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img> [ISSUE]</a></td>
                 <td><img {{ result.object.series.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}"> {{ result.object.full_name }}</a>
                 {{ result.object.publication_date|str_encl:'(' }}</td>
             {% endif %}
             {% if result.model_name == 'story' %}
-                <td>[STORY]</td>
+                <td><a hx-get="{% url "show_story_modal" story_id=result.object.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;" title="preview"><img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img> [STORY]</a></td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object|show_title:1 }}</a>
-              {% if result.object.feature %} / {{ result.object.feature }}{% endif %}
+              {% if result.object.has_feature %} / {{ result.object.show_feature }}{% endif %} / {{ result.object.type }}
               {% if result.object.page_count %} / {{ result.object|show_page_count:1 }}{% endif %}
               (from
                 <img {{ result.object.issue.series.country|show_country_info }}  class="embedded_flag">
                 <a href="{{ result.object.issue.get_absolute_url }}">
               {{ result.object.issue.full_name }}</a> {{ result.object.issue.publication_date|str_encl:'(' }})</td>
+            {% endif %}
+            {% if result.model_name == 'feature' %}
+                <td>[FEATURE]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'universe' %}
+                <td>[UNIVERSE]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'character' %}
+                <td>[CHARACTER]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+            {% endif %}
+            {% if result.model_name == 'group' %}
+                <td>[GROUP]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
             {% if result.model_name == 'publisher' %}
                 <td>[PUBLISHER]</td>
@@ -201,7 +235,10 @@
                 :
                   <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
-
+            {% if result.model_name == 'printer' %}
+                <td>[PRINTER]</td>
+                <td><img {{ result.object.country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
+            {% endif %}
             {% if result.model_name == 'award' %}
                 <td>[AWARD]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
@@ -209,7 +246,7 @@
 
             {% if result.model_name == 'creator' %}
                 <td>[CREATOR]</td>
-                <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.gcd_official_name }}</a></td>
+                <td><img {{ result.object.birth_country|show_country_info }}  class="embedded_flag"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatormembership' %}
                 <td>[CREATOR MEMBERSHIP]</td>
@@ -229,6 +266,7 @@
             {% endif %}
             </tr>
         {% endfor %}
+        </tbody>
         </table>
       </div>
       <div class="right">

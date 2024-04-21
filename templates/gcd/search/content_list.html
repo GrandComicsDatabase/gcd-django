@@ -46,12 +46,12 @@
     {{ story.feature }} /
     {% endif %}
     {% with story.type|lower as lower_type %}
-    {% ifequal lower_type 'cover' %}
+    {% if lower_type == 'cover' %}
             <a href="{{ url }}cover/4/">{{ story.type }}</a>
          {% else %}
             {{ story.type }} / {% if story.page_count %}{{ story|show_page_count:1 }}
             {% endif %}
-         {% endifequal %}
+         {% endif %}
     {% endwith %}
     <td class="listing_country" style="padding-right: 0px;"> <img {{ story.issue.series.country|show_country_info }}>
     <td> <a href="{{ story.issue.series.get_absolute_url }}">{{ story.issue.series.name }}</a> ({{ story.issue.series.year_began }} series)

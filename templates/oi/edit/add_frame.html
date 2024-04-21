@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
-{% load staticfiles %}
+{% load static %}
+{% load crispy_forms_tags %}
 
 {% block title %}
 Adding {{ object_name }}
@@ -19,33 +20,35 @@ Adding {{ object_name }}
 <link rel="stylesheet" type="text/css"
       href="{% static "jquery/css/msdropdown/dd.css" %}"/>
 {% endif %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}
+{% include "oi/bits/jquery.html" %}
+{{ credits_formset.media }}
+{{ form.media }}
 {% include "oi/bits/multi_selector.html" %}
 <h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
 
 <div class="edit">
-<form action="{{ object_url }}" method="POST">
+<form action="{{ object_url }}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
-  {% if include_before_form %}
-    {% include include_before_form %}
-  {% endif %}
   <table class="editing">
-  {{ form.as_table }}
-  </table>
-  {% if include_after_form %}
-    {% include include_after_form %}
+  {% if object_name == 'Story' or object_name == 'Creator' or object_name == 'Issue' or object_name == 'Variant Issue' or object_name == 'Character' or object_name == 'Group' %}
+    {% crispy form %}
+  {% else %}
+    {{ form.as_table }}
   {% endif %}
+  </table>
+  <input type="submit" name="add" value="{{ action_label}} {{ object_name }}">
 {% if alternative_action %}
-  <input type="submit" name="{{ alternative_action }}" value="{{ alternative_label }}"></input>
+  <input type="submit" name="{{ alternative_action }}" value="{{ alternative_label }}">
 {% endif %}
-  <input type="submit" name="add" value="{{ action_label}} {{ object_name }}"></input>
-{% ifequal object_name "Story" %}
-  <input type="submit" name="cancel_return" value="Cancel" formnovalidate></input>
+{% if object_name == "Story" %}
+  <input type="submit" name="cancel_return" value="Cancel" formnovalidate>
 {% else %}
-  <input type="submit" name="cancel" value="Cancel" formnovalidate></input>
-{% endifequal %}
+  <input type="submit" name="cancel" value="Cancel" formnovalidate>
+{% endif %}
 </form>
 </div>
 {% endblock %}

@@ -1,9 +1,9 @@
 from django.conf import settings
-from contact_form.forms import ContactForm
-from captcha.fields import ReCaptchaField
+from django_contact_form.forms import ContactForm
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV3
 
 class CustomContactForm(ContactForm):
-    recipient_list = ['%s' % settings.DEFAULT_FROM_EMAIL,
-                      'gcd-contact@googlegroups.com']
-    from_email = 'do-not-reply@comics.org'
-    captcha = ReCaptchaField()
+    recipient_list = ['%s' % settings.DEFAULT_FROM_EMAIL,]
+    from_email = settings.DEFAULT_FROM_EMAIL
+    captcha = ReCaptchaField(widget=ReCaptchaV3(action='contact_form'))

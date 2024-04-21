@@ -1,3 +1,3 @@
 
 from django import forms
-from django.core import urlresolvers
+import django.urls as urlresolvers

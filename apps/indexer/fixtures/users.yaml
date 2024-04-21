@@ -26,6 +26,34 @@
     notify_on_approve: True
     collapse_compare_view: False
 
+- model: mycomics.collector
+  pk: 1
+  fields:
+    user: 1
+    grade_system: 1
+    default_language: 25 # English
+
+- model: mycomics.collection
+  pk: 1
+  fields:
+    collector: 1
+    name: 'Default have collection'
+    condition_used: True
+    acquisition_date_used: True
+    location_used: True
+    purchase_location_used: True
+    was_read_used: True
+    for_sale_used: True
+    signed_used: True
+    price_paid_used: True
+
+- model: mycomics.collection
+  pk: 101
+  fields:
+    collector: 1
+    name: 'Default want collection'
+    market_value_used: True
+
 - model: auth.user
   pk: 2
   fields:
@@ -54,6 +82,34 @@
     notify_on_approve: False
     collapse_compare_view: True
 
+- model: mycomics.collector
+  pk: 2
+  fields:
+    user: 2
+    grade_system: 1
+    default_language: 25 # English
+
+- model: mycomics.collection
+  pk: 2
+  fields:
+    collector: 2
+    name: 'Default have collection'
+    condition_used: True
+    acquisition_date_used: True
+    location_used: True
+    purchase_location_used: True
+    was_read_used: True
+    for_sale_used: True
+    signed_used: True
+    price_paid_used: True
+
+- model: mycomics.collection
+  pk: 102
+  fields:
+    collector: 2
+    name: 'Default want collection'
+    market_value_used: True
+
 - model: auth.user
   pk: 3
   fields:
@@ -79,8 +135,36 @@
     max_reservations: 12
     max_ongoing: 4
     imps: 100
-    notify_on_approve: True
+    notify_on_approve: False
     collapse_compare_view: False
+
+- model: mycomics.collector
+  pk: 3
+  fields:
+    user: 3
+    grade_system: 1
+    default_language: 25 # English
+
+- model: mycomics.collection
+  pk: 3
+  fields:
+    collector: 3
+    name: 'Default have collection'
+    condition_used: True
+    acquisition_date_used: True
+    location_used: True
+    purchase_location_used: True
+    was_read_used: True
+    for_sale_used: True
+    signed_used: True
+    price_paid_used: True
+
+- model: mycomics.collection
+  pk: 103
+  fields:
+    collector: 3
+    name: 'Default want collection'
+    market_value_used: True
 
 - model: auth.user
   pk: 4
@@ -109,6 +193,34 @@
     imps: 0
     notify_on_approve: False
     collapse_compare_view: False
+
+- model: mycomics.collector
+  pk: 4
+  fields:
+    user: 4
+    grade_system: 1
+    default_language: 25 # English
+
+- model: mycomics.collection
+  pk: 4
+  fields:
+    collector: 4
+    name: 'Default have collection'
+    condition_used: True
+    acquisition_date_used: True
+    location_used: True
+    purchase_location_used: True
+    was_read_used: True
+    for_sale_used: True
+    signed_used: True
+    price_paid_used: True
+
+- model: mycomics.collection
+  pk: 104
+  fields:
+    collector: 4
+    name: 'Default want collection'
+    market_value_used: True
 
 - model: auth.group
   pk: 1

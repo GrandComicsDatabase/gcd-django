@@ -182,6 +182,9 @@ msgstr ""
 msgid "publishers"
 msgstr "förlagsgrupp"
 
+msgid "creators"
+msgstr ""
+
 msgid "brands"
 msgstr "förlagslogo"
 
@@ -202,3 +205,12 @@ msgstr "omslag"
 
 msgid "stories"
 msgstr "sekvenser"
+
+#: templates/gcd/index.html:136
+msgid "On-sale this week"
+msgstr ""
+
+#: templates/gcd/index.html:137
+msgid "On-sale this month"
+msgstr ""
+

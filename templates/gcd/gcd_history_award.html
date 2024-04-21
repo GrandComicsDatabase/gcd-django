@@ -1,0 +1,23 @@
+{% extends "gcd/base_view.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+  GCD :: Comics History Award
+{% endblock %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/gcd/default.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+{% if USE_TEMPLATESADMIN %}
+  {% include 'managed_content/gcd/en/gcd_history_award.html' %}
+{% else %}
+placeholder text
+{% endif %}
+
+{% endblock %}
+

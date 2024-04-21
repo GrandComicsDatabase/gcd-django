@@ -1,0 +1,212 @@
+{% extends "gcd/base_content.html" %}
+
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Character :: {{ character.name }}
+{% endblock %}
+
+{% block content_header %}
+<h1 class="item_id">
+  <div class="left">
+    {{ character.name }}
+  </div>
+</h1>
+<div class="item_id">
+  <div class="flex_left">
+    {{ character.language }}
+  </div>
+</div>
+{% endblock content_header %}
+
+{% block content %}
+      <dl class="pub_data">
+{% if character.disambiguation %}
+        <p><strong>Disambiguation:</strong> {{ character.disambiguation }}</p>
+{% endif %}
+{% if character.universe %}
+        <p><strong>Universe:</strong> {{ character.universe|absolute_url }}</p>
+{% endif %}
+{% if character.year_first_published %}
+        <p><strong>First published in:</strong> {{ character.display_year_first_published }}</p>
+{% endif %}
+{% if character.description %}
+        <dt> Description:
+        <dd> {{ character.description|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+{% if character.notes %}
+        <dt> Notes:
+        <dd> {{ character.notes|markdown }}
+{% endif %}
+{% if character.external_link.count %}
+  {% for external_link in character.external_link.all %}
+    <strong>Link:</strong> {{ external_link.link|urlize }}
+  {% endfor %}
+{% endif %}
+
+<p>{{ character|show_credit:'keywords' }}</P>
+      </dl>
+      <ul style="columns: 2;">
+	<li><a href='{% url "character_creators" character_id=character.id %}'>Creator Checklist (via linked story records)</a></li>
+	<li><a href='{% url "character_creator_names" character_id=character.id %}'>Creator Name Checklist (via linked story records)</a></li>
+        <li><a href='{% url "character_issues" character_id=character.id %}'>Issue Checklist (via linked story records)</a></li>
+  {% if character.active_specifications %}
+        <li><a href='{% url "character_issues_down" character_id=character.id %}'>Issue Checklist, including specifications (via linked story records)</a></li>
+  {% endif %}
+  {% if character.active_generalisations and not character.universe %}
+        <li><a href='{% url "character_issues_up" character_id=character.id %}'>Issue Checklist, including generalisations (via linked story records)</a></li>
+  {% endif %}
+        <li><a href='{% url "character_covers" character_id=character.id %}'>Cover List (via linked story records)</a></li>
+        <li><a href='{% url "character_series" character_id=character.id %}'>Series List (via linked story records)</a></li>
+        <li><a href='{% url "character_sequences" character_id=character.id %}'>Sequences List (via linked story records)</a></li>
+      </ul>
+      <h3>Name:</h3>
+      <ol>
+        <a href='{% url "character_name_issues" character_name_id=character.official_name.id %}'>{{ character.official_name.name }}</a>
+      </ol>
+  {% if additional_names %}
+          <h3>Additional Names:</h3>
+    {% if additional_names.count > 1 %}
+          <ol style="columns: 2;">
+    {% else %}
+          <ol>
+    {% endif %}
+    {% for name in additional_names %}
+            <li style="page-break-inside: avoid;">
+              <a href='{% url "character_name_issues" character_name_id=name.id %}'>{{ name.name }}</a>
+            </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
+
+  {% if character.active_universe_origins %}
+        <hr>
+        <h3>Appearances With a Character Origin Universe:</h3>
+        <table style="border-collapse: collapse;">
+          <tr><td style="padding: 0"><ul style="margin: 0">
+            <li><a href='{% url "character_issues_per_universe" character_id=character.id universe_id=-1 %}'>without a universe</a></li>
+          {% for universe in character.active_universe_origins %}
+          <tr><td style="padding: 0"><ul style="margin: 0">
+            <li><a href='{% url "character_issues_per_universe" character_id=character.id universe_id=universe.id %}'>{{ universe }}</a></li></td>
+            <td style="padding:0 0 0 2em">{{ character|character_for_universe:universe.id }}</td></tr>
+          {% endfor %}
+        </table>
+  {% endif %}
+  {% if character.active_universe_appearances %}
+        <hr>
+        <h3>Appearances With a Story Universe:</h3>
+        <table style="border-collapse: collapse;">
+          <tr><td style="padding: 0"><ul style="margin: 0">
+            <li><a href='{% url "character_story_issues_per_universe" character_id=character.id story_universe_id=-1 %}'>without a universe</a></li>
+          {% for universe in character.active_universe_appearances %}
+          <tr><td style="padding: 0"><ul style="margin: 0">
+            <li><a href='{% url "character_story_issues_per_universe" character_id=character.id story_universe_id=universe.id %}'>{{ universe }}</a></li></td>
+          </tr>
+          {% endfor %}
+        </table>
+  {% endif %}
+  {% if character.active_relations_own %}
+        <hr>
+        <h3>Relations:</h3>
+        {% if character.active_relations_own.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for relation in character.active_relations_own %}
+      {% with relation_info=relation|pre_process_relation:character %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0.descriptor }}</a>
+        {% if relation.notes %}
+          <br><strong>Notes: </strong>{{ relation.notes }}
+        {% endif %}
+        </li>
+      {% endwith %}
+    {% endfor %}
+          </ol>
+  {% endif %}
+  {% if character.active_translations %}
+        <hr>
+        <h3>Translations:</h3>
+        {% if character.active_translations.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for relation in character.active_translations %}
+      {% with relation_info=relation|pre_process_relation:character %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
+        {% if relation.notes %}
+          <br><strong>Notes: </strong>{{ relation.notes }}
+        {% endif %}
+        </li>
+      {% endwith %}
+    {% endfor %}
+          </ol>
+  {% endif %}
+  {% if character.active_alternate_universe_versions %}
+        <hr>
+        <h3>Alternate Universe Version:</h3>
+        {% if character.active_alternate_universe_versions.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for relation in character.active_alternate_universe_versions %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_character' character_id=relation.to_character.id %}">{{ relation.to_character }}</a>
+      {% if relation.notes %}
+          <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+        </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
+
+  {% if character.active_memberships %}
+        <hr>
+        <h3>Group Memberships:</h3>
+        {% if character.active_memberships.count > 1 %}
+        <ol style="columns: 2;">
+        {% else %}
+        <ol>
+        {% endif %}
+    {% for membership in character.active_memberships %}
+        <li style="page-break-inside: avoid;">
+          <a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group.descriptor }}</a>
+          <br>
+          <a href="{% url 'show_group_membership' group_membership_id=membership.id %}">{{ membership.display_years }} ({{ membership.membership_type }}</a>)
+        {% if membership.notes %}
+          <br><strong>Notes: </strong>{{ membership.notes }}
+        {% endif %}
+        </li>
+    {% endfor %}
+          </ol>
+  {% endif %}
+
+{% endblock content %}
+
+{% block edit_box %}
+ {% if not preview %}
+   {% with object=character object_class='character' object_name='Character' %}
+     {% include "gcd/bits/status_banner.html" %}
+   {% endwith %}
+ {% endif %}
+ {% if request.user.is_authenticated %}
+  <form method="GET"
+        action="{% url "add_character_relation" character_id=character.id %}">
+      <input name="add_character_relation" type="submit" value="Add Relation"/>
+  </form>
+  <form method="GET"
+        action="{% url "add_group_membership" character_id=character.id %}">
+      <input name="add_group_membership" type="submit" value="Add Group Membership"/>
+  </form>
+  {% endif %}
+{% endblock edit_box %}
+
+{% block change_history %}
+  <a href="{% url "change_history" model_name='character' id=character.id %}">View Change History</a>
+{% endblock change_history %}

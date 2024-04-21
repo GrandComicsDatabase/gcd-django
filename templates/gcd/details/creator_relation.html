@@ -1,42 +1,39 @@
-{% extends "gcd/base_view.html" %}
-{% load staticfiles %}
-{% load i18n %}
+{% extends "gcd/base_content.html" %}
 
 {% block title %}
   GCD :: Creator Relation :: {{ creator_relation.from_creator }} - {{ creator_relation.to_creator }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-    href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
-
-{% block view_body %}
+{% block content_header %}
  {% include "gcd/bits/creator_header.html" %}
-<div class="control_body">
-  <div id="control_container">
-    <div id="control_center">
-      <dl class="pub_data">
-        <dt> Creator:
-        <dd> <a href="{{ creator_relation.from_creator.get_absolute_url }}">{{ creator_relation.from_creator }}</a>
-        <dt> Relation:
-        <dd> {{ creator_relation.relation_type }}
-        <dt> Creator:
-        <dd> <a href="{{ creator_relation.to_creator.get_absolute_url }}">{{ creator_relation.to_creator }}</a>
-        {% if creator_relation.notes %}
-        <dt>Notes
-        <dd>{{ creator_relation.notes }}
-        {% endif %}
-        {% with creator_relation.data_source.all as data_sources %}
-        {% include "gcd/bits/show_sources.html" %}
-        {% endwith %}
-      </dl>
-    </div> <!-- control_center -->
+{% endblock content_header %}
 
-  {% if not preview or creator_relation.source %}
-    <div id="control_rail">
-      <div class="edit_box">
-        <div class="edit_header">Editing</div>
+{% block content %}
+<dl class="pub_data">
+  <dt> Creator:
+  <dd> <a href="{{ creator_relation.from_creator.get_absolute_url }}">{{ creator_relation.from_creator }}</a>
+  <dt> Relation:
+  <dd> {{ creator_relation.relation_type }}
+  <dt> Creator:
+  <dd> <a href="{{ creator_relation.to_creator.get_absolute_url }}">{{ creator_relation.to_creator }}</a>
+  {% if creator_relation.creator_name.count %}
+    <dt> Using Creator Name{{ creator_relation.creator_name.count|pluralize }}:
+    <dd>
+    {% for creator_name in creator_relation.creator_name.all %}
+      {{ creator_name.name }}{% if not forloop.last %};{%  endif %}
+    {% endfor %}
+  {% endif %}
+  {% if creator_relation.notes %}
+    <dt>Notes:
+    <dd>{{ creator_relation.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% with creator_relation.data_source.all as data_sources %}
+    {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+</dl>
+{% endblock content %}
+
+{% block edit_box %}
   {% if not preview %}
     {% with creator_relation as object %}
     {% with 'creator_relation' as object_class %}
@@ -46,19 +43,12 @@
     {% endwith %}
     {% endwith %}
   {% endif %} <!-- not preview -->
-      </div> <!-- edit_box -->
-      <div id="change_history" class="edit_footer">
+{% endblock edit_box %}
+
+{% block change_history %}
   {% if preview %}
-        <a href="{% url "change_history" model_name='creator_relation' id=creator_relation.source.id %}">View Change History</a>
+    <a href="{% url "change_history" model_name='creator_relation' id=creator_relation.source.id %}">View Change History</a>
   {% else %}
-        <a href="{% url "change_history" model_name='creator_relation' id=creator_relation.id %}">View Change History</a>
+    <a href="{% url "change_history" model_name='creator_relation' id=creator_relation.id %}">View Change History</a>
   {% endif %}
-      </div>
-    </div> <!-- control_rail -->
-  {% endif %}
-
-  </div> <!-- control_container -->
-</div> <!-- control_body -->
-
-
-{% endblock %}
+{% endblock change_history %}

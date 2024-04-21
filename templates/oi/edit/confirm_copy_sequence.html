@@ -1,0 +1,52 @@
+{% extends "oi/base_view.html" %}
+
+{% load credits %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/gcd/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/gcd/{{ style|default:"default" }}/issue.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/gcd/{{ style|default:"default" }}/single_story.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
+<link rel="stylesheet" type="text/css"
+      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}/widgets.css"/>
+{% endblock %}
+
+{% block view_body %}
+<h2>Confirm to copy the following story into {{ issue_revision }}:
+</h2>
+<div class="edit">
+  {% if story_revision %}
+  <form id="confirm" action="{% url "confirm_copy_story_revision" story_revision_id=story.revision.id issue_revision_id=issue_revision.id %}" method="POST">
+  {% else %}
+  <form id="confirm" action="{% url "confirm_copy_story" story_id=story.id issue_revision_id=issue_revision.id sequence_number=sequence_number %}" method="POST">
+  {% endif %}
+  {% csrf_token %}
+  <table id="sequence-details" class="editing">
+    <th>
+    <tr> <th><label>
+      Copy credits with credited/signed/etc. qualifiers:
+      </label> </th> <td><input type="checkbox" name="copy_credit_info" value=True></td>
+    </tr> 
+    <tr> <th><label>
+      Copy characters:
+      </label> </th> <td>  <input type="checkbox" name="copy_characters" value=True></td>
+    </tr>
+  </table>
+  
+
+  {% with 1 as preview %}
+  <div id="story_data">
+    {% include "gcd/details/single_story.html" %}
+  </div>
+  {% endwith %}
+  <input type="submit" name="confirm" value="Confirm Copy">
+  <input type="submit" name="cancel" value="Cancel">
+  </form>
+</div>
+{% endblock %}

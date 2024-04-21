@@ -1,6 +1,6 @@
 {% extends "gcd/base_view.html" %}
 
-{% load staticfiles %}
+{% load static %}
 {% load i18n %}
 {% load credits %}
 
@@ -15,9 +15,9 @@
 
 <h1 class="item_id search_id">
 <div class="left">
-  Covers for comics {% if use_on_sale %}on-sale in the month{% else %}with a publication date{% endif %} of {{ date|date:"F Y" }} from {{ publisher }}
+  {{ heading }}
 </div>
-{% include "gcd/bits/choose_month.html" %}
+{% include "gcd/bits/choose_date.html" %}
 </h1>
 
 <div class="item_id">
@@ -40,7 +40,7 @@
 <div class="left">
   Covers for comics {% if use_on_sale %}on-sale in the month{% else %}with a publication date{% endif %} of {{ date|date:"F Y" }} from {{ publisher }}
 </div>
-{% include "gcd/bits/choose_month.html" %}
+{% include "gcd/bits/choose_date.html" %}
 </h1>
 <div id="item_id_footer" class="item_id">
   <div class="left">
