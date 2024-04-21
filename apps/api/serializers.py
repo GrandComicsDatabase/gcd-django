@@ -4,42 +4,68 @@ from apps.gcd.models import Series, Publisher, Brand, BrandGroup, Issue, \
                             IndiciaPublisher
 
 
+class IssueSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Issue
+        exclude = ['created', 'is_indexed', 'indicia_printer']
+
+    # TODO
+    # how to embed stories
+    # a) credits as links and text, or text only ?
+    # b) characters as links and text, or text only ?
+    # in the linked case we would need to give access to characters
+    # and / or creators, so likely just show_characters, etc. to
+    # give the text.
+    # c) same goes for reprint links
+    # d) essentially use for stories the code from exporting as csv ?
+    story_set = serializers.StringRelatedField(many=True)
+
+
 class SeriesSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Series
-        fields = ('url', 'id', 'name', 'binding', 'color', 'created',
-                  'deleted', 'dimensions', 'format', 'has_barcode',
-                  'has_gallery', 'has_indicia_frequency', 'has_isbn',
-                  'has_issue_title', 'has_rating', 'publisher')
+        exclude = ['created', ]
+
+    country = serializers.PrimaryKeyRelatedField(read_only=True)
+    language = serializers.PrimaryKeyRelatedField(read_only=True)
+    publication_type = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    # TODO
+    # a) filter for deleted issue
+    # b) consider *_related
+    # c)
+
+    # give links
+    issue_set = serializers.HyperlinkedRelatedField(many=True,
+                                                    read_only=True,
+                                                    view_name='issue-detail')
+    # or embed issue serialization (which could embed story)
+    # issue_set = IssueSerializer(many=True, read_only=True)
 
 
 class PublisherSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Publisher
-        fields = ('url', 'name', 'id', 'brand_count', 'series_count')
+        exclude = ['created', ]
+
+    country = serializers.PrimaryKeyRelatedField(read_only=True)
 
 
 class BrandSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Brand
-        fields = ('url', 'name', 'id', 'group', 'year_began', 'year_ended',
-                  'issue_count')
+        exclude = ['created', ]
 
 
 class BrandGroupSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = BrandGroup
-        fields = ('url', 'name')
-
-
-class IssueSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = Issue
-        fields = ('url', 'brand', 'id', 'series', 'title',
-                  'first_issue_series_set', 'rating', 'indicia_publisher')
+        exclude = ['created', ]
 
 
 class IndiciaPublisherSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = IndiciaPublisher
-        fields = ('url', 'id', 'name', 'issue_count', 'parent')
+        exclude = ['created', ]
+
+    country = serializers.PrimaryKeyRelatedField(read_only=True)
