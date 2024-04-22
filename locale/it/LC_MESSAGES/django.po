@@ -16,7 +16,7 @@ msgstr ""
 
 #: templates/gcd/index.html:61 templates/gcd/bits/front_page_login.html:18
 msgid "Login"
-msgstr ""
+msgstr "Login"
 
 #: templates/gcd/index.html:69
 msgid "Disclaimer"
@@ -28,6 +28,9 @@ msgid ""
 "of documenting and indexing all comics for the free use of scholars, "
 "historians, researchers, and fans."
 msgstr ""
+"Il Progetto di Grand Comics Database (GCD) è un'iniziativa volontaria il cui obiettivo "
+"è documentare ed indicizzare tutti i fumetti per renderli liberamente accessibili agli studiosi, "
+"storici, ricercatori e appassionati."
 
 #: templates/gcd/index.html:76
 msgid ""
