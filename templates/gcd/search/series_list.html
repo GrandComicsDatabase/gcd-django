@@ -5,8 +5,8 @@
 {% load credits %}
 
 {% block list_contents %}
-<table class="listing">
-  <tr>
+<table class="sortable_listing">
+  <tr style="vertical-align:top">
     {% if select_key %}
     <th> Selection </th>
     {% endif %}
@@ -19,7 +19,7 @@
   </tr>
 {% for series in items %}
   {% with series|object_filter as series %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+  <tr>
     {% if select_key %}
     <td>
       <form action="{% url "select_object" select_key=select_key %}" method="POST">
