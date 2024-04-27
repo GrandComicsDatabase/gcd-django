@@ -368,9 +368,9 @@ def publisher_search_hx(request):
                              template='gcd/search/publisher_base_list.html')
 
 
-def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA,
+def publisher_by_name(request, publisher_name='', sort=ORDER_ALPHA,
                       template='gcd/search/publisher_list.html'):
-    if settings.USE_ELASTICSEARCH:
+    if settings.USE_ELASTICSEARCH and not publisher_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
                               .models(Publisher)
         return generic_by_name(request, publisher_name, None, sort, Publisher,
@@ -381,8 +381,8 @@ def publisher_by_name(request, publisher_name, sort=ORDER_ALPHA,
                                Publisher, template)
 
 
-def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
-    if settings.USE_ELASTICSEARCH:
+def brand_group_by_name(request, brand_group_name='', sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH and not brand_group_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_group_name)) \
                               .models(BrandGroup)
         return generic_by_name(request, brand_group_name, None, sort,
@@ -394,8 +394,8 @@ def brand_group_by_name(request, brand_group_name, sort=ORDER_ALPHA):
                                BrandGroup, 'gcd/search/brand_group_list.html')
 
 
-def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
-    if settings.USE_ELASTICSEARCH:
+def brand_by_name(request, brand_name='', sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH  and not brand_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_name)) \
                               .models(Brand)
         return generic_by_name(request, brand_name, None, sort, Brand,
@@ -406,8 +406,8 @@ def brand_by_name(request, brand_name, sort=ORDER_ALPHA):
                                Brand, 'gcd/search/brand_list.html')
 
 
-def indicia_publisher_by_name(request, ind_pub_name, sort=ORDER_ALPHA):
-    if settings.USE_ELASTICSEARCH:
+def indicia_publisher_by_name(request, ind_pub_name='', sort=ORDER_ALPHA):
+    if settings.USE_ELASTICSEARCH and not ind_pub_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(ind_pub_name)) \
                             .models(IndiciaPublisher)
         return generic_by_name(request, ind_pub_name, None, sort,
@@ -497,9 +497,9 @@ def creator_search_hx(request):
                            template='gcd/search/creator_base_list.html')
 
 
-def creator_by_name(request, creator_name, sort=ORDER_ALPHA,
+def creator_by_name(request, creator_name='', sort=ORDER_ALPHA,
                     template='gcd/search/creator_list.html'):
-    if settings.USE_ELASTICSEARCH:
+    if settings.USE_ELASTICSEARCH and not creator_name == '':
         # TODO use name instead ?
         sqs = SearchQuerySet().filter(
           gcd_official_name=GcdNameQuery(creator_name)).models(Creator)
@@ -735,9 +735,9 @@ def series_search_hx(request):
                           template='gcd/search/series_base_list.html')
 
 
-def series_by_name(request, series_name, sort=ORDER_ALPHA,
+def series_by_name(request, series_name='', sort=ORDER_ALPHA,
                    template='gcd/search/series_list.html'):
-    if settings.USE_ELASTICSEARCH:
+    if settings.USE_ELASTICSEARCH and not series_name == '':
         sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name)) \
                               .models(Series)
         return generic_by_name(request, series_name, None, sort, Series,
@@ -854,11 +854,17 @@ def search(request):
 
     if 'query' not in request.GET or not request.GET['query'] or \
        request.GET['query'].isspace():
-        # if no query, but a referer page
-        if 'referer' in request.headers:
-            return HttpResponseRedirect(request.headers['referer'])
-        else:  # rare, but possible
-            return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
+        if request.GET['search_type'] in ['publisher', 'creator', 'series',
+                                          'brand', 'brand_group',
+                                          'indicia_publisher']:
+            view = '%s_by_name' % request.GET['search_type']
+            return HttpResponseRedirect(urlresolvers.reverse(view))
+        else:
+            # if no query, but a referer page
+            if 'referer' in request.headers:
+                return HttpResponseRedirect(request.headers['referer'])
+            else:  # rare, but possible
+                return HttpResponseRedirect(urlresolvers.reverse(advanced_search))
 
     if 'sort' in request.GET:
         sort = request.GET['sort']
