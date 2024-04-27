@@ -8,6 +8,8 @@ from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
      GcdSearchQuerySet
 
 from apps.gcd import views as gcd_views
+import apps.gcd.views.search
+import apps.gcd.views.redirect
 
 urlpatterns = [
     ###########################################################################
