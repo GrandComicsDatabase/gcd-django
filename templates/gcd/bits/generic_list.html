@@ -31,6 +31,13 @@ GCD
   </div>
 
 <div style="clear: both;"></div>
+  {% if filter %}
+  <p></p>
+    <form method="get">
+    {{ filter.form }}
+    <input type="submit" value='filter results'/>
+    </form>
+  {% endif %}
 {% render_table table %}
 
   <div id="item_id_footer" class="item_id">

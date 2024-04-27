@@ -469,6 +469,10 @@ urlpatterns = [
       gcd_views.details.group_membership, name='show_group_membership'),
 
     # Keywords
+    path('keyword/name/<path:keyword>/',
+      gcd_views.details.keywords, name='keyword_by_name'),
+    path('keyword/name/',
+      gcd_views.details.keywords, name='keyword_by_name'),
     path('keyword/<path:keyword>/<path:model_name>/',
       gcd_views.details.keyword, name='show_keyword'),
     path('keyword/<path:keyword>/',

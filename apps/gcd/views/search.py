@@ -855,7 +855,7 @@ def search(request):
     if 'query' not in request.GET or not request.GET['query'] or \
        request.GET['query'].isspace():
         if request.GET['search_type'] in ['publisher', 'creator', 'series',
-                                          'brand', 'brand_group',
+                                          'keyword', 'brand', 'brand_group',
                                           'indicia_publisher']:
             view = '%s_by_name' % request.GET['search_type']
             return HttpResponseRedirect(urlresolvers.reverse(view))
@@ -942,6 +942,11 @@ def search(request):
         param_type = 'number'
 
     param_type_value = request.GET['query'].strip()
+
+    if object_type == 'keyword':
+        return HttpResponseRedirect(
+          urlresolvers.reverse(view,
+                               kwargs={param_type: param_type_value}))
     return HttpResponseRedirect(
       urlresolvers.reverse(view,
                            kwargs={param_type: param_type_value,
