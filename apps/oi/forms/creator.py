@@ -13,12 +13,15 @@ from dal import autocomplete
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
 
-from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
-                           CreatorArtInfluenceRevision, CreatorDegreeRevision,\
-                           CreatorNonComicWorkRevision, CreatorSchoolRevision,\
-                           CreatorMembershipRevision, CreatorRelationRevision,\
-                           CreatorSignatureRevision, get_creator_field_list,\
-                           ImageRevision, _get_revision_lock,\
+from apps.oi.models import CreatorRevision, CreatorNameDetailRevision, \
+                           CreatorArtInfluenceRevision, \
+                           CreatorDegreeRevision, \
+                           CreatorNonComicWorkRevision, \
+                           CreatorSchoolRevision, \
+                           CreatorMembershipRevision, \
+                           CreatorRelationRevision, \
+                           CreatorSignatureRevision, get_creator_field_list, \
+                           ImageRevision, _get_revision_lock, \
                            _get_creator_sourced_fields, _check_year
 from apps.gcd.models import NameType, CreatorNameDetail, ImageType, School
 from apps.stddata.models import Country
@@ -71,6 +74,8 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
                 self.fields['type'].queryset |= NameType.objects.filter(
                   id=self.instance.creator_name_detail.type.id)
             if self.instance.creator_name_detail.storycredit_set\
+                                                .filter(deleted=False).count()\
+                or self.instance.creator_name_detail.issuecredit_set\
                                                 .filter(deleted=False).count():
                 # TODO How can the 'remove'-link not be shown in this case ?
                 self.fields['name'].help_text = \
@@ -97,6 +102,8 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
         # TODO workaround, better to not allow the removal, see above
         if form.instance.creator_name_detail:
             if form.instance.creator_name_detail.storycredit_set\
+                                                .filter(deleted=False).count()\
+              or form.instance.creator_name_detail.issuecredit_set\
                                                 .filter(deleted=False).count():
                 form.cleaned_data['DELETE'] = False
                 return False
@@ -165,7 +172,7 @@ class CreatorRevisionForm(forms.ModelForm):
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
         self.fields['bio_source_description'].label = \
-          "Biography source description"
+            "Biography source description"
         self.fields['bio_source_type'].label = "Biography source type"
         fields = list(self.fields)
         field_list = [BaseField(Field('creator_help',
