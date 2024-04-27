@@ -451,6 +451,8 @@ class Creator(GcdData):
     def has_dependents(self):
         if self.creator_names.filter(storycredit__deleted=False).exists():
             return True
+        if self.creator_names.filter(issuecredit__deleted=False).exists():
+            return True
         if self.art_influence_revisions.active_set().exists():
             return True
         # TODO how to handle GenericRelation for ReceivedAward
