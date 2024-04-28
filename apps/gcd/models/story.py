@@ -814,3 +814,22 @@ class StoryTable(tables.Table):
 
     def value_publisher(self, value):
         return str(value)
+
+
+class MatchedSearchStoryTable(StoryTable):
+    matched_search = tables.Column(accessor='id', orderable=False,
+                                   verbose_name='Matched Search')
+
+    class Meta:
+        model = Story
+        fields = ('matched_search',)
+        attrs = {'th': {'class': "non_visited"}}
+
+    def __init__(self, *args, **kwargs):
+        self.target = kwargs.pop('target')
+        super(MatchedSearchStoryTable, self).__init__(*args, **kwargs)
+
+    def render_matched_search(self, record):
+        from apps.gcd.templatetags.credits import show_credit
+        credit_text = show_credit(record, 'characters:' + self.target)
+        return mark_safe('<dl class="credits">' + credit_text + '</dl>')

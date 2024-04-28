@@ -10,54 +10,93 @@ GCD :: Add Data Objects
       href="{% static "css/gcd/default.css" %}"/>
 <link rel="stylesheet" type="text/css"
       href="{% static "css/oi/default.css" %}"/>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/listing.css" %}"/>
+{% endblock %}
+
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}
+<div>
+<p></p>
+<table class="add_page">
+  <tr>
+    <td>
+      <a href="{% url "add_award" %}"><button type="button">Add Award</button></a>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='award' %}</td>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <a href="{% url "add_character" %}"><button type="button">Add Character</button></a>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='character' %}</td>
+  </tr>
+  <tr>
+    <td>
+      <a href="{% url "add_creator" %}"><button type="button">Add Creator</button></a>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='creator' %}</td>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <a href="{% url "add_feature" %}"><button type="button">Add Feature</button></a>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='feature' %}</td>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <a href="{% url "add_group" %}"><button type="button">Add Group</button></a>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='group' %}</td>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <a href="{% url "add_printer" %}"><button type="button">Add Printer</button></a>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='printer' %}</td>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <a href="{% url "add_publisher" %}"><button type="button">Add Publisher</button></a>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='publisher' %}</td>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <a href="{% url "add_universe" %}"><button type="button">Add Universe</button></a>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='universe' %}</td>
+    </td>
+  </tr>
+</table>
+</div>
+<div>
+      <table class="table">
+            <tbody id="search-results">
+            </tbody>
+        </table>        
+</div>
 
 <p>
-<a href="{% url "add_award" %}">
-<button type="button">Add Award</button>
-</a>
+      Issues are added from the corresponding series page, series from the publisher page
+      and brands and indicia publishers from the page of their parent publisher.
 </p>
-<p>
-<a href="{% url "add_character" %}">
-<button type="button">Add Character</button>
-</a>
-</p>
-<p>
-<a href="{% url "add_creator" %}">
-<button type="button">Add Creator</button>
-</a>
-</p>
-<p>
-<a href="{% url "add_feature" %}">
-<button type="button">Add Feature</button>
-</a>
-</p>
-<p>
-<a href="{% url "add_group" %}">
-<button type="button">Add Group</button>
-</a>
-</p>
-<p>
-<a href="{% url "add_printer" %}">
-<button type="button">Add Printer</button>
-</a>
-</p>
-<p>
-<a href="{% url "add_publisher" %}">
-<button type="button">Add Publisher</button>
-</a>
-</p>
-<p>
-<a href="{% url "add_universe" %}">
-<button type="button">Add Universe</button>
-</a>
-</p>
-<p>
-Issues are added from the corresponding series page, series from the publisher page
-and brands and indicia publishers from the page of their parent publisher.
-</p>
-
 {% endblock %}
 

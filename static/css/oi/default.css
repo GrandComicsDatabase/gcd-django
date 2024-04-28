@@ -188,3 +188,7 @@ div.indexer_notice {
     margin-bottom: 1em;
     border: 1px solid #DDD;
 }
+
+.add_page td {
+    padding-bottom: 0.5em;
+}

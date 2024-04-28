@@ -73,6 +73,14 @@ class Universe(GcdData):
             display_name += self.designation
         return display_name
 
+    def display_year_first_published(self):
+        if not self.year_first_published:
+            return '?'
+        else:
+            return '%d%s' % (self.year_first_published,
+                             '?' if self.year_first_published_uncertain
+                             else '')
+
     def has_dependents(self):
         from .story import Story
         if Story.objects.filter(universe=self, deleted=False).exists():

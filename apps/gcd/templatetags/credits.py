@@ -85,7 +85,6 @@ def show_credit(story, credit):
     on a better way welcome, as clearly I'm abusing the Django filter
     convention here.
     """
-
     if not story:
         return ""
 
@@ -132,20 +131,24 @@ def show_credit(story, credit):
         collator = icu.Collator.createInstance()
         collator.setStrength(0)
         target = credit[len('characters:'):]
-        formatted_credit = ""
-        if story.characters:
+        formatted_credit = mark_safe("")
+        if story.characters or story.appearing_characters.count():
+            character_string = story.show_characters_as_text()
             search = icu.StringSearch(target.lower(),
-                                      story.characters.lower(),
+                                      character_string.lower(),
                                       collator)
             if search.first() != -1:
-                formatted_credit = __format_credit(story, 'characters')
+                formatted_credit = __format_credit(story, 'characters',
+                                                   character_string)
 
-        if story.feature:
+        if story.feature or story.feature_object.count():
+            feature_string = story.show_feature_as_text()
             search = icu.StringSearch(target.lower(),
-                                      story.feature.lower(),
+                                      feature_string.lower(),
                                       collator)
             if search.first() != -1:
-                formatted_credit += __format_credit(story, 'feature')
+                formatted_credit += __format_credit(story, 'feature',
+                                                    feature_string)
         return formatted_credit
     elif credit == 'genre':
         genres = story.genre.lower()
@@ -217,9 +220,11 @@ def __credit_visible(value):
     return value is not None and value != ''
 
 
-def __format_credit(story, credit):
+def __format_credit(story, credit, computed_value=''):
     if credit in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
         credit_value = __credit_value(story, credit, url=True)
+    elif credit in ['characters', 'feature']:
+        credit_value = computed_value
     else:
         credit_value = getattr(story, credit)
     if not __credit_visible(credit_value):

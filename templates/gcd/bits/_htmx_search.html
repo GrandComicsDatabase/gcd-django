@@ -1,0 +1,13 @@
+{% load static %}
+
+Search: &nbsp;
+<input class="form-control" type="text"
+       name="search" placeholder="Begin Typing To Search..."
+       hx-post="/{{ target }}/search/"
+       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+       hx-trigger="keyup changed delay:500ms"
+       hx-target="#search-results"
+       hx-indicator=".htmx-indicator">
+<span class="htmx-indicator">
+<img src="{% static "img/bars.svg" %}"> Searching...
+</span>
