@@ -287,16 +287,16 @@ def generic_by_name(request, name, q_obj, sort,
                 query_val[credit] = name
                 credit = None
                 template = 'gcd/search/issue_list_sortable.html'
-                things = Story.objects.filter(
-                  id__in=things.values_list('id', flat=True))\
-                    .select_related('issue__series__publisher__country',
-                                    'type').prefetch_related('feature_object')
+                things = things.prefetch_related('feature_object')
+                filter = filter_sequences(request, things)
+                things = filter.qs
                 table = StoryTable(
                   things, attrs={'class': 'sortable_listing'},
                   template_name='gcd/bits/sortable_table.html',
                   order_by=('issue'))
                 context = {'item_name': item_name,
                            'plural_suffix': plural_suffix,
+                           'filter': filter,
                            'heading': heading}
 
                 return generic_sortable_list(request, things, table, template,

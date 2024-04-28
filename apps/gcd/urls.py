@@ -558,9 +558,9 @@ urlpatterns = [
     path('story/name/<path:title>/',
       gcd_views.search.story_by_title, name='story_by_title'),
 
-    path('feature/name/<path:feature>/sort/<path:sort>/',
+    path('story_by_feature/<path:feature>/sort/<path:sort>/',
       gcd_views.search.story_by_feature, name='story_by_feature'),
-    path('feature/name/<path:feature>/',
+    path('story_by_feature/<path:feature>/',
       gcd_views.search.story_by_feature, name='story_by_feature'),
 
     path('credit/name/<path:name>/sort/<path:sort>/',
