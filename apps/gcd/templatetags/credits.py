@@ -372,13 +372,13 @@ def markdown(value):
     return mark_safe(md.markdown(value))
 
 
-def __format_keywords(keywords, join_on='; ', model_name='story'):
+def __format_keywords(keywords, join_on='; ', model_name='story', url=True):
     if type(keywords) is str:
         credit_value = keywords
     else:
         keyword_list = list()
         for i in keywords.all().order_by('name'):
-            if model_name in ['story', 'issue']:
+            if model_name in ['story', 'issue'] and url:
                 keyword_list.append('<a href="%s%s/">%s</a>' % (
                                     urlresolvers.reverse(
                                       'show_keyword', kwargs={'keyword': i}),
@@ -392,6 +392,11 @@ def __format_keywords(keywords, join_on='; ', model_name='story'):
 @register.filter
 def show_keywords(object):
     return __format_keywords(object.keywords)
+
+
+@register.filter
+def show_keywords_as_text(object):
+    return __format_keywords(object.keywords, url=False)
 
 
 @register.filter
