@@ -290,10 +290,14 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.prefetch_related('feature_object')
                 filter = filter_sequences(request, things)
                 things = filter.qs
+                if sort == ORDER_CHRONO:
+                    order_by = 'publication_date'
+                else:
+                    order_by = 'issue'
                 table = StoryTable(
                   things, attrs={'class': 'sortable_listing'},
                   template_name='gcd/bits/sortable_table.html',
-                  order_by=('issue'))
+                  order_by=(order_by))
                 context = {'item_name': item_name,
                            'plural_suffix': plural_suffix,
                            'filter': filter,
