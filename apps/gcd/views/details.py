@@ -20,12 +20,16 @@ from django.http import HttpResponseRedirect, Http404, JsonResponse, \
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.clickjacking import xframe_options_sameorigin
+from django.utils.safestring import mark_safe
 
 from django_tables2 import RequestConfig
 from django_tables2.paginators import LazyPaginator
 from django_tables2.export.export import TableExport
+import django_tables2 as tables
 
 from djqscsv import render_to_csv_response
+
+from taggit.models import Tag, TaggedItem
 
 from apps.indexer.views import ViewTerminationError
 from apps.indexer.models import Indexer
@@ -49,7 +53,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
 from apps.gcd.models.creator import GenericCreatorTable, \
                                     GenericCreatorNameTable, \
                                     CreatorCreatorTable, NAME_TYPES
-from apps.gcd.models.character import CreatorCharacterTable, \
+from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       UniverseCharacterTable, \
                                       SeriesCharacterTable
 from apps.gcd.models.feature import FeatureTable
@@ -78,7 +82,8 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            IndiciaPublisherRevision, ImageRevision, \
                            Changeset, SeriesBondRevision, CreatorRevision, \
                            CTYPES
-from apps.select.views import SeriesFilter, filter_issues, filter_sequences
+from apps.select.views import SeriesFilter, KeywordUsedFilter, \
+                              filter_issues, filter_sequences
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -2203,33 +2208,112 @@ def series_issues_to_migrate(request, series_id):
     return generic_sortable_list(request, issues, table, template, context)
 
 
-def keyword(request, keyword, model_name='story'):
+class KeywordsTable(tables.Table):
+    keyword = tables.Column(accessor='name')
+    objects_count = tables.Column(verbose_name='# Usages')
+
+    def render_keyword(self, record):
+        url = urlresolvers.reverse(
+                'show_keyword',
+                kwargs={'keyword': record.name})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.name))
+
+
+def keywords(request, keyword=''):
+    """
+    List all keywords
+    """
+    if keyword:
+        keywords = Tag.objects.filter(name__icontains=keyword)
+    else:
+        keywords = Tag.objects.all()
+    keywords = keywords.annotate(
+      objects_count=Count(
+        'taggit_taggeditem_items',
+        filter=~Q(taggit_taggeditem_items__content_type__id__in=[72, 75])))\
+        .order_by('-objects_count').filter(objects_count__gt=0)
+    template = 'gcd/search/issue_list_sortable.html'
+    context = {
+        'item_name': 'keyword',
+        'plural_suffix': 's',
+        'heading': 'Keywords'
+    }
+    table = KeywordsTable(keywords,
+                          attrs={'class': 'sortable_listing'},
+                          template_name=SORT_TABLE_TEMPLATE,
+                          order_by=('keywords'))
+    return generic_sortable_list(request, keywords, table, template, context)
+
+
+class KeywordTable(tables.Table):
+    item = tables.Column(accessor='content_object',
+                         verbose_name='Tagged Objects',
+                         orderable=False)
+
+    def render_item(self, record):
+        url = record.content_object.get_absolute_url()
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.content_object))
+
+
+def keyword(request, keyword, model_name=''):
     """
     Display the objects associated to a keyword.
     """
-    from apps.oi.views import DISPLAY_CLASSES
-    if model_name not in ['story', 'issue']:
-        return render(
-            request, 'indexer/error.html',
-            {'error_text':
-             'There are no keyword-lists for these objects.'})
+    if 'content_type' in request.GET:
+        if request.GET['content_type'] == '13':
+            model_name = 'story'
+        elif request.GET['content_type'] == '12':
+            model_name = 'issue'
+        elif request.GET['content_type'] == '147':
+            model_name = 'character'
 
-    objs = DISPLAY_CLASSES[model_name].objects.filter(keywords__name=keyword,
-                                                      deleted=False)
+    if model_name:
+        from apps.oi.views import DISPLAY_CLASSES
+        objs = DISPLAY_CLASSES[model_name].objects.filter(
+          keywords__name=keyword, deleted=False)
+        filter = None
+
     if model_name == 'story':
         table = StoryTable(objs,
                            attrs={'class': 'sortable_listing'},
                            template_name=SORT_TABLE_TEMPLATE,
-                           order_by=('name'))
+                           order_by=('issue'))
         description = 'showing %d stories for keyword' % objs.count()
+        object_type = 'stories'
     elif model_name == 'issue':
         table = IssuePublisherTable(objs,
                                     attrs={'class': 'sortable_listing'},
                                     template_name=SORT_TABLE_TEMPLATE,
-                                    order_by=('name'))
-        description = 'showing %d issues for keyword' % objs.count()
+                                    order_by=('issue'))
+        object_type = 'issues'
+    elif model_name == 'character':
+        table = CharacterTable(objs,
+                               attrs={'class': 'sortable_listing'},
+                               template_name=SORT_TABLE_TEMPLATE,
+                               order_by=('character'))
+        object_type = 'characters'
+    else:
+        objs = TaggedItem.objects.filter(tag__name=keyword).exclude(
+          content_type__id__in=[72, 75])
+        content_types = set(objs.values_list('content_type', flat=True))
+        filter = KeywordUsedFilter(request.GET,
+                                   queryset=objs,
+                                   content_type=content_types)
+        objs = filter.qs
+        table = KeywordTable(objs,
+                             attrs={'class': 'sortable_listing'},
+                             template_name=SORT_TABLE_TEMPLATE,
+                             order_by=('name'))
+        object_type = 'objects'
+
+    description = 'showing %d %s with the keyword (case insensitive)' % (
+      objs.count(), object_type)
+
     context = {'object': keyword,
-               'description': description
+               'description': description,
+               'filter': filter
                }
     return generic_sortable_list(request, objs, table,
                                  'gcd/bits/generic_list.html', context)

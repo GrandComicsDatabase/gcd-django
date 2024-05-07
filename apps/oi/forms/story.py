@@ -329,6 +329,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['signature'] and not cd['is_signed']:
             cd['signature'] = None
 
+        if cd['signature'] and cd['signed_as']:
+            raise forms.ValidationError(
+              ['Either select a signature or enter a transcription of the '
+               'text of the signature, but not both']
+            )
+
         if cd['signature'] and 'creator' in cd:
             if cd['signature'].creator != cd['creator'].creator:
                 raise forms.ValidationError(

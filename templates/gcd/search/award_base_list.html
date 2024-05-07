@@ -1,0 +1,15 @@
+{% load display %}
+{% load credits %}
+
+<table class="sortable_listing">
+  <tr>
+  <th colspan="2"> Award </th>
+  </tr>
+  {% for award in items %}
+    {% with award|object_filter as award %}
+    <tr>
+      <td> <a href="{{ award.get_absolute_url }}">{{ award.name }}</a></td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>

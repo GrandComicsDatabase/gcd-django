@@ -259,6 +259,9 @@ class CreatorNameDetail(GcdData):
                                  esc(display_as_name))
             if extra_name:
                 credit_text = credit_text[:-1] + ' as %s)' % extra_name
+        if credit.credited_as and not (getattr(credit, 'signed_as', None) and \
+           (credit.credited_as == credit.signed_as)):
+            credit_text += ' (credited as %s)' % esc(credit.credited_as)
         if credit_attribute:
             credit_text += ' (%s)' % credit_attribute
         if hasattr(credit, 'signature') and credit.signature:
@@ -276,8 +279,6 @@ class CreatorNameDetail(GcdData):
             credit_text += ' (credited, signed as %s)' % \
                            esc(credit.credited_as)
         else:
-            if credit.credited_as:
-                credit_text += ' (credited as %s)' % esc(credit.credited_as)
             if hasattr(credit, 'is_signed') and credit.signed_as:
                 credit_text += ' (signed as %s)' % esc(credit.signed_as)
 
@@ -449,6 +450,8 @@ class Creator(GcdData):
 
     def has_dependents(self):
         if self.creator_names.filter(storycredit__deleted=False).exists():
+            return True
+        if self.creator_names.filter(issuecredit__deleted=False).exists():
             return True
         if self.art_influence_revisions.active_set().exists():
             return True

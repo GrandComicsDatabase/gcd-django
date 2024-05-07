@@ -78,6 +78,13 @@ class CharacterNameDetailRevisionForm(forms.ModelForm):
         self.fields['sort_name'].help_text = "In the Western culture usually "\
                                              " 'family name, given name'."
 
+        if self.instance.character_name_detail:
+            if self.instance.character_name_detail.storycharacter_set\
+                                                  .filter(deleted=False).count():
+                # TODO How can the 'remove'-link not be shown in this case ?
+                self.fields['name'].help_text = \
+                    'Character names with existing credits cannot be removed.'
+
 
 class CharacterInlineFormSet(forms.BaseInlineFormSet):
     def _should_delete_form(self, form):

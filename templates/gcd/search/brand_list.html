@@ -4,8 +4,8 @@
 {% load credits %}
 
 {% block list_contents %}
-<table class="listing">
-  <tr>
+<table class="sortable_listing">
+  <tr style="vertical-align:top">
     <th> Publisher Brand Emblem</th>
     <th> Name </th>
     <th> Brand Groups </th>
@@ -15,7 +15,7 @@
   </tr>
   {% for brand in items %}
     {% with brand|object_filter as brand %}
-    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <tr>
       <td> {% if brand.emblem %} <a href="{{ brand.get_absolute_url }}"> <img src="{{ brand.emblem.thumbnail.url }}"> {% endif %} </a></td>
       <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
       <td class="listing_publisher"> {% for group in brand.group.all %}  <img {{ group.parent.country|show_country_info }}> <a href="{{ group.get_absolute_url }}">{{ group.name }}</a> {% endfor %} </td>

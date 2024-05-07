@@ -4,8 +4,8 @@
 {% load display %}
 
 {% block list_contents %}
-<table class="listing">
-  <tr>
+<table class="sortable_listing">
+  <tr style="vertical-align:top">
     <th> Publisher Brand Group </th>
     <th colspan="2"> Parent Publisher </th>
     <th> Year&nbsp;Began </th>
@@ -14,7 +14,7 @@
   </tr>
   {% for brand in items %}
     {% with brand|object_filter as brand %}
-    <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <tr>
       <td class="listing_publisher"> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
       <td class="listing_country"> <img {{ brand.parent.country|show_country_info }}>
       <td class="listing_publisher"> <a href="{{ brand.parent.get_absolute_url }}">{{ brand.parent.name }}</a></td>

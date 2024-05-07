@@ -5,6 +5,7 @@ from haystack.forms import FacetedSearchForm
 
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Value, IntegerField, F
 import django.urls as urlresolvers
 from django.http import HttpResponseRedirect, JsonResponse
@@ -859,6 +860,26 @@ class SequenceFilter(FilterSet):
         if publishers:
             qs = Publisher.objects.filter(id__in=publishers)
             self.filters['publisher'].queryset = qs
+
+
+class KeywordUsedFilter(FilterSet):
+    content_type = ModelChoiceFilter(field_name='content_type',
+                                     label='Object',
+                                     queryset=ContentType.objects.all())
+
+    class Meta:
+        model = Issue
+        fields = ['content_type',]
+
+    def __init__(self, *args, **kwargs):
+        if 'content_type' in kwargs:
+            content_type = kwargs.pop('content_type')
+        else:
+            content_type = None
+        super(KeywordUsedFilter, self).__init__(*args, **kwargs)
+        if content_type:
+            qs = ContentType.objects.filter(id__in=content_type)
+            self.filters['content_type'].queryset = qs
 
 
 def filter_issues(request, issues):
