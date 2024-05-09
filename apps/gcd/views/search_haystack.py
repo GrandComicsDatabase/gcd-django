@@ -1,5 +1,5 @@
 import shlex
-from datetime import datetime
+from datetime import datetime, date
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str as uni
 
@@ -107,6 +107,18 @@ class GcdSearchQuerySet(SearchQuerySet):
     def auto_query(self, query_string, fieldname='content'):
         return self
 
+    def boost_fields(self, fields):
+        """Boosts fields."""
+        clone = self._clone()
+        clone.query.add_boost_fields(fields)
+        return clone
+
+    def boost_negative(self, query, negative_boost):
+        """Boost negatively."""
+        clone = self._clone()
+        clone.query.add_boost_negative(query, negative_boost)
+        return clone
+
 
 class PaginatedFacetedSearchView(FacetedSearchView):
     def __call__(self, request, context=None):
@@ -120,12 +132,39 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.query = self.get_query().strip('\\')
         # TODO List of fields should be gathered
         # automatically from our SearchIndex classes
-        fields = ['content', 'name', 'title']
+        #
+        # TODO search over three fields is by now handled via boost_fields
+        # in ES (or generally fields), so we could refactor
+        # parse_query_into_sq, where we use to parse the AND/OR query for ES
+        # into the three fiedlds
+        fields = ['content', ]
         sq, not_sq = parse_query_into_sq(self.query, fields)
         if sq:
             self.form.searchqueryset = self.form.searchqueryset.filter(sq)
         if not_sq:
             self.form.searchqueryset = self.form.searchqueryset.exclude(not_sq)
+
+        self.form.searchqueryset = self.form.searchqueryset\
+                                       .facet('facet_model_name')\
+                                       .facet('country')\
+                                       .facet('language')\
+                                       .facet('publisher')\
+                                       .facet('feature', size=100)\
+                                       .facet('type')\
+                                       .date_facet('date',
+                                                   start_date=date(1000, 1, 1),
+                                                   end_date=date(3000, 1, 1),
+                                                   gap_by='year')
+        self.form.searchqueryset = self.form.searchqueryset\
+                                       .boost_fields({'name': 5,
+                                                      'text': 1,
+                                                      'title': 2})\
+                                       .boost_negative({'terms': {'type': [
+                                         'comics-form advertising',
+                                         'promo (ad from the publisher)',
+                                         'advertisement',
+                                         'preview (from the publisher)',
+                                         'in-house column']}}, 0.2)
 
         self.results = self.get_results()
         if 'date_facet' in request.GET:
@@ -212,13 +251,6 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                            vars=context)
         self.paginator.vars['page'] = self.paginator.paginate(request)
         return self.create_response()
-
-    def get_queryset(self):
-        options = {"size": 0} # capped @ 100
-        qs = super().get_queryset()
-        for field in self.facet_fields:
-            qs = qs.facet(field, **options)
-        return qs
 
     def extra_context(self):
         extra = super(PaginatedFacetedSearchView, self).extra_context()

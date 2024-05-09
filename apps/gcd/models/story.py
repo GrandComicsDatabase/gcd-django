@@ -638,11 +638,11 @@ class Story(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
-    def _show_characters(cls, story):
-        return show_characters(story)
+    def _show_characters(cls, story, css_style=True):
+        return show_characters(story, css_style=css_style)
 
-    def show_characters(self):
-        return self._show_characters(self)
+    def show_characters(self, css_style=True):
+        return self._show_characters(self, css_style=css_style)
 
     def show_characters_as_text(self):
         return show_characters(self, url=False)
@@ -833,3 +833,102 @@ class MatchedSearchStoryTable(StoryTable):
         from apps.gcd.templatetags.credits import show_credit
         credit_text = show_credit(record, 'characters:' + self.target)
         return mark_safe('<dl class="credits">' + credit_text + '</dl>')
+
+
+class HaystackStoryTable(tables.Table):
+    story = tables.TemplateColumn(
+      accessor='id', verbose_name='Story',
+      template_name='gcd/bits/hs_sortable_sequence_entry.html')
+    country = tables.Column(
+      accessor='country', verbose_name='', orderable=False,
+      attrs={"td": {'class': "listing_country",
+                    'style': "padding-right: 0px;"}})
+    issue = tables.TemplateColumn(
+      accessor='id', verbose_name='Issue',
+      template_name='gcd/bits/hs_sortable_issue_entry.html')
+    publisher = tables.Column(verbose_name='Publisher')
+    publication_date = tables.Column(accessor='key_date',
+                                     verbose_name='Publication Date',
+                                     empty_values=('9999-99-99'))
+
+    def order_publisher(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction +
+                                       'publisher',
+                                       direction + 'sort_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
+    def order_issue(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction +
+                                       'sort_name',
+                                       direction + 'key_date',
+                                       'sequence_number')
+        return (query_set, True)
+
+    def order_story(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'sort_title',
+                                       direction + 'sort_name',
+                                       direction + 'sort_code',
+                                       direction + 'sequence_number')
+        return (query_set, True)
+
+    def render_country(self, record):
+        from apps.gcd.templatetags.credits import show_country_info
+        return mark_safe('<img ' +
+                         show_country_info(record.object.issue.series.country)
+                         + '>')
+
+
+class HaystackMatchedStoryTable(HaystackStoryTable):
+    matched_search = tables.Column(accessor='id',
+                                   verbose_name='Matched Search',
+                                   orderable=False)
+
+    class Meta:
+        model = Story
+        fields = ('matched_search',)
+        attrs = {'th': {'class': "non_visited"}}
+
+    def __init__(self, *args, **kwargs):
+        self.target = kwargs.pop('target')
+        super(HaystackMatchedStoryTable, self).__init__(*args, **kwargs)
+
+    def render_matched_search(self, record):
+        from apps.gcd.templatetags.credits import show_credit
+        if self.target.startswith('any:'):
+            search_terms = self.target[4:].split()
+            matched_credits = []
+            for c in ['script', 'pencils', 'inks', 'colors', 'letters',
+                      'editing']:
+                credit = getattr(record, c, None)
+                if credit:
+                    credit = ' '.join(credit).lower()
+                    found = True
+                    for term in search_terms:
+                        if not term.lower() in credit:
+                            found = False
+                    if found:
+                        matched_credits.append(c)
+            record.object.matched_credits = matched_credits
+        if self.target.startswith('characters:'):
+            search_terms = self.target[11:].split()
+            matched_credits = []
+            for c in ['characters', 'feature']:
+                credit = getattr(record, c, None)
+                if credit:
+                    credit = ' '.join(credit).lower()
+                    found = True
+                    for term in search_terms:
+                        if not term.lower() in credit:
+                            found = False
+                    if found:
+                        matched_credits.append(c)
+            record.object.matched_credits = matched_credits
+            if not matched_credits:
+                raise ValueError
+        return mark_safe('<dl class="credits">'
+                         + show_credit(record.object, self.target)
+                         + '</dl>')

@@ -15,7 +15,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
 from django.shortcuts import render
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 
 from djqscsv import render_to_csv_response
 from haystack.query import SearchQuerySet
@@ -36,7 +36,8 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, \
                             Award, ReceivedAward, Character, Group, Universe, \
                             Printer
 from apps.gcd.models.issue import INDEXED, IssuePublisherTable
-from apps.gcd.models.story import StoryTable, MatchedSearchStoryTable
+from apps.gcd.models.story import StoryTable, MatchedSearchStoryTable, \
+                                  HaystackMatchedStoryTable
 from apps.gcd.models.series import SeriesPublisherTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
@@ -44,6 +45,8 @@ from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, \
                                    IS_NONE, generic_sortable_list
 from apps.gcd.views.covers import get_image_tags_per_page
+from apps.gcd.templatetags.credits import get_native_language_name
+from apps.select.forms import get_filter_form
 from apps.select.views import filter_sequences
 # Should not be importing anything from oi, but we're doing this
 # in several places.
@@ -331,16 +334,47 @@ def generic_by_name(request, name, q_obj, sort,
                 # query_val['feature'] = name
                 # query_val['logic'] = True
         else:
-            things = sqs
-            if (sort == ORDER_ALPHA):
-                things = things.order_by("sort_name",
-                                         "key_date",
-                                         "sequence_number")
-            elif (sort == ORDER_CHRONO):
-                things = things.order_by("key_date",
-                                         "sort_name",
-                                         "sequence_number")
+            things = sqs.facet('publisher').facet('country').facet('language')
+            if request.GET.get('language', ''):
+                things = things.filter(
+                  language__exact=unquote(request.GET['language']))
+            if request.GET.get('country', ''):
+                things = things.filter(
+                  country__exact=unquote(request.GET['country']))
+            if request.GET.get('publisher', ''):
+                things = things.filter(
+                  publisher__exact=unquote(request.GET['publisher']))
+            table = HaystackMatchedStoryTable(
+              things, attrs={'class': 'sortable_listing'},
+              template_name='gcd/bits/sortable_table.html', target=credit)
+            if not request.GET.get('sort', None):
+                if sort == ORDER_ALPHA:
+                    table.order_by = 'issue'
+                elif sort == ORDER_CHRONO:
+                    table.order_by = 'publication_date'
 
+            countries = [('', "---------")]
+            for country in things.facet_counts()['fields']['country']:
+                countries.append((quote(country[0]), '%s (%d)' % (country[0],
+                                                                  country[1])))
+            languages = [('', "---------")]
+            for language in things.facet_counts()['fields']['language']:
+                languages.append((quote(language[0]),
+                                  '%s (%d)' % (get_native_language_name(
+                                    language[0]), language[1])))
+            publishers = [('', "---------")]
+            for publisher in things.facet_counts()['fields']['publisher']:
+                publishers.append((quote(publisher[0]),
+                                   '%s (%d)' % (publisher[0], publisher[1])))
+            filter_form = get_filter_form(countries=countries,
+                                          languages=languages,
+                                          publishers=publishers)(request.GET)
+            context = {'item_name': item_name,
+                       'plural_suffix': plural_suffix,
+                       'filter_form': filter_form,
+                       'heading': heading}
+            return generic_sortable_list(request, things, table, template,
+                                         context)
     else:
         raise TypeError("Unsupported search target!")
 
@@ -592,14 +626,23 @@ def story_by_character(request, character, sort=ORDER_ALPHA):
           'A search for characters must use more than 3 letters.',
           redirect=False)
 
-    q_obj = Q(characters__icontains=character) | \
-            Q(feature__icontains=character) | \
-            Q(appearing_characters__character__name__icontains=character) | \
-            Q(feature_object__name__icontains=character)
-
-    return generic_by_name(request, character, q_obj, sort,
-                           credit="characters:" + character,
-                           selected="character")
+    if settings.USE_ELASTICSEARCH:
+        query_part = GcdNameQuery(character)
+        sq = SQ(**{'characters': query_part})
+        sq |= SQ(**{'feature': query_part})
+        sqs = SearchQuerySet().filter(sq) \
+                              .models(Story)
+        return generic_by_name(request, character, None, sort,
+                               credit="characters:" + character,
+                               selected="character", sqs=sqs)
+    else:
+        q_obj = Q(characters__icontains=character) | \
+                Q(feature__icontains=character) | \
+                Q(appearing_characters__character__name__icontains=character) | \
+                Q(feature_object__name__icontains=character)
+        return generic_by_name(request, character, q_obj, sort,
+                               credit="characters:" + character,
+                               selected="character")
 
 
 def character_search_hx(request):
@@ -828,10 +871,16 @@ def story_by_title(request, title, sort=ORDER_ALPHA):
 
 def story_by_feature(request, feature, sort=ORDER_ALPHA):
     """Looks up story by feature."""
-    q_obj = Q(feature__icontains=feature) | \
-            Q(feature_object__name__icontains=feature)
-    return generic_by_name(request, feature, q_obj, sort, credit="feature",
-                           selected="feature")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(feature=GcdNameQuery(feature)) \
+                              .models(Story)
+        return generic_by_name(request, feature, None, sort, credit="feature",
+                               selected="feature", sqs=sqs)
+    else:
+        q_obj = Q(feature__icontains=feature) | \
+                Q(feature_object__name__icontains=feature)
+        return generic_by_name(request, feature, q_obj, sort, credit="feature",
+                            selected="feature")
 
 
 def series_search_hx(request):

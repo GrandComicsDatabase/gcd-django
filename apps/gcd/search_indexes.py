@@ -8,8 +8,6 @@ from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
 
 from apps.oi.models import on_sale_date_fields
 
-DEFAULT_BOOST = 15.0
-
 
 class ObjectIndex(object):
     def index_queryset(self, using=None):
@@ -42,7 +40,7 @@ class ObjectIndex(object):
 
 class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
-    title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)
+    title = indexes.CharField(model_attr="title")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='series__sort_name',
@@ -96,7 +94,7 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
 class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='sort_name', indexed=False)
@@ -135,7 +133,9 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
 class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
-    title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)
+    title = indexes.CharField(model_attr="title")
+    sort_title = indexes.CharField(model_attr="title", indexed=False)
+
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='issue__series__sort_name',
@@ -156,7 +156,8 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     publisher = indexes.CharField(model_attr='issue__series__publisher__name',
                                   faceted=True, indexed=False)
 
-    feature = indexes.MultiValueField(faceted=True, indexed=False, null=True)
+    feature = indexes.MultiValueField(faceted=True, null=True)
+    characters = indexes.MultiValueField(faceted=True, null=True)
 
     script = indexes.MultiValueField(faceted=True, null=True)
     pencils = indexes.MultiValueField(faceted=True, null=True)
@@ -273,6 +274,12 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         else:
             return return_val
 
+    def prepare_characters(self, obj):
+        return obj.show_characters_as_text()
+
+    def prepare_sort_title(self, obj):
+        return obj.show_title(True)
+
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
         return super(ObjectIndex, self).index_queryset(using).exclude(
@@ -284,7 +291,7 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/feature_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
@@ -310,7 +317,7 @@ class UniverseIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/universe_text.txt')
-    name = indexes.CharField(boost=DEFAULT_BOOST)
+    name = indexes.CharField()
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(indexed=False)
@@ -340,7 +347,7 @@ class CharacterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/character_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
@@ -366,7 +373,7 @@ class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/group_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
@@ -392,7 +399,7 @@ class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -415,7 +422,7 @@ class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -437,7 +444,7 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -460,7 +467,7 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -482,7 +489,7 @@ class PrinterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -502,7 +509,7 @@ class AwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/award_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -520,7 +527,7 @@ class ReceivedAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/received_award_text.txt')
-    name = indexes.CharField(model_attr="award_name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="award_name")
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()
@@ -554,9 +561,8 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/creator_text.txt')
-    gcd_official_name = indexes.CharField(model_attr="gcd_official_name",
-                                          boost=DEFAULT_BOOST)
-    name = MultiValueField(boost=DEFAULT_BOOST)
+    gcd_official_name = indexes.CharField(model_attr="gcd_official_name")
+    name = MultiValueField()
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()
@@ -597,8 +603,7 @@ class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/creator_membership_text.txt')
-    name = indexes.CharField(model_attr="organization_name",
-                             boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="organization_name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='organization_name',
@@ -615,7 +620,7 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
                                indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True,
            template_name='search/indexes/gcd/creator_art_influence_text.txt')
-    name = indexes.CharField(model_attr="influence", boost=DEFAULT_BOOST)
+    title = indexes.CharField(model_attr="influence")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='influence', indexed=False)
@@ -628,13 +633,15 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
     def prepare_facet_model_name(self, obj):
         return "creator art influence"
 
+    def prepare_title(self, obj):
+        return str(obj)
+
 
 class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex,
                                indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True,
            template_name='search/indexes/gcd/creator_non_comic_work_text.txt')
-    name = indexes.CharField(model_attr="publication_title",
-                             boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="publication_title")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='publication_title',

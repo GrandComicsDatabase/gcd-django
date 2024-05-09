@@ -53,3 +53,14 @@ def get_select_search_form(search_publisher=False, search_series=False,
                                                  required=False, min_value=0)
         select_key = forms.CharField(widget=HiddenInput)
     return SelectSearchForm
+
+
+def get_filter_form(countries=None, languages=None, publishers=None):
+    class FilterSearchForm(forms.Form):
+        if countries:
+            country = forms.ChoiceField(choices=countries, required=False)
+        if languages:
+            language = forms.ChoiceField(choices=languages, required=False)
+        if publishers:
+            publisher = forms.ChoiceField(choices=publishers, required=False)
+    return FilterSearchForm
