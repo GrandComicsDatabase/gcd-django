@@ -197,9 +197,13 @@ ABSOLUTE_URL_OVERRIDES = {
 #    }
 #}
 # in your settings_local.py as an override.
+# TODO check on python library for memcached, this is the former binding
+# using python-memcached, which was removed in 4.2. But that one falls
+# silently more often, where silent fails are fine for our cache uses
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+#        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        'BACKEND': 'apps.middleware.memcached_backend.MemcachedCache',
         'LOCATION': '127.0.0.1:11211',
     }
 }
@@ -255,12 +259,10 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 #################################################################################
 # Haystack and search
 #################################################################################
-# we use a copy of ConfigurableElasticBackend from elasticstack, to be
-# able to work with elasticsearch2. Will need to redo all this at some
-# point and move away from haystack.
+# We use our own ElasticsearchBackend, which supports more boosting on queries.
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': 'apps.gcd.elastic_backend_configurable.ConfigurableElasticSearchEngine',
+        'ENGINE': 'apps.gcd.elastic_backend_boosting.Elasticsearch7BoostingSearchEngine',
         'URL': 'http://127.0.0.1:9200/',
         'INDEX_NAME': 'haystack',
         'INCLUDE_SPELLING': True,
