@@ -261,12 +261,12 @@ def get_keywords(source):
 
 def save_keywords(revision, source):
     if revision.keywords:
-        source.keywords.set(*[x.strip() for x in revision.keywords.split(';')])
+        source.keywords.set([x.strip() for x in revision.keywords.split(';')])
         revision.keywords = '; '.join(
             str(i) for i in source.keywords.all().order_by('name'))
         revision.save()
     else:
-        source.keywords.set()
+        source.keywords.set([])
 
 
 def _check_year(year):
