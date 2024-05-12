@@ -4,6 +4,7 @@
 {% load i18n %}
 {% load credits %}
 {% load display %}
+{% load l10n %}
 
 {% block title %} GCD :: Covers Pending Review {% endblock %}
 
@@ -40,7 +41,9 @@
         {% if issue.publication_date %}
         <span class="cover_date">{{ issue.publication_date }}</span><br>
         {% endif %}
+        {% localize off %}
         {{ cover.created }}<br>
+        {% endlocalize %}
         {{ cover.changeset.indexer.indexer|absolute_url }}<br>
         {% if cover.changeset.state == states.REVIEWING or cover.changeset.state == states.DISCUSSED %}
           reviewed by {{ cover.changeset.approver.indexer|absolute_url }}

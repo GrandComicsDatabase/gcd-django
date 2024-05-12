@@ -33,6 +33,12 @@ class GcdBase(models.Model):
     def pending_deletion(self):
         return bool(self.revisions.pending_deletions().exists())
 
+    def approved_changesets(self):
+        from apps.oi.models import Changeset
+        revision_ids = self.revisions.values_list('changeset__id', flat=True)
+        return Changeset.objects.filter(id__in=revision_ids, state=5)\
+                                .order_by('-modified')
+
     # Indicates if the global stats are updated for this data object.
     _update_stats = False
 

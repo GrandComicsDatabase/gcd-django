@@ -3,6 +3,7 @@
 {% load static %}
 {% load credits %}
 {% load editing %}
+{% load l10n %}
 
 {% block title %}
 Reviewing :: {{ revision }}
@@ -42,7 +43,9 @@ Reviewing :: {{ revision }}
   {% endif %}
     <div>
       Cover <a href="{% url "compare" id=old_cover.changeset.id %}">
+      {% localize off %}
       uploaded on {{ old_cover.created }}</a> by <br>
+      {% endlocalize %}
       {{ old_cover|show_cover_contributor }}.
     </div>
   </div>
@@ -85,11 +88,15 @@ Reviewing :: {{ revision }}
 {% if revision.deleted %}
     <div>
       Cover <a href="{% url "compare" id=old_cover.changeset.id %}">
+      {% localize off %}
       uploaded on {{ old_cover.created }}</a> by <br>
+      {% endlocalize %}
       {{ old_cover|show_cover_contributor }}.
     </div>
 {% endif %}
+{% localize off %}
 Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revision.created }} by <br>
+{% endlocalize %}
 {{ revision|show_cover_contributor }}.
 {% if revision.marked %}
     <p><span class="comparison_highlight">cover is marked for replacement</span></p>
@@ -171,7 +178,9 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
       <a href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
       <br>
       <div class="cover_caption">
+        {% localize off %}
         uploaded on {{ cover.created }}<br>
+        {% endlocalize %}
         by {{ cover.changeset.indexer.indexer }}<br>
       </div>
     </td>
