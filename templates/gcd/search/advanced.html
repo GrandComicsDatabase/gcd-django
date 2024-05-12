@@ -57,6 +57,7 @@ if ($(window).width() < 1240) {
   {{ form.method|show_form }}
   {{ form.logic|show_form }}
   {{ form.keywords|show_form }}
+  {{ form.credit_is_linked|show_form }}
 </ol>
 </fieldset>
 
@@ -74,7 +75,6 @@ if ($(window).width() < 1240) {
   <fieldset class="credits">
     <legend> Credits </legend>
     <ol>
-      {{ form.credit_is_linked|show_form }}
       {{ form.script|show_form }}
       {{ form.pencils|show_form }}
       {{ form.inks|show_form }}
