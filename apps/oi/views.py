@@ -4484,7 +4484,7 @@ def move_issue(request, issue_revision_id, series_id):
         return render_error(
           request, 'Only the reservation holder may move issues.')
 
-    if series_id == '0':
+    if series_id == 0:
         if 'series_id' in request.GET:
             try:
                 series_id = int(request.GET['series_id'])

@@ -71,9 +71,9 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_date(self, obj):
         if obj.key_date:
             year, month, day = on_sale_date_fields(obj.key_date)
-            if month < 1 or month > 12:
+            if not month or month < 1 or month > 12:
                 month = 1
-            if day < 1 or day > 31:
+            if not day or day < 1 or day > 31:
                 day = 1
             try:
                 return date(year, month, day)
@@ -181,9 +181,9 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_date(self, obj):
         if obj.issue.key_date:
             year, month, day = on_sale_date_fields(obj.issue.key_date)
-            if month < 1 or month > 12:
+            if not month or month < 1 or month > 12:
                 month = 1
-            if day < 1 or day > 31:
+            if not day or day < 1 or day > 31:
                 day = 1
             try:
                 return date(year, month, day)
