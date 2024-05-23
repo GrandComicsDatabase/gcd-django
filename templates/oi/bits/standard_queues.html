@@ -13,6 +13,9 @@
 <table>
   <tr>
       {% if perms.indexer.can_approve or queue_name == 'editing' %}
+        {% if queue_name == 'pending' and section.object_name == 'Issues' %}
+    <th> </th>
+        {% endif %}
     <th> </th>
       {% endif %}
     <th> Name {{ queue_name }}</th>
@@ -34,6 +37,11 @@
       {% for changeset in section.changesets %}
   <tr>
         {% if perms.indexer.can_approve or queue_name == 'editing' %}
+          {% if queue_name == 'pending' and section.object_name == 'Issues' %}
+    <td style="text-align: right">
+          {{ forloop.counter }}.
+    </td>
+          {% endif %}
     <td style="text-align: right">
           {% if queue_name != 'editing' or changeset.state > states.OPEN %} {{ changeset.magnitude }} {% endif %}
     </td>
