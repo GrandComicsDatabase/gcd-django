@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 import re
 from collections import OrderedDict
 from math import log10
@@ -23,9 +22,9 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       _get_comments_form_field, _clean_keywords,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
 
-from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision,\
+from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
                            PublisherCodeNumberRevision, get_issue_field_list
-from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType,\
+from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType, \
                             CreatorNameDetail, IndiciaPrinter
 
 
@@ -47,9 +46,13 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
             position = self.helper['editing'].slice[0].positions[0]
+            if revision and revision.editing not in ['', '?']:
+                disabled = ''
+            else:
+                disabled = 'disabled'
             self.helper.layout[position].append(
               HTML('<th></th><td><input type="submit" name="save_migrate"'
-                   ' value="save and migrate editing"  /></td>'))
+                   ' value="save and migrate editing" %s /></td>' % disabled))
 
             issue_year = None
             if revision and revision.key_date:
@@ -235,7 +238,6 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                         'A cover sequence exists for this variant. Before '
                         'changing the variant cover status please first mark '
                         'it for delete or remove it.')
-
 
             if cd['volume'] != "" and cd['no_volume']:
                 raise forms.ValidationError(
@@ -464,8 +466,9 @@ class IssueCreditRevisionForm(forms.ModelForm):
         self.helper.layout = Layout(*(f for f in self.fields))
         self.fields['credit_type'].queryset = CreditType.objects \
             .filter(id=6)
-        if self.instance.id:
-            self.fields['credit_type'].empty_label = None
+        # so far, only editing is valid credit_type on the issue level,
+        # we can make it default and in clean remove it if no data in form
+        self.fields['credit_type'].empty_label = None
 
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
@@ -478,6 +481,10 @@ class IssueCreditRevisionForm(forms.ModelForm):
 
     def clean(self):
         cd = self.cleaned_data
+        if 'creator' not in cd and 'credit_name' not in cd:
+            cd.pop('credit_type')
+            cd['DELETE'] = True
+
         if cd['credited_as'] and not cd['is_credited']:
             raise forms.ValidationError(
               ['Is credited needs to be selected when entering a name as '
@@ -486,8 +493,9 @@ class IssueCreditRevisionForm(forms.ModelForm):
         if cd['credited_as'] and 'creator' in cd and \
            cd['credited_as'] == cd['creator'].name:
             raise forms.ValidationError(
-              ['Name entered as "credited as" is identicial to creator name.']
+              ['Name entered as "credited as" is identical to creator name.']
             )
+        return cd
 
 
 IssueRevisionFormSet = inlineformset_factory(
@@ -528,6 +536,7 @@ class IssueRevisionForm(forms.ModelForm):
     class Meta:
         model = IssueRevision
         fields = get_issue_field_list()
+        fields.insert(fields.index('editing'), 'creator_help')
         fields.insert(fields.index('year_on_sale'), 'on_sale_date_help')
         fields.insert(fields.index('year_on_sale'), 'on_sale_date')
         fields.insert(fields.index('keywords') + 1, 'turned_off_help')
@@ -598,6 +607,14 @@ class IssueRevisionForm(forms.ModelForm):
                   'known. If you only know the decade you can enter the '
                   'first three digits, e.g. 199 for the decade 1990-1999.')
     on_sale_date = forms.DateField(required=False, input_formats=['%Y-%m-%d'])
+
+    creator_help = forms.CharField(
+        widget=HiddenInputWithHelp,
+        required=False,
+        help_text='The editor and any similar credits for the whole issue. '
+                  ' If no overall editor is known put a question mark in '
+                  'the text field below.',
+        label='')
 
 
 def get_bulk_issue_revision_form(series, method, user=None):
