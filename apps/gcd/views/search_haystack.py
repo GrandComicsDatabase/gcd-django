@@ -37,9 +37,18 @@ class GcdNameQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdNameQuery, self).prepare(query_obj)
         query_return = ''
-        for phrase in safe_split(query_string):
-            # if we also do * in front, searches with 'the' won't work somehow
-            query_return += phrase + '* '
+        query_string = query_string.replace('[', '\[')\
+                                   .replace(']', '\]')\
+                                   .replace('{', '\{')\
+                                   .replace('}', '\}')\
+                                   .replace('/', ' ')
+        if ((query_string[0] == '"' and query_string[-1] == '"') or
+            (query_string[0] == "'" and query_string[-1] == "'")):
+            query_return = query_string
+        else:
+            for phrase in safe_split(query_string):
+                # if we also do * in front, searches with 'the' won't work somehow
+                query_return += phrase + '* '
         return query_return
 
 
