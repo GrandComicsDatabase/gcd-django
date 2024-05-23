@@ -556,6 +556,14 @@ class Issue(GcdData):
         return issue_descriptor(self)
 
     @property
+    def issue_descriptor_series_status(self):
+        issue_descriptor = self.issue_descriptor
+        if self.active_code_numbers().filter(number_type__id=1):
+            issue_descriptor += " (%s)" % (self.active_code_numbers()
+                                           .get(number_type__id=1).number)
+        return issue_descriptor
+
+    @property
     def display_full_descriptor(self):
         number = self.issue_descriptor
         if number:
