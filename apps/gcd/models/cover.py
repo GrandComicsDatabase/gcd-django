@@ -89,6 +89,12 @@ class Cover(models.Model):
         return self.revisions.filter(changeset__state__in=states.ACTIVE)\
                              .count() == 0
 
+    def approved_changesets(self):
+        from apps.oi.models import Changeset
+        revision_ids = self.revisions.values_list('changeset__id', flat=True)
+        return Changeset.objects.filter(id__in=revision_ids, state=5)\
+                                .order_by('-modified')
+
     def __str__(self):
         return '%s %s cover' % (self.issue.series, self.issue.display_number)
 

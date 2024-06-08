@@ -200,6 +200,11 @@ ABSOLUTE_URL_OVERRIDES = {
 # TODO check on python library for memcached, this is the former binding
 # using python-memcached, which was removed in 4.2. But that one falls
 # silently more often, where silent fails are fine for our cache uses
+# There also seems an issue with thread-safety for PyMemcacheCache, might
+# need to use for that one
+#        'OPTIONS': {
+#            'use_pooling': True,
+#        }
 CACHES = {
     'default': {
 #        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
@@ -255,6 +260,11 @@ TEMPLATESADMIN_TEMPLATE_DIRS = [abspath(join(dirname(__file__),
 TEMPLATESADMIN_GROUP = 'templateadmin'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
+
+# decides if compression should be done outside of the request/response loop
+# set to True for production
+COMPRESS_OFFLINE = False
+
 
 #################################################################################
 # Haystack and search

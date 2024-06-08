@@ -51,6 +51,12 @@ class SeriesBond(models.Model):
     def deletable(self):
         return True
 
+    def approved_changesets(self):
+        from apps.oi.models import Changeset
+        revision_ids = self.revisions.values_list('changeset__id', flat=True)
+        return Changeset.objects.filter(id__in=revision_ids, state=5)\
+                                .order_by('-modified')
+
     def __str__(self):
         if self.origin_issue:
             object_string = '%s' % self.origin_issue

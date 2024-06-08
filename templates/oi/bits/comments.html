@@ -1,5 +1,6 @@
 {% load editing %}
 {% load display %}
+{% load l10n %}
 
 <table class="comments">
 <tr>
@@ -23,7 +24,9 @@
     {% endif %} 
   </td>
   {% endif %}
+  {% localize off %}
   <td> {{ comment.created }} </td>
+  {% endlocalize %}
   <td> {{ comment.display_old_state }} </td>
   <td> {{ comment.display_new_state }} </td>
 </tr>

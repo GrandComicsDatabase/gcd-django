@@ -2,7 +2,7 @@
 {% load static %}
 {% load credits %}
 {% load editing %}
-
+{% l10n %}
 {% block title %}
 Reviewing :: {{ revision }}
 {% endblock %}
@@ -41,7 +41,9 @@ Reviewing :: {{ revision }}
       </div>
       <div>
       Image <a href="{% url "compare" id=replaced_image.changeset.id %}">
+      {% localize off %}
       uploaded on {{ replaced_image.created }}</a> by <br>
+      {% endlocalize %}
       {{ replaced_image.changeset.indexer.indexer }}.
       </div>
     </td>
@@ -68,7 +70,9 @@ Reviewing :: {{ revision }}
   {% if revision.deleted %}
   <div>
     Image <a href="{% url "compare" id=revision.previous.changeset.id %}">
+    {% localize off %}
     uploaded on {{ revision.previous.created }}</a> by <br>
+    {% endlocalize %}
     {{ revision.previous.changeset.indexer.indexer }}.
   </div>
   {% endif %}

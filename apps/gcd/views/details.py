@@ -1868,7 +1868,9 @@ def series_overview(request, series_id):
                                               issue_id=OuterRef('pk'),
                                               type_id=19, deleted=False)
                                               .values('pk')
-                                              .order_by('-page_count')[:1]))
+                                              .order_by('-page_count',
+                                                        'sequence_number')[:1])
+                             )
 
     heading = 'Covers and Longest Comic Story for Series %s' % (series)
 
@@ -4146,6 +4148,10 @@ def show_issue(request, issue, preview=False):
             oi_indexers.append(i.indexer.id)
 
     revs = issue.revisions.filter(changeset__state=states.APPROVED)\
+                .exclude(changeset__indexer__username=settings.ANON_USER_NAME)\
+                .select_related('changeset')
+    oi_indexers.extend(revs.values_list('changeset__indexer_id', flat=True))
+    revs = issue.cover_revisions.filter(changeset__state=states.APPROVED)\
                 .exclude(changeset__indexer__username=settings.ANON_USER_NAME)\
                 .select_related('changeset')
     oi_indexers.extend(revs.values_list('changeset__indexer_id', flat=True))

@@ -40,8 +40,8 @@ from apps.gcd.models.story import StoryTable, MatchedSearchStoryTable, \
                                   HaystackMatchedStoryTable
 from apps.gcd.models.series import SeriesPublisherTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
-from apps.gcd.forms.search import AdvancedSearch, PAGE_RANGE_REGEXP, \
-                                  COUNT_RANGE_REGEXP
+from apps.gcd.forms.search import AdvancedSearch, \
+                                  PAGE_RANGE_REGEXP, COUNT_RANGE_REGEXP
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, \
                                    IS_NONE, generic_sortable_list
 from apps.gcd.views.covers import get_image_tags_per_page
@@ -240,6 +240,7 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['barcode'] = name
 
     elif (class_ is Story):
+        template = 'gcd/search/issue_list_sortable.html'
         item_name = 'stor'
         plural_suffix = 'y,ies'
         heading = 'Story Search Results'
@@ -258,8 +259,6 @@ def generic_by_name(request, name, q_obj, sort,
                                 'letters', 'story_editing', 'issue_editing']:
                 query_val[credit_type] = name
         if sqs is None:
-            # TODO: for credits on production we use elasticsearch
-            # Therefore cannot use sortable_lists or filters for now
             if credit in ['script', 'pencils', 'inks', 'colors', 'letters']:
                 creators = list(CreatorNameDetail.objects
                                 .filter(name__icontains=name)
@@ -289,7 +288,6 @@ def generic_by_name(request, name, q_obj, sort,
             if credit in ['title', 'feature']:
                 query_val[credit] = name
                 credit = None
-                template = 'gcd/search/issue_list_sortable.html'
                 things = things.prefetch_related('feature_object')
                 filter = filter_sequences(request, things)
                 things = filter.qs
@@ -310,7 +308,6 @@ def generic_by_name(request, name, q_obj, sort,
                                              context)
             elif credit.startswith('characters'):
                 query_val['characters'] = name
-                template = 'gcd/search/issue_list_sortable.html'
                 things = things.prefetch_related('feature_object',
                                                  'appearing_characters',
                                                  'universe')
@@ -880,7 +877,7 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
         q_obj = Q(feature__icontains=feature) | \
                 Q(feature_object__name__icontains=feature)
         return generic_by_name(request, feature, q_obj, sort, credit="feature",
-                            selected="feature")
+                               selected="feature")
 
 
 def series_search_hx(request):
@@ -1231,14 +1228,34 @@ def do_advanced_search(request):
     elif data['target'] == 'issue':
         filter = Issue.objects.exclude(deleted=True)
         if query:
-            filter = filter.filter(query)
+            text_filter = filter.filter(query)
+            if linked_credits_q_objs and data['credit_is_linked'] is not False:
+                linked_filter = filter.filter(query_linked)
+                for credit_obj in linked_credits_q_objs:
+                    linked_filter = linked_filter.filter(credit_obj)
+                if data['credit_is_linked'] is True:
+                    text_filter = linked_filter
+                else:
+                    text_filter = text_filter | linked_filter
+            filter = text_filter
+
         items = filter.order_by(*terms).select_related(
           'series__publisher').distinct()
 
     elif data['target'] in ['cover', 'issue_cover']:
         filter = Cover.objects.exclude(deleted=True)
         if query:
-            filter = filter.filter(query)
+            text_filter = filter.filter(query)
+            if linked_credits_q_objs and data['credit_is_linked'] is not False:
+                linked_filter = filter.filter(query_linked)
+                for credit_obj in linked_credits_q_objs:
+                    linked_filter = linked_filter.filter(credit_obj)
+                if data['credit_is_linked'] is True:
+                    text_filter = linked_filter
+                else:
+                    text_filter = text_filter | linked_filter
+            filter = text_filter
+
         items = filter.order_by(*terms).select_related(
           'issue__series__publisher').distinct()
 
@@ -2004,13 +2021,14 @@ def search_stories(data, op):
               Q(**{'%s%s__%s' % (prefix, field, op): data[field]}))
             for creator in data[field].split(';'):
                 creator = creator.strip()
-                creator_q_obj = Q(**{'name__%s' % (op): creator}) | \
-                                Q(**{'creator__gcd_official_name__%s' % (op):
-                                     creator})
+                creator_q_obj = Q(**{'name__%s' % (op): creator})
+                creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
+                                      creator})
                 creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
                                                  .values_list('id', flat=True))
                 linked_credits_q_objs.append(
                   (Q(**{'%scredits__creator__id__in' % (prefix): creators,
+                        '%scredits__deleted' % (prefix): False,
                         '%scredits__credit_type__id' % (prefix):
                         CREDIT_TYPES[field]}))
                 )
@@ -2039,13 +2057,14 @@ def search_stories(data, op):
         text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
                                    data['story_editing']}))
 
-        creator_q_obj = Q(**{'name__%s' % (op): data['story_editing']}) | \
-                        Q(**{'creator__gcd_official_name__%s' % (op):
-                             data['story_editing']})
+        creator_q_obj = Q(**{'name__%s' % (op): data['story_editing']})
+        creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
+                              data['story_editing']})
         creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
                                          .values_list('id', flat=True))
         linked_credits_q_objs.append(
           (Q(**{'%scredits__creator__id__in' % (prefix): creators,
+                '%scredits__deleted' % (prefix): False,
                 '%scredits__credit_type__id' % (prefix):
                 CREDIT_TYPES['editing']}))
         )
@@ -2085,22 +2104,36 @@ def search_stories(data, op):
     # since issue_editing is credit use it here to allow correct 'OR' behavior
     if data['issue_editing']:
         if target == 'sequence':  # no prefix in this case
-            q_objs.append(Q(**{'issue__editing__%s' % op:
-                               data['issue_editing']}) |
-                          Q(**{'issue__credits__creator__name__%s' % op:
-                               data['issue_editing'],
-                               'issue__credits__deleted': False,
-                               'issue__credits__credit_type__id':
-                                   CREDIT_TYPES['editing']}))
+            text_credits_q_objs.append(Q(**{'issue__editing__%s' % op:
+                                       data['issue_editing']}))
+
+            creator_q_obj = Q(**{'name__%s' % (op): data['issue_editing']})
+            creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
+                               data['issue_editing']})
+            creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
+                                             .values_list('id', flat=True))
+            linked_credits_q_objs.append(
+              (Q(**{'issue__credits__creator__id__in': creators,
+                    'issue__credits__deleted': False,
+                    'issue__credits__credit_type__id':
+                    CREDIT_TYPES['editing']}))
+            )
         else:  # cut off 'story__'
-            q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7], op):
-                               data['issue_editing']}) |
-                          Q(**{'%scredits__creator__name__%s' % (prefix[:-7],
-                                                                 op):
-                               data['issue_editing'],
-                               '%scredits__deleted' % (prefix[:-7]): False,
-                               '%scredits__credit_type__id' % (prefix[:-7]):
-                                   CREDIT_TYPES['editing']}))
+            text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7],
+                                                               op):
+                                       data['issue_editing']}))
+
+            creator_q_obj = Q(**{'name__%s' % (op): data['issue_editing']})
+            creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
+                                  data['issue_editing']})
+            creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
+                                             .values_list('id', flat=True))
+            linked_credits_q_objs.append(
+              (Q(**{'%scredits__creator__id__in' % (prefix[:-7]): creators,
+                    '%scredits__deleted' % (prefix[:-7]): False,
+                    '%scredits__credit_type__id' % (prefix[:-7]):
+                    CREDIT_TYPES['editing']}))
+            )
 
     text_credits_q_objs.extend(q_objs)
     if data['logic'] is True:  # OR credits

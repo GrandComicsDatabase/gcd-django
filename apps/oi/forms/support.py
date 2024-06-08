@@ -504,8 +504,8 @@ ISSUE_HELP_TEXTS = {
         "Check if you do not know or aren't sure about the page count.",
 
     'editing':
-        'The editor and any similar credits for the whole issue.  If no '
-        'overall editor is known put a question mark in the field.',
+        'Text credits can be used for creators not currently in the '
+        'database or for special credit entries. ',
     'no_editing':
         'Check if there is no editor or similar credit (such as '
         'publisher) for the issue as a whole.',
