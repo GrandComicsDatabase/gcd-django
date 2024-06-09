@@ -422,7 +422,7 @@ class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "group"
 
     def prepare_relations_weight(self, obj):
-        return obj.active_translations().filter(from_character=obj).count()
+        return obj.active_translations().filter(from_group=obj).count()
 
 
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
