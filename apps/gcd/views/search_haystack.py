@@ -154,12 +154,12 @@ class PaginatedFacetedSearchView(FacetedSearchView):
             self.form.searchqueryset = self.form.searchqueryset.exclude(not_sq)
 
         self.form.searchqueryset = self.form.searchqueryset\
-                                       .facet('facet_model_name')\
-                                       .facet('country')\
-                                       .facet('language')\
-                                       .facet('publisher')\
+                                       .facet('facet_model_name', size=100)\
+                                       .facet('country', size=100)\
+                                       .facet('language', size=100)\
+                                       .facet('publisher', size=100)\
                                        .facet('feature', size=100)\
-                                       .facet('type')\
+                                       .facet('type', size=100)\
                                        .date_facet('date',
                                                    start_date=date(1000, 1, 1),
                                                    end_date=date(3000, 1, 1),
@@ -167,7 +167,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.form.searchqueryset = self.form.searchqueryset\
                                        .boost_fields({'name': 5,
                                                       'text': 1,
-                                                      'title': 2})\
+                                                      'title': 3})\
                                        .boost_negative({'terms': {'type': [
                                          'comics-form advertising',
                                          'promo (ad from the publisher)',

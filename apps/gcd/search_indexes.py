@@ -56,6 +56,8 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     publisher = indexes.CharField(model_attr='series__publisher__name',
                                   faceted=True, indexed=False)
 
+    relations_weight = indexes.FloatField()
+
     def get_model(self):
         return Issue
 
@@ -89,7 +91,10 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return "9999-99-99"
 
     def prepare_title(self, obj):
-        return obj.short_name()
+        return '%s %s' % (obj.series.name, obj.display_number)
+
+    def prepare_relations_weight(self, obj):
+        return obj.to_all_reprints.count()
 
 
 class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -110,6 +115,8 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     issue_count = indexes.IntegerField(model_attr='issue_count',
                                        indexed=False)
 
+    relations_weight = indexes.FloatField()
+
     def get_model(self):
         return Series
 
@@ -129,6 +136,9 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                 if issue.title:
                     name += '\n' + issue.title
         return name
+
+    def prepare_relations_weight(self, obj):
+        return float(obj.issue_count)/100.
 
 
 class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -165,6 +175,8 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     colors = indexes.MultiValueField(faceted=True, null=True)
     letters = indexes.MultiValueField(faceted=True, null=True)
     editing = indexes.MultiValueField(faceted=True, null=True)
+
+    relations_weight = indexes.FloatField()
 
     def get_model(self):
         return Story
@@ -285,6 +297,9 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return super(ObjectIndex, self).index_queryset(using).exclude(
             type=STORY_TYPES['blank']).filter(deleted=False)
 
+    def prepare_relations_weight(self, obj):
+        return obj.to_all_reprints.count()
+
 
 class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
@@ -299,6 +314,8 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     language = indexes.CharField(model_attr='language__code',
                                  faceted=True, indexed=False)
 
+    relations_weight = indexes.FloatField()
+
     def prepare_year(self, obj):
         if obj.year_created:
             return obj.year_created
@@ -310,6 +327,9 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_facet_model_name(self, obj):
         return "feature"
+
+    def prepare_relations_weight(self, obj):
+        return obj.to_related_feature.filter(from_feature=obj).count()
 
 
 class UniverseIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -355,6 +375,8 @@ class CharacterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     language = indexes.CharField(model_attr='language__code',
                                  faceted=True, indexed=False)
 
+    relations_weight = indexes.FloatField()
+
     def prepare_year(self, obj):
         if obj.year_first_published:
             return obj.year_first_published
@@ -366,6 +388,10 @@ class CharacterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_facet_model_name(self, obj):
         return "character"
+
+    def prepare_relations_weight(self, obj):
+        return obj.active_specifications().count() + \
+               obj.active_translations().filter(from_character=obj).count()
 
 
 class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -381,6 +407,8 @@ class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     language = indexes.CharField(model_attr='language__code',
                                  faceted=True, indexed=False)
 
+    relations_weight = indexes.FloatField()
+
     def prepare_year(self, obj):
         if obj.year_first_published:
             return obj.year_first_published
@@ -392,6 +420,9 @@ class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_facet_model_name(self, obj):
         return "group"
+
+    def prepare_relations_weight(self, obj):
+        return obj.active_translations().filter(from_character=obj).count()
 
 
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -641,7 +672,6 @@ class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex,
                                indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True,
            template_name='search/indexes/gcd/creator_non_comic_work_text.txt')
-    name = indexes.CharField(model_attr="publication_title")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='publication_title',
