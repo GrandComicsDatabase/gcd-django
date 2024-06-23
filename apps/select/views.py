@@ -640,9 +640,13 @@ class CharacterAutocomplete(LoginRequiredMixin,
         qs = Character.objects.filter(deleted=False)
 
         language = self.forwarded.get('language_code', None)
+        relation_type = self.forwarded.get('relation_type', None)
 
-        if language:
-            qs = qs.filter(language__code__in=[language, 'zxx'])
+        if language and relation_type:
+            if relation_type not in ['1', '-1']:
+                qs = qs.filter(language__code__in=[language, 'zxx'])
+            elif relation_type in ['1', '-1']:
+                qs = qs.exclude(language__code=language)
 
         qs = _filter_and_sort(qs, self.q, chrono_sort='year_first_published')
 
@@ -680,9 +684,13 @@ class GroupAutocomplete(LoginRequiredMixin,
 
         language = self.forwarded.get('language_code', None)
         character_name = self.forwarded.get('character_name', None)
+        relation_type = self.forwarded.get('relation_type', None)
 
-        if language:
-            qs = qs.filter(language__code__in=[language, 'zxx'])
+        if language and relation_type:
+            if relation_type not in ['1', '-1']:
+                qs = qs.filter(language__code__in=[language, 'zxx'])
+            elif relation_type in ['1', '-1']:
+                qs = qs.exclude(language__code=language)
 
         if character_name:
             qs = qs.filter(members__character__character_names=character_name)\
