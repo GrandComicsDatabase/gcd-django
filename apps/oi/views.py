@@ -2845,6 +2845,7 @@ def add_character_relation(request, character_id):
 
     initial = {}
     initial['from_character'] = character_id
+    initial['language_code'] = character.language.code
 
     cancel = urlresolvers.reverse('show_character',
                                   kwargs={'character_id': character_id})
@@ -2901,6 +2902,7 @@ def add_group_relation(request, group_id):
 
     initial = {}
     initial['from_group'] = group_id
+    initial['language_code'] = group.language.code
 
     cancel = urlresolvers.reverse('show_group',
                                   kwargs={'group_id': group_id})
