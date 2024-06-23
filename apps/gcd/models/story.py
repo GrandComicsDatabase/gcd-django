@@ -435,7 +435,7 @@ class StoryGroup(GcdData):
     class Meta:
         app_label = 'gcd'
         db_table = 'gcd_group_character'
-        ordering = ['group__sort_name']
+        ordering = ['group_name__sort_name']
 
     # TODO: remove group, remove null=True from group_name
     # rename group_name to group
@@ -758,6 +758,8 @@ class IssueColumn(tables.TemplateColumn):
     def order(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue__series__sort_name',
+                                       direction + 'issue__series__year_began',
+                                       direction + 'issue__series_id',
                                        direction + 'issue__sort_code',
                                        'sequence_number')
         return (query_set, True)
@@ -842,7 +844,7 @@ class HaystackStoryTable(tables.Table):
     country = tables.Column(
       accessor='country', verbose_name='', orderable=False,
       attrs={"td": {'class': "listing_country",
-                    'style': "padding-right: 0px;"}})
+                    'style': "padding-right: 0px;"}}, exclude_from_export=True)
     issue = tables.TemplateColumn(
       accessor='id', verbose_name='Issue',
       template_name='gcd/bits/hs_sortable_issue_entry.html')
@@ -861,9 +863,9 @@ class HaystackStoryTable(tables.Table):
 
     def order_issue(self, query_set, is_descending):
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction +
-                                       'sort_name',
-                                       direction + 'key_date',
+        query_set = query_set.order_by(direction + 'sort_name',
+                                       direction + 'year',
+                                       direction + 'sort_code',
                                        'sequence_number')
         return (query_set, True)
 
@@ -881,11 +883,23 @@ class HaystackStoryTable(tables.Table):
                          show_country_info(record.object.issue.series.country)
                          + '>')
 
+    def value_country(self, value):
+        return value
+
+    def value_story(self, record):
+        return str(record.object)
+
+    def value_issue(self, record):
+        return str(record.object.issue)
+
+# TODO see if the two templates for sequence and issue can be combined or included from each other
+
 
 class HaystackMatchedStoryTable(HaystackStoryTable):
     matched_search = tables.Column(accessor='id',
                                    verbose_name='Matched Search',
-                                   orderable=False)
+                                   orderable=False,
+                                   exclude_from_export=True)
 
     class Meta:
         model = Story
@@ -895,6 +909,10 @@ class HaystackMatchedStoryTable(HaystackStoryTable):
     def __init__(self, *args, **kwargs):
         self.target = kwargs.pop('target')
         super(HaystackMatchedStoryTable, self).__init__(*args, **kwargs)
+
+    def value_matched_search(self, record):
+        # TODO refactor render_method to use for both, maybe with show_creator_credit_bare
+        return ""
 
     def render_matched_search(self, record):
         from apps.gcd.templatetags.credits import show_credit
@@ -914,11 +932,16 @@ class HaystackMatchedStoryTable(HaystackStoryTable):
                         matched_credits.append(c)
             record.object.matched_credits = matched_credits
         if self.target.startswith('characters:'):
-            search_terms = self.target[11:].split()
+            search_terms = self.target[11:]
+            if search_terms[0] == '"' and search_terms[-1] == '"':
+                search_terms = [search_terms.strip('"'), ]
+            else:
+                search_terms = search_terms.split()
             matched_credits = []
             for c in ['characters', 'feature']:
                 credit = getattr(record, c, None)
                 if credit:
+                    # credit is a multivalue field in the search index, join it
                     credit = ' '.join(credit).lower()
                     found = True
                     for term in search_terms:
@@ -927,8 +950,6 @@ class HaystackMatchedStoryTable(HaystackStoryTable):
                     if found:
                         matched_credits.append(c)
             record.object.matched_credits = matched_credits
-            if not matched_credits:
-                raise ValueError
         return mark_safe('<dl class="credits">'
                          + show_credit(record.object, self.target)
                          + '</dl>')
