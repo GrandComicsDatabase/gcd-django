@@ -83,7 +83,7 @@
   {% endwith %}
 {% endif %}
 
-{% if description == "Issue" and perms.indexer.can_vote %}
+{% if description == "Issue" and perms.indexer.can_vote and object.cover_set.count %}
 <h3 style="margin-bottom: 0em; clear: both;">Change History For Cover Scans</h3>
   {% for cover in object.cover_set.all %}
     {% with object=cover changesets=cover.approved_changesets %}

@@ -15,7 +15,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
 from django.shortcuts import render
-from urllib.parse import quote, unquote
+from urllib.parse import quote, unquote, unquote_plus
 
 from djqscsv import render_to_csv_response
 from haystack.query import SearchQuerySet
@@ -240,7 +240,6 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['barcode'] = name
 
     elif (class_ is Story):
-        template = 'gcd/search/issue_list_sortable.html'
         item_name = 'stor'
         plural_suffix = 'y,ies'
         heading = 'Story Search Results'
@@ -331,6 +330,7 @@ def generic_by_name(request, name, q_obj, sort,
                 # query_val['feature'] = name
                 # query_val['logic'] = True
         else:
+            template = 'gcd/search/issue_list_sortable.html'
             things = sqs.facet('publisher').facet('country').facet('language')
             if request.GET.get('language', ''):
                 things = things.filter(
@@ -343,7 +343,8 @@ def generic_by_name(request, name, q_obj, sort,
                   publisher__exact=unquote(request.GET['publisher']))
             table = HaystackMatchedStoryTable(
               things, attrs={'class': 'sortable_listing'},
-              template_name='gcd/bits/sortable_table.html', target=credit)
+              template_name='gcd/bits/sortable_table.html',
+              target=unquote_plus(credit))
             if not request.GET.get('sort', None):
                 if sort == ORDER_ALPHA:
                     table.order_by = 'issue'
@@ -369,7 +370,10 @@ def generic_by_name(request, name, q_obj, sort,
             context = {'item_name': item_name,
                        'plural_suffix': plural_suffix,
                        'filter_form': filter_form,
+                       'selected': selected,
+                       'search_term': name,
                        'heading': heading}
+            table.no_raw_export = True
             return generic_sortable_list(request, things, table, template,
                                          context)
     else:
@@ -631,7 +635,7 @@ def story_by_character(request, character, sort=ORDER_ALPHA):
                               .models(Story)
         return generic_by_name(request, character, None, sort,
                                credit="characters:" + character,
-                               selected="character", sqs=sqs)
+                               selected="by_character", sqs=sqs)
     else:
         q_obj = Q(characters__icontains=character) | \
                 Q(feature__icontains=character) | \
@@ -639,7 +643,7 @@ def story_by_character(request, character, sort=ORDER_ALPHA):
                 Q(feature_object__name__icontains=character)
         return generic_by_name(request, character, q_obj, sort,
                                credit="characters:" + character,
-                               selected="character")
+                               selected="by_character")
 
 
 def character_search_hx(request):
@@ -872,12 +876,12 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
         sqs = SearchQuerySet().filter(feature=GcdNameQuery(feature)) \
                               .models(Story)
         return generic_by_name(request, feature, None, sort, credit="feature",
-                               selected="feature", sqs=sqs)
+                               selected="by_feature", sqs=sqs)
     else:
         q_obj = Q(feature__icontains=feature) | \
                 Q(feature_object__name__icontains=feature)
         return generic_by_name(request, feature, q_obj, sort, credit="feature",
-                               selected="feature")
+                               selected="by_feature")
 
 
 def series_search_hx(request):

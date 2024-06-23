@@ -4,7 +4,7 @@ from .models import (MembershipType, NameType, NonComicWorkRole, CreditType,
                      NonComicWorkType, RelationType, School, SeriesBondType,
                      SourceType, FeatureType, FeatureRelationType, StoryType,
                      Degree, CodeNumberType, CharacterRelationType,
-                     Multiverse, CharacterRole, ExternalSite)
+                     GroupRelationType, Multiverse, CharacterRole, ExternalSite)
 
 
 class StoryTypeAdmin(admin.ModelAdmin):
@@ -39,4 +39,5 @@ admin.site.register(NonComicWorkRole)
 admin.site.register(School)
 admin.site.register(Degree)
 admin.site.register(CharacterRelationType)
+admin.site.register(GroupRelationType)
 admin.site.register(ExternalSite)

@@ -5281,7 +5281,7 @@ class StoryCharacterRevision(Revision):
 class StoryGroupRevision(Revision):
     class Meta:
         db_table = 'oi_story_group_revision'
-        ordering = ['group__sort_name']
+        ordering = ['group_name__sort_name']
 
     story_group = models.ForeignKey(StoryGroup, null=True,
                                     on_delete=models.CASCADE,

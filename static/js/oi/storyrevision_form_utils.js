@@ -67,6 +67,27 @@ $(document).on('change', 'input[type=checkbox]', function () {
             }
         }
     }
+    else {
+        var id = $(this).attr('id'),
+        match = id.match(/appearing_characters_additional_information/)
+        position = '#id_appearing_characters_'
+        if (!match){
+            match = id.match(/group_members_additional_information/)
+            position = '#id_group_members_'
+        }
+        if (match) {
+            var fields = ['role', 'flashback', 'origin', 'death', 'notes'];
+            for (var i=0; i<fields.length; i++){
+                var inputRow = $(position + fields[i])
+                            .parent().parent();
+                if ($(this).is(':checked')) {
+                    inputRow.show()
+                } else {
+                    inputRow.hide()
+                }
+            }
+        }
+    }
 })
 
 $('input[type=checkbox]').change()
