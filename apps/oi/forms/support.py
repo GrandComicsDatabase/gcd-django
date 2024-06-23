@@ -423,8 +423,8 @@ ISSUE_LABELS = {
     'no_isbn': 'No ISBN',
     'rating': "Publisher's age guidelines",
     'no_rating': "No publisher's age guidelines",
-    'brand': 'Brand emblem',
-    'no_brand': 'No brand emblem',
+    'brand': "Publisher's brand emblem",
+    'no_brand': "No publisher's brand emblem",
 }
 
 ISSUE_HELP_TEXTS = {

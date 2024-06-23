@@ -80,10 +80,10 @@ def generic_by_name(request, name, q_obj, sort,
             base_name = 'indicia_publisher'
             display_name = 'Indicia / Colophon Publisher'
         elif class_ is Brand:
-            display_name = 'Brand Emblem'
+            display_name = "Publisher's Brand Emblem"
             base_name = 'brand_emblem'
         elif class_ is BrandGroup:
-            display_name = 'Brand Group'
+            display_name = "Publisher's Brand Group"
             base_name = 'brand_group'
         else:
             display_name = class_.__name__
@@ -2178,9 +2178,9 @@ def compute_prefix(target, current):
             return 'issue__series__publisher__'
     elif current == 'brand_group':
         if target == 'indicia_publisher':
-            raise SearchError('Cannot search for Indicia Publishers by '
-                              'Publisher Brand attributes, as they are not '
-                              'directly related')
+            raise SearchError("Cannot search for Indicia Publishers by "
+                              "Publisher's Brand attributes, as they are not "
+                              "directly related")
         if target == 'publisher':
             return 'brandgroup__'
         if target == 'issue':
@@ -2189,9 +2189,9 @@ def compute_prefix(target, current):
             return 'issue__brand__group__'
     elif current == 'brand_emblem':
         if target == 'indicia_publisher':
-            raise SearchError('Cannot search for Indicia Publishers by '
-                              'Publisher Brand attributes, as they are not '
-                              'directly related')
+            raise SearchError("Cannot search for Indicia Publishers by "
+                              "Publisher's Brand attributes, as they are not "
+                              "directly related")
         if target == 'publisher':
             return 'brandgroup__brand__'
         if target == 'issue':

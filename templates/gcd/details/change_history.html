@@ -124,7 +124,7 @@
 {% endif %}
 
 {% if description == "Brand" and object.emblem %}
-<h3 style="margin-bottom: 0em; clear: both;">Change History For Brand Emblem Scan</h3>
+<h3 style="margin-bottom: 0em; clear: both;">Change History For Publisher's Brand Emblem Scan</h3>
   {% with model_name='image' object=object.emblem changesets=object.emblem.approved_changesets %}
     {% include "gcd/bits/change_history_details.html" %}
   {% endwith %}

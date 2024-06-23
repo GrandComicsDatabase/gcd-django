@@ -8,7 +8,7 @@
 {% load django_tables2 %}
 
 {% block title %}
-GCD :: Brand Emblem :: {{ brand.name }}
+GCD :: Publisher's Brand Emblem :: {{ brand.name }}
 {% endblock %}
 
 {% block css %}
@@ -24,7 +24,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
 {% block view_body %}
 
 {% with brand as publisher %}
-{% with "Brand Emblem" as description %}
+{% with "Publisher's Brand Emblem" as description %}
 {% with "brands" as url_suffix %}
   {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
@@ -58,7 +58,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
         <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
-      <dt>Brand Emblem:</dt>
+      <dt>Publisher's Brand Emblem:</dt>
       {% if brand.emblem and not FAKE_IMAGES %}
       <dd><img src="{{ brand.emblem.scaled_image.url }}"></dd>
       {% endif %}
@@ -80,7 +80,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
     {% if not preview %}
       {% with brand as object %}
       {% with 'brand' as object_class %}
-      {% with 'Brand Emblem' as object_name %}
+      {% with "Publisher's Brand Emblem" as object_name %}
         {% include "gcd/bits/status_banner.html" %}
       {% endwith %}
       {% endwith %}
@@ -88,17 +88,17 @@ GCD :: Brand Emblem :: {{ brand.name }}
       {% if brand.emblem %}
         {% if brand.emblem|is_locked %}
         <div style='padding:.4em' class="index_status_1">
-        Brand emblem changes pending
+        Publisher's brand emblem changes pending
         </div>
         {% else %}
           {% if user.is_authenticated %}
         <form method="GET"
           action="{% url "replace_image" model_name='brand' id=brand.id image_id=brand.emblem.id %}">
-          <input type="submit" value="{% trans 'Replace Brand Image' %}">
+          <input type="submit" value="{% trans "Replace Publisher's Brand Image" %}">
         </form>
         <form method="GET"
           action="{% url "delete_revision" model_name='image' id=brand.emblem.id %}">
-          <input type="submit" value="{% trans 'Delete Brand Image' %}">
+          <input type="submit" value="{% trans "Delete Publisher's Brand Image" %}">
         </form>
           {% endif %}
         {% endif %}
@@ -106,7 +106,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
           {% if user.is_authenticated and not brand.generic %}
         <form method="GET"
           action="{% url "upload_image" model_name='brand' id=brand.id image_type='BrandScan' %}">
-          <input type="submit" value="{% trans 'Add Brand Image' %}">
+          <input type="submit" value="{% trans "Add Publisher's Brand Image" %}">
         </form>
         {% endif %}
       {% endif %}
@@ -114,7 +114,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
         <form method="POST"
           action="{% url "add_brand_use" brand_id=brand.id %}">
       {% csrf_token %}
-          <input id="add_use" name="add_use" type="submit" value="Add Brand Use"></input>
+          <input id="add_use" name="add_use" type="submit" value="Add Publisher's Brand Use"></input>
         </form>
       {% endif %}
     {% endif %}
@@ -134,10 +134,10 @@ GCD :: Brand Emblem :: {{ brand.name }}
 
 {% if brand.group.count %}
 <hr>
-<h3>Brand emblem belongs to the brand group{{ brand.group.count|pluralize }}:</h3>
+<h3>Publisher's brand emblem belongs to the publisher's brand group{{ brand.group.count|pluralize }}:</h3>
 <table id="publisher_detail_listing" class="listing">
   <tr>
-    <th> Brand Group </th>
+    <th> Publisher's Brand Group </th>
     <th> Publisher </th>
     <th> Issues </th>
     <th> Year Began </th>
@@ -159,7 +159,7 @@ GCD :: Brand Emblem :: {{ brand.name }}
 
 {% if uses.count %}
 <hr>
-<h3>Brand emblem is in use at the following publishers:</h3>
+<h3>Publisher's brand emblem is in use at the following publishers:</h3>
 <table id="publisher_detail_listing" class="listing">
   <tr>
     <th> Publisher </th>

@@ -7,7 +7,7 @@
 {% load django_tables2 %}
 
 {% block title %}
-GCD :: Brand Group :: {{ brand.name }}
+GCD :: Publisher's Brand Group :: {{ brand.name }}
 {% endblock %}
 
 {% block css %}
@@ -23,7 +23,7 @@ GCD :: Brand Group :: {{ brand.name }}
 {% block view_body %}
 
 {% with brand as publisher %}
-{% with "Brand Groups" as description %}
+{% with "Publisher's Brand Groups" as description %}
 {% with "brands" as url_suffix %}
   {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
@@ -80,7 +80,7 @@ GCD :: Brand Group :: {{ brand.name }}
       {% if user.is_authenticated and not publisher.pending_deletion %}
         <form method="GET"
               action="{% url "add_brand_via_group" brand_group_id=brand.id %}">
-          <input id="add" name="add" type="submit" value="Add brand emblem" />
+          <input id="add" name="add" type="submit" value="Add publisher's brand emblem" />
         </form>
       {% endif %} <!-- logged in -->
     {% endif %}
@@ -100,10 +100,10 @@ GCD :: Brand Group :: {{ brand.name }}
 
 {% if page.number == 1 %}
 <hr>
-<h3>Used brand emblems:</h3>
+<h3>Used publisher's brand emblems:</h3>
 <table id="publisher_detail_listing" class="listing">
   <tr>
-    <th> Brand Emblem</th>
+    <th> Publisher's Brand Emblem</th>
     <th> Name </th>
     <th> Issues </th>
     <th> Year Began</th>
