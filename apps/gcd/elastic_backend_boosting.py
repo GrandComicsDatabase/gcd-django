@@ -12,9 +12,17 @@ class Elasticsearch7BoostingSearchBackend(Elasticsearch7SearchBackend):
 
     def __init__(self, connection_alias, **connection_options):
         super().__init__(connection_alias, **connection_options)
+        self.DEFAULT_SETTINGS["settings"]["analysis"]["char_filter"] = {
+          "abbreviation_filter": {
+            "type": "pattern_replace",
+            "pattern": "(\\w+)\\.(?=\\w)",
+            "replacement": "$1"
+            }
+          }
         self.DEFAULT_SETTINGS["settings"]["analysis"]['analyzer']\
                              ["accents_analyzer"] = {  # noqa: E211
                                "tokenizer": "standard",
+                               "char_filter": ["abbreviation_filter"],
                                "filter": ["lowercase", "asciifolding"]
                              }
 
@@ -33,12 +41,15 @@ class Elasticsearch7BoostingSearchBackend(Elasticsearch7SearchBackend):
 
         if query_string != "*:*":
             # we are doing boost on some fields, so not just 'default_field'
-            kwargs['query']['bool']['must']['query_string'].pop('default_field')
-            kwargs['query']['bool']['must']['query_string']['fields'] = [content_field]
+            kwargs['query']['bool']['must']['query_string']\
+                  .pop('default_field')
+            kwargs['query']['bool']['must']['query_string']['fields'] = [
+              content_field]
             if boost_fields:
                 kwargs['query']['bool']['must']['query_string']['fields'] = []
                 for boost_field, boost_value in boost_fields.items():
-                    kwargs['query']['bool']['must']['query_string']['fields'].append('%s^%s' % (boost_field, boost_value))
+                    kwargs['query']['bool']['must']['query_string']['fields']\
+                          .append('%s^%s' % (boost_field, boost_value))
             # negativ boost for some matches
             if boost_negative:
                 boosting = {
