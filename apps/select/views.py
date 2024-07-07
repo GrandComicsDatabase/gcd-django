@@ -9,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Value, IntegerField, F
 import django.urls as urlresolvers
 from django.http import HttpResponseRedirect, JsonResponse
+from django.conf import settings
 from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.html import format_html
@@ -791,6 +792,7 @@ class SeriesFilter(FilterSet):
 
 
 class IssueFilter(FilterSet):
+    from apps.mycomics.models import Collection
     country = ModelChoiceFilter(field_name='series__country',
                                 label='Country',
                                 queryset=Country.objects.all())
@@ -800,12 +802,16 @@ class IssueFilter(FilterSet):
     publisher = ModelChoiceFilter(field_name='series__publisher',
                                   label='Publisher',
                                   queryset=Publisher.objects.all())
+    collection = ModelChoiceFilter(field_name='collectionitem__collections',
+                                   label='In Collection',
+                                   queryset=Collection.objects.all())
 
     class Meta:
         model = Issue
         fields = ['country', 'language', 'publisher']
 
     def __init__(self, *args, **kwargs):
+        from apps.mycomics.models import Collection
         if 'countries' in kwargs:
             countries = kwargs.pop('countries')
         else:
@@ -818,6 +824,10 @@ class IssueFilter(FilterSet):
             publishers = kwargs.pop('publishers')
         else:
             publishers = None
+        if 'collections' in kwargs:
+            collections = kwargs.pop('collections')
+        else:
+            collections = None
         super(IssueFilter, self).__init__(*args, **kwargs)
         if countries:
             qs = Country.objects.filter(id__in=countries)
@@ -828,6 +838,11 @@ class IssueFilter(FilterSet):
         if publishers:
             qs = Publisher.objects.filter(id__in=publishers)
             self.filters['publisher'].queryset = qs
+        if collections:
+            qs = Collection.objects.filter(id__in=collections)
+            self.filters['collection'].queryset = qs
+        else:
+            self.filters.pop('collection')
 
 
 class SequenceFilter(FilterSet):
@@ -901,11 +916,18 @@ def filter_issues(request, issues):
         countries.append(i[0])
         languages.append(i[1])
         publishers.append(i[2])
+    if settings.MYCOMICS and request.user.is_authenticated:
+        collections = request.user.collector.collections.all()\
+                             .order_by('name').values_list('id', flat=True)
+    else:
+        collections = None
     filter = IssueFilter(request.GET,
                          queryset=issues,
                          countries=countries,
                          languages=languages,
-                         publishers=publishers)
+                         publishers=publishers,
+                         collections=collections
+                         )
     return filter
 
 
