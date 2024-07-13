@@ -4573,7 +4573,15 @@ def move_story_revision(request, id):
         _free_revision_lock(reprint_revision.reprint)
         reprint_revision.delete()
     for reprint_revision in story.changeset.reprintrevisions.filter(
+      target_revision=story):
+        _free_revision_lock(reprint_revision.reprint)
+        reprint_revision.delete()
+    for reprint_revision in story.changeset.reprintrevisions.filter(
       origin=story.story):
+        _free_revision_lock(reprint_revision.reprint)
+        reprint_revision.delete()
+    for reprint_revision in story.changeset.reprintrevisions.filter(
+      origin_revision=story):
         _free_revision_lock(reprint_revision.reprint)
         reprint_revision.delete()
 
