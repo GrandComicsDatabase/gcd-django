@@ -1641,7 +1641,7 @@ class Revision(models.Model):
         methods as 'fork_source'.
 
         Entirely new data objects should be started by simply instantiating
-        a new revision of the approparite type directly.
+        a new revision of the appropriate type directly.
 
         A set (or set-like object) of field names to exclude from copying
         may be passed.  This is particularly useful for forking.

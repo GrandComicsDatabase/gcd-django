@@ -3247,7 +3247,6 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
           next_revision__changeset__state__lt=5)
         compare_revision = compare_revision.get()
     if other_revision_id:
-        changeset_id = revision.changeset_id
         compare_revision = get_object_or_404(StoryRevision,
                                              id=other_revision_id)
     if request.method != 'POST':
@@ -3279,6 +3278,10 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
         if field in fields_to_set:
             getattr(revision, field).add(*list(getattr(compare_revision,
                                                        field).all()))
+        # special handling for keywords due to their different storage
+        # in data_objects vs. revision
+        if field == 'keywords':
+            setattr(revision, field, getattr(compare_revision, field))
     revision.save()
 
     if 'copy_select_with_qualifiers' in request.POST:
