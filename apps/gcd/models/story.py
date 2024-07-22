@@ -170,25 +170,31 @@ def show_characters(story, url=True, css_style=True, compare=False):
         if reference_universe_id and group.universe:
             if group.universe_id != reference_universe_id:
                 group_universe_name = group.universe.universe_name()
+        if url:
+            characters += '<a href="%s"><b>%s</b></a>%s%s: ' \
+                            % (group.group_name.group.get_absolute_url(),
+                               esc(group.group_name.name),
+                               ' <i>(%s)</i>' %
+                               group_universe_name if
+                               group_universe_name else '',
+                               ' (%s)' %
+                               group.notes if group.notes else '')
+        else:
+            characters += '%s%s%s [' % (group.group_name.name,
+                                        ' (%s)' % group_universe_name if
+                                        group_universe_name else '',
+                                        ' (%s)' %
+                                        group.notes if group.notes else '')
         for member in in_group.filter(group_name=group.group_name_id,
                                       group_universe=group.universe_id):
             if first_member:
                 first_member = False
                 if url:
-                    characters += '<a href="%s"><b>%s</b></a>%s%s: ' \
-                                  '<a href="%s">%s</a>' \
-                                  % (group.group_name.group.get_absolute_url(),
-                                     esc(group.group_name.name),
-                                     ' <i>(%s)</i>' %
-                                     group_universe_name if
-                                     group_universe_name else '',
-                                     ' (%s)' %
-                                     group.notes if group.notes else '',
-                                     member.character.get_absolute_url(),
+                    characters += '<a href="%s">%s</a>' \
+                                  % (member.character.get_absolute_url(),
                                      esc(member.character.name))
                 else:
-                    characters += '%s [%s' % (group.group_name.name,
-                                              member.character.name)
+                    characters += '%s' % (member.character.name)
                 if compare:
                     disambiguation += '%s%s: <br>&nbsp;&nbsp; %s' % (
                       group.group_name.group.disambiguated,
@@ -218,17 +224,20 @@ def show_characters(story, url=True, css_style=True, compare=False):
                     disambiguation += ' - %s' % member.universe
             if reference_universe_id and member.universe:
                 if member.universe_id != reference_universe_id:
-                    characters += ' (<i>%s</i>)' % member.universe\
-                                                         .universe_name()
+                    if url:
+                        characters += ' (<i>%s</i>)' % member.universe\
+                                                             .universe_name()
+                    else:
+                        characters += ' (%s)' % member.universe\
+                                                      .universe_name()
             characters += character_notes(member)
         if first_member is True:
+            characters = characters[:-2]
             if url:
-                characters += '<a href="%s"><b>%s</b></a><br> ' \
-                                % (group.group_name.group.get_absolute_url(),
-                                   esc(group.group_name.name))
+                characters += '<br>'
+                first_member = False
             else:
-                characters += '%s; ' % (group.group_name.name)
-            first_member = False
+                characters += '; '
             if compare:
                 disambiguation += '%s%s' % (
                   group.group_name.group.disambiguated,
@@ -892,7 +901,8 @@ class HaystackStoryTable(tables.Table):
     def value_issue(self, record):
         return str(record.object.issue)
 
-# TODO see if the two templates for sequence and issue can be combined or included from each other
+# TODO see if the two templates for sequence and issue can be combined or
+# included from each other
 
 
 class HaystackMatchedStoryTable(HaystackStoryTable):
@@ -911,7 +921,8 @@ class HaystackMatchedStoryTable(HaystackStoryTable):
         super(HaystackMatchedStoryTable, self).__init__(*args, **kwargs)
 
     def value_matched_search(self, record):
-        # TODO refactor render_method to use for both, maybe with show_creator_credit_bare
+        # TODO refactor render_method to use for both, maybe with
+        # show_creator_credit_bare
         return ""
 
     def render_matched_search(self, record):
