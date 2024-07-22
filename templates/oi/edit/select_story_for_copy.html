@@ -11,10 +11,10 @@
 {% endblock %}
 
 {% block view_body %}
-<h2>Select for <i>{{ revision }}</i> a story to compare with & copy from</h2>
+<h2>Select for <i>{{ revision }}</i> a sequence to compare with & copy from</h2>
 {% if cached_stories %}
 <p>
-  Select a story from the data cache:
+  Select a sequence from the data cache:
   <ul>
   {% for story in cached_stories %}
     <li>{{ story.issue }}: <a href="{% url 'compare_stories_copy' story_revision_id=revision.id story_id=story.id %}">{{ story }}</a></li>
@@ -33,7 +33,7 @@
 </p>
 {% endif %}
 {% if revision.story and revision.story.from_story_reprints.count or revision.story and revision.story.to_story_reprints.count %}
-  Select a story linked via reprint:
+  Select a sequence linked via reprint:
   <ul>
   {% for story in revision.story.from_story_reprints %}    
     <li>{{ story.origin.issue }}: <a href="{% url 'compare_stories_copy' story_revision_id=revision.id story_id=story.origin.id %}">{{ story.origin }}</a></li>
@@ -45,7 +45,7 @@
 {% endif %}
 
 {% if other_revisions %}
-Select a story from the current changeset:
+Select a sequence from the current changeset:
 <ul>
 {% for story in other_revisions %}
   <li>{{ story }}: <a href="{% url 'compare_revisions_copy' story_revision_id=revision.id other_revision_id=story.id %}">{{ story }}</a></li>
