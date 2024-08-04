@@ -1880,7 +1880,8 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
                 kwargs={'publisher_id': publisher_id}))
 
     form = get_brand_revision_form(user=request.user, publisher=publisher,
-                                   brand_group=brand_group)(request.POST)
+                                   brand_group=brand_group)(request.POST,
+                                                            request.FILES)
     if not form.is_valid():
         return _display_add_brand_form(request, form, brand_group, publisher)
 
@@ -1890,6 +1891,14 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
     revision = form.save(commit=False)
     revision.save_added_revision(changeset=changeset)
     form.save_m2m()
+    # TODO make generic
+    if revision.image_revision:
+        revision.image_revision.changeset = changeset
+        revision.image_revision.object_id = revision.id
+        revision.image_revision.content_type = ContentType\
+                               .objects.get_for_model(revision)
+        revision.image_revision.save()
+
     return submit(request, changeset.id)
 
 
@@ -2720,7 +2729,9 @@ def add_feature_logo(request, feature_id):
 
     initial = {'feature': feature}
     form = get_feature_logo_revision_form(
-      user=request.user)(request.POST or None, initial=initial)
+      user=request.user)(request.POST or None,
+                         request.FILES or None,
+                         initial=initial)
 
     if form.is_valid():
         changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -2729,6 +2740,14 @@ def add_feature_logo(request, feature_id):
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset)
         form.save_m2m()
+        # TODO make generic
+        if revision.image_revision:
+            revision.image_revision.changeset = changeset
+            revision.image_revision.object_id = revision.id
+            revision.image_revision.content_type = ContentType\
+                                   .objects.get_for_model(revision)
+            revision.image_revision.save()
+
         return submit(request, changeset.id)
 
     object_name = 'Feature Logo'
@@ -5540,6 +5559,14 @@ def compare(request, id):
     revision.compare_changes()
 
     if model_name == 'creator_signature':
+        if changeset.imagerevisions.exists():
+            return image_compare(request, changeset,
+                                 changeset.imagerevisions.get(), revision)
+    if model_name == 'feature_logo':
+        if changeset.imagerevisions.exists():
+            return image_compare(request, changeset,
+                                 changeset.imagerevisions.get(), revision)
+    if model_name == 'brand':
         if changeset.imagerevisions.exists():
             return image_compare(request, changeset,
                                  changeset.imagerevisions.get(), revision)
