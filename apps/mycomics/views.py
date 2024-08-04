@@ -114,8 +114,12 @@ def view_collection(request, collection_id):
     publishers = []
     for i in data:
         publishers.append(i[0])
+    locations = request.user.collector.location_set.all()
+    purchase_locations = request.user.collector.purchaselocation_set.all()
     f = CollectionItemFilter(request.GET, queryset=items,
-                             collection=collection, publishers=publishers)
+                             collection=collection, publishers=publishers,
+                             locations=locations,
+                             purchase_locations=purchase_locations)
     vars['filter'] = f
     paginator = ResponsePaginator(f.qs, vars=vars, per_page=DEFAULT_PER_PAGE,
                                   alpha=True)
@@ -820,8 +824,8 @@ def add_series_issues_to_collection(request, series_id):
         # add all issues (without variants) to the selected collection
         collection_id = int(request.POST['collection_id'])
         collection = get_object_or_404(Collection, id=collection_id)
-        item_before = collection.items.filter(issue__series__sort_name__lt=
-                                              series.sort_name).reverse()
+        item_before = collection.items.filter(
+          issue__series__sort_name__lt=series.sort_name).reverse()
 
         if item_before:
             page = "?page=%d" % (item_before.count() / DEFAULT_PER_PAGE + 1)

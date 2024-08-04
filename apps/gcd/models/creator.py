@@ -166,10 +166,18 @@ class CreatorNameDetail(GcdData):
                     as_name = self
             elif self.type and self.type_id == NAME_TYPES['house']:
                 if self.creator_relation.exists():
+                    # point to both, creator and house name
                     as_name = self.creator_relation.get().to_creator\
                                   .active_names().get(is_official_name=True)
                 else:
-                    as_name = self
+                    # handles case of house name with different spellings,
+                    # show only the name as entered, not also official name
+                    as_name = ""
+                    name = self.name
+                    if credit.credit_name:
+                        credit.credit_name += ', house name'
+                    else:
+                        credit.credit_name = 'house name'
             elif self.type and self.type_id == NAME_TYPES['joint']:
                 if self.creator_relation.exists():
                     as_name = self.creator_relation.get().to_creator\
@@ -259,8 +267,9 @@ class CreatorNameDetail(GcdData):
                                  esc(display_as_name))
             if extra_name:
                 credit_text = credit_text[:-1] + ' as %s)' % extra_name
-        if credit.credited_as and not (getattr(credit, 'signed_as', None) and \
-           (credit.credited_as == credit.signed_as)):
+        if credit.credited_as and not (getattr(credit, 'signed_as', None) and
+                                       (credit.credited_as == credit.signed_as)
+                                       ):
             credit_text += ' (credited as %s)' % esc(credit.credited_as)
         if credit_attribute:
             credit_text += ' (%s)' % credit_attribute

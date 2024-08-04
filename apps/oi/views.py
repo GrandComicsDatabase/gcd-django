@@ -1880,7 +1880,8 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
                 kwargs={'publisher_id': publisher_id}))
 
     form = get_brand_revision_form(user=request.user, publisher=publisher,
-                                   brand_group=brand_group)(request.POST)
+                                   brand_group=brand_group)(request.POST,
+                                                            request.FILES)
     if not form.is_valid():
         return _display_add_brand_form(request, form, brand_group, publisher)
 
@@ -1890,6 +1891,14 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
     revision = form.save(commit=False)
     revision.save_added_revision(changeset=changeset)
     form.save_m2m()
+    # TODO make generic
+    if revision.image_revision:
+        revision.image_revision.changeset = changeset
+        revision.image_revision.object_id = revision.id
+        revision.image_revision.content_type = ContentType\
+                               .objects.get_for_model(revision)
+        revision.image_revision.save()
+
     return submit(request, changeset.id)
 
 
@@ -2720,7 +2729,9 @@ def add_feature_logo(request, feature_id):
 
     initial = {'feature': feature}
     form = get_feature_logo_revision_form(
-      user=request.user)(request.POST or None, initial=initial)
+      user=request.user)(request.POST or None,
+                         request.FILES or None,
+                         initial=initial)
 
     if form.is_valid():
         changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -2729,6 +2740,14 @@ def add_feature_logo(request, feature_id):
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset)
         form.save_m2m()
+        # TODO make generic
+        if revision.image_revision:
+            revision.image_revision.changeset = changeset
+            revision.image_revision.object_id = revision.id
+            revision.image_revision.content_type = ContentType\
+                                   .objects.get_for_model(revision)
+            revision.image_revision.save()
+
         return submit(request, changeset.id)
 
     object_name = 'Feature Logo'
@@ -2845,6 +2864,7 @@ def add_character_relation(request, character_id):
 
     initial = {}
     initial['from_character'] = character_id
+    initial['language_code'] = character.language.code
 
     cancel = urlresolvers.reverse('show_character',
                                   kwargs={'character_id': character_id})
@@ -2901,6 +2921,7 @@ def add_group_relation(request, group_id):
 
     initial = {}
     initial['from_group'] = group_id
+    initial['language_code'] = group.language.code
 
     cancel = urlresolvers.reverse('show_group',
                                   kwargs={'group_id': group_id})
@@ -3245,7 +3266,6 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
           next_revision__changeset__state__lt=5)
         compare_revision = compare_revision.get()
     if other_revision_id:
-        changeset_id = revision.changeset_id
         compare_revision = get_object_or_404(StoryRevision,
                                              id=other_revision_id)
     if request.method != 'POST':
@@ -3277,6 +3297,10 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
         if field in fields_to_set:
             getattr(revision, field).add(*list(getattr(compare_revision,
                                                        field).all()))
+        # special handling for keywords due to their different storage
+        # in data_objects vs. revision
+        if field == 'keywords':
+            setattr(revision, field, getattr(compare_revision, field))
     revision.save()
 
     if 'copy_select_with_qualifiers' in request.POST:
@@ -4571,7 +4595,15 @@ def move_story_revision(request, id):
         _free_revision_lock(reprint_revision.reprint)
         reprint_revision.delete()
     for reprint_revision in story.changeset.reprintrevisions.filter(
+      target_revision=story):
+        _free_revision_lock(reprint_revision.reprint)
+        reprint_revision.delete()
+    for reprint_revision in story.changeset.reprintrevisions.filter(
       origin=story.story):
+        _free_revision_lock(reprint_revision.reprint)
+        reprint_revision.delete()
+    for reprint_revision in story.changeset.reprintrevisions.filter(
+      origin_revision=story):
         _free_revision_lock(reprint_revision.reprint)
         reprint_revision.delete()
 
@@ -5527,6 +5559,14 @@ def compare(request, id):
     revision.compare_changes()
 
     if model_name == 'creator_signature':
+        if changeset.imagerevisions.exists():
+            return image_compare(request, changeset,
+                                 changeset.imagerevisions.get(), revision)
+    if model_name == 'feature_logo':
+        if changeset.imagerevisions.exists():
+            return image_compare(request, changeset,
+                                 changeset.imagerevisions.get(), revision)
+    if model_name == 'brand':
         if changeset.imagerevisions.exists():
             return image_compare(request, changeset,
                                  changeset.imagerevisions.get(), revision)

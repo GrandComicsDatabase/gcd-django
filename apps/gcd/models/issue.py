@@ -720,7 +720,7 @@ class IssuePublisherTable(IssueTable):
 
 class IndiciaPublisherIssueTable(IssueTable):
     brand = tables.Column(accessor='brand',
-                          verbose_name='Brand')
+                          verbose_name="Publisher's Brand")
 
     class Meta:
         model = Issue

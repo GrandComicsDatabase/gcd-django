@@ -275,6 +275,16 @@ class CollectionItemFilter(django_filters.FilterSet):
     sell_price = django_filters.RangeFilter()
     market_value = django_filters.RangeFilter()
     rating = django_filters.RangeFilter()
+    location = django_filters.ModelChoiceFilter(
+      queryset=Location.objects.all())
+    purchase_location = django_filters.ModelChoiceFilter(
+      queryset=PurchaseLocation.objects.all())
+    year_acquired = django_filters.RangeFilter(
+      field_name='acquisition_date__year',
+      label="Year Acquired")
+    publication_date = django_filters.DateTimeFromToRangeFilter(
+      field_name='issue__key_date',
+      label="Publication Date")
     own = django_filters.ChoiceFilter(choices=OWN_CHOICES)
     publisher = django_filters.ModelChoiceFilter(
       field_name='issue__series__publisher',
@@ -287,11 +297,25 @@ class CollectionItemFilter(django_filters.FilterSet):
             publishers = kwargs.pop('publishers')
         else:
             publishers = None
+        if 'locations' in kwargs:
+            locations = kwargs.pop('locations')
+        else:
+            locations = None
+        if 'purchase_locations' in kwargs:
+            purchase_locations = kwargs.pop('purchase_locations')
+        else:
+            purchase_locations = None
         super().__init__(*args, **kwargs)
+        if not collection.acquisition_date_used:
+            self.filters.pop('year_acquired')
         if not collection.price_paid_used:
             self.filters.pop('price_paid')
         if not collection.sell_price_used:
             self.filters.pop('sell_price')
+        if not collection.location_used:
+            self.filters.pop('location')
+        if not collection.purchase_location_used:
+            self.filters.pop('purchase_location')
         if not collection.market_value_used:
             self.filters.pop('market_value')
         if not collection.rating_used:
@@ -309,6 +333,12 @@ class CollectionItemFilter(django_filters.FilterSet):
         if publishers:
             qs = Publisher.objects.filter(id__in=publishers)
             self.filters['publisher'].queryset = qs
+        if locations and 'location' in self.filters:
+            qs = Location.objects.filter(id__in=locations)
+            self.filters['location'].queryset = qs
+        if purchase_locations and 'purchase_location' in self.filters:
+            qs = PurchaseLocation.objects.filter(id__in=purchase_locations)
+            self.filters['purchase_location'].queryset = qs
 
     class Meta:
         model = CollectionItem

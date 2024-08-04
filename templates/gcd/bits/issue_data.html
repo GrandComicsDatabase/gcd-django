@@ -29,7 +29,7 @@
         <dt> {% trans "Indicia&nbsp;/&nbsp;Colophon Publisher" %}</dt>
         <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}</dd>
 {% if not issue.no_brand %}
-        <dt> {% trans "Brand" %}</dt>
+        <dt> {% trans "Publisher's Brand" %}</dt>
         <dd id="issue_brand">
           {% if issue.brand.emblem %}
             {{ issue.brand|absolute_url:issue.brand.emblem|default:"?" }}

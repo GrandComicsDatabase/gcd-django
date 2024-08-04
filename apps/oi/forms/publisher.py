@@ -5,9 +5,11 @@ from collections import OrderedDict
 
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
+from django.forms.widgets import HiddenInput
 
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
+    _create_embedded_image_revision, _save_runtime_embedded_image_revision,
     GENERIC_ERROR_MESSAGE, PUBLISHER_HELP_LINKS, PUBLISHER_HELP_TEXTS,
     INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS)
 
@@ -214,7 +216,7 @@ def get_brand_revision_form(user=None, revision=None,
 
     class RuntimeBrandRevisionForm(BrandRevisionForm):
         def __init__(self, *args, **kw):
-            super(BrandRevisionForm, self).__init__(*args, **kw)
+            super(RuntimeBrandRevisionForm, self).__init__(*args, **kw)
             if revision:
                 # brand_group_other_publisher_id is last field,
                 # move it after group
@@ -224,6 +226,14 @@ def get_brand_revision_form(user=None, revision=None,
                 new_fields = OrderedDict([(f,
                                            self.fields[f]) for f in ordering])
                 self.fields = new_fields
+                if revision.image_revision or (revision.source and
+                                               revision.source.emblem):
+                    self.fields['brand_emblem_image'].help_text = \
+                      'Select a file if you want to replace the existing '\
+                      'image.'
+                    self.fields['generic'] = forms.BooleanField(
+                      widget=HiddenInput, required=False)
+
         group = forms.ModelMultipleChoiceField(
             required=True,
             widget=FilteredSelectMultiple('Brand Groups', False),
@@ -237,6 +247,38 @@ def get_brand_revision_form(user=None, revision=None,
                 help_text="One can add a brand group from a different "
                           "publisher by id. If an id is entered the submit "
                           "will return for confirmation.")
+            if revision.source.generic:
+                brand_emblem_image = forms.ImageField(widget=HiddenInput,
+                                                      required=False)
+                generic = forms.BooleanField(widget=HiddenInput,
+                                             required=False)
+
+        def save(self, commit=True):
+            instance = super(RuntimeBrandRevisionForm,
+                             self).save(commit=commit)
+            if instance.image_revision and revision:
+                if revision.source:
+                    image = revision.brand.emblem
+                else:
+                    image = None
+                instance = _save_runtime_embedded_image_revision(instance,
+                                                                 revision,
+                                                                 image)
+            return instance
+
+        def clean(self):
+            cd = self.cleaned_data
+
+            if cd['generic'] and cd['brand_emblem_image']:
+                raise forms.ValidationError(
+                  'Either mark the brand emblem as generic or upload an '
+                  'image, not both.')
+            if cd['generic'] and revision and revision.image_revision:
+                raise forms.ValidationError(
+                  'brand emblem image exists, cannot mark the brand emblem '
+                  'as generic.')
+            if self._errors:
+                raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
@@ -250,6 +292,13 @@ class BrandRevisionForm(forms.ModelForm):
         model = BrandRevision
         fields = _get_publisher_fields(middle=('group',))
         fields.insert(fields.index('year_began'), 'generic')
+
+    def __init__(self, *args, **kwargs):
+        super(BrandRevisionForm, self).__init__(*args, **kwargs)
+        ordering = list(self.fields)
+        ordering.insert(2, 'brand_emblem_image')
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
 
     name = forms.CharField(
         widget=forms.TextInput(attrs={'autofocus': ''}),
@@ -289,7 +338,20 @@ class BrandRevisionForm(forms.ModelForm):
                   "brand as printed on the issue, without being specific "
                   "about a visual appearance of the brand name."
     )
+
+    brand_emblem_image = forms.ImageField(widget=forms.FileInput,
+                                          required=False)
+
     comments = _get_comments_form_field()
+
+    def save(self, commit=True):
+        instance = super(BrandRevisionForm, self).save(commit=commit)
+        brand_emblem_image = self.cleaned_data['brand_emblem_image']
+        if brand_emblem_image:
+            instance = _create_embedded_image_revision(instance,
+                                                       brand_emblem_image,
+                                                       'BrandScan')
+        return instance
 
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)

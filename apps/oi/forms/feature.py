@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-
 from django import forms
+from django.forms.widgets import HiddenInput
 
 from dal import autocomplete
+
+from collections import OrderedDict
 
 from apps.gcd.models import Feature, FeatureRelationType
 from apps.gcd.models.support import GENRES
@@ -11,7 +13,9 @@ from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, remove_leading_article)
 
 from .support import (_set_help_labels, _clean_keywords,
-                      _get_comments_form_field, combine_reverse_relations)
+                      _get_comments_form_field, combine_reverse_relations,
+                      GENERIC_ERROR_MESSAGE, _create_embedded_image_revision,
+                      _save_runtime_embedded_image_revision)
 from .story import _genre_choices
 
 
@@ -22,7 +26,8 @@ def get_feature_revision_form(revision=None, user=None):
             if revision:
                 self.fields['feature_type'].empty_label = None
 
-                if revision.source and revision.source.active_stories().exists():
+                if revision.source and revision.source.active_stories()\
+                                                      .exists():
                     self.fields['feature_type'].queryset = \
                       FeatureType.objects.filter(id=revision.feature_type.id)
 
@@ -42,7 +47,7 @@ def get_feature_revision_form(revision=None, user=None):
 
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
-                # _set_help_labels(self, FEATURE_HELP_LINKS)
+            #       _set_help_labels(self, FEATURE_HELP_LINKS)
             return super(FeatureRevisionForm, self).as_table()
 
     return RuntimeFeatureRevisionForm
@@ -90,19 +95,71 @@ class FeatureRevisionForm(forms.ModelForm):
 
 
 def get_feature_logo_revision_form(revision=None, user=None):
-    class RuntimeFeatureRevisionForm(FeatureLogoRevisionForm):
+    class RuntimeFeatureLogoRevisionForm(FeatureLogoRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeFeatureLogoRevisionForm,
+                  self).__init__(*args, **kwargs)
+
+            if revision and (revision.image_revision or (revision.source and
+                             revision.source.logo)):
+                self.fields['feature_logo_image'].help_text = \
+                  'Select a file if you want to replace the existing image.'
+                self.fields['generic'] = forms.BooleanField(widget=HiddenInput,
+                                                            required=False)
+
+        if revision and revision.source:
+            if revision.source.generic:
+                feature_logo_image = forms.ImageField(widget=HiddenInput,
+                                                      required=False)
+                generic = forms.BooleanField(widget=HiddenInput,
+                                             required=False)
+
+        def save(self, commit=True):
+            instance = super(RuntimeFeatureLogoRevisionForm,
+                             self).save(commit=commit)
+            if instance.image_revision and revision:
+                if revision.source:
+                    image = revision.feature_logo.logo
+                else:
+                    image = None
+                instance = _save_runtime_embedded_image_revision(instance,
+                                                                 revision,
+                                                                 image)
+            return instance
+
+        def clean(self):
+            cd = self.cleaned_data
+
+            if cd['generic'] and cd['feature_logo_image']:
+                raise forms.ValidationError(
+                  'Either mark the feature logo as generic or upload an '
+                  'image, not both.')
+            if cd['generic'] and revision and revision.image_revision:
+                raise forms.ValidationError(
+                  'Feature logo image exists, cannot mark the feature logo '
+                  'as generic.')
+            if self._errors:
+                raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
+
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
-                # _set_help_labels(self, AWARD_HELP_LINKS)
+            #     _set_help_labels(self, AWARD_HELP_LINKS)
             return super(FeatureLogoRevisionForm, self).as_table()
 
-    return RuntimeFeatureRevisionForm
+    return RuntimeFeatureLogoRevisionForm
 
 
 class FeatureLogoRevisionForm(forms.ModelForm):
     class Meta:
         model = FeatureLogoRevision
         fields = model._base_field_list
+
+    def __init__(self, *args, **kwargs):
+        super(FeatureLogoRevisionForm, self).__init__(*args, **kwargs)
+        ordering = list(self.fields)
+        ordering.insert(3, 'feature_logo_image')
+        new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
+        self.fields = new_fields
 
     feature = forms.ModelMultipleChoiceField(
         queryset=Feature.objects.filter(deleted=False),
@@ -114,7 +171,20 @@ class FeatureLogoRevisionForm(forms.ModelForm):
                   "of a feature as presented on the story, without recording "
                   "a specific visual appearance of the name."
     )
+
+    feature_logo_image = forms.ImageField(widget=forms.FileInput,
+                                          required=False)
+
     comments = _get_comments_form_field()
+
+    def save(self, commit=True):
+        instance = super(FeatureLogoRevisionForm, self).save(commit=commit)
+        feature_logo_image = self.cleaned_data['feature_logo_image']
+        if feature_logo_image:
+            instance = _create_embedded_image_revision(instance,
+                                                       feature_logo_image,
+                                                       'FeatureLogo')
+        return instance
 
     def clean_feature(self):
         languages = self.cleaned_data['feature'].values('language')
@@ -139,16 +209,16 @@ class FeatureLogoRevisionForm(forms.ModelForm):
 def get_feature_relation_revision_form(revision=None, user=None):
     class RuntimeFeatureRelationRevisionForm(FeatureRelationRevisionForm):
         choices = list(FeatureRelationType.objects.values_list('id',
-                                                            'description'))
+                                                               'description'))
         additional_choices = FeatureRelationType.objects\
                                                 .values_list('id',
-                                                            'reverse_description')
+                                                             'reverse_description')
         choices = combine_reverse_relations(choices, additional_choices)
         relation_type = forms.ChoiceField(choices=choices)
 
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
-                # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
+            #     _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
             return super(FeatureRelationRevisionForm, self).as_table()
 
     return RuntimeFeatureRelationRevisionForm

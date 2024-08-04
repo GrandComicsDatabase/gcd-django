@@ -67,16 +67,16 @@
       <form class="changeset" method="GET"
         action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
         <div class="left">
-          <input type="submit" id="add_story" name="add" value="Add Story">
+          <input type="submit" id="add_story" name="add" value="Add Sequence">
         {% if issue_revision.variant_of %}
           {% if issue_revision.issue %}
-          <input type="submit" id="copy_cover" name="copy_cover" value="Copy Story">
+          <input type="submit" id="copy_cover" name="copy_cover" value="Copy Sequence">
           {% endif %}
           <br>A cover sequence can be added in case the cover artwork is different between variant and base. <br>
           Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
           <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
         {% else %}
-          <input type="submit" id="copy_story" name="copy" value="Copy Story">
+          <input type="submit" id="copy_story" name="copy" value="Copy Sequence">
         </div>
         <div class="right">
           &nbsp;sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
@@ -96,7 +96,7 @@
             action="{% url "reorder_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
         <input type="submit" id="reorder_issue_{{ issue.id }}"
                name="reorder_issue_{{ issue.id }}"
-               value="Reorder Issue Stories">
+               value="Reorder Issue Sequences">
       </form>
     </td>
   </tr>
@@ -107,7 +107,7 @@
       <form class="changeset" method="GET"
             action="{% url "list_issue_reprints" id=issue_revision.id %}">
         <input type="submit" id="list_reprints_{{ issue_revision.id }}"
-               name="list_issue_reprints_{{ issue_revision.id }}" value="Edit Issue & Story Reprint Links">
+               name="list_issue_reprints_{{ issue_revision.id }}" value="Edit Issue & Sequence Reprint Links">
       </form>
     </td>
     <td align="right">
@@ -200,7 +200,7 @@
       <form class="story_button" method="GET"
             action="{% url "remove_story_revision" id=story.id %}">
         <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
-               value="Remove New Story">
+               value="Remove New Sequence">
       </form>
         {% else %}
           {% if story.issue %}

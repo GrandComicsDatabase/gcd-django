@@ -7,7 +7,8 @@ from collections import OrderedDict
 
 from dal import autocomplete
 
-from apps.gcd.models import Character, Group, CharacterRelationType, Universe
+from apps.gcd.models import Character, Group, CharacterRelationType, \
+                            GroupRelationType, Universe
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -80,7 +81,8 @@ class CharacterNameDetailRevisionForm(forms.ModelForm):
 
         if self.instance.character_name_detail:
             if self.instance.character_name_detail.storycharacter_set\
-                                                  .filter(deleted=False).count():
+                                                  .filter(deleted=False)\
+                                                  .count():
                 # TODO How can the 'remove'-link not be shown in this case ?
                 self.fields['name'].help_text = \
                     'Character names with existing credits cannot be removed.'
@@ -305,7 +307,14 @@ class GroupMembershipRevisionForm(forms.ModelForm):
 
 
 def get_character_relation_revision_form(revision=None, user=None):
+    if revision is not None:
+        code = revision.from_character.language.code
+    else:
+        code = None
+
     class RuntimeCharacterRelationRevisionForm(CharacterRelationRevisionForm):
+        language_code = forms.CharField(widget=forms.HiddenInput,
+                                        initial=code)
         choices = list(CharacterRelationType.objects.values_list('id', 'type'))
         additional_choices = CharacterRelationType.objects.exclude(id__in=[3,
                                                                            4])\
@@ -339,6 +348,8 @@ class CharacterRelationRevisionForm(forms.ModelForm):
     to_character = forms.ModelChoiceField(
         queryset=Character.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='character_autocomplete',
+                                         forward=['language_code',
+                                                  'relation_type'],
                                          attrs={'style': 'min-width: 45em'}),
         label='Character B'
     )
@@ -369,7 +380,21 @@ class CharacterRelationRevisionForm(forms.ModelForm):
 
 
 def get_group_relation_revision_form(revision=None, user=None):
+    if revision is not None:
+        code = revision.from_group.language.code
+    else:
+        code = None
+
     class RuntimeGroupRelationRevisionForm(GroupRelationRevisionForm):
+        language_code = forms.CharField(widget=forms.HiddenInput,
+                                        initial=code)
+        choices = list(GroupRelationType.objects.values_list('id', 'type'))
+        additional_choices = GroupRelationType.objects.exclude(id=2)\
+                                              .values_list('id',
+                                                           'reverse_type')
+        choices = combine_reverse_relations(choices, additional_choices)
+        relation_type = forms.ChoiceField(choices=choices)
+
         def as_table(self):
             # if not user or user.indexer.show_wiki_links:
             # _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
@@ -395,8 +420,32 @@ class GroupRelationRevisionForm(forms.ModelForm):
     to_group = forms.ModelChoiceField(
         queryset=Group.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2(url='group_autocomplete',
+                                         forward=['language_code',
+                                                  'relation_type'],
                                          attrs={'style': 'min-width: 45em'}),
         label='Group B'
     )
 
     comments = _get_comments_form_field()
+
+    def clean(self):
+        cd = self.cleaned_data
+
+        type = int(cd['relation_type'])
+        if type < 0:
+            stash = cd['from_group']
+            cd['from_group'] = cd['to_group']
+            cd['to_group'] = stash
+            cd['relation_type'] = GroupRelationType.objects.get(id=-type)
+        else:
+            cd['relation_type'] = GroupRelationType.objects.get(id=type)
+
+        if cd['from_group'].language != cd['to_group'].language:
+            if cd['relation_type'].id != 1:
+                raise forms.ValidationError(
+                  "Groups have a different language.")
+        else:
+            if cd['relation_type'].id == 1:
+                raise forms.ValidationError(
+                  "Groups have the same language.")
+        return cd

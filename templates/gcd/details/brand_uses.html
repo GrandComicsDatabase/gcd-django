@@ -15,16 +15,16 @@
 
 {% block view_body %}
 
-{% with "Brand Emblems Used" as extra %}
+{% with "Publisher's Brand Emblems Used" as extra %}
 {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
 {% if items.count %}
-<h3>Used brand emblems:</h3>
+<h3>Used publisher's brand emblems:</h3>
 <table id="publisher_detail_listing" class="listing">
   <tr>
-    <th> Brand Emblem</th>
+    <th> Publisher's Brand Emblem</th>
     <th> Name </th>
-    <th> Brand Group </th>
+    <th> Publisher's Brand Group </th>
     <th> Year Began </th>
     <th> Year Ended </th>
     <th> Notes </th>
@@ -51,7 +51,7 @@
 </table>
 {% else %}
 <dl>
-  <dt> Brand Emblem in use:
+  <dt> Publisher's Brand Emblem in use:
   <dd> None
 </dl>
 {% endif %}

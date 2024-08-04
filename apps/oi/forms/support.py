@@ -6,14 +6,19 @@ from pagedown.widgets import PagedownWidget
 
 from django import forms
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.files import File
+from django.db import IntegrityError
+from django.forms.utils import pretty_name
 from django.forms.widgets import TextInput
 from django.utils.safestring import mark_safe
-from django.forms.utils import pretty_name
 
-from apps.gcd.models import SourceType
+from apps.gcd.models import ImageType, SourceType
 from apps.gcd.templatetags.credits import format_page_count
-
+from apps.oi import states
+from apps.oi.models import _get_revision_lock, ImageRevision
+from apps.oi.templatetags.editing import is_locked
 
 CREATOR_CREDIT_HELP = (
     'The %s and similar credits for this sequence, where multiple '
@@ -423,8 +428,8 @@ ISSUE_LABELS = {
     'no_isbn': 'No ISBN',
     'rating': "Publisher's age guidelines",
     'no_rating': "No publisher's age guidelines",
-    'brand': 'Brand emblem',
-    'no_brand': 'No brand emblem',
+    'brand': "Publisher's brand emblem",
+    'no_brand': "No publisher's brand emblem",
 }
 
 ISSUE_HELP_TEXTS = {
@@ -681,6 +686,44 @@ def insert_data_source_fields(field_name, ordering, fields, insert_after):
     ordering.insert(index+2, '%s_source_type' % field_name)
     fields.update({'%s_source_type' % field_name: forms.ModelChoiceField(
                         queryset=SourceType.objects.all(), required=False)})
+
+
+def _create_embedded_image_revision(instance, file, object_name):
+    if not instance.image_revision:
+        image_revision = ImageRevision(type=ImageType.objects.get(
+                                            name=object_name),
+                                       changeset_id=1)
+        image_revision.save()
+        instance.image_revision = image_revision
+    else:
+        image_revision = instance.image_revision
+    image_revision.image_file.save(str(image_revision.id) + '.jpg',
+                                   content=File(file))
+    return instance
+
+
+def _save_runtime_embedded_image_revision(instance, revision, image):
+    instance.image_revision.changeset = revision.changeset
+    instance.image_revision.object_id = instance.id
+    content_type = ContentType.objects.get_for_model(instance)
+    instance.image_revision.content_type = content_type
+
+    if revision.source:
+        img_lock = _get_revision_lock(image,
+                                      changeset=revision.changeset)
+        if img_lock is None:
+            lock = is_locked(image)
+            if lock.changeset != revision.changeset:
+                raise IntegrityError("needed Image lock not possible")
+        previous = image.revisions.filter(
+                            changeset__state=states.APPROVED).last()
+        instance.image_revision.previous_revision = previous
+        instance.image_revision.is_replacement = True
+        instance.image_revision.image = image
+
+    instance.image_revision.save()
+
+    return instance
 
 
 def combine_reverse_relations(choices, additional_choices):
