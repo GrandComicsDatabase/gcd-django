@@ -121,7 +121,7 @@ class AccountForm(forms.Form):
 
     issue_detail = forms.ChoiceField(
       choices=[['0', 'core view'],
-               ['1', 'edititorial content'],
+               ['1', 'editorial content'],
                ['2', 'all content (including ads)']],
       initial='1',
       label='Displayed content for issues',
