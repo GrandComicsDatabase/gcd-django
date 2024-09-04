@@ -602,6 +602,8 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     country = indexes.CharField(model_attr='birth_country__name',
                                 indexed=False, faceted=True, null=True)
 
+    relations_weight = indexes.FloatField()
+
     def get_model(self):
         return Creator
 
@@ -609,8 +611,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "creator"
 
     def prepare_name(self, obj):
-        return [(creator_name.name) for creator_name in
-                obj.active_names()]
+        return obj.gcd_official_name
 
     def prepare_year(self, obj):
         if obj.birth_date.year and '?' not in obj.birth_date.year:
@@ -626,6 +627,12 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                 return None
         else:
             return None
+
+    def prepare_relations_weight(self, obj):
+        return obj.active_influenced_creators().count() + \
+               obj.active_awards().count() + \
+               obj.active_awards_for_issues().count() + \
+               obj.active_awards_for_stories().count()
 
 
 class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,

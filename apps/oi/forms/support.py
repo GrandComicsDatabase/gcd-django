@@ -635,7 +635,8 @@ def _get_comments_form_field():
     return forms.CharField(
         widget=forms.Textarea, required=False,
         help_text='Information about the changes submitted. Will not '
-                  'displayed, but is stored in the change history.')
+                  'displayed, but is stored in the change history. '
+                  'Note that emojis currently are not supported.')
 
 
 def _clean_keywords(cleaned_data):
