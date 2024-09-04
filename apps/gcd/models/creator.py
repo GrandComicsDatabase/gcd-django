@@ -160,12 +160,12 @@ class CreatorNameDetail(GcdData):
                                           is_official_name=True).in_script):
                 as_name = self
             if self.type and self.type_id == NAME_TYPES['ghost']:
-                if self.creator_relation.exists():
+                if self.creator_relation.filter(deleted=False).exists():
                     as_name = self.creator_relation.get().to_creator
                 else:
                     as_name = self
             elif self.type and self.type_id == NAME_TYPES['house']:
-                if self.creator_relation.exists():
+                if self.creator_relation.filter(deleted=False).exists():
                     # point to both, creator and house name
                     as_name = self.creator_relation.get().to_creator\
                                   .active_names().get(is_official_name=True)
@@ -179,7 +179,7 @@ class CreatorNameDetail(GcdData):
                     else:
                         credit.credit_name = 'house name'
             elif self.type and self.type_id == NAME_TYPES['joint']:
-                if self.creator_relation.exists():
+                if self.creator_relation.filter(deleted=False).exists():
                     as_name = self.creator_relation.get().to_creator\
                                   .active_names().get(is_official_name=True)
                 else:
@@ -188,7 +188,7 @@ class CreatorNameDetail(GcdData):
                 # for compare and search use uncredited non-official-name
                 as_name = self
             if self.type and self.type_id == NAME_TYPES['studio'] \
-               and self.creator_relation.count():
+               and self.creator_relation.filter(deleted=False).count():
                 co_name = self.creator_relation.filter(deleted=False).get()\
                               .to_creator
 
@@ -217,7 +217,7 @@ class CreatorNameDetail(GcdData):
                           (self.creator.get_absolute_url(),
                            esc(name))
         else:
-            credit_text = esc(name)
+            credit_text = name
         if co_name:
             if self.type_id == NAME_TYPES['studio']:
                 if url:
@@ -225,7 +225,7 @@ class CreatorNameDetail(GcdData):
                                     (co_name.get_absolute_url(),
                                      esc(co_name.gcd_official_name))
                 else:
-                    credit_text += ' of %s' % esc(co_name.gcd_official_name)
+                    credit_text += ' of %s' % co_name.gcd_official_name
             else:
                 raise ValueError
         if as_name:
@@ -264,13 +264,17 @@ class CreatorNameDetail(GcdData):
             else:
                 credit_text += ' (%s %s)' % \
                                 (attribute,
-                                 esc(display_as_name))
+                                 display_as_name)
             if extra_name:
                 credit_text = credit_text[:-1] + ' as %s)' % extra_name
         if credit.credited_as and not (getattr(credit, 'signed_as', None) and
                                        (credit.credited_as == credit.signed_as)
                                        ):
-            credit_text += ' (credited as %s)' % esc(credit.credited_as)
+            if url:
+                credit_text += ' (credited as %s)' % esc(credit.credited_as)
+            else:
+                credit_text += ' (credited as %s)' % credit.credited_as
+
         if credit_attribute:
             credit_text += ' (%s)' % credit_attribute
         if hasattr(credit, 'signature') and credit.signature:
@@ -281,15 +285,22 @@ class CreatorNameDetail(GcdData):
                                             credit.signature.signature,
                                             esc(credit.signature.name))
             else:
-                credit_text += ' (signed as %s)' % esc(credit.signature.name)
+                credit_text += ' (signed as %s)' % credit.signature.name
 
         if credit.credited_as and getattr(credit, 'signed_as', None) and \
            (credit.credited_as == credit.signed_as):
-            credit_text += ' (credited, signed as %s)' % \
-                           esc(credit.credited_as)
+            if url:
+                 credit_text += ' (credited, signed as %s)' % \
+                                esc(credit.credited_as)
+            else:
+                credit_text += ' (credited, signed as %s)' % \
+                                credit.credited_as
         else:
             if hasattr(credit, 'is_signed') and credit.signed_as:
-                credit_text += ' (signed as %s)' % esc(credit.signed_as)
+                if url:
+                    credit_text += ' (signed as %s)' % esc(credit.signed_as)
+                else:
+                    credit_text += ' (signed as %s)' % credit.signed_as
 
         if credit.is_sourced:
             if show_sources:
@@ -305,7 +316,10 @@ class CreatorNameDetail(GcdData):
                     credit_text += ' (sourced)'
 
         if credit.credit_name:
-            credit_text += ' (%s)' % esc(credit.credit_name)
+            if url:
+                credit_text += ' (%s)' % esc(credit.credit_name)
+            else:
+                credit_text += ' (%s)' % credit.credit_name
 
         if compare_info:
             credit_text += compare_info
