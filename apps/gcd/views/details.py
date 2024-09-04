@@ -3709,7 +3709,8 @@ def character_name_issues(request, character_name_id, universe_id=None):
                                              .from_character
             filter_character_name = filter_character.character_names\
                                                     .get(name=
-                                                         character_name.name)
+                                                         character_name.name,
+                                                         deleted=False)
         else:
             return render(request, 'indexer/error.html',
                           {'error_text':
