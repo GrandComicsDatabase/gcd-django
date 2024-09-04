@@ -367,7 +367,8 @@ class Changeset(models.Model):
             return (self.featurerevisions.all(),)
 
         if self.change_type == CTYPES['feature_logo']:
-            return (self.featurelogorevisions.all(),)
+            return (self.featurelogorevisions.all(),
+                    self.imagerevisions.all(),)
 
         if self.change_type == CTYPES['feature_relation']:
             return (self.featurerelationrevisions.all(),)
@@ -409,7 +410,8 @@ class Changeset(models.Model):
                     self.indiciapublisherrevisions.all())
 
         if self.change_type == CTYPES['brand']:
-            return (self.brandrevisions.all(), self.branduserevisions.all())
+            return (self.brandrevisions.all(), self.branduserevisions.all(),
+                    self.imagerevisions.all(),)
 
         if self.change_type == CTYPES['brand_group']:
             return (self.brandgrouprevisions.all(), self.brandrevisions.all(),
@@ -1985,6 +1987,17 @@ class Revision(models.Model):
         """
         pass
 
+    def _handle_dependent_image_revision(self):
+        """
+        align image from ModelRevision to Model
+        """
+        if self.changeset.imagerevisions.count():
+            image_revision = self.changeset.imagerevisions.get()
+            content_type = ContentType.objects.get_for_model(self.source)
+            image_revision.object_id = self.source.id
+            image_revision.content_type = content_type
+            image_revision.save()
+
     def _copy_fields_to(self, target):
         """
         Used to copy fields from a revision to a display object.
@@ -2767,6 +2780,11 @@ class BrandRevision(PublisherRevisionBase):
                                    related_name='brand_revisions')
     generic = models.BooleanField(default=False)
 
+    image_revision = models.ForeignKey('oi.ImageRevision',
+                                       on_delete=models.CASCADE,
+                                       null=True,
+                                       related_name='brand_emblem_revisions')
+
     source_name = 'brand'
     source_class = Brand
 
@@ -2812,6 +2830,7 @@ class BrandRevision(PublisherRevisionBase):
                     year_ended_uncertain=self.year_ended_uncertain)
                 use.save()
                 use.commit_to_display()
+        self._handle_dependent_image_revision()
 
     def get_absolute_url(self):
         if self.brand is None:
@@ -2844,6 +2863,9 @@ class BrandRevision(PublisherRevisionBase):
     def _queue_name(self):
         return '%s: %s (%s)' % (self.group.all()[0].name, self.name,
                                 self.year_began)
+
+    def full_name(self):
+        return self.__str__()
 
 
 class PreviewBrand(Brand):
@@ -6726,6 +6748,11 @@ class FeatureLogoRevision(Revision):
     year_ended_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
 
+    image_revision = models.ForeignKey('oi.ImageRevision',
+                                       on_delete=models.CASCADE,
+                                       null=True,
+                                       related_name='feature_logo_revisions')
+
     source_name = 'feature_logo'
     source_class = FeatureLogo
 
@@ -6749,10 +6776,16 @@ class FeatureLogoRevision(Revision):
         else:
             self.feature_logo.sort_name = self.name
 
+    def _handle_dependents(self, changes):
+        self._handle_dependent_image_revision()
+
     def get_absolute_url(self):
         if self.feature_logo is None:
             return "/feature_logo/revision/%i/preview" % self.id
         return self.feature_logo.get_absolute_url()
+
+    def full_name(self):
+        return self.__str__()
 
     def __str__(self):
         return '%s' % (self.name)
@@ -9057,13 +9090,7 @@ class CreatorSignatureRevision(Revision):
         reserve_data_sources(data_sources, self.changeset, self, delete)
 
     def _handle_dependents(self, changes):
-        # align object from CreatorSignaturRevision to CreatorSignature
-        if self.changeset.imagerevisions.count():
-            image_revision = self.changeset.imagerevisions.get()
-            content_type = ContentType.objects.get_for_model(self.source)
-            image_revision.object_id = self.source.id
-            image_revision.content_type = content_type
-            image_revision.save()
+        self._handle_dependent_image_revision()
 
     def full_name(self):
         return str(self)
