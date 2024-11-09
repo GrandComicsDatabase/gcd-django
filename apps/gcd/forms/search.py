@@ -352,9 +352,10 @@ class AdvancedSearch(forms.Form):
                       "When searching for covers only type cover can be "
                       "selected.")
             if cleaned_data['target'] in ['cover', 'issue_cover']:
-                if cleaned_data['credit_is_linked'] is None:
+                if cleaned_data['credit_is_linked'] is True:
                     raise forms.ValidationError(
-                      "When searching for covers use either text or linked credits.")
+                      "When searching for covers use either text or linked "
+                      "credits.")
             if cleaned_data['use_on_sale_date']:
                 if cleaned_data['target'] not in ['issue', 'sequence',
                                                   'issue_cover']:
