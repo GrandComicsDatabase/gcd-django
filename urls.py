@@ -109,6 +109,7 @@ else:
                     [path('', include('apps.indexer.urls'))] + \
                     [path('', include('apps.select.urls'))] + \
                     [path('', include('apps.oi.urls'))] + \
+                    [path('api/', include('apps.api.urls'))] + \
                     [path('voting/', include('apps.voting.urls'))] + \
                     [path('admin/templatesadmin/', include('templatesadmin.urls'))] + \
                     [path('admin/', admin.site.urls)] + \
