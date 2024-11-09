@@ -1237,7 +1237,7 @@ def do_advanced_search(request):
                 linked_filter = filter.filter(query_linked)
                 for credit_obj in linked_credits_q_objs:
                     linked_filter = linked_filter.filter(credit_obj)
-                if data['credit_is_linked'] is True:
+                if data['credit_is_linked'] is None:
                     text_filter = linked_filter
                 else:
                     text_filter = text_filter | linked_filter
@@ -1254,7 +1254,7 @@ def do_advanced_search(request):
                 linked_filter = filter.filter(query_linked)
                 for credit_obj in linked_credits_q_objs:
                     linked_filter = linked_filter.filter(credit_obj)
-                if data['credit_is_linked'] is True:
+                if data['credit_is_linked'] is None:
                     text_filter = linked_filter
                 else:
                     text_filter = text_filter | linked_filter
@@ -1271,7 +1271,7 @@ def do_advanced_search(request):
                 linked_filter = filter.filter(query_linked)
                 for credit_obj in linked_credits_q_objs:
                     linked_filter = linked_filter.filter(credit_obj)
-                if data['credit_is_linked'] is True:
+                if data['credit_is_linked'] is None:
                     text_filter = linked_filter
                 else:
                     text_filter = text_filter | linked_filter
@@ -1393,13 +1393,13 @@ def used_search(search_values):
     if 'credit_is_linked' in search_values:
         if search_values['credit_is_linked'] == 'True':
             used_search_terms.append(('credit_is_linked',
-                                      'linked credits only'))
+                                      'both linked and text credits'))
         elif search_values['credit_is_linked'] == 'False':
             used_search_terms.append(('credit_is_linked',
                                       'text credits only'))
         else:
             used_search_terms.append(('credit_is_linked',
-                                      'both linked and text credits'))
+                                      'linked credits only'))
         del search_values['credit_is_linked']
     for i in search_values:
         if search_values[i] and search_values[i] not in ['None', 'False']:
@@ -2030,12 +2030,34 @@ def search_stories(data, op):
                                       creator})
                 creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
                                                  .values_list('id', flat=True))
-                linked_credits_q_objs.append(
-                  (Q(**{'%scredits__creator__id__in' % (prefix): creators,
-                        '%scredits__deleted' % (prefix): False,
-                        '%scredits__credit_type__id' % (prefix):
-                        CREDIT_TYPES[field]}))
-                )
+                stories = list(Story.objects.filter(
+                  credits__creator__id__in=creators,
+                  credits__deleted=False,
+                  credits__credit_type__id=CREDIT_TYPES[field])
+                  .values_list('id', flat=True))
+                if (stories):
+                    linked_credits_q_objs.append(
+                      (Q(**{'%sid__in' % (prefix): stories}))
+                    )
+
+    if data['story_editing']:
+        text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
+                                   data['story_editing']}))
+
+        creator_q_obj = Q(**{'name__%s' % (op): data['story_editing']})
+        creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
+                              data['story_editing']})
+        creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
+                                         .values_list('id', flat=True))
+        stories = list(Story.objects.filter(
+          credits__creator__id__in=creators,
+          credits__deleted=False,
+          credits__credit_type__id=CREDIT_TYPES[field])
+          .values_list('id', flat=True))
+        if (stories):
+            linked_credits_q_objs.append(
+                (Q(**{'%sid__in' % (prefix): stories}))
+            )
 
     for field in ('title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
@@ -2056,22 +2078,6 @@ def search_stories(data, op):
     if data['genre']:
         for genre in data['genre']:
             q_and_only.append(Q(**{'%sgenre__icontains' % prefix: genre}))
-
-    if data['story_editing']:
-        text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
-                                   data['story_editing']}))
-
-        creator_q_obj = Q(**{'name__%s' % (op): data['story_editing']})
-        creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
-                              data['story_editing']})
-        creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
-                                         .values_list('id', flat=True))
-        linked_credits_q_objs.append(
-          (Q(**{'%scredits__creator__id__in' % (prefix): creators,
-                '%scredits__deleted' % (prefix): False,
-                '%scredits__credit_type__id' % (prefix):
-                CREDIT_TYPES['editing']}))
-        )
 
     if data['story_reprinted'] != '':
         if data['story_reprinted'] == 'from':
@@ -2107,45 +2113,36 @@ def search_stories(data, op):
 
     # since issue_editing is credit use it here to allow correct 'OR' behavior
     if data['issue_editing']:
-        if target == 'sequence':  # no prefix in this case
-            text_credits_q_objs.append(Q(**{'issue__editing__%s' % op:
-                                       data['issue_editing']}))
+        creator_q_obj = Q(**{'name__%s' % (op): data['issue_editing']})
+        creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
+                              data['issue_editing']})
+        creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
+                                                 .values_list('id', flat=True))
+        issues = list(Issue.objects.filter(
+            credits__creator__id__in=creators,
+            credits__deleted=False,
+            credits__credit_type__id=CREDIT_TYPES['editing'])
+            .values_list('id', flat=True))
+        if issues:
+            if target == 'sequence':  # no prefix in this case
+                text_credits_q_objs.append(Q(**{'issue__editing__%s' % op:
+                                           data['issue_editing']}))
 
-            creator_q_obj = Q(**{'name__%s' % (op): data['issue_editing']})
-            creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
-                               data['issue_editing']})
-            creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
-                                             .values_list('id', flat=True))
-            linked_credits_q_objs.append(
-              (Q(**{'issue__credits__creator__id__in': creators,
-                    'issue__credits__deleted': False,
-                    'issue__credits__credit_type__id':
-                    CREDIT_TYPES['editing']}))
-            )
-        else:  # cut off 'story__'
-            text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7],
-                                                               op):
-                                       data['issue_editing']}))
-
-            creator_q_obj = Q(**{'name__%s' % (op): data['issue_editing']})
-            creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
-                                  data['issue_editing']})
-            creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
-                                             .values_list('id', flat=True))
-            linked_credits_q_objs.append(
-              (Q(**{'%scredits__creator__id__in' % (prefix[:-7]): creators,
-                    '%scredits__deleted' % (prefix[:-7]): False,
-                    '%scredits__credit_type__id' % (prefix[:-7]):
-                    CREDIT_TYPES['editing']}))
-            )
+                linked_credits_q_objs.append((Q(**{'issue__id__in': issues})))
+            else:  # cut off 'story__'
+                text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7],
+                                                                   op):
+                                           data['issue_editing']}))
+                linked_credits_q_objs.append((Q(**{'%sid__in' % (prefix[:-7]):
+                                                issues})))
 
     text_credits_q_objs.extend(q_objs)
     if data['logic'] is True:  # OR credits
-        if data['credit_is_linked'] is True:
+        if data['credit_is_linked'] is None:
             linked_credits_q_objs.extend(q_objs)
             return compute_qobj(data, q_and_only, linked_credits_q_objs), \
                 None, None
-        elif data['credit_is_linked'] is None:
+        elif data['credit_is_linked'] is True:
             text_credits_q_objs.extend(linked_credits_q_objs)
         return compute_qobj(data, q_and_only, text_credits_q_objs), None, None
     else:  # AND credits

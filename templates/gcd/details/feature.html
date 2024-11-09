@@ -126,6 +126,17 @@ GCD :: Feature :: {{ feature.name }}
   {% endif %}
 {% endblock edit_box %}
 
+{% block www_comics_cross_link %}
+<div class="www_comics_cross_link">
+<a href="http://www.comics.org{% url "show_feature" feature_id=feature.id %}">Feature at www.comics.org</a>
+</div>
+{% endblock www_comics_cross_link %}
+{% block my_comics_cross_link %}
+<div class="my_comics_cross_link">
+<a href="http://my.comics.org{% url "show_feature" feature_id=feature.id %}">Feature at my.comics.org</a>
+</div>
+{% endblock my_comics_cross_link %}
+
 {% block change_history %}
   {% if preview %}
     <a href="{% url "change_history" model_name='feature' id=feature.source.id %}">View Change History</a>

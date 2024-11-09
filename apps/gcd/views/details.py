@@ -2610,7 +2610,7 @@ def daily_changes(request, show_date=None, user=False):
     else:
         user = None
 
-    # TODO what aboud awards, memberships, etc. Display separately,
+    # TODO what about awards, memberships, etc. Display separately,
     # or display the affected creator for such changes as well.
     creator_revisions = list(_get_daily_revisions(CreatorRevision, args,
                                                   'creator', user=user))
@@ -3045,11 +3045,15 @@ def feature_issuelist_by_id(request, feature_id):
                               .select_related('series__publisher')
         result_disclaimer = MIGRATE_DISCLAIMER
 
+    filter = filter_issues(request, issues)
+    issues = filter.qs
+
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'Issue List for Feature %s' % (feature)
+        'heading': 'Issue List for Feature %s' % (feature),
+        'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssueTable(issues,
@@ -3709,7 +3713,8 @@ def character_name_issues(request, character_name_id, universe_id=None):
                                              .from_character
             filter_character_name = filter_character.character_names\
                                                     .get(name=
-                                                         character_name.name)
+                                                         character_name.name,
+                                                         deleted=False)
         else:
             return render(request, 'indexer/error.html',
                           {'error_text':

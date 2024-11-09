@@ -34,6 +34,13 @@
     {% block change_history %}
     {% endblock change_history %}
       </div>
+    {% if MYCOMICS %}
+      {% block www_comics_cross_link %}
+      {% endblock www_comics_cross_link %}
+    {% else %}
+      {% block my_comics_cross_link %}
+      {% endblock my_comics_cross_link %}
+    {% endif %}
     </div> <!-- control_rail -->
 
   </div> <!-- control_container -->

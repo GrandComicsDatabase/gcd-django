@@ -11,6 +11,7 @@ from apps.oi.models import on_sale_date_fields
 
 class ObjectIndex(object):
     def index_queryset(self, using=None):
+        """ Used when populating the queryset with db models """
         """Used when the entire index for model is updated."""
         return self.get_model().objects.filter(deleted=False)
 
@@ -31,6 +32,8 @@ class ObjectIndex(object):
 
         return self.prepared_data
 
+    # this likely doesn't work
+    # use prepare with check on deleted, remove_object and raise SkipDocument ?
     def should_update(self, instance, **kwargs):
         """Overide to check if we need to remove an object from the index."""
         if instance.deleted:
@@ -292,10 +295,22 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_sort_title(self, obj):
         return obj.show_title(True)
 
+    def prepare(self, obj):
+        from haystack.exceptions import SkipDocument
+        if obj.type.id == STORY_TYPES['blank']:
+            raise SkipDocument
+        return super(ObjectIndex, self).prepare(obj)
+
+    # maybe add SkipDocument to ObjectIndex prepare ?
+    # not fully sure if deleted objects are not indexed, are only later filtered
+    # maybe need for blank pages
+    # def should_update(self, instance, **kwargs):
+
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
         return super(ObjectIndex, self).index_queryset(using).exclude(
             type=STORY_TYPES['blank']).filter(deleted=False)
+            # type=STORY_TYPES['blank'])#.filter(deleted=False)
 
     def prepare_relations_weight(self, obj):
         return obj.to_all_reprints.count()
@@ -602,6 +617,8 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     country = indexes.CharField(model_attr='birth_country__name',
                                 indexed=False, faceted=True, null=True)
 
+    relations_weight = indexes.FloatField()
+
     def get_model(self):
         return Creator
 
@@ -609,8 +626,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "creator"
 
     def prepare_name(self, obj):
-        return [(creator_name.name) for creator_name in
-                obj.active_names()]
+        return obj.gcd_official_name
 
     def prepare_year(self, obj):
         if obj.birth_date.year and '?' not in obj.birth_date.year:
@@ -626,6 +642,12 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                 return None
         else:
             return None
+
+    def prepare_relations_weight(self, obj):
+        return obj.active_influenced_creators().count() + \
+               obj.active_awards().count() + \
+               obj.active_awards_for_issues().count() + \
+               obj.active_awards_for_stories().count()
 
 
 class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,
