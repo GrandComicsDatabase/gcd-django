@@ -1237,7 +1237,7 @@ def do_advanced_search(request):
                 linked_filter = filter.filter(query_linked)
                 for credit_obj in linked_credits_q_objs:
                     linked_filter = linked_filter.filter(credit_obj)
-                if data['credit_is_linked'] is True:
+                if data['credit_is_linked'] is None:
                     text_filter = linked_filter
                 else:
                     text_filter = text_filter | linked_filter
@@ -1254,7 +1254,7 @@ def do_advanced_search(request):
                 linked_filter = filter.filter(query_linked)
                 for credit_obj in linked_credits_q_objs:
                     linked_filter = linked_filter.filter(credit_obj)
-                if data['credit_is_linked'] is True:
+                if data['credit_is_linked'] is None:
                     text_filter = linked_filter
                 else:
                     text_filter = text_filter | linked_filter
@@ -1271,7 +1271,7 @@ def do_advanced_search(request):
                 linked_filter = filter.filter(query_linked)
                 for credit_obj in linked_credits_q_objs:
                     linked_filter = linked_filter.filter(credit_obj)
-                if data['credit_is_linked'] is True:
+                if data['credit_is_linked'] is None:
                     text_filter = linked_filter
                 else:
                     text_filter = text_filter | linked_filter
@@ -1393,13 +1393,13 @@ def used_search(search_values):
     if 'credit_is_linked' in search_values:
         if search_values['credit_is_linked'] == 'True':
             used_search_terms.append(('credit_is_linked',
-                                      'linked credits only'))
+                                      'both linked and text credits'))
         elif search_values['credit_is_linked'] == 'False':
             used_search_terms.append(('credit_is_linked',
                                       'text credits only'))
         else:
             used_search_terms.append(('credit_is_linked',
-                                      'both linked and text credits'))
+                                      'linked credits only'))
         del search_values['credit_is_linked']
     for i in search_values:
         if search_values[i] and search_values[i] not in ['None', 'False']:
@@ -2141,11 +2141,11 @@ def search_stories(data, op):
 
     text_credits_q_objs.extend(q_objs)
     if data['logic'] is True:  # OR credits
-        if data['credit_is_linked'] is True:
+        if data['credit_is_linked'] is None:
             linked_credits_q_objs.extend(q_objs)
             return compute_qobj(data, q_and_only, linked_credits_q_objs), \
                 None, None
-        elif data['credit_is_linked'] is None:
+        elif data['credit_is_linked'] is True:
             text_credits_q_objs.extend(linked_credits_q_objs)
         return compute_qobj(data, q_and_only, text_credits_q_objs), None, None
     else:  # AND credits
