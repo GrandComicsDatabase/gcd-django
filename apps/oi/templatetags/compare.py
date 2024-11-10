@@ -510,37 +510,73 @@ def show_credit_status(story):
     if story.script or story.no_script or \
        story.story_credit_revisions.filter(credit_type__name='script')\
                                    .exists():
-        status.append('S')
+        if story.no_script:
+            status.append(
+              '<span style="margin-top:-3px; background: linear-gradient('
+              'to bottom, white 17.5%, #E5E7E9 17.5%, #E5E7E9 98%, white 98%);'
+              '">S</span>')
+        else:
+            status.append('S')
         required_remaining -= 1
 
     if story.pencils or story.no_pencils or \
        story.story_credit_revisions.filter(credit_type__name='pencils')\
                                    .exists():
-        status.append('P')
+        if story.no_pencils:
+            status.append(
+              '<span style="margin-top:-3px; background: linear-gradient('
+              'to bottom, white 17.5%, #E5E7E9 17.5%, #E5E7E9 98%, white 98%);'
+              '">P</span>')
+        else:
+            status.append('P')
         required_remaining -= 1
 
     if story.inks or story.no_inks or \
        story.story_credit_revisions.filter(credit_type__name='inks')\
                                    .exists():
-        status.append('I')
+        if story.no_inks:
+            status.append(
+              '<span style="margin-top:-3px; background: linear-gradient('
+              'to bottom, white 17.5%, #E5E7E9 17.5%, #E5E7E9 98%, white 98%);'
+              '">I</span>')
+        else:
+            status.append('I')
         required_remaining -= 1
 
     if story.colors or story.no_colors or \
        story.story_credit_revisions.filter(credit_type__name='colors')\
                                    .exists():
-        status.append('C')
+        if story.no_colors:
+            status.append(
+              '<span style="margin-top:-3px; background: linear-gradient('
+              'to bottom, white 17.5%, #E5E7E9 17.5%, #E5E7E9 98%, white 98%);'
+              '">C</span>')
+        else:
+            status.append('C')
         required_remaining -= 1
 
     if story.letters or story.no_letters or \
        story.story_credit_revisions.filter(credit_type__name='letters')\
                                    .exists():
-        status.append('L')
+        if story.no_letters:
+            status.append(
+              '<span style="margin-top:-3px; background: linear-gradient('
+              'to bottom, white 17.5%, #E5E7E9 17.5%, #E5E7E9 98%, white 98%);'
+              '">L</span>')
+        else:
+            status.append('L')
         required_remaining -= 1
 
     if story.editing or story.no_editing or \
        story.story_credit_revisions.filter(credit_type__name='editing')\
                                    .exists():
-        status.append('E')
+        if story.no_editing:
+            status.append(
+              '<span style="margin-top:-3px; background: linear-gradient('
+              'to bottom, white 17.5%, #E5E7E9 17.5%, #E5E7E9 98%, white 98%);'
+              '">E</span>')
+        else:
+            status.append('E')
 
     completion = 'complete'
     if required_remaining:

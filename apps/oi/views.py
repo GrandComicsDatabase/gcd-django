@@ -1760,6 +1760,13 @@ def edit_issues_in_bulk(request):
                     setattr(revision, field, cd[field])
             revision.save()
 
+    # safety check, did happen that issues got reserved in-between
+    if not changeset.issuerevisions.exists():
+        return render_error(
+          request,
+          'All issues fulfilling the search criteria for the bulk change'
+          ' are currently reserved.')
+
     return submit(request, changeset.id)
 
 
