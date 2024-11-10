@@ -109,8 +109,8 @@ class SeriesSerializer(serializers.HyperlinkedModelSerializer):
                   'publishing_format', 'notes', 'year_began', 'year_ended',
                   "publisher"]
 
-    country = serializers.StringRelatedField(read_only=True)
-    language = serializers.StringRelatedField(read_only=True)
+    country = serializers.SlugRelatedField(read_only=True, slug_field='code')
+    language = serializers.SlugRelatedField(read_only=True, slug_field='code')
 
     active_issues = serializers.HyperlinkedRelatedField(
       many=True, read_only=True, view_name='issue-detail')
