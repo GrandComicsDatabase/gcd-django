@@ -123,15 +123,13 @@ def generic_by_name(request, name, q_obj, sort,
             query_val[base_name] = name
 
     elif class_ in [Award, ]:
-        sort_name = "name"
-
         if sqs is None:
             things = class_.objects.exclude(deleted=True).filter(q_obj)
-            things = things.order_by(sort_name)
+            things = things.order_by("name")
             things = things.distinct()
         else:
             things = sqs
-            things = things.order_by(sort_name)
+            things = things.order_by('sort_name')
         display_name = class_.__name__
         base_name = display_name.lower()
         item_name = display_name.lower()
@@ -140,12 +138,11 @@ def generic_by_name(request, name, q_obj, sort,
         heading = '%s Search Results' % display_name
 
     elif class_ in [Creator, Character, Group, Feature, Universe]:
-        if class_ in [Creator, Character, Group, Feature]:
-            sort_name = "sort_name"
-        else:
-            sort_name = "name"
-
         if sqs is None:
+            if class_ in [Creator, Character, Group, Feature]:
+                sort_name = "sort_name"
+            else:
+                sort_name = "name"
             if class_ is Creator:
                 sort_year = "birth_date__year"
             elif class_ is Feature:
@@ -164,11 +161,11 @@ def generic_by_name(request, name, q_obj, sort,
             sort_year = "year"
             things = sqs
             if (sort == ORDER_ALPHA):
-                things = things.order_by(sort_name,
+                things = things.order_by('sort_name',
                                          sort_year)
             elif (sort == ORDER_CHRONO):
                 things = things.order_by(sort_year,
-                                         sort_name)
+                                         'sort_name')
         display_name = class_.__name__
         base_name = display_name.lower()
         item_name = display_name.lower()
