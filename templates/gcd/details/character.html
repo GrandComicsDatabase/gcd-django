@@ -34,7 +34,7 @@ GCD :: Character :: {{ character.name }}
 {% endif %}
 {% if character.description %}
         <dt> Description:
-        <dd> {{ character.description|urlizetrunc:75|linebreaksbr }}
+        <dd> {{ character.description|markdown }}
 {% endif %}
 {% if character.notes %}
         <dt> Notes:
