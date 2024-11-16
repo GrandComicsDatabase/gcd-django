@@ -55,7 +55,8 @@ from apps.gcd.models.creator import GenericCreatorTable, \
                                     CreatorCreatorTable, NAME_TYPES
 from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       UniverseCharacterTable, \
-                                      SeriesCharacterTable
+                                      SeriesCharacterTable, \
+                                      FeatureCharacterTable
 from apps.gcd.models.feature import FeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   BrandEmblemIssueTable, \
@@ -3102,6 +3103,37 @@ def feature_overview(request, feature_id):
     return generic_sortable_list(request, issues, table, template, context, 50)
 
 
+def feature_characters(request, feature_id):
+    feature = get_gcd_object(Feature, feature_id)
+    characters = Character.objects.filter(
+      character_names__storycharacter__story__feature_object=feature,
+      character_names__storycharacter__story__type__id__in=CORE_TYPES,
+      character_names__storycharacter__deleted=False,
+      deleted=False).distinct()
+
+    characters = characters.annotate(issue_count=Count(
+      'character_names__storycharacter__story__issue', distinct=True))
+    characters = characters.annotate(first_appearance=Min(
+      Case(When(character_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('character_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'character',
+        'plural_suffix': 's',
+        'heading': 'Characters in Feature %s' % (feature)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = FeatureCharacterTable(characters,
+                                  attrs={'class': 'sortable_listing'},
+                                  feature=feature,
+                                  template_name=SORT_TABLE_TEMPLATE,
+                                  order_by=('character'))
+    return generic_sortable_list(request, characters, table, template, context)
+
+
 def feature_creators(request, feature_id, creator_names=False):
     # list of creators that worked on feature feature_id
     feature = get_gcd_object(Feature, feature_id)
@@ -3461,6 +3493,47 @@ def character_issues(request, character_id, layer=None, universe_id=None,
         'plural_suffix': 's',
         'heading': 'Issue List for Character %s' % (character),
         'filter': filter
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def character_issues_feature(request, character_id, feature_id):
+    character = get_gcd_object(Character, character_id)
+    feature = get_gcd_object(Feature, feature_id)
+
+    filter_character = character
+    universe_id = None
+    if character.universe:
+        if character.active_generalisations():
+            universe_id = character.universe.id
+            filter_character = character.active_generalisations()\
+                                        .get().from_character
+
+    query = {'story__appearing_characters__character__character':
+             filter_character,
+             'story__appearing_characters__deleted': False,
+             'story__type__id__in': CORE_TYPES,
+             'story__feature_object__id': feature_id,
+             'story__deleted': False}
+
+    if universe_id:
+        query['story__appearing_characters__universe_id'] = universe_id
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for %s in  %s' % (character, feature),
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssueTable(issues,
