@@ -685,6 +685,20 @@ class UniverseCharacterTable(CharacterTable):
         return record.issue_count
 
 
+class CharacterCharacterTable(UniverseCharacterTable):
+    def __init__(self, *args, **kwargs):
+        self.character = kwargs.pop('character')
+        super(UniverseCharacterTable, self).__init__(*args, **kwargs)
+
+    def render_appearances_count(self, record):
+        url = urlresolvers.reverse(
+                'character_issues_character',
+                kwargs={'character_id': self.character.id,
+                        'character_with_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
+
+
 class FeatureCharacterTable(UniverseCharacterTable):
     def __init__(self, *args, **kwargs):
         self.feature = kwargs.pop('feature')
