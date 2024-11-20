@@ -2,7 +2,7 @@
 {% load credits %}
 <table class="sortable_listing">
   <tr>
-    <th colspan="2">{{ item_name|capfirst }} Name</th>
+    <th colspan="2">{{ item_name|capfirst }}</th>
     <th> Year of First Publication </th>
   </tr>
   {% for character in items %}
@@ -14,4 +14,6 @@
     {% endwith %}
   {% endfor %}
 </table>
+{% if not no_result_count %}
 Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}
+{% endif %}

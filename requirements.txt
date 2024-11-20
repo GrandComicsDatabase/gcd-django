@@ -12,7 +12,8 @@ django-contact-form<2.2
 django-crispy-forms<2.2
 crispy-bootstrap3
 django-filter<25
-django-haystack<3.3
+#django-haystack<3.3
+git+https://github.com/django-haystack/django-haystack.git@a7fcc250d46605e65687c02aa9cb8e6e077e51aa
 django-imagekit<5.1
 django-markdownx<4.1
 django-pagedown<2.3
@@ -24,7 +25,7 @@ django-model-utils<4.6
 git+https://github.com/GrandComicsDatabase/django-taggit.git@django42
 git+https://github.com/GrandComicsDatabase/django-templatesadmin.git@django-42
 chardet<5.3
-elasticsearch<3.0
+elasticsearch>7.0,<8.0
 pymemcache<4.1
 python-stdnum<1.21
 python3-vote-core==20170329.0
@@ -32,6 +33,10 @@ python-graph-core<1.9
 requests<2.32
 simplejson<3.20
 tablib<3.7
+
+# REST-API
+djangorestframework
+djangorestframework-yaml
 
 # These packages are used in development and testing.
 flake8

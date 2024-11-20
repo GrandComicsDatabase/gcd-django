@@ -398,6 +398,12 @@ $(function() {
         }
     });
 
+    var editingField = $('#id_editing');
+    editingField.bind('input', function () {
+        var migrate_button = $("[name='save_migrate']");
+        migrate_button.removeAttr("disabled");
+    });
+
     // Add brand emblem images
     $("#id_brand").msDropDown({addToWidth: $("#id_brand").addToOptionWidth()});
 });

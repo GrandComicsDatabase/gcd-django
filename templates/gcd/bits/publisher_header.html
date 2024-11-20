@@ -16,7 +16,7 @@
   {% endif %}
   {% if description %}
     {% if description != 'Publisher' %}
-      {% if description == 'Brand Emblem' %}
+      {% if description == "Publisher's Brand Emblem" %}
     ({{ description }})
       {% else %}
     (<a href="{{ publisher.parent.get_absolute_url }}{{ url_suffix }}/">{{ description }}</a>)

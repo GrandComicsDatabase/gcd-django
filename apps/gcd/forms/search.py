@@ -242,8 +242,8 @@ class AdvancedSearch(forms.Form):
 
     credit_is_linked = forms.NullBooleanField(
       label="Linked and Text Credits", required=False,
-      widget=forms.Select(choices=((None, "both linked and text credits"),
-                                   (True, "linked credits only"),
+      widget=forms.Select(choices=((None, "linked credits only"),
+                                   (True, "both linked and text credits"),
                                    (False, "text credits only"))))
     script = forms.CharField(required=False)
     pencils = forms.CharField(required=False)
@@ -351,6 +351,11 @@ class AdvancedSearch(forms.Form):
                     raise forms.ValidationError(
                       "When searching for covers only type cover can be "
                       "selected.")
+            if cleaned_data['target'] in ['cover', 'issue_cover']:
+                if cleaned_data['credit_is_linked'] is True:
+                    raise forms.ValidationError(
+                      "When searching for covers use either text or linked "
+                      "credits.")
             if cleaned_data['use_on_sale_date']:
                 if cleaned_data['target'] not in ['issue', 'sequence',
                                                   'issue_cover']:

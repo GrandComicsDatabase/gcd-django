@@ -1,4 +1,7 @@
 {{ object.gcd_official_name|safe }}
+{% for name in object.active_names %}
+{{ name.name }}
+{% endfor %}
 {{ object.display_birthplace }}
 {{ object.display_deathplace }}
 {{ object.bio|safe }}

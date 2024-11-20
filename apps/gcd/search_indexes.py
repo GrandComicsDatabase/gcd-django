@@ -8,11 +8,10 @@ from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
 
 from apps.oi.models import on_sale_date_fields
 
-DEFAULT_BOOST = 15.0
-
 
 class ObjectIndex(object):
     def index_queryset(self, using=None):
+        """ Used when populating the queryset with db models """
         """Used when the entire index for model is updated."""
         return self.get_model().objects.filter(deleted=False)
 
@@ -33,6 +32,8 @@ class ObjectIndex(object):
 
         return self.prepared_data
 
+    # this likely doesn't work
+    # use prepare with check on deleted, remove_object and raise SkipDocument ?
     def should_update(self, instance, **kwargs):
         """Overide to check if we need to remove an object from the index."""
         if instance.deleted:
@@ -42,7 +43,7 @@ class ObjectIndex(object):
 
 class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
-    title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)
+    title = indexes.CharField(model_attr="title")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='series__sort_name',
@@ -57,6 +58,8 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                  faceted=True, indexed=False)
     publisher = indexes.CharField(model_attr='series__publisher__name',
                                   faceted=True, indexed=False)
+
+    relations_weight = indexes.FloatField()
 
     def get_model(self):
         return Issue
@@ -73,9 +76,9 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_date(self, obj):
         if obj.key_date:
             year, month, day = on_sale_date_fields(obj.key_date)
-            if month < 1 or month > 12:
+            if not month or month < 1 or month > 12:
                 month = 1
-            if day < 1 or day > 31:
+            if not day or day < 1 or day > 31:
                 day = 1
             try:
                 return date(year, month, day)
@@ -91,12 +94,15 @@ class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return "9999-99-99"
 
     def prepare_title(self, obj):
-        return obj.short_name()
+        return '%s %s' % (obj.series.name, obj.display_number)
+
+    def prepare_relations_weight(self, obj):
+        return obj.to_all_reprints.count()
 
 
 class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='sort_name', indexed=False)
@@ -111,6 +117,8 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                   faceted=True, indexed=False)
     issue_count = indexes.IntegerField(model_attr='issue_count',
                                        indexed=False)
+
+    relations_weight = indexes.FloatField()
 
     def get_model(self):
         return Series
@@ -132,10 +140,15 @@ class SeriesIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                     name += '\n' + issue.title
         return name
 
+    def prepare_relations_weight(self, obj):
+        return float(obj.issue_count)/100.
+
 
 class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
-    title = indexes.CharField(model_attr="title", boost=DEFAULT_BOOST)
+    title = indexes.CharField(model_attr="title")
+    sort_title = indexes.CharField(model_attr="title", indexed=False)
+
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='issue__series__sort_name',
@@ -156,7 +169,8 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     publisher = indexes.CharField(model_attr='issue__series__publisher__name',
                                   faceted=True, indexed=False)
 
-    feature = indexes.MultiValueField(faceted=True, indexed=False, null=True)
+    feature = indexes.MultiValueField(faceted=True, null=True)
+    characters = indexes.MultiValueField(faceted=True, null=True)
 
     script = indexes.MultiValueField(faceted=True, null=True)
     pencils = indexes.MultiValueField(faceted=True, null=True)
@@ -164,6 +178,8 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     colors = indexes.MultiValueField(faceted=True, null=True)
     letters = indexes.MultiValueField(faceted=True, null=True)
     editing = indexes.MultiValueField(faceted=True, null=True)
+
+    relations_weight = indexes.FloatField()
 
     def get_model(self):
         return Story
@@ -180,9 +196,9 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_date(self, obj):
         if obj.issue.key_date:
             year, month, day = on_sale_date_fields(obj.issue.key_date)
-            if month < 1 or month > 12:
+            if not month or month < 1 or month > 12:
                 month = 1
-            if day < 1 or day > 31:
+            if not day or day < 1 or day > 31:
                 day = 1
             try:
                 return date(year, month, day)
@@ -273,10 +289,31 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         else:
             return return_val
 
+    def prepare_characters(self, obj):
+        return obj.show_characters_as_text()
+
+    def prepare_sort_title(self, obj):
+        return obj.show_title(True)
+
+    def prepare(self, obj):
+        from haystack.exceptions import SkipDocument
+        if obj.type.id == STORY_TYPES['blank']:
+            raise SkipDocument
+        return super(ObjectIndex, self).prepare(obj)
+
+    # maybe add SkipDocument to ObjectIndex prepare ?
+    # not fully sure if deleted objects are not indexed, are only later filtered
+    # maybe need for blank pages
+    # def should_update(self, instance, **kwargs):
+
     def index_queryset(self, using=None):
         """Used when the entire index for model is updated."""
         return super(ObjectIndex, self).index_queryset(using).exclude(
             type=STORY_TYPES['blank']).filter(deleted=False)
+            # type=STORY_TYPES['blank'])#.filter(deleted=False)
+
+    def prepare_relations_weight(self, obj):
+        return obj.to_all_reprints.count()
 
 
 class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -284,13 +321,15 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/feature_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
     year = indexes.IntegerField()
     language = indexes.CharField(model_attr='language__code',
                                  faceted=True, indexed=False)
+
+    relations_weight = indexes.FloatField()
 
     def prepare_year(self, obj):
         if obj.year_created:
@@ -304,13 +343,16 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_facet_model_name(self, obj):
         return "feature"
 
+    def prepare_relations_weight(self, obj):
+        return obj.to_related_feature.filter(from_feature=obj).count()
+
 
 class UniverseIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/universe_text.txt')
-    name = indexes.CharField(boost=DEFAULT_BOOST)
+    name = indexes.CharField()
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(indexed=False)
@@ -340,13 +382,15 @@ class CharacterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/character_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
     year = indexes.IntegerField()
     language = indexes.CharField(model_attr='language__code',
                                  faceted=True, indexed=False)
+
+    relations_weight = indexes.FloatField()
 
     def prepare_year(self, obj):
         if obj.year_first_published:
@@ -360,19 +404,25 @@ class CharacterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_facet_model_name(self, obj):
         return "character"
 
+    def prepare_relations_weight(self, obj):
+        return obj.active_specifications().count() + \
+               obj.active_translations().filter(from_character=obj).count()
+
 
 class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/group_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
     year = indexes.IntegerField()
     language = indexes.CharField(model_attr='language__code',
                                  faceted=True, indexed=False)
+
+    relations_weight = indexes.FloatField()
 
     def prepare_year(self, obj):
         if obj.year_first_published:
@@ -386,13 +436,16 @@ class GroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     def prepare_facet_model_name(self, obj):
         return "group"
 
+    def prepare_relations_weight(self, obj):
+        return obj.active_translations().filter(from_group=obj).count()
+
 
 class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -415,7 +468,7 @@ class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -437,7 +490,7 @@ class BrandIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -460,7 +513,7 @@ class BrandGroupIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -482,7 +535,7 @@ class PrinterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/publisher_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -502,7 +555,7 @@ class AwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/award_text.txt')
-    name = indexes.CharField(model_attr="name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='name', indexed=False)
@@ -520,7 +573,7 @@ class ReceivedAwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/received_award_text.txt')
-    name = indexes.CharField(model_attr="award_name", boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="award_name")
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()
@@ -554,9 +607,8 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/creator_text.txt')
-    gcd_official_name = indexes.CharField(model_attr="gcd_official_name",
-                                          boost=DEFAULT_BOOST)
-    name = MultiValueField(boost=DEFAULT_BOOST)
+    gcd_official_name = indexes.CharField(model_attr="gcd_official_name")
+    name = MultiValueField()
     facet_model_name = indexes.CharField(faceted=True)
 
     year = indexes.IntegerField()
@@ -565,6 +617,8 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     country = indexes.CharField(model_attr='birth_country__name',
                                 indexed=False, faceted=True, null=True)
 
+    relations_weight = indexes.FloatField()
+
     def get_model(self):
         return Creator
 
@@ -572,8 +626,7 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "creator"
 
     def prepare_name(self, obj):
-        return [(creator_name.name) for creator_name in
-                obj.active_names()]
+        return obj.gcd_official_name
 
     def prepare_year(self, obj):
         if obj.birth_date.year and '?' not in obj.birth_date.year:
@@ -590,6 +643,12 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         else:
             return None
 
+    def prepare_relations_weight(self, obj):
+        return obj.active_influenced_creators().count() + \
+               obj.active_awards().count() + \
+               obj.active_awards_for_issues().count() + \
+               obj.active_awards_for_stories().count()
+
 
 class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,
                              indexes.Indexable):
@@ -597,8 +656,7 @@ class CreatorMembershipIndex(ObjectIndex, indexes.SearchIndex,
                              use_template=True,
                              template_name=
                              'search/indexes/gcd/creator_membership_text.txt')
-    name = indexes.CharField(model_attr="organization_name",
-                             boost=DEFAULT_BOOST)
+    name = indexes.CharField(model_attr="organization_name")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='organization_name',
@@ -615,7 +673,7 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
                                indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True,
            template_name='search/indexes/gcd/creator_art_influence_text.txt')
-    name = indexes.CharField(model_attr="influence", boost=DEFAULT_BOOST)
+    title = indexes.CharField(model_attr="influence")
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='influence', indexed=False)
@@ -628,13 +686,14 @@ class CreatorArtInfluenceIndex(ObjectIndex, indexes.SearchIndex,
     def prepare_facet_model_name(self, obj):
         return "creator art influence"
 
+    def prepare_title(self, obj):
+        return str(obj)
+
 
 class CreatorNonComicWorkIndex(ObjectIndex, indexes.SearchIndex,
                                indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True,
            template_name='search/indexes/gcd/creator_non_comic_work_text.txt')
-    name = indexes.CharField(model_attr="publication_title",
-                             boost=DEFAULT_BOOST)
     facet_model_name = indexes.CharField(faceted=True)
 
     sort_name = indexes.CharField(model_attr='publication_title',

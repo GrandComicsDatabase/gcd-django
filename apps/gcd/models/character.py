@@ -73,6 +73,14 @@ class Universe(GcdData):
             display_name += self.designation
         return display_name
 
+    def display_year_first_published(self):
+        if not self.year_first_published:
+            return '?'
+        else:
+            return '%d%s' % (self.year_first_published,
+                             '?' if self.year_first_published_uncertain
+                             else '')
+
     def has_dependents(self):
         from .story import Story
         if Story.objects.filter(universe=self, deleted=False).exists():
@@ -675,6 +683,34 @@ class UniverseCharacterTable(CharacterTable):
 
     def value_appearances_count(self, record):
         return record.issue_count
+
+
+class CharacterCharacterTable(UniverseCharacterTable):
+    def __init__(self, *args, **kwargs):
+        self.character = kwargs.pop('character')
+        super(UniverseCharacterTable, self).__init__(*args, **kwargs)
+
+    def render_appearances_count(self, record):
+        url = urlresolvers.reverse(
+                'character_issues_character',
+                kwargs={'character_id': self.character.id,
+                        'character_with_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
+
+
+class FeatureCharacterTable(UniverseCharacterTable):
+    def __init__(self, *args, **kwargs):
+        self.feature = kwargs.pop('feature')
+        super(UniverseCharacterTable, self).__init__(*args, **kwargs)
+
+    def render_appearances_count(self, record):
+        url = urlresolvers.reverse(
+                'character_issues_per_feature',
+                kwargs={'feature_id': self.feature.id,
+                        'character_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
 
 
 class SeriesCharacterTable(UniverseCharacterTable):

@@ -34,7 +34,7 @@ GCD :: Character :: {{ character.name }}
 {% endif %}
 {% if character.description %}
         <dt> Description:
-        <dd> {{ character.description|urlizetrunc:75|linebreaksbr }}
+        <dd> {{ character.description|markdown }}
 {% endif %}
 {% if character.notes %}
         <dt> Notes:
@@ -60,6 +60,8 @@ GCD :: Character :: {{ character.name }}
   {% endif %}
         <li><a href='{% url "character_covers" character_id=character.id %}'>Cover List (via linked story records)</a></li>
         <li><a href='{% url "character_series" character_id=character.id %}'>Series List (via linked story records)</a></li>
+        <li><a href='{% url "character_features" character_id=character.id %}'>Features List (via linked story records)</a></li>
+        <li><a href='{% url "character_characters" character_id=character.id %}'>Characters Appeared With (via linked story records)</a></li>
         <li><a href='{% url "character_sequences" character_id=character.id %}'>Sequences List (via linked story records)</a></li>
       </ul>
       <h3>Name:</h3>
@@ -206,6 +208,17 @@ GCD :: Character :: {{ character.name }}
   </form>
   {% endif %}
 {% endblock edit_box %}
+
+{% block www_comics_cross_link %}
+<div class="www_comics_cross_link">
+<a href="http://www.comics.org{% url "show_character" character_id=character.id %}">Character at www.comics.org</a>
+</div>
+{% endblock www_comics_cross_link %}
+{% block my_comics_cross_link %}
+<div class="my_comics_cross_link">
+<a href="http://my.comics.org{% url "show_character" character_id=character.id %}">Character at my.comics.org</a>
+</div>
+{% endblock my_comics_cross_link %}
 
 {% block change_history %}
   <a href="{% url "change_history" model_name='character' id=character.id %}">View Change History</a>

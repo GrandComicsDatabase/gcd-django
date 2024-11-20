@@ -166,6 +166,7 @@ INSTALLED_APPS = (
     'imagekit',
     'haystack',
     'bootstrap3',
+    'rest_framework',
     'django_contact_form',
     'django_recaptcha',
     'crispy_forms',
@@ -196,9 +197,18 @@ ABSOLUTE_URL_OVERRIDES = {
 #    }
 #}
 # in your settings_local.py as an override.
+# TODO check on python library for memcached, this is the former binding
+# using python-memcached, which was removed in 4.2. But that one falls
+# silently more often, where silent fails are fine for our cache uses
+# There also seems an issue with thread-safety for PyMemcacheCache, might
+# need to use for that one
+#        'OPTIONS': {
+#            'use_pooling': True,
+#        }
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+#        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        'BACKEND': 'apps.middleware.memcached_backend.MemcachedCache',
         'LOCATION': '127.0.0.1:11211',
     }
 }
@@ -251,15 +261,18 @@ TEMPLATESADMIN_GROUP = 'templateadmin'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
 
+# decides if compression should be done outside of the request/response loop
+# set to True for production
+COMPRESS_OFFLINE = False
+
+
 #################################################################################
 # Haystack and search
 #################################################################################
-# we use a copy of ConfigurableElasticBackend from elasticstack, to be
-# able to work with elasticsearch2. Will need to redo all this at some
-# point and move away from haystack.
+# We use our own ElasticsearchBackend, which supports more boosting on queries.
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': 'apps.gcd.elastic_backend_configurable.ConfigurableElasticSearchEngine',
+        'ENGINE': 'apps.gcd.elastic_backend_boosting.Elasticsearch7BoostingSearchEngine',
         'URL': 'http://127.0.0.1:9200/',
         'INDEX_NAME': 'haystack',
         'INCLUDE_SPELLING': True,
@@ -299,6 +312,39 @@ RQ_QUEUES = {
         'PASSWORD': 'some-password',
         'DEFAULT_TIMEOUT': 360,
     },
+}
+
+#################################################################################
+# REST-API
+#################################################################################
+REST_FRAMEWORK = {
+
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework_yaml.parsers.YAMLParser',
+    ),
+
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.BrowsableAPIRenderer',
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework_yaml.renderers.YAMLRenderer',
+    ),
+    # Use Django's standard `django.contrib.auth` permissions, 
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+        # 'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    "URL_FIELD_NAME": "api_url",
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '30/hour',
+        'user': '2000/day'
+    }
 }
 
 #################################################################################

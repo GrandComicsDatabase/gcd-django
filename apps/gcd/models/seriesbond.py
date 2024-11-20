@@ -6,6 +6,7 @@ BOND_TRACKING = {1, 2, 3, 4, 5, 6, 7}
 SUBNUMBER_TRACKING = 4
 MERGE_TRACKING = {5, 6}
 
+
 class SeriesBondType(models.Model):
     class Meta:
         app_label = 'gcd'
@@ -19,6 +20,7 @@ class SeriesBondType(models.Model):
 
     def __str__(self):
         return self.description
+
 
 class SeriesBond(models.Model):
     class Meta:
@@ -45,11 +47,18 @@ class SeriesBond(models.Model):
     @property
     def modified(self):
         return self.revisions.filter(changeset__state=5).latest().modified
-    
+
     # we check for deleted in the oi for models, so set to False
     deleted = False
+
     def deletable(self):
         return True
+
+    def approved_changesets(self):
+        from apps.oi.models import Changeset
+        revision_ids = self.revisions.values_list('changeset__id', flat=True)
+        return Changeset.objects.filter(id__in=revision_ids, state=5)\
+                                .order_by('-modified')
 
     def __str__(self):
         if self.origin_issue:
@@ -61,6 +70,7 @@ class SeriesBond(models.Model):
         else:
             object_string += ' continues at %s' % self.target
         return object_string
+
 
 @total_ordering
 class SeriesRelativeBond(object):
@@ -84,7 +94,7 @@ class SeriesRelativeBond(object):
 
     Since the main reason for this class is to deal with bonds within
     a series, and the primary differentiator is the issue, this
-    class also defaults bond targets to the first issue and bond origins        
+    class also defaults bond targets to the first issue and bond origins
     to the last issue.  This can be overridden.
     """
 

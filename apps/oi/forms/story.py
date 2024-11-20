@@ -24,7 +24,7 @@ from apps.oi.models import (
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
                             Feature, FeatureLogo, CharacterNameDetail, \
-                            GroupNameDetail, \
+                            GroupNameDetail, CharacterRole, \
                             Universe, STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
@@ -177,10 +177,30 @@ def get_story_revision_form(revision=None, user=None,
             else:
                 universe = None
             if appearing_characters:
+                additional_information = self.cleaned_data[
+                  'appearing_characters_additional_information']
+                if additional_information:
+                    role = self.cleaned_data['appearing_characters_role']
+                    flashback = self.cleaned_data[
+                      'appearing_characters_flashback']
+                    origin = self.cleaned_data['appearing_characters_origin']
+                    death = self.cleaned_data['appearing_characters_death']
+                    notes = self.cleaned_data['appearing_characters_notes']
+                else:
+                    role = None
+                    flashback = False
+                    origin = False
+                    death = False
+                    notes = ''
                 for character in appearing_characters:
                     story_character = StoryCharacterRevision(
                       character=character,
                       universe=universe,
+                      role=role,
+                      is_flashback=flashback,
+                      is_origin=origin,
+                      is_death=death,
+                      notes=notes,
                       story_revision=instance,
                       changeset=changeset)
                     story_character.save()
@@ -192,9 +212,28 @@ def get_story_revision_form(revision=None, user=None,
                                                  story_revision=instance,
                                                  changeset=changeset)
                 story_group.save()
+                additional_information = self.cleaned_data[
+                  'group_members_additional_information']
+                if additional_information:
+                    role = self.cleaned_data['group_members_role']
+                    flashback = self.cleaned_data['group_members_flashback']
+                    origin = self.cleaned_data['group_members_origin']
+                    death = self.cleaned_data['group_members_death']
+                    notes = self.cleaned_data['group_members_notes']
+                else:
+                    role = None
+                    flashback = False
+                    origin = False
+                    death = False
+                    notes = ''
                 for member in group_members:
                     story_character = StoryCharacterRevision(
                       character=member,
+                      role=role,
+                      is_flashback=flashback,
+                      is_origin=origin,
+                      is_death=death,
+                      notes=notes,
                       universe=universe,
                       group_universe=universe,
                       story_revision=instance,
@@ -329,12 +368,19 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['signature'] and not cd['is_signed']:
             cd['signature'] = None
 
+        if cd['signature'] and cd['signed_as']:
+            raise forms.ValidationError(
+              ['Either select a signature or enter a transcription of the '
+               'text of the signature, but not both']
+            )
+
         if cd['signature'] and 'creator' in cd:
             if cd['signature'].creator != cd['creator'].creator:
                 raise forms.ValidationError(
-                ['Creator of selected signature differs from selected '
-                 'creator.']
+                  ['Creator of selected signature differs from selected '
+                   'creator.']
                 )
+
 
 class StoryFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
@@ -528,8 +574,24 @@ class StoryRevisionForm(forms.ModelForm):
         fields.insert(fields.index('characters'), 'universe')
         fields.insert(fields.index('characters'), 'use_universe')
         fields.insert(fields.index('characters'), 'appearing_characters')
+        fields.insert(fields.index('characters'),
+                      'appearing_characters_additional_information')
+        fields.insert(fields.index('characters'), 'appearing_characters_role')
+        fields.insert(fields.index('characters'),
+                      'appearing_characters_flashback')
+        fields.insert(fields.index('characters'),
+                      'appearing_characters_origin')
+        fields.insert(fields.index('characters'), 'appearing_characters_death')
+        fields.insert(fields.index('characters'), 'appearing_characters_notes')
         fields.insert(fields.index('characters'), 'group_name')
         fields.insert(fields.index('group_name')+1, 'group_members')
+        fields.insert(fields.index('characters'),
+                      'group_members_additional_information')
+        fields.insert(fields.index('characters'), 'group_members_role')
+        fields.insert(fields.index('characters'), 'group_members_flashback')
+        fields.insert(fields.index('characters'), 'group_members_origin')
+        fields.insert(fields.index('characters'), 'group_members_death')
+        fields.insert(fields.index('characters'), 'group_members_notes')
         fields.insert(fields.index('characters'), 'one_character_help')
         widgets = {
             'feature': forms.TextInput(attrs={'class': 'wide'}),
@@ -573,12 +635,12 @@ class StoryRevisionForm(forms.ModelForm):
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credits_start:
-                                               characters_start-7]])
+                                               characters_start-19]])
         field_list.append(HTML('<tr><td><hr>&nbsp;<strong>Characters:</strong>'
                                '</td><th><hr></th></tr>'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start-7:
+                           for field in fields[characters_start-19:
                                                characters_start-1]])
         field_list.append(HTML(
           '<tr><th><input type="submit" name="save_and_set_universe"'
@@ -832,6 +894,36 @@ class StoryRevisionForm(forms.ModelForm):
       label='a) Appearing characters',
       required=False,
     )
+
+    appearing_characters_additional_information = forms.BooleanField(
+      required=False,
+      help_text='Click to enter role, flashback, origin, death, or '
+                'notes for all appearing characters.')
+    appearing_characters_role = forms.ModelChoiceField(
+      queryset=CharacterRole.objects.all(),
+      required=False)
+    appearing_characters_flashback = forms.BooleanField(
+        required=False)
+    appearing_characters_origin = forms.BooleanField(
+        required=False)
+    appearing_characters_death = forms.BooleanField(
+        required=False)
+    appearing_characters_notes = forms.CharField(required=False)
+
+    group_members_additional_information = forms.BooleanField(
+      required=False,
+      help_text='Click to enter role, flashback, origin, death, or '
+                'notes for all group members.')
+    group_members_role = forms.ModelChoiceField(
+      queryset=CharacterRole.objects.all(),
+      required=False)
+    group_members_flashback = forms.BooleanField(
+        required=False)
+    group_members_origin = forms.BooleanField(
+        required=False)
+    group_members_death = forms.BooleanField(
+        required=False)
+    group_members_notes = forms.CharField(required=False)
 
     comments = _get_comments_form_field()
 

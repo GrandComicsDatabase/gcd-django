@@ -1,0 +1,19 @@
+{% load display %}
+{% load credits %}
+<table class="sortable_listing">
+  <tr>
+    <th colspan="2">{{ item_name|capfirst }} Name</th>
+    <th> Year Created </th>
+  </tr>
+  {% for feature in items %}
+    {% with feature|object_filter as feature %}
+    <tr>
+      <td> <a href="{{ feature.get_absolute_url }}">{{ feature }}</a><td>
+      <td> {{ feature.display_year_created }} </td>
+    </tr>
+    {% endwith %}
+  {% endfor %}
+</table>
+{% if not no_result_count %}
+Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}
+{% endif %}

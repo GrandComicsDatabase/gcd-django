@@ -669,21 +669,21 @@ div.list_table_header {
     margin-bottom: 1em;
 }
 
-.listing dl {
+.listing dl, .sortable_listing dl{
     margin-top: 0;
 }
 
-.listing dl.credits {
+.listing dl.credits, .sortable_listing dl.credits {
     margin-bottom: 0;
 }
 
-.listing dl.credits dt {
+.listing dl.credits dt, .sortable_listing dl.credits dt {
     float: left;
     clear: both;
     padding-right: 0.25em;
 }
 
-.listing dl.credits dd {
+.listing dl.credits dd, .sortable_listing dl.credits dd {
     margin: 0;
 }
 

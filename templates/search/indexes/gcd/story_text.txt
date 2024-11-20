@@ -19,7 +19,7 @@
 {{ object.show_characters_as_text|safe }}
 {{ object.synopsis|safe }}
 {{ object.notes|safe }}
-{{ object|show_keywords|safe }}
+{{ object|show_keywords_as_text|safe }}
 {{ object.issue.series.publisher.name|safe }}
 {{ object.issue.series.name|safe }} {{ object.issue.display_number }}
 {{ object.issue.publication_date|safe }}

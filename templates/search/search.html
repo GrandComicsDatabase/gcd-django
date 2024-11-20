@@ -123,7 +123,7 @@
       {% for year in facets.dates.date %}
         {% if year.1 %}
             <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-          <td><a href="?{{ query }}{{ facet_page }}{% if not is_date_selected or forloop.counter > 1 %}&amp;date_facet={{ year.0 }}{% endif %}">{{ year.0|date:"Y" }} ({{ year.1}})</a>
+          <td><a href="?{{ query }}{{ facet_page }}{% if not is_date_selected or forloop.counter > 1 %}&amp;date_facet={{ year.0|date:'Y-m-d H:i:s' }}{% endif %}">{{ year.0|date:"Y" }} ({{ year.1 }})</a>
           </td></tr>
 	{% endif %}
       {% endfor %}

@@ -20,12 +20,16 @@ from django.http import HttpResponseRedirect, Http404, JsonResponse, \
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.views.decorators.clickjacking import xframe_options_sameorigin
+from django.utils.safestring import mark_safe
 
 from django_tables2 import RequestConfig
 from django_tables2.paginators import LazyPaginator
 from django_tables2.export.export import TableExport
+import django_tables2 as tables
 
 from djqscsv import render_to_csv_response
+
+from taggit.models import Tag, TaggedItem
 
 from apps.indexer.views import ViewTerminationError
 from apps.indexer.models import Indexer
@@ -49,10 +53,12 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
 from apps.gcd.models.creator import GenericCreatorTable, \
                                     GenericCreatorNameTable, \
                                     CreatorCreatorTable, NAME_TYPES
-from apps.gcd.models.character import CreatorCharacterTable, \
+from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       UniverseCharacterTable, \
-                                      SeriesCharacterTable
-from apps.gcd.models.feature import FeatureTable
+                                      SeriesCharacterTable, \
+                                      FeatureCharacterTable, \
+                                      CharacterCharacterTable
+from apps.gcd.models.feature import CreatorFeatureTable, CharacterFeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   BrandEmblemIssueTable, \
                                   IndiciaPublisherIssueTable, \
@@ -78,7 +84,8 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            IndiciaPublisherRevision, ImageRevision, \
                            Changeset, SeriesBondRevision, CreatorRevision, \
                            CTYPES
-from apps.select.views import SeriesFilter, filter_issues, filter_sequences
+from apps.select.views import SeriesFilter, KeywordUsedFilter, \
+                              filter_issues, filter_sequences
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -490,7 +497,7 @@ def creator_features(request, creator_id, country=None, language=None):
         'heading': 'Features for Creator %s' % (creator),
     }
     template = 'gcd/search/issue_list_sortable.html'
-    table = FeatureTable(features, attrs={'class': 'sortable_listing'},
+    table = CreatorFeatureTable(features, attrs={'class': 'sortable_listing'},
                          creator=creator,
                          template_name=SORT_TABLE_TEMPLATE,
                          order_by=('feature'))
@@ -1863,7 +1870,9 @@ def series_overview(request, series_id):
                                               issue_id=OuterRef('pk'),
                                               type_id=19, deleted=False)
                                               .values('pk')
-                                              .order_by('-page_count')[:1]))
+                                              .order_by('-page_count',
+                                                        'sequence_number')[:1])
+                             )
 
     heading = 'Covers and Longest Comic Story for Series %s' % (series)
 
@@ -2203,33 +2212,112 @@ def series_issues_to_migrate(request, series_id):
     return generic_sortable_list(request, issues, table, template, context)
 
 
-def keyword(request, keyword, model_name='story'):
+class KeywordsTable(tables.Table):
+    keyword = tables.Column(accessor='name')
+    objects_count = tables.Column(verbose_name='# Usages')
+
+    def render_keyword(self, record):
+        url = urlresolvers.reverse(
+                'show_keyword',
+                kwargs={'keyword': record.name})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.name))
+
+
+def keywords(request, keyword=''):
+    """
+    List all keywords
+    """
+    if keyword:
+        keywords = Tag.objects.filter(name__icontains=keyword)
+    else:
+        keywords = Tag.objects.all()
+    keywords = keywords.annotate(
+      objects_count=Count(
+        'taggit_taggeditem_items',
+        filter=~Q(taggit_taggeditem_items__content_type__id__in=[72, 75])))\
+        .order_by('-objects_count').filter(objects_count__gt=0)
+    template = 'gcd/search/issue_list_sortable.html'
+    context = {
+        'item_name': 'keyword',
+        'plural_suffix': 's',
+        'heading': 'Keywords'
+    }
+    table = KeywordsTable(keywords,
+                          attrs={'class': 'sortable_listing'},
+                          template_name=SORT_TABLE_TEMPLATE,
+                          order_by=('keywords'))
+    return generic_sortable_list(request, keywords, table, template, context)
+
+
+class KeywordTable(tables.Table):
+    item = tables.Column(accessor='content_object',
+                         verbose_name='Tagged Objects',
+                         orderable=False)
+
+    def render_item(self, record):
+        url = record.content_object.get_absolute_url()
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.content_object))
+
+
+def keyword(request, keyword, model_name=''):
     """
     Display the objects associated to a keyword.
     """
-    from apps.oi.views import DISPLAY_CLASSES
-    if model_name not in ['story', 'issue']:
-        return render(
-            request, 'indexer/error.html',
-            {'error_text':
-             'There are no keyword-lists for these objects.'})
+    if 'content_type' in request.GET:
+        if request.GET['content_type'] == '13':
+            model_name = 'story'
+        elif request.GET['content_type'] == '12':
+            model_name = 'issue'
+        elif request.GET['content_type'] == '147':
+            model_name = 'character'
 
-    objs = DISPLAY_CLASSES[model_name].objects.filter(keywords__name=keyword,
-                                                      deleted=False)
+    if model_name:
+        from apps.oi.views import DISPLAY_CLASSES
+        objs = DISPLAY_CLASSES[model_name].objects.filter(
+          keywords__name=keyword, deleted=False)
+        filter = None
+
     if model_name == 'story':
         table = StoryTable(objs,
                            attrs={'class': 'sortable_listing'},
                            template_name=SORT_TABLE_TEMPLATE,
-                           order_by=('name'))
+                           order_by=('issue'))
         description = 'showing %d stories for keyword' % objs.count()
+        object_type = 'stories'
     elif model_name == 'issue':
         table = IssuePublisherTable(objs,
                                     attrs={'class': 'sortable_listing'},
                                     template_name=SORT_TABLE_TEMPLATE,
-                                    order_by=('name'))
-        description = 'showing %d issues for keyword' % objs.count()
+                                    order_by=('issue'))
+        object_type = 'issues'
+    elif model_name == 'character':
+        table = CharacterTable(objs,
+                               attrs={'class': 'sortable_listing'},
+                               template_name=SORT_TABLE_TEMPLATE,
+                               order_by=('character'))
+        object_type = 'characters'
+    else:
+        objs = TaggedItem.objects.filter(tag__name=keyword).exclude(
+          content_type__id__in=[72, 75])
+        content_types = set(objs.values_list('content_type', flat=True))
+        filter = KeywordUsedFilter(request.GET,
+                                   queryset=objs,
+                                   content_type=content_types)
+        objs = filter.qs
+        table = KeywordTable(objs,
+                             attrs={'class': 'sortable_listing'},
+                             template_name=SORT_TABLE_TEMPLATE,
+                             order_by=('name'))
+        object_type = 'objects'
+
+    description = 'showing %d %s with the keyword (case insensitive)' % (
+      objs.count(), object_type)
+
     context = {'object': keyword,
-               'description': description
+               'description': description,
+               'filter': filter
                }
     return generic_sortable_list(request, objs, table,
                                  'gcd/bits/generic_list.html', context)
@@ -2524,7 +2612,7 @@ def daily_changes(request, show_date=None, user=False):
     else:
         user = None
 
-    # TODO what aboud awards, memberships, etc. Display separately,
+    # TODO what about awards, memberships, etc. Display separately,
     # or display the affected creator for such changes as well.
     creator_revisions = list(_get_daily_revisions(CreatorRevision, args,
                                                   'creator', user=user))
@@ -2959,11 +3047,15 @@ def feature_issuelist_by_id(request, feature_id):
                               .select_related('series__publisher')
         result_disclaimer = MIGRATE_DISCLAIMER
 
+    filter = filter_issues(request, issues)
+    issues = filter.qs
+
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'Issue List for Feature %s' % (feature)
+        'heading': 'Issue List for Feature %s' % (feature),
+        'filter': filter
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssueTable(issues,
@@ -3010,6 +3102,37 @@ def feature_overview(request, feature_id):
                                  template_name=SORT_TABLE_TEMPLATE,
                                  order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context, 50)
+
+
+def feature_characters(request, feature_id):
+    feature = get_gcd_object(Feature, feature_id)
+    characters = Character.objects.filter(
+      character_names__storycharacter__story__feature_object=feature,
+      character_names__storycharacter__story__type__id__in=CORE_TYPES,
+      character_names__storycharacter__deleted=False,
+      deleted=False).distinct()
+
+    characters = characters.annotate(issue_count=Count(
+      'character_names__storycharacter__story__issue', distinct=True))
+    characters = characters.annotate(first_appearance=Min(
+      Case(When(character_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('character_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'character',
+        'plural_suffix': 's',
+        'heading': 'Characters in Feature %s' % (feature)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = FeatureCharacterTable(characters,
+                                  attrs={'class': 'sortable_listing'},
+                                  feature=feature,
+                                  template_name=SORT_TABLE_TEMPLATE,
+                                  order_by=('character'))
+    return generic_sortable_list(request, characters, table, template, context)
 
 
 def feature_creators(request, feature_id, creator_names=False):
@@ -3304,6 +3427,68 @@ def show_character(request, character, preview=False):
     return render(request, 'gcd/details/character.html', vars)
 
 
+def character_characters(request, character_id):
+    character = get_gcd_object(Character, character_id)
+    characters = Character.objects.filter(
+      character_names__storycharacter__story__appearing_characters__character__character=character,
+      character_names__storycharacter__story__type__id__in=CORE_TYPES,
+      character_names__storycharacter__deleted=False,
+      deleted=False).distinct()
+
+    characters = characters.annotate(issue_count=Count(
+      'character_names__storycharacter__story__issue', distinct=True))
+    characters = characters.annotate(first_appearance=Min(
+      Case(When(character_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('character_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'character',
+        'plural_suffix': 's',
+        'heading': 'Characters appearing together with %s' % (character)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CharacterCharacterTable(characters,
+                                    attrs={'class': 'sortable_listing'},
+                                    character=character,
+                                    template_name=SORT_TABLE_TEMPLATE,
+                                    order_by=('character'))
+    return generic_sortable_list(request, characters, table, template, context)
+
+
+def character_features(request, character_id):
+    character = get_gcd_object(Character, character_id)
+    features = Feature.objects.filter(
+      story__appearing_characters__character__character=character,
+      story__type__id__in=CORE_TYPES,
+      story__deleted=False,
+      deleted=False).distinct()
+
+    features = features.annotate(issue_count=Count(
+      'story__issue', distinct=True))
+    features = features.annotate(first_appearance=Min(
+      Case(When(story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'feature',
+        'plural_suffix': 's',
+        'heading': 'Features with an appearance of %s' % (character)
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = CharacterFeatureTable(features,
+                                  attrs={'class': 'sortable_listing'},
+                                  character=character,
+                                  template_name=SORT_TABLE_TEMPLATE,
+                                  order_by=('feature'))
+    return generic_sortable_list(request, features, table, template, context)
+
+
 def character_issues(request, character_id, layer=None, universe_id=None,
                      story_universe_id=None):
     character = get_gcd_object(Character, character_id)
@@ -3371,6 +3556,94 @@ def character_issues(request, character_id, layer=None, universe_id=None,
         'plural_suffix': 's',
         'heading': 'Issue List for Character %s' % (character),
         'filter': filter
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def character_issues_character(request, character_id, character_with_id):
+    character = get_gcd_object(Character, character_id)
+    character_with = get_gcd_object(Character, character_with_id)
+
+    filter_character = character
+    universe_id = None
+    if character.universe:
+        if character.active_generalisations():
+            universe_id = character.universe.id
+            filter_character = character.active_generalisations()\
+                                        .get().from_character
+
+    query = {'appearing_characters__character__character':
+             filter_character,
+             'appearing_characters__deleted': False,
+             'type__id__in': CORE_TYPES,
+             'deleted': False}
+    if universe_id:
+        query['story__appearing_characters__universe_id'] = universe_id
+
+    stories = Story.objects.filter(Q(**query))
+    query_with = {'story__appearing_characters__character__character':
+                  character_with,
+                  'story__appearing_characters__deleted': False,
+                  'story__type__id__in': CORE_TYPES,
+                  'story__deleted': False,
+                  'story__id__in': stories}
+
+    issues = Issue.objects.filter(Q(**query_with)).distinct()\
+                          .select_related('series__publisher')
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for %s with %s' % (character, character_with),
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=SORT_TABLE_TEMPLATE,
+                       order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def character_issues_feature(request, character_id, feature_id):
+    character = get_gcd_object(Character, character_id)
+    feature = get_gcd_object(Feature, feature_id)
+
+    filter_character = character
+    universe_id = None
+    if character.universe:
+        if character.active_generalisations():
+            universe_id = character.universe.id
+            filter_character = character.active_generalisations()\
+                                        .get().from_character
+
+    query = {'story__appearing_characters__character__character':
+             filter_character,
+             'story__appearing_characters__deleted': False,
+             'story__type__id__in': CORE_TYPES,
+             'story__feature_object__id': feature_id,
+             'story__deleted': False}
+
+    if universe_id:
+        query['story__appearing_characters__universe_id'] = universe_id
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'Issue List for %s in  %s' % (character, feature),
     }
     template = 'gcd/search/issue_list_sortable.html'
     table = IssueTable(issues,
@@ -3623,7 +3896,8 @@ def character_name_issues(request, character_name_id, universe_id=None):
                                              .from_character
             filter_character_name = filter_character.character_names\
                                                     .get(name=
-                                                         character_name.name)
+                                                         character_name.name,
+                                                         deleted=False)
         else:
             return render(request, 'indexer/error.html',
                           {'error_text':
@@ -4062,6 +4336,10 @@ def show_issue(request, issue, preview=False):
             oi_indexers.append(i.indexer.id)
 
     revs = issue.revisions.filter(changeset__state=states.APPROVED)\
+                .exclude(changeset__indexer__username=settings.ANON_USER_NAME)\
+                .select_related('changeset')
+    oi_indexers.extend(revs.values_list('changeset__indexer_id', flat=True))
+    revs = issue.cover_revisions.filter(changeset__state=states.APPROVED)\
                 .exclude(changeset__indexer__username=settings.ANON_USER_NAME)\
                 .select_related('changeset')
     oi_indexers.extend(revs.values_list('changeset__indexer_id', flat=True))

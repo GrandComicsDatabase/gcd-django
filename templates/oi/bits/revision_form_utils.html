@@ -5,6 +5,7 @@
 
 {% compress js %}
 <script type='text/javascript' src='{% static "jquery/js/input-special-event.js" %}'></script>
+{% endcompress %}
 {% if revision.source_name in 'story issue' or object_name in 'Story Issue' %}
 <script type='text/javascript' src='{% static "js/oi/storyrevision_form_utils.js" %}'></script>
 {% endif %}
@@ -12,7 +13,6 @@
 <script type='text/javascript' src='{% static "js/oi/issuerevision_form_utils.js" %}'></script>
 <script type='text/javascript' src='{% static "jquery/js/msdropdown/jquery.dd.min.js" %}'></script>
 {% endif %}
-{% endcompress %}
 
 {% if revision.source_name == 'story' or object_name == 'Story' %}
   {% if settings %}

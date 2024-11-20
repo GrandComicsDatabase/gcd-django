@@ -13,10 +13,13 @@ from django_contact_form.views import ContactFormView
 
 from apps.indexer.views import error_view
 from apps.gcd.views import read_only
+from apps.api.urls import router as api_router
+
 
 from apps.gcd.forms.contact import CustomContactForm
 
 admin.autodiscover()
+
 
 # Note that the structure of the various pattern lists is to facilitate
 # future implementation of a read-only mode for the site.  Such a mode
@@ -53,6 +56,7 @@ basic_patterns = [
             template_name='django_contact_form/contact_form_sent.html'
         ),
         name='contact_form_sent'),
+    path('api/', include(api_router.urls)),
 ]
 
 read_only_patterns = [
@@ -105,6 +109,7 @@ else:
                     [path('', include('apps.indexer.urls'))] + \
                     [path('', include('apps.select.urls'))] + \
                     [path('', include('apps.oi.urls'))] + \
+                    [path('api/', include('apps.api.urls'))] + \
                     [path('voting/', include('apps.voting.urls'))] + \
                     [path('admin/templatesadmin/', include('templatesadmin.urls'))] + \
                     [path('admin/', admin.site.urls)] + \

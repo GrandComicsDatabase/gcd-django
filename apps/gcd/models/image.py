@@ -91,5 +91,11 @@ class Image(models.Model):
         else:
             return ''
 
+    def approved_changesets(self):
+        from apps.oi.models import Changeset
+        revision_ids = self.revisions.values_list('changeset__id', flat=True)
+        return Changeset.objects.filter(id__in=revision_ids, state=5)\
+                                .order_by('-modified')
+
     def __str__(self):
         return '%s: %s' % (str(self.object), self.type.description.capitalize())

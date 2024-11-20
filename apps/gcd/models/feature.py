@@ -207,11 +207,66 @@ class FeatureRelation(GcdLink):
 
 
 class FeatureTable(tables.Table):
+    feature = tables.Column(accessor='name',
+                            verbose_name='Feature')
+
+    class Meta:
+        model = Feature
+        fields = ('feature',)
+
+    def render_feature(self, record):
+        name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
+                                                  esc(record.name),
+                                                  record.language.name)
+        return mark_safe(name_link)
+
+
+class CharacterFeatureTable(FeatureTable):
+    appearances_count = tables.Column(accessor='issue_count',
+                                      verbose_name='Issues',
+                                      initial_sort_descending=True)
+    first_appearance = tables.Column(verbose_name='First Appearance')
+
+    def __init__(self, *args, **kwargs):
+        self.character = kwargs.pop('character')
+        super(CharacterFeatureTable, self).__init__(*args, **kwargs)
+
+    # TODO: make the following a class mixin with CharacterTable and others
+    def order_first_appearance(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'first_appearance',
+                                       '-issue_count',
+                                       'sort_name',
+                                       'language__code')
+        return (query_set, True)
+
+    def render_first_appearance(self, value):
+        return value[:4]
+
+    def order_appearances_count(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue_count',
+                                       'sort_name',
+                                       'first_appearance',
+                                       'language__code')
+        return (query_set, True)
+
+    def render_appearances_count(self, record):
+        url = urlresolvers.reverse(
+                'character_issues_per_feature',
+                kwargs={'feature_id': record.id,
+                        'character_id': self.character.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
+
+    def value_appearances_count(self, record):
+        return record.issue_count
+
+
+class CreatorFeatureTable(FeatureTable):
     credits_count = tables.Column(accessor='issue_credits_count',
                                   verbose_name='Issues',
                                   initial_sort_descending=True)
-    feature = tables.Column(accessor='name',
-                            verbose_name='Feature')
     first_credit = tables.Column(verbose_name='First Credit')
     role = tables.Column(accessor='script', orderable=False)
 
@@ -221,13 +276,7 @@ class FeatureTable(tables.Table):
 
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')
-        super(FeatureTable, self).__init__(*args, **kwargs)
-
-    def render_feature(self, record):
-        name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
-                                                  esc(record.name),
-                                                  record.language.name)
-        return mark_safe(name_link)
+        super(CreatorFeatureTable, self).__init__(*args, **kwargs)
 
     def render_first_credit(self, value):
         return value[:4]

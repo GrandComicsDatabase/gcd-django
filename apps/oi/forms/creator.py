@@ -2,27 +2,25 @@
 
 from collections import OrderedDict
 from django import forms
-from django.contrib.contenttypes.models import ContentType
-from django.core.files import File
 from django.forms.models import inlineformset_factory
 from django.forms.widgets import HiddenInput
-from django.db import IntegrityError
 
 from dal import autocomplete
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
 
-from apps.oi.models import CreatorRevision, CreatorNameDetailRevision,\
-                           CreatorArtInfluenceRevision, CreatorDegreeRevision,\
-                           CreatorNonComicWorkRevision, CreatorSchoolRevision,\
-                           CreatorMembershipRevision, CreatorRelationRevision,\
-                           CreatorSignatureRevision, get_creator_field_list,\
-                           ImageRevision, _get_revision_lock,\
+from apps.oi.models import CreatorRevision, CreatorNameDetailRevision, \
+                           CreatorArtInfluenceRevision, \
+                           CreatorDegreeRevision, \
+                           CreatorNonComicWorkRevision, \
+                           CreatorSchoolRevision, \
+                           CreatorMembershipRevision, \
+                           CreatorRelationRevision, \
+                           CreatorSignatureRevision, get_creator_field_list, \
                            _get_creator_sourced_fields, _check_year
-from apps.gcd.models import NameType, CreatorNameDetail, ImageType, School
+from apps.gcd.models import NameType, CreatorNameDetail, School
 from apps.stddata.models import Country
-from apps.oi import states
 
 from .custom_layout_object import Formset, FormAsField, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
@@ -36,6 +34,8 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       CREATOR_SIGNATURE_HELP_TEXTS,
                       _set_help_labels, _get_comments_form_field,
                       init_data_source_fields, insert_data_source_fields,
+                      _create_embedded_image_revision,
+                      _save_runtime_embedded_image_revision,
                       HiddenInputWithHelp)
 
 
@@ -71,6 +71,8 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
                 self.fields['type'].queryset |= NameType.objects.filter(
                   id=self.instance.creator_name_detail.type.id)
             if self.instance.creator_name_detail.storycredit_set\
+                                                .filter(deleted=False).count()\
+                or self.instance.creator_name_detail.issuecredit_set\
                                                 .filter(deleted=False).count():
                 # TODO How can the 'remove'-link not be shown in this case ?
                 self.fields['name'].help_text = \
@@ -97,6 +99,8 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
         # TODO workaround, better to not allow the removal, see above
         if form.instance.creator_name_detail:
             if form.instance.creator_name_detail.storycredit_set\
+                                                .filter(deleted=False).count()\
+              or form.instance.creator_name_detail.issuecredit_set\
                                                 .filter(deleted=False).count():
                 form.cleaned_data['DELETE'] = False
                 return False
@@ -165,7 +169,7 @@ class CreatorRevisionForm(forms.ModelForm):
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
         self.fields['bio_source_description'].label = \
-          "Biography source description"
+            "Biography source description"
         self.fields['bio_source_type'].label = "Biography source type"
         fields = list(self.fields)
         field_list = [BaseField(Field('creator_help',
@@ -303,26 +307,14 @@ def get_creator_signature_revision_form(revision=None, user=None):
         def save(self, commit=True):
             instance = super(RuntimeCreatorSignatureRevisionForm,
                              self).save(commit=commit)
-            if instance.image_revision:
-                instance.image_revision.changeset = revision.changeset
-                instance.image_revision.object_id = instance.id
-                content_type = ContentType.objects.get_for_model(instance)
-                instance.image_revision.content_type = content_type
-
+            if instance.image_revision and revision:
                 if revision.source:
                     image = revision.creator_signature.signature
-                    img_lock = _get_revision_lock(image,
-                                                  changeset=revision.changeset)
-                    if img_lock is None:
-                        raise IntegrityError("needed Image lock not possible")
-                    previous = image.revisions.filter(
-                                     changeset__state=states.APPROVED).last()
-                    instance.image_revision.previous_revision = previous
-                    instance.image_revision.is_replacement = True
-                    instance.image_revision.image = image
-
-                instance.image_revision.save()
-
+                else:
+                    image = None
+                instance = _save_runtime_embedded_image_revision(instance,
+                                                                 revision,
+                                                                 image)
             return instance
 
         def clean(self):
@@ -374,16 +366,9 @@ class CreatorSignatureRevisionForm(forms.ModelForm):
                                                              commit=commit)
         signature = self.cleaned_data['signature']
         if signature:
-            if not instance.image_revision:
-                image_revision = ImageRevision(type=ImageType.objects.get(
-                                                    name='CreatorSignature'),
-                                               changeset_id=1)
-                image_revision.save()
-                instance.image_revision = image_revision
-            else:
-                image_revision = instance.image_revision
-            image_revision.image_file.save(str(image_revision.id) + '.jpg',
-                                           content=File(signature))
+            instance = _create_embedded_image_revision(instance,
+                                                       signature,
+                                                       'CreatorSignature')
         return instance
 
     def clean(self):

@@ -4,7 +4,7 @@
 {% load i18n %}
 
 {% block title %}
-  GCD :: Publisher :: {{ publisher.name }} :: Brand Groups
+  GCD :: Publisher :: {{ publisher.name }} :: Publisher's Brand Groups
 {% endblock %}
 
 {% block css %}
@@ -14,7 +14,7 @@
 
 {% block view_body %}
 
-{% with "Brand Groups" as extra %}
+{% with "Publisher's Brand Groups" as extra %}
 {% include "gcd/bits/publisher_header.html" %}
 {% endwith %}
 <div class="publisher_list_control_panel">
@@ -34,7 +34,7 @@
 {% if publisher.brand_count %}
 <table id="publisher_detail_listing" class="listing">
   <tr>
-    <th> Brand Group </th>
+    <th> Publisher's Brand Group </th>
     <th> Issues </th>
     <th> Year Began</th>
     <th> Year Ended</th>
@@ -54,7 +54,7 @@
 </table>
 {% else %}
 <dl>
-  <dt> Brands:
+  <dt> Publisher's Brands:
   <dd> None
 </dl>
 {% endif %}

@@ -14,7 +14,7 @@
   <div class="status_grid">
 {% for issue in series.active_base_issues %}
     <div class="status_grid_flex status_{{ issue|index_status_css }} {{ issue_status_width }}">
-      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor|default:issue }}</a> </td>
+      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor_series_status|default:issue }}</a> </td>
     </div>
 {% endfor %}
   </div>

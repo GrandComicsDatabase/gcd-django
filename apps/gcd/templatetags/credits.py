@@ -85,7 +85,6 @@ def show_credit(story, credit):
     on a better way welcome, as clearly I'm abusing the Django filter
     convention here.
     """
-
     if not story:
         return ""
 
@@ -96,16 +95,24 @@ def show_credit(story, credit):
         credit_string = ''
         for c in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
             story_credit = getattr(story, c).lower()
-            if story_credit:
+            if getattr(story, 'matched_credits', None):
+                # results are from using elasticsearch
+                if c in story.matched_credits:
+                    credit_string += ' ' + __format_credit(story, c)
+                    if credit_string == ' ':
+                        credit_string = __format_credit(story.issue, c)\
+                                        .replace('Editing', 'Issue Editing')
+
+            elif story_credit:
                 result = find_credit_search(story_credit, target, collator)
                 if result != -1:
                     credit_string += ' ' + __format_credit(story, c)
-        if story.issue.editing:
+        if not getattr(story, 'matched_credits', None) and story.issue.editing:
             result = find_credit_search(story.issue.editing.lower(), target,
                                         collator)
             if result != -1:
                 credit_string += __format_credit(story.issue, 'editing')\
-                                 .replace('Editing', 'Issue editing')
+                                 .replace('Editing', 'Issue Editing')
         return credit_string
 
     elif credit.startswith('editing_search:'):
@@ -113,19 +120,10 @@ def show_credit(story, credit):
         collator.setStrength(0)
         target = credit[15:]
         formatted_credit = ""
-        if story.editing:
-            result = find_credit_search(story.editing.lower(), target,
-                                        collator)
-            if result != -1:
-                formatted_credit = __format_credit(story, 'editing')\
-                                   .replace('Editing', 'Story editing')
-
-        if story.issue.editing:
-            result = find_credit_search(story.issue.editing.lower(), target,
-                                        collator)
-            if result != -1:
-                formatted_credit += __format_credit(story.issue, 'editing')\
-                                    .replace('Editing', 'Issue editing')
+        formatted_credit = __format_credit(story, 'editing')\
+                            .replace('Editing', 'Story Editing')
+        formatted_credit += __format_credit(story.issue, 'editing')\
+                            .replace('Editing', 'Issue Editing')
         return formatted_credit
 
     elif credit.startswith('characters:'):
@@ -133,19 +131,29 @@ def show_credit(story, credit):
         collator.setStrength(0)
         target = credit[len('characters:'):]
         formatted_credit = ""
-        if story.characters:
-            search = icu.StringSearch(target.lower(),
-                                      story.characters.lower(),
-                                      collator)
-            if search.first() != -1:
-                formatted_credit = __format_credit(story, 'characters')
+        if getattr(story, 'matched_credits', None):
+            # results are from using elasticsearch
+            for c in ['characters', 'feature']:
+                if c in story.matched_credits:
+                    formatted_credit += ' ' + __format_credit(story, c)
+        else:
+            if story.characters or story.appearing_characters.count():
+                character_string = story.show_characters_as_text()
+                search = icu.StringSearch(target.lower(),
+                                        character_string.lower(),
+                                        collator)
+                if search.first() != -1:
+                    formatted_credit = __format_credit(story, 'characters',
+                                                       character_string)
 
-        if story.feature:
-            search = icu.StringSearch(target.lower(),
-                                      story.feature.lower(),
-                                      collator)
-            if search.first() != -1:
-                formatted_credit += __format_credit(story, 'feature')
+            if story.feature or story.feature_object.count():
+                feature_string = story.show_feature_as_text()
+                search = icu.StringSearch(target.lower(),
+                                        feature_string.lower(),
+                                        collator)
+                if search.first() != -1:
+                    formatted_credit += __format_credit(story, 'feature',
+                                                        feature_string)
         return formatted_credit
     elif credit == 'genre':
         genres = story.genre.lower()
@@ -217,11 +225,17 @@ def __credit_visible(value):
     return value is not None and value != ''
 
 
-def __format_credit(story, credit):
+def __format_credit(story, credit, computed_value=''):
     if credit in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
         credit_value = __credit_value(story, credit, url=True)
+    elif credit in ['characters', 'feature']:
+        credit_value = computed_value
     else:
         credit_value = getattr(story, credit)
+    if credit == 'feature':
+        credit_value = story.show_feature()
+    if credit == 'characters':
+        credit_value = story.show_characters(css_style=False)
     if not __credit_visible(credit_value):
         return ''
 
@@ -367,13 +381,13 @@ def markdown(value):
     return mark_safe(md.markdown(value))
 
 
-def __format_keywords(keywords, join_on='; ', model_name='story'):
+def __format_keywords(keywords, join_on='; ', model_name='story', url=True):
     if type(keywords) is str:
         credit_value = keywords
     else:
         keyword_list = list()
         for i in keywords.all().order_by('name'):
-            if model_name in ['story', 'issue']:
+            if model_name in ['story', 'issue'] and url:
                 keyword_list.append('<a href="%s%s/">%s</a>' % (
                                     urlresolvers.reverse(
                                       'show_keyword', kwargs={'keyword': i}),
@@ -387,6 +401,11 @@ def __format_keywords(keywords, join_on='; ', model_name='story'):
 @register.filter
 def show_keywords(object):
     return __format_keywords(object.keywords)
+
+
+@register.filter
+def show_keywords_as_text(object):
+    return __format_keywords(object.keywords, url=False)
 
 
 @register.filter

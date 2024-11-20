@@ -1,0 +1,30 @@
+{% load display %}
+{% load l10n %}
+
+{% if object.deleted %}
+<div>
+This {{ description }} has been deleted.  The most recent change in its history
+should include a comment explaining the deletion.
+</div>
+{% endif %}
+<table class="listing">
+  <tr>
+    <th> Date Approved </th>
+    <th> Indexer </th>
+    <th> Approver </th>
+    <th> Changed Fields </th>
+  </tr>
+{% for changeset in changesets %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    {% localize off %}
+    <td><a href="{% url "compare" id=changeset.id %}?collapse=1"> {{ changeset.modified }} </a></td>
+    {% endlocalize %}
+    <td>{{ changeset.indexer.indexer|absolute_url }}</td>
+    <td>{{ changeset.approver.indexer|absolute_url }}</td>
+    <td>
+    {{ changeset|changed_fields:object }}
+    {{ changeset|changed_story_list }}
+    </td>
+  </tr>
+{% endfor %}
+</table>

@@ -73,145 +73,75 @@
 {% endif %}
 
 <div class="details">
-{% if object.deleted %}
-<div>
-This {{ description }} has been deleted.  The most recent change in its history
-should include a comment explaining the deletion.
-</div>
-{% endif %}
-<table class="listing">
-  <tr>
-    <th> Date Approved </th>
-    <th> Indexer </th>
-    <th> Approver </th>
-    <th> Changed Fields </th>
-  </tr>
-{% for changeset in changesets %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td><a href="{% url "compare" id=changeset.id %}?collapse=1"> {{ changeset.modified }} </a></td>
-    <td>{{ changeset.indexer.indexer|absolute_url }}</td>
-    <td>{{ changeset.approver.indexer|absolute_url }}</td>
-    <td>
-    {{ changeset|changed_fields:object }}
-    {{ changeset|changed_story_list }}
-    </td>
-  </tr>
-{% endfor %}
-</table>
+{% include "gcd/bits/change_history_details.html" %}
 </div>
 
 {% if description == "Issue" and object.series.is_singleton %}
-<div>
-<table class="listing">
-  <tr>
-    <th colspan="2">Change History For Series Data</th>
-  </tr>
-  <tr class="listing_even">
-    <td><a href="{% url "change_history" model_name='series' id=object.series.id %}?collapse=1"> {{ object.series }} </a></td>
-    <td>{{ object.series.modified }}</td>
-  </tr>
-</table>
-</div>
+<h3 style="margin-bottom: 0em; clear: both;">Change History For Series Data</h3>
+  {% with object=object.series changesets=object.series.approved_changesets %}
+    {% include "gcd/bits/change_history_details.html" %}
+  {% endwith %}
 {% endif %}
 
-{% if description == "Issue" and perms.indexer.can_vote %}
-<div>
-<table class="listing">
-  <tr>
-    <th colspan="2">Change History For Cover Scans</th>
-  </tr>
+{% if description == "Issue" and perms.indexer.can_vote and object.cover_set.count %}
+<h3 style="margin-bottom: 0em; clear: both;">Change History For Cover Scans</h3>
   {% for cover in object.cover_set.all %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    <td><a href="{% url "change_history" model_name='cover' id=cover.id %}?collapse=1"> {{ cover }} </a></td>
-    <td>{{ cover.last_upload }}</td>
-  </tr>
+    {% with object=cover changesets=cover.approved_changesets %}
+      {% include "gcd/bits/change_history_details.html" %}
+    {% endwith %}
   {% endfor %}
-</table>
-</div>
 {% endif %}
 
 {% if description == "Issue" and object.indicia_image or object.soo_image %}
-<div>
   {% if object.indicia_image %}
-  <table class="listing">
-    <tr>
-      <th colspan="2">Change History For Indicia Scan</th>
-    </tr>
-    {% with model_name='image' object=object.indicia_image %}
-      {% include "gcd/bits/change_history_link.html" %}
+  <h3 style="margin-bottom: 0em; clear: both;">Change History For Indicia Scan</h3>
+    {% with model_name='image' object=object.indicia_image changesets=object.indicia_image.approved_changesets %}
+      {% include "gcd/bits/change_history_details.html" %}
     {% endwith %}
-  </table>
   {% endif %}
   {% if object.soo_image %}
-  <table class="listing">
-    <tr>
-      <th colspan="2">Change History For Statement of Ownership Scan</th>
-    </tr>
-    {% with model_name='image' object=object.soo_image %}
-      {% include "gcd/bits/change_history_link.html" %}
+  <h3 style="margin-bottom: 0em; clear: both;">Change History For Statement of Ownership Scan</h3>
+    {% with model_name='image' object=object.soo_image changesets=object.soo_image.approved_changesets %}
+      {% include "gcd/bits/change_history_details.html" %}
     {% endwith %}
-  </table>
   {% endif %}
-</div>
 {% endif %}
 
 {% if description == "Series" and object.has_series_bonds %}
-<div>
-  <table class="listing">
-    <tr>
-      <th colspan="2">Change History For Series Bonds</th>
-    </tr>
-    {% for bond in object.to_series_bond.all %}
-    {% with model_name='series_bond' object=bond %}
-      {% include "gcd/bits/change_history_link.html" %}
+<h3 style="margin-bottom: 0em; clear: both;">Change History For Series Bonds</h3>
+  {% for bond in object.to_series_bond.all %}
+<h3 style="margin-bottom: 0em; clear: both;">{{ bond }}</h3>
+    {% with object=bond changesets=bond.approved_changesets %}
+      {% include "gcd/bits/change_history_details.html" %}
     {% endwith %}
   {% endfor %}
   {% for bond in object.from_series_bond.all %}
-    {% with model_name='series_bond' object=bond %}
-      {% include "gcd/bits/change_history_link.html" %}
+<h3 style="margin-bottom: 0em; clear: both;">{{ bond }}</h3>
+    {% with object=bond changesets=bond.approved_changesets %}
+      {% include "gcd/bits/change_history_details.html" %}
     {% endwith %}
   {% endfor %}
-  </table>
-</div>
 {% endif %}
 
 {% if description == "Brand" and object.emblem %}
-<div>
-  <table class="listing">
-    <tr>
-      <th colspan="2">Change History For Brand Emblem Scan</th>
-    </tr>
-  {% with model_name='image' object=object.emblem %}
-    {% include "gcd/bits/change_history_link.html" %}
+<h3 style="margin-bottom: 0em; clear: both;">Change History For Publisher's Brand Emblem Scan</h3>
+  {% with model_name='image' object=object.emblem changesets=object.emblem.approved_changesets %}
+    {% include "gcd/bits/change_history_details.html" %}
   {% endwith %}
-  </table>
-</div>
 {% endif %}
 
 {% if description == "Creator" and object.portrait %}
-<div>
-  <table class="listing">
-    <tr>
-      <th colspan="2">Change History For Creator portrait image</th>
-    </tr>
-  {% with model_name='image' object=object.portrait %}
-    {% include "gcd/bits/change_history_link.html" %}
+<h3 style="margin-bottom: 0em; clear: both;">Change History For Creator Portrait Image</h3>
+  {% with model_name='image' object=object.portrait changesets=object.portrait.approved_changesets %}
+    {% include "gcd/bits/change_history_details.html" %}
   {% endwith %}
-  </table>
-</div>
 {% endif %}
 
 {% if description == "Creator" and object.samplescan %}
-<div>
-  <table class="listing">
-    <tr>
-      <th colspan="2">Change History For Sample scan</th>
-    </tr>
-  {% with model_name='image' object=object.samplescan %}
-    {% include "gcd/bits/change_history_link.html" %}
+<h3 style="margin-bottom: 0em; clear: both;">Change History For Sample Scan</h3>
+  {% with model_name='image' object=object.samplescan changesets=object.samplescan.approved_changesets %}
+    {% include "gcd/bits/change_history_details.html" %}
   {% endwith %}
-  </table>
-</div>
 {% endif %}
 
 {% endblock %}
