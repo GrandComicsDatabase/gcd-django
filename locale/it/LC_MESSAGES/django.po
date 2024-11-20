@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2010-05-08 00:12+0200\n"
-"PO-Revision-Date: 2024-11-20 18:00+0100\n"
+"PO-Revision-Date: 2024-11-20 18:30+0100\n"
 "Last-Translator: Simone Nardi <prof.simone.nardi@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -39,12 +39,12 @@ msgid ""
 "some may find objectionable."
 msgstr ""
 "Il GCD riconosce che la natura onnicomprensiva della ricerca legata al "
-"progetto potrebbe portare alla pubblicazione di scansioni di copertine di fumetti"
-"contenenti immagini che alcuni potrebbero ritenere discutibili."
+"progetto potrebbe comportare la pubblicazione di scansioni di copertine "
+"con immagini che alcuni potrebbero ritenere offensive."
 
 #: templates/gcd/index.html:79
 msgid "Viewer discretion is advised."
-msgstr "Si invita a prestare attenzione durante la visione."
+msgstr "Si avvisano gli utenti di prestare attenzione durante la navigazione."
 
 #: templates/gcd/index.html:82
 msgid "The Grand Comics Database Team"
@@ -60,7 +60,7 @@ msgstr "Copertine del giorno"
 
 #: templates/gcd/index.html:111
 msgid "Today's changes"
-msgstr "Modifiche del gorno"
+msgstr "Modifiche del giorno"
 
 #: templates/gcd/index.html:112
 msgid "Covers to replace"
@@ -220,4 +220,3 @@ msgstr "In vendita questa settimana"
 #: templates/gcd/index.html:137
 msgid "On-sale this month"
 msgstr "In vendita questo mese"
-
