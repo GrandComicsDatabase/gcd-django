@@ -148,11 +148,11 @@ msgstr ""
 "Se ritieni che qualsiasi informazione sia errata, per favore\n"
 "<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
 "product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
-"   target=\"_blank\">faccelo sapere</a> (si apre in una nuova finestra).\n"
+"   target=\"_blank\">comunicalo</a> (apre nuova scheda).\n"
 
 #: templates/gcd/bits/legalese.html:11
 msgid "Cover thumbnails are used for identification purposes only."
-msgstr Le miniature delle copertine sono utilizzate a puro scopo identificativo."
+msgstr "Le miniature delle copertine sono utilizzate a puro scopo identificativo."
 
 #: templates/gcd/bits/legalese.html:12
 msgid ""
@@ -205,7 +205,7 @@ msgid "issues"
 msgstr "numeri"
 
 msgid "issue indexes"
-msgstr "indici delle pubblicazioni"
+msgstr "indici dei numeri"
 
 msgid "covers"
 msgstr "copertine"
