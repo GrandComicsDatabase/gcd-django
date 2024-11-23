@@ -114,8 +114,13 @@ def view_collection(request, collection_id):
     publishers = []
     for i in data:
         publishers.append(i[0])
-    locations = request.user.collector.location_set.all()
-    purchase_locations = request.user.collector.purchaselocation_set.all()
+    if request.user.is_authenticated and \
+       collection.collector == request.user.collector:
+        locations = request.user.collector.location_set.all()
+        purchase_locations = request.user.collector.purchaselocation_set.all()
+    else:
+        locations = None
+        purchase_locations = None
     f = CollectionItemFilter(request.GET, queryset=items,
                              collection=collection, publishers=publishers,
                              locations=locations,
