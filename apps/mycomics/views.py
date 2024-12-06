@@ -114,8 +114,13 @@ def view_collection(request, collection_id):
     publishers = []
     for i in data:
         publishers.append(i[0])
-    locations = request.user.collector.location_set.all()
-    purchase_locations = request.user.collector.purchaselocation_set.all()
+    if request.user.is_authenticated and \
+       collection.collector == request.user.collector:
+        locations = request.user.collector.location_set.all()
+        purchase_locations = request.user.collector.purchaselocation_set.all()
+    else:
+        locations = None
+        purchase_locations = None
     f = CollectionItemFilter(request.GET, queryset=items,
                              collection=collection, publishers=publishers,
                              locations=locations,
@@ -223,7 +228,7 @@ def export_collection(request, collection_id):
     """
     collection = get_object_or_404(Collection, id=collection_id,
                                    collector=request.user.collector)
-    filename = str(collection).replace(' ', '_')
+    filename = str(collection).replace('.', '')
 
     export_data = ["issue__series__name", "issue__series__publisher__name",
                    "issue__series__year_began",
