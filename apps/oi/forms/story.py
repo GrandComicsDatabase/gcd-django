@@ -128,7 +128,8 @@ def get_story_revision_form(revision=None, user=None,
     elif not is_comics_publication:
         sequence_filter = ['comic story', 'photo story', 'cartoon',
                            'cover reprint (on interior page)',
-                           'comics-form advertising']
+                           'comics-form advertising',
+                           'preview (from the publisher)']
         if has_about_comics is True:
             sequence_filter.append('about comics')
             if issue.is_indexed == INDEXED['full']:
