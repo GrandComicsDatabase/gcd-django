@@ -3429,11 +3429,28 @@ def show_character(request, character, preview=False):
 
 def character_characters(request, character_id):
     character = get_gcd_object(Character, character_id)
-    characters = Character.objects.filter(
-      character_names__storycharacter__story__appearing_characters__character__character=character,
-      character_names__storycharacter__story__type__id__in=CORE_TYPES,
-      character_names__storycharacter__deleted=False,
-      deleted=False).distinct()
+    universe_id = None
+    if character.universe:
+        if character.active_generalisations():
+            filter_character = character.active_generalisations().get()\
+                                        .from_character
+            universe_id = character.universe.id
+        else:
+            filter_character = character
+    else:
+        filter_character = character
+
+    query = {'character_names__storycharacter__story__'
+             'appearing_characters__character__character':
+             filter_character,
+             'character_names__storycharacter__deleted': False,
+             'character_names__storycharacter__story__type__id__in':
+             CORE_TYPES}
+    if universe_id:
+        query['character_names__storycharacter__story__'
+              'appearing_characters__universe_id'] = universe_id
+    characters = Character.objects.filter(Q(**query))\
+                          .exclude(id=filter_character.id).distinct()
 
     characters = characters.annotate(issue_count=Count(
       'character_names__storycharacter__story__issue', distinct=True))
@@ -3583,11 +3600,18 @@ def character_issues_character(request, character_id, character_with_id):
              'type__id__in': CORE_TYPES,
              'deleted': False}
     if universe_id:
-        query['story__appearing_characters__universe_id'] = universe_id
+        query['appearing_characters__universe_id'] = universe_id
 
     stories = Story.objects.filter(Q(**query))
+
+    filter_character_with = character_with
+    if character_with.universe:
+        if character_with.active_generalisations():
+            universe_id = character_with.universe.id
+            filter_character_with = character_with.active_generalisations()\
+                                                  .get().from_character
     query_with = {'story__appearing_characters__character__character':
-                  character_with,
+                  filter_character_with,
                   'story__appearing_characters__deleted': False,
                   'story__type__id__in': CORE_TYPES,
                   'story__deleted': False,
