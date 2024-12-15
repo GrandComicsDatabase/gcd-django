@@ -32,19 +32,19 @@
   <li> National Rank:
     <span class="data_value">{{ ranking.national|ordinal }}</span> place
     {% if ranking.national_levelup %}
-    (IMPs to next rank: <span class="data_value">{{ ranking.national_levelup }}</span>)
+    (IMPs to next place: <span class="data_value">{{ ranking.national_levelup }}</span>)
     {% endif %}
     {% if ranking.national_leveldown %}
-    (IMPs ahead of following rank: <span class="data_value">{{ ranking.national_leveldown }}</span>)
+    (IMPs ahead of following place: <span class="data_value">{{ ranking.national_leveldown }}</span>)
     {% endif %}
   </li>
   <li> Worldwide Rank:
     <span class="data_value">{{ ranking.global|ordinal }}</span> place
     {% if ranking.global_levelup %}
-    (IMPs to next rank: <span class="data_value">{{ ranking.global_levelup }}</span>)
+    (IMPs to next place: <span class="data_value">{{ ranking.global_levelup }}</span>)
     {% endif %}
     {% if ranking.global_leveldown %}
-    (IMPs ahead of following rank: <span class="data_value">{{ ranking.global_leveldown }}</span>)
+    (IMPs ahead of following place: <span class="data_value">{{ ranking.global_leveldown }}</span>)
     {% endif %}
   </li>
   {% endif %}
