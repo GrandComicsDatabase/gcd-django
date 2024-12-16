@@ -44,14 +44,14 @@ class UniverseRevisionForm(BaseForm):
         fields = model._base_field_list
         help_texts = {
             'multiverse':
-                'WIP: The name of the multiverse the universe belongs to, '
+                'The name of the multiverse the universe belongs to, '
                 'e.g. DC or Marvel.',
             'name':
-                'WIP: A description or common name for the universe, '
-                'e.g. mainstream, Ultimate. (TBD other good examples)',
+                'A description or common name for the universe, '
+                'e.g. mainstream, Ultimate, Absolute, MC2',
             'designation':
-                'WIP: The designation of the universe, e.g. Earth-1610, '
-                'Earth 1'
+                'The designation of the universe, e.g. Earth-1610, '
+                'Earth 1, Earth-982'
         }
 
     comments = _get_comments_form_field()
