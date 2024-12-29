@@ -6086,6 +6086,7 @@ class StoryRevision(Revision):
             for feature in features:
                 feature = feature.strip()
                 save_feature = feature
+                feature = feature.replace('  ', ' ')
                 migrated = self.migrate_single_feature(feature)
                 if not migrated and feature.find('[') > 1:
                     feature = feature[:feature.find('[')]
