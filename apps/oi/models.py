@@ -4443,6 +4443,7 @@ class IssueRevision(Revision):
             for credit in credits:
                 credit = credit.strip()
                 save_credit = credit
+                credit = credit.replace('  ', ' ')
                 if credit.strip()[-1] == '?':
                     credit = credit[:-1]
                     uncertain = True
@@ -5446,6 +5447,13 @@ class StoryRevision(Revision):
         revision = StoryRevision.clone(story, changeset, fork=True)
         revision.issue = issue_revision.issue
         revision.sequence_number = issue_revision.next_sequence_number()
+        if revision.type.id == STORY_TYPES['cover']:
+            if revision.changeset.storyrevisions.filter(
+              issue=revision.issue,
+              type__id=STORY_TYPES['cover'],
+              deleted=False).exists():
+                revision.type = StoryType.objects.get(
+                  name='cover reprint (on interior page)')
         credits = story.active_credits
         if revision.issue.series.language != story.issue.series.language:
             if revision.letters:
@@ -5951,6 +5959,7 @@ class StoryRevision(Revision):
                     if credit in ['Typeset', 'Computer']:
                         credit = 'typeset'
                     save_credit = credit
+                    credit = credit.replace('  ', ' ')
                     if credit[-1] == '?':
                         credit = credit[:-1]
                         uncertain = True
