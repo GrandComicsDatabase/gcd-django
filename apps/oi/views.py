@@ -6557,3 +6557,21 @@ def migrate_story_revision(request, id):
     return HttpResponseRedirect(
       urlresolvers.reverse('edit_revision', kwargs={'model_name': 'story',
                                                     'id': story.id}))
+
+
+@permission_required('indexer.can_reserve')
+def migrate_issue_revision(request, id):
+    issue = get_object_or_404(IssueRevision, id=id)
+    if request.user != issue.changeset.indexer:
+        return render_error(
+          request, 'Only the reservation holder may migrate issues.')
+
+    if request.method != 'POST':
+        return _cant_get(request)
+
+    if issue.editing:
+        issue.migrate_credits()
+
+    return HttpResponseRedirect(
+      urlresolvers.reverse('edit_revision', kwargs={'model_name': 'issue',
+                                                    'id': issue.id}))

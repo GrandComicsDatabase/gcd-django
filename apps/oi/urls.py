@@ -136,6 +136,9 @@ urlpatterns = [
     path('issue/<int:issue_one_id>/edit_with/<int:issue_two_id>/',
         oi_views.reserve_two_issues,
         name='reserve_two_issues'),
+    path('issue/revision/<int:id>/migrate/',
+        oi_views.migrate_issue_revision,
+        name='migrate_issue_revision'),
 
     path('issue/<int:issue_id>/export_issue/',
         oi_import.export_issue_to_file,
