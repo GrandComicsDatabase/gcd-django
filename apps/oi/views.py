@@ -722,6 +722,12 @@ def _save(request, form, revision, changeset=None, model_name=None):
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
+        if 'save_migrate_feature' in request.POST:
+            if revision.feature:
+                revision.migrate_feature()
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'edit_revision',
+              kwargs={'model_name': model_name, 'id': revision.id}))
         if 'save_and_set_universe' in request.POST:
             if revision.universe.count() == 1:
                 characters = revision.story_character_revisions.filter(
@@ -1561,6 +1567,7 @@ def process_revision(request, id, model_name):
 
     if 'save' in request.POST or 'save_return' in request.POST \
        or 'save_migrate' in request.POST \
+       or 'save_migrate_feature' in request.POST \
        or 'save_and_set_universe' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         form = get_revision_form(revision,

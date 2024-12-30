@@ -162,6 +162,10 @@ def get_story_revision_form(revision=None, user=None,
         def __init__(self, *args, **kwargs):
             kwargs['user'] = user
             super(RuntimeStoryRevisionForm, self).__init__(*args, **kwargs)
+            if revision and revision.feature != '':
+                self.fields['feature'].label = \
+                  '<input type="submit" name="save_migrate_feature"' \
+                  ' value="Migrate"/></td> Feature'
 
         def save(self, commit=True):
             instance = super(RuntimeStoryRevisionForm,
