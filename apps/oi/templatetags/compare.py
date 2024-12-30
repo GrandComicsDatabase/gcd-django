@@ -15,8 +15,9 @@ from apps.gcd.templatetags.credits import format_page_count, \
                                           split_reprint_string
 
 from apps.oi import states
-from apps.oi.models import remove_leading_article, validated_isbn, \
-                           ReprintRevision, StoryRevision, IssueRevision
+from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
+                           ReprintRevision, StoryRevision, IssueRevision, \
+                           IssueCreditRevision
 from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
 from apps.oi.templatetags.editing import is_locked
 
@@ -60,9 +61,12 @@ def field_value(revision, field):
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
         value = esc(value)
         if type(revision).__name__ == 'IssueRevision':
-            credits = revision.issue_credit_revisions.filter(
-                credit_type__id=CREDIT_TYPES[field],
-                deleted=False)
+            if revision.changeset.change_type != CTYPES['issue_bulk']:
+                credits = revision.issue_credit_revisions.filter(
+                  credit_type__id=CREDIT_TYPES[field],
+                  deleted=False)
+            else:
+                credits = IssueCreditRevision.objects.none()
         else:
             credits = revision.story_credit_revisions.filter(
                                credit_type__id=CREDIT_TYPES[field],

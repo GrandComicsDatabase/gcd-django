@@ -5595,6 +5595,9 @@ def compare(request, id):
 
     prev_rev = revision.previous()
     post_rev = revision.posterior()
+    if changeset.change_type == CTYPES['issue_bulk']:
+        # set temporary change_type to prevent display of linked edits
+        prev_rev.changeset.change_type = CTYPES['issue_bulk']
     field_list = revision.field_list()
     sourced_fields = None
     group_sourced_fields = None
