@@ -1618,9 +1618,11 @@ def edit_issues_in_bulk(request):
           'This should not happen. Please try again. If this error message '
           'persists, please contact an Editor.')
 
+    ids = list(items.values_list('id', flat=True))
+    items = Issue.objects.filter(id__in=ids)
     nr_items = items.count()
     nr_items_reserved = RevisionLock.objects.filter(
-      object_id__in=items.values_list('id', flat=True),
+      object_id__in=ids,
       content_type=ContentType.objects.get_for_model(items[0])).count()
     nr_items_unreserved = nr_items - nr_items_reserved
     if nr_items_unreserved == 0:
