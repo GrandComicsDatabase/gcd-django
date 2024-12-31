@@ -16,7 +16,7 @@
   {% if issue_revision.variant_of %} (variant of {{ issue_revision.variant_of }}) {% endif %}
     </td>
     <td align="right">
-    {% if issue_revision.editing %}
+    {% if issue_revision.editing and not issue_revision.editing == '?' %}
       <form class="changeset" action="{% url 'migrate_issue_revision' id=issue_revision.id %}" method="POST">
         {% csrf_token %}
         <input type="submit" value="Migrate Editing">
