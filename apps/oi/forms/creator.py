@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import unicodedata as ucd
 from collections import OrderedDict
 from django import forms
 from django.forms.models import inlineformset_factory
@@ -37,6 +37,14 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision,
                       HiddenInputWithHelp)
+
+
+# if we want/need to have more specific control, we can use
+# str.maketrans with a map that encodes our needs
+# https://stackoverflow.com/questions/65833714/how-to-remove-accents-from-a-string-in-python
+def remove_diacritics(input_str):
+    nfkd_form = ucd.normalize('NFKD', input_str)
+    return u"".join([c for c in nfkd_form if not ucd.combining(c)])
 
 
 def _generic_data_source_clean(form, cd, field=''):
@@ -113,11 +121,20 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
     def clean(self):
         super(CustomInlineFormSet, self).clean()
         gcd_official_count = 0
+        names = []
         for form in self.forms:
             cd = form.cleaned_data
             if 'is_official_name' in cd and cd['is_official_name'] and \
                not cd['DELETE']:
                 gcd_official_count += 1
+            if 'name' in cd and not cd['DELETE'] and (
+              cd['id'] is None or cd['id'].creator is None):
+                if remove_diacritics(cd['name']) in names:
+                    raise forms.ValidationError(
+                      "Name %s is entered twice, or already exists "
+                      "with/without accents or umlauts." % cd['name'])
+            if 'DELETE' in cd and not cd['DELETE']:
+                names.append(remove_diacritics(cd['name']))
         if gcd_official_count != 1:
             raise forms.ValidationError(
               "Exactly one name needs to selected as the gcd_official_name.")
