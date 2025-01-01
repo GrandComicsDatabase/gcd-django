@@ -81,7 +81,11 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
             if self.instance.creator_name_detail.storycredit_set\
                                                 .filter(deleted=False).count()\
                 or self.instance.creator_name_detail.issuecredit_set\
-                                                .filter(deleted=False).count():
+                                                .filter(deleted=False).count()\
+                or self.instance.creator_name_detail.storycreditrevision_set\
+                                                    .active_set().exists()\
+                or self.instance.creator_name_detail.issuecreditrevision_set\
+                                                    .active_set().exists():
                 # TODO How can the 'remove'-link not be shown in this case ?
                 self.fields['name'].help_text = \
                     'Creator names with existing credits cannot be removed.'
@@ -109,7 +113,11 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
             if form.instance.creator_name_detail.storycredit_set\
                                                 .filter(deleted=False).count()\
               or form.instance.creator_name_detail.issuecredit_set\
-                                                .filter(deleted=False).count():
+                                                .filter(deleted=False).count()\
+              or form.instance.creator_name_detail.storycreditrevision_set\
+                                                    .active_set().exists()\
+              or form.instance.creator_name_detail.issuecreditrevision_set\
+                                                    .active_set().exists():
                 form.cleaned_data['DELETE'] = False
                 return False
         if form.instance.creator_name_detail:
