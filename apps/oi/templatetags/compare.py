@@ -296,7 +296,7 @@ def field_value(revision, field):
             return absolute_url(revision.source, descriptor=value)
     elif field == 'variant_cover_status':
         return VARIANT_COVER_STATUS[value]
-    elif field == 'genre':
+    elif field == 'genre' and revision.source_name == 'story':
         return  _compare_string_genre(revision)
     return value
 
