@@ -299,6 +299,22 @@ def field_value(revision, field):
     return value
 
 
+def _compare_string_genre(revision):
+    genres = getattr(revision, "genre")
+    from_feature = ''
+    for feature in revision.feature_object.filter(deleted=False):
+        for genre in feature.genre.split(';'):
+            genre = genre.strip()
+            if genre not in genres and genre not in from_feature:
+                if from_feature == '':
+                    from_feature = genre
+                else:
+                    from_feature += '; %s' % genre
+    if from_feature:
+        genres += ' (from feature: %s)' % from_feature
+    return genres
+
+
 @register.simple_tag
 def diff_list(prev_rev, revision, field):
     """Generates an array which describes the change in text fields"""
@@ -348,6 +364,11 @@ def diff_list(prev_rev, revision, field):
                  'source_description', 'gcd_official_name', 'bio']:
         diff = diff_match_patch().diff_main(getattr(prev_rev, field),
                                             getattr(revision, field))
+        diff_match_patch().diff_cleanupSemantic(diff)
+        return diff
+    if field == 'genre':
+        diff = diff_match_patch().diff_main(_compare_string_genre(prev_rev),
+                                            _compare_string_genre(revision))
         diff_match_patch().diff_cleanupSemantic(diff)
         return diff
     else:

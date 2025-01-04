@@ -6500,6 +6500,10 @@ class PreviewStory(Story):
         return preview_story
 
     @property
+    def feature_object(self):
+        return self.revision.feature_object.exclude(deleted=True)
+
+    @property
     def credits(self):
         return self.revision.story_credit_revisions.exclude(deleted=True)
 
@@ -6571,9 +6575,6 @@ class PreviewStory(Story):
 
     def has_feature(self):
         return self.revision.feature or self.revision.feature_object.count()
-
-    def show_feature(self):
-        return self._show_feature(self.revision)
 
     def show_feature_logo(self):
         return self._show_feature_logo(self.revision)
