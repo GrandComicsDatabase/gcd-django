@@ -296,6 +296,8 @@ def field_value(revision, field):
             return absolute_url(revision.source, descriptor=value)
     elif field == 'variant_cover_status':
         return VARIANT_COVER_STATUS[value]
+    elif field == 'genre':
+        return  _compare_string_genre(revision)
     return value
 
 
@@ -367,8 +369,8 @@ def diff_list(prev_rev, revision, field):
         diff_match_patch().diff_cleanupSemantic(diff)
         return diff
     if field == 'genre':
-        diff = diff_match_patch().diff_main(_compare_string_genre(prev_rev),
-                                            _compare_string_genre(revision))
+        diff = diff_match_patch().diff_main(field_value(prev_rev, field),
+                                            field_value(revision, field))
         diff_match_patch().diff_cleanupSemantic(diff)
         return diff
     else:

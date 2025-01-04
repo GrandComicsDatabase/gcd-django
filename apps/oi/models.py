@@ -5619,7 +5619,10 @@ class StoryRevision(Revision):
             if 'feature_object' in self.changed and \
               self.changed['feature_object']:
                 from apps.oi.templatetags.compare import _compare_string_genre
-                previous = _compare_string_genre(self.previous())
+                if self.previous():
+                    previous = _compare_string_genre(self.previous())
+                else:
+                    previous = ''
                 current = _compare_string_genre(self)
                 if previous != current:
                     self.changed['genre'] = True
