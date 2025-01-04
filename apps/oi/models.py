@@ -5615,6 +5615,15 @@ class StoryRevision(Revision):
                     self.is_changed = True
                     break
 
+        if 'genre' not in self.changed or not self.changed['genre']:
+            if 'feature_object' in self.changed and \
+              self.changed['feature_object']:
+                from apps.oi.templatetags.compare import _compare_string_genre
+                previous = _compare_string_genre(self.previous())
+                current = _compare_string_genre(self)
+                if previous != current:
+                    self.changed['genre'] = True
+
     def _do_complete_added_revision(self, issue):
         """
         Do the necessary processing to complete the fields of a new
