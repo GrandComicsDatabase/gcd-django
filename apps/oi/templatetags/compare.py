@@ -302,7 +302,7 @@ def field_value(revision, field):
 
 
 def _compare_string_genre(revision):
-    genres = getattr(revision, "genre")
+    genres = getattr(revision, "genre").lower()
     from_feature = ''
     for feature in revision.feature_object.filter(deleted=False):
         for genre in feature.genre.split(';'):

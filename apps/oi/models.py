@@ -5615,6 +5615,11 @@ class StoryRevision(Revision):
                     self.is_changed = True
                     break
 
+        if 'genre' in self.changed and self.changed['genre'] \
+          and self.previous():
+            if self.previous().genre.lower() == self.genre.lower():
+                self.changed['genre'] = False
+
         if 'genre' not in self.changed or not self.changed['genre']:
             if 'feature_object' in self.changed and \
               self.changed['feature_object']:
@@ -5626,6 +5631,7 @@ class StoryRevision(Revision):
                 current = _compare_string_genre(self)
                 if previous != current:
                     self.changed['genre'] = True
+
 
     def _do_complete_added_revision(self, issue):
         """
