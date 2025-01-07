@@ -431,7 +431,7 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
                      interactive=True, chrono_sort=''):
     if query:
         if disambiguation or parent_disambiguation:
-            if query.find(' [') > 1:
+            if query.find(' [') >= 0:
                 pos = query.find(' [')
                 disambiguation = query[pos+2:query.find(']') if
                                        query.find(']') > 1 else None]

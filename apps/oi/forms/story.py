@@ -715,8 +715,10 @@ class StoryRevisionForm(forms.ModelForm):
                           forward=['language_code', 'type'],
                           attrs={'style': 'min-width: 60em'}),
       required=False,
-      help_text='Only features for the series language can be selected. '
-                '[l] marks letter page features, [a] stands for ad features.'
+      help_text='Only features for the series language can be selected. Enter '
+                '"&lt;space&gt;[&lt;text&gt;" to search the disambiguation. '
+                '[l] marks letter page features, [i] stands for in-house '
+                'columns, [a] stands for ad features.'
      )
 
     feature_logo = forms.ModelMultipleChoiceField(
