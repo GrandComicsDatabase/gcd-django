@@ -63,7 +63,7 @@
           <a href="/admin/" class="block px-6 py-2 hover:bg-blue-100 hover:text-black hover:no-underline text-white visited:text-white">Admin</a>
           {% endif %}
           {% if user.is_authenticated %}
-          <a href="{% url "donate" %}" class="block px-6 py-2 hover:bg-blue-100 hover:text-black hover:no-underline visited:text-white">Donate</a>
+          <a href="{% url "donate" %}" class="block px-6 py-2 hover:bg-blue-100 hover:text-black hover:no-underline text-white visited:text-white">Donate</a>
           <form class="block px-6 py-2 hover:bg-blue-100 hover:text-black hover:no-underline text-white visited:text-white" action="{% url "logout" %}" method="POST">
             {% csrf_token %}
             <input type="submit" name="logout" value="Log Out">
