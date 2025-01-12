@@ -108,6 +108,7 @@ MIGRATE_DISCLAIMER = ' Text credits are currently being migrated to '\
                      'database are shown here.'
 
 SORT_TABLE_TEMPLATE = 'gcd/bits/sortable_table.html'
+TW_SORT_TABLE_TEMPLATE = 'gcd/bits/tw_sortable_table.html'
 
 # For ad purposes, we need to be able to identify adult cover images,
 # right now we do it by publisher.
@@ -126,6 +127,34 @@ PUB_WITH_ADULT_IMAGES = [
   4829,  # Weissblech Comics
   3197,  # Zenescope Entertainment
 ]
+
+
+def home(request):
+    creator = get_gcd_object(Creator, 1)
+    creator_names = _get_creator_names_for_checklist(creator)
+
+    stories = Story.objects.filter(credits__creator__in=creator_names,
+                                   credits__deleted=False).distinct()\
+                           .select_related('issue__series__publisher')
+    heading = 'for creator %s' % (creator)
+
+    filter = filter_sequences(request, stories)
+    stories = filter.qs
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'sequence',
+        'plural_suffix': 's',
+        'heading': heading,
+        'filter_form': filter.form
+    }
+    template = 'gcd/search/issue_list_sortable.html'
+    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
+                       template_name=TW_SORT_TABLE_TEMPLATE,
+                       order_by=('issue'))
+    return generic_sortable_list(request, stories, table, 'home.html', context)
+    context['table'] = table
+    return render(request, 'home.html', context)
 
 
 # to set flag for choice of ad providers

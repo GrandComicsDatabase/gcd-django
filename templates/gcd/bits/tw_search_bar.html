@@ -1,0 +1,146 @@
+{% load static %}
+<nav class="flex items-center justify-between flex-wrap bg-gcd px-6 py-1">
+  <div class="flex-1 ">
+    <div class="w-14">
+    <a href="{% url "home" %}"><img class="w-14" src="{% static "img/gcd_logo.png" %}" alt="GCD"></a>
+    </div>
+  </div>
+  <!-- Mobile Menu Button -->
+  <div class="md:hidden flex items-center">
+    <button class="mobile-menu-button-gcd">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+        <title>bars-3-bottom-left</title>
+        <g fill="none">
+          <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        </g>
+      </svg>
+    </button>
+  </div><!-- Mobile Menu Button -->
+  <!-- <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto "> -->
+  <div><!-- Search Box -->
+    <form action="{% url "basic_search" %}" method="get">
+      <div class="flex rounded-md overflow-hidden max-w-md mx-auto">
+      {% include "gcd/bits/search_for.html" %}
+        <input type="search" name="query" placeholder="Search..."
+          class="w-full bg-white text-gray-600 px-1 " />
+        <button type='submit' class="flex items-center justify-center bg-white px-2">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192.904 192.904" width="16px" class="fill-black">
+          <path
+            d="m190.707 180.101-47.078-47.077c11.702-14.072 18.752-32.142 18.752-51.831C162.381 36.423 125.959 0 81.191 0 36.422 0 0 36.423 0 81.193c0 44.767 36.422 81.187 81.191 81.187 19.688 0 37.759-7.049 51.831-18.751l47.079 47.078a7.474 7.474 0 0 0 5.303 2.197 7.498 7.498 0 0 0 5.303-12.803zM15 81.193C15 44.694 44.693 15 81.191 15c36.497 0 66.189 29.694 66.189 66.193 0 36.496-29.692 66.187-66.189 66.187C44.693 147.38 15 117.689 15 81.193z">
+          </path>
+        </svg>
+        </button>
+      {% include "gcd/bits/search_order.html" %}
+      </div>
+    </form>
+  </div><!-- Search Box -->
+  <!-- Overall Navigation -->
+  <div class="flex flex-1 justify-end">
+    <!-- Primary Navigation -->
+    <div class="hidden flex lg:flex lg:flex-row md:flex-col justify-end text-white items-center navigation-menu">
+      <a class="px-3 py-2 visited:text-white hover:bg-blue-100 hover:text-black hover:no-underline" href="{% url "advanced_search" %}">Advanced Query</a>
+      {% if user.is_authenticated %}
+        {% if MYCOMICS %}
+      <a href="{% url "collections_list" %}">Collections</a>  
+        {% else %}
+      <a class="px-3 py-2 visited:text-white hover:bg-blue-100 hover:text-black hover:no-underline" href="{% url "editing" %}">Editing</a>
+        {% endif %}
+      {% else %}
+        <a class="px-3 py-2 visited:text-white hover:bg-blue-100 hover:text-black hover:no-underline" href="{% url "donate" %}">Donate</a>
+      {% endif %}
+      <!-- Dropdown Menu -->
+      <div class="inline">
+        <button class="dropdown-toggle py-2 px-3 items-center gap-2 rounded">
+          <span class="pointer-events-none">
+            <img class="w-10" src='{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/avatar-default-symbolic.svg" %}'>
+          </span>
+        </button>
+        <div class="dropdown-menu absolute right-0 hidden bg-gcd text-white rounded-b-lg pb-2 w-48">
+          {% if not user.is_anonymous %}
+          <a href="{% url "view_profile" user_id=user.id %}" class="block px-6 py-2 hover:bg-blue-100 hover:text-black hover:no-underline visited:text-white">Profile</a>
+          {% endif %}
+          {% if user.is_staff %}
+          <a href="/admin/" class="block px-6 py-2 hover:bg-blue-100 hover:text-black hover:no-underline visited:text-white">Admin</a>
+          {% endif %}
+          {% if user.is_authenticated %}
+          <a href="{% url "donate" %}" class="block px-6 py-2 hover:bg-blue-100 hover:text-black hover:no-underline visited:text-white">Donate</a>
+          <form class="block px-6 py-2 hover:bg-blue-100 hover:text-black hover:no-underline visited:text-white" action="{% url "logout" %}" method="POST">
+            {% csrf_token %}
+            <input type="submit" name="logout" value="Log Out">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          </form>        
+          {% else %}
+          <form class="block px-6 py-2 hover:bg-gray-800" action="{% url "login" %}" method="GET">
+            <input type="submit" name="login" value="Log In">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          </form>
+          {% endif %}   
+         </div>
+      </div><!-- Dropdown Menu -->
+    </div><!-- Primary Navigation -->
+    <!-- Mobile Menu Button Medium -->
+    <div class="hidden md:block lg:hidden">
+    <button class="mobile-menu-button-gcd-md">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+        <title>bars-3-bottom-left</title>
+        <g fill="none">
+          <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        </g>
+      </svg>
+    </button>
+    </div><!-- Mobile Menu Button Medium -->
+  </div><!-- Overall Navigation -->
+</nav>
+
+<script type="text/javascript">
+document.addEventListener("DOMContentLoaded", () => {
+  // Select all dropdown toggle buttons
+  const dropdownToggles = document.querySelectorAll(".dropdown-toggle")
+
+  dropdownToggles.forEach((toggle) => {
+    toggle.addEventListener("click", () => {
+      // Find the next sibling element which is the dropdown menu
+      const dropdownMenu = toggle.nextElementSibling
+
+      // Toggle the 'hidden' class to show or hide the dropdown menu
+      if (dropdownMenu.classList.contains("hidden")) {
+        // Hide any open dropdown menus before showing the new one
+        document.querySelectorAll(".dropdown-menu").forEach((menu) => {
+          menu.classList.add("hidden")
+        })
+
+        dropdownMenu.classList.remove("hidden")
+      } else {
+        dropdownMenu.classList.add("hidden")
+      }
+    })
+  })
+
+  // Clicking outside of an open dropdown menu closes it
+  window.addEventListener("click", function (e) {
+    if (!e.target.matches(".dropdown-toggle")) {
+      document.querySelectorAll(".dropdown-menu").forEach((menu) => {
+        if (!menu.contains(e.target)) {
+          menu.classList.add("hidden")
+        }
+      })
+    }
+  })
+  
+  // Mobile menu toggle
+  
+  const mobileMenuButton = document.querySelector('.mobile-menu-button-gcd')
+  const mobileMenuButtonMedium = document.querySelector('.mobile-menu-button-gcd-md')
+  const mobileMenu = document.querySelector('.navigation-menu')
+  
+  mobileMenuButton.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden')
+  })
+
+  mobileMenuButtonMedium.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden')
+  })
+
+})
+</script>
+  

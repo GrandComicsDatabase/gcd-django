@@ -1,0 +1,98 @@
+{% load i18n %}
+
+<div class="flex flex-1 justify-end">
+<div class="flex">
+  <ul class="max-lg:hidden flex items-center h-8 px-2">
+{% if page.has_other_pages %}
+  {% spaceless %}
+    <li>
+  {% if page.has_previous %}
+      <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-s-lg hover:bg-blue-300 hover:no-underline" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
+  {% else %}
+      <span class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-s-lg" style="text-decoration: none">&#5176;</span>
+  {% endif %} <!-- has_previous -->
+    </li>
+  {% for number in page.page_range %}
+    <li>
+    {% if number == page.number %}
+      <span class="flex items-center justify-center px-2 h-8 link-with-text-color border border-gray-400 bg-blue-300 hover:no-underline">{{ number }}</span>
+    {% else %}
+    {% if not number %}<span class="flex items-center justify-center px-2 h-8 link-text-color border border-gray-400 bg-blue-100 hover:no-underline"> ... {# literally dots #}</span>
+      {% else %}{# pagelink num #}
+        {% if extra_string %}
+      <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 hover:bg-blue-300 hover:no-underline" href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
+        {% else %}
+      <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 hover:bg-blue-300 hover:no-underline" href="?page={{ number }}">{{ number }}</a>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+    </li>
+  {% endfor %}
+    <li>
+  {% if page.has_next %}
+    <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-e-lg hover:bg-blue-300 hover:no-underline" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
+  {% else %}
+      <span class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-e-lg" style="text-decoration: none">&#5171;</span>
+  {% endif %} <!-- has_next -->
+    </li>
+  {% endspaceless %}
+{% else %}
+    <li> <span class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded" style="text-decoration: none">{{ page.number }}</span> </li>
+{% endif %}
+  </ul>
+
+  <ul class="max-sm:hidden lg:hidden flex items-center h-8 px-2">
+{% if page.has_other_pages %}
+    <li>
+  {% if page.has_previous %}
+      <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-s-lg hover:bg-blue-300 hover:no-underline" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
+  {% else %}
+      <span class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-s-lg" style="text-decoration: none">&#5176;</span>
+  {% endif %} <!-- has_previous -->
+    </li>
+  {% if page.has_next %}
+    <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-e-lg hover:bg-blue-300 hover:no-underline" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
+  {% else %}
+      <span class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-e-lg" style="text-decoration: none">&#5171;</span>
+  {% endif %} <!-- has_next -->
+    </li>
+{% endif %}
+  </ul>
+
+{% if page.has_other_pages %}
+  <ul class="flex justify-end -space-x-px items-center h-8">
+    <li>
+  {% if page.has_other_pages %}
+    {% spaceless %}
+    <div class="px-1 sm:hidden py-2">
+    {% if page.has_previous %}
+        <a class="px-3 py-1 link-with-text-color bg-blue-100 border border-gray-400 rounded-s-lg hover:bg-blue-300 hover:no-underline" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
+    {% else %}
+        <span class="px-3 py-1 link-with-text-color bg-blue-100 border border-gray-400 rounded-s-lg" style="text-decoration: none">&#5176;</span>
+    {% endif %} <!-- has_previous -->
+    {% if page.has_next %}
+      <a class="px-3 py-1 link-with-text-color bg-blue-100 border border-gray-400 rounded-e-lg hover:bg-blue-300 hover:no-underline" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
+    {% else %}
+        <span class="px-3 py-1 link-with-text-color bg-blue-100 border border-gray-400 rounded-e-lg" style="text-decoration: none">&#5171;</span>
+    {% endif %} <!-- has_next -->
+    </div>
+    {% endspaceless %}
+  {% endif %}
+        <form method="GET">
+        <input type="text"  class="border border-gray-400 rounded" name="page" size="3">
+        <input type="submit" class="px-2 py-0 h-8 bg-blue-100 border border-gray-400 hover:bg-blue-300  rounded" value="{% trans 'Go' %}">
+{% if advanced_search %}
+  {% for field, value in request.GET.items %}
+    {% if field != "page" and field != "submit" %}
+        <input type="hidden" name="{{ field }}" value="{{ value|default:'' }}">
+        </input>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+      </form>
+      <span class="lg:hidden px-3 items-center">{{ page.paginator.num_pages }} pages</span>
+    </li>
+  </ul>
+{% endif %}
+</div>
+</div>

@@ -736,5 +736,6 @@ urlpatterns += [
           permanent=True)),
     path('creator_checklist/name/<path:creator>/',
          bv.RedirectView.as_view(url='/checklist/name/%(creator)s/',
-                                 permanent=True))
+                                 permanent=True)),
+    path('home', gcd_views.details.home, name='home')
 ]

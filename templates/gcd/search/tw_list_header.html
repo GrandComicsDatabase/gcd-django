@@ -1,0 +1,17 @@
+{% load i18n %}
+{% load static %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-3">
+    <div class="flex-1 font-bold text-lg">
+  {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}
+  {{ heading }}
+    </div>
+  {% with query_string as extra_string %}
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+  {% endwith %}
+</nav>
+{% if position == 'top' and not select_key and not confirm_selection and not hide_info %}
+<div id="search_reminder">
+  Refine your query using an <a href="{% url 'advanced_search' %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>.
+<div class="right">
+  Download <a href="{% url "process_advanced_search_csv" %}?{{ query_string }}">results as csv</a>.</div>
+{% endif %}

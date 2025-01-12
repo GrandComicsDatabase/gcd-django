@@ -1,6 +1,6 @@
 {% load display %}
 
-<select name="search_type" size="1">
+<select class="px-1" name="search_type" size="1">
   {% if USE_ELASTICSEARCH %}
     {% if MYCOMICS %}
       <option value={{ selected|default:""|current_search:"mycomics_haystack" }}> Everything </option>

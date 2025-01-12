@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+{% load static %}
+{% load django_tables2 %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Grid with Tailwind CSS</title>
+{% load static %}
+    <link rel="stylesheet" href="{% static 'css/output.css' %}" type="text/css"> <!-- We add the output Tailwind CSS here -->
+</head>
+
+<body class="h-screen justify-center items-center">
+{% include "gcd/bits/tw_search_bar.html" %}
+    <script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
+{% with position='top' link_direction='bottom' hide_info=True query_string=extra_string %}
+  {% include "gcd/search/tw_list_header.html" %}
+{% endwith %}
+    
+<div class="px-0 lg:px-2"> 
+  <p>
+{{ result_disclaimer }}
+  </p>
+
+<!-- {% if filter_form %}
+  <form method="GET">
+  {{ filter_form }}
+    <input type="submit" value='filter results'/>
+  </form>
+{% endif %} -->
+  
+{% render_table table %}
+  </div>
+</body>
+</html>
