@@ -297,11 +297,25 @@ def field_value(revision, field):
     elif field == 'variant_cover_status':
         return VARIANT_COVER_STATUS[value]
     elif field == 'genre' and revision.source_name == 'story':
-        return  _compare_string_genre(revision)
+        return _compare_string_genre(revision)
     return value
 
 
 def _compare_string_genre(revision):
+    """
+    Compares the genres of a story_revision with the genres of its
+    associated features.
+
+    Args:
+        revision (object): An object representing a revision, which has
+                           a 'genre' attribute and a 'feature_object' attribute
+                           that is a queryset of features.
+
+    Returns:
+        str: A string of genres in lowercase. If there are genres in the
+             features that are not in the revision's genres, they are
+             appended in the format ' (from feature: genre1; genre2; ...)'.
+    """
     genres = getattr(revision, "genre").lower()
     from_feature = ''
     for feature in revision.feature_object.filter(deleted=False):
