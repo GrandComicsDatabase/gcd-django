@@ -13,7 +13,17 @@
         {% endif %}
         {% for column in table.columns %}
             {% if column.orderable %}
-            <th style="no_visited" {{ column.attrs.th.as_html }}><a class="sort-icon visited:text-indigo-700" href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">{{ column.header }}</a></th>
+            <th style="no_visited" {{ column.attrs.th.as_html }}>
+            <a class="sort-icon visited:text-indigo-700" href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">
+                {{ column.header }}
+                {% if column.is_ordered %}
+                    {% if column.order_by_alias|first == '-' %}
+                       <span>&#x25BC;</span> <!-- Down arrow -->
+                    {% else %}
+                       <span>&#x25B2;</span> <!-- Up arrow -->
+                    {% endif %}
+                {% endif %}
+            </a></th>
             {% else %}
             <th {{ column.attrs.th.as_html }}>{{ column.header }}</th>
             {% endif %}
