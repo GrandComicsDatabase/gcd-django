@@ -685,6 +685,10 @@ a:hover {
   display: none;
 }
 
+.h-7 {
+  height: 1.75rem;
+}
+
 .h-8 {
   height: 2rem;
 }
@@ -912,9 +916,9 @@ a:hover {
 }
 
 html {
-  font-size: 16px;
+  font-size: 15px;
   @media (min-width: 1024px) {
-    font-size: 17px;
+    font-size: 18px;
   }
 }
 

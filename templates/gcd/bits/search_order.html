@@ -2,3 +2,18 @@
     <option value="alpha" selected> Name
     <option value="chrono"> Date
 </select>
+<script>
+    function updateSortSelect() {
+        var searchType = document.querySelector('select[name="search_type"]').value;
+        var sortSelect = document.querySelector('select[name="sort"]');
+        if (searchType.includes('haystack')) {
+            sortSelect.disabled = true;
+            sortSelect.value = '';
+        } else {
+            sortSelect.disabled = false;
+            sortSelect.selectedIndex = 0;
+        }
+    }
+    document.addEventListener('DOMContentLoaded', updateSortSelect);
+    document.querySelector('select[name="search_type"]').addEventListener('change', updateSortSelect);
+</script>
