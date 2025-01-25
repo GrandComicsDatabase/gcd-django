@@ -253,9 +253,16 @@ def show_characters(story, url=True, css_style=True, compare=False):
     if groups and first_member is True:
         characters = characters[:-2]
 
-    appearing_characters = all_appearing_characters.exclude(
+    appearing_characters_ids = list(all_appearing_characters.exclude(
       character__id__in=in_group.values_list('character'),
-      group_name__isnull=False)
+      group_name__isnull=False).values_list('character', flat=True))
+    # We do not give the QuerySet to the filter, but the IDs.
+    # In get_civilian_identity we need to filter the appearing_characters
+    # once more, which otherwise would still use the above exclude,
+    # which for StoryCharacterRevision is somehow expensive.
+    appearing_characters = all_appearing_characters.filter(
+      character_id__in=appearing_characters_ids)
+
     for character in appearing_characters:
         alias_identity = set(
           character.character.character.from_related_character
