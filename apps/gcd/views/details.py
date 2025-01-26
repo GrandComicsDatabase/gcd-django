@@ -2632,6 +2632,8 @@ def daily_covers(request, show_date=None, user=False):
 
         result_disclaimer = mark_safe('Switch to <a href="%s">%s</a>.' % (
           other_url, link_name))
+    else:
+        result_disclaimer = ''
 
     context = {
         'item_name': 'cover',
