@@ -1304,13 +1304,6 @@ def publisher_monthly_covers(request,
     else:
         url_name = date_type[:-8] + 'on_sale'
         ordering = 'publication_date'
-    switch_date_link = "Show %s by <a href='%s'>%s</a>." % (
-      'issues' if overview else 'covers',
-      urlresolvers.reverse(url_name,
-                           kwargs={'publisher_id': publisher_id,
-                                   'year': year,
-                                   'month': month}),
-      'on-sale date' if not use_on_sale else 'publication date')
 
     if year and 'month' not in request.GET:
         year = int(year)
@@ -1325,7 +1318,13 @@ def publisher_monthly_covers(request,
             year = return_val[0]
             month = return_val[1]
 
-    table_width = COVER_TABLE_WIDTH
+    switch_date_link = "Show %s by <a href='%s'>%s</a>." % (
+      'issues' if overview else 'covers',
+      urlresolvers.reverse(url_name,
+                           kwargs={'publisher_id': publisher_id,
+                                   'year': year,
+                                   'month': month}),
+      'on-sale date' if not use_on_sale else 'publication date')
 
     start_date = datetime(year, month, 1)
     date_before = start_date + timedelta(-1)
@@ -1552,7 +1551,6 @@ def publisher_monthly_covers(request,
           'choose_url_before': choose_url_before,
           'choose_date': True,
           'use_on_sale': use_on_sale,
-          'table_width': table_width,
           'heading': heading,
           'result_disclaimer': mark_safe(switch_date_link),
           'RANDOM_IMAGE': _publisher_image_content(publisher.id)
@@ -1565,11 +1563,6 @@ def publisher_monthly_covers(request,
           order_by=(ordering))
         return generic_sortable_list(request, covers, table, template,
                                      context, 50)
-
-        return paginate_response(
-          request, covers, 'gcd/details/publisher_monthly_covers.html',
-          context, per_page=COVERS_PER_GALLERY_PAGE,
-          callback_key='tags', callback=get_image_tags_per_page)
 
 
 def indicia_publisher(request, indicia_publisher_id):
