@@ -19,6 +19,7 @@ from django.http import HttpResponseRedirect, Http404, JsonResponse, \
                         HttpResponse
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
+from django.template.defaultfilters import pluralize
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.utils.safestring import mark_safe
 
@@ -1907,6 +1908,16 @@ def series_covers(request, series_id):
     series = get_gcd_object(Series, series_id)
     covers = Cover.objects.filter(issue__series=series, deleted=False) \
                           .select_related('issue')
+    series_status_info = '<a href="%sstatus"> Index Status</a> / ' \
+                         '<a href="%sscans">Cover Scan Status</a>' \
+                         ' (%s %s for %s %s available).' % (
+                           series.get_absolute_url(),
+                           series.get_absolute_url(),
+                           series.scan_count,
+                           pluralize(series.scan_count, 'cover,covers'),
+                           series.issue_count,
+                           pluralize(series.issue_count, 'issue,issues'),
+                         )
 
     context = {
         'item_name': 'cover',
@@ -1914,6 +1925,7 @@ def series_covers(request, series_id):
         'publisher': publisher,
         'heading': mark_safe("for %s" %
                              series.full_name_with_link(publisher=True)),
+        'result_disclaimer': mark_safe(series_status_info),
     }
 
     template = 'gcd/search/tw_list_sortable.html'
