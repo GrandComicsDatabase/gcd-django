@@ -14,7 +14,8 @@ from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.html import format_html
 
-from django_filters import FilterSet, ModelChoiceFilter
+from django_filters import FilterSet, ModelChoiceFilter, \
+                           ModelMultipleChoiceFilter
 
 from dal import autocomplete
 
@@ -757,15 +758,7 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
 # filtering of objects in lists
 ##############################################################################
 
-class SeriesFilter(FilterSet):
-    country = ModelChoiceFilter(queryset=Country.objects.all())
-    language = ModelChoiceFilter(queryset=Language.objects.all())
-    publisher = ModelChoiceFilter(queryset=Publisher.objects.all())
-
-    class Meta:
-        model = Series
-        fields = ['country', 'language', 'publisher']
-
+class CommonFilter(FilterSet):
     def __init__(self, *args, **kwargs):
         if 'countries' in kwargs:
             countries = kwargs.pop('countries')
@@ -779,7 +772,7 @@ class SeriesFilter(FilterSet):
             publishers = kwargs.pop('publishers')
         else:
             publishers = None
-        super(SeriesFilter, self).__init__(*args, **kwargs)
+        super(CommonFilter, self).__init__(*args, **kwargs)
         if countries:
             qs = Country.objects.filter(id__in=countries)
             self.filters['country'].queryset = qs
@@ -791,20 +784,31 @@ class SeriesFilter(FilterSet):
             self.filters['publisher'].queryset = qs
 
 
-class IssueFilter(FilterSet):
+class SeriesFilter(CommonFilter):
+    country = ModelMultipleChoiceFilter(queryset=Country.objects.all())
+    language = ModelMultipleChoiceFilter(queryset=Language.objects.all())
+    publisher = ModelMultipleChoiceFilter(queryset=Publisher.objects.all())
+
+    class Meta:
+        model = Series
+        fields = ['country', 'language', 'publisher']
+
+
+class IssueFilter(CommonFilter):
     from apps.mycomics.models import Collection
-    country = ModelChoiceFilter(field_name='series__country',
-                                label='Country',
-                                queryset=Country.objects.all())
-    language = ModelChoiceFilter(field_name='series__language',
-                                 label='Language',
-                                 queryset=Language.objects.all())
-    publisher = ModelChoiceFilter(field_name='series__publisher',
-                                  label='Publisher',
-                                  queryset=Publisher.objects.all())
-    collection = ModelChoiceFilter(field_name='collectionitem__collections',
-                                   label='In Collection',
-                                   queryset=Collection.objects.all())
+    country = ModelMultipleChoiceFilter(field_name='series__country',
+                                        label='Country',
+                                        queryset=Country.objects.all())
+    language = ModelMultipleChoiceFilter(field_name='series__language',
+                                         label='Language',
+                                         queryset=Language.objects.all())
+    publisher = ModelMultipleChoiceFilter(field_name='series__publisher',
+                                          label='Publisher',
+                                          queryset=Publisher.objects.all())
+    collection = ModelMultipleChoiceFilter(
+      field_name='collectionitem__collections',
+      label='In Collection',
+      queryset=Collection.objects.all())
 
     class Meta:
         model = Issue
@@ -812,32 +816,11 @@ class IssueFilter(FilterSet):
 
     def __init__(self, *args, **kwargs):
         from apps.mycomics.models import Collection
-        if 'countries' in kwargs:
-            countries = kwargs.pop('countries')
-        else:
-            countries = None
-        if 'languages' in kwargs:
-            languages = kwargs.pop('languages')
-        else:
-            languages = None
-        if 'publishers' in kwargs:
-            publishers = kwargs.pop('publishers')
-        else:
-            publishers = None
         if 'collections' in kwargs:
             collections = kwargs.pop('collections')
         else:
             collections = None
         super(IssueFilter, self).__init__(*args, **kwargs)
-        if countries:
-            qs = Country.objects.filter(id__in=countries)
-            self.filters['country'].queryset = qs
-        if languages:
-            qs = Language.objects.filter(id__in=languages)
-            self.filters['language'].queryset = qs
-        if publishers:
-            qs = Publisher.objects.filter(id__in=publishers)
-            self.filters['publisher'].queryset = qs
         if collections:
             qs = Collection.objects.filter(id__in=collections)
             self.filters['collection'].queryset = qs
@@ -845,44 +828,42 @@ class IssueFilter(FilterSet):
             self.filters.pop('collection')
 
 
-class SequenceFilter(FilterSet):
-    country = ModelChoiceFilter(field_name='issue__series__country',
-                                label='Country',
-                                queryset=Country.objects.all())
-    language = ModelChoiceFilter(field_name='issue__series__language',
-                                 label='Language',
-                                 queryset=Language.objects.all())
-    publisher = ModelChoiceFilter(field_name='issue__series__publisher',
-                                  label='Publisher',
-                                  queryset=Publisher.objects.all())
+class CoverFilter(CommonFilter):
+    country = ModelMultipleChoiceFilter(field_name='issue__series__country',
+                                        label='Country',
+                                        queryset=Country.objects.all())
+    language = ModelMultipleChoiceFilter(field_name='issue__series__language',
+                                         label='Language',
+                                         queryset=Language.objects.all())
+    publisher = ModelMultipleChoiceFilter(
+      field_name='issue__series__publisher',
+      label='Publisher',
+      queryset=Publisher.objects.all())
 
     class Meta:
         model = Issue
         fields = ['country', 'language', 'publisher']
 
-    def __init__(self, *args, **kwargs):
-        if 'countries' in kwargs:
-            countries = kwargs.pop('countries')
-        else:
-            countries = None
-        if 'languages' in kwargs:
-            languages = kwargs.pop('languages')
-        else:
-            languages = None
-        if 'publishers' in kwargs:
-            publishers = kwargs.pop('publishers')
-        else:
-            publishers = None
-        super(SequenceFilter, self).__init__(*args, **kwargs)
-        if countries:
-            qs = Country.objects.filter(id__in=countries)
-            self.filters['country'].queryset = qs
-        if languages:
-            qs = Language.objects.filter(id__in=languages)
-            self.filters['language'].queryset = qs
-        if publishers:
-            qs = Publisher.objects.filter(id__in=publishers)
-            self.filters['publisher'].queryset = qs
+
+class SequenceFilter(CommonFilter):
+    country = ModelMultipleChoiceFilter(field_name='issue__series__country',
+                                        label='Country',
+                                        required=False,
+                                        queryset=Country.objects.all())
+    language = ModelMultipleChoiceFilter(field_name='issue__series__language',
+                                         label='Language',
+                                         required=False,
+                                         blank=True,
+                                         queryset=Language.objects.all())
+    publisher = ModelMultipleChoiceFilter(
+      field_name='issue__series__publisher',
+      label='Publisher',
+      required=False,
+      queryset=Publisher.objects.all())
+
+    class Meta:
+        model = Issue
+        fields = ['country', 'language', 'publisher']
 
 
 class KeywordUsedFilter(FilterSet):
@@ -903,6 +884,24 @@ class KeywordUsedFilter(FilterSet):
         if content_type:
             qs = ContentType.objects.filter(id__in=content_type)
             self.filters['content_type'].queryset = qs
+
+
+def filter_series(request, series):
+    data = set(series.values_list('country', 'language', 'publisher'))
+    countries = []
+    languages = []
+    publishers = []
+    for i in data:
+        countries.append(i[0])
+        languages.append(i[1])
+        publishers.append(i[2])
+    filter = SeriesFilter(request.GET,
+                          queryset=series,
+                          countries=countries,
+                          languages=languages,
+                          publishers=publishers,
+                          )
+    return filter
 
 
 def filter_issues(request, issues):
@@ -927,6 +926,26 @@ def filter_issues(request, issues):
                          languages=languages,
                          publishers=publishers,
                          collections=collections
+                         )
+    return filter
+
+
+def filter_covers(request, covers):
+    data = set(covers.values_list('issue__series__country',
+                                  'issue__series__language',
+                                  'issue__series__publisher'))
+    countries = []
+    languages = []
+    publishers = []
+    for i in data:
+        countries.append(i[0])
+        languages.append(i[1])
+        publishers.append(i[2])
+    filter = CoverFilter(request.GET,
+                         queryset=covers,
+                         countries=countries,
+                         languages=languages,
+                         publishers=publishers,
                          )
     return filter
 

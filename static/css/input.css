@@ -10,7 +10,7 @@
 
 @layer components {
     .link-with-text-color {
-        @apply text-black visited:text-black hover:no-underline
+        @apply text-black visited:text-black
     }
 }
 
@@ -18,7 +18,19 @@ html {
   font-size: 15px;
   @screen lg {
     font-size: 18px;
+  };
+  @screen 2xl {
+    font-size: 16px;
   }
 }
 
+.btn {
+  @apply font-bold py-1 px-4 rounded;
+}
+.btn-blue {
+  @apply bg-blue-500 text-white;
+}
+.btn-blue:hover {
+  @apply bg-blue-700;
+}
 

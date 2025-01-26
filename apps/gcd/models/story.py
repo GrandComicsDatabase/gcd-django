@@ -15,6 +15,7 @@ from .character import CharacterNameDetail, Group, GroupNameDetail, \
                        Universe, Multiverse
 from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
+from .support_tables import render_publisher
 
 STORY_TYPES = {
     'ad': 2,
@@ -818,11 +819,7 @@ class StoryTable(tables.Table):
         return (query_set, True)
 
     def render_publisher(self, value):
-        from apps.gcd.templatetags.display import absolute_url
-        from apps.gcd.templatetags.credits import show_country_info
-        display_publisher = "<img class='px-1 inline' %s>" % (
-          show_country_info(value.country))
-        return mark_safe(display_publisher) + absolute_url(value)
+        return render_publisher(value)
 
     def value_publisher(self, value):
         return str(value)

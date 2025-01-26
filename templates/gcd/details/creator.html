@@ -53,12 +53,12 @@
   {% endif %}
             <p>
             <ul style="columns: 2;">
-              <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue Checklist (via credit search for name "{{ creator.gcd_official_name }}")</a></li>
-              <li><a href='{% url "checklist_by_id" creator_id=creator.id %}'>Issue Checklist (via linked credit records)</a></li>
+              <li><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue List (via credit search for name "{{ creator.gcd_official_name }}")</a></li>
+              <li><a href='{% url "creator_issues" creator_id=creator.id %}'>Issue List (via linked credit records)</a></li>
               <li><a href='{% url "creator_overview" creator_id=creator.id %}'>Issue Overview (via linked credit records)</a></li>
               <li><a href='{% url "creator_migrate_checklist" creator=creator.gcd_official_name %}'>List of to be migrated issues (via credit search for name "{{ creator.gcd_official_name }}")</a></li>
               <li><a href='{% url "creator_edited_issues" creator_id=creator.id %}'>Issue Edit List (via linked credit records)</a></li>
-              <li><a href='{% url "cover_checklist_by_id" creator_id=creator.id %}'>Cover List (via linked credit records)</a></li>
+              <li><a href='{% url "creator_covers" creator_id=creator.id %}'>Cover List (via linked credit records)</a></li>
               <li><a href='{% url "creator_series" creator_id=creator.id %}'>Series List (via linked credit records)</a></li>
               <li><a href='{% url "creator_characters" creator_id=creator.id %}'>Characters List (via linked credit records)</a></li>
               <li><a href='{% url "creator_features" creator_id=creator.id %}'>Features List (via linked credit records)</a></li>
@@ -189,7 +189,7 @@
           <ol>
     {% for signature in creator.active_signatures %}
       <li><a href="{{ signature.get_absolute_url }}">{{ signature.name }}</a>
-      {% if signature.signature %}
+      {% if signature.signature and not FAKE_IMAGES %}
               <img src="{{ signature.signature.scaled_image.url }}">
       {% else %}
                [generic]

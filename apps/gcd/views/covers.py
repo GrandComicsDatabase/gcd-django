@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-from urllib.parse import quote
-
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models import Issue
 from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 from apps.oi import states
+
 
 def get_generic_image_tag(image, alt_text):
     img_class = 'cover_img'
@@ -15,12 +13,14 @@ def get_generic_image_tag(image, alt_text):
         width = min(image.image_file.width, 400)
     except IOError:
         width = 0
-    return mark_safe('<img src="' + image.scaled_image.url + '?' + \
-                     str(hash(image.modified)) + '" alt="' + esc(alt_text) \
-                     + '" ' + ' class="' + img_class + '" width="' + str(width) + '"/>')
+    return mark_safe('<img src="' + image.scaled_image.url + '?' +
+                     str(hash(image.modified)) + '" alt="' + esc(alt_text)
+                     + '" ' + ' class="' + img_class +
+                     '" width="' + str(width) + '"/>')
 
-def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
-    img_class = 'cover_img'
+
+def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
+                  img_class='cover_img'):
     css_width = ''
 
     if zoom_level == ZOOM_SMALL:
@@ -42,25 +42,25 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
         size = 'medium'
 
     if not can_have_cover:
-        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
-            'img/noupload_' + size +'.png" alt="No image"' + \
-            'class="cover_img">')
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
+                         'img/noupload_' + size + '.png" alt="No image"' +
+                         'class="cover_img max-w-none">')
 
     if cover is None:
-        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
-            'img/nocover_' + size +'.png" alt="No image yet"' + \
-            'class="cover_img">')
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
+                         'img/nocover_' + size + '.png" alt="No image yet"' +
+                         'class="cover_img max-w-none">')
 
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
-        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL + \
-               'img/nocover_' + size +'.png" alt="No image yet"' + \
-               'class="cover_img">')
+        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
+                         'img/nocover_' + size + '.png" alt="No image yet"' +
+                         'class="cover_img max-w-none">')
 
     if settings.FAKE_IMAGES:
-        return mark_safe('<img src="' +settings.STATIC_URL + \
-               'img/placeholder_' + size + '.jpg"' + \
-               'class="cover_img"' + css_width + '>')
+        return mark_safe('<img src="' + settings.STATIC_URL +
+                         'img/placeholder_' + size + '.jpg"' +
+                         'class="cover_img max-w-none" "' + css_width + '>')
 
     img_url = cover.get_base_url()+("/w%d/%d.jpg" % (width, cover.id))
 
@@ -69,8 +69,9 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True):
     # prefered solution found on the net.
     img_url = img_url + '?' + str(hash(cover.last_upload))
 
-    return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) + \
-           '" ' + ' class="' + img_class + '"' + css_width + '/>')
+    return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) +
+                     '" ' + ' class="' + img_class + ' max-w-none"' +
+                     css_width + '/>')
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
@@ -82,8 +83,8 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
             covers = covers | issue.variant_covers()
     else:
         return mark_safe(get_image_tag(cover=None, zoom_level=zoom_level,
-                    alt_text=alt_text,
-                    can_have_cover=issue.can_have_cover()))
+                         alt_text=alt_text,
+                         can_have_cover=issue.can_have_cover()))
 
     if exclude_ids:
         covers = covers.exclude(id__in=exclude_ids)
@@ -115,14 +116,10 @@ def get_image_tags_per_page(page, series=None):
     """
 
     cover_tags = []
-    cover_series=series
     for cover in page.object_list.select_related('issue__series__publisher'):
-        if series is None:
-            cover_series = cover.issue.series
         issue = cover.issue
         alt_string = 'Cover for %s' % issue.full_name()
         cover_tags.append([cover, issue, get_image_tag(cover,
                                                        alt_string,
                                                        ZOOM_SMALL)])
     return cover_tags
-

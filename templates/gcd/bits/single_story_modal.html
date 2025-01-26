@@ -2,29 +2,25 @@
 <script src="https://unpkg.com/hyperscript.org"></script>
 <link rel="stylesheet" type="text/css"
         href="{% static "css/gcd/default/modal.css" %}"/>
-        <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default/issue.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default/single_story.css" %}"/>
 <div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
   <div class="modal-underlay" _="on click trigger closeModal"></div>
   <div class="modal-content">
 {% if image_tag %}
-    <div class="left" style="max-width:200px;">
+    <div class="flex flex-wrap justify-between">
+    <div class="flex-l" style="max-width:200px;">
       <a href="{{ story.issue.get_absolute_url }}">{{ image_tag }}</a>
-      <button _="on click trigger closeModal">Close</button>
+      <button _="on click trigger closeModal" class="btn btn-blue mt-1">Close</button>
     </div>
-    <div class="right" style="max-width:600px;">
+    <div class="justify-end" style="max-width:550px;">
 {% endif %}
 {% with modal=True %}
-  {% include "gcd/details/single_story.html" %}
+  {% include "gcd/details/tw_single_story.html" %}
 {% endwith %}
 {% if image_tag %}
     </div>
+  </div>
 {% else %}
-    <button _="on click trigger closeModal">Close</button>
+    <button _="on click trigger closeModal" class="btn btn-blue">Close</button>
 {% endif %}
   </div>
 </div>

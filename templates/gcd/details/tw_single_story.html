@@ -1,0 +1,67 @@
+{% load i18n %}
+{% load credits %}
+{% load display %}
+{% load mathfilter %}
+
+<div>
+  <a name="{{ story.id }}"></a>
+  <h2 class="bg-gcd">
+    <span>
+{% if modal %}
+      <a class="text-lg text-white visited:text-white px-1" href='{% url "show_issue" issue_id=story.issue.id %}#{{ story.id }}'>
+{% endif %}
+  {{ story|show_title }}
+{% if modal %}
+      </a>
+{% endif %}
+    </span>
+  </h2>
+  <h3 class="text-black visited:text-black bg-blue-100 px-1">
+    <span>
+{% if story.has_feature %}
+      <span>{{ story.show_feature }}</span>
+{% endif %}
+{% if story.type or story.page_count %}
+      <span>
+      <!-- needs to be stuck together to get display spacing right. -->
+  {% if story.has_feature %} / {% endif %}
+  {% if story.type %}{{ story.type }} / {% endif %}
+  {{ story|show_page_count }}
+  {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
+    page{{ suffix }}
+  {% endblocktrans %}
+      </span>
+{%endif %}
+    </span>
+  </h3>
+{% if not not_shown_types or story.type.id not in not_shown_types %}
+  <div class="ml-1">
+  {% include "gcd/bits/story_creator_credits.html" %}
+  </div>
+
+  {% if story.has_content %}
+  <hr></hr>
+  <h3 class="text-red-500 font-bold">The following content is not styled so far.</h3>
+  <dl>
+    {{ story|show_credit:"job_number" }}
+    {{ story|show_credit:"first_line" }}
+    {{ story|show_credit:"feature_logo" }}
+    {{ story|show_credit:"genre" }}
+    {{ story.show_characters|linebreaksbr }}
+    {% if story.universe.exists %}
+    {{ story.show_universe }}
+    {% endif %}
+    {{ story|show_credit:"synopsis"|linebreaksbr }}
+    {{ story|show_credit:"show_awards" }}
+    {{ story|show_reprints|linebreaksbr }}
+    {{ story|show_credit:"keywords" }}
+  </dl>
+  {% endif %}
+
+  {% if not story.has_credits and not story.has_content and not story.notes or story.type.id in not_shown_types %}
+    <dl class="contents"></dl>
+  {% endif %}
+
+{% endif %} <!-- shown_types -->
+</div>
+

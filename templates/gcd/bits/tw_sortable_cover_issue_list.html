@@ -1,0 +1,46 @@
+{% load django_tables2 %}
+{% load i18n %}
+
+<div class="sm:justify-center"> 
+{% block table %}
+<table class="border" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %} >
+    {% block table.thead %}
+    {% if table.show_header %}
+    <thead class="bg-blue-100">
+        <tr class="flex flex-row">
+        {% if table.context.select_key %}
+        <th> Selection </th>
+        {% endif %}
+        {% for column in table.columns %}
+            {% if column.orderable %}
+            <th class="px-2">
+            <a class="visited:text-link-gcd" href="{% querystring table.prefixed_order_by_field=column.order_by_alias.next %}">
+                {{ column.header }}
+                {% if column.is_ordered %}
+                    {% if column.order_by_alias|first == '-' %}
+                       <span>&#x25BC;</span> <!-- Down arrow -->
+                    {% else %}
+                       <span>&#x25B2;</span> <!-- Up arrow -->
+                    {% endif %}
+                {% endif %}
+            </a></th>
+            {% endif %}
+        {% endfor %}
+        </tr>
+    </thead>
+    {% endif %}
+    {% endblock table.thead %}
+</table>
+    {% block table.tbody %}
+    <div class="flex flex-wrap gap-4">
+    {% for row in table.paginated_rows %}
+          <div class="flex-col w-48">
+            {% for column, cell in row.items %}
+                <div {{ column.attrs.td.as_html }}>{% if column.localize == None %}{{ cell }}{% else %}{% if column.localize %}{{ cell|localize }}{% else %}{{ cell|unlocalize }}{% endif %}{% endif %}</div>
+            {% endfor %}
+            </div>
+    {% endfor %}
+    </div>
+    {% endblock table.tbody %}
+{% endblock table %}
+</div>

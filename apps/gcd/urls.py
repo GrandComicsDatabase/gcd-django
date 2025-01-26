@@ -204,6 +204,10 @@ urlpatterns = [
          gcd_views.details.checklist_by_id, name='creator_feature_issues'),
     path('creator/<int:creator_id>/overview/',
          gcd_views.details.creator_overview, name='creator_overview'),
+    path('creator/<int:creator_id>/issues/',
+      gcd_views.details.checklist_by_id, name='creator_issues'),
+    path('creator/<int:creator_id>/covers/',
+      gcd_views.details.cover_checklist_by_id, name='creator_covers'),
     path('creator/name/<path:creator_name>/',
          gcd_views.search.creator_by_name,
          name='creator_by_name'),
@@ -313,7 +317,7 @@ urlpatterns = [
       gcd_views.details.status, name='series_status'),
 
     path('series/<int:series_id>/covers/',
-      gcd_views.details.covers, name='series_covers'),
+      gcd_views.details.series_covers, name='series_covers'),
     path('series/<int:series_id>/overview/',
       gcd_views.details.series_overview, name='series_overview'),
 
@@ -737,5 +741,4 @@ urlpatterns += [
     path('creator_checklist/name/<path:creator>/',
          bv.RedirectView.as_view(url='/checklist/name/%(creator)s/',
                                  permanent=True)),
-    path('home', gcd_views.details.home, name='home')
 ]

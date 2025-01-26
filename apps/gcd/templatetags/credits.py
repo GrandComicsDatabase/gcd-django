@@ -120,10 +120,12 @@ def show_credit(story, credit):
         collator.setStrength(0)
         target = credit[15:]
         formatted_credit = ""
-        formatted_credit = __format_credit(story, 'editing')\
-                            .replace('Editing', 'Story Editing')
-        formatted_credit += __format_credit(story.issue, 'editing')\
-                            .replace('Editing', 'Issue Editing')
+        formatted_credit = __format_credit(story,
+                                           'editing').replace('Editing',
+                                                              'Story Editing')
+        formatted_credit += __format_credit(story.issue,
+                                            'editing').replace('Editing',
+                                                               'Issue Editing')
         return formatted_credit
 
     elif credit.startswith('characters:'):
@@ -140,8 +142,8 @@ def show_credit(story, credit):
             if story.characters or story.appearing_characters.count():
                 character_string = story.show_characters_as_text()
                 search = icu.StringSearch(target.lower(),
-                                        character_string.lower(),
-                                        collator)
+                                          character_string.lower(),
+                                          collator)
                 if search.first() != -1:
                     formatted_credit = __format_credit(story, 'characters',
                                                        character_string)
@@ -149,8 +151,8 @@ def show_credit(story, credit):
             if story.feature or story.feature_object.count():
                 feature_string = story.show_feature_as_text()
                 search = icu.StringSearch(target.lower(),
-                                        feature_string.lower(),
-                                        collator)
+                                          feature_string.lower(),
+                                          collator)
                 if search.first() != -1:
                     formatted_credit += __format_credit(story, 'feature',
                                                         feature_string)
@@ -341,6 +343,36 @@ def show_full_credits(story, credit_type, show_sources):
                                show_sources=show_sources)
 
 
+@register.simple_tag(takes_context=True)
+def show_bare_creator_credits(context, story, credit_type, show_sources=False):
+    if credit_type == 'letters' and story.type_id == STORY_TYPES['cover']:
+        request = context['request']
+        preview = context.get('preview')
+        if request.user.is_authenticated and not preview and \
+           request.user.indexer.cover_letterer_creator_only:
+            if (story.letters == 'typeset' or story.letters == '?') and not\
+              story.active_credits.filter(credit_type_id=CREDIT_TYPES[
+                                                         'letters']):
+                return ''
+    credit_value = __credit_value(story, credit_type, True,
+                                  show_sources)
+    return credit_value
+
+
+@register.filter
+def show_bare_cover_letterer_credit(story):
+    if (story.letters == 'typeset' or story.letters == '?') and not\
+      story.active_credits.filter(credit_type_id=CREDIT_TYPES['letters']):
+        return ''
+    return show_creator_credit(story, 'letters')
+
+
+@register.filter
+def show_creator_credit_bare(story, credit_type):
+    credit_value = __credit_value(story, credit_type, url=True)
+    return credit_value
+
+
 @register.filter
 def show_creator_credit(story, credit_type, url=True,
                         show_sources=False):
@@ -359,12 +391,6 @@ def show_creator_credit(story, credit_type, url=True,
         return mark_safe(val)
     else:
         return credit_value
-
-
-@register.filter
-def show_creator_credit_bare(story, credit_type):
-    credit_value = __credit_value(story, credit_type, url=True)
-    return credit_value
 
 
 @register.filter

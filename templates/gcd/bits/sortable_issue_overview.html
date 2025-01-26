@@ -2,9 +2,9 @@
 {% load display %}
 {% load mathfilter %}
 {% load static %}
-<div class="credits_table_view">
-  <a hx-get="{% url "show_issue_modal" issue_id=value %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
-<img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img></a>
+<div>
+  <a hx-get="{% url "show_issue_modal" issue_id=value %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #2727eb;">
+<img class="inline pb-1 pe-1" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img></a>
 {% if publisher %}
   {{ record.full_name_with_link }}
 {% else %}

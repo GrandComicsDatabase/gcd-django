@@ -22,6 +22,7 @@ from .story import StoryType, STORY_TYPES, CreditType
 from .creator import CreatorNameDetail
 from .award import ReceivedAward
 from .datasource import ExternalLink
+from .support_tables import render_publisher
 
 INDEXED = {
     'skeleton': 0,
@@ -649,7 +650,7 @@ class IssueTable(tables.Table):
                         template_name='gcd/bits/sortable_issue_entry.html',
                         )
     publication_date = tables.Column(verbose_name='Publication Date')
-    on_sale_date = tables.Column(verbose_name='On-sale Date')
+    on_sale_date = tables.Column(verbose_name='On-sale')
 
     class Meta:
         model = Issue
@@ -678,10 +679,37 @@ class IssueTable(tables.Table):
             pass
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'on_sale_date',
-                                       direction + 'key_date',
                                        direction + 'series_name',
+                                       direction + 'key_date',
                                        direction + 'sort_code')
         return (query_set, True)
+
+
+class IssueCoverTable(IssueTable):
+    cover = tables.Column(accessor='active_covers',
+                          verbose_name='Cover', orderable=False)
+
+    class Meta:
+        model = Issue
+        fields = ('cover', 'issue', 'publication_date', 'on_sale_date')
+
+    def render_cover(self, record):
+        from apps.gcd.views.covers import get_image_tag
+        issue = record
+        alt_text = 'Cover for %s' % issue.full_name()
+        if issue.active_covers():
+            cover = issue.active_covers()[0]
+            cover_tag = '<a href="%s">%s</a>' % (issue.get_absolute_url(),
+                                                 get_image_tag(cover,
+                                                               zoom_level=2,
+                                                 alt_text=alt_text))
+
+        else:
+            cover_tag = get_image_tag(cover=None, zoom_level=2,
+                                      alt_text=alt_text,
+                                      can_have_cover=issue.can_have_cover())
+
+        return mark_safe(cover_tag)
 
 
 class IssuePublisherTable(IssueTable):
@@ -709,13 +737,17 @@ class IssuePublisherTable(IssueTable):
         return (query_set, True)
 
     def render_publisher(self, value):
-        from apps.gcd.templatetags.display import absolute_url
-        from apps.gcd.templatetags.credits import show_country_info
-        display_publisher = "<img %s>" % (show_country_info(value.country))
-        return mark_safe(display_publisher) + absolute_url(value)
+        return render_publisher(value)
 
     def value_publisher(self, value):
         return str(value)
+
+
+class IssueCoverPublisherTable(IssuePublisherTable, IssueCoverTable):
+    class Meta:
+        model = Issue
+        fields = ('cover', 'publisher', 'issue', 'publication_date',
+                  'on_sale_date')
 
 
 class IndiciaPublisherIssueTable(IssueTable):
@@ -805,6 +837,13 @@ class PublisherIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
 
     def value_indicia_publisher(self, value):
         return str(value)
+
+
+class PublisherIssueCoverTable(PublisherIssueTable, IssueCoverTable):
+    class Meta:
+        model = Issue
+        fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
+                  'brand', 'indicia_publisher')
 
 
 class SeriesDetailsIssueTable(PublisherIssueTable):

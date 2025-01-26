@@ -1,0 +1,30 @@
+  {% if story.has_credits %}
+<table class="[&_:is(th,td):where(:nth-child(1),)]:text-right">
+  <tbody>
+    {% with story=story credit_type="script" %}
+    {% include "gcd/bits/tw_single_credit.html" %}
+    {% endwith %}
+
+    {% with story=story credit_type="pencils" %}
+    {% include "gcd/bits/tw_single_credit.html" %}
+    {% endwith %}
+
+    {% with story=story credit_type="inks" %}
+    {% include "gcd/bits/tw_single_credit.html" %}
+    {% endwith %}
+
+    {% with story=story credit_type="colors" %}
+    {% include "gcd/bits/tw_single_credit.html" %}
+    {% endwith %}
+
+    {% with story=story credit_type="letters" %}
+    {% include "gcd/bits/tw_single_credit.html" %}
+    {% endwith %}
+
+    {% with story=story credit_type="editing" %}
+    {% include "gcd/bits/tw_single_credit.html" %}
+    {% endwith %}
+
+  </tbody>
+</table>
+  {% endif %}

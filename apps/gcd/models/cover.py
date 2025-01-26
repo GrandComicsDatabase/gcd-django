@@ -125,7 +125,100 @@ class CoverIssuePublisherTable(IssuePublisherTable):
         model = Issue
         fields = ('cover', 'publisher', 'issue', 'publication_date',
                   'on_sale_date')
-        attrs = {'th': {'class': "non_visited"}}
+
+
+class CoverIssuePublisherEditTable(IssuePublisherTable):
+    cover = tables.Column(accessor='id',
+                          verbose_name='', orderable=False)
+    issue = IssueColumn(accessor='issue', verbose_name='Issue',
+                        template_name='gcd/bits/sortable_issue_entry.html',
+                        )
+    on_sale_date = tables.Column(accessor='issue__on_sale_date',
+                                 verbose_name='On-sale')
+    publication_date = tables.Column(accessor='issue__publication_date',
+                                     verbose_name='Publication Date')
+    edit_cover = tables.Column(accessor='issue',
+                               verbose_name='', orderable=False)
+    publisher = tables.Column(accessor='issue__series__publisher')
+
+    class Meta:
+        model = Cover
+        fields = ('cover', 'issue', 'publisher', 'publication_date',
+                  'on_sale_date', 'edit_cover')
+
+    def render_cover(self, record):
+        from apps.gcd.views.covers import get_image_tag
+        cover_tag = '<a href="%s">%s</a>' % (record.get_absolute_url(),
+                                             get_image_tag(record,
+                                                           '', 1.5))
+        return mark_safe(cover_tag)
+
+    def render_edit_cover(self, value):
+        link = urlresolvers.reverse("edit_covers",
+                                    kwargs={'issue_id': value.id})
+        return mark_safe('<a href="%s">%s</a>' % (link, 'add/replace cover'))
+
+    def render_issue(self, value):
+        return mark_safe('<a href="%s">%s (%s series)</a>' % (
+          value.get_absolute_url(),
+          value.short_name(),
+          value.series.year_began))
+
+    def order_issue(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__series__sort_name',
+                                       'issue__series__year_began',
+                                       'issue__series__id',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def order_publisher(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(
+          direction + 'issue__series__publisher__name',
+          direction + 'issue__series__sort_name',
+          direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def order_publication_date(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__key_date',
+                                       direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+    def order_on_sale_date(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue__on_sale_date',
+                                       direction + 'issue__series__sort_name',
+                                       direction + 'issue__sort_code')
+        return (query_set, True)
+
+
+class OnSaleCoverIssueTable(CoverIssuePublisherEditTable):
+    publisher = None
+
+    class Meta:
+        model = Cover
+        fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
+                  'edit_cover')
+
+    def render_issue(self, value):
+        return mark_safe('<a href="%s">%s</a>' % (value.get_absolute_url(),
+                                                  value.full_name()))
+
+
+class CoverSeriesTable(CoverIssuePublisherEditTable):
+    publisher = None
+
+    class Meta:
+        model = Cover
+        fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
+                  'edit_cover')
+
+    def render_issue(self, value):
+        return mark_safe('<a href="%s">%s</a>' % (value.get_absolute_url(),
+                                                  value.full_descriptor))
 
 
 class CoverIssueStoryTable(IssueTable):

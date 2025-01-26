@@ -3,7 +3,7 @@
 
 <script src="https://unpkg.com/hyperscript.org"></script>
 <link rel="stylesheet" type="text/css"
-        href="{% static 'css/gcd/default/modal.css' %}"/>
+        href="{% static "css/gcd/default/modal.css" %}"/>
 
 <div id="modal" _="on closeModal add .closing then wait for animationend then remove me">
   <div class="modal-underlay" _="on click trigger closeModal"></div>
@@ -17,7 +17,7 @@
         <br><p><button _="on click trigger closeModal" class="btn btn-blue">Close</button></p>
       </div>
       <div class="justify-end">
-        <table class="border mt-2" style="max-width:550px;">
+        <table class="border mt-2" style="max-width:600px;">
           <thead class="bg-blue-100">
             <tr>
               <th> Table of Contents </th>

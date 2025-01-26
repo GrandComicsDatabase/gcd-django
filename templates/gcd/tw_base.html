@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+{% load compress %}
+{% load static %}
+<html>
+<head>
+  <title>{% block title %}{% endblock %}</title>
+  <link rel="shortcut icon" href="{% static "img/favicon.ico" %}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+{% compress css inline %}
+{% block css %}{% endblock %}
+{% endcompress %}
+{% block css_raw %}{% endblock %}
+</head>
+
+<body>
+<div {% if preview %} class="bg-preview" {% endif %}>
+{% if BETA %}
+  {% include "gcd/bits/beta_banner.html" %}
+{% endif %}
+
+{% if USE_TEMPLATESADMIN and not EDITING %}
+  {% include "managed_content/gcd/messages/special_banner.html" %}
+{% endif %}
+
+{% if preview %}
+  {% include "gcd/bits/preview_banner.html" %}
+{% endif %}
+
+{% block body %}{% endblock %}
+
+{% block fine_print %}
+  <div class="text-xs text-gray-600 px-2 py-2">
+  {% include "gcd/fine_print.html" %}
+  </div>
+{% endblock %}
+</div>
+{% block footer %}{% endblock %}
+</body>
+</html>

@@ -7,7 +7,6 @@
 	right:0px;
 	background-color:rgba(0,0,0,0.5);
 	z-index:1000;
-        font-size: 0.9em;
 
 	/* Flexbox centers the .modal-content vertically and horizontally */
 	display:flex;

@@ -20,6 +20,7 @@ from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
 from .award import ReceivedAward
+from .support_tables import render_publisher
 
 
 class SeriesPublicationType(models.Model):
@@ -552,10 +553,7 @@ class SeriesPublisherTable(SeriesTable):
         return (query_set, True)
 
     def render_publisher(self, value):
-        from apps.gcd.templatetags.display import absolute_url
-        from apps.gcd.templatetags.credits import show_country_info
-        display_publisher = "<img %s>" % (show_country_info(value.country))
-        return mark_safe(display_publisher) + absolute_url(value)
+        return render_publisher(value)
 
     def value_publisher(self, value):
         return str(value)

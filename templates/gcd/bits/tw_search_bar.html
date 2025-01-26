@@ -2,7 +2,7 @@
 <nav class="flex items-center justify-between flex-wrap bg-gcd px-6 py-1">
   <div class="flex-1 ">
     <div class="w-14">
-    <a href="{% url "home" %}"><img class="w-14" src="{% static "img/gcd_logo.png" %}" alt="GCD"></a>
+    <a href="/"><img class="w-14" src="{% static "img/gcd_logo.png" %}" alt="GCD"></a>
     </div>
   </div>
   <!-- Mobile Menu Button -->
@@ -21,7 +21,7 @@
     <form action="{% url "basic_search" %}" method="get">
       <div class="flex rounded-md overflow-hidden max-w-md mx-auto">
       {% include "gcd/bits/search_for.html" %}
-        <input type="search" name="query" placeholder="Search..."
+        <input type="search" name="query" value="{{ search_term|default:'' }}" placeholder="Search..."
           class="w-full bg-white text-gray-600 px-1 " />
         <button type='submit' class="flex items-center justify-center bg-white px-2">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192.904 192.904" width="16px" class="fill-black">

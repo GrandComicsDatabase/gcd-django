@@ -5,11 +5,12 @@ module.exports = {
   theme: {
   extend: {
       colors: {
-        normal: "neutral-950",
-        'normal-gcd': "neutral-950",
+        normal: "#0a0a0a",
+        'normal-gcd': "#0a0a0a",
         'gcd': '#66E',
         'link-gcd': '#2727eb',
-        'visited-gcd': 'purple-800',
+        'preview': '#FFE944',
+        'visited-gcd': '#551A8B',
       },
     },
   },

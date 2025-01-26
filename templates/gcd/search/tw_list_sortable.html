@@ -1,0 +1,85 @@
+{% extends "gcd/tw_base_view.html" %}
+
+{% load static %}
+{% load credits %}
+{% load display %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: {{ heading }}
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{% static 'css/output.css' %}" type="text/css">
+{% endblock %}
+{% block css_raw %}
+<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
+{% endblock %}
+
+
+{% block view_body %}
+{% include "gcd/search/tw_list_header.html" %}
+
+<div class="flex">
+  <div class="px-2 flex-1">
+{{ result_disclaimer }}
+{% if not result_disclaimer and not filter_form %}
+<span>&nbsp;</span>
+{% endif %}
+  </div>
+{% if list_grid %}
+  <div class="flex justify-end items-center">
+    <a href="{% querystring 'display'='list' %}" class="pe-1 {% if not request.GET.display or 'list' == request.GET.display %}pointer-events-none"><svg class="fill-slate-400{% else %}"><svg class="{% endif %} border border-gray-400 px-1 py-1 h-9" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g><path d="m 9 3 h 6 v 2 h -6 z m 0 0"/><path d="m 9 7 h 6 v 2 h -6 z m 0 0"/><path d="m 9 11 h 6 v 2 h -6 z m 0 0"/><path d="m 1 3 h 6 v 2 h -6 z m 0 0"/><path d="m 1 7 h 6 v 2 h -6 z m 0 0"/><path d="m 1 11 h 6 v 2 h -6 z m 0 0"/></g></svg>
+    </a>
+    <a href="{% querystring 'display'='grid' %}" class="pe-1 {% if 'grid' == request.GET.display %}pointer-events-none"><svg class="fill-slate-400{% else %}"><svg class="{% endif %} border border-gray-400 px-1 py-1 w-9 h-9" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="m 1.992188 0 c -1.089844 0 -2.0000005 0.910156 -2.0000005 2 v 3 c 0 1.089844 0.9101565 2 2.0000005 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m 8 0 c -1.089844 0 -2 0.910156 -2 2 v 3 c 0 1.089844 0.910156 2 2 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m -8 2 h 3 v 3 h -3 z m 8 0 h 3 v 3 h -3 z m -8 6 c -1.089844 0 -2.0000005 0.910156 -2.0000005 2 v 3 c 0 1.089844 0.9101565 2 2.0000005 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m 8 0 c -1.089844 0 -2 0.910156 -2 2 v 3 c 0 1.089844 0.910156 2 2 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m -8 2 h 3 v 3 h -3 z m 8 0 h 3 v 3 h -3 z m 0 0"/></svg></a>
+  </div>
+{% endif %}
+</div>
+{% comment %}
+We use filter for ChoiceFilter and use filter_form for MultipleChoiceFilter, where we have our own display with checkboxes.
+Should be changed so that we have consistent display. Currently only the search for keywords uses filter, otherwise we have filter_form.
+{% endcomment %}
+{% if filter %}
+<form method="get">
+{{ filter.form }}
+<button class="btn btn-blue ml-1 mt-1 h-8">Filter Results</button>
+</form>
+{% endif %}
+{% if filter_form %}
+<form method="GET" class="max-sm:hidden flex">
+  {% if request.GET.sort %}
+  <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+  {% endif %}
+  {% if request.GET.display %}
+  <input type="hidden" name="display" value="{{ request.GET.display }}">
+  {% endif %}
+    {% for field in filter_form %}
+    <div class="flex">
+        <label class="mt-1 font-medium px-1">{{ field.label }}</label>
+      <div class="mt-1 relative">
+        <div class="overflow-y-auto max-h-24 border rounded-md border-gray-300 p-1 inline-block">
+        {% for choice in field.field.choices %}
+          <div class="flex items-center inline-block mr-4">
+          <input type="checkbox"
+            id="{{ field.name }}_{{ choice.0 }}"
+            name="{{ field.name }}"
+            value="{{ choice.0 }}"
+            {% if choice.0|stringformat:"s" in field.value %}checked{% endif %}
+            class="h-4 w-4 border-gray-300 rounded">
+          <label for="{{ field.name }}_{{ choice.0 }}" class="ml-2 block text-sm">
+        {{ choice.1 }}
+          </label>
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  <button class="btn btn-blue ml-1 mt-1 h-8">Filter Results</button>
+</form>
+{% endif %}
+<div class="px-0 lg:px-1">
+  {% render_table table %}
+</div>
+
+{% endblock %}
