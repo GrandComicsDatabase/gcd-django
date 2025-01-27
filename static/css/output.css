@@ -620,6 +620,10 @@ a:hover {
   visibility: visible;
 }
 
+.invisible {
+  visibility: hidden;
+}
+
 .collapse {
   visibility: collapse;
 }
@@ -675,10 +679,6 @@ a:hover {
 
 .mt-2 {
   margin-top: 0.5rem;
-}
-
-.mt-4 {
-  margin-top: 1rem;
 }
 
 .block {
@@ -1088,6 +1088,10 @@ html {
 
 .hover\:no-underline:hover {
   text-decoration-line: none;
+}
+
+.group:hover .group-hover\:visible {
+  visibility: visible;
 }
 
 @media not all and (min-width: 1024px) {
