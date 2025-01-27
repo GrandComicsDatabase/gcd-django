@@ -51,7 +51,7 @@ def absolute_url(item, popup=None, descriptor=''):
                          ' group-hover:opacity-100"><img src="%s"></span>' \
                          % popup.thumbnail.url
             return mark_safe('<a href="%s" class="group popup">%s%s</a>' %
-                             (item.get_absolute_url(), image_link, descriptor))
+                             (item.get_absolute_url(), descriptor, image_link))
         else:
             return mark_safe('<a href="%s">%s</a>' %
                              (item.get_absolute_url(), descriptor))
