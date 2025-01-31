@@ -6,7 +6,7 @@
     function updateSortSelect() {
         var searchType = document.querySelector('select[name="search_type"]').value;
         var sortSelect = document.querySelector('select[name="sort"]');
-        if (searchType.includes('haystack')) {
+        if (searchType.endsWith('haystack')) {
             sortSelect.disabled = true;
             sortSelect.value = '';
         } else {
