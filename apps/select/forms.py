@@ -58,9 +58,12 @@ def get_select_search_form(search_publisher=False, search_series=False,
 def get_filter_form(countries=None, languages=None, publishers=None):
     class FilterSearchForm(forms.Form):
         if countries:
-            country = forms.ChoiceField(choices=countries, required=False)
+            country = forms.MultipleChoiceField(choices=countries,
+                                                required=False)
         if languages:
-            language = forms.ChoiceField(choices=languages, required=False)
+            language = forms.MultipleChoiceField(choices=languages,
+                                                 required=False)
         if publishers:
-            publisher = forms.ChoiceField(choices=publishers, required=False)
+            publisher = forms.MultipleChoiceField(choices=publishers,
+                                                  required=False)
     return FilterSearchForm

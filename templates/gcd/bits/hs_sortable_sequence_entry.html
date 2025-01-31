@@ -1,19 +1,5 @@
 {% load static %}
-{% load credits %}
 {% with record=record.object %}
-<div style="float: left;">
-<a hx-get="{% url "show_story_modal" story_id=record.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
-<img class="icon" src="{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/preview-search.svg" %}" title="preview"></img></a>
-</div>
-<div style="float: left;">
-  {{ record.show_series_and_issue_link }}
-<a href="{{ record.get_absolute_url }}">{{ record|show_title:True }}</a><br>
-  {% if record.has_feature %}
-    {{ record.show_feature }} /
-  {% endif %}
-  {% if record.type %}{{ record.type }} /
-  {% endif %}
-  {{ record|show_page_count:1 }}
-</div>
+  {% include "gcd/sortable_sequence_entry.html" %}
 {% endwith %}
 

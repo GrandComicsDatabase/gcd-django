@@ -37,7 +37,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, \
                             Printer
 from apps.gcd.models.issue import INDEXED, IssuePublisherTable
 from apps.gcd.models.story import StoryTable, MatchedSearchStoryTable, \
-                                  HaystackMatchedStoryTable
+                                  HaystackMatchedStoryTable, HaystackStoryTable
 from apps.gcd.models.series import SeriesPublisherTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, \
@@ -239,7 +239,7 @@ def generic_by_name(request, name, q_obj, sort,
     elif (class_ is Story):
         item_name = 'stor'
         plural_suffix = 'y,ies'
-        heading = 'Story Search Results'
+        heading = "matching your query for '%s' in %s" % (name, credit)
         query_val['target'] = 'sequence'
         # build the query_string for the link to the advanced search
         if credit in ['script', 'pencils', 'inks', 'colors', 'letters',
@@ -249,11 +249,16 @@ def generic_by_name(request, name, q_obj, sort,
             query_val['story_editing'] = name
             query_val['issue_editing'] = name
             query_val['logic'] = True
+            heading = "matching your query for '%s' in editing" % (name)
         elif credit.startswith('any'):
+            heading = "matching your query for '%s' in any credit" % (name)
             query_val['logic'] = True
             for credit_type in ['script', 'pencils', 'inks', 'colors',
                                 'letters', 'story_editing', 'issue_editing']:
                 query_val[credit_type] = name
+        elif credit.startswith('characters'):
+            heading = "matching your query for '%s' in characters" % (name)
+
         if sqs is None:
             if credit in ['script', 'pencils', 'inks', 'colors', 'letters']:
                 creators = list(CreatorNameDetail.objects
@@ -327,21 +332,29 @@ def generic_by_name(request, name, q_obj, sort,
                 # query_val['feature'] = name
                 # query_val['logic'] = True
         else:
-            template = 'gcd/search/issue_list_sortable.html'
+            template = 'gcd/search/tw_list_sortable.html'
             things = sqs.facet('publisher').facet('country').facet('language')
             if request.GET.get('language', ''):
                 things = things.filter(
-                  language__exact=unquote(request.GET['language']))
+                  language__in=[unquote(x)
+                                for x in request.GET.getlist('language')])
             if request.GET.get('country', ''):
                 things = things.filter(
-                  country__exact=unquote(request.GET['country']))
+                  country__in=[unquote(x)
+                               for x in request.GET.getlist('country')])
             if request.GET.get('publisher', ''):
                 things = things.filter(
-                  publisher__exact=unquote(request.GET['publisher']))
-            table = HaystackMatchedStoryTable(
-              things, attrs={'class': 'sortable_listing'},
-              template_name='gcd/bits/sortable_table.html',
-              target=unquote_plus(credit))
+                  publisher__in=[unquote(x)
+                                 for x in request.GET.getlist('publisher')])
+            if credit == 'title':
+                table = HaystackStoryTable(
+                  things, attrs={'class': 'sortable_listing'},
+                  template_name='gcd/bits/tw_sortable_table.html',)
+            else:
+                table = HaystackMatchedStoryTable(
+                  things, attrs={'class': 'sortable_listing'},
+                  template_name='gcd/bits/tw_sortable_table.html',
+                  target=unquote_plus(credit))
             if not request.GET.get('sort', None):
                 if sort == ORDER_ALPHA:
                     table.order_by = 'issue'
@@ -636,8 +649,8 @@ def story_by_character(request, character, sort=ORDER_ALPHA):
     else:
         q_obj = Q(characters__icontains=character) | \
                 Q(feature__icontains=character) | \
-                Q(appearing_characters__character__name__icontains=character) | \
-                Q(feature_object__name__icontains=character)
+                Q(appearing_characters__character__name__icontains=character) \
+                | Q(feature_object__name__icontains=character)
         return generic_by_name(request, character, q_obj, sort,
                                credit="characters:" + character,
                                selected="by_character")
@@ -862,9 +875,15 @@ def story_by_job_number_name(request, number, sort=ORDER_ALPHA):
 
 def story_by_title(request, title, sort=ORDER_ALPHA):
     """Looks up story by story (not issue or series) title."""
-    q_obj = Q(title__icontains=title)
-    return generic_by_name(request, title, q_obj, sort, credit="title",
-                           selected="story")
+    if settings.USE_ELASTICSEARCH:
+        sqs = SearchQuerySet().filter(title=GcdNameQuery(title)) \
+                              .models(Story)
+        return generic_by_name(request, title, None, sort, credit="title",
+                               selected="story", sqs=sqs)
+    else:
+        q_obj = Q(title__icontains=title)
+        return generic_by_name(request, title, q_obj, sort, credit="title",
+                               selected="story")
 
 
 def story_by_feature(request, feature, sort=ORDER_ALPHA):

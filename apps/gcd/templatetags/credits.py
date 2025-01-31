@@ -77,7 +77,7 @@ def show_award_list(awards):
 
 
 @register.filter
-def show_credit(story, credit):
+def show_credit(story, credit, tailwind=False):
     """
     For showing the credits on the search results page.
     As far as I can tell Django template filters can only take
@@ -98,21 +98,28 @@ def show_credit(story, credit):
             if getattr(story, 'matched_credits', None):
                 # results are from using elasticsearch
                 if c in story.matched_credits:
-                    credit_string += ' ' + __format_credit(story, c)
+                    credit_string += ' ' + __format_credit(story, c,
+                                                           tailwind=tailwind)
+                    if tailwind:
+                        credit_string += '<br>'
                     if credit_string == ' ':
-                        credit_string = __format_credit(story.issue, c)\
+                        credit_string = __format_credit(story.issue, c,
+                                                        tailwind=tailwind)\
                                         .replace('Editing', 'Issue Editing')
-
             elif story_credit:
                 result = find_credit_search(story_credit, target, collator)
                 if result != -1:
-                    credit_string += ' ' + __format_credit(story, c)
+                    credit_string += ' ' + __format_credit(story, c,
+                                                           tailwind=tailwind)
         if not getattr(story, 'matched_credits', None) and story.issue.editing:
             result = find_credit_search(story.issue.editing.lower(), target,
                                         collator)
             if result != -1:
-                credit_string += __format_credit(story.issue, 'editing')\
+                credit_string += __format_credit(story.issue, 'editing',
+                                                 tailwind=tailwind)\
                                  .replace('Editing', 'Issue Editing')
+        if credit_string and tailwind:
+            credit_string = credit_string[:-4]
         return credit_string
 
     elif credit.startswith('editing_search:'):
@@ -120,12 +127,17 @@ def show_credit(story, credit):
         collator.setStrength(0)
         target = credit[15:]
         formatted_credit = ""
-        formatted_credit = __format_credit(story,
-                                           'editing').replace('Editing',
-                                                              'Story Editing')
+        formatted_credit = __format_credit(story, 'editing',
+                                           tailwind=tailwind).replace(
+                                             'Editing', 'Story Editing')
+        if formatted_credit and tailwind:
+            formatted_credit += '<br>'
         formatted_credit += __format_credit(story.issue,
-                                            'editing').replace('Editing',
-                                                               'Issue Editing')
+                                            'editing',
+                                            tailwind=tailwind).replace(
+                                              'Editing', 'Issue Editing')
+        if formatted_credit.endswith('<br>'):
+            formatted_credit = formatted_credit[:-4]
         return formatted_credit
 
     elif credit.startswith('characters:'):
@@ -137,7 +149,12 @@ def show_credit(story, credit):
             # results are from using elasticsearch
             for c in ['characters', 'feature']:
                 if c in story.matched_credits:
-                    formatted_credit += ' ' + __format_credit(story, c)
+                    formatted_credit += ' ' + __format_credit(
+                      story, c, tailwind=tailwind)
+                    if tailwind:
+                        formatted_credit += '<br>'
+            if formatted_credit.endswith('<br>'):
+                formatted_credit = formatted_credit[:-4]
         else:
             if story.characters or story.appearing_characters.count():
                 character_string = story.show_characters_as_text()
@@ -146,7 +163,8 @@ def show_credit(story, credit):
                                           collator)
                 if search.first() != -1:
                     formatted_credit = __format_credit(story, 'characters',
-                                                       character_string)
+                                                       character_string,
+                                                       tailwind=tailwind)
 
             if story.feature or story.feature_object.count():
                 feature_string = story.show_feature_as_text()
@@ -155,7 +173,8 @@ def show_credit(story, credit):
                                           collator)
                 if search.first() != -1:
                     formatted_credit += __format_credit(story, 'feature',
-                                                        feature_string)
+                                                        feature_string,
+                                                        tailwind=tailwind)
         return formatted_credit
     elif credit == 'genre':
         genres = story.genre.lower()
@@ -214,7 +233,7 @@ def show_credit(story, credit):
         else:
             return ""
     elif hasattr(story, credit):
-        return __format_credit(story, credit)
+        return __format_credit(story, credit, tailwind=tailwind)
     else:
         return ""
 
@@ -227,7 +246,7 @@ def __credit_visible(value):
     return value is not None and value != ''
 
 
-def __format_credit(story, credit, computed_value=''):
+def __format_credit(story, credit, computed_value='', tailwind=False):
     if credit in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
         credit_value = __credit_value(story, credit, url=True)
     elif credit in ['characters', 'feature']:
@@ -276,17 +295,21 @@ def __format_credit(story, credit, computed_value=''):
             return ''
     else:  # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
-    dt = '<dt class="credit_tag'
-    dd = '<dd class="credit_def'
-    if credit in ['genre', 'job_number', 'feature_logo']:
-        dt += ' short'
-        dd += ' short'
-    dt += '">'
-    dd += '">'
+    if tailwind:
+        return mark_safe('<span class="font-bold pe-1 align-top">' + label +
+                         ':</span>' + credit_value)
+    else:
+        dt = '<dt class="credit_tag'
+        dd = '<dd class="credit_def'
+        if credit in ['genre', 'job_number', 'feature_logo']:
+            dt += ' short'
+            dd += ' short'
+        dt += '">'
+        dd += '">'
 
-    return mark_safe(
-           dt + '<span class="credit_label">' + label + '</span></dt>' +
-           dd + '<span class="credit_value">' + credit_value + '</span></dd>')
+        return mark_safe(
+            dt + '<span class="credit_label">' + label + '</span></dt>' +
+            dd + '<span class="credit_value">' + credit_value + '</span></dd>')
 
 
 @register.filter
@@ -369,7 +392,12 @@ def show_bare_cover_letterer_credit(story):
 
 @register.filter
 def show_creator_credit_bare(story, credit_type):
-    credit_value = __credit_value(story, credit_type, url=True)
+    if credit_type == 'feature':
+        credit_value = story.show_feature()
+    elif credit_type.startswith('character'):
+        credit_value = story.show_characters(css_style=False)
+    else:
+        credit_value = __credit_value(story, credit_type, url=True)
     return credit_value
 
 
@@ -533,14 +561,7 @@ def show_title(story, use_first_line=False):
     """
     if story is None:
         return ''
-    if story.title == '':
-        if use_first_line and story.first_line:
-            return '["%s"]' % story.first_line
-        else:
-            return '[no title indexed]'
-    if story.title_inferred:
-        return '[%s]' % story.title
-    return story.title
+    return story.show_title(use_first_line)
 
 
 def generate_reprint_link(issue, from_to, notes=None, li=True,

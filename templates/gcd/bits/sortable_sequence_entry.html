@@ -1,4 +1,5 @@
 {% load static %}
+{% load credits %}
 <div style="display: flex; align-items: center;">
     <div>
         <a hx-get="{% url "show_story_modal" story_id=record.id %}" hx-target="body" hx-swap="beforeend" style="cursor: pointer; color: #00e;">
@@ -6,8 +7,7 @@
         </a>
     </div>
     <div style="flex-grow: 1;">
-        {{ record.show_series_and_issue_link }}
-        <a href="{{ record.get_absolute_url }}">{{ record.show_title }}</a><br>
+        <a href="{{ record.get_absolute_url }}">{{ record|show_title:True }}</a><br>
         {% if record.has_feature %}
             {{ record.show_feature }} /
         {% endif %}

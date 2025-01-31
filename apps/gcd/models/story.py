@@ -793,7 +793,6 @@ class StoryTable(tables.Table):
     class Meta:
         model = Story
         fields = ('story',)
-        attrs = {'th': {'class': "non_visited"}}
 
     def order_publication_date(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -832,7 +831,6 @@ class MatchedSearchStoryTable(StoryTable):
     class Meta:
         model = Story
         fields = ('matched_search',)
-        attrs = {'th': {'class': "non_visited"}}
 
     def __init__(self, *args, **kwargs):
         self.target = kwargs.pop('target')
@@ -848,10 +846,6 @@ class HaystackStoryTable(tables.Table):
     story = tables.TemplateColumn(
       accessor='id', verbose_name='Story',
       template_name='gcd/bits/hs_sortable_sequence_entry.html')
-    country = tables.Column(
-      accessor='country', verbose_name='', orderable=False,
-      attrs={"td": {'class': "listing_country",
-                    'style': "padding-right: 0px;"}}, exclude_from_export=True)
     issue = tables.TemplateColumn(
       accessor='id', verbose_name='Issue',
       template_name='gcd/bits/hs_sortable_issue_entry.html')
@@ -890,6 +884,9 @@ class HaystackStoryTable(tables.Table):
                          show_country_info(record.object.issue.series.country)
                          + '>')
 
+    def render_publisher(self, record):
+        return render_publisher(record.object.issue.series.publisher)
+
     def value_country(self, value):
         return value
 
@@ -912,7 +909,6 @@ class HaystackMatchedStoryTable(HaystackStoryTable):
     class Meta:
         model = Story
         fields = ('matched_search',)
-        attrs = {'th': {'class': "non_visited"}}
 
     def __init__(self, *args, **kwargs):
         self.target = kwargs.pop('target')
@@ -959,6 +955,5 @@ class HaystackMatchedStoryTable(HaystackStoryTable):
                     if found:
                         matched_credits.append(c)
             record.object.matched_credits = matched_credits
-        return mark_safe('<dl class="credits">'
-                         + show_credit(record.object, self.target)
-                         + '</dl>')
+        return mark_safe(show_credit(record.object, self.target,
+                                     tailwind=True))
