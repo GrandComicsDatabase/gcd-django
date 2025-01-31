@@ -150,7 +150,7 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
         from apps.gcd.views.covers import get_image_tag
         cover_tag = '<a href="%s">%s</a>' % (record.get_absolute_url(),
                                              get_image_tag(record,
-                                                           '', 1.5))
+                                                           '', 2))
         return mark_safe(cover_tag)
 
     def render_edit_cover(self, value):
