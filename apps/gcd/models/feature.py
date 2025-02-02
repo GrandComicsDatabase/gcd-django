@@ -74,8 +74,8 @@ class Feature(GcdData):
     def other_translations(self):
         if self.from_related_feature.filter(relation_type__id=1).count() == 1:
             source = self.from_related_feature.get(relation_type__id=1)
-            other_translations = source.from_feature.to_related_feature\
-                                 .filter(to_feature__language=self.language)
+            other_translations = source.from_feature.to_related_feature.filter(
+              to_feature__language=self.language)
             return other_translations.exclude(to_feature=self)
         return None
 
@@ -209,10 +209,14 @@ class FeatureRelation(GcdLink):
 class FeatureTable(tables.Table):
     feature = tables.Column(accessor='name',
                             verbose_name='Feature')
+    year_created = tables.Column(verbose_name='First Published')
 
-    class Meta:
-        model = Feature
-        fields = ('feature',)
+    def order_year_created(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'year_created',
+                                       'sort_name',
+                                       'language__code')
+        return (query_set, True)
 
     def render_feature(self, record):
         name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
@@ -220,12 +224,47 @@ class FeatureTable(tables.Table):
                                                   record.language.name)
         return mark_safe(name_link)
 
+    def value_feature(self, value):
+        return value
 
-class CharacterFeatureTable(FeatureTable):
-    appearances_count = tables.Column(accessor='issue_count',
-                                      verbose_name='Issues',
-                                      initial_sort_descending=True)
+
+class FeatureSearchTable(FeatureTable):
+    issue_count = tables.Column(verbose_name='Issues',
+                                initial_sort_descending=True,
+                                attrs={"td": {"align": "right"}})
+
+    def order_year_created(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'year_created',
+                                       'sort_name',
+                                       '-issue_count',
+                                       'language__code')
+        return (query_set, True)
+
+    def order_issue_count(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue_count',
+                                       'sort_name',
+                                       'year_created',
+                                       'language__code')
+        return (query_set, True)
+
+    def render_issue_count(self, record):
+        url = urlresolvers.reverse('feature_issuelist_by_id',
+                                   kwargs={'feature_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
+
+    def value_issue_count(self, value):
+        return value
+
+
+class CharacterFeatureTable(FeatureSearchTable):
     first_appearance = tables.Column(verbose_name='First Appearance')
+
+    class Meta:
+        models = Feature
+        fields = ('feature', 'year_created', 'first_appearance', 'issue_count')
 
     def __init__(self, *args, **kwargs):
         self.character = kwargs.pop('character')
@@ -241,17 +280,9 @@ class CharacterFeatureTable(FeatureTable):
         return (query_set, True)
 
     def render_first_appearance(self, value):
-        return value[:4]
+        return value
 
-    def order_appearances_count(self, query_set, is_descending):
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'issue_count',
-                                       'sort_name',
-                                       'first_appearance',
-                                       'language__code')
-        return (query_set, True)
-
-    def render_appearances_count(self, record):
+    def render_issue_count(self, record):
         url = urlresolvers.reverse(
                 'character_issues_per_feature',
                 kwargs={'feature_id': record.id,
@@ -259,38 +290,38 @@ class CharacterFeatureTable(FeatureTable):
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
 
-    def value_appearances_count(self, record):
-        return record.issue_count
 
-
-class CreatorFeatureTable(FeatureTable):
-    credits_count = tables.Column(accessor='issue_credits_count',
-                                  verbose_name='Issues',
-                                  initial_sort_descending=True)
+class CreatorFeatureTable(FeatureSearchTable):
     first_credit = tables.Column(verbose_name='First Credit')
     role = tables.Column(accessor='script', orderable=False)
 
     class Meta:
-        model = Feature
-        fields = ('feature', 'first_credit')
+        models = Feature
+        fields = ('feature', 'year_created', 'first_credit', 'issue_count',
+                  'role')
 
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')
         super(CreatorFeatureTable, self).__init__(*args, **kwargs)
 
-    def render_first_credit(self, value):
-        return value[:4]
+    def order_first_credit(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'first_credit',
+                                       'sort_name',
+                                       '-issue_count',
+                                       'language__code')
+        return (query_set, True)
 
-    def render_credits_count(self, record):
+    def render_first_credit(self, value):
+        return value
+
+    def render_issue_count(self, record):
         url = urlresolvers.reverse(
                 'creator_feature_issues',
                 kwargs={'creator_id': self.creator.id,
                         'feature_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
-                                                  record.issue_credits_count))
-
-    def value_credits_count(self, record):
-        return record.issue_credits_count
+                                                  record.issue_count))
 
     def render_role(self, record):
         role = ''

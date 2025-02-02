@@ -50,7 +50,7 @@ from apps.gcd.models.gcddata import GcdData, GcdLink
 
 from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.story import show_feature, show_feature_as_text, \
-                                  show_characters
+                                  show_characters, show_title
 
 from apps.indexer.views import ErrorWithMessage
 
@@ -6182,6 +6182,9 @@ class StoryRevision(Revision):
     def show_feature_as_text(self):
         return show_feature_as_text(self)
 
+    def show_title(self, use_first_line=False):
+        return show_title(self, use_first_line)
+
     def __str__(self):
         """
         Re-implement locally instead of using self.story because it may change.
@@ -7905,7 +7908,6 @@ class ReprintRevision(Revision):
             self.target_issue = self.target.issue
 
     def get_compare_string(self, base_issue, do_compare=False):
-        from apps.gcd.templatetags.credits import show_title
         moved = False
         if do_compare:
             self.compare_changes()
@@ -8000,7 +8002,6 @@ class ReprintRevision(Revision):
             self.target_issue = self.target.issue
 
     def __str__(self):
-        from apps.gcd.templatetags.credits import show_title
         if self.origin or self.origin_revision:
             if self.origin:
                 origin = self.origin

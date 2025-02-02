@@ -89,6 +89,20 @@ def show_feature_as_text(story):
     return show_feature(story, url=False)
 
 
+def show_title(story, use_first_line=False):
+    """
+    Return a properly formatted title.
+    """
+    if story.title == '':
+        if use_first_line and story.first_line:
+            return '["%s"]' % story.first_line
+        else:
+            return '[no title indexed]'
+    if story.title_inferred:
+        return '[%s]' % story.title
+    return story.title
+
+
 def character_notes(character):
     notes = []
     if character.is_flashback:
@@ -697,17 +711,7 @@ class Story(GcdData):
         return mark_safe(universes)
 
     def show_title(self, use_first_line=False):
-        """
-        Return a properly formatted title.
-        """
-        if self.title == '':
-            if use_first_line and self.first_line:
-                return '["%s"]' % self.first_line
-            else:
-                return '[no title indexed]'
-        if self.title_inferred:
-            return '[%s]' % self.title
-        return self.title
+        return show_title(self, use_first_line)
 
     def show_page_count(self, show_page=False):
         """
@@ -838,8 +842,8 @@ class MatchedSearchStoryTable(StoryTable):
 
     def render_matched_search(self, record):
         from apps.gcd.templatetags.credits import show_credit
-        credit_text = show_credit(record, 'characters:' + self.target)
-        return mark_safe('<dl class="credits">' + credit_text + '</dl>')
+        return mark_safe(show_credit(record, self.target,
+                                     tailwind=True))
 
 
 class HaystackStoryTable(tables.Table):
@@ -870,6 +874,13 @@ class HaystackStoryTable(tables.Table):
                                        'sequence_number')
         return (query_set, True)
 
+    def order_publication_date(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'key_date',
+                                       direction + 'sort_name',
+                                       direction + 'sort_code')
+        return (query_set, True)
+
     def order_story(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_title',
@@ -883,6 +894,9 @@ class HaystackStoryTable(tables.Table):
         return mark_safe('<img ' +
                          show_country_info(record.object.issue.series.country)
                          + '>')
+
+    def render_publication_date(self, record):
+        return record.object.issue.publication_date
 
     def render_publisher(self, record):
         return render_publisher(record.object.issue.series.publisher)

@@ -4,16 +4,19 @@
 from django.db import models
 from django.db.models import F
 import django.urls as urlresolvers
-from apps.stddata.models import Country
-from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
+from django.utils.safestring import mark_safe
 
 from taggit.managers import TaggableManager
+import django_tables2 as tables
 
 from apps.oi import states
+from apps.stddata.models import Country
 from .gcddata import GcdData, GcdLink
 from .image import Image
+from .support_tables import render_publisher
+
 
 def _display_year(year, flag):
     if year:
@@ -34,8 +37,10 @@ class BasePublisher(GcdData):
     year_ended_uncertain = models.BooleanField(default=False, db_index=True)
     year_overall_began = models.IntegerField(db_index=True, null=True)
     year_overall_ended = models.IntegerField(null=True)
-    year_overall_began_uncertain = models.BooleanField(default=False, db_index=True)
-    year_overall_ended_uncertain = models.BooleanField(default=False, db_index=True)
+    year_overall_began_uncertain = models.BooleanField(default=False,
+                                                       db_index=True)
+    year_overall_ended_uncertain = models.BooleanField(default=False,
+                                                       db_index=True)
     notes = models.TextField()
     keywords = TaggableManager()
     url = models.URLField(max_length=255, blank=True, default='')
@@ -155,7 +160,7 @@ class Publisher(BasePublisher):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_publisher',
-            kwargs={'publisher_id': self.id } )
+            kwargs={'publisher_id': self.id})
 
     ############################
     # TODO related to OI functionality, to be re-factored
@@ -163,20 +168,22 @@ class Publisher(BasePublisher):
     def active_brand_emblems_no_pending(self):
         """
         Active brands, not including those with pending deletes.
-        Used in some cases where we don't want someone to add to a brand that is
-        in the process of being deleted.
+        Used in some cases where we don't want someone to add to a brand
+        that is in the process of being deleted.
         """
         # TODO: check for pending brand_use deletes
-        return self.active_brand_emblems().exclude(revisions__deleted=True,
+        return self.active_brand_emblems().exclude(
+          revisions__deleted=True,
           revisions__changeset__state__in=states.ACTIVE).distinct()
 
     def active_indicia_publishers_no_pending(self):
         """
         Active indicia publishers, not including those with pending deletes.
-        Used in some cases where we don't want someone to add to an ind pub that is
-        in the process of being deleted.
+        Used in some cases where we don't want someone to add to an ind pub
+        that is in the process of being deleted.
         """
-        return self.active_indicia_publishers().exclude(revisions__deleted=True,
+        return self.active_indicia_publishers().exclude(
+          revisions__deleted=True,
           revisions__changeset__state__in=states.ACTIVE)
 
 
@@ -213,7 +220,7 @@ class IndiciaPublisher(BasePublisher):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_indicia_publisher',
-            kwargs={'indicia_publisher_id': self.id } )
+            kwargs={'indicia_publisher_id': self.id})
 
 
 class BrandGroup(BasePublisher):
@@ -254,7 +261,7 @@ class BrandGroup(BasePublisher):
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_brand_group',
-            kwargs={'brand_group_id': self.id } )
+            kwargs={'brand_group_id': self.id})
 
 
 class Brand(BasePublisher):
@@ -270,8 +277,9 @@ class Brand(BasePublisher):
 
     @property
     def emblem(self):
-        img = Image.objects.filter(object_id=self.id, deleted=False,
-          content_type = ContentType.objects.get_for_model(self), type__id=3)
+        img = Image.objects.filter(
+          object_id=self.id, deleted=False,
+          content_type=ContentType.objects.get_for_model(self), type__id=3)
         if img:
             return img.get()
         else:
@@ -300,9 +308,8 @@ class Brand(BasePublisher):
         return {'issues': self.issue_count}
 
     def get_absolute_url(self):
-        return urlresolvers.reverse(
-            'show_brand',
-            kwargs={'brand_id': self.id } )
+        return urlresolvers.reverse('show_brand',
+                                    kwargs={'brand_id': self.id})
 
     def __str__(self):
         if self.generic:
@@ -335,12 +342,12 @@ class BrandUse(GcdLink):
           .filter(issue__series__publisher=self.publisher)
 
     def get_absolute_url(self):
-        return urlresolvers.reverse(
-            'show_brand',
-            kwargs={'brand_id': self.emblem.id } )
+        return urlresolvers.reverse('show_brand',
+                                    kwargs={'brand_id': self.emblem.id})
 
     def __str__(self):
-        return 'emblem %s was used from %s to %s by %s.' % (self.emblem,
+        return 'emblem %s was used from %s to %s by %s.' % (
+          self.emblem,
           _display_year(self.year_began, self.year_began_uncertain),
           _display_year(self.year_ended, self.year_ended_uncertain),
           self.publisher)
@@ -391,9 +398,8 @@ class Printer(BasePublisher):
                                     deleted=False).count()
 
     def get_absolute_url(self):
-        return urlresolvers.reverse(
-            'show_printer',
-            kwargs={'printer_id': self.id } )
+        return urlresolvers.reverse('show_printer',
+                                    kwargs={'printer_id': self.id})
 
 
 class IndiciaPrinter(BasePublisher):
@@ -438,5 +444,191 @@ class IndiciaPrinter(BasePublisher):
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
-            'show_indicia_printer',
-            kwargs={'indicia_printer_id': self.id } )
+          'show_indicia_printer', kwargs={'indicia_printer_id': self.id})
+
+
+class PublisherBaseTable(tables.Table):
+    name = tables.Column()
+    year_began = tables.Column(verbose_name='Began')
+    year_ended = tables.Column(verbose_name='Ended')
+    issue_count = tables.Column(verbose_name='Issues',
+                                initial_sort_descending=True,
+                                attrs={"td": {"align": "right"}})
+
+    def order_name(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'name',
+                                       'year_began',)
+        return (query_set, True)
+
+    def order_issue_count(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue_count',
+                                       'name',
+                                       'year_began',)
+        return (query_set, True)
+
+    def render_name(self, record):
+        return render_publisher(record)
+
+    def render_issue_count(self, value, record):
+        return mark_safe('<a href="%sissues/">%d</a>' %
+                         (record.get_absolute_url(), value))
+
+
+class PublisherSearchTable(PublisherBaseTable):
+    name = tables.Column(verbose_name='Publisher')
+    series_count = tables.Column(verbose_name='Series',
+                                 initial_sort_descending=True,
+                                 attrs={"td": {"align": "right"}})
+    brand_count = tables.Column(verbose_name='Brands',
+                                initial_sort_descending=True,
+                                attrs={"td": {"align": "right"}})
+    indicia_publisher_count = tables.Column(
+      verbose_name='Indicia / Colophon Publishers',
+      initial_sort_descending=True,
+      attrs={"td": {"align": "right"}})
+
+    def render_brand_count(self, value, record):
+        return mark_safe('<a href="%sbrands/">%d</a>' %
+                         (record.get_absolute_url(), value))
+
+    def render_indicia_publisher_count(self, value, record):
+        return mark_safe('<a href="%sindicia_publishers/">%d</a>' %
+                         (record.get_absolute_url(), value))
+
+    def render_series_count(self, value, record):
+        return mark_safe('<a href="%s">%d</a>' %
+                         (record.get_absolute_url(), value))
+
+
+class IndiciaPublisherSearchTable(PublisherBaseTable):
+    name = tables.Column(verbose_name='Indicia / Colophon Publisher')
+    parent = tables.Column(verbose_name='Parent Publisher')
+
+    class Meta:
+        fields = ('name', 'parent', 'year_began', 'year_ended', 'issue_count')
+
+    def render_issue_count(self, value, record):
+        return mark_safe('<a href="%s">%d</a>' %
+                         (record.get_absolute_url(), value))
+
+    def render_parent(self, value):
+        return render_publisher(value)
+
+
+class IndiciaPublisherPublisherTable(IndiciaPublisherSearchTable):
+    parent = None
+    surrogate = tables.Column(accessor='is_surrogate',
+                              verbose_name='Surrogate',
+                              empty_values=(False,))
+
+    class Meta:
+        fields = ('name', 'year_began', 'year_ended', 'surrogate',
+                  'issue_count')
+
+    def render_surrogate(self, value):
+        return 'Yes' if value else ''
+
+
+class BrandGroupSearchTable(IndiciaPublisherSearchTable):
+    name = tables.Column(verbose_name="Publisher's Brand Group")
+
+    class Meta:
+        fields = ('name', 'parent', 'year_began', 'year_ended', 'issue_count')
+
+    def render_name(self, value, record):
+        return mark_safe('<a href="%s">%s</a>' %
+                         (record.get_absolute_url(), value))
+
+
+class BrandGroupPublisherTable(BrandGroupSearchTable):
+    parent = None
+    emblem_count = tables.Column(accessor='brand_emblem_count',
+                                 verbose_name='Brand Emblems',
+                                 initial_sort_descending=True,
+                                 attrs={"td": {"align": "right"}})
+
+    class Meta:
+        fields = ('name', 'year_began', 'year_ended', 'emblem_count',
+                  'issue_count')
+
+    def render_emblem_count(self, value, record):
+        return mark_safe('<a href="%s">%s</a>' %
+                         (record.get_absolute_url(), value))
+
+
+class BrandEmblemSearchTable(PublisherBaseTable):
+    name = tables.Column(verbose_name="Publisher's Brand Emblem")
+    group = tables.Column(verbose_name="Publisher's Brand Group(s)",
+                          orderable=False)
+    emblem = tables.Column(verbose_name="Emblem", orderable=False)
+
+    class Meta:
+        fields = ('emblem', 'name', 'group', 'year_began', 'year_ended',
+                  'issue_count')
+
+    def render_group(self, value):
+        return_value = ''
+        for group in value.all():
+            return_value += '<a href="%s">%s</a>' % (
+              group.get_absolute_url(), group)
+            return_value += ' (%s); ' % render_publisher(group.parent)
+        return_value = return_value[:-2]
+        return mark_safe(return_value)
+
+    def render_emblem(self, value, record):
+        from django.templatetags.static import static
+        if value:
+            return mark_safe(
+              f'<a href="{record.get_absolute_url()}">'
+              f'<img src="{static(value.thumbnail.url)}"></a>')
+        return ''
+
+    def render_issue_count(self, value, record):
+        return mark_safe('<a href="%s">%d</a>' %
+                         (record.get_absolute_url(), value))
+
+    def render_name(self, value, record):
+        return mark_safe('<a href="%s">%s</a>' %
+                         (record.get_absolute_url(), value))
+
+
+class BrandEmblemPublisherTable(BrandEmblemSearchTable):
+    name = tables.Column(accessor='emblem__name',
+                         verbose_name="Publisher's Brand Emblem")
+    group = tables.Column(accessor='emblem__group',
+                          verbose_name="Publisher's Brand Group(s)",
+                          orderable=False)
+    notes = tables.Column(orderable=False)
+    emblem = tables.Column(accessor='emblem__emblem',
+                           verbose_name="Emblem",
+                           orderable=False)
+
+    class Meta:
+        fields = ('emblem', 'name', 'group', 'year_began', 'year_ended',)
+
+    def order_name(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'emblem__name',
+                                       'year_began',)
+        return (query_set, True)
+
+    def order_issue_count(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue_count',
+                                       'emblem__name',
+                                       'year_began',)
+        return (query_set, True)
+
+    def render_group(self, value, record):
+        return_value = ''
+        for group in value.all():
+            return_value += '<a href="%s">%s</a>' % (
+              group.get_absolute_url(), group)
+            if group.parent != record.publisher:
+                return_value += ' (%s); ' % render_publisher(group.parent)
+            else:
+                return_value += '; '
+        return_value = return_value[:-2]
+        return mark_safe(return_value)

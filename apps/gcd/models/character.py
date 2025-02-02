@@ -312,6 +312,10 @@ class Character(CharacterGroupBase):
     #
     #     return {'characters': 1}
 
+    def get_issue_list_url(self):
+        return urlresolvers.reverse('character_issues',
+                                    kwargs={'character_id': self.id})
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_character',
@@ -450,6 +454,10 @@ class Group(CharacterGroupBase):
             return True
         return False
 
+    def get_issue_list_url(self):
+        return urlresolvers.reverse('group_issues',
+                                    kwargs={'group_id': self.id})
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_group',
@@ -581,6 +589,23 @@ class GroupMembership(GcdLink):
 class CharacterTable(tables.Table):
     character = tables.Column(accessor='name',
                               verbose_name='Character')
+    year_first_published = tables.Column(verbose_name='First Published')
+
+    def __init__(self, *args, **kwargs):
+        self.group = kwargs.pop('group', None)
+        if self.group:
+            self.base_columns['character'].verbose_name = 'Group'
+            self.group = False
+        else:
+            self.base_columns['character'].verbose_name = 'Character'
+        super(CharacterTable, self).__init__(*args, **kwargs)
+
+    def order_year_first_published(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'year_first_published',
+                                       'sort_name',
+                                       'language__code')
+        return (query_set, True)
 
     def order_character(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -595,35 +620,70 @@ class CharacterTable(tables.Table):
                                                   record.language.name)
         return mark_safe(name_link)
 
+    def value_character(self, value):
+        return value
 
-class CreatorCharacterTable(CharacterTable):
-    credits_count = tables.Column(accessor='issue_credits_count',
-                                  verbose_name='Issues',
-                                  initial_sort_descending=True)
+
+class CharacterSearchTable(CharacterTable):
+    issue_count = tables.Column(verbose_name='Issues',
+                                initial_sort_descending=True,
+                                attrs={"td": {"align": "right"}})
+
+    def order_year_first_published(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'year_first_published',
+                                       'sort_name',
+                                       '-issue_count',
+                                       'language__code')
+        return (query_set, True)
+
+    def order_issue_count(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'issue_count',
+                                       'sort_name',
+                                       'year_first_published',
+                                       'language__code')
+        return (query_set, True)
+
+    def render_issue_count(self, record):
+        return mark_safe('<a href="%s">%s</a>' % (record.get_issue_list_url(),
+                                                  record.issue_count))
+
+    def value_issue_count(self, record):
+        return record.issue_count
+
+
+class CreatorCharacterTable(CharacterSearchTable):
     first_credit = tables.Column(verbose_name='First Credit')
     role = tables.Column(accessor='script', orderable=False)
 
     class Meta:
         model = Character
-        fields = ('character', 'first_credit')
+        fields = ('character', 'year_first_published', 'first_credit',
+                  'issue_count', 'role')
 
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')
         super(CreatorCharacterTable, self).__init__(*args, **kwargs)
 
+    def order_first_credit(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'first_credit',
+                                       'sort_name',
+                                       '-issue_count',
+                                       'language__code')
+        return (query_set, True)
+
     def render_first_credit(self, value):
         return value[:4]
 
-    def render_credits_count(self, record):
+    def render_issue_count(self, record):
         url = urlresolvers.reverse(
                 'creator_character_issues',
                 kwargs={'creator_id': self.creator.id,
                         'character_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
-                                                  record.issue_credits_count))
-
-    def value_credits_count(self, record):
-        return record.issue_credits_count
+                                                  record.issue_count))
 
     def render_role(self, record):
         role = ''
@@ -640,15 +700,12 @@ class CreatorCharacterTable(CharacterTable):
         return role[:-2]
 
 
-class UniverseCharacterTable(CharacterTable):
-    appearances_count = tables.Column(accessor='issue_count',
-                                      verbose_name='Issues',
-                                      initial_sort_descending=True)
+class UniverseCharacterTable(CharacterSearchTable):
     first_appearance = tables.Column(verbose_name='First Appearance')
 
     class Meta:
         model = Character
-        fields = ('character', 'first_appearance')
+        fields = ('character', 'year_first_published', 'first_appearance')
 
     def __init__(self, *args, **kwargs):
         self.universe = kwargs.pop('universe')
@@ -657,23 +714,15 @@ class UniverseCharacterTable(CharacterTable):
     def order_first_appearance(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'first_appearance',
-                                       '-issue_count',
                                        'sort_name',
+                                       '-issue_count',
                                        'language__code')
         return (query_set, True)
 
     def render_first_appearance(self, value):
-        return value[:4]
+        return value
 
-    def order_appearances_count(self, query_set, is_descending):
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'issue_count',
-                                       'sort_name',
-                                       'first_appearance',
-                                       'language__code')
-        return (query_set, True)
-
-    def render_appearances_count(self, record):
+    def render_issue_count(self, record):
         url = urlresolvers.reverse(
                 'character_issues_per_universe',
                 kwargs={'universe_id': self.universe.id,
@@ -681,16 +730,17 @@ class UniverseCharacterTable(CharacterTable):
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
 
-    def value_appearances_count(self, record):
-        return record.issue_count
-
 
 class CharacterCharacterTable(UniverseCharacterTable):
+    class Meta:
+        model = Character
+        fields = ('character', 'year_first_published', 'first_appearance')
+
     def __init__(self, *args, **kwargs):
         self.character = kwargs.pop('character')
         super(UniverseCharacterTable, self).__init__(*args, **kwargs)
 
-    def render_appearances_count(self, record):
+    def render_issue_count(self, record):
         url = urlresolvers.reverse(
                 'character_issues_character',
                 kwargs={'character_id': self.character.id,
@@ -700,11 +750,15 @@ class CharacterCharacterTable(UniverseCharacterTable):
 
 
 class FeatureCharacterTable(UniverseCharacterTable):
+    class Meta:
+        model = Character
+        fields = ('character', 'year_first_published', 'first_appearance')
+
     def __init__(self, *args, **kwargs):
         self.feature = kwargs.pop('feature')
         super(UniverseCharacterTable, self).__init__(*args, **kwargs)
 
-    def render_appearances_count(self, record):
+    def render_issue_count(self, record):
         url = urlresolvers.reverse(
                 'character_issues_per_feature',
                 kwargs={'feature_id': self.feature.id,
@@ -714,11 +768,15 @@ class FeatureCharacterTable(UniverseCharacterTable):
 
 
 class SeriesCharacterTable(UniverseCharacterTable):
+    class Meta:
+        model = Character
+        fields = ('character', 'year_first_published', 'first_appearance')
+
     def __init__(self, *args, **kwargs):
         self.series = kwargs.pop('series')
         super(UniverseCharacterTable, self).__init__(*args, **kwargs)
 
-    def render_appearances_count(self, record):
+    def render_issue_count(self, record):
         url = urlresolvers.reverse(
                 'character_issues_per_series',
                 kwargs={'series_id': self.series.id,

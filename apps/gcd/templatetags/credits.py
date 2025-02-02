@@ -111,6 +111,8 @@ def show_credit(story, credit, tailwind=False):
                 if result != -1:
                     credit_string += ' ' + __format_credit(story, c,
                                                            tailwind=tailwind)
+                    if tailwind:
+                        credit_string += '<br>'
         if not getattr(story, 'matched_credits', None) and story.issue.editing:
             result = find_credit_search(story.issue.editing.lower(), target,
                                         collator)

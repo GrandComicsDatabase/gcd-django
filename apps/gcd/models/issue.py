@@ -750,6 +750,24 @@ class IssueCoverPublisherTable(IssuePublisherTable, IssueCoverTable):
                   'on_sale_date')
 
 
+class ISBNPublisherIssueTable(IssuePublisherTable):
+    isbn = tables.Column(verbose_name="ISBN")
+
+    class Meta:
+        model = Issue
+        fields = ('publisher', 'issue', 'isbn', 'publication_date',
+                  'on_sale_date')
+
+
+class BarcodePublisherIssueTable(IssuePublisherTable):
+    barcode = tables.Column()
+
+    class Meta:
+        model = Issue
+        fields = ('publisher', 'issue', 'barcode', 'publication_date',
+                  'on_sale_date')
+
+
 class IndiciaPublisherIssueTable(IssueTable):
     brand = tables.Column(accessor='brand',
                           verbose_name="Publisher's Brand")

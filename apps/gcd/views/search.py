@@ -10,7 +10,7 @@ from haystack.backends import SQ
 from stdnum import isbn as stdisbn
 from random import randint
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
@@ -35,7 +35,15 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, \
                             CreatorNameDetail, SeriesPublicationType, \
                             Award, ReceivedAward, Character, Group, Universe, \
                             Printer
-from apps.gcd.models.issue import INDEXED, IssuePublisherTable
+from apps.gcd.models.character import CharacterSearchTable
+from apps.gcd.models.feature import FeatureSearchTable
+from apps.gcd.models.issue import INDEXED, IssuePublisherTable, \
+                                  BarcodePublisherIssueTable, \
+                                  ISBNPublisherIssueTable
+from apps.gcd.models.publisher import PublisherSearchTable, \
+                                      BrandGroupSearchTable, \
+                                      BrandEmblemSearchTable, \
+                                      IndiciaPublisherSearchTable
 from apps.gcd.models.story import StoryTable, MatchedSearchStoryTable, \
                                   HaystackMatchedStoryTable, HaystackStoryTable
 from apps.gcd.models.series import SeriesPublisherTable
@@ -47,7 +55,7 @@ from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, \
 from apps.gcd.views.covers import get_image_tags_per_page
 from apps.gcd.templatetags.credits import get_native_language_name
 from apps.select.forms import get_filter_form
-from apps.select.views import filter_sequences
+from apps.select.views import filter_sequences, filter_issues
 # Should not be importing anything from oi, but we're doing this
 # in several places.
 # TODO: states should probably live somewhere else.
@@ -73,6 +81,10 @@ def generic_by_name(request, name, q_obj, sort,
     base_name = 'unknown'
     plural_suffix = 's'
     query_val = {'method': 'icontains', 'logic': True}
+    heading = "matching your query for '%s'" % (name,)
+    display_name = class_.__name__
+    base_name = display_name.lower()
+    item_name = display_name.lower()
 
     if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher,
                    Printer)):
@@ -98,14 +110,40 @@ def generic_by_name(request, name, q_obj, sort,
         plural_suffix = '' if class_ is Series else 's'
         sort_name = "sort_name" if class_ is Series else "name"
         if sqs is None:
+            context = {'item_name': item_name,
+                       'plural_suffix': plural_suffix,
+                       'selected': base_name,
+                       'search_term': name,
+                       'heading': heading}
+
             things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
-            if (sort == ORDER_ALPHA):
-                things = things.order_by(sort_name, "year_began")
-            elif (sort == ORDER_CHRONO):
-                things = things.order_by("year_began", sort_name)
             things = things.distinct()
+
+            if (sort == ORDER_ALPHA):
+                order_by = 'name'
+            elif (sort == ORDER_CHRONO):
+                order_by = 'year_began'
+
+            if class_ is Publisher:
+                table_format = PublisherSearchTable
+            elif class_ is Brand:
+                table_format = BrandEmblemSearchTable
+                context['selected'] = 'brand'
+            elif class_ is BrandGroup:
+                table_format = BrandGroupSearchTable
+            elif class_ is IndiciaPublisher:
+                table_format = IndiciaPublisherSearchTable
+
+            table = table_format(
+              things,
+              template_name='gcd/bits/tw_sortable_table.html',
+              order_by=(order_by))
+            template = 'gcd/search/tw_list_sortable.html'
+            return generic_sortable_list(request, things, table, template,
+                                         context)
+
         else:
             things = sqs
             if (sort == ORDER_ALPHA):
@@ -114,7 +152,6 @@ def generic_by_name(request, name, q_obj, sort,
             elif (sort == ORDER_CHRONO):
                 things = things.order_by('year',
                                          'sort_name')
-        heading = '%s Search Results' % display_name
         # query_string for the link to the advanced search
         query_val['target'] = base_name
         if class_ is Publisher:
@@ -130,23 +167,81 @@ def generic_by_name(request, name, q_obj, sort,
         else:
             things = sqs
             things = things.order_by('sort_name')
-        display_name = class_.__name__
-        base_name = display_name.lower()
-        item_name = display_name.lower()
         selected = base_name
 
         heading = '%s Search Results' % display_name
-
-    elif class_ in [Creator, Character, Group, Feature, Universe]:
+    elif class_ in [Character, Group, Feature]:
         if sqs is None:
-            if class_ in [Creator, Character, Group, Feature]:
+            context = {'item_name': item_name,
+                       'plural_suffix': plural_suffix,
+                       'selected': base_name,
+                       'search_term': name,
+                       'heading': heading}
+            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if related:
+                things = things.select_related(*related)
+            things = things.distinct()
+            if class_ == Feature:
+                things = things.annotate(issue_count=Count(
+                        'story__issue', distinct=True))
+                order_by = 'feature'
+                if sort == ORDER_CHRONO:
+                    order_by = 'year_created'
+
+                table = FeatureSearchTable(
+                  things,
+                  template_name='gcd/bits/tw_sortable_table.html',
+                  order_by=(order_by))
+            if class_ == Character:
+                order_by = 'character'
+                if (sort == ORDER_CHRONO):
+                    order_by = 'year_first_published'
+                things = things.distinct()
+                things = things.annotate(issue_count=Count(
+                  'character_names__storycharacter__story__issue',
+                  distinct=True))
+
+                table = CharacterSearchTable(
+                  things,
+                  template_name='gcd/bits/tw_sortable_table.html',
+                  order_by=(order_by))
+            if class_ == Group:
+                order_by = 'character'
+                if (sort == ORDER_CHRONO):
+                    order_by = 'year_first_published'
+                things = things.distinct()
+                things = things.annotate(issue_count=Count(
+                  'group_names__storycharacter__story__issue', distinct=True))
+
+                table = CharacterSearchTable(
+                  things,
+                  template_name='gcd/bits/tw_sortable_table.html',
+                  order_by=(order_by),
+                  group=True)
+            template = 'gcd/search/tw_list_sortable.html'
+            return generic_sortable_list(request, things, table, template,
+                                         context)
+
+        else:
+            sort_year = "year"
+            things = sqs
+            if (sort == ORDER_ALPHA):
+                things = things.order_by('sort_name',
+                                         sort_year)
+            elif (sort == ORDER_CHRONO):
+                things = things.order_by(sort_year,
+                                         'sort_name')
+        # query_string for the link to the advanced search
+        query_val['target'] = base_name
+        query_val[base_name] = name
+    elif class_ in [Creator, Universe]:
+        if sqs is None:
+            if class_ in [Creator, ]:
                 sort_name = "sort_name"
             else:
                 sort_name = "name"
             if class_ is Creator:
                 sort_year = "birth_date__year"
-            elif class_ is Feature:
-                sort_year = "year_created"
             else:
                 sort_year = "year_first_published"
             things = class_.objects.exclude(deleted=True).filter(q_obj)
@@ -224,19 +319,38 @@ def generic_by_name(request, name, q_obj, sort,
         item_name = 'issue'
         things = Issue.objects.exclude(deleted=True).filter(q_obj) \
                       .select_related('series__publisher')
-        if (sort == ORDER_ALPHA):
-            things = things.order_by("series__sort_name", "key_date")
-        elif (sort == ORDER_CHRONO):
-            things = things.order_by("key_date", "series__sort_name")
-        heading = 'Issue Search Results'
+        heading = "matching your query for '%s' in %s" % (name, credit)
         # query_string for the link to the advanced search
         query_val['target'] = 'issue'
         if credit == 'isbn':
             query_val['isbn'] = name
-        else:
+            table_format = ISBNPublisherIssueTable
+        elif credit == 'barcode':
             query_val['barcode'] = name
+            table_format = BarcodePublisherIssueTable
+        else:
+            table_format = IssuePublisherTable
+        if sort == ORDER_CHRONO:
+            order_by = 'publication_date'
+        else:
+            order_by = 'issue'
+        filter = filter_issues(request, things)
+        things = filter.qs
+        table = table_format(
+          things,
+          template_name='gcd/bits/tw_sortable_table.html',
+          order_by=(order_by))
+        template = 'gcd/search/tw_list_sortable.html'
+        context = {'item_name': item_name,
+                   'plural_suffix': plural_suffix,
+                   'filter_form': filter.form,
+                   'heading': heading}
+
+        return generic_sortable_list(request, things, table, template,
+                                     context)
 
     elif (class_ is Story):
+        template = 'gcd/search/tw_list_sortable.html'
         item_name = 'stor'
         plural_suffix = 'y,ies'
         heading = "matching your query for '%s' in %s" % (name, credit)
@@ -264,26 +378,22 @@ def generic_by_name(request, name, q_obj, sort,
                 creators = list(CreatorNameDetail.objects
                                 .filter(name__icontains=name)
                                 .values_list('id', flat=True))
-                q_obj |= Q(credits__creator__id__in=creators,
-                           credits__credit_type__id=CREDIT_TYPES[credit])
+                if settings.DEBUG:
+                    q_obj = Q(credits__creator__id__in=creators,
+                              credits__credit_type__id=CREDIT_TYPES[credit],
+                              credits__deleted=False)
+                else:
+                    q_obj |= Q(credits__creator__id__in=creators,
+                               credits__credit_type__id=CREDIT_TYPES[credit],
+                               credits__deleted=False)
             q_obj &= Q(deleted=False)
-
             things = class_.objects.filter(q_obj)
-            things = things.select_related('issue__series__publisher',
+            things = things.select_related('issue__series',
                                            'type')
-
-            # TODO: This order_by stuff only works for Stories, which is
-            # TODO: OK for now, but might not always be.
-            if (sort == ORDER_ALPHA):
-                things = things.order_by("issue__series__sort_name",
-                                         "issue__series__year_began",
-                                         "issue__key_date",
-                                         "sequence_number")
-            elif (sort == ORDER_CHRONO):
-                things = things.order_by("issue__key_date",
-                                         "issue__series__sort_name",
-                                         "issue__series__year_began",
-                                         "sequence_number")
+            if sort == ORDER_CHRONO:
+                order_by = 'publication_date'
+            else:
+                order_by = 'issue'
             # build the query_string for the link to the advanced search
             # remove the ones which are not matched in display of results
             if credit in ['title', 'feature']:
@@ -292,47 +402,45 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.prefetch_related('feature_object')
                 filter = filter_sequences(request, things)
                 things = filter.qs
-                if sort == ORDER_CHRONO:
-                    order_by = 'publication_date'
-                else:
-                    order_by = 'issue'
                 table = StoryTable(
-                  things, attrs={'class': 'sortable_listing'},
-                  template_name='gcd/bits/sortable_table.html',
+                  things,
+                  template_name='gcd/bits/tw_sortable_table.html',
                   order_by=(order_by))
                 context = {'item_name': item_name,
                            'plural_suffix': plural_suffix,
-                           'filter': filter,
+                           'filter_form': filter.form,
                            'heading': heading}
 
                 return generic_sortable_list(request, things, table, template,
                                              context)
             elif credit.startswith('characters'):
+                target = 'characters:' + name
                 query_val['characters'] = name
-                things = things.prefetch_related('feature_object',
-                                                 'appearing_characters',
-                                                 'universe')
-                filter = filter_sequences(request, things)
-                things = filter.qs
+            elif credit.startswith('any'):
+                target = 'any:' + name
+                query_val['logic'] = True
+            else:
+                target = credit
+            filter = filter_sequences(request, things)
+            things = filter.qs
 
-                table = MatchedSearchStoryTable(
-                  things, attrs={'class': 'sortable_listing'},
-                  template_name='gcd/bits/sortable_table.html',
-                  target=name,
-                  order_by=('issue'))
-                context = {'item_name': item_name,
-                           'plural_suffix': plural_suffix,
-                           'filter': filter,
-                           'heading': heading}
+            table = MatchedSearchStoryTable(
+                things, attrs={'class': 'sortable_listing'},
+                template_name='gcd/bits/tw_sortable_table.html',
+                target=target,
+                order_by=(order_by))
+            context = {'item_name': item_name,
+                       'plural_suffix': plural_suffix,
+                       'filter_form': filter.form,
+                       'heading': heading}
 
-                return generic_sortable_list(request, things, table, template,
-                                             context)
-                # OR-logic only applies to credits, so we cannnot use it
-                # to mimic the double search for characters and features here
-                # query_val['feature'] = name
-                # query_val['logic'] = True
+            return generic_sortable_list(request, things, table, template,
+                                         context)
+            # OR-logic only applies to credits, so we cannot use it
+            # to mimic the double search for characters and features here
+            # query_val['feature'] = name
+            # query_val['logic'] = True
         else:
-            template = 'gcd/search/tw_list_sortable.html'
             things = sqs.facet('publisher').facet('country').facet('language')
             if request.GET.get('language', ''):
                 things = things.filter(
@@ -647,10 +755,15 @@ def story_by_character(request, character, sort=ORDER_ALPHA):
                                credit="characters:" + character,
                                selected="by_character", sqs=sqs)
     else:
-        q_obj = Q(characters__icontains=character) | \
-                Q(feature__icontains=character) | \
-                Q(appearing_characters__character__name__icontains=character) \
-                | Q(feature_object__name__icontains=character)
+        if settings.DEBUG:
+            q_obj = Q(appearing_characters__character__name__icontains=
+                      character)
+        else:
+            q_obj = Q(characters__icontains=character) | \
+                    Q(feature__icontains=character) | \
+                    Q(appearing_characters__character__name__icontains=
+                      character) \
+                    | Q(feature_object__name__icontains=character)
         return generic_by_name(request, character, q_obj, sort,
                                credit="characters:" + character,
                                selected="by_character")
@@ -894,7 +1007,10 @@ def story_by_feature(request, feature, sort=ORDER_ALPHA):
         return generic_by_name(request, feature, None, sort, credit="feature",
                                selected="by_feature", sqs=sqs)
     else:
-        q_obj = Q(feature__icontains=feature) | \
+        if settings.DEBUG:
+            q_obj = Q(feature_object__name__icontains=feature)
+        else:
+            q_obj = Q(feature__icontains=feature) | \
                 Q(feature_object__name__icontains=feature)
         return generic_by_name(request, feature, q_obj, sort, credit="feature",
                                selected="by_feature")

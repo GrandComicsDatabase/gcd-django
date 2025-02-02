@@ -68,11 +68,14 @@ from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   IssueCoverTable, \
                                   IssueCoverPublisherTable, \
                                   PublisherIssueCoverTable
+from apps.gcd.models.publisher import BrandEmblemPublisherTable, \
+                                      BrandGroupPublisherTable, \
+                                      IndiciaPublisherPublisherTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
                                    CharacterSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
                                   StoryTable
-from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO, \
+from apps.gcd.views import paginate_response, ORDER_CHRONO, \
                            ResponsePaginator
 from apps.gcd.views.covers import get_image_tag, get_generic_image_tag, \
                                   get_image_tags_per_issue, \
@@ -341,7 +344,7 @@ def creator_characters(request, creator_id, country=None):
       character_names__storycharacter__story__credits__deleted=False)\
         .distinct()
 
-    characters = characters.annotate(issue_credits_count=Count(
+    characters = characters.annotate(issue_count=Count(
       'character_names__storycharacter__story__issue', distinct=True))
     characters = characters.annotate(first_credit=Min(
       Case(When(character_names__storycharacter__story__issue__key_date='',
@@ -465,8 +468,8 @@ def creator_features(request, creator_id, country=None, language=None):
         language = get_object_or_404(Language, code=language)
         features = features.filter(language=language)
 
-    features = features.annotate(issue_credits_count=Count('story__issue',
-                                                           distinct=True))
+    features = features.annotate(issue_count=Count('story__issue',
+                                                   distinct=True))
     features = features.annotate(first_credit=Min(
                                  Case(When(story__issue__key_date='',
                                            then=Value('9999-99-99'),
@@ -1659,7 +1662,7 @@ def imprint(request, imprint_id):
                            kwargs={'model_name': 'imprint', 'id': imprint_id}))
 
 
-def brands(request, publisher_id):
+def publisher_brands(request, publisher_id):
     """
     Finds brands of a publisher and presents them as a paginated list.
     """
@@ -1673,22 +1676,30 @@ def brands(request, publisher_id):
 
     brands = publisher.active_brands()
 
-    sort = ORDER_ALPHA
-    if 'sort' in request.GET:
-        sort = request.GET['sort']
+    brands = brands.annotate(brand_emblem_count=Count(
+      'brand', filter=Q(brand__deleted=False)))
 
+    sort = request.GET.get('sort', None)
     if (sort == ORDER_CHRONO):
-        brands = brands.order_by('year_began', 'name')
+        order_by = 'year_began'
     else:
-        brands = brands.order_by('name', 'year_began')
+        order_by = 'name'
 
-    return paginate_response(request, brands, 'gcd/details/brands.html', {
-      'publisher': publisher,
-      'error_subject': '%s brands' % publisher,
-    })
+    context = {'item_name': "publisher's brand group",
+               'plural_suffix': 's',
+               'heading': mark_safe('used at <a href="%s">%s</a>' % (
+                                    publisher.get_absolute_url(), publisher))}
+
+    table = BrandGroupPublisherTable(
+        brands,
+        template_name='gcd/bits/tw_sortable_table.html',
+        order_by=(order_by))
+    template = 'gcd/search/tw_list_sortable.html'
+    return generic_sortable_list(request, brands, table, template,
+                                 context)
 
 
-def brand_uses(request, publisher_id):
+def publisher_brand_uses(request, publisher_id):
     """
     Finds brand emblems used at a publisher and presents them as a
     paginated list.
@@ -1703,24 +1714,32 @@ def brand_uses(request, publisher_id):
 
     brand_uses = publisher.branduse_set.all()
 
-    sort = ORDER_ALPHA
-    if 'sort' in request.GET:
-        sort = request.GET['sort']
-
+    sort = request.GET.get('sort', None)
     if (sort == ORDER_CHRONO):
-        brand_uses = brand_uses.order_by('year_began', 'emblem__name')
+        order_by = 'year_began'
     else:
-        brand_uses = brand_uses.order_by('emblem__name', 'year_began')
+        order_by = 'name'
 
-    return paginate_response(
-      request, brand_uses,
-      'gcd/details/brand_uses.html', {
-        'publisher': publisher,
-        'error_subject': '%s brands' % publisher,
-      })
+    brand_uses = brand_uses.annotate(issue_count=Count(
+      'emblem__issue', filter=Q(emblem__issue__deleted=False,
+                                emblem__issue__key_date__gte=F('year_began'),
+                                emblem__issue__key_date__lte=F('year_ended'))))
+
+    context = {'item_name': "publisher's brand emblem",
+               'plural_suffix': 's',
+               'heading': mark_safe('used at <a href="%s">%s</a>' % (
+                                    publisher.get_absolute_url(), publisher))}
+
+    table = BrandEmblemPublisherTable(
+        brand_uses,
+        template_name='gcd/bits/tw_sortable_table.html',
+        order_by=(order_by))
+    template = 'gcd/search/tw_list_sortable.html'
+    return generic_sortable_list(request, brand_uses, table, template,
+                                 context)
 
 
-def indicia_publishers(request, publisher_id):
+def publisher_indicia_publishers(request, publisher_id):
     """
     Finds indicia publishers of a publisher and presents them as
     a paginated list.
@@ -1734,22 +1753,24 @@ def indicia_publishers(request, publisher_id):
 
     indicia_publishers = publisher.active_indicia_publishers()
 
-    sort = ORDER_ALPHA
-    if 'sort' in request.GET:
-        sort = request.GET['sort']
-
+    sort = request.GET.get('sort', None)
     if (sort == ORDER_CHRONO):
-        indicia_publishers = indicia_publishers.order_by('year_began', 'name')
+        order_by = 'year_began'
     else:
-        indicia_publishers = indicia_publishers.order_by('name', 'year_began')
+        order_by = 'name'
 
-    return paginate_response(
-      request, indicia_publishers,
-      'gcd/details/indicia_publishers.html',
-      {
-        'publisher': publisher,
-        'error_subject': '%s indicia publishers' % publisher,
-      })
+    context = {'item_name': "indicia / colophon publisher",
+               'plural_suffix': 's',
+               'heading': mark_safe('used at <a href="%s">%s</a>' % (
+                                    publisher.get_absolute_url(), publisher))}
+
+    table = IndiciaPublisherPublisherTable(
+        indicia_publishers,
+        template_name='gcd/bits/tw_sortable_table.html',
+        order_by=(order_by))
+    template = 'gcd/search/tw_list_sortable.html'
+    return generic_sortable_list(request, indicia_publishers, table, template,
+                                 context)
 
 
 def printer(request, printer_id):
