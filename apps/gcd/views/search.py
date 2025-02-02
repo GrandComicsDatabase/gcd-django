@@ -118,7 +118,7 @@ def generic_by_name(request, name, q_obj, sort,
                        'search_term': name,
                        'heading': heading}
 
-            if not things:
+            if things is None:
                 things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
@@ -182,7 +182,7 @@ def generic_by_name(request, name, q_obj, sort,
                        'selected': base_name,
                        'search_term': name,
                        'heading': heading}
-            if not things:
+            if things is None:
                 things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
@@ -269,7 +269,7 @@ def generic_by_name(request, name, q_obj, sort,
                 sort_year = "birth_date__year"
             else:
                 sort_year = "year_first_published"
-            if not things:
+            if things is None:
                 things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
