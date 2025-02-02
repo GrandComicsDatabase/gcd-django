@@ -934,6 +934,7 @@ class Changeset(models.Model):
                        isinstance(revision, StoryCreditRevision) or \
                        isinstance(revision, IssueCreditRevision) or \
                        isinstance(revision, ReprintRevision) or \
+                       isinstance(revision, CharacterNameDetailRevision) or \
                        isinstance(revision, CreatorNameDetailRevision) or \
                        isinstance(revision, DataSourceRevision) or \
                        isinstance(revision, StoryCharacterRevision) or \
