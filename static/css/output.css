@@ -952,6 +952,10 @@ a:hover {
   padding-inline-end: 0.25rem;
 }
 
+.text-left {
+  text-align: left;
+}
+
 .text-center {
   text-align: center;
 }
@@ -1169,6 +1173,10 @@ html {
 
   .md\:flex-col {
     flex-direction: column;
+  }
+
+  .md\:text-right {
+    text-align: right;
   }
 }
 

@@ -453,7 +453,8 @@ class PublisherBaseTable(tables.Table):
     year_ended = tables.Column(verbose_name='Ended')
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
-                                attrs={"td": {"align": "right"}})
+                                attrs={'td': {'class':
+                                              'px-2 md:text-right text-left'}})
 
     def order_name(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -480,14 +481,18 @@ class PublisherSearchTable(PublisherBaseTable):
     name = tables.Column(verbose_name='Publisher')
     series_count = tables.Column(verbose_name='Series',
                                  initial_sort_descending=True,
-                                 attrs={"td": {"align": "right"}})
+                                 attrs={'td': {'class':
+                                               'px-2 md:text-right text-left'}})
     brand_count = tables.Column(verbose_name='Brands',
                                 initial_sort_descending=True,
-                                attrs={"td": {"align": "right"}})
+                                attrs={'td': {'class':
+                                              'px-2 md:text-right text-left'}})
     indicia_publisher_count = tables.Column(
       verbose_name='Indicia / Colophon Publishers',
       initial_sort_descending=True,
-      attrs={"td": {"align": "right"}})
+      attrs={'td': {'class':
+                    'px-2 md:text-right text-left'}})
+
 
     def render_brand_count(self, value, record):
         return mark_safe('<a href="%sbrands/">%d</a>' %
@@ -547,7 +552,8 @@ class BrandGroupPublisherTable(BrandGroupSearchTable):
     emblem_count = tables.Column(accessor='brand_emblem_count',
                                  verbose_name='Brand Emblems',
                                  initial_sort_descending=True,
-                                 attrs={"td": {"align": "right"}})
+                                 attrs={'td': {'class':
+                                               'px-2 md:text-right text-left'}})
 
     class Meta:
         fields = ('name', 'year_began', 'year_ended', 'emblem_count',

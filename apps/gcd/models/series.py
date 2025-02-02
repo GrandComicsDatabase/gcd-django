@@ -493,17 +493,19 @@ class NameColumn(tables.Column):
 class SeriesTable(tables.Table):
     name = NameColumn(verbose_name='Series')
     year_began = tables.Column(accessor='year_began', verbose_name='Year')
-    issue_count = tables.Column(attrs={'td': {'style': "text-align: right"}},
-                                verbose_name='Issues',
-                                initial_sort_descending=True)
+    issue_count = tables.Column(verbose_name='Issues',
+                                initial_sort_descending=True,
+                                attrs={'td': {'class':
+                                              'px-2 md:text-right text-left'}})
     covers = CoversColumn(accessor='scan_count',
-                          attrs={'td': {'style': "text-align: right"}},
-                          initial_sort_descending=True)
+                          initial_sort_descending=True,
+                          attrs={'td': {'class':
+                                        'px-2 md:text-right text-left'}})
     published = PublishedColumn(accessor='year_began',
-                                attrs={'td': {'style': "text-align: right"}},
                                 orderable=False,
-                                verbose_name='Published')
-
+                                verbose_name='Published',
+                                attrs={'td': {'class':
+                                              'px-2 md:text-right text-left'}})
     class Meta:
         model = Series
         fields = ('name', 'year_began', 'issue_count', 'covers', 'published')

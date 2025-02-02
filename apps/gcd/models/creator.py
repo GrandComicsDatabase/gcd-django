@@ -1032,7 +1032,8 @@ class CreatorBaseTable(tables.Table):
                             verbose_name='Creator Name')
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
-                                attrs={'td': {'align': 'right'}})
+                                attrs={'td': {'class':
+                                              'px-2 md:text-right text-left'}})
 
     def order_creator(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -1157,9 +1158,6 @@ class CreatorNameTable(CreatorTable):
 
 
 class CreatorCreatorTable(CreatorTable):
-    issue_count = tables.Column(verbose_name='# Issues',
-                                initial_sort_descending=True)
-
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')
         self.resolve_name = 'creator'

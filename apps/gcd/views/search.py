@@ -87,7 +87,6 @@ def generic_by_name(request, name, q_obj, sort,
     display_name = class_.__name__
     base_name = display_name.lower()
     item_name = display_name.lower()
-
     if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher,
                    Printer)):
         if class_ is Brand:
@@ -625,7 +624,7 @@ def brand_by_name(request, brand_name='', sort=ORDER_ALPHA):
                                things=things)
     else:
         q_obj = Q(name__icontains=brand_name)
-        return generic_by_name(request, brand_name, q_obj, sort)
+        return generic_by_name(request, brand_name, q_obj, sort, Brand)
 
 
 def indicia_publisher_by_name(request, ind_pub_name='', sort=ORDER_ALPHA):

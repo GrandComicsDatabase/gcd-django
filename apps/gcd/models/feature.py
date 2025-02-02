@@ -249,7 +249,8 @@ class FeatureTable(tables.Table):
 class FeatureSearchTable(FeatureTable):
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
-                                attrs={"td": {"align": "right"}})
+                                attrs={'td': {'class':
+                                              'px-2 md:text-right text-left'}})
 
     def order_feature(self, query_set, is_descending):
         direction = '-' if is_descending else ''
