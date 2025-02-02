@@ -74,6 +74,7 @@ def generic_by_name(request, name, q_obj, sort,
                     credit=None,
                     related=[],
                     sqs=None,
+                    things=None,
                     selected=None):
     """
     Helper function for the most common search cases.
@@ -88,15 +89,15 @@ def generic_by_name(request, name, q_obj, sort,
 
     if (class_ in (Series, BrandGroup, Brand, IndiciaPublisher, Publisher,
                    Printer)):
-        if class_ is IndiciaPublisher:
-            base_name = 'indicia_publisher'
-            display_name = 'Indicia / Colophon Publisher'
-        elif class_ is Brand:
+        if class_ is Brand:
             display_name = "Publisher's Brand Emblem"
             base_name = 'brand_emblem'
         elif class_ is BrandGroup:
             display_name = "Publisher's Brand Group"
             base_name = 'brand_group'
+        elif class_ is IndiciaPublisher:
+            base_name = 'indicia_publisher'
+            display_name = 'Indicia / Colophon Publisher'
         else:
             display_name = class_.__name__
             base_name = display_name.lower()
@@ -116,7 +117,8 @@ def generic_by_name(request, name, q_obj, sort,
                        'search_term': name,
                        'heading': heading}
 
-            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if not things:
+                things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
             things = things.distinct()
@@ -135,6 +137,8 @@ def generic_by_name(request, name, q_obj, sort,
                 table_format = BrandGroupSearchTable
             elif class_ is IndiciaPublisher:
                 table_format = IndiciaPublisherSearchTable
+            elif class_ is Series:
+                table_format = SeriesPublisherTable
 
             table = table_format(
               things,
@@ -177,7 +181,8 @@ def generic_by_name(request, name, q_obj, sort,
                        'selected': base_name,
                        'search_term': name,
                        'heading': heading}
-            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if not things:
+                things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
             things = things.distinct()
@@ -324,9 +329,11 @@ def generic_by_name(request, name, q_obj, sort,
         query_val['target'] = 'issue'
         if credit == 'isbn':
             query_val['isbn'] = name
+            selected = 'isbn'
             table_format = ISBNPublisherIssueTable
         elif credit == 'barcode':
             query_val['barcode'] = name
+            selected = 'barcode'
             table_format = BarcodePublisherIssueTable
         else:
             table_format = IssuePublisherTable
@@ -344,6 +351,8 @@ def generic_by_name(request, name, q_obj, sort,
         context = {'item_name': item_name,
                    'plural_suffix': plural_suffix,
                    'filter_form': filter.form,
+                   'search_term': name,
+                   'selected': selected,
                    'heading': heading}
 
         return generic_sortable_list(request, things, table, template,
@@ -561,8 +570,10 @@ def publisher_by_name(request, publisher_name='', sort=ORDER_ALPHA,
     if settings.USE_ELASTICSEARCH and not publisher_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
                               .models(Publisher)
+        publisher_ids = sqs.values_list('pk', flat=True)
+        things = Publisher.objects.filter(id__in=publisher_ids)
         return generic_by_name(request, publisher_name, None, sort, Publisher,
-                               template, sqs=sqs)
+                               things=things, template=template)
     else:
         q_obj = Q(name__icontains=publisher_name)
         return generic_by_name(request, publisher_name, q_obj, sort,
@@ -573,40 +584,41 @@ def brand_group_by_name(request, brand_group_name='', sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH and not brand_group_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_group_name)) \
                               .models(BrandGroup)
-        return generic_by_name(request, brand_group_name, None, sort,
-                               BrandGroup, 'gcd/search/brand_group_list.html',
-                               sqs=sqs)
+        brand_group_ids = sqs.values_list('pk', flat=True)
+        things = BrandGroup.objects.filter(id__in=brand_group_ids)
+        return generic_by_name(request, brand_group_name, None, sort, BrandGroup,
+                               things=things)
     else:
         q_obj = Q(name__icontains=brand_group_name)
         return generic_by_name(request, brand_group_name, q_obj, sort,
-                               BrandGroup, 'gcd/search/brand_group_list.html')
+                               BrandGroup)
 
 
 def brand_by_name(request, brand_name='', sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH and not brand_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(brand_name)) \
                               .models(Brand)
+        brand_ids = sqs.values_list('pk', flat=True)
+        things = Brand.objects.filter(id__in=brand_ids)
         return generic_by_name(request, brand_name, None, sort, Brand,
-                               'gcd/search/brand_list.html', sqs=sqs)
+                               things=things)
     else:
         q_obj = Q(name__icontains=brand_name)
-        return generic_by_name(request, brand_name, q_obj, sort,
-                               Brand, 'gcd/search/brand_list.html')
+        return generic_by_name(request, brand_name, q_obj, sort)
 
 
 def indicia_publisher_by_name(request, ind_pub_name='', sort=ORDER_ALPHA):
     if settings.USE_ELASTICSEARCH and not ind_pub_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(ind_pub_name)) \
                             .models(IndiciaPublisher)
-        return generic_by_name(request, ind_pub_name, None, sort,
-                               IndiciaPublisher,
-                               'gcd/search/indicia_publisher_list.html',
-                               sqs=sqs)
+        ind_pub_ids = sqs.values_list('pk', flat=True)
+        things = IndiciaPublisher.objects.filter(id__in=ind_pub_ids)
+        return generic_by_name(request, ind_pub_name, None, sort, IndiciaPublisher,
+                               things=things)
     else:
         q_obj = Q(name__icontains=ind_pub_name)
         return generic_by_name(request, ind_pub_name, q_obj, sort,
-                               IndiciaPublisher,
-                               'gcd/search/indicia_publisher_list.html')
+                               IndiciaPublisher)
 
 
 def name_search_hx(request):
@@ -785,8 +797,10 @@ def character_by_name(request, character_name='', sort=ORDER_ALPHA,
     if settings.USE_ELASTICSEARCH and not character_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(character_name)) \
                               .models(Character)
+        character_ids = sqs.values_list('pk', flat=True)
+        things = Character.objects.filter(id__in=character_ids)
         return generic_by_name(request, character_name, None, sort, Character,
-                               sqs=sqs, template=template,
+                               things=things, template=template,
                                include_template=include_template)
     else:
         q_obj = Q(name__icontains=character_name)
@@ -811,8 +825,10 @@ def group_by_name(request, group_name='', sort=ORDER_ALPHA,
     if settings.USE_ELASTICSEARCH and not group_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(group_name)) \
                               .models(Group)
+        group_ids = sqs.values_list('pk', flat=True)
+        things = Group.objects.filter(id__in=group_ids)
         return generic_by_name(request, group_name, None, sort, Group,
-                               sqs=sqs, template=template,
+                               things=things, template=template,
                                include_template=include_template)
     else:
         q_obj = Q(name__icontains=group_name)
@@ -864,8 +880,10 @@ def feature_by_name(request, feature_name='', sort=ORDER_ALPHA,
     if settings.USE_ELASTICSEARCH and not feature_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(feature_name)) \
                               .models(Feature)
+        feature_ids = sqs.values_list('pk', flat=True)
+        things = Feature.objects.filter(id__in=feature_ids)
         return generic_by_name(request, feature_name, None, sort, Feature,
-                               sqs=sqs, template=template,
+                               things=things, template=template,
                                include_template=include_template)
     else:
         q_obj = Q(name__icontains=feature_name)
@@ -1031,8 +1049,10 @@ def series_by_name(request, series_name='', sort=ORDER_ALPHA,
     if settings.USE_ELASTICSEARCH and not series_name == '':
         sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name)) \
                               .models(Series)
+        series_ids = sqs.values_list('pk', flat=True)
+        things = Series.objects.filter(id__in=series_ids)
         return generic_by_name(request, series_name, None, sort, Series,
-                               template, sqs=sqs)
+                               things=things, template=template)
     else:
         q_obj = Q(name__icontains=series_name) | \
                 Q(issue__title__icontains=series_name)
