@@ -3,13 +3,14 @@
 
 from decimal import Decimal
 
-from django.db import models, NotSupportedError
-import django.urls as urlresolvers
-from django.db.models import Sum, F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
+from django.db import models, NotSupportedError
+from django.db.models import Sum, F, Value
+from django.db.models.functions import NullIf
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
+import django.urls as urlresolvers
 
 import django_tables2 as tables
 
@@ -664,10 +665,16 @@ class IssueTable(tables.Table):
             # it fails for joined querysets, but there we did the annotation
             # beforehand !
             pass
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'key_date',
-                                       direction + 'series_name',
-                                       direction + 'sort_code')
+        if is_descending:
+            query_set = query_set.order_by(NullIf('key_date', Value(''))
+                                           .desc(nulls_last=True),
+                                           'series_name',
+                                           'sort_code')
+        else:
+            query_set = query_set.order_by(NullIf('key_date', Value(''))
+                                           .asc(nulls_last=True),
+                                           'series_name',
+                                           'sort_code')
         return (query_set, True)
 
     def order_on_sale_date(self, query_set, is_descending):
@@ -677,11 +684,20 @@ class IssueTable(tables.Table):
             # it fails for joined querysets, but there we did the annotation
             # beforehand !
             pass
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'on_sale_date',
-                                       direction + 'series_name',
-                                       direction + 'key_date',
-                                       direction + 'sort_code')
+        if is_descending:
+            query_set = query_set.order_by(NullIf('on_sale_date', Value(''))
+                                           .desc(nulls_last=True),
+                                           NullIf('key_date', Value(''))
+                                           .desc(nulls_last=True),
+                                           'series_name',
+                                           '-sort_code')
+        else:
+            query_set = query_set.order_by(NullIf('on_sale_date', Value(''))
+                                           .asc(nulls_last=True),
+                                           NullIf('key_date', Value(''))
+                                           .asc(nulls_last=True),
+                                           'series_name',
+                                           'sort_code')
         return (query_set, True)
 
 
