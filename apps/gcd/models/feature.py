@@ -13,6 +13,7 @@ import django_tables2 as tables
 from apps.stddata.models import Language
 from .gcddata import GcdData, GcdLink
 from .image import Image
+from .support_tables import TW_COLUMN_ALIGN_RIGHT
 
 
 class FeatureRelationType(models.Model):
@@ -250,7 +251,7 @@ class FeatureSearchTable(FeatureTable):
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
-                                              'px-2 md:text-right text-left'}})
+                                              TW_COLUMN_ALIGN_RIGHT}})
 
     def order_feature(self, query_set, is_descending):
         direction = '-' if is_descending else ''

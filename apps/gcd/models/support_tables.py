@@ -1,5 +1,7 @@
 from django.utils.safestring import mark_safe
 
+TW_COLUMN_ALIGN_RIGHT = 'px-2 sm:text-right text-left'
+
 
 def render_publisher(value, addon=''):
     from apps.gcd.templatetags.display import absolute_url

@@ -15,7 +15,7 @@ from apps.oi import states
 from apps.stddata.models import Country
 from .gcddata import GcdData, GcdLink
 from .image import Image
-from .support_tables import render_publisher
+from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT
 
 
 def _display_year(year, flag):
@@ -454,7 +454,7 @@ class PublisherBaseTable(tables.Table):
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
-                                              'px-2 md:text-right text-left'}})
+                                              TW_COLUMN_ALIGN_RIGHT}})
 
     def order_name(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -482,17 +482,16 @@ class PublisherSearchTable(PublisherBaseTable):
     series_count = tables.Column(verbose_name='Series',
                                  initial_sort_descending=True,
                                  attrs={'td': {'class':
-                                               'px-2 md:text-right text-left'}})
+                                               TW_COLUMN_ALIGN_RIGHT}})
     brand_count = tables.Column(verbose_name='Brands',
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
-                                              'px-2 md:text-right text-left'}})
+                                              TW_COLUMN_ALIGN_RIGHT}})
     indicia_publisher_count = tables.Column(
       verbose_name='Indicia / Colophon Publishers',
       initial_sort_descending=True,
       attrs={'td': {'class':
-                    'px-2 md:text-right text-left'}})
-
+                    TW_COLUMN_ALIGN_RIGHT}})
 
     def render_brand_count(self, value, record):
         return mark_safe('<a href="%sbrands/">%d</a>' %
@@ -553,7 +552,7 @@ class BrandGroupPublisherTable(BrandGroupSearchTable):
                                  verbose_name='Brand Emblems',
                                  initial_sort_descending=True,
                                  attrs={'td': {'class':
-                                               'px-2 md:text-right text-left'}})
+                                               TW_COLUMN_ALIGN_RIGHT}})
 
     class Meta:
         fields = ('name', 'year_began', 'year_ended', 'emblem_count',

@@ -1160,6 +1160,10 @@ html {
   .sm\:justify-center {
     justify-content: center;
   }
+
+  .sm\:text-right {
+    text-align: right;
+  }
 }
 
 @media (min-width: 768px) {
@@ -1173,10 +1177,6 @@ html {
 
   .md\:flex-col {
     flex-direction: column;
-  }
-
-  .md\:text-right {
-    text-align: right;
   }
 }
 

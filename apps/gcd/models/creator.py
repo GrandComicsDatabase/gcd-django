@@ -13,6 +13,7 @@ from .award import ReceivedAward
 from .datasource import DataSource, ExternalLink
 from .image import Image
 from apps.stddata.models import Country, Date, Script
+from .support_tables import TW_COLUMN_ALIGN_RIGHT
 
 MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
@@ -1033,7 +1034,7 @@ class CreatorBaseTable(tables.Table):
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
-                                              'px-2 md:text-right text-left'}})
+                                              TW_COLUMN_ALIGN_RIGHT}})
 
     def order_creator(self, query_set, is_descending):
         direction = '-' if is_descending else ''

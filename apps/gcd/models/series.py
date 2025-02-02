@@ -20,7 +20,7 @@ from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
 from .award import ReceivedAward
-from .support_tables import render_publisher
+from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT
 
 
 class SeriesPublicationType(models.Model):
@@ -496,16 +496,17 @@ class SeriesTable(tables.Table):
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
-                                              'px-2 md:text-right text-left'}})
+                                              TW_COLUMN_ALIGN_RIGHT}})
     covers = CoversColumn(accessor='scan_count',
                           initial_sort_descending=True,
                           attrs={'td': {'class':
-                                        'px-2 md:text-right text-left'}})
+                                        TW_COLUMN_ALIGN_RIGHT}})
     published = PublishedColumn(accessor='year_began',
                                 orderable=False,
                                 verbose_name='Published',
                                 attrs={'td': {'class':
-                                              'px-2 md:text-right text-left'}})
+                                              TW_COLUMN_ALIGN_RIGHT}})
+
     class Meta:
         model = Series
         fields = ('name', 'year_began', 'issue_count', 'covers', 'published')
