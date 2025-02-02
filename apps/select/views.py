@@ -762,14 +762,20 @@ class CommonFilter(FilterSet):
     def __init__(self, *args, **kwargs):
         if 'countries' in kwargs:
             countries = kwargs.pop('countries')
+            if countries == []:
+                countries = [-1,]
         else:
             countries = None
         if 'languages' in kwargs:
             languages = kwargs.pop('languages')
+            if languages == []:
+                languages = [-1,]
         else:
             languages = None
         if 'publishers' in kwargs:
             publishers = kwargs.pop('publishers')
+            if publishers == []:
+                publishers = [-1,]
         else:
             publishers = None
         super(CommonFilter, self).__init__(*args, **kwargs)

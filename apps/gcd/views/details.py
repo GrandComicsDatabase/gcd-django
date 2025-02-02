@@ -2660,7 +2660,7 @@ def daily_covers(request, show_date=None, user=False):
         'item_name': 'cover',
         'plural_suffix': 's',
         'publisher': publisher,
-        'heading': 'upload on %s' % show_date,
+        'heading': 'uploaded on %s' % show_date,
         'years': range(date.today().year, 2003, -1),
         'daily': True,
         'choose_url_before': urlresolvers.reverse(
