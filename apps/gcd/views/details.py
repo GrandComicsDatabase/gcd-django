@@ -409,8 +409,8 @@ def creator_creators(request, creator_id):
       creator_names__storycredit__deleted=False,
       creator_names__storycredit__credit_type__id__lt=6).exclude(id=creator.id)
     creators = creators.annotate(
-      issue_credits_count=Count("creator_names__storycredit__story__issue",
-                                distinct=True))
+      issue_count=Count("creator_names__storycredit__story__issue",
+                        distinct=True))
     creators = creators.annotate(first_credit=Min(
       Case(When(creator_names__storycredit__story__issue__key_date="",
                 then=Value("9999-99-99"),
@@ -2144,8 +2144,8 @@ def _annotate_creator_list(creators):
                     filter=Q(creator_names__storycredit__credit_type__id=5),
                     distinct=True)
     creators = creators.annotate(
-      credits_count=Count('creator_names__storycredit__story__issue',
-                          distinct=True),
+      issue_count=Count('creator_names__storycredit__story__issue',
+                        distinct=True),
       script=script,
       pencils=pencils,
       inks=inks,
@@ -2171,7 +2171,7 @@ def _annotate_creator_name_detail_list(creator_names):
     letters = Count('storycredit__story__issue',
                     filter=Q(storycredit__credit_type__id=5), distinct=True)
     creators = creators.annotate(
-      credits_count=Count('storycredit__story__issue', distinct=True),
+      issue_count=Count('storycredit__story__issue', distinct=True),
       script=script,
       pencils=pencils,
       inks=inks,

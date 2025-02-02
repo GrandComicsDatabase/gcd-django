@@ -10,7 +10,7 @@ from haystack.backends import SQ
 from stdnum import isbn as stdisbn
 from random import randint
 
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Min, Case, When, Value, F
 from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
@@ -36,6 +36,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, \
                             Award, ReceivedAward, Character, Group, Universe, \
                             Printer
 from apps.gcd.models.character import CharacterSearchTable
+from apps.gcd.models.creator import CreatorSearchTable
 from apps.gcd.models.feature import FeatureSearchTable
 from apps.gcd.models.issue import INDEXED, IssuePublisherTable, \
                                   BarcodePublisherIssueTable, \
@@ -174,7 +175,7 @@ def generic_by_name(request, name, q_obj, sort,
         selected = base_name
 
         heading = '%s Search Results' % display_name
-    elif class_ in [Character, Group, Feature]:
+    elif class_ in [Creator, Character, Group, Feature]:
         if sqs is None:
             context = {'item_name': item_name,
                        'plural_suffix': plural_suffix,
@@ -197,7 +198,7 @@ def generic_by_name(request, name, q_obj, sort,
                   things,
                   template_name='gcd/bits/tw_sortable_table.html',
                   order_by=(order_by))
-            if class_ == Character:
+            elif class_ == Character:
                 order_by = 'character'
                 if (sort == ORDER_CHRONO):
                     order_by = 'year_first_published'
@@ -210,7 +211,7 @@ def generic_by_name(request, name, q_obj, sort,
                   things,
                   template_name='gcd/bits/tw_sortable_table.html',
                   order_by=(order_by))
-            if class_ == Group:
+            elif class_ == Group:
                 order_by = 'character'
                 if (sort == ORDER_CHRONO):
                     order_by = 'year_first_published'
@@ -223,6 +224,25 @@ def generic_by_name(request, name, q_obj, sort,
                   template_name='gcd/bits/tw_sortable_table.html',
                   order_by=(order_by),
                   group=True)
+            elif class_ == Creator:
+                order_by = 'creator'
+                if (sort == ORDER_CHRONO):
+                    order_by = 'date_of_birth'
+                things = things.distinct()
+                things = things.annotate(
+                  first_credit=Min(Case(When(
+                    creator_names__storycredit__story__issue__key_date='',
+                    then=Value('9999-99-99'),
+                    ),
+                    default=F(
+                      'creator_names__storycredit__story__issue__key_date'))))
+                things = things.annotate(issue_count=Count(
+                  'creator_names__storycredit__story__issue',
+                  distinct=True))
+                table = CreatorSearchTable(
+                  things,
+                  template_name='gcd/bits/tw_sortable_table.html',
+                  order_by=(order_by))
             template = 'gcd/search/tw_list_sortable.html'
             return generic_sortable_list(request, things, table, template,
                                          context)
@@ -249,7 +269,8 @@ def generic_by_name(request, name, q_obj, sort,
                 sort_year = "birth_date__year"
             else:
                 sort_year = "year_first_published"
-            things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if not things:
+                things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
             if (sort == ORDER_ALPHA):
@@ -586,8 +607,8 @@ def brand_group_by_name(request, brand_group_name='', sort=ORDER_ALPHA):
                               .models(BrandGroup)
         brand_group_ids = sqs.values_list('pk', flat=True)
         things = BrandGroup.objects.filter(id__in=brand_group_ids)
-        return generic_by_name(request, brand_group_name, None, sort, BrandGroup,
-                               things=things)
+        return generic_by_name(request, brand_group_name, None, sort,
+                               BrandGroup, things=things)
     else:
         q_obj = Q(name__icontains=brand_group_name)
         return generic_by_name(request, brand_group_name, q_obj, sort,
@@ -613,8 +634,8 @@ def indicia_publisher_by_name(request, ind_pub_name='', sort=ORDER_ALPHA):
                             .models(IndiciaPublisher)
         ind_pub_ids = sqs.values_list('pk', flat=True)
         things = IndiciaPublisher.objects.filter(id__in=ind_pub_ids)
-        return generic_by_name(request, ind_pub_name, None, sort, IndiciaPublisher,
-                               things=things)
+        return generic_by_name(request, ind_pub_name, None, sort,
+                               IndiciaPublisher, things=things)
     else:
         q_obj = Q(name__icontains=ind_pub_name)
         return generic_by_name(request, ind_pub_name, q_obj, sort,
@@ -669,8 +690,10 @@ def creator_by_name(request, creator_name='', sort=ORDER_ALPHA,
         # TODO use name instead ?
         sqs = SearchQuerySet().filter(
           gcd_official_name=GcdNameQuery(creator_name)).models(Creator)
-        return generic_by_name(request, creator_name, None, sort,
-                               Creator, template, sqs=sqs)
+        creator_ids = sqs.values_list('pk', flat=True)
+        things = Creator.objects.filter(id__in=creator_ids)
+        return generic_by_name(request, creator_name, None, sort, Creator,
+                               things=things, template=template)
     else:
         q_obj = Q(creator_names__name__icontains=creator_name) | Q(
             gcd_official_name__icontains=creator_name)
