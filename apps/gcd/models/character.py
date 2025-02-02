@@ -1,5 +1,6 @@
 import django.urls as urlresolvers
 from django.db import models
+from django.db.models import F
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
@@ -601,16 +602,23 @@ class CharacterTable(tables.Table):
         super(CharacterTable, self).__init__(*args, **kwargs)
 
     def order_year_first_published(self, query_set, is_descending):
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'year_first_published',
-                                       'sort_name',
-                                       'language__code')
+        if is_descending:
+            query_set = query_set.order_by(F('year_first_published')
+                                           .desc(nulls_last=True),
+                                           'sort_name',
+                                           'language__code')
+        else:
+            query_set = query_set.order_by(F('year_first_published')
+                                           .asc(nulls_last=True),
+                                           'sort_name',
+                                           'language__code')
         return (query_set, True)
 
     def order_character(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name',
-                                       'year_first_published',
+                                       F('year_first_published')
+                                       .asc(nulls_last=True),
                                        'language__code')
         return (query_set, True)
 
@@ -629,10 +637,11 @@ class CharacterSearchTable(CharacterTable):
                                 initial_sort_descending=True,
                                 attrs={"td": {"align": "right"}})
 
-    def order_year_first_published(self, query_set, is_descending):
+    def order_character(self, query_set, is_descending):
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'year_first_published',
-                                       'sort_name',
+        query_set = query_set.order_by(direction + 'sort_name',
+                                       F('year_first_published')
+                                       .asc(nulls_last=True),
                                        '-issue_count',
                                        'language__code')
         return (query_set, True)
@@ -641,8 +650,24 @@ class CharacterSearchTable(CharacterTable):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue_count',
                                        'sort_name',
-                                       'year_first_published',
+                                       F('year_first_published')
+                                       .asc(nulls_last=True),
                                        'language__code')
+        return (query_set, True)
+
+    def order_year_first_published(self, query_set, is_descending):
+        if is_descending:
+            query_set = query_set.order_by(F('year_first_published')
+                                           .desc(nulls_last=True),
+                                           'sort_name',
+                                           '-issue_count',
+                                           'language__code')
+        else:
+            query_set = query_set.order_by(F('year_first_published')
+                                           .asc(nulls_last=True),
+                                           'sort_name',
+                                           '-issue_count',
+                                           'language__code')
         return (query_set, True)
 
     def render_issue_count(self, record):

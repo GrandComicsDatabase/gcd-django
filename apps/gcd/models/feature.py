@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
 import django.urls as urlresolvers
@@ -211,11 +212,25 @@ class FeatureTable(tables.Table):
                             verbose_name='Feature')
     year_created = tables.Column(verbose_name='First Published')
 
-    def order_year_created(self, query_set, is_descending):
+    def order_feature(self, query_set, is_descending):
+        from django.db.models import F
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'year_created',
-                                       'sort_name',
+        query_set = query_set.order_by(direction + 'sort_name',
+                                       F('year_created').asc(nulls_last=True),
                                        'language__code')
+        return (query_set, True)
+
+    def order_year_created(self, query_set, is_descending):
+        if is_descending:
+            query_set = query_set.order_by(F('year_created')
+                                           .desc(nulls_last=True),
+                                           'sort_name',
+                                           'language__code')
+        else:
+            query_set = query_set.order_by(F('year_created')
+                                           .asc(nulls_last=True),
+                                           'sort_name',
+                                           'language__code')
         return (query_set, True)
 
     def render_feature(self, record):
@@ -233,19 +248,34 @@ class FeatureSearchTable(FeatureTable):
                                 initial_sort_descending=True,
                                 attrs={"td": {"align": "right"}})
 
-    def order_year_created(self, query_set, is_descending):
+    def order_feature(self, query_set, is_descending):
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'year_created',
-                                       'sort_name',
+        query_set = query_set.order_by(direction + 'sort_name',
+                                       F('year_created').asc(nulls_last=True),
                                        '-issue_count',
                                        'language__code')
+        return (query_set, True)
+
+    def order_year_created(self, query_set, is_descending):
+        if is_descending:
+            query_set = query_set.order_by(F('year_created')
+                                           .desc(nulls_last=True),
+                                           'sort_name',
+                                           '-issue_count',
+                                           'language__code')
+        else:
+            query_set = query_set.order_by(F('year_created')
+                                           .asc(nulls_last=True),
+                                           'sort_name',
+                                           '-issue_count',
+                                           'language__code')
         return (query_set, True)
 
     def order_issue_count(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue_count',
                                        'sort_name',
-                                       'year_created',
+                                       F('year_created').asc(nulls_last=True),
                                        'language__code')
         return (query_set, True)
 
