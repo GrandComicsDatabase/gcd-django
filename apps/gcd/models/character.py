@@ -652,6 +652,7 @@ class CharacterSearchTable(CharacterTable):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue_count',
                                        'sort_name',
+                                       'disambiguation',
                                        F('year_first_published')
                                        .asc(nulls_last=True),
                                        'language__code')
@@ -662,12 +663,14 @@ class CharacterSearchTable(CharacterTable):
             query_set = query_set.order_by(F('year_first_published')
                                            .desc(nulls_last=True),
                                            'sort_name',
+                                           'disambiguation',
                                            '-issue_count',
                                            'language__code')
         else:
             query_set = query_set.order_by(F('year_first_published')
                                            .asc(nulls_last=True),
                                            'sort_name',
+                                           'disambiguation',
                                            '-issue_count',
                                            'language__code')
         return (query_set, True)
@@ -697,6 +700,7 @@ class CreatorCharacterTable(CharacterSearchTable):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'first_credit',
                                        'sort_name',
+                                       'disambiguation',
                                        '-issue_count',
                                        'language__code')
         return (query_set, True)

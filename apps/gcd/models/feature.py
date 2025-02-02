@@ -226,11 +226,13 @@ class FeatureTable(tables.Table):
             query_set = query_set.order_by(F('year_created')
                                            .desc(nulls_last=True),
                                            'sort_name',
+                                           'disambiguation',
                                            'language__code')
         else:
             query_set = query_set.order_by(F('year_created')
                                            .asc(nulls_last=True),
                                            'sort_name',
+                                           'disambiguation',
                                            'language__code')
         return (query_set, True)
 
@@ -263,12 +265,14 @@ class FeatureSearchTable(FeatureTable):
             query_set = query_set.order_by(F('year_created')
                                            .desc(nulls_last=True),
                                            'sort_name',
+                                           'disambiguation',
                                            '-issue_count',
                                            'language__code')
         else:
             query_set = query_set.order_by(F('year_created')
                                            .asc(nulls_last=True),
                                            'sort_name',
+                                           'disambiguation',
                                            '-issue_count',
                                            'language__code')
         return (query_set, True)
@@ -277,6 +281,7 @@ class FeatureSearchTable(FeatureTable):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'issue_count',
                                        'sort_name',
+                                       'disambiguation',
                                        F('year_created').asc(nulls_last=True),
                                        'language__code')
         return (query_set, True)
@@ -308,6 +313,7 @@ class CharacterFeatureTable(FeatureSearchTable):
         query_set = query_set.order_by(direction + 'first_appearance',
                                        '-issue_count',
                                        'sort_name',
+                                       'disambiguation',
                                        'language__code')
         return (query_set, True)
 
@@ -340,6 +346,7 @@ class CreatorFeatureTable(FeatureSearchTable):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'first_credit',
                                        'sort_name',
+                                       'disambiguation',
                                        '-issue_count',
                                        'language__code')
         return (query_set, True)
