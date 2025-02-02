@@ -492,7 +492,7 @@ class NameColumn(tables.Column):
 
 class SeriesTable(tables.Table):
     name = NameColumn(verbose_name='Series')
-    year = tables.Column(accessor='year_began', verbose_name='Year')
+    year_began = tables.Column(accessor='year_began', verbose_name='Year')
     issue_count = tables.Column(attrs={'td': {'style': "text-align: right"}},
                                 verbose_name='Issues',
                                 initial_sort_descending=True)
@@ -506,7 +506,7 @@ class SeriesTable(tables.Table):
 
     class Meta:
         model = Series
-        fields = ('name', 'year', 'issue_count', 'covers', 'published')
+        fields = ('name', 'year_began', 'issue_count', 'covers', 'published')
 
     def order_covers(self, query_set, is_descending):
         query_set = query_set.annotate(
@@ -517,7 +517,7 @@ class SeriesTable(tables.Table):
                                        'year_began')
         return (query_set, True)
 
-    def order_year(self, QuerySet, is_descending):
+    def order_year_began(self, QuerySet, is_descending):
         QuerySet = QuerySet.order_by(('-' if is_descending else '')
                                      + 'year_began', 'sort_name')
         return (QuerySet, True)
@@ -542,7 +542,7 @@ class SeriesPublisherTable(SeriesTable):
 
     class Meta:
         model = Series
-        fields = ('publisher', 'name', 'year', 'issue_count', 'covers',
+        fields = ('publisher', 'name', 'year_began', 'issue_count', 'covers',
                   'published')
 
     def order_publisher(self, query_set, is_descending):
@@ -575,7 +575,7 @@ class CharacterSeriesTable(SeriesPublisherTable):
 
     class Meta:
         model = Series
-        fields = ('name', 'year', 'publisher', 'first_appearance')
+        fields = ('name', 'year_began', 'publisher', 'first_appearance')
 
     def order_appearances_count(self, QuerySet, is_descending):
         if is_descending:
@@ -619,7 +619,7 @@ class CreatorSeriesTable(SeriesPublisherTable):
 
     class Meta:
         model = Series
-        fields = ('name', 'year', 'publisher', 'first_credit')
+        fields = ('name', 'year_began', 'publisher', 'first_credit')
 
     def order_credits_count(self, QuerySet, is_descending):
         if is_descending:
