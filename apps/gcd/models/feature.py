@@ -216,6 +216,7 @@ class FeatureTable(tables.Table):
         from django.db.models import F
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name',
+                                       direction + 'disambiguation',
                                        F('year_created').asc(nulls_last=True),
                                        'language__code')
         return (query_set, True)
@@ -251,6 +252,7 @@ class FeatureSearchTable(FeatureTable):
     def order_feature(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name',
+                                       direction + 'disambiguation',
                                        F('year_created').asc(nulls_last=True),
                                        '-issue_count',
                                        'language__code')
