@@ -121,5 +121,26 @@ if 'django_rq' in settings.INSTALLED_APPS:
 if 'rosetta' in settings.INSTALLED_APPS:
     urlpatterns += [path('rosetta/', include('rosetta.urls'))]
 
+if 'drf_spectacular' in settings.INSTALLED_APPS:
+    from drf_spectacular.views import SpectacularAPIView, \
+                                      SpectacularRedocView, \
+                                      SpectacularSwaggerView
+
+    urlpatterns += [path('api/schema/', SpectacularAPIView.as_view(),
+                         name='schema'),
+                    path('api/schema/swagger-ui/',
+                         SpectacularSwaggerView.as_view(url_name='schema'),
+                         name='swagger-ui'),
+                    path('api/schema/redoc/',
+                         SpectacularRedocView.as_view(url_name='schema'),
+                         name='redoc'),
+                    ]
+
+if settings.DEBUG and 'debug_toolbar' in settings.INSTALLED_APPS:
+    import debug_toolbar
+    urlpatterns += [
+        path('__debug__/', include(debug_toolbar.urls)),
+    ]
+
 # This only has any effect when DEBUG is True.
 urlpatterns += staticfiles_urlpatterns()

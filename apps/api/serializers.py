@@ -15,42 +15,42 @@ class StorySerializer(serializers.ModelSerializer):
 
     script = serializers.SerializerMethodField()
 
-    def get_script(self, obj):
+    def get_script(self, obj) -> str:
         return (show_creator_credit(obj, 'script', url=False))
 
     pencils = serializers.SerializerMethodField()
 
-    def get_pencils(self, obj):
+    def get_pencils(self, obj) -> str:
         return (show_creator_credit(obj, 'pencils', url=False))
 
     inks = serializers.SerializerMethodField()
 
-    def get_inks(self, obj):
+    def get_inks(self, obj) -> str:
         return (show_creator_credit(obj, 'inks', url=False))
 
     colors = serializers.SerializerMethodField()
 
-    def get_colors(self, obj):
+    def get_colors(self, obj) -> str:
         return (show_creator_credit(obj, 'colors', url=False))
 
     letters = serializers.SerializerMethodField()
 
-    def get_letters(self, obj):
+    def get_letters(self, obj) -> str:
         return (show_creator_credit(obj, 'letters', url=False))
 
     editing = serializers.SerializerMethodField()
 
-    def get_editing(self, obj):
+    def get_editing(self, obj) -> str:
         return (show_creator_credit(obj, 'editing', url=False))
 
     feature = serializers.SerializerMethodField()
 
-    def get_feature(self, obj):
+    def get_feature(self, obj) -> str:
         return (obj.show_feature_as_text())
 
     characters = serializers.SerializerMethodField()
 
-    def get_characters(self, obj):
+    def get_characters(self, obj) -> str:
         return (obj.show_characters_as_text())
 
 
@@ -67,7 +67,7 @@ class IssueSerializer(serializers.HyperlinkedModelSerializer):
 
     descriptor = serializers.SerializerMethodField()
 
-    def get_descriptor(self, obj):
+    def get_descriptor(self, obj) -> str:
         return (obj.full_descriptor)
 
     indicia_publisher = serializers.StringRelatedField(read_only=True)
@@ -75,12 +75,12 @@ class IssueSerializer(serializers.HyperlinkedModelSerializer):
 
     editing = serializers.SerializerMethodField()
 
-    def get_editing(self, obj):
+    def get_editing(self, obj) -> str:
         return (show_creator_credit(obj, 'editing', url=False))
 
     cover = serializers.SerializerMethodField()
 
-    def get_cover(self, obj):
+    def get_cover(self, obj) -> str:
         covers = obj.active_covers()
         if covers:
             cover_links = covers[0].get_base_url() + ("/w400/%d.jpg" %
@@ -115,11 +115,10 @@ class SeriesSerializer(serializers.HyperlinkedModelSerializer):
     active_issues = serializers.HyperlinkedRelatedField(
       many=True, read_only=True, view_name='issue-detail')
 
-    issue_descriptors = serializers.SlugRelatedField(
-      read_only=True,
-      many=True,
-      source='active_issues',
-      slug_field='full_descriptor')
+    issue_descriptors = serializers.SerializerMethodField()
+
+    def get_issue_descriptors(self, obj) -> list:
+        return [issue.full_descriptor for issue in obj.active_issues()]
 
 
 class PublisherSerializer(serializers.HyperlinkedModelSerializer):
