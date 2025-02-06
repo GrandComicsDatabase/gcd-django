@@ -121,9 +121,10 @@ def get_civilian_identity(character, appearing_characters, url=True,
                                'character__character', flat=True))
     if civilian_identity:
         civilian_identity = appearing_characters.filter(
-              character__character__id=civilian_identity.pop())
+              character__character__id__in=civilian_identity)
         characters = ' ['
         several = False
+        compare_characters = ''
         for identity in civilian_identity:
             if several:
                 characters += '; '
@@ -134,9 +135,14 @@ def get_civilian_identity(character, appearing_characters, url=True,
             else:
                 characters += '%s' % identity.character.name
             if compare:
-                return ' [%s]' % identity.character.character.disambiguated
+                if several:
+                    compare_characters += '; '
+                compare_characters += ' [%s' % identity.character.character\
+                                                       .disambiguated
             several = True
         characters += ']'
+        if compare:
+            return compare_characters + ']'
         return characters
     else:
         return ''
