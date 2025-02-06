@@ -3917,11 +3917,26 @@ def character_name_issues(request, character_name_id, universe_id=None):
         if character.active_generalisations().filter(
            from_character__character_names__name=character_name.name):
             filter_character = character.active_generalisations().get()\
-                                             .from_character
-            filter_character_name = filter_character.character_names\
-                                                    .get(name=
-                                                         character_name.name,
-                                                         deleted=False)
+                                                .from_character
+            try:
+                filter_character_name = \
+                  filter_character.character_names.get(
+                    name=character_name.name,
+                    deleted=False)
+            except CharacterNameDetail.MultipleObjectsReturned:
+                # This can happen due to diacritics, so we try to find the
+                # exact match.
+                found = False
+                for name in filter_character.character_names\
+                                            .filter(name=character_name.name,
+                                                    deleted=False):
+                    if name.name == character_name.name:
+                        filter_character_name = name
+                        found = True
+                        break
+                if not found:
+                    # more a CharacterNameDetail.DoesNotExist exception here ?
+                    raise
         else:
             return render(request, 'indexer/error.html',
                           {'error_text':
