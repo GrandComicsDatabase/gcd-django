@@ -583,11 +583,10 @@ class BrandEmblemSearchTable(PublisherBaseTable):
         return mark_safe(return_value)
 
     def render_emblem(self, value, record):
-        from django.templatetags.static import static
         if value:
             return mark_safe(
               f'<a href="{record.get_absolute_url()}">'
-              f'<img src="{static(value.thumbnail.url)}"></a>')
+              f'<img src="{value.thumbnail.url}"></a>')
         return ''
 
     def render_issue_count(self, value, record):

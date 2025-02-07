@@ -8,6 +8,7 @@ from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 from django.views.i18n import JavaScriptCatalog
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.conf.urls.static import static
 
 from django_contact_form.views import ContactFormView
 
@@ -122,4 +123,4 @@ if 'rosetta' in settings.INSTALLED_APPS:
     urlpatterns += [path('rosetta/', include('rosetta.urls'))]
 
 # This only has any effect when DEBUG is True.
-urlpatterns += staticfiles_urlpatterns()
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

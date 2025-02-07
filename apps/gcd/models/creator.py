@@ -1035,10 +1035,17 @@ class CreatorBaseTable(tables.Table):
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
                                               TW_COLUMN_ALIGN_RIGHT}})
+    first_credit = tables.Column(verbose_name='First Credit')
 
     def order_creator(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name')
+        return (query_set, True)
+
+    def order_first_credit(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'first_credit',
+                                       'sort_name',)
         return (query_set, True)
 
     def render_creator(self, record):
@@ -1047,6 +1054,9 @@ class CreatorBaseTable(tables.Table):
         display_country = "<img class='pe-1 inline' %s>" % (
           show_country_info(record.birth_country))
         return mark_safe(display_country) + absolute_url(record)
+
+    def render_first_credit(self, value):
+        return value
 
     def render_issue_count(self, record):
         url = urlresolvers.reverse(
@@ -1059,7 +1069,6 @@ class CreatorBaseTable(tables.Table):
 
 
 class CreatorSearchTable(CreatorBaseTable):
-    first_credit = tables.Column(verbose_name='First Credit')
     date_of_birth = tables.Column(accessor='birth_date',
                                   verbose_name='Date of Birth')
     place_of_birth = tables.Column(accessor='pk',
@@ -1068,22 +1077,14 @@ class CreatorSearchTable(CreatorBaseTable):
 
     class Meta:
         model = Creator
-        fields = ('creator', 'date_of_birth', 'place_of_birth', 'issue_count')
+        fields = ('creator', 'date_of_birth', 'place_of_birth', 'first_credit',
+                  'issue_count',)
 
     def order_date_of_birth(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'birth_date',
                                        'sort_name',)
         return (query_set, True)
-
-    def order_first_credit(self, query_set, is_descending):
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'first_credit',
-                                       'sort_name',)
-        return (query_set, True)
-
-    def render_first_credit(self, value):
-        return value
 
     def render_date_of_birth(self, value):
         return _display_day(value, table=True)
@@ -1093,15 +1094,15 @@ class CreatorSearchTable(CreatorBaseTable):
 
 
 class CreatorTable(CreatorBaseTable):
-    first_credit = tables.Column(verbose_name='First Credit')
     role = tables.Column(accessor='script', orderable=False)
 
-    class Meta:
-        model = Creator
-        fields = ('creator', 'first_credit', 'issue_count', 'role')
-
-    def render_first_credit(self, value):
-        return value[:4]
+    def render_issue_count(self, record):
+        url = urlresolvers.reverse(
+                '%s_creator_issues' % self.resolve_name,
+                kwargs={'creator_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url, record.issue_count))
 
     def render_role(self, record):
         role = ''
@@ -1118,6 +1119,39 @@ class CreatorTable(CreatorBaseTable):
         return role[:-2]
 
 
+class CreatorPortraitTable(CreatorTable):
+    issue_count = tables.Column(verbose_name='Issues',
+                                initial_sort_descending=True)
+
+    def __init__(self, *args, **kwargs):
+        self.resolve_name = kwargs.pop('resolve_name')
+        setattr(self, self.resolve_name, kwargs.pop('object'))
+        super(CreatorPortraitTable, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Creator
+        fields = ('creator', 'first_credit', 'issue_count', 'role')
+
+    def render_creator(self, record):
+        from apps.gcd.templatetags.display import absolute_url
+        from apps.gcd.templatetags.credits import show_country_info
+        if record.portrait:
+            display_face = "<a href='%s'>" \
+                           "<img class='border-2 size-8 rounded-full' "\
+                           "src='%s'></a>" % (
+                             record.get_absolute_url(),
+                             record.portrait.face_portrait.url)
+        else:
+            from django.templatetags.static import static
+            display_face = f"<a href='{record.get_absolute_url()}'>" \
+                           "<img class='border-2 size-8 rounded-full'" \
+                           f" src='{static('img/avatar.png')}'></a>"
+        display_country = "<img class='pe-1 inline' %s>" % (
+          show_country_info(record.birth_country))
+        display_creator = absolute_url(record)
+        return mark_safe(display_face + display_country + display_creator)
+
+
 class CreatorNameTable(CreatorTable):
     creator = tables.Column(accessor='creator__gcd_official_name',
                             verbose_name='Creator Name')
@@ -1126,11 +1160,6 @@ class CreatorNameTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         super(CreatorTable, self).__init__(*args, **kwargs)
         self.resolve_name = 'creator_name'
-
-    class Meta(CreatorTable.Meta):
-        model = CreatorNameDetail
-        fields = ('creator', 'detail_name', 'first_credit', 'issue_count',
-                  'role')
 
     def order_creator(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -1158,41 +1187,15 @@ class CreatorNameTable(CreatorTable):
         return str(record.creator)
 
 
-class CreatorCreatorTable(CreatorTable):
-    def __init__(self, *args, **kwargs):
-        self.creator = kwargs.pop('creator')
-        self.resolve_name = 'creator'
-        super(CreatorTable, self).__init__(*args, **kwargs)
-
-    class Meta:
-        model = Creator
-        fields = ('creator', 'issue_count', 'first_credit', 'role')
-
-    def render_issue_count(self, record):
-        url = urlresolvers.reverse(
-                'creator_cocreator_issues',
-                kwargs={'co_creator_id': record.id,
-                        '%s_id' % self.resolve_name:
-                        getattr(self, self.resolve_name).id})
-        return mark_safe('<a href="%s">%s</a>' % (url,
-                                                  record.issue_count))
-
-    def value_issue_count(self, value):
-        return value
-
-    def render_name(self, record):
-        from apps.gcd.templatetags.display import absolute_url
-        return absolute_url(record)
-
-    def value_name(self, record):
-        return str(record)
-
-
 class GenericCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         self.resolve_name = kwargs.pop('resolve_name')
         setattr(self, self.resolve_name, kwargs.pop('object'))
         super(CreatorTable, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = Creator
+        fields = ('creator', 'first_credit', 'issue_count', 'role')
 
 
 class GenericCreatorNameTable(CreatorNameTable):
@@ -1200,3 +1203,8 @@ class GenericCreatorNameTable(CreatorNameTable):
         self.resolve_name = kwargs.pop('resolve_name')
         setattr(self, self.resolve_name, kwargs.pop('object'))
         super(CreatorNameTable, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = CreatorNameDetail
+        fields = ('creator', 'detail_name', 'first_credit', 'issue_count',
+                  'role')

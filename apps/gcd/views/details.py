@@ -53,7 +53,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import GenericCreatorTable, \
                                     GenericCreatorNameTable, \
-                                    CreatorCreatorTable, NAME_TYPES
+                                    CreatorPortraitTable, \
+                                    NAME_TYPES
 from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       UniverseCharacterTable, \
                                       SeriesCharacterTable, \
@@ -119,6 +120,7 @@ MIGRATE_DISCLAIMER = ' Text credits are currently being migrated to '\
 
 SORT_TABLE_TEMPLATE = 'gcd/bits/sortable_table.html'
 TW_SORT_TABLE_TEMPLATE = 'gcd/bits/tw_sortable_table.html'
+TW_SORT_GRID_TEMPLATE = 'gcd/bits/tw_sortable_grid.html'
 
 # For ad purposes, we need to be able to identify adult cover images,
 # right now we do it by publisher.
@@ -450,10 +452,9 @@ def creator_creators(request, creator_id):
         'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = CreatorCreatorTable(creators, attrs={'class': 'sortable_listing'},
-                                creator=creator,
-                                template_name=TW_SORT_TABLE_TEMPLATE,
-                                order_by=('name'))
+    table = _table_creators_list_or_grid(request, creators, context,
+                                         resolve_name='co_creator',
+                                         object=creator)
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -786,14 +787,32 @@ def _table_issues_list_or_grid(request, issues, context, publisher=True):
         if publisher:
             table = IssueCoverPublisherTable(
               issues,
-              template_name='gcd/bits/tw_sortable_cover_issue_list.html',
+              template_name=TW_SORT_GRID_TEMPLATE,
               order_by=('publication_date'))
         else:
             table = IssueCoverTable(
               issues,
-              template_name='gcd/bits/tw_sortable_cover_issue_list.html',
+              template_name=TW_SORT_GRID_TEMPLATE,
               order_by=('publication_date'))
 
+    return table
+
+
+def _table_creators_list_or_grid(request, creators, context, resolve_name,
+                                 object):
+    context['list_grid'] = True
+    if 'display' not in request.GET or request.GET['display'] == 'list':
+        table = GenericCreatorTable(creators,
+                                    resolve_name=resolve_name,
+                                    object=object,
+                                    template_name=TW_SORT_TABLE_TEMPLATE,
+                                    order_by=('creator'))
+    else:
+        table = CreatorPortraitTable(creators,
+                                     resolve_name=resolve_name,
+                                     object=object,
+                                     template_name=TW_SORT_GRID_TEMPLATE,
+                                     order_by=('creator'))
     return table
 
 
@@ -1463,7 +1482,7 @@ def publisher_monthly_covers(request,
         else:
             table = IssueCoverPublisherTable(
               issues,
-              template_name='gcd/bits/tw_sortable_cover_issue_list.html',
+              template_name=TW_SORT_GRID_TEMPLATE,
               order_by=(ordering))
 
         return generic_sortable_list(request, issues, table, template,
@@ -1563,7 +1582,7 @@ def publisher_monthly_covers(request,
         template = 'gcd/search/tw_list_sortable.html'
         table = OnSaleCoverIssueTable(
           covers,
-          template_name='gcd/bits/tw_sortable_cover_issue_list.html',
+          template_name=TW_SORT_GRID_TEMPLATE,
           order_by=(ordering))
         return generic_sortable_list(request, covers, table, template,
                                      context, 50)
@@ -1952,7 +1971,7 @@ def series_covers(request, series_id):
     template = 'gcd/search/tw_list_sortable.html'
     table = CoverSeriesTable(
       covers,
-      template_name='gcd/bits/tw_sortable_cover_issue_list.html',
+      template_name=TW_SORT_GRID_TEMPLATE,
       order_by=('issue'))
     return generic_sortable_list(request, covers, table, template,
                                  context, 50)
@@ -2213,11 +2232,9 @@ def publisher_creators(request, publisher_id, creator_names=False):
                                         template_name=TW_SORT_TABLE_TEMPLATE,
                                         order_by=('name'))
     else:
-        table = GenericCreatorTable(creators,
-                                    resolve_name='publisher',
-                                    object=publisher,
-                                    template_name=TW_SORT_TABLE_TEMPLATE,
-                                    order_by=('name'))
+        table = _table_creators_list_or_grid(request, creators, context,
+                                             resolve_name='publisher',
+                                             object=publisher)
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -2250,13 +2267,11 @@ def series_creators(request, series_id, creator_names=False):
                                         object=series,
                                         resolve_name='series',
                                         template_name=TW_SORT_TABLE_TEMPLATE,
-                                        order_by=('name'))
+                                        order_by=('creator'))
     else:
-        table = GenericCreatorTable(creators,
-                                    object=series,
-                                    resolve_name='series',
-                                    template_name=TW_SORT_TABLE_TEMPLATE,
-                                    order_by=('name'))
+        table = _table_creators_list_or_grid(request, creators, context,
+                                             resolve_name='series',
+                                             object=series)
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -2677,7 +2692,7 @@ def daily_covers(request, show_date=None, user=False):
     template = 'gcd/search/tw_list_sortable.html'
     table = CoverIssuePublisherEditTable(
       covers,
-      template_name='gcd/bits/tw_sortable_cover_issue_list.html',
+      template_name=TW_SORT_GRID_TEMPLATE,
       order_by=('publisher'))
     return generic_sortable_list(request, covers, table, template,
                                  context, 50)
@@ -3330,11 +3345,9 @@ def feature_creators(request, feature_id, creator_names=False):
                                         template_name=TW_SORT_TABLE_TEMPLATE,
                                         order_by=('name'))
     else:
-        table = GenericCreatorTable(creators,
-                                    resolve_name='feature',
-                                    object=feature,
-                                    template_name=TW_SORT_TABLE_TEMPLATE,
-                                    order_by=('name'))
+        table = _table_creators_list_or_grid(request, creators, context,
+                                             resolve_name='feature',
+                                             object=feature)
     return generic_sortable_list(request, creators, table, template, context)
 
 
@@ -3869,7 +3882,7 @@ def character_issues_series(request, character_id, series_id):
     else:
         table = IssueCoverTable(
           issues,
-          template_name='gcd/bits/tw_sortable_cover_issue_list.html',
+          template_name=TW_SORT_GRID_TEMPLATE,
           order_by=('publication_date'))
 
     return generic_sortable_list(request, issues, table, template, context)
@@ -3980,11 +3993,9 @@ def character_creators(request, character_id, creator_names=False):
                                         template_name=TW_SORT_TABLE_TEMPLATE,
                                         order_by=('name'))
     else:
-        table = GenericCreatorTable(creators,
-                                    object=character,
-                                    resolve_name='character',
-                                    template_name=TW_SORT_TABLE_TEMPLATE,
-                                    order_by=('name'))
+        table = _table_creators_list_or_grid(request, creators, context,
+                                             resolve_name='character',
+                                             object=character)
     # TODO: pass filter through to links to combined lists
     return generic_sortable_list(request, creators, table, template, context)
 

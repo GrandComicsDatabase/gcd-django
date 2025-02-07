@@ -189,7 +189,7 @@ urlpatterns = [
     path('creator/<int:creator_id>/creators/',
          gcd_views.details.creator_creators, name='creator_creators'),
     path('creator/<int:creator_id>/creator/<int:co_creator_id>/issues/',
-         gcd_views.details.checklist_by_id, name='creator_cocreator_issues'),
+         gcd_views.details.checklist_by_id, name='co_creator_creator_issues'),
     path('creator/<int:creator_id>/features/',
          gcd_views.details.creator_features, name='creator_features'),
     path('creator/<int:creator_id>/series/<int:series_id>/issues/',
