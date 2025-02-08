@@ -20,7 +20,9 @@
   <div class="flex-1 font-bold text-lg">
   {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} result{{ page.paginator.count|pluralize:'s' }} matching your search for '{{ request.GET.q }}'
   </div>
-  {% include "gcd/bits/tw_pagination_bar.html" %}
+  {% with query_string=query|add:facet_page|add:sort %}
+    {% include "gcd/bits/tw_pagination_bar.html" %}
+  {% endwith %}
 </nav>
 
   {% if suggestion %}
@@ -30,7 +32,7 @@
 <h1 class="px-2">Search Results:</h1>
 <div class="px-2">
   {% if facets.fields.facet_model_name %}
-  <ul style="columns: 3;" class="px-6 list-disc">
+  <ul class="px-6 list-disc columns-2 sm:columns-3">
     {% for model in facets.fields.facet_model_name %}
     <li><a href="?{{ query }}{{ facet_page }}{% if not is_model_selected %}&amp;selected_facets=facet_model_name_exact:{{ model.0|urlencode }}{% endif %}">{{ model.0 }}</a> ({{ model.1 }})</li>
     {% endfor %}
@@ -38,7 +40,7 @@
   {% endif %}
 
   {% if paginator.count > 100 %}
-  <div>
+  <div class='max-sm:hidden'>
     Too many results? Try adding further terms to limit the matches,
     e.g. publication year or publisher. Or put search terms in ""-quotes
     for exact matches, which also works for (exact) series name and
@@ -48,7 +50,7 @@
 </div>
 
 <div class="flex">
-  <div class="px-2 flex flex-col w-48">
+  <div class="px-2 flex flex-col w-48 max-sm:hidden">
     <details {% if is_country_selected %} open="open" {% endif %} class="mb-2">
       <summary class="bg-blue-100">Country ({{ facets.fields.country|length }})</summary>
       <table>
@@ -132,13 +134,13 @@
       {% if select_key %}
             <th> Selection </th>
       {% endif %}
-            <th style="width: 170px;">Type</th>
+            <th>Type</th>
             <th>Name</th>
           </tr>
           </thead>
           <tbody>
         {% for result in page.object_list %}
-            <tr class="hover:bg-blue-50 sm:table-row border-y-2 max-sm:bg-blue-50">
+            <tr class="hover:bg-blue-50 sm:table-row border-y-2">
             {% if select_key %}
               <td>
               {% if result.model_name in allowed_selects %}
@@ -155,7 +157,7 @@
               </td>
             {% endif %}
             {% if result.model_name == 'series' %}
-                <td>[SERIES]</td>
+                <td class="pe-2">[SERIES]</td>
                 <td><img {{ result.object.country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'issue' %}
@@ -174,68 +176,68 @@
               {{ result.object.issue.full_name }}</a> {{ result.object.issue.publication_date|str_encl:'(' }})</td>
             {% endif %}
             {% if result.model_name == 'feature' %}
-                <td>[FEATURE]</td>
+                <td class="pe-2">[FEATURE]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
             {% if result.model_name == 'universe' %}
-                <td>[UNIVERSE]</td>
+                <td class="pe-2">[UNIVERSE]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
             {% if result.model_name == 'character' %}
-                <td>[CHARACTER]</td>
+                <td class="pe-2">[CHARACTER]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
             {% if result.model_name == 'group' %}
-                <td>[GROUP]</td>
+                <td class="pe-2">[GROUP]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
             {% if result.model_name == 'publisher' %}
-                <td>[PUBLISHER]</td>
+                <td class="pe-2">[PUBLISHER]</td>
                 <td><img {{ result.object.country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'indiciapublisher' %}
-                <td>[INDICIA PUBLISHER]</td>
+                <td class="pe-2">[INDICIA PUBLISHER]</td>
                 <td><img {{ result.object.country|show_country_info }}  class="inline"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
               :
                 <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'brand' %}
-                <td>[BRAND EMBLEM]</td>
+                <td class="pe-2">[BRAND EMBLEM]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'brandgroup' %}
-                <td>[BRAND GROUP]</td>
+                <td class="pe-2">[BRAND GROUP]</td>
                 <td><img {{ result.object.parent.country|show_country_info }}  class="inline"> <a href="{{ result.object.parent.get_absolute_url }}">{{ result.object.parent.name }}</a>
                 :
                   <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'printer' %}
-                <td>[PRINTER]</td>
+                <td class="pe-2">[PRINTER]</td>
                 <td><img {{ result.object.country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
             {% endif %}
             {% if result.model_name == 'award' %}
-                <td>[AWARD]</td>
+                <td class="pe-2">[AWARD]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
 
             {% if result.model_name == 'creator' %}
-                <td>[CREATOR]</td>
+                <td class="pe-2">[CREATOR]</td>
                 <td><img {{ result.object.birth_country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.search_result_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatormembership' %}
-                <td>[CREATOR MEMBERSHIP]</td>
+                <td class="pe-2">[CREATOR MEMBERSHIP]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.organization_name }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatorartinfluence' %}
-                <td>[CREATOR ART INFLUENCE]</td>
+                <td class="pe-2">[CREATOR ART INFLUENCE]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
             {% endif %}
             {% if result.model_name == 'receivedaward' %}
-                <td>[RECEIVED AWARD]</td>
+                <td class="pe-2">[RECEIVED AWARD]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.award }} - {{ result.object.display_name }}: {{ result.object.recipient }}</a></td>
             {% endif %}
             {% if result.model_name == 'creatornoncomicwork' %}
-                <td>[CREATOR NONCOMICWORK]</td>
+                <td class="pe-2">[CREATOR NONCOMICWORK]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.publication_title }}</a></td>
             {% endif %}
             </tr>
@@ -262,7 +264,7 @@
 
     {% else %}
       {% if query %}
-      <p>No results.</p>
+      <div class="px-2">No results.</div>
       {% endif %}
     {% endif %}
       <div class="px-2">Please enter the search word(s) in the box. The search is looking for exact matches for each word.
@@ -277,7 +279,9 @@
       </div>
 <nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-3">
     <div></div>
-  {% include "gcd/bits/tw_pagination_bar.html" %}
+  {% with query_string=query|add:facet_page|add:sort %}
+    {% include "gcd/bits/tw_pagination_bar.html" %}
+  {% endwith %}
 </nav>
 {% include 'oi/bits/jquery.html' with details=True %}
 {% endblock %}

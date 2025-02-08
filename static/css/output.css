@@ -653,6 +653,10 @@ a:hover {
   margin-right: auto;
 }
 
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
 .mb-4 {
   margin-bottom: 1rem;
 }
@@ -675,10 +679,6 @@ a:hover {
 
 .mt-2 {
   margin-top: 0.5rem;
-}
-
-.mb-2 {
-  margin-bottom: 0.5rem;
 }
 
 .block {
@@ -787,6 +787,11 @@ a:hover {
 
 .list-disc {
   list-style-type: disc;
+}
+
+.columns-2 {
+  -moz-columns: 2;
+       columns: 2;
 }
 
 .flex-row {
@@ -966,6 +971,10 @@ a:hover {
 
 .pe-1 {
   padding-inline-end: 0.25rem;
+}
+
+.pe-2 {
+  padding-inline-end: 0.5rem;
 }
 
 .text-left {
@@ -1165,6 +1174,11 @@ html {
 
   .sm\:h-8 {
     height: 2rem;
+  }
+
+  .sm\:columns-3 {
+    -moz-columns: 3;
+         columns: 3;
   }
 
   .sm\:justify-center {
