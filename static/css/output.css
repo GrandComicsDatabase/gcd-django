@@ -677,6 +677,10 @@ a:hover {
   margin-top: 0.5rem;
 }
 
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
 .block {
   display: block;
 }
@@ -779,6 +783,10 @@ a:hover {
 
 .border-collapse {
   border-collapse: collapse;
+}
+
+.list-disc {
+  list-style-type: disc;
 }
 
 .flex-row {

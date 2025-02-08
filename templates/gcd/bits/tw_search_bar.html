@@ -7,16 +7,20 @@
   </div>
   <!-- <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto "> -->
   <div><!-- Search Box -->
+{% if haystack_search %}
+    <form action="{% url "haystack_search" %}" method="get">
+{% else %}
     <form action="{% url "basic_search" %}" method="get">
+{% endif %}
       <div class="flex rounded-md overflow-hidden max-w-md mx-auto">
         <span class="max-sm:hidden flex">
-      {% if haystack_search %}
-        {% include "gcd/bits/hs_search_for.html" %}
-      {% else %}
-        {% include "gcd/bits/search_for.html" %}
-      {% endif %}
+{% if haystack_search %}
+  {% include "gcd/bits/hs_search_for.html" %}
+{% else %}
+  {% include "gcd/bits/search_for.html" %}
+{% endif %}
         </span>
-        <input type="search" name="query" value="{{ search_term|default:'' }}" placeholder="Search..."
+        <input type="search" name="{% if haystack_search %}q{% else %}query{% endif %}" value="{{ search_term|default:'' }}" placeholder="Search..."
           class="w-full bg-white text-gray-600 px-1 " />
         <button type='submit' class="flex items-center justify-center bg-white px-2">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192.904 192.904" width="16px" class="fill-black">
@@ -26,11 +30,11 @@
         </svg>
         </button>
         <span class="max-sm:hidden flex">
-      {% if haystack_search %}
-        {% include "gcd/bits/hs_search_order.html" %}
-      {% else %}
-        {% include "gcd/bits/search_order.html" %}
-      {% endif %}
+{% if haystack_search %}
+  {% include "gcd/bits/hs_search_order.html" %}
+{% else %}
+  {% include "gcd/bits/search_order.html" %}
+{% endif %}
         </span>
       </div>
     </form>
@@ -123,4 +127,3 @@ document.addEventListener("DOMContentLoaded", () => {
   
 })
 </script>
-  

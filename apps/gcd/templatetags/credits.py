@@ -509,7 +509,7 @@ def show_country_info(country):
 
 @register.filter
 def get_country_flag(country):
-    return mark_safe('<img %s class="embedded_flag">'
+    return mark_safe('<img %s class="inline">'
                      % show_country_info(country))
 
 

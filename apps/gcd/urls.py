@@ -713,6 +713,7 @@ urlpatterns += [re_path(r'^searchNew/',
                 search_view_factory(
                   view_class=PaginatedFacetedSearchView,
                   form_class=FacetedSearchForm,
+                  template='search/tw_search.html',
                   searchqueryset=GcdSearchQuerySet()),
                 name='haystack_search'),
                 ]

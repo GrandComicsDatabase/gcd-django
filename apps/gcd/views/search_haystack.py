@@ -296,6 +296,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                 elif 'type_exact:' in facet:
                     is_type_selected = True
         extra.update({'suggestion': suggestion,
+                      'haystack_search': 1,
+                      'search_term': self.get_query(),
                       'facet_page': facet_page,
                       'is_date_selected': is_date_selected,
                       'is_model_selected': is_model_selected,
