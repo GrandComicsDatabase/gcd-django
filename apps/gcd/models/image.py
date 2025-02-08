@@ -9,7 +9,8 @@ import django.urls as urlresolvers
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit, ResizeToFill
 
-from cv2 import FaceDetectorYN_create, cvtColor, COLOR_BGR2RGB, COLOR_RGB2BGR
+from cv2 import FaceDetectorYN_create, cvtColor, resize, \
+                COLOR_BGR2RGB, COLOR_RGB2BGR, INTER_CUBIC
 from apps.oi import states
 
 import numpy as np
@@ -27,6 +28,9 @@ def convert_from_image_to_cv2(img: pyImage) -> np.ndarray:
 class CropToFace(object):
     def process(self, image):
         image = convert_from_image_to_cv2(image)
+        while image.shape[0] > 2000 or image.shape[1] > 2000:
+            size = (int(image.shape[1]/2), int(image.shape[0]/2))
+            image = resize(image, size, interpolation=INTER_CUBIC)
         model_location = \
             settings.STATICFILES_DIRS[0] + '/face_detection_yunet_2023mar.onnx'
         yunet = FaceDetectorYN_create(model_location, "",
@@ -58,7 +62,12 @@ class CropToFace(object):
                 border = max(0, image.shape[0]-y-h)
             faces = image[y-border:y + h+border, x-border:x + w+border]
             if w + 2*border > 50:
-                return convert_from_cv2_to_image(faces)
+                faces = convert_from_cv2_to_image(faces)
+                # for some reason, some images are not fully processed
+                # on beta (production likely), but the avatar is shown
+                # instead. If we do resize directly here, it works.
+                resized = faces.resize((150, 150), pyImage.LANCZOS)
+                return resized
         return pyImage.open(settings.STATICFILES_DIRS[0] + '/img/avatar.png')
 
 

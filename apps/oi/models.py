@@ -51,7 +51,7 @@ from apps.gcd.models.gcddata import GcdData, GcdLink
 from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.story import show_feature, show_feature_as_text, \
                                   show_characters, show_title
-
+from apps.gcd.models.image import CropToFace
 from apps.indexer.views import ErrorWithMessage
 
 from functools import reduce
@@ -8086,6 +8086,10 @@ class ImageRevision(Revision):
     scaled_image = ImageSpecField([ResizeToFit(width=400)],
                                   source='image_file',
                                   format='JPEG', options={'quality': 90})
+    cropped_face = ImageSpecField([CropToFace(), ],
+                                  source='image_file',
+                                  format='JPEG',
+                                  options={'quality': 90})
 
     marked = models.BooleanField(default=False)
     is_replacement = models.BooleanField(default=False)

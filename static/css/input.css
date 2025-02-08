@@ -16,12 +16,6 @@
 
 html {
   font-size: 15px;
-  @screen lg {
-    font-size: 18px;
-  };
-  @screen 2xl {
-    font-size: 16px;
-  }
 }
 
 .btn {

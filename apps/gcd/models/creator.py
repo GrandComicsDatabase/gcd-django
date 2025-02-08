@@ -1035,7 +1035,8 @@ class CreatorBaseTable(tables.Table):
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
                                               TW_COLUMN_ALIGN_RIGHT}})
-    first_credit = tables.Column(verbose_name='First Credit')
+    first_credit = tables.Column(verbose_name='First Credit',
+                                 empty_values=('9999-99-99', None))
 
     def order_creator(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -1135,12 +1136,15 @@ class CreatorPortraitTable(CreatorTable):
     def render_creator(self, record):
         from apps.gcd.templatetags.display import absolute_url
         from apps.gcd.templatetags.credits import show_country_info
+        # from apps.oi.models import _clear_image_cache
         if record.portrait:
+            # _clear_image_cache(record.portrait.cropped_face)
+            # _clear_image_cache(record.portrait.face_portrait)
             display_face = "<a href='%s'>" \
                            "<img class='border-2 size-8 rounded-full' "\
                            "src='%s'></a>" % (
                              record.get_absolute_url(),
-                             record.portrait.face_portrait.url)
+                             record.portrait.cropped_face.url)
         else:
             from django.templatetags.static import static
             display_face = f"<a href='{record.get_absolute_url()}'>" \

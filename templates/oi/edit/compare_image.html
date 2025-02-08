@@ -64,8 +64,11 @@ Reviewing :: {{ revision }}
   {% if revision.image_file %}
   <a href="{{ revision.image_file.url }}">{{ image_tag }}</a>
   <div>The image has a size of {{ revision.image_file.width }} x {{ revision.image_file.height }} pixels. Click on the image to view it in full.</div>
+    {% if revision.content_type.model == 'creator'  %}
+  <img src="{{ revision.cropped_face.url }}" alt="cropped face" />
+    {% endif %}
   {% else %}
-    {{ image_tag }}
+  {{ image_tag }}
   {% endif %}
   {% if revision.deleted %}
   <div>
