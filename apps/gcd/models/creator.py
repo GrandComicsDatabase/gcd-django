@@ -1121,9 +1121,6 @@ class CreatorTable(CreatorBaseTable):
 
 
 class CreatorPortraitTable(CreatorTable):
-    issue_count = tables.Column(verbose_name='Issues',
-                                initial_sort_descending=True)
-
     def __init__(self, *args, **kwargs):
         self.resolve_name = kwargs.pop('resolve_name')
         setattr(self, self.resolve_name, kwargs.pop('object'))
