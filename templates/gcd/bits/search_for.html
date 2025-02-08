@@ -9,9 +9,7 @@
     {% endif %}
   {% endif %}
     <option value={{ selected|default:""|current_search:"series" }}> Series Name </option>
-  {% if USE_ELASTICSEARCH %}
-    <option value={{ selected|default:""|current_search:"haystack_issue" }}> Series Name &amp; Issue # </option>
-  {% endif %}
+    <option value={{ selected|default:""|current_search:"series_and_issue" }}> Series Name &amp; Issue # </option>
     <option value={{ selected|default:""|current_search:"creator" }}> Creator Name </option>
     <option style="font-size: 1pt; background-color: #000000;" disabled>&nbsp;</option>
     <option value={{ selected|default:""|current_search:"writer" }}> Writer </option>

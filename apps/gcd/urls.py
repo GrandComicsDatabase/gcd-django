@@ -274,6 +274,12 @@ urlpatterns = [
     path('imprint/<int:imprint_id>/', gcd_views.details.imprint,
       name='show_imprint'),
 
+    # Series and Issue
+    path('series/name/<path:series_name>/issue/<str:issue_nr>/sort/<str:sort>/',
+      gcd_views.search.series_and_issue, name='series_and_issue'),
+    path('series/name/<path:series_name>/issue/<str:issue_nr>/',
+      gcd_views.search.series_and_issue, name='series_and_issue'),
+
     # Series
     path('series/<int:series_id>/',
       gcd_views.details.series, name='show_series'),
@@ -305,9 +311,6 @@ urlpatterns = [
     path('series/name/',
      gcd_views.search.series_by_name, name='series_by_name'),
 
-    # Series and Issue
-    path('series/name/<path:series_name>/issue/<str:issue_nr>/',
-      gcd_views.search.series_and_issue),
     path('series/search/',
       gcd_views.search.series_search_hx,
       name='series_search_hx'),

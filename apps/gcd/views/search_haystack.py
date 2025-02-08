@@ -145,7 +145,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         # TODO search over three fields is by now handled via boost_fields
         # in ES (or generally fields), so we could refactor
         # parse_query_into_sq, where we use to parse the AND/OR query for ES
-        # into the three fiedlds
+        # into the three fields
         fields = ['content', ]
         sq, not_sq = parse_query_into_sq(self.query, fields)
         if sq:

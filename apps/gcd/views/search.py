@@ -342,8 +342,9 @@ def generic_by_name(request, name, q_obj, sort,
 
     elif class_ is Issue:
         item_name = 'issue'
-        things = Issue.objects.exclude(deleted=True).filter(q_obj) \
-                      .select_related('series__publisher')
+        if things is None:
+            things = Issue.objects.exclude(deleted=True).filter(q_obj) \
+                          .select_related('series__publisher')
         heading = "matching your query for '%s' in %s" % (name, credit)
         # query_string for the link to the advanced search
         query_val['target'] = 'issue'
@@ -1083,24 +1084,25 @@ def series_by_name(request, series_name='', sort=ORDER_ALPHA,
 
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
-    """ Looks for issue_nr in series_name """
-    things = Issue.objects.exclude(deleted=True) \
-                  .filter(series__name__exact=series_name) \
-                  .filter(number__exact=issue_nr)
+    """ Looks for issue_nr in series with series_name """
+    if settings.USE_ELASTICSEARCH:
+        search_term = series_name + ' ' + issue_nr
+        sqs = SearchQuerySet().filter(title_search=GcdNameQuery(search_term)) \
+                              .models(Issue)
+        issue_ids = sqs.values_list('pk', flat=True)
+        things = Issue.objects.filter(id__in=issue_ids)
+    else:
+        things = Issue.objects.exclude(deleted=True) \
+                    .filter(series__name__exact=series_name) \
+                    .filter(number__exact=issue_nr)
 
     if things.count() == 1:  # if one display the issue
         return HttpResponseRedirect(urlresolvers.reverse(issue,
                                     kwargs={'issue_id': things[0].id}))
-    else:  # if more or none use issue_list.html from search
-        context = {
-            'items': things,
-            'item_name': 'issue',
-            'plural_suffix': 's',
-            'heading': series_name + ' #' + issue_nr,
-        }
-
-        return paginate_response(
-          request, things, 'gcd/search/issue_list.html', context)
+    else:  # if more use generic routine
+        return generic_by_name(request, series_name + ' ' + issue_nr, None,
+                               sort, Issue, selected='series_and_issue',
+                               things=things, credit="series and issue")
 
 
 def compute_isbn_qobj(isbn, prefix, op):
@@ -1227,10 +1229,21 @@ def search(request):
             return HttpResponseRedirect(
               urlresolvers.reverse("haystack_search") + "?q=%s" % quoted_query)
 
-    if request.GET['search_type'] == "haystack_issue":
-        return HttpResponseRedirect(urlresolvers.reverse("haystack_search") +
-                                    '?q="%s"&search_object=issue&sort=%s' %
-                                    (quoted_query, sort))
+    if request.GET['search_type'] == "series_and_issue":
+        issue_pos = request.GET['query'].rfind(' ')
+        if issue_pos > 0:
+            series = request.GET['query'][:issue_pos]
+            issue = request.GET['query'][issue_pos+1:]
+            return HttpResponseRedirect(urlresolvers.reverse(
+                                        "series_and_issue",
+                                        kwargs={'series_name': series,
+                                                'issue_nr': issue,
+                                                'sort': sort}))
+        else:
+            return HttpResponseRedirect(urlresolvers.reverse("series_by_name",
+                                        kwargs={'series_name':
+                                                request.GET['query'],
+                                                'sort': sort}))
 
     # TODO: Redesign this- the current setup is a quick hack to adjust
     # a design that was elegant when it was written, but things have changed.
