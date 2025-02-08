@@ -1185,6 +1185,11 @@ html {
     justify-content: center;
   }
 
+  .sm\:px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
   .sm\:text-right {
     text-align: right;
   }
