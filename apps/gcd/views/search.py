@@ -1086,8 +1086,8 @@ def series_by_name(request, series_name='', sort=ORDER_ALPHA,
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
     """ Looks for issue_nr in series with series_name """
     if settings.USE_ELASTICSEARCH:
-        search_term = series_name + ' ' + issue_nr
-        sqs = SearchQuerySet().filter(title_search=GcdNameQuery(search_term)) \
+        search_term = '"' + series_name + ' ' + issue_nr + '"'
+        sqs = SearchQuerySet().filter(title=GcdNameQuery(search_term)) \
                               .models(Issue)
         issue_ids = sqs.values_list('pk', flat=True)
         things = Issue.objects.filter(id__in=issue_ids)
