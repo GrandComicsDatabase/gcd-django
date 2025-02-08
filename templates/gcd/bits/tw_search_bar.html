@@ -2,7 +2,7 @@
 <nav class="flex items-center justify-between flex-wrap bg-gcd px-6 py-1">
   <div class="flex-1 ">
     <div class="w-14">
-    <a href="/"><img class="w-14" src="{% static "img/gcd_logo.png" %}" alt="GCD"></a>
+    <a href="/"><img class="w-14" src="{% static 'img/gcd_logo.png' %}" alt="GCD"></a>
     </div>
   </div>
   <!-- <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto "> -->
@@ -10,7 +10,11 @@
     <form action="{% url "basic_search" %}" method="get">
       <div class="flex rounded-md overflow-hidden max-w-md mx-auto">
         <span class="max-sm:hidden flex">
-      {% include "gcd/bits/search_for.html" %}
+      {% if haystack_search %}
+        {% include "gcd/bits/hs_search_for.html" %}
+      {% else %}
+        {% include "gcd/bits/search_for.html" %}
+      {% endif %}
         </span>
         <input type="search" name="query" value="{{ search_term|default:'' }}" placeholder="Search..."
           class="w-full bg-white text-gray-600 px-1 " />
@@ -22,7 +26,11 @@
         </svg>
         </button>
         <span class="max-sm:hidden flex">
-      {% include "gcd/bits/search_order.html" %}
+      {% if haystack_search %}
+        {% include "gcd/bits/hs_search_order.html" %}
+      {% else %}
+        {% include "gcd/bits/search_order.html" %}
+      {% endif %}
         </span>
       </div>
     </form>
@@ -62,7 +70,7 @@
       </button>
       {% if user.is_authenticated %}
         {% if MYCOMICS %}
-      <a href="{% url "collections_list" %}">Collections</a>  
+      <a href="{% url 'collections_list' %}">Collections</a>
         {% else %}
       <button class="btn hover:bg-blue-700">
         <a class=" text-white visited:text-white hover:no-underline" href="{% url "editing" %}">Editing</a>

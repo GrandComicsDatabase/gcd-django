@@ -1,0 +1,7 @@
+<select name="sort" size="1">
+  <option value="relevance"> Relevance </option>
+{% if is_model_selected %}
+  <option value="alpha" {% if 'alpha' in sort %}selected{% endif %}> Name </option>
+{% endif %}
+  <option value="chrono" {% if 'chrono' in sort %}selected{% endif %}> Date </option>
+</select>
