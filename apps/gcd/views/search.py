@@ -15,7 +15,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
 from django.shortcuts import render
-from urllib.parse import quote, unquote, unquote_plus
+from urllib.parse import quote, unquote_plus
 
 from djqscsv import render_to_csv_response
 from haystack.query import SearchQuerySet
@@ -54,9 +54,7 @@ from apps.gcd.forms.search import AdvancedSearch, \
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, \
                                    IS_NONE, generic_sortable_list
 from apps.gcd.views.covers import get_image_tags_per_page
-from apps.gcd.templatetags.credits import get_native_language_name
-from apps.select.forms import get_filter_form
-from apps.select.views import filter_sequences, filter_issues
+from apps.select.views import filter_sequences, filter_issues, filter_haystack
 # Should not be importing anything from oi, but we're doing this
 # in several places.
 # TODO: states should probably live somewhere else.
@@ -471,19 +469,8 @@ def generic_by_name(request, name, q_obj, sort,
             # query_val['feature'] = name
             # query_val['logic'] = True
         else:
-            things = sqs.facet('publisher').facet('country').facet('language')
-            if request.GET.get('language', ''):
-                things = things.filter(
-                  language__in=[unquote(x)
-                                for x in request.GET.getlist('language')])
-            if request.GET.get('country', ''):
-                things = things.filter(
-                  country__in=[unquote(x)
-                               for x in request.GET.getlist('country')])
-            if request.GET.get('publisher', ''):
-                things = things.filter(
-                  publisher__in=[unquote(x)
-                                 for x in request.GET.getlist('publisher')])
+            things, filter_form = filter_haystack(request, sqs)
+
             if credit == 'title':
                 table = HaystackStoryTable(
                   things, attrs={'class': 'sortable_listing'},
@@ -493,28 +480,13 @@ def generic_by_name(request, name, q_obj, sort,
                   things, attrs={'class': 'sortable_listing'},
                   template_name='gcd/bits/tw_sortable_table.html',
                   target=unquote_plus(credit))
+
             if not request.GET.get('sort', None):
                 if sort == ORDER_ALPHA:
                     table.order_by = 'issue'
                 elif sort == ORDER_CHRONO:
                     table.order_by = 'publication_date'
 
-            countries = [('', "---------")]
-            for country in things.facet_counts()['fields']['country']:
-                countries.append((quote(country[0]), '%s (%d)' % (country[0],
-                                                                  country[1])))
-            languages = [('', "---------")]
-            for language in things.facet_counts()['fields']['language']:
-                languages.append((quote(language[0]),
-                                  '%s (%d)' % (get_native_language_name(
-                                    language[0]), language[1])))
-            publishers = [('', "---------")]
-            for publisher in things.facet_counts()['fields']['publisher']:
-                publishers.append((quote(publisher[0]),
-                                   '%s (%d)' % (publisher[0], publisher[1])))
-            filter_form = get_filter_form(countries=countries,
-                                          languages=languages,
-                                          publishers=publishers)(request.GET)
             context = {'item_name': item_name,
                        'plural_suffix': plural_suffix,
                        'filter_form': filter_form,

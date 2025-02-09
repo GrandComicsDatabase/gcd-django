@@ -18,6 +18,7 @@ from django_filters import FilterSet, ModelChoiceFilter, \
                            ModelMultipleChoiceFilter
 
 from dal import autocomplete
+from urllib.parse import quote, unquote
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
@@ -28,9 +29,11 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
 from apps.stddata.models import Country, Language
 from apps.gcd.views.search_haystack import GcdSearchQuerySet, \
                                            PaginatedFacetedSearchView
+from apps.gcd.templatetags.credits import get_native_language_name
 from apps.gcd.views import paginate_response
 from apps.indexer.views import render_error
-from apps.select.forms import get_select_cache_form, get_select_search_form
+from apps.select.forms import get_select_cache_form, get_select_search_form, \
+                              get_filter_form
 
 
 ##############################################################################
@@ -973,6 +976,43 @@ def filter_sequences(request, sequences):
                             languages=languages,
                             publishers=publishers)
     return filter
+
+
+def filter_haystack(request, sqs):
+    things = sqs.facet('publisher', size=100)\
+                .facet('country', size=100)\
+                .facet('language', size=100)
+    if request.GET.get('language', ''):
+        things = things.filter(
+            language__in=[unquote(x)
+                          for x in request.GET.getlist('language')])
+    if request.GET.get('country', ''):
+        things = things.filter(
+            country__in=[unquote(x)
+                         for x in request.GET.getlist('country')])
+    if request.GET.get('publisher', ''):
+        things = things.filter(
+            publisher__in=[unquote(x)
+                           for x in request.GET.getlist('publisher')])
+
+    countries = []
+    for country in things.facet_counts()['fields']['country']:
+        countries.append((quote(country[0]), '%s (%d)' % (country[0],
+                                                          country[1])))
+    languages = []
+    for language in things.facet_counts()['fields']['language']:
+        languages.append((quote(language[0]),
+                          '%s (%d)' % (get_native_language_name(
+                                       language[0]), language[1])))
+    publishers = []
+    for publisher in things.facet_counts()['fields']['publisher']:
+        publishers.append((quote(publisher[0]),
+                           '%s (%d)' % (publisher[0], publisher[1])))
+    filter_form = get_filter_form(countries=countries,
+                                  languages=languages,
+                                  publishers=publishers)(request.GET)
+
+    return things, filter_form
 
 ##############################################################################
 # selecting of objects
