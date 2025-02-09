@@ -632,14 +632,8 @@ class IssueColumn(tables.TemplateColumn):
         return str(record)
 
     def order(self, query_set, is_descending):
-        try:
-            query_set = query_set.annotate(series_name=F('series__sort_name'))
-        except NotSupportedError:
-            # it fails for joined querysets, but there we did the annotation
-            # beforehand !
-            pass
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'series_name',
+        query_set = query_set.order_by(direction + 'series__sort_name',
                                        'series__year_began',
                                        'series__id',
                                        direction + 'sort_code')
@@ -659,44 +653,32 @@ class IssueTable(tables.Table):
         attrs = {'th': {'class': "non_visited"}}
 
     def order_publication_date(self, query_set, is_descending):
-        try:
-            query_set = query_set.annotate(series_name=F('series__sort_name'))
-        except NotSupportedError:
-            # it fails for joined querysets, but there we did the annotation
-            # beforehand !
-            pass
         if is_descending:
             query_set = query_set.order_by(NullIf('key_date', Value(''))
                                            .desc(nulls_last=True),
-                                           'series_name',
+                                           'series__sort_name',
                                            'sort_code')
         else:
             query_set = query_set.order_by(NullIf('key_date', Value(''))
                                            .asc(nulls_last=True),
-                                           'series_name',
+                                           'series__sort_name',
                                            'sort_code')
         return (query_set, True)
 
     def order_on_sale_date(self, query_set, is_descending):
-        try:
-            query_set = query_set.annotate(series_name=F('series__sort_name'))
-        except NotSupportedError:
-            # it fails for joined querysets, but there we did the annotation
-            # beforehand !
-            pass
         if is_descending:
             query_set = query_set.order_by(NullIf('on_sale_date', Value(''))
                                            .desc(nulls_last=True),
                                            NullIf('key_date', Value(''))
                                            .desc(nulls_last=True),
-                                           'series_name',
+                                           'series__sort_name',
                                            '-sort_code')
         else:
             query_set = query_set.order_by(NullIf('on_sale_date', Value(''))
                                            .asc(nulls_last=True),
                                            NullIf('key_date', Value(''))
                                            .asc(nulls_last=True),
-                                           'series_name',
+                                           'series__sort_name',
                                            'sort_code')
         return (query_set, True)
 
@@ -738,17 +720,9 @@ class IssuePublisherTable(IssueTable):
         attrs = {'th': {'class': "non_visited"}}
 
     def order_publisher(self, query_set, is_descending):
-        try:
-            query_set = query_set.annotate(
-              publisher_name=F('series__publisher__name'))
-            query_set = query_set.annotate(series_name=F('series__sort_name'))
-        except NotSupportedError:
-            # it fails for joined querysets, but there we did the annotation
-            # beforehand !
-            pass
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'publisher_name',
-                                       direction + 'series_name',
+        query_set = query_set.order_by(direction + 'series__publisher__name',
+                                       direction + 'series__sort_name',
                                        direction + 'sort_code')
         return (query_set, True)
 
@@ -794,10 +768,9 @@ class IndiciaPublisherIssueTable(IssueTable):
         attrs = {'th': {'class': "non_visited"}}
 
     def order_brand(self, query_set, is_descending):
-        query_set = query_set.annotate(series_name=F('series__sort_name'))
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'brand__name',
-                                       direction + 'series_name',
+                                       direction + 'series__sort_name',
                                        direction + 'sort_code')
         return (query_set, True)
 
@@ -821,10 +794,9 @@ class BrandEmblemIssueTable(IssueTable):
         attrs = {'th': {'class': "non_visited"}}
 
     def order_indicia_publisher(self, query_set, is_descending):
-        query_set = query_set.annotate(series_name=F('series__sort_name'))
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'indicia_publisher',
-                                       direction + 'series_name',
+                                       direction + 'series__sort_name',
                                        direction + 'sort_code')
         return (query_set, True)
 

@@ -876,31 +876,13 @@ def checklist_by_name(request, creator, country=None, language=None,
             q_objs_text |= Q(**{'%s%s__%s' % (prefix, field, op): creator,
                                 '%stype__id__in' % (prefix): CORE_TYPES,
                                 '%sdeleted' % (prefix): False})
-    issues = Issue.objects.filter(q_objs_text).distinct()\
-                          .annotate(series_name=F('series__sort_name'))
-    if 'sort' in request.GET:
-        if request.GET['sort'] in ['issue', '-issue']:
-            issues = issues.annotate(series__year_began=F(
-                                     'series__year_began'))\
-                           .annotate(series__id=F('series__id'))
-        elif request.GET['sort'] in ['publisher', '-publisher']:
-            issues = issues.annotate(publisher_name=F(
-                                     'series__publisher__name'))
+    issues = Issue.objects.filter(q_objs_text).distinct()
     creator = Creator.objects.filter(gcd_official_name__iexact=creator)
     if creator and not to_be_migrated:
         q_objs_credits = Q(**{
           '%scredits__creator__creator__in' % (prefix): creator,
           '%stype__id__in' % (prefix): CORE_TYPES})
-        items2 = Issue.objects.filter(q_objs_credits).distinct()\
-                              .annotate(series_name=F('series__sort_name'))
-        if 'sort' in request.GET:
-            if request.GET['sort'] in ['issue', '-issue']:
-                items2 = items2.annotate(
-                  series__year_began=F('series__year_began')).annotate(
-                  series__id=F('series__id'))
-            elif request.GET['sort'] in ['publisher', '-publisher']:
-                items2 = items2.annotate(
-                  publisher_name=F('series__publisher__name'))
+        items2 = Issue.objects.filter(q_objs_credits).distinct()
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
@@ -912,7 +894,11 @@ def checklist_by_name(request, creator, country=None, language=None,
         if creator and not to_be_migrated:
             items2 = items2.filter(series__language=language)
     if creator and not to_be_migrated:
-        issues = issues.union(items2)
+        # an OR query is very expensive, so use IDs and make
+        # a separate query after merging both ID-lists
+        id1 = list(issues.values_list('id', flat=True))
+        id1.extend(items2.values_list('id', flat=True))
+        issues = Issue.objects.filter(id__in=id1)
         filter = None
     else:
         filter = filter_issues(request, issues)
@@ -1608,7 +1594,7 @@ def show_indicia_publisher(request, indicia_publisher, preview=False):
     table = IndiciaPublisherIssueTable(indicia_publisher_issues,
                                        attrs={'class': 'sortable_listing'},
                                        template_name=SORT_TABLE_TEMPLATE,
-                                       order_by=('issues'))
+                                       order_by=('issue'))
     return generic_sortable_list(request, indicia_publisher_issues, table,
                                  'gcd/details/indicia_publisher.html', context)
 
@@ -1638,7 +1624,7 @@ def show_brand_group(request, brand_group, preview=False):
                                  attrs={'class': 'sortable_listing'},
                                  brand=brand_group,
                                  template_name=SORT_TABLE_TEMPLATE,
-                                 order_by=('issues'))
+                                 order_by=('issue'))
     return generic_sortable_list(request, brand_issues, table,
                                  'gcd/details/brand_group.html', context)
 
@@ -1665,7 +1651,7 @@ def show_brand(request, brand, preview=False):
     table = BrandEmblemIssueTable(brand_issues,
                                   attrs={'class': 'sortable_listing'},
                                   template_name=SORT_TABLE_TEMPLATE,
-                                  order_by=('issues'))
+                                  order_by=('issue'))
     return generic_sortable_list(request, brand_issues, table,
                                  'gcd/details/brand.html', context)
 
