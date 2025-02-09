@@ -9,6 +9,8 @@ from haystack.query import SearchQuerySet
 from haystack.inputs import AutoQuery
 from haystack.backends import SQ
 
+from apps.select.views import filter_facets, form_filter_facets
+
 
 def safe_split(value):
     try:
@@ -153,13 +155,16 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         if not_sq:
             self.form.searchqueryset = self.form.searchqueryset.exclude(not_sq)
 
+        self.form.searchqueryset = filter_facets(request,
+                                                 self.form.searchqueryset,
+                                                 ['publisher',
+                                                  'country',
+                                                  'language',
+                                                  'facet_model_name',
+                                                  'feature',
+                                                  'type'])
+
         self.form.searchqueryset = self.form.searchqueryset\
-                                       .facet('facet_model_name', size=100)\
-                                       .facet('country', size=100)\
-                                       .facet('language', size=100)\
-                                       .facet('publisher', size=100)\
-                                       .facet('feature', size=100)\
-                                       .facet('type', size=100)\
                                        .date_facet('date',
                                                    start_date=date(1000, 1, 1),
                                                    end_date=date(3000, 1, 1),
@@ -254,6 +259,12 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                     elif request.GET['sort'] == 'chrono':
                         self.results = self.results.order_by('year',
                                                              'sort_name')
+        self.filter_form = form_filter_facets(self.form.searchqueryset,
+                                              ['country',
+                                               'language',
+                                               'publisher',
+                                               'type',
+                                               'feature'])
         if self.query:
             self.query = urlencode({'q': self.query})
         self.paginator = ResponsePaginator(self.results,
@@ -298,6 +309,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         extra.update({'suggestion': suggestion,
                       'haystack_search': 1,
                       'search_term': self.get_query(),
+                      'filter_form': self.filter_form,
                       'facet_page': facet_page,
                       'is_date_selected': is_date_selected,
                       'is_model_selected': is_model_selected,
