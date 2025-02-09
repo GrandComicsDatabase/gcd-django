@@ -34,9 +34,9 @@
     {% block table.tbody %}
     <div class="flex flex-wrap gap-4">
     {% for row in table.paginated_rows %}
-          <div class="flex-col w-48">
+          <div {% render_attrs row.attrs %}>
             {% for column, cell in row.items %}
-                <div {% render_attrs column.attrs.div %} class="px-2">{% if column.localize == None %}{{ cell }}{% else %}{% if column.localize %}{{ cell|localize }}{% else %}{{ cell|unlocalize }}{% endif %}{% endif %}</div>
+                <div {% render_attrs column.attrs.div %}>{% if column.localize == None %}{{ cell }}{% else %}{% if column.localize %}{{ cell|localize }}{% else %}{{ cell|unlocalize }}{% endif %}{% endif %}</div>
             {% endfor %}
             </div>
     {% endfor %}

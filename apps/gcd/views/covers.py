@@ -44,23 +44,23 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
     if not can_have_cover:
         return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
                          'img/noupload_' + size + '.png" alt="No image"' +
-                         'class="cover_img max-w-none">')
+                         'class="cover_img w-[200px]">')
 
     if cover is None:
         return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
                          'img/nocover_' + size + '.png" alt="No image yet"' +
-                         'class="cover_img max-w-none">')
+                         'class="cover_img w-[200px]">')
 
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
         return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
                          'img/nocover_' + size + '.png" alt="No image yet"' +
-                         'class="cover_img max-w-none">')
+                         'class="cover_img w-[200px]">')
 
     if settings.FAKE_IMAGES:
         return mark_safe('<img src="' + settings.STATIC_URL +
                          'img/placeholder_' + size + '.jpg"' +
-                         'class="cover_img max-w-none" "' + css_width + '>')
+                         'class="cover_img w-[200px]" "' + css_width + '>')
 
     img_url = cover.get_base_url()+("/w%d/%d.jpg" % (width, cover.id))
 
@@ -70,7 +70,7 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
     img_url = img_url + '?' + str(hash(cover.last_upload))
 
     return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) +
-                     '" ' + ' class="' + img_class + ' max-w-none"' +
+                     '" ' + ' class="' + img_class + ' w-[200px]"' +
                      css_width + '/>')
 
 

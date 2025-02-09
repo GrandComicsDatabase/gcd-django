@@ -765,6 +765,14 @@ a:hover {
   width: 100%;
 }
 
+.w-\[150px\] {
+  width: 150px;
+}
+
+.w-\[200px\] {
+  width: 200px;
+}
+
 .min-w-24 {
   min-width: 6rem;
 }

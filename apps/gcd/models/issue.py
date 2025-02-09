@@ -650,7 +650,6 @@ class IssueTable(tables.Table):
     class Meta:
         model = Issue
         fields = ('issue', 'publication_date', 'on_sale_date')
-        attrs = {'th': {'class': "non_visited"}}
 
     def order_publication_date(self, query_set, is_descending):
         if is_descending:
@@ -690,6 +689,7 @@ class IssueCoverTable(IssueTable):
     class Meta:
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date')
+        row_attrs = {'class': 'w-[200px]'}
 
     def render_cover(self, record):
         from apps.gcd.views.covers import get_image_tag
@@ -717,7 +717,6 @@ class IssuePublisherTable(IssueTable):
     class Meta:
         model = Issue
         fields = ('publisher', 'issue', 'publication_date', 'on_sale_date')
-        attrs = {'th': {'class': "non_visited"}}
 
     def order_publisher(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -734,8 +733,7 @@ class IssuePublisherTable(IssueTable):
 
 
 class IssueCoverPublisherTable(IssuePublisherTable, IssueCoverTable):
-    class Meta:
-        model = Issue
+    class Meta(IssueCoverTable.Meta):
         fields = ('cover', 'publisher', 'issue', 'publication_date',
                   'on_sale_date')
 
@@ -765,7 +763,6 @@ class IndiciaPublisherIssueTable(IssueTable):
     class Meta:
         model = Issue
         fields = ('issue', 'publication_date', 'on_sale_date', 'brand')
-        attrs = {'th': {'class': "non_visited"}}
 
     def order_brand(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -791,7 +788,6 @@ class BrandEmblemIssueTable(IssueTable):
         model = Issue
         fields = ('issue', 'publication_date', 'on_sale_date',
                   'indicia_publisher')
-        attrs = {'th': {'class': "non_visited"}}
 
     def order_indicia_publisher(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -847,7 +843,6 @@ class PublisherIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
 
 class PublisherIssueCoverTable(PublisherIssueTable, IssueCoverTable):
     class Meta:
-        model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'brand', 'indicia_publisher')
 
@@ -874,7 +869,6 @@ class SeriesDetailsIssueTable(PublisherIssueTable):
         fields = ('key_date', 'publication_date', 'on_sale_date', 'volume',
                   'issue', 'title', 'indicia_publisher', 'brand', 'page_count',
                   'price', 'indicia_frequency', 'isbn', 'barcode', 'rating')
-        attrs = {'th': {'class': "non_visited"}}
 
     def render_issue(self, record):
         from apps.gcd.templatetags.display import absolute_url

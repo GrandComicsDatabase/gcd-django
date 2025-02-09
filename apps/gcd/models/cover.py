@@ -145,6 +145,7 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
         model = Cover
         fields = ('cover', 'issue', 'publisher', 'publication_date',
                   'on_sale_date', 'edit_cover')
+        row_attrs = {'class': 'w-[200px]'}
 
     def render_cover(self, record):
         from apps.gcd.views.covers import get_image_tag
@@ -235,7 +236,6 @@ class CoverIssueStoryTable(IssueTable):
         model = Issue
         fields = ('cover', 'issue', 'longest_story', 'publication_date',
                   'on_sale_date')
-        attrs = {'th': {'class': "non_visited"}}
 
     def value_longest_story(self, value, record):
         from .story import Story
