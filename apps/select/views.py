@@ -19,7 +19,6 @@ from django_filters import FilterSet, ModelChoiceFilter, \
                            ModelMultipleChoiceFilter
 
 from dal import autocomplete
-from urllib.parse import quote, unquote
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
@@ -443,7 +442,8 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
                 if parent_disambiguation:
                     qs_contains = qs.filter(Q(**{
                       '%s__icontains' % field: dis_query,
-                      '%s__disambiguation__istartswith' % parent_disambiguation:
+                      '%s__disambiguation__istartswith'
+                      % parent_disambiguation:
                       disambiguation}))
                 else:
                     qs_contains = qs.filter(Q(**{'%s__icontains' % field:
@@ -1014,9 +1014,10 @@ def form_filter_facets(things, fields, content_call={}):
             if 'dates' in things.facet_counts():
                 values = []
                 for value in things.facet_counts()['dates']['date']:
-                    values.append((value[0].strftime("%Y"),
-                                   '%s (%d)' % (value[0].strftime("%Y"),
-                                                value[1])))
+                    if value[1] > 0:
+                        values.append((value[0].strftime("%Y"),
+                                       '%s (%d)' % (value[0].strftime("%Y"),
+                                                    value[1])))
                 self.fields['dates'] = forms.MultipleChoiceField(
                   choices=values,
                   required=False)

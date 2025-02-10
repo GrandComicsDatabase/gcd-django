@@ -1,5 +1,5 @@
 import shlex
-from datetime import datetime, date
+from datetime import date
 from django.utils.encoding import smart_str as uni
 
 from haystack.views import FacetedSearchView
@@ -49,7 +49,7 @@ class GcdNameQuery(AutoQuery):
             query_return = query_string
         else:
             for phrase in safe_split(query_string):
-                # if we also do * in front, searches with 'the' won't work 
+                # if we also do * in front, searches with 'the' won't work
                 # somehow
                 query_return += phrase + '* '
         return query_return
@@ -160,12 +160,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                          'facet_model_name']
         self.form.searchqueryset = filter_facets(request,
                                                  self.form.searchqueryset,
-                                                 ['publisher',
-                                                  'country',
-                                                  'language',
-                                                  'facet_model_name',
-                                                  'feature',
-                                                  'type'])
+                                                 filter_fields)
         filter_fields.pop('facet_model_name')
         self.form.searchqueryset = self.form.searchqueryset\
                                        .date_facet('date',
@@ -184,26 +179,11 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                          'in-house column']}}, 0.2)
 
         self.results = self.get_results()
-        if 'date_facet' in request.GET:
-            try:
-                year = datetime.strptime(request.GET['date_facet'],
-                                         '%Y-%m-%d %H:%M:%S')
-                self.results = self.results.filter(date__gte=year)\
-                                   .filter(date__lt=year.replace(
-                                      year=year.year+1))
-                self.date_facet = request.GET['date_facet']
-            except ValueError:
-                self.date_facet = None
-        else:
-            self.date_facet = None
         if 'sort' in request.GET:
             self.sort = request.GET['sort']
         else:
             self.sort = ''
-        if self.sort == 'country':
-            self.results = self.results.order_by('country',
-                                                 '-_score')
-        elif self.sort == 'year':
+        if self.sort == 'year':
             self.results = self.results.order_by('year',
                                                  '-_score')
         elif len(self.form.selected_facets) >= 1:
@@ -294,44 +274,18 @@ class PaginatedFacetedSearchView(FacetedSearchView):
             suggestion = ''
         facet_page = ''
         is_model_selected = False
-        is_country_selected = False
-        is_language_selected = False
-        is_publisher_selected = False
-        is_feature_selected = False
-        is_type_selected = False
-        if self.date_facet:
-            is_date_selected = True
-            facet_page += '&date_facet=%s' % self.date_facet
-        else:
-            is_date_selected = False
         if self.form.selected_facets:
             for facet in self.form.selected_facets:
                 facet_page += '&selected_facets=%s' % facet
                 if 'facet_model_name_exact:' in facet:
                     is_model_selected = True
-                elif 'country_exact:' in facet:
-                    is_country_selected = True
-                elif 'language_exact:' in facet:
-                    is_language_selected = True
-                elif 'publisher_exact:' in facet:
-                    is_publisher_selected = True
-                elif 'feature_exact:' in facet:
-                    is_feature_selected = True
-                elif 'type_exact:' in facet:
-                    is_type_selected = True
         extra.update({'suggestion': suggestion,
                       'haystack_search': 1,
                       'search_term': self.get_query(),
                       'filter_form': self.filter_form,
                       'facet_page': facet_page,
                       'selected': self.selected,
-                      'is_date_selected': is_date_selected,
-                      'is_model_selected': is_model_selected,
-                      'is_country_selected': is_country_selected,
-                      'is_language_selected': is_language_selected,
-                      'is_publisher_selected': is_publisher_selected,
-                      'is_feature_selected': is_feature_selected,
-                      'is_type_selected': is_type_selected})
+                      'is_model_selected': is_model_selected})
         if self.sort:
             extra.update({'sort': '&sort=%s' % self.sort})
         else:
