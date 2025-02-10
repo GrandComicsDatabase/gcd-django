@@ -48,9 +48,41 @@
   </div>
   {% endif %}
 </div>
-
 <div class="flex">
   <div class="px-2 flex flex-col w-48 max-sm:hidden">
+    <form method="GET" class="max-sm:hidden flex-col">
+      <button class="btn btn-blue ml-1 mb-2 h-8">Filter Results</button>
+    {% if request.GET.sort %}
+      <input type="hidden" name="sort" value="{{ request.GET.sort }}">
+    {% endif %}
+    {% if request.GET.selected_facets %}
+      <input type="hidden" name="selected_facets" value="{{ request.GET.selected_facets }}">
+    {% endif %}
+      <input type="hidden" name="q" value="{{ request.GET.q }}">
+    {% for field in filter_form %}
+      <details {% if field.label in selected %} open="open" {% endif %} class="mb-2">
+        <summary class="bg-blue-100">{{ field.label }} ({{ field.field.choices|length }})</summary>
+        <div class="mt-1 relative">
+          <div class="overflow-y-auto max-h-24 border rounded-md border-gray-300 p-1 inline-block">
+      {% for choice in field.field.choices %}
+            <div class="flex items-center inline-block mr-4">
+              <input type="checkbox"
+                id="{{ field.name }}_{{ choice.0 }}"
+                name="{{ field.name }}"
+                value="{{ choice.0 }}"
+        {% if choice.0|stringformat:"s" in field.value %}checked{% endif %}
+                class="h-4 w-4 border-gray-300 rounded">
+              <label for="{{ field.name }}_{{ choice.0 }}" class="ml-2 block text-sm">
+                {{ choice.1 }}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </details>
+    {% endfor %}
+    </form>
+
     <details {% if is_country_selected %} open="open" {% endif %} class="mb-2">
       <summary class="bg-blue-100">Country ({{ facets.fields.country|length }})</summary>
       <table>

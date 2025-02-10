@@ -983,9 +983,14 @@ def filter_facets(request, things, fields, size=100):
         things = things.facet(field, size=size)
         if request.GET.get(field, ''):
             things = things.filter(**{
-              field + '__in': [unquote(x)
+              field + '__in': [x.replace('"', '\\"')
                                for x in request.GET.getlist(field)]
-                                })
+                               })
+    if 'dates' in request.GET:
+        things = things.filter(**{
+              'year__in': [x
+                           for x in request.GET.getlist('dates')]
+                           })
     return things
 
 
@@ -1000,12 +1005,21 @@ def form_filter_facets(things, fields, content_call={}):
                         label = content_call[field](value[0])
                     else:
                         label = value[0]
-                    values.append((quote(value[0]), '%s (%d)' % (label,
-                                                                 value[1])))
+                    values.append((value[0], '%s (%d)' % (label,
+                                                          value[1])))
                 self.fields[field] = forms.MultipleChoiceField(
                     choices=values,
                     required=False
                 )
+            if 'dates' in things.facet_counts():
+                values = []
+                for value in things.facet_counts()['dates']['date']:
+                    values.append((value[0].strftime("%Y"),
+                                   '%s (%d)' % (value[0].strftime("%Y"),
+                                                value[1])))
+                self.fields['dates'] = forms.MultipleChoiceField(
+                  choices=values,
+                  required=False)
     return FilterSearchForm
 
 

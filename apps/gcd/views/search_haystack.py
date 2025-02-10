@@ -1,6 +1,5 @@
 import shlex
 from datetime import datetime, date
-from django.utils.http import urlencode
 from django.utils.encoding import smart_str as uni
 
 from haystack.views import FacetedSearchView
@@ -10,6 +9,7 @@ from haystack.inputs import AutoQuery
 from haystack.backends import SQ
 
 from apps.select.views import filter_facets, form_filter_facets
+from apps.gcd.templatetags.credits import get_native_language_name
 
 
 def safe_split(value):
@@ -45,11 +45,12 @@ class GcdNameQuery(AutoQuery):
                                    .replace('}', '\}')\
                                    .replace('/', ' ')
         if ((query_string[0] == '"' and query_string[-1] == '"') or
-            (query_string[0] == "'" and query_string[-1] == "'")):
+           (query_string[0] == "'" and query_string[-1] == "'")):
             query_return = query_string
         else:
             for phrase in safe_split(query_string):
-                # if we also do * in front, searches with 'the' won't work somehow
+                # if we also do * in front, searches with 'the' won't work 
+                # somehow
                 query_return += phrase + '* '
         return query_return
 
@@ -155,6 +156,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         if not_sq:
             self.form.searchqueryset = self.form.searchqueryset.exclude(not_sq)
 
+        filter_fields = ['country', 'language', 'publisher', 'type', 'feature',
+                         'facet_model_name']
         self.form.searchqueryset = filter_facets(request,
                                                  self.form.searchqueryset,
                                                  ['publisher',
@@ -163,7 +166,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                                                   'facet_model_name',
                                                   'feature',
                                                   'type'])
-
+        filter_fields.pop('facet_model_name')
         self.form.searchqueryset = self.form.searchqueryset\
                                        .date_facet('date',
                                                    start_date=date(1000, 1, 1),
@@ -186,7 +189,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                 year = datetime.strptime(request.GET['date_facet'],
                                          '%Y-%m-%d %H:%M:%S')
                 self.results = self.results.filter(date__gte=year)\
-                                   .filter(date__lt=year.replace(year=year.year+1))
+                                   .filter(date__lt=year.replace(
+                                      year=year.year+1))
                 self.date_facet = request.GET['date_facet']
             except ValueError:
                 self.date_facet = None
@@ -259,14 +263,23 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                     elif request.GET['sort'] == 'chrono':
                         self.results = self.results.order_by('year',
                                                              'sort_name')
-        self.filter_form = form_filter_facets(self.form.searchqueryset,
-                                              ['country',
-                                               'language',
-                                               'publisher',
-                                               'type',
-                                               'feature'])
+        self.filter_form = form_filter_facets(self.results, filter_fields,
+                                              {'language':
+                                               get_native_language_name})
+        self.filter_form = self.filter_form(request.GET)
+        self.selected = []
+        self.filter_form['type'].label = 'Sequence'
+        self.filter_form['dates'].label = 'Year'
+        filter_fields.append('dates')
+        for field in filter_fields:
+            if field in request.GET:
+                self.selected.append(self.filter_form[field].label)
+
+        get_copy = request.GET.copy()
+        get_copy.pop('page', None)
+
         if self.query:
-            self.query = urlencode({'q': self.query})
+            self.query = get_copy.urlencode()
         self.paginator = ResponsePaginator(self.results,
                                            vars=context)
         self.paginator.vars['page'] = self.paginator.paginate(request)
@@ -311,6 +324,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                       'search_term': self.get_query(),
                       'filter_form': self.filter_form,
                       'facet_page': facet_page,
+                      'selected': self.selected,
                       'is_date_selected': is_date_selected,
                       'is_model_selected': is_model_selected,
                       'is_country_selected': is_country_selected,
