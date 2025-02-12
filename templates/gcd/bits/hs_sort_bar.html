@@ -1,0 +1,19 @@
+<span class="max-sm:hidden">Sort:</span> 
+{% if sort and 'relevance' not in sort %}
+<a class="visited:text-link-gcd" href="?{{ query }}{% if is_search_object %}&amp;selected_facets={{ selected_model }}{% endif %}">Relevance</a>{% else %}Relevance{% endif %} |
+{% if selected_model %}
+<a class="visited:text-link-gcd" href="?{{ query }}{% if is_search_object %}&amp;selected_facets={{ selected_model }}{% endif %}&sort={% if 'alpha' in sort and '-alpha' not in sort %}-{% endif %}alpha">Name
+  {% if '-alpha' in sort %}
+  <span class="visited:text-link-gcd">&#x25BC;</span> <!-- Down arrow -->
+  {% elif 'alpha' in sort %}
+  <span class="visited:text-link-gcd">&#x25B2;</span> <!-- Up arrow -->
+  {% endif %}
+</a> |
+{% endif %}
+<a class="visited:text-link-gcd" href="?{{ query }}{% if is_search_object %}&amp;selected_facets={{ selected_model }}{% endif %}&sort={% if 'chrono' in sort and '-' not in sort %}-{% endif %}chrono">Date
+{% if '-chrono' in sort %}
+  <span class="visited:text-link-gcd">&#x25BC;</span> <!-- Down arrow -->
+{% elif 'chrono' in sort %}
+  <span class="visited:text-link-gcd">&#x25B2;</span> <!-- Up arrow -->
+{% endif %}
+</a>
