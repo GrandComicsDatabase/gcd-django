@@ -211,27 +211,27 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                    in self.form.selected_facets) or \
                   ('facet_model_name_exact:feature'
                    in self.form.selected_facets):
-                    if self.sort.contains('alpha'):
+                    if 'alpha' in self.sort:
                         self.results = self.results.order_by(
                           direction + 'sort_name', 'year')
-                    elif self.sort.contains('chrono'):
+                    if 'chrono' in self.sort:
                         self.results = self.results.order_by(
                           direction + 'year', 'sort_name')
                 elif 'facet_model_name_exact:issue' \
                      in self.form.selected_facets:
-                    if self.sort.contains('alpha'):
+                    if 'alpha' in self.sort:
                         self.results = self.results.order_by(
                           direction + 'sort_name', 'key_date', 'sort_code')
-                    elif self.sort.contains('chrono'):
+                    if 'chrono' in self.sort:
                         self.results = self.results.order_by(
                           direction + 'key_date', 'sort_name', 'sort_code')
                 elif 'facet_model_name_exact:story' \
                      in self.form.selected_facets:
-                    if self.sort.contains('alpha'):
+                    if 'alpha' in self.sort:
                         self.results = self.results.order_by(
                           direction + 'sort_name', 'key_date',
                           'sort_code', 'sequence_number')
-                    elif self.sort.contains('chrono'):
+                    if 'chrono' in self.sort:
                         self.results = self.results.order_by(
                           direction + 'key_date', 'sort_name',
                           'sort_code', 'sequence_number')
@@ -242,10 +242,10 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                      'facet_model_name_exact:creator artinfluence',
                      'facet_model_name_exact:creator award',
                      'facet_model_name_exact:creator noncomicwork']:
-                    if self.sort.contains('alpha'):
+                    if 'alpha' in self.sort:
                         self.results = self.results.order_by(
                           direction + 'sort_name', 'year')
-                    elif self.sort.contains('chrono'):
+                    if 'chrono' in self.sort:
                         self.results = self.results.order_by(
                           direction + 'year', 'sort_name')
         self.filter_form = form_filter_facets(self.results, filter_fields,
