@@ -994,7 +994,7 @@ def filter_facets(request, things, fields, size=100):
     return things
 
 
-def form_filter_facets(things, fields, content_call={}):
+def form_filter_facets(things, fields, content_call={}, dates=False):
     class FilterSearchForm(forms.Form):
         def __init__(self, *args, **kwargs):
             super(FilterSearchForm, self).__init__(*args, **kwargs)
@@ -1011,7 +1011,7 @@ def form_filter_facets(things, fields, content_call={}):
                     choices=values,
                     required=False
                 )
-            if 'dates' in things.facet_counts():
+            if dates and 'dates' in things.facet_counts():
                 values = []
                 for value in things.facet_counts()['dates']['date']:
                     if value[1] > 0:

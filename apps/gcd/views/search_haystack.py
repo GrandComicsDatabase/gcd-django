@@ -137,10 +137,13 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.request = request
 
         self.form = self.build_form()
+        self.selected_model = None
+        self.search_object = False
         if 'search_object' in request.GET:
             if request.GET['search_object'] != "all":
                 self.form.selected_facets = ['facet_model_name_exact:%s' %
                                              request.GET['search_object']]
+                self.search_object = True
         self.query = self.get_query().strip('\\')
         # TODO List of fields should be gathered
         # automatically from our SearchIndex classes
@@ -161,7 +164,7 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         self.form.searchqueryset = filter_facets(request,
                                                  self.form.searchqueryset,
                                                  filter_fields)
-        filter_fields.pop('facet_model_name')
+        filter_fields.remove('facet_model_name')
         self.form.searchqueryset = self.form.searchqueryset\
                                        .date_facet('date',
                                                    start_date=date(1000, 1, 1),
@@ -183,11 +186,17 @@ class PaginatedFacetedSearchView(FacetedSearchView):
             self.sort = request.GET['sort']
         else:
             self.sort = ''
-        if self.sort == 'year':
-            self.results = self.results.order_by('year',
-                                                 '-_score')
-        elif len(self.form.selected_facets) >= 1:
-            if self.sort:
+        if self.sort:
+            # do not use the default sort by relevance
+            if len(self.form.selected_facets) == 0:
+                if self.sort == 'chrono':
+                    self.results = self.results.order_by('year',
+                                                        '-_score')
+                elif self.sort == '-chrono':
+                    self.results = self.results.order_by('-year',
+                                                        '-_score')
+            else:
+                direction = '-' if self.sort[0] == '-' else ''
                 if ('facet_model_name_exact:publisher'
                     in self.form.selected_facets) or \
                   ('facet_model_name_exact:indicia publisher'
@@ -202,34 +211,30 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                    in self.form.selected_facets) or \
                   ('facet_model_name_exact:feature'
                    in self.form.selected_facets):
-                    if request.GET['sort'] == 'alpha':
-                        self.results = self.results.order_by('sort_name',
-                                                             'year')
-                    elif request.GET['sort'] == 'chrono':
-                        self.results = self.results.order_by('year',
-                                                             'sort_name')
+                    if self.sort.contains('alpha'):
+                        self.results = self.results.order_by(
+                          direction + 'sort_name', 'year')
+                    elif self.sort.contains('chrono'):
+                        self.results = self.results.order_by(
+                          direction + 'year', 'sort_name')
                 elif 'facet_model_name_exact:issue' \
                      in self.form.selected_facets:
-                    if request.GET['sort'] == 'alpha':
-                        self.results = self.results.order_by('sort_name',
-                                                             'key_date',
-                                                             'sort_code')
-                    elif request.GET['sort'] == 'chrono':
-                        self.results = self.results.order_by('key_date',
-                                                             'sort_name',
-                                                             'sort_code')
+                    if self.sort.contains('alpha'):
+                        self.results = self.results.order_by(
+                          direction + 'sort_name', 'key_date', 'sort_code')
+                    elif self.sort.contains('chrono'):
+                        self.results = self.results.order_by(
+                          direction + 'key_date', 'sort_name', 'sort_code')
                 elif 'facet_model_name_exact:story' \
                      in self.form.selected_facets:
-                    if request.GET['sort'] == 'alpha':
-                        self.results = self.results.order_by('sort_name',
-                                                             'key_date',
-                                                             'sort_code',
-                                                             'sequence_number')
-                    elif request.GET['sort'] == 'chrono':
-                        self.results = self.results.order_by('key_date',
-                                                             'sort_name',
-                                                             'sort_code',
-                                                             'sequence_number')
+                    if self.sort.contains('alpha'):
+                        self.results = self.results.order_by(
+                          direction + 'sort_name', 'key_date',
+                          'sort_code', 'sequence_number')
+                    elif self.sort.contains('chrono'):
+                        self.results = self.results.order_by(
+                          direction + 'key_date', 'sort_name',
+                          'sort_code', 'sequence_number')
 
                 elif self.form.selected_facets[0] in \
                     ['facet_model_name_exact:creator',
@@ -237,26 +242,30 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                      'facet_model_name_exact:creator artinfluence',
                      'facet_model_name_exact:creator award',
                      'facet_model_name_exact:creator noncomicwork']:
-                    if request.GET['sort'] == 'alpha':
-                        self.results = self.results.order_by('sort_name',
-                                                             'year')
-                    elif request.GET['sort'] == 'chrono':
-                        self.results = self.results.order_by('year',
-                                                             'sort_name')
+                    if self.sort.contains('alpha'):
+                        self.results = self.results.order_by(
+                          direction + 'sort_name', 'year')
+                    elif self.sort.contains('chrono'):
+                        self.results = self.results.order_by(
+                          direction + 'year', 'sort_name')
         self.filter_form = form_filter_facets(self.results, filter_fields,
                                               {'language':
-                                               get_native_language_name})
-        self.filter_form = self.filter_form(request.GET)
+                                               get_native_language_name},
+                                              dates=True)
         self.selected = []
-        self.filter_form['type'].label = 'Sequence'
-        self.filter_form['dates'].label = 'Year'
-        filter_fields.append('dates')
+        if self.query:
+            self.filter_form = self.filter_form(request.GET)
+            self.filter_form['type'].label = 'Sequence'
+            self.filter_form['dates'].label = 'Year'
+            filter_fields.append('dates')
         for field in filter_fields:
             if field in request.GET:
                 self.selected.append(self.filter_form[field].label)
 
         get_copy = request.GET.copy()
         get_copy.pop('page', None)
+        get_copy.pop('search_object', None)
+        get_copy.pop('sort', None)
 
         if self.query:
             self.query = get_copy.urlencode()
@@ -273,19 +282,20 @@ class PaginatedFacetedSearchView(FacetedSearchView):
         if suggestion == self.get_query().lower():
             suggestion = ''
         facet_page = ''
-        is_model_selected = False
         if self.form.selected_facets:
             for facet in self.form.selected_facets:
-                facet_page += '&selected_facets=%s' % facet
+                if self.search_object:
+                    facet_page += '&selected_facets=%s' % facet
                 if 'facet_model_name_exact:' in facet:
-                    is_model_selected = True
+                    self.selected_model = facet
         extra.update({'suggestion': suggestion,
                       'haystack_search': 1,
+                      'is_search_object': self.search_object,
                       'search_term': self.get_query(),
                       'filter_form': self.filter_form,
                       'facet_page': facet_page,
                       'selected': self.selected,
-                      'is_model_selected': is_model_selected})
+                      'selected_model': self.selected_model})
         if self.sort:
             extra.update({'sort': '&sort=%s' % self.sort})
         else:

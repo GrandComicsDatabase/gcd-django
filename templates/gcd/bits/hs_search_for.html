@@ -1,16 +1,9 @@
-<select class="px-1" name="search_object" size="1">
+<select class="bg-blue-100 px-1" name="search_object" size="1">
   <option value="all"> All </option>
   <option value="story" {% if 'facet_model_name_exact:story' in form.selected_facets %}selected{% endif %}> Story </option>
   <option value="issue" {% if 'facet_model_name_exact:issue' in form.selected_facets %}selected{% endif %}> Issue </option>
   <option value="series" {% if 'facet_model_name_exact:series' in form.selected_facets %}selected{% endif %}> Series </option>
   <option value="publisher" {% if 'facet_model_name_exact:publisher' in form.selected_facets %}selected{% endif %}> Publisher </option>
-  <option value="brand group" {% if 'facet_model_name_exact:brand group' in form.selected_facets %}selected{% endif %}> Publisher Brand Group </option>
-  <option value="brand emblem" {% if 'facet_model_name_exact:brand emblem' in form.selected_facets %}selected{% endif %}> Publisher Brand Emblem </option>
-  <option value="indicia publisher" {% if 'facet_model_name_exact:indicia publisher' in form.selected_facets %}selected{% endif %}> Indicia Publisher </option>
   <option value="printer" {% if 'facet_model_name_exact:printer' in form.selected_facets %}selected{% endif %}> Printer </option>
   <option value="creator" {% if 'facet_model_name_exact:creator' in form.selected_facets %}selected{% endif %}> Creator </option>
-  <option value="creator membership" {% if 'facet_model_name_exact:creator membership' in form.selected_facets %}selected{% endif %}> Creator Membership</option>
-  <option value="creator art influence" {% if 'facet_model_name_exact:creator art influence' in form.selected_facets %}selected{% endif %}> Creator Art Influence</option>
-  <option value="received award" {% if 'facet_model_name_exact:received award' in form.selected_facets %}selected{% endif %}> Received Award</option>
-  <option value="creator non comic work" {% if 'facet_model_name_exact:creator non comic work' in form.selected_facets %}selected{% endif %}> Creator Non Comic Work </option>
 </select>

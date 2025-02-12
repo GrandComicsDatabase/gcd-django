@@ -620,6 +620,10 @@ a:hover {
   visibility: visible;
 }
 
+.invisible {
+  visibility: hidden;
+}
+
 .collapse {
   visibility: collapse;
 }
@@ -1165,6 +1169,10 @@ html {
     display: none;
   }
 
+  .max-sm\:max-w-xs {
+    max-width: 20rem;
+  }
+
   .max-sm\:bg-blue-50 {
     --tw-bg-opacity: 1;
     background-color: rgb(239 246 255 / var(--tw-bg-opacity));
@@ -1265,6 +1273,10 @@ html {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
+}
+
+.\[\&\>a\]\:visited\:text-link-gcd:visited>a {
+  color: rgb(39 39 235 );
 }
 
 .\[\&_\:is\(th\2c td\)\:where\(\:nth-child\(1\)\2c \)\]\:text-right :is(th,td):where(:nth-child(1),) {
