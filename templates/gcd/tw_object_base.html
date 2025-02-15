@@ -21,14 +21,7 @@
       <div class="max-sm:hidden rounded flex bg-gcd text-white font-bold px-2 py-1">Editing</div>
       <div class="sm:hidden bg-gcd h-7 px-1">
         <button class="mobile-editing-menu-button">
-            <span class="pointer-events-none">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-              <title>bars-3-bottom-left</title>
-              <g fill="none">
-                <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-              </g>
-            </svg>
-          </span>
+            {% include "gcd/bits/tw_three_bars.html" %}
         </button>
       </div>
       <div class="w-56 editing-menu max-sm:hidden max-sm:absolute overflow-hidden bg-white max-sm:right-0">
@@ -67,7 +60,7 @@
       })
       
     })
-    </script>
+</script>
   {% endblock %}
 
 {% endblock %}

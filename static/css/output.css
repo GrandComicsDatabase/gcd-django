@@ -659,6 +659,10 @@ a:hover {
   position: relative;
 }
 
+.left-0 {
+  left: 0px;
+}
+
 .right-0 {
   right: 0px;
 }
@@ -1064,10 +1068,6 @@ a:hover {
   padding-inline-start: 0.25rem;
 }
 
-.ps-6 {
-  padding-inline-start: 1.5rem;
-}
-
 .text-left {
   text-align: left;
 }
@@ -1328,6 +1328,10 @@ html {
     position: absolute;
   }
 
+  .max-sm\:left-0 {
+    left: 0px;
+  }
+
   .max-sm\:right-0 {
     right: 0px;
   }
@@ -1336,12 +1340,12 @@ html {
     margin: 0.25rem;
   }
 
-  .max-sm\:hidden {
-    display: none;
+  .max-sm\:mt-8 {
+    margin-top: 2rem;
   }
 
-  .max-sm\:max-w-xs {
-    max-width: 20rem;
+  .max-sm\:hidden {
+    display: none;
   }
 
   .max-sm\:bg-blue-50 {
@@ -1396,6 +1400,11 @@ html {
 
   .sm\:justify-center {
     justify-content: center;
+  }
+
+  .sm\:px-2 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
 
   .sm\:px-4 {

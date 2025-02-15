@@ -78,8 +78,13 @@
   {% endif %}
 </div>
 <div class="flex">
-  <div class="px-2 flex flex-col w-48 max-sm:hidden">
-    <form method="GET" class="max-sm:hidden flex-col">
+  <div class="sm:hidden bg-blue-100 h-7 pe-1 absolute left-0 flex">
+    <button class="mobile-facet-menu-button">
+      {% include "gcd/bits/tw_three_bars.html" %}
+    </button>
+  </div>
+  <div class="facet-filter px-1 sm:px-2 flex flex-col w-48 max-sm:mt-8 max-sm:hidden max-sm:absolute max-sm:left-0 bg-white overflow-hidden">
+    <form method="GET" class="flex-col">
       <button class="btn btn-blue ml-1 mb-2 h-8">Filter Results</button>
   {% if request.GET.sort %}
       <input type="hidden" name="sort" value="{{ request.GET.sort }}">
@@ -276,4 +281,30 @@
   {% endwith %}
 </nav>
   {% include 'oi/bits/jquery.html' with details=True %}
+
+<script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", () => {
+      // Select all dropdown toggle buttons
+      const editingToggles = document.querySelectorAll(".mobile-facet-menu-button")
+        editingToggles.forEach((toggle) => {
+        toggle.addEventListener("click", () => {
+          // Find the next sibling element which is the dropdown menu
+          document.querySelectorAll(".facet-filter").forEach((menu) => {
+              menu.classList.toggle("max-sm:hidden")
+          })
+        })
+      })
+
+      // Clicking outside of an open dropdown menu closes it
+      window.addEventListener("click", function (e) {
+        if (!e.target.matches(".mobile-facet-menu-button") ) {
+          document.querySelectorAll(".facet-filter").forEach((menu) => {
+            if (!menu.contains(e.target)) {
+              menu.classList.add("max-sm:hidden")
+            }
+          })
+        }
+      })
+    })
+</script>
 {% endblock %}
