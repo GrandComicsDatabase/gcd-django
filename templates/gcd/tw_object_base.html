@@ -1,0 +1,73 @@
+{% extends "gcd/tw_base_view.html" %}
+{% load static %}
+{% block css %}
+  <link rel="stylesheet" type="text/css"
+        href="{% static "css/output.css" %}"/>
+{% endblock %}
+
+{% block view_body %}
+  {% block header %}
+<h1 class="bg-blue-100 px-1 lg:px-2">
+    {{ object }}
+</h1>
+  {% endblock %}
+<div class="flex">
+  <div class="flex-1 items-start"> <!-- content -->
+  {% block content_left %}
+  {% endblock %}
+  </div>
+  <div class="flex justify-end"> <!-- editing -->
+    <div class="sm:pe-1 mt-2">
+      <div class="max-sm:hidden rounded flex bg-gcd text-white font-bold px-2 py-1">Editing</div>
+      <div class="sm:hidden bg-gcd h-7 px-1">
+        <button class="mobile-editing-menu-button">
+            <span class="pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <title>bars-3-bottom-left</title>
+              <g fill="none">
+                <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </g>
+            </svg>
+          </span>
+        </button>
+      </div>
+      <div class="w-56 editing-menu max-sm:hidden max-sm:absolute overflow-hidden bg-white max-sm:right-0">
+        {% block editing %}
+        {% endblock %}    
+      </div>
+    </div>  
+  </div>
+</div>
+  {% block content %}
+  {% endblock %}
+
+  {% block js %}
+<script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", () => {
+      // Select all dropdown toggle buttons
+      const editingToggles = document.querySelectorAll(".mobile-editing-menu-button")
+        editingToggles.forEach((toggle) => {
+        toggle.addEventListener("click", () => {
+          // Find the next sibling element which is the dropdown menu
+          document.querySelectorAll(".editing-menu").forEach((menu) => {
+              menu.classList.toggle("max-sm:hidden")
+          })
+        })
+      })
+    
+      // Clicking outside of an open dropdown menu closes it
+      window.addEventListener("click", function (e) {
+        if (!e.target.matches(".mobile-editing-menu-button") ) {
+          document.querySelectorAll(".editing-menu").forEach((menu) => {
+            if (!menu.contains(e.target)) {
+              menu.classList.add("max-sm:hidden")
+            }
+          })
+        }
+      })
+      
+    })
+    </script>
+  {% endblock %}
+
+{% endblock %}

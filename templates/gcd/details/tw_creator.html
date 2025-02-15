@@ -1,0 +1,477 @@
+{% extends "gcd/tw_object_base.html" %}
+{% load static %}
+{% load i18n %}
+{% load display %}
+
+{% block title %}
+  GCD :: Creator :: {{ creator }}
+{% endblock %}
+
+{% block header %}
+  {% with object=creator %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[100px] sm:w-[150px] sm:min-w-[150px]">
+        <img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}">
+      </div>
+    </td>
+    <td>
+      <div class="flex ps-1">
+        <div>
+          <table class="[&_:is(th,td):where(:nth-child(1),)]:align-top [&_:is(th,td):where(:nth-child(1),)]:text-right [&_:is(th,td):where(:nth-child(1),)]:font-bold">
+            <tr>
+              <td>Born:</td>
+              <td>{{ creator.display_birthday }} in {{ creator.display_birthplace }}</td>
+            </tr>
+            {% if creator.has_death_info %}
+            <tr>
+              <td>Died:</td>
+              <td>{{ creator.display_deathday }} in {{ creator.display_deathplace }}</td>
+            </tr>
+            {% endif %}
+            {% if creator.bio %}
+            <tr>
+              <td>Biography:</td>
+              <td>{{ creator.bio|linebreaksbr }}</td>
+            </tr>
+            {% endif %}
+            {% if creator.notes %}
+            <tr>
+              <td>Notes:</td>
+              <td>{{ creator.notes|urlizetrunc:75|linebreaksbr }}</td>
+            </tr>
+            {% endif %}
+          </table> <!-- content table -->
+          <ul class="list-disc columns-2 list-inside">
+            <li><a href='{% url "creator_issues" creator_id=creator.id %}'>Issue List</a></li>
+            <li><a href='{% url "creator_overview" creator_id=creator.id %}'>Issue Overview</a></li>
+            <li><a href='{% url "creator_edited_issues" creator_id=creator.id %}'>Issue Edit List</a></li>
+            <li><a href='{% url "creator_covers" creator_id=creator.id %}'>Cover List</a></li>
+            <li><a href='{% url "creator_series" creator_id=creator.id %}'>Series List</a></li>
+            <li><a href='{% url "creator_characters" creator_id=creator.id %}'>Character List</a></li>
+            <li><a href='{% url "creator_features" creator_id=creator.id %}'>Feature List</a></li>
+            <li><a href='{% url "creator_sequences" creator_id=creator.id %}'>Sequence List</a></li>
+            <li><a href='{% url "creator_creators" creator_id=creator.id %}'>Co-Creator List</a></li>
+
+          </ul>
+          via credit search for "{{ creator.gcd_official_name }}"
+          <ul class="list-disc columns-2 ps-6">
+            <li><a href='{% url "creator_migrate_checklist" creator=creator.gcd_official_name %}'>Issues to be Migrated</a></li>
+            <li class="break-inside-avoid-column"><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue List</a></li>
+            <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD</a></li>
+          </ul>
+      {% if creator.whos_who or creator.external_link.count %}
+          external links
+          <ul class="list-disc columns-2 ps-6">
+            {% if creator.whos_who %}
+            <li><a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a></li>
+      {% endif %}
+      {% if creator.external_link.count %}
+        {% for external_link in creator.external_link.all %}
+            <li><a href="{{ external_link.link }}">{{ external_link.site }}</a></li>
+        {% endfor %}
+      {% endif %}
+          </ul>
+            {% endif %}
+        </div> <!-- all text content -->
+      </div>
+    </td>
+  </tr>
+</table>
+  <!-- Creator's Names -->
+ <div class="px-2"> 
+  <h3>Name:</h3>
+  <ul class="ms-2 list-disc sm:columns-2 px-6 list-outside [&>li]:pr-4">
+    <li>
+      <a href="{% url 'creator_name_sequences' creator_id=gcd_name.id %}">{{ gcd_name.name }}</a>
+    </li>
+  {% if gcd_name.given_name or gcd_name.given_name or gcd_name.family_name %}
+    <li class="break-inside-avoid-column">
+    {% if gcd_name.type %}
+      <strong>Type</strong>: {{ gcd_name.type }}<br>
+    {% endif %}
+    {% if gcd_name.given_name %}
+      <strong>Given name</strong>: {{ gcd_name.given_name }}
+{% endif %}
+{% if gcd_name.family_name %}
+      <strong>Family name</strong>: {{ gcd_name.family_name }}<br>
+{% endif %}
+  {% if creator.disambiguation %}
+      <strong>Disambiguation:</strong> {{ creator.disambiguation }}
+  {% endif %}
+    </li>
+{% endif %}
+  </ul>
+{% if other_names %}
+  <h3>Other Names:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for creator_name in other_names %}
+    <li class="break-inside-avoid-column">
+      <a href="{% url 'creator_name_sequences' creator_id=creator_name.id %}">{{ creator_name.name }}</a>
+    {% if creator_name.type %}
+      <strong>Type</strong>: {{ creator_name.type }}<br>
+    {% endif %}
+    {% if creator_name.given_name %}
+      <strong>Given name</strong>: {{ creator_name.given_name }}
+{% endif %}
+{% if creator_name.family_name %}
+      <strong>Family name</strong>: {{ creator_name.family_name }}
+{% endif %}
+{% if creator_name.source.all %}
+      <strong>Sources</strong> :{% for source in creator_name.source.all %}
+{{ source.type }},{% endfor %}
+{% endif %}
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+ </div>
+{% endblock content_left %}
+
+{% block editing %}
+  {% if not preview %}
+    {% with creator as object %}
+      {% with 'creator' as object_class %}
+        {% with 'creator' as object_name %}
+          {% include "gcd/bits/tw_status_banner.html" %}
+        {% endwith %}
+      {% endwith %}
+    {% endwith %}
+    {% if user.is_authenticated and not creator.pending_deletion %}
+      <btn class="btn btn-blue-editing"><a href="{% url "add_creator_art_influence" creator.id %}">
+      Add Art Influence</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "add_creator_award" creator.id %}">
+      Add Award</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "add_creator_membership" creator.id %}">
+      Add Membership</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "add_creator_non_comic_work" creator.id %}">
+      Add Non Comic Work</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "add_creator_relation" creator.id %}">
+      Add Relation</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "add_creator_school" creator.id %}">
+      Add School</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "add_creator_degree" creator.id %}">
+      Add School Degree</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "add_creator_signature" creator.id %}">
+      Add Signature</btn>
+      </a>
+    {% endif %}
+    {% if creator.portrait %}
+      {% if creator.portrait.reserved %}
+      <div style='padding:.4em' class="index_status_1">
+        Creator portrait changes pending
+      </div>
+      {% else %}
+        {% if user.is_authenticated %}
+      <btn class="btn btn-blue-editing"><a href="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.portrait.id %}">
+      Replace Portrait Image</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "delete_revision" model_name='image' id=creator.portrait.id %}">
+      Delete Portrait Image</btn>
+      </a>
+        {% endif %}
+      {% endif %}
+    {% else %}
+      {% if user.is_authenticated %}
+      <btn class="btn btn-blue-editing"><a href="{% url "upload_image" model_name='creator' id=creator.id image_type='CreatorPortrait' %}">
+      Add Portrait Image</btn>
+      </a>
+      {% endif %}
+    {% endif %}
+    {% if creator.samplescan %}
+      {% if creator.samplescan.reserved %}
+      <div style='padding:.4em' class="index_status_1">
+        Creator sample scan changes pending
+      </div>
+    {% else %}
+      {% if user.is_authenticated %}
+        <btn class="btn btn-blue-editing"><a href="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.samplescan.id %}">
+        Replace Sample Scan Image</btn>
+      </a>
+      <btn class="btn btn-blue-editing"><a href="{% url "delete_revision" model_name='image' id=creator.samplescan.id %}">
+      Delete Sample Scan Image</btn>
+      </a>
+      {% endif %}
+    {% endif %}
+  {% else %}
+    {% if user.is_authenticated %}
+      <btn class="btn btn-blue-editing"><a href="{% url "upload_image" model_name='creator' id=creator.id image_type='SampleScan' %}">
+      Add Sample Scan Image</btn>
+      </a>
+    {% endif %}
+  {% endif %}
+{% endif %} <!-- not preview -->
+{% if not preview or creator.id %}
+  {% if MYCOMICS %}
+          <div>
+            <div>my.comics.org</div>
+          </div>
+  {% else %}
+  {% endif %} <!-- MYCOMCIS -->
+        <div class="mt-1 bg-gcd font-bold px-2 py-1 text-center rounded hover:bg-blue-700">
+          <a class="text-white visited:text-white" href="{% url "change_history" model_name='creator' id=creator.id %}">View Change History</a>
+        </div>
+  {% if MYCOMICS %}
+        <div class="bg-gcd mt-1 font-bold px-2 py-1 text-center rounded">
+          <a class="text-white visited:text-white" href="http://www.comics.org{% url "show_creator" creator_id=creator.id %}">Creator at www.comics.org</a>
+        </div>
+  {% else %}
+        <div class="bg-my-comics mt-1 font-bold px-2 py-1 text-center rounded">
+          <a class="text-white visited:text-white" href="http://my.comics.org{% url "show_creator" creator_id=creator.id %}">Creator at my.comics.org</a>
+        </div>
+  {% endif %}
+{% endif %}
+{% endblock editing %}
+
+{% block content %}
+<div class="px-2">
+
+<!--Creator's Signatures-->
+{% if creator.active_signatures %}
+  <hr>
+  <h3>Signatures:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for signature in creator.active_signatures %}
+    <li><a href="{{ signature.get_absolute_url }}">{{ signature.name }}</a>
+{% if signature.signature and not FAKE_IMAGES %}
+      <img src="{{ signature.signature.scaled_image.url }}">
+{% else %}
+       [generic]
+{% endif %}
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+
+<!--Creator's Scans-->
+{% if creator.samplescan or creator.portrait %}
+  <hr>
+  <div class="flex flex-col sm:flex-row">
+  {% if creator.portrait %}
+  <div class="m-2">
+    <img src="{{ creator.portrait.scaled_image.url }}">
+  </div>
+  {% endif %}
+  {% if creator.samplescan %}
+  <div class="m-2">
+      <img src="{{ creator.samplescan.scaled_image.url }}">
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+
+<!--Creator's Awards-->
+{% if creator.active_awards %}
+  <hr>
+  <h3>Awards:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for award in creator.active_awards %}
+    <li class="break-inside-avoid-column">
+{% if award.award_year %}
+{{ award.award_year }}:
+{% endif %}
+{% if award.award %}
+      <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
+{% endif %}
+      <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a>
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+
+{% if creator.active_awards_for_issues %}
+  <hr>
+  <h3>Awards for Issues:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for award in creator.active_awards_for_issues %}
+    <li class="break-inside-avoid-column">
+{% if award.award_year %}
+{{ award.award_year }}:
+{% endif %}
+{% if award.award %}
+      <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
+{% endif %}
+      <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a><br>
+      <a href="{{ award.recipient.get_absolute_url }}">{{ award.recipient }}</a>
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+{% if creator.active_awards_for_stories %}
+  <hr>
+  <h3>Awards for Stories:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for award in creator.active_awards_for_stories %}
+    <li class="break-inside-avoid-column">
+{% if award.award_year %}
+{{ award.award_year }}:
+{% endif %}
+{% if award.award %}
+      <a href="{{ award.award.get_absolute_url }}">{{ award.award.name }}</a> -
+{% endif %}
+      <a href="{{ award.get_absolute_url }}">{{ award.display_name }}</a><br>
+      <a href="{{ award.recipient.get_absolute_url }}">{{ award.recipient }}</a>
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+
+<!--Creator's Schools-->
+{% if creator.active_schools %}
+  <hr>
+  <h3>Schools:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for school in creator.active_schools %}
+    <li>
+      <p><a href="{{ school.get_absolute_url }}">{{ school.school }}</a>
+{% if school.school_year_began %}
+  {{ school.school_year_began }}
+{% endif %}
+{% if not school.school_year_began or school.school_year_began_uncertain %}
+  ?
+{% endif %}
+  to
+{% if school.school_year_ended %}
+  {{ school.school_year_ended }}
+{% endif %}
+{% if not school.school_year_ended or school.school_year_ended_uncertain %}
+  ?
+{% endif %}
+{% if school.notes %}
+      <p><strong>Notes: </strong>{{ school.notes }}</p>
+{% endif %}
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+
+<!--Creator's Degree-->
+{% if creator.active_degrees %}
+  <hr>
+  <h3>Degrees:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for degree in creator.active_degrees %}
+    <li>
+      <p><a href="{{ degree.get_absolute_url }}">{{ degree.degree }}, {{ degree.school.school_name }}</a>
+{% if degree.degree_year or degree.degree_year_uncertain %}
+in {{ degree.degree_year }}{% if degree.degree_year_uncertain %}?{% endif %}
+{% endif %}
+{% if degree.notes %}
+      <p><strong>Notes: </strong>{{ degree.notes }}</p>
+{% endif %}
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+
+<!--Creator's Art Influences-->
+{% if creator.active_art_influences or creator.active_influenced_creators %}
+  <hr>
+  <h3>Art Influences:</h3>
+{% if creator.active_art_influences %}
+{{ creator }} stated influences by:
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for influence in creator.active_art_influences %}
+    <li>
+      <a href="{{ influence.get_absolute_url }}">{% if influence.influence_link %}{{ influence.influence_link }}{% else %}{{ influence.influence_name }}{% endif %}</a>
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+{% if creator.active_influenced_creators %}
+Influences by {{ creator }} were stated by:
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for influence in creator.active_influenced_creators %}
+    <li>
+      <a href="{{ influence.get_absolute_url }}">{{ influence.creator }}</a>
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+{% endif %}
+
+<!--Creator's Memberships-->
+{% if creator.active_memberships %}
+  <hr>
+  <h3>Memberships:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for membership in creator.active_memberships %}
+    <li>
+      <p><a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
+      <strong>Type</strong>: {{ membership.membership_type.type }}
+{% if membership.display_years %}
+      <strong>Duration:</strong> {{ membership.display_years }}
+{% endif %}
+{% if membership.notes %}
+      <br><strong>Notes: </strong>{{ membership.notes }}
+{% endif %}
+      </p>
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+
+<!--Creator's Noncomic works-->
+{% if creator.active_non_comic_works %}
+  <hr>
+  <h3>Non Comics Works:</h3>
+    <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+{% for ncw in creator.active_non_comic_works %}
+    <li class="break-inside-avoid-column">
+      <p><strong>Publication Title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
+      ({{ ncw.work_type.type }}) - <strong>Role:</strong> {{ ncw.work_role.role_name }}
+      {% if ncw.display_years %}
+- <strong>Year{{ ncw.noncomicworkyears.all|pluralize }}:</strong> {{ ncw.display_years }}
+{% endif %}
+{% if ncw.employer_name %}
+      <br><strong>Employer Name</strong> : {{ ncw.employer_name }}
+{% endif %}
+{% if ncw.work_title %}
+      <br><strong>Work Title:</strong> {{ ncw.work_title }}
+{% endif %}
+{% if ncw.notes %}
+      <br><strong>Notes: </strong>{{ ncw.notes }}
+{% endif %}
+      </p>
+    </li>
+{% endfor %}
+  </ol>
+{% endif %}
+
+{% if creator.active_relations %}
+  <hr>
+  <h3>Relations:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  {% for relation in creator.active_relations %}
+    {% with relation_info=relation|pre_process_relation:creator %}
+    <li class="break-inside-avoid-column">
+      <a href="{% url 'show_creator_relation' creator_relation_id=relation.id %}">{{ relation_info.1 }}</a> 
+      - <a href="{% url 'show_creator' creator_id=relation_info.0.id %}">{% if relation_info.1 == 'Similar Name' %}{{ relation_info.0.search_result_name }}{% else %} {{ relation_info.0 }}{% endif %}</a>
+  {% if relation.relation_type.id in studio_types and relation.creator_name.count %} using the name{{ relation.creator_name.count|pluralize }}:
+    {% for creator_name in relation.creator_name.all  %}
+      {{ creator_name.name }}{% if not forloop.last %};{%  endif %}
+    {% endfor %}
+  {% endif %}
+  {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+  {% endif %}
+    </li>
+  {% endwith %}
+  {% endfor %}
+  </ol>
+{% endif %}
+</div>
+{% endblock content %}

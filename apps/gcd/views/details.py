@@ -274,7 +274,7 @@ def show_creator(request, creator, preview=False):
             'error_subject': creator,
             'preview': preview,
             'studio_types': [2, 3]}
-    return render(request, 'gcd/details/creator.html', vars)
+    return render(request, 'gcd/details/tw_creator.html', vars)
 
 
 def creator_sequences(request, creator_id, series_id=None,

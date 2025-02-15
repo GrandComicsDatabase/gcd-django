@@ -572,6 +572,13 @@ class Creator(GcdData):
                 'show_creator',
                 kwargs={'creator_id': self.id})
 
+    def get_portrait_url(self):
+        if self.portrait:
+            return self.portrait.cropped_face.url
+        else:
+            from django.templatetags.static import static
+            return f"{static('img/avatar.png')}"
+
     def search_result_name(self):
         if self.disambiguation:
             extra = ' [%s]' % self.disambiguation
@@ -1135,19 +1142,13 @@ class CreatorPortraitTable(CreatorTable):
         from apps.gcd.templatetags.display import absolute_url
         from apps.gcd.templatetags.credits import show_country_info
         # from apps.oi.models import _clear_image_cache
-        if record.portrait:
-            # _clear_image_cache(record.portrait.cropped_face)
-            # _clear_image_cache(record.portrait.face_portrait)
-            display_face = "<a href='%s'>" \
-                           "<img class='border-2 size-8 rounded-full' "\
-                           "src='%s'></a>" % (
-                             record.get_absolute_url(),
-                             record.portrait.cropped_face.url)
-        else:
-            from django.templatetags.static import static
-            display_face = f"<a href='{record.get_absolute_url()}'>" \
-                           "<img class='border-2 size-8 rounded-full'" \
-                           f" src='{static('img/avatar.png')}'></a>"
+        # if record.portrait:
+        # _clear_image_cache(record.portrait.cropped_face)
+        # _clear_image_cache(record.portrait.face_portrait)
+        display_face = "<a href='%s'>" \
+                       "<img class='border-2 rounded-full' "\
+                       "src='%s'></a>" % (record.get_absolute_url(),
+                                          record.get_portrait_url())
         display_country = "<img class='pe-1 inline' %s>" % (
           show_country_info(record.birth_country))
         display_creator = absolute_url(record)

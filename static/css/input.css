@@ -2,7 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "tailwindcss";
+
 @layer base {
+    h1 {
+      font-size: theme('fontSize.2xl');
+      font-weight: bold;
+    }
+    h2 {
+      font-size: theme('fontSize.xl');
+      font-weight: bold;
+    }
+    h3 {
+      font-size: theme('fontSize.lg');
+      font-weight: bold;
+    }
+
     a {
       @apply text-link-gcd visited:text-visited-gcd hover:underline
     }
@@ -23,8 +38,19 @@ html {
 }
 .btn-blue {
   @apply bg-blue-500 text-white;
+  a {
+    @apply text-white visited:text-white hover:no-underline;
+  }
 }
-.btn-blue:hover {
+.btn-blue:hover, .btn-blue-editing:hover {
   @apply bg-blue-700;
 }
-
+.btn-blue-editing {
+  @apply block me-1 mt-1 max-sm:m-1 sm:mx-1 bg-blue-500 text-white text-sm text-center;
+  a {
+    @apply text-white visited:text-white hover:no-underline text-center;
+  };
+}
+.btn-blue-disabled {
+  @apply bg-blue-300 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
+}
