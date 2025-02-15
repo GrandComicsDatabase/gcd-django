@@ -44,11 +44,11 @@ html {
   @apply bg-blue-700;
 }
 .btn-blue-editing {
-  @apply block me-1 mt-1 max-sm:m-1 sm:mx-1 bg-blue-500 text-white text-sm text-center;
+  @apply font-normal block me-1 mt-1 max-sm:m-1 sm:mx-1 bg-blue-200 text-black text-sm text-center;
   a {
-    @apply text-white visited:text-white hover:no-underline text-center;
+    @apply text-black visited:text-black hover:no-underline text-center;
   };
 }
 .btn-blue-disabled {
-  @apply bg-blue-300 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
+  @apply font-normal bg-blue-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
 }

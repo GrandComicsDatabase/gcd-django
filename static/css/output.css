@@ -1193,12 +1193,13 @@ html {
   margin-top: 0.25rem;
   display: block;
   --tw-bg-opacity: 1;
-  background-color: rgb(59 130 246 / var(--tw-bg-opacity));
+  background-color: rgb(191 219 254 / var(--tw-bg-opacity));
   text-align: center;
   font-size: 0.875rem;
   line-height: 1.25rem;
+  font-weight: 400;
   --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity));
+  color: rgb(0 0 0 / var(--tw-text-opacity));
 }
 
 @media not all and (min-width: 640px) {
@@ -1220,10 +1221,10 @@ html {
   }
   a {
     --tw-text-opacity: 1;
-    color: rgb(255 255 255 / var(--tw-text-opacity));
+    color: rgb(0 0 0 / var(--tw-text-opacity));
   }
   a:visited {
-    color: rgb(255 255 255 );
+    color: rgb(0 0 0 );
   }
   a:hover {
     text-decoration-line: none;
@@ -1234,10 +1235,11 @@ html {
   margin-inline-end: 0.25rem;
   display: block;
   --tw-bg-opacity: 1;
-  background-color: rgb(147 197 253 / var(--tw-bg-opacity));
+  background-color: rgb(239 246 255 / var(--tw-bg-opacity));
   text-align: center;
   font-size: 0.875rem;
   line-height: 1.25rem;
+  font-weight: 400;
   --tw-text-opacity: 1;
   color: rgb(107 114 128 / var(--tw-text-opacity));
 }
