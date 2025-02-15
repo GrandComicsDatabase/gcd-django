@@ -244,9 +244,9 @@
   <h3>Signatures:</h3>
   <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
 {% for signature in creator.active_signatures %}
-    <li><a href="{{ signature.get_absolute_url }}">{{ signature.name }}</a>
+    <li class="break-inside-avoid-column"><a href="{{ signature.get_absolute_url }}">{{ signature.name }}</a>
 {% if signature.signature and not FAKE_IMAGES %}
-      <img src="{{ signature.signature.scaled_image.url }}">
+      <img class="inline" src="{{ signature.signature.thumbnail.url }}">
 {% else %}
        [generic]
 {% endif %}
