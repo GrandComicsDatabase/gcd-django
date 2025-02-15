@@ -60,14 +60,14 @@
 
           </ul>
           via credit search for "{{ creator.gcd_official_name }}"
-          <ul class="list-disc columns-2 ps-6">
+          <ul class="list-disc columns-2 list-inside">
             <li><a href='{% url "creator_migrate_checklist" creator=creator.gcd_official_name %}'>Issues to be Migrated</a></li>
             <li class="break-inside-avoid-column"><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue List</a></li>
             <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD</a></li>
           </ul>
       {% if creator.whos_who or creator.external_link.count %}
           external links
-          <ul class="list-disc columns-2 ps-6">
+          <ul class="list-disc columns-2 list-inside">
             {% if creator.whos_who %}
             <li><a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a></li>
       {% endif %}
