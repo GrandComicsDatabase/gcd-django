@@ -40,7 +40,7 @@ html {
     @apply text-white visited:text-white hover:no-underline;
   }
 }
-.btn-blue:hover, .btn-blue-editing:hover {
+.btn-blue:hover {
   @apply bg-blue-700;
 }
 .btn-blue-editing {
@@ -48,6 +48,9 @@ html {
   a {
     @apply text-black visited:text-black hover:no-underline text-center;
   };
+}
+.btn-blue-editing:hover {
+  @apply bg-blue-400;
 }
 .btn-blue-disabled {
   @apply font-normal bg-blue-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;

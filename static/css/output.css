@@ -1183,7 +1183,7 @@ html {
   }
 }
 
-.btn-blue:hover, .btn-blue-editing:hover {
+.btn-blue:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(29 78 216 / var(--tw-bg-opacity));
 }
@@ -1229,6 +1229,11 @@ html {
   a:hover {
     text-decoration-line: none;
   }
+}
+
+.btn-blue-editing:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(96 165 250 / var(--tw-bg-opacity));
 }
 
 .btn-blue-disabled {
