@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "tailwindcss";
-
 @layer base {
     h1 {
       font-size: theme('fontSize.2xl');
