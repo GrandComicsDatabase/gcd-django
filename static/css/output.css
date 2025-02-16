@@ -1383,12 +1383,6 @@ html {
   }
 }
 
-@media (min-width: 480px) {
-  .xs\:w-\[200px\] {
-    width: 200px;
-  }
-}
-
 @media (min-width: 640px) {
   .sm\:table-row {
     display: table-row;
@@ -1470,6 +1464,10 @@ html {
 
   .md\:top-0 {
     top: 0px;
+  }
+
+  .md\:w-\[200px\] {
+    width: 200px;
   }
 
   .md\:columns-2 {

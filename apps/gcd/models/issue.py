@@ -689,7 +689,7 @@ class IssueCoverTable(IssueTable):
     class Meta:
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date')
-        row_attrs = {'class': 'w-[150px] xs:w-[200px]'}
+        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
 
     def render_cover(self, record):
         from apps.gcd.views.covers import get_image_tag

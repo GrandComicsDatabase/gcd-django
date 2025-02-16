@@ -313,6 +313,30 @@
   </ol>
 {% endif %}
 
+<!--Creator's Relations-->
+{% if creator.active_relations %}
+  <hr>
+  <h3>Relations:</h3>
+  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  {% for relation in creator.active_relations %}
+    {% with relation_info=relation|pre_process_relation:creator %}
+    <li class="break-inside-avoid-column">
+      <a href="{% url 'show_creator_relation' creator_relation_id=relation.id %}">{{ relation_info.1 }}</a>
+      - <a href="{% url 'show_creator' creator_id=relation_info.0.id %}">{% if relation_info.1 == 'Similar Name' %}{{ relation_info.0.search_result_name }}{% else %} {{ relation_info.0 }}{% endif %}</a>
+  {% if relation.relation_type.id in studio_types and relation.creator_name.count %} using the name{{ relation.creator_name.count|pluralize }}:
+    {% for creator_name in relation.creator_name.all  %}
+      {{ creator_name.name }}{% if not forloop.last %};{%  endif %}
+    {% endfor %}
+  {% endif %}
+  {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+  {% endif %}
+    </li>
+  {% endwith %}
+  {% endfor %}
+  </ol>
+{% endif %}
+
 <!--Creator's Schools-->
 {% if creator.active_schools %}
   <hr>
@@ -432,29 +456,6 @@ Influences by {{ creator }} were stated by:
       </p>
     </li>
 {% endfor %}
-  </ol>
-{% endif %}
-
-{% if creator.active_relations %}
-  <hr>
-  <h3>Relations:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
-  {% for relation in creator.active_relations %}
-    {% with relation_info=relation|pre_process_relation:creator %}
-    <li class="break-inside-avoid-column">
-      <a href="{% url 'show_creator_relation' creator_relation_id=relation.id %}">{{ relation_info.1 }}</a> 
-      - <a href="{% url 'show_creator' creator_id=relation_info.0.id %}">{% if relation_info.1 == 'Similar Name' %}{{ relation_info.0.search_result_name }}{% else %} {{ relation_info.0 }}{% endif %}</a>
-  {% if relation.relation_type.id in studio_types and relation.creator_name.count %} using the name{{ relation.creator_name.count|pluralize }}:
-    {% for creator_name in relation.creator_name.all  %}
-      {{ creator_name.name }}{% if not forloop.last %};{%  endif %}
-    {% endfor %}
-  {% endif %}
-  {% if relation.notes %}
-      <br><strong>Notes: </strong>{{ relation.notes }}
-  {% endif %}
-    </li>
-  {% endwith %}
-  {% endfor %}
   </ol>
 {% endif %}
 </div>

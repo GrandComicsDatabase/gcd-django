@@ -145,7 +145,7 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
         model = Cover
         fields = ('cover', 'issue', 'publisher', 'publication_date',
                   'on_sale_date', 'edit_cover')
-        row_attrs = {'class': 'w-[150px] xs:w-[200px]'}
+        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
 
     def render_cover(self, record):
         from apps.gcd.views.covers import get_image_tag
