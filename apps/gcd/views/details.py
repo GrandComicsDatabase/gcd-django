@@ -1223,7 +1223,7 @@ def show_publisher_issues(request, publisher_id):
     else:
         table = PublisherIssueCoverTable(
           issues,
-          template_name='gcd/bits/tw_sortable_cover_issue_list.html',
+          template_name=TW_SORT_GRID_TEMPLATE,
           order_by=('issue'))
 
     return generic_sortable_list(request, issues, table,

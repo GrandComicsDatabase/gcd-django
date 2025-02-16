@@ -845,6 +845,7 @@ class PublisherIssueCoverTable(PublisherIssueTable, IssueCoverTable):
     class Meta:
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'brand', 'indicia_publisher')
+        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
 
 
 class SeriesDetailsIssueTable(PublisherIssueTable):
