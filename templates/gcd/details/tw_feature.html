@@ -53,14 +53,14 @@ GCD :: Feature :: {{ feature.name }}
               <td>{{ feature.display_year_created }}</td>
             </tr>
 {% endif %}
-{% if feature.keywords %}
+{% if feature.has_keywords %}
             <tr>
               <td>Keywords:</td>
               <td>{{ feature.display_keywords }}</td>
             </tr>
 {% endif %}
           </table>  
-          <ul class="list-disc sm:columns-2 list-outside ps-4">
+          <ul class="list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
             <li><a href='{% url "feature_creators" feature_id=feature.id %}'>Creator List</a></li>
             <li><a href='{% url "feature_creator_names" feature_id=feature.id %}'>Creator Name List</a></li>
             <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue List</a></li>
