@@ -36,7 +36,7 @@
     <tbody>
         {% for row in table.paginated_rows %}
         {% block table.tbody.row %}
-        <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border-y-2 max-sm:bg-blue-50">
+        <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border-t-2 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
             {% if table.context.select_key %}
             <td>
               <form action="{% url "select_object" select_key=table.context.select_key %}" method="POST">

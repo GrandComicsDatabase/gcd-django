@@ -38,29 +38,38 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
         size = 'large'
     elif zoom_level == 1.5:
         width = 200
-        css_width = 'width="150px"'
+        css_width = 150
         size = 'medium'
 
-    if not can_have_cover:
-        return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
-                         'img/noupload_' + size + '.png" alt="No image"' +
-                         'class="cover_img w-[200px]">')
+    if css_width:
+        img_class += ' w-[%spx]' % css_width
+    else:
+        img_class += ' w-[%spx]' % width
+
+    print (zoom_level, img_class)
+    if zoom_level in [1.5, ZOOM_MEDIUM]:
+        img_class += ' min-w-[150px]'
 
     if cover is None:
+        if not can_have_cover:
+            return mark_safe('<img class="no_cover" src="' +
+                             settings.STATIC_URL +
+                             'img/noupload_' + size + '.png" alt="No image"' +
+                             'class="' + img_class + '">')
         return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
                          'img/nocover_' + size + '.png" alt="No image yet"' +
-                         'class="cover_img w-[200px]">')
+                         'class="' + img_class + '">')
 
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
         return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
                          'img/nocover_' + size + '.png" alt="No image yet"' +
-                         'class="cover_img w-[200px]">')
+                         'class="' + img_class + '">')
 
     if settings.FAKE_IMAGES:
         return mark_safe('<img src="' + settings.STATIC_URL +
                          'img/placeholder_' + size + '.jpg"' +
-                         'class="cover_img w-[200px]" "' + css_width + '>')
+                         'class="' + img_class + '">')
 
     img_url = cover.get_base_url()+("/w%d/%d.jpg" % (width, cover.id))
 
@@ -70,8 +79,7 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
     img_url = img_url + '?' + str(hash(cover.last_upload))
 
     return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) +
-                     '" ' + ' class="' + img_class + ' w-[200px]"' +
-                     css_width + '/>')
+                     '" ' + ' class="' + img_class + '">')
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
