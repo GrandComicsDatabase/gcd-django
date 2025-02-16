@@ -17,14 +17,14 @@
   {% endblock %}
   </div>
   <div class="flex justify-end"> <!-- editing -->
-    <div class="sm:pe-1 mt-2">
-      <div class="max-sm:hidden rounded flex bg-gcd text-white font-bold px-2 py-1">Editing</div>
-      <div class="sm:hidden bg-gcd h-7 px-1">
+    <div class="md:pe-1 mt-2">
+      <div class="max-md:hidden rounded flex bg-gcd text-white font-bold px-2 py-1">Editing</div>
+      <div class="md:hidden bg-gcd h-7 px-1">
         <button class="mobile-editing-menu-button">
             {% include "gcd/bits/tw_three_bars.html" %}
         </button>
       </div>
-      <div class="w-56 editing-menu max-sm:hidden max-sm:absolute overflow-hidden bg-white max-sm:right-0">
+      <div class="w-56 editing-menu max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0">
         {% block editing %}
         {% endblock %}    
         {% block change_history %}
@@ -72,7 +72,7 @@
         toggle.addEventListener("click", () => {
           // Find the next sibling element which is the dropdown menu
           document.querySelectorAll(".editing-menu").forEach((menu) => {
-              menu.classList.toggle("max-sm:hidden")
+              menu.classList.toggle("max-md:hidden")
           })
         })
       })
@@ -82,7 +82,7 @@
         if (!e.target.matches(".mobile-editing-menu-button") ) {
           document.querySelectorAll(".editing-menu").forEach((menu) => {
             if (!menu.contains(e.target)) {
-              menu.classList.add("max-sm:hidden")
+              menu.classList.add("max-md:hidden")
             }
           })
         }

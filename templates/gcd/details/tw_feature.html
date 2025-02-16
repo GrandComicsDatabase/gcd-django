@@ -59,8 +59,13 @@ GCD :: Feature :: {{ feature.name }}
               <td>{{ feature.notes|urlizetrunc:75|linebreaksbr }}</td>
             </tr>
 {% endif %}
+{% if feature.keywords %}
+            <tr>
+              <td>Keywords:</td>
+              <td>{{ feature.display_keywords }}</td>
+            </tr>
+{% endif %}
           </table>  
-          <p>{{ feature|show_credit:'keywords' }}</P>
           <ul class="list-disc sm:columns-2 list-outside ps-4">
             <li><a href='{% url "feature_creators" feature_id=feature.id %}'>Creator List</a></li>
             <li><a href='{% url "feature_creator_names" feature_id=feature.id %}'>Creator Name List</a></li>

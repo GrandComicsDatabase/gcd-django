@@ -92,6 +92,9 @@ class GcdData(GcdBase):
     def has_keywords(self):
         return self.keywords.exists()
 
+    def display_keywords(self):
+        return '; '.join([keyword.name for keyword in self.keywords.all()])
+
     def delete(self):
         self.deleted = True
         self.save()

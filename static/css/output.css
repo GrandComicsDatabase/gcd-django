@@ -1335,8 +1335,16 @@ html {
 }
 
 @media not all and (min-width: 768px) {
+  .max-md\:absolute {
+    position: absolute;
+  }
+
   .max-md\:right-0 {
     right: 0px;
+  }
+
+  .max-md\:hidden {
+    display: none;
   }
 }
 
@@ -1347,10 +1355,6 @@ html {
 
   .max-sm\:left-0 {
     left: 0px;
-  }
-
-  .max-sm\:right-0 {
-    right: 0px;
   }
 
   .max-sm\:float-left {
@@ -1444,10 +1448,6 @@ html {
     padding-right: 1rem;
   }
 
-  .sm\:pe-1 {
-    padding-inline-end: 0.25rem;
-  }
-
   .sm\:text-right {
     text-align: right;
   }
@@ -1462,6 +1462,10 @@ html {
     top: 0px;
   }
 
+  .md\:hidden {
+    display: none;
+  }
+
   .md\:w-\[200px\] {
     width: 200px;
   }
@@ -1473,6 +1477,10 @@ html {
 
   .md\:flex-col {
     flex-direction: column;
+  }
+
+  .md\:pe-1 {
+    padding-inline-end: 0.25rem;
   }
 }
 
