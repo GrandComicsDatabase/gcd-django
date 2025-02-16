@@ -1,0 +1,151 @@
+{% extends "gcd/tw_object_base.html" %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+GCD :: Feature :: {{ feature.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=feature %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top px-1">
+      <div class="w-[150px] sm:w-[200px] sm:min-w-[200px] mt-1">
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <table class="[&_:is(th,td):where(:nth-child(1),)]:align-top [&_:is(th,td):where(:nth-child(1),)]:text-right [&_:is(th,td):where(:nth-child(1),)]:font-bold">
+{% if feature.disambiguation %}
+            <tr>
+              <td>Disambiguation:</td>
+              <td>{{ feature.disambiguation }}</td>
+            </tr>
+{% endif %}
+{% if feature.genre %}
+            <tr>
+              <td>Genre:</td>
+              <td>{{ feature.genre }}</td>
+            </tr>
+{% endif %}
+{% if not feature.feature_type.id == 1 %}
+            <tr>
+              <td>Type:</td>
+              <td>{{ feature.feature_type }}</td>
+            </tr>
+{% endif %}
+{% if feature.year_created %}
+            <tr>
+              <td>Created in:</td>
+              <td>{{ feature.display_year_created }}</td>
+            </tr>
+{% endif %}
+{% if feature.notes %}
+            <tr>
+              <td>Notes:</td>
+              <td>{{ feature.notes|urlizetrunc:75|linebreaksbr }}</td>
+            </tr>
+{% endif %}
+          </table>  
+          <p>{{ feature|show_credit:'keywords' }}</P>
+          <ul class="list-disc sm:columns-2 list-inside">
+            <li><a href='{% url "feature_creators" feature_id=feature.id %}'>Creator List</a></li>
+            <li><a href='{% url "feature_creator_names" feature_id=feature.id %}'>Creator Name List</a></li>
+            <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue List</a></li>
+{% if feature.feature_type.id == 1%}
+            <li><a href='{% url "feature_overview" feature_id=feature.id %}'>Issue Overview </a></li>
+{% endif %}
+            <li><a href='{% url "feature_covers" feature_id=feature.id %}'>Cover List</a></li>
+            <li><a href='{% url "feature_characters" feature_id=feature.id %}'>Character List</a></li>
+            <li><a href='{% url "feature_sequences" feature_id=feature.id %}'>Sequences List</a></li>
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block editing %}
+  {% with object=feature object_class='feature' object_name='feature' %}
+    {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if request.user.is_authenticated %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_feature_logo' feature_id=feature.id %}">
+    Add Feature Logo</a></btn>
+  {% endif %}
+  {% if request.user.is_authenticated %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_feature_relation' feature_id=feature.id %}">
+    Add Feature Relation</a></btn>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% if page.object_list.count %}
+  <hr>
+    {% if feature.feature_type.id == 1 %}
+  <h2> Feature Logos</h2>
+    {%  else %}
+  <h2> {{ feature.feature_type.name|title }} Logos</h2>
+    {% endif %}
+  <div class="px-0 lg:px-1">
+    {% render_table table %}
+  </div>
+  {% endif %}
+
+  {% if feature.from_related_feature.count or feature.to_related_feature.count %}
+  <hr>
+  <h2> Feature Relations </h2>
+  <ol class="ms-2 list-disc sm:columns-2 px-6 list-outside [&>li]:pr-4">
+    {% for relation in feature.from_related_feature.all %}
+    <li class="break-inside-avoid-column">
+      <a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.reverse_description }}</a>:
+        {{ relation.from_feature|absolute_url }}
+    </li>
+    {% endfor %}
+    {% if feature.other_translations %}
+      {% for relation in feature.other_translations %}
+      <li class="break-inside-avoid-column">
+        other {{ feature.language }} translation: {{ relation.to_feature|absolute_url }}
+      </li>
+    {% endfor %}
+    {% endif  %}
+    {% for relation in feature.to_related_feature.all %}
+    <li class="break-inside-avoid-column">
+      <a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.description }}</a>:
+        {{ relation.to_feature|absolute_url }}
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+{% endblock content %}
+
+{% block www_my_comics_cross_link %}
+  {% url "show_feature" feature_id=feature.id as object_url %}
+  {% with model_name='Feature' object_url=object_url %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block change_history %}
+  {% with model_name='feature' object=feature %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
+
+{% block listing %}
+{% endblock listing %}
+

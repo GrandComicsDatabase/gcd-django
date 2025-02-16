@@ -6,7 +6,7 @@
 <table class="border" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %} >
     {% block table.thead %}
     {% if table.show_header %}
-    <thead class="bg-blue-100 md:sticky md:top-0">
+    <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
         <tr class="flex flex-col sm:table-row">
         {% if table.context.select_key %}
         <th> Selection </th>
@@ -73,8 +73,10 @@
     {% endblock table.tfoot %}
 </table>
 {% endblock table %}
+{% if not table.no_export %}
 <p>Download the shown data as <a href="{% export_url "csv" %}"><code>.csv</code></a> or <a href="{% export_url "json" %}"><code>.json</code></a>.<br>
-{% if not table.no_raw_export %}
+  {% if not table.no_raw_export %}
 Download the raw database fields for the shown objects as <a href="{% export_url "db_csv" %}"><code>.csv</code></a> or <a href="{% export_url "db_json" %}"><code>.json</code></a>. Technical note, this download does include only the IDs of foreign keys and contains no many-to-many relationships.  </p>
+  {% endif %}
 {% endif %}
 </div>

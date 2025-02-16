@@ -60,7 +60,9 @@ from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       SeriesCharacterTable, \
                                       FeatureCharacterTable, \
                                       CharacterCharacterTable
-from apps.gcd.models.feature import CreatorFeatureTable, CharacterFeatureTable
+from apps.gcd.models.feature import CreatorFeatureTable, \
+                                    CharacterFeatureTable, \
+                                    FeatureLogoTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   BrandEmblemIssueTable, \
                                   IndiciaPublisherIssueTable, \
@@ -3143,16 +3145,35 @@ def feature(request, feature_id):
 
 
 def show_feature(request, feature, preview=False):
-    logos = feature.active_logos().order_by(
-      'year_began', 'name')
+    logos = feature.active_logos()
+    table = FeatureLogoTable(logos,
+                             template_name=TW_SORT_TABLE_TEMPLATE)
+    table.no_export = True
+    table.not_sticky = True
 
-    vars = {'feature': feature,
-            'error_subject': '%s' % feature,
-            'preview': preview}
-    return paginate_response(request,
-                             logos,
-                             'gcd/details/feature.html',
-                             vars)
+    issues = Issue.objects.filter(story__feature_object=feature,
+                                  story__type__id=6,
+                                  story__credits__deleted=False,
+                                  cover__isnull=False,
+                                  cover__deleted=False).distinct()
+
+    if issues:
+        selected_issue = issues[randint(0, issues.count()-1)]
+        image_tag = get_image_tag(cover=selected_issue.cover_set.first(),
+                                  zoom_level=ZOOM_MEDIUM,
+                                  alt_text='Random Cover from Feature')
+    else:
+        image_tag = ''
+        selected_issue = None
+
+    context = {'feature': feature,
+               'table': table,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
+               'error_subject': '%s' % feature,
+               'preview': preview}
+    return generic_sortable_list(request, logos, table,
+                                 'gcd/details/tw_feature.html', context)
 
 
 def feature_sequences(request, feature_id, country=None):

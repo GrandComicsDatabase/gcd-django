@@ -1380,8 +1380,16 @@ html {
     width: 150px;
   }
 
+  .sm\:w-\[200px\] {
+    width: 200px;
+  }
+
   .sm\:min-w-\[150px\] {
     min-width: 150px;
+  }
+
+  .sm\:min-w-\[200px\] {
+    min-width: 200px;
   }
 
   .sm\:columns-2 {
@@ -1428,6 +1436,11 @@ html {
 
   .md\:top-0 {
     top: 0px;
+  }
+
+  .md\:columns-2 {
+    -moz-columns: 2;
+         columns: 2;
   }
 
   .md\:flex-col {

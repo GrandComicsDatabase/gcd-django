@@ -12,6 +12,7 @@
     {{ block.super }}
   {% endwith %}
 {% endblock %}
+
 {% block content_left %}
 <table>
   <tr>
@@ -60,14 +61,14 @@
 
           </ul>
           via credit search for "{{ creator.gcd_official_name }}"
-          <ul class="list-disc columns-2 list-inside">
+          <ul class="list-disc sm:columns-2 list-inside">
             <li><a href='{% url "creator_migrate_checklist" creator=creator.gcd_official_name %}'>Issues to be Migrated</a></li>
             <li class="break-inside-avoid-column"><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue List</a></li>
             <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD</a></li>
           </ul>
       {% if creator.whos_who or creator.external_link.count %}
           external links
-          <ul class="list-disc columns-2 list-inside">
+          <ul class="list-disc md:columns-2 list-inside">
             {% if creator.whos_who %}
             <li><a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a></li>
       {% endif %}
@@ -134,60 +135,45 @@
 {% endblock content_left %}
 
 {% block editing %}
+  {% with object=creator object_class='creator' object_name='creator' %}
+    {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
   {% if not preview %}
-    {% with creator as object %}
-      {% with 'creator' as object_class %}
-        {% with 'creator' as object_name %}
-          {% include "gcd/bits/tw_status_banner.html" %}
-        {% endwith %}
-      {% endwith %}
-    {% endwith %}
     {% if user.is_authenticated and not creator.pending_deletion %}
       <btn class="btn btn-blue-editing"><a href="{% url "add_creator_art_influence" creator.id %}">
-      Add Art Influence</btn>
-      </a>
+      Add Art Influence</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "add_creator_award" creator.id %}">
-      Add Award</btn>
-      </a>
+      Add Award</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "add_creator_membership" creator.id %}">
-      Add Membership</btn>
-      </a>
+      Add Membership</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "add_creator_non_comic_work" creator.id %}">
-      Add Non Comic Work</btn>
-      </a>
+      Add Non Comic Work</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "add_creator_relation" creator.id %}">
-      Add Relation</btn>
-      </a>
+      Add Relation</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "add_creator_school" creator.id %}">
-      Add School</btn>
-      </a>
+      Add School</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "add_creator_degree" creator.id %}">
-      Add School Degree</btn>
-      </a>
+      Add School Degree</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "add_creator_signature" creator.id %}">
-      Add Signature</btn>
-      </a>
+      Add Signature</a></btn>
     {% endif %}
     {% if creator.portrait %}
       {% if creator.portrait.reserved %}
       <div style='padding:.4em' class="index_status_1">
-        Creator portrait changes pending
+        Creator portrait _s pending
       </div>
       {% else %}
         {% if user.is_authenticated %}
       <btn class="btn btn-blue-editing"><a href="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.portrait.id %}">
-      Replace Portrait Image</btn>
-      </a>
+      Replace Portrait Image</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "delete_revision" model_name='image' id=creator.portrait.id %}">
-      Delete Portrait Image</btn>
-      </a>
+      Delete Portrait Image</a></btn>
         {% endif %}
       {% endif %}
     {% else %}
       {% if user.is_authenticated %}
       <btn class="btn btn-blue-editing"><a href="{% url "upload_image" model_name='creator' id=creator.id image_type='CreatorPortrait' %}">
-      Add Portrait Image</btn>
-      </a>
+      Add Portrait Image</a></btn>
       {% endif %}
     {% endif %}
     {% if creator.samplescan %}
@@ -198,18 +184,15 @@
     {% else %}
       {% if user.is_authenticated %}
         <btn class="btn btn-blue-editing"><a href="{% url "replace_image" model_name='creator' id=creator.id image_id=creator.samplescan.id %}">
-        Replace Sample Scan Image</btn>
-      </a>
+        Replace Sample Scan Image</a></btn>
       <btn class="btn btn-blue-editing"><a href="{% url "delete_revision" model_name='image' id=creator.samplescan.id %}">
-      Delete Sample Scan Image</btn>
-      </a>
+      Delete Sample Scan Image</a></btn>
       {% endif %}
     {% endif %}
   {% else %}
     {% if user.is_authenticated %}
       <btn class="btn btn-blue-editing"><a href="{% url "upload_image" model_name='creator' id=creator.id image_type='SampleScan' %}">
-      Add Sample Scan Image</btn>
-      </a>
+      Add Sample Scan Image</a></btn>
     {% endif %}
   {% endif %}
 {% endif %} <!-- not preview -->
@@ -219,21 +202,22 @@
             <div>my.comics.org</div>
           </div>
   {% else %}
-  {% endif %} <!-- MYCOMCIS -->
-        <div class="mt-1 bg-gcd font-bold px-2 py-1 text-center rounded hover:bg-blue-700">
-          <a class="text-white visited:text-white" href="{% url "change_history" model_name='creator' id=creator.id %}">View Change History</a>
-        </div>
-  {% if MYCOMICS %}
-        <div class="bg-gcd mt-1 font-bold px-2 py-1 text-center rounded">
-          <a class="text-white visited:text-white" href="http://www.comics.org{% url "show_creator" creator_id=creator.id %}">Creator at www.comics.org</a>
-        </div>
-  {% else %}
-        <div class="bg-my-comics mt-1 font-bold px-2 py-1 text-center rounded">
-          <a class="text-white visited:text-white" href="http://my.comics.org{% url "show_creator" creator_id=creator.id %}">Creator at my.comics.org</a>
-        </div>
-  {% endif %}
+  {% endif %} <!-- MYCOMICS -->
 {% endif %}
 {% endblock editing %}
+
+{% block www_my_comics_cross_link %}
+  {% url "show_creator" creator_id=creator.id as object_url %}
+  {% with model_name='Creator' object_url=object_url %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block change_history %}
+  {% with model_name='creator' object=creator %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
 
 {% block content %}
 <div class="px-2">

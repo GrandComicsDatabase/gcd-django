@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.db.models import F
 from django.contrib.contenttypes.models import ContentType
@@ -46,7 +47,7 @@ class FeatureType(models.Model):
 class Feature(GcdData):
     class Meta:
         app_label = 'gcd'
-        ordering = ('sort_name',)
+        ordering = ('sort_name', 'language__name')
         db_table = 'gcd_feature'
 
     name = models.CharField(max_length=255, db_index=True)
@@ -295,6 +296,27 @@ class FeatureSearchTable(FeatureTable):
                                                   record.issue_count))
 
     def value_issue_count(self, value):
+        return value
+
+
+class FeatureLogoTable(tables.Table):
+    logo = tables.Column(orderable=False)
+    name = tables.Column(accessor='name')
+    year_began = tables.Column()
+    year_ended = tables.Column()
+
+    def render_logo(self, record):
+        if record.logo:
+            return mark_safe('<a href="%s"><img src="%s"></a>' %
+                             (record.get_absolute_url(),
+                              record.logo.thumbnail.url))
+
+    def render_name(self, record):
+        name_link = '<a href="%s">%s</a>' % (record.get_absolute_url(),
+                                             esc(record.name))
+        return mark_safe(name_link)
+
+    def value_feature(self, value):
         return value
 
 
