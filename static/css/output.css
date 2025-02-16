@@ -1416,10 +1416,6 @@ html {
     min-width: 150px;
   }
 
-  .sm\:min-w-\[200px\] {
-    min-width: 200px;
-  }
-
   .sm\:columns-2 {
     -moz-columns: 2;
          columns: 2;
