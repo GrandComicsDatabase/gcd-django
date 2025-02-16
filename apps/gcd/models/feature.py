@@ -304,9 +304,13 @@ class FeatureLogoTable(tables.Table):
     name = tables.Column(accessor='name')
     year_began = tables.Column()
     year_ended = tables.Column()
+    issue_count = tables.Column(verbose_name='Issues',
+                                initial_sort_descending=True,
+                                attrs={'td': {'class':
+                                              TW_COLUMN_ALIGN_RIGHT}})
 
     def render_logo(self, record):
-        if record.logo:
+        if not settings.FAKE_IMAGES and record.logo:
             return mark_safe('<a href="%s"><img src="%s"></a>' %
                              (record.get_absolute_url(),
                               record.logo.thumbnail.url))

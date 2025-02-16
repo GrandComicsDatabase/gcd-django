@@ -3145,7 +3145,9 @@ def feature(request, feature_id):
 
 
 def show_feature(request, feature, preview=False):
-    logos = feature.active_logos()
+    logos = feature.active_logos().annotate(
+      issue_count=Count('story__issue', distinct=True))
+
     table = FeatureLogoTable(logos,
                              template_name=TW_SORT_TABLE_TEMPLATE,
                              order_by=('year_began'))

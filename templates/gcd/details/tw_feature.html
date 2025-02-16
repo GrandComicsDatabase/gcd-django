@@ -94,6 +94,7 @@ GCD :: Feature :: {{ feature.name }}
 {% endblock %}
 
 {% block content %}
+<div class="px-2">
   {% if page.object_list.count %}
   <hr>
     {% if feature.feature_type.id == 1 %}
@@ -101,7 +102,7 @@ GCD :: Feature :: {{ feature.name }}
     {%  else %}
   <h2> {{ feature.feature_type.name|title }} Logos</h2>
     {% endif %}
-  <div class="px-0 lg:px-1">
+  <div>
     {% render_table table %}
   </div>
   {% endif %}
@@ -131,6 +132,7 @@ GCD :: Feature :: {{ feature.name }}
     {% endfor %}
   </ol>
   {% endif %}
+</div>
 {% endblock content %}
 
 {% block www_my_comics_cross_link %}
