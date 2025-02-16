@@ -17,7 +17,7 @@ GCD :: Feature :: {{ feature.name }}
 {% block content_left %}
 <table>
   <tr>
-    <td class="align-top px-1">
+    <td class="align-top">
       <div class="w-[150px] md:w-[200px] mt-1">
         <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
         <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
@@ -53,12 +53,6 @@ GCD :: Feature :: {{ feature.name }}
               <td>{{ feature.display_year_created }}</td>
             </tr>
 {% endif %}
-{% if feature.notes %}
-            <tr>
-              <td>Notes:</td>
-              <td>{{ feature.notes|urlizetrunc:75|linebreaksbr }}</td>
-            </tr>
-{% endif %}
 {% if feature.keywords %}
             <tr>
               <td>Keywords:</td>
@@ -82,6 +76,10 @@ GCD :: Feature :: {{ feature.name }}
     </td>
   </tr> 
 </table>
+{% if feature.notes %}
+<span class="font-bold">Notes:</span>
+{{ feature.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
 {% endblock %}
 
 {% block editing %}
@@ -99,45 +97,43 @@ GCD :: Feature :: {{ feature.name }}
 {% endblock %}
 
 {% block content %}
-<div class="px-2">
-  {% if page.object_list.count %}
-  <hr>
-    {% if feature.feature_type.id == 1 %}
-  <h2> Feature Logos</h2>
-    {%  else %}
-  <h2> {{ feature.feature_type.name|title }} Logos</h2>
-    {% endif %}
-  <div>
-    {% render_table table %}
-  </div>
+{% if page.object_list.count %}
+<hr>
+  {% if feature.feature_type.id == 1 %}
+<h2> Feature Logos</h2>
+  {%  else %}
+<h2> {{ feature.feature_type.name|title }} Logos</h2>
   {% endif %}
-
-  {% if feature.from_related_feature.count or feature.to_related_feature.count %}
-  <hr>
-  <h2> Feature Relations </h2>
-  <ol class="ms-2 list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
-    {% for relation in feature.from_related_feature.all %}
-    <li class="break-inside-avoid-column">
-      <a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.reverse_description }}</a>:
-        {{ relation.from_feature|absolute_url }}
-    </li>
-    {% endfor %}
-    {% if feature.other_translations %}
-      {% for relation in feature.other_translations %}
-      <li class="break-inside-avoid-column">
-        other {{ feature.language }} translation: {{ relation.to_feature|absolute_url }}
-      </li>
-    {% endfor %}
-    {% endif  %}
-    {% for relation in feature.to_related_feature.all %}
-    <li class="break-inside-avoid-column">
-      <a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.description }}</a>:
-        {{ relation.to_feature|absolute_url }}
-    </li>
-    {% endfor %}
-  </ol>
-  {% endif %}
+<div>
+  {% render_table table %}
 </div>
+{% endif %}
+
+{% if feature.from_related_feature.count or feature.to_related_feature.count %}
+<hr>
+<h2> Feature Relations </h2>
+<ol class="ms-2 list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
+  {% for relation in feature.from_related_feature.all %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.reverse_description }}</a>:
+      {{ relation.from_feature|absolute_url }}
+  </li>
+  {% endfor %}
+  {% if feature.other_translations %}
+    {% for relation in feature.other_translations %}
+    <li class="break-inside-avoid-column">
+      other {{ feature.language }} translation: {{ relation.to_feature|absolute_url }}
+    </li>
+  {% endfor %}
+  {% endif  %}
+  {% for relation in feature.to_related_feature.all %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.description }}</a>:
+      {{ relation.to_feature|absolute_url }}
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
 {% endblock content %}
 
 {% block www_my_comics_cross_link %}

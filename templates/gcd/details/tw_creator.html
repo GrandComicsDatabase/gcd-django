@@ -85,7 +85,7 @@
   </tr>
 </table>
   <!-- Creator's Names -->
- <div class="px-2"> 
+<div>
   <h3>Name:</h3>
   <ul class="ms-2 list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
     <li>
@@ -220,8 +220,6 @@
 {% endblock change_history %}
 
 {% block content %}
-<div class="px-2">
-
 <!--Creator's Signatures-->
 {% if creator.active_signatures %}
   <hr>
@@ -458,5 +456,4 @@ Influences by {{ creator }} were stated by:
 {% endfor %}
   </ol>
 {% endif %}
-</div>
 {% endblock content %}

@@ -11,7 +11,7 @@
     {{ object }}
 </h1>
   {% endblock %}
-<div class="flex">
+<div class="flex px-1 md:px-2">
   <div class="flex-1 items-start"> <!-- content -->
   {% block content_left %}
   {% endblock %}
@@ -60,8 +60,10 @@
     </div>  
   </div>
 </div>
+<div class="px-1 md:px-2">
   {% block content %}
   {% endblock %}
+</div>
 
   {% block js %}
 <script type="text/javascript">

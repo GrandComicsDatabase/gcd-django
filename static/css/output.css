@@ -1479,6 +1479,11 @@ html {
     flex-direction: column;
   }
 
+  .md\:px-2 {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
   .md\:pe-1 {
     padding-inline-end: 0.25rem;
   }
