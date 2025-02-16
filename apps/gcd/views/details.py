@@ -3147,7 +3147,8 @@ def feature(request, feature_id):
 def show_feature(request, feature, preview=False):
     logos = feature.active_logos()
     table = FeatureLogoTable(logos,
-                             template_name=TW_SORT_TABLE_TEMPLATE)
+                             template_name=TW_SORT_TABLE_TEMPLATE,
+                             order_by=('year_began'))
     table.no_export = True
     table.not_sticky = True
 
