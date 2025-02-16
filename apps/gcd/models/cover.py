@@ -203,6 +203,7 @@ class OnSaleCoverIssueTable(CoverIssuePublisherEditTable):
         model = Cover
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'edit_cover')
+        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
 
     def render_issue(self, value):
         return mark_safe('<a href="%s">%s</a>' % (value.get_absolute_url(),
@@ -216,6 +217,7 @@ class CoverSeriesTable(CoverIssuePublisherEditTable):
         model = Cover
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'edit_cover')
+        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
 
     def render_issue(self, value):
         return mark_safe('<a href="%s">%s</a>' % (value.get_absolute_url(),
