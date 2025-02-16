@@ -1376,6 +1376,10 @@ html {
     height: 2rem;
   }
 
+  .sm\:w-24 {
+    width: 6rem;
+  }
+
   .sm\:w-\[150px\] {
     width: 150px;
   }
