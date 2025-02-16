@@ -1538,10 +1538,6 @@ html {
   padding-right: 1rem;
 }
 
-.\[\&\>li\]\:pr-2>li {
-  padding-right: 0.5rem;
-}
-
 .\[\&_\:is\(th\2c td\)\:where\(\:nth-child\(1\)\2c \)\]\:text-right :is(th,td):where(:nth-child(1),) {
   text-align: right;
 }

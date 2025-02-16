@@ -35,18 +35,6 @@
               <td>{{ creator.display_deathday }} in {{ creator.display_deathplace }}</td>
             </tr>
             {% endif %}
-            {% if creator.bio %}
-            <tr>
-              <td>Biography:</td>
-              <td>{{ creator.bio|linebreaksbr }}</td>
-            </tr>
-            {% endif %}
-            {% if creator.notes %}
-            <tr>
-              <td>Notes:</td>
-              <td>{{ creator.notes|urlizetrunc:75|linebreaksbr }}</td>
-            </tr>
-            {% endif %}
           </table> <!-- content table -->
           <ul class="list-disc columns-2 list-outside ps-4">
             <li><a href='{% url "creator_issues" creator_id=creator.id %}'>Issue List</a></li>
@@ -84,7 +72,16 @@
     </td>
   </tr>
 </table>
-  <!-- Creator's Names -->
+{% if creator.bio %}
+<div class="mt-2 font-bold">Biography:</div>
+{{ creator.bio|linebreaksbr }}
+{% endif %}
+{% if creator.notes %}
+<div class="mt-2 font-bold">Notes:</div>
+{{ creator.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+
+<!-- Creator's Names -->
 <div>
   <h3>Name:</h3>
   <ul class="ms-2 list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
