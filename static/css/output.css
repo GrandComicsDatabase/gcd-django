@@ -576,6 +576,12 @@ a:hover {
   width: 100%;
 }
 
+@media (min-width: 480px) {
+  .container {
+    max-width: 480px;
+  }
+}
+
 @media (min-width: 640px) {
   .container {
     max-width: 640px;
@@ -1374,6 +1380,12 @@ html {
 
   .max-sm\:odd\:clear-left:nth-child(odd) {
     clear: left;
+  }
+}
+
+@media (min-width: 480px) {
+  .xs\:w-\[200px\] {
+    width: 200px;
   }
 }
 

@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 const colors = require('tailwindcss/colors')
+
 module.exports = {
   content: ['./templates/*.html', './templates/**/*.html', './templates/**/**/*.html'],
   theme: {
@@ -15,7 +16,9 @@ module.exports = {
         'preview': '#FFE944',
         'visited-gcd': '#551A8B',
       },
+      screens: {
+        'xs': '480px',
+      },
     },
   },
 }
-
