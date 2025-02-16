@@ -846,10 +846,6 @@ a:hover {
   border-collapse: collapse;
 }
 
-.list-inside {
-  list-style-position: inside;
-}
-
 .list-outside {
   list-style-position: outside;
 }
@@ -1080,6 +1076,10 @@ a:hover {
 
 .ps-1 {
   padding-inline-start: 0.25rem;
+}
+
+.ps-4 {
+  padding-inline-start: 1rem;
 }
 
 .text-left {

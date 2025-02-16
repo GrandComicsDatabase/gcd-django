@@ -48,7 +48,7 @@
             </tr>
             {% endif %}
           </table> <!-- content table -->
-          <ul class="list-disc columns-2 list-inside">
+          <ul class="list-disc columns-2 list-outside ps-4">
             <li><a href='{% url "creator_issues" creator_id=creator.id %}'>Issue List</a></li>
             <li><a href='{% url "creator_overview" creator_id=creator.id %}'>Issue Overview</a></li>
             <li><a href='{% url "creator_edited_issues" creator_id=creator.id %}'>Issue Edit List</a></li>
@@ -61,14 +61,14 @@
 
           </ul>
           via credit search for "{{ creator.gcd_official_name }}"
-          <ul class="list-disc sm:columns-2 list-inside">
+          <ul class="list-disc sm:columns-2 list-outside ps-4">
             <li><a href='{% url "creator_migrate_checklist" creator=creator.gcd_official_name %}'>Issues to be Migrated</a></li>
             <li class="break-inside-avoid-column"><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue List</a></li>
             <li><a href='{% url "haystack_search" %}?q="{{ creator.gcd_official_name }}"&selected_facets=facet_model_name_exact:story&sort=chrono'>Story Credits in the GCD</a></li>
           </ul>
       {% if creator.whos_who or creator.external_link.count %}
           external links
-          <ul class="list-disc md:columns-2 list-inside">
+          <ul class="list-disc md:columns-2 list-outside ps-4">
             {% if creator.whos_who %}
             <li><a href="{{ creator.whos_who }}">Who's Who of American Comic Books</a></li>
       {% endif %}
@@ -87,7 +87,7 @@
   <!-- Creator's Names -->
  <div class="px-2"> 
   <h3>Name:</h3>
-  <ul class="ms-2 list-disc sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ul class="ms-2 list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
     <li>
       <a href="{% url 'creator_name_sequences' creator_id=gcd_name.id %}">{{ gcd_name.name }}</a>
     </li>
@@ -110,7 +110,7 @@
   </ul>
 {% if other_names %}
   <h3>Other Names:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for creator_name in other_names %}
     <li class="break-inside-avoid-column">
       <a href="{% url 'creator_name_sequences' creator_id=creator_name.id %}">{{ creator_name.name }}</a>
@@ -226,7 +226,7 @@
 {% if creator.active_signatures %}
   <hr>
   <h3>Signatures:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for signature in creator.active_signatures %}
     <li class="break-inside-avoid-column"><a href="{{ signature.get_absolute_url }}">{{ signature.name }}</a>
 {% if signature.signature and not FAKE_IMAGES %}
@@ -261,7 +261,7 @@
 {% if creator.active_awards %}
   <hr>
   <h3>Awards:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for award in creator.active_awards %}
     <li class="break-inside-avoid-column">
 {% if award.award_year %}
@@ -279,7 +279,7 @@
 {% if creator.active_awards_for_issues %}
   <hr>
   <h3>Awards for Issues:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for award in creator.active_awards_for_issues %}
     <li class="break-inside-avoid-column">
 {% if award.award_year %}
@@ -297,7 +297,7 @@
 {% if creator.active_awards_for_stories %}
   <hr>
   <h3>Awards for Stories:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for award in creator.active_awards_for_stories %}
     <li class="break-inside-avoid-column">
 {% if award.award_year %}
@@ -317,7 +317,7 @@
 {% if creator.active_relations %}
   <hr>
   <h3>Relations:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
   {% for relation in creator.active_relations %}
     {% with relation_info=relation|pre_process_relation:creator %}
     <li class="break-inside-avoid-column">
@@ -341,7 +341,7 @@
 {% if creator.active_schools %}
   <hr>
   <h3>Schools:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for school in creator.active_schools %}
     <li>
       <p><a href="{{ school.get_absolute_url }}">{{ school.school }}</a>
@@ -370,7 +370,7 @@
 {% if creator.active_degrees %}
   <hr>
   <h3>Degrees:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for degree in creator.active_degrees %}
     <li>
       <p><a href="{{ degree.get_absolute_url }}">{{ degree.degree }}, {{ degree.school.school_name }}</a>
@@ -391,7 +391,7 @@ in {{ degree.degree_year }}{% if degree.degree_year_uncertain %}?{% endif %}
   <h3>Art Influences:</h3>
 {% if creator.active_art_influences %}
 {{ creator }} stated influences by:
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for influence in creator.active_art_influences %}
     <li>
       <a href="{{ influence.get_absolute_url }}">{% if influence.influence_link %}{{ influence.influence_link }}{% else %}{{ influence.influence_name }}{% endif %}</a>
@@ -401,7 +401,7 @@ in {{ degree.degree_year }}{% if degree.degree_year_uncertain %}?{% endif %}
 {% endif %}
 {% if creator.active_influenced_creators %}
 Influences by {{ creator }} were stated by:
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for influence in creator.active_influenced_creators %}
     <li>
       <a href="{{ influence.get_absolute_url }}">{{ influence.creator }}</a>
@@ -415,7 +415,7 @@ Influences by {{ creator }} were stated by:
 {% if creator.active_memberships %}
   <hr>
   <h3>Memberships:</h3>
-  <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for membership in creator.active_memberships %}
     <li>
       <p><a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
@@ -436,7 +436,7 @@ Influences by {{ creator }} were stated by:
 {% if creator.active_non_comic_works %}
   <hr>
   <h3>Non Comics Works:</h3>
-    <ol class="ms-2 list-decimal sm:columns-2 px-6 list-outside [&>li]:pr-4">
+    <ol class="ms-2 list-decimal sm:columns-2 list-outside ps-4 [&>li]:pr-4">
 {% for ncw in creator.active_non_comic_works %}
     <li class="break-inside-avoid-column">
       <p><strong>Publication Title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>

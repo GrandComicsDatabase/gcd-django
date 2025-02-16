@@ -61,7 +61,7 @@ GCD :: Feature :: {{ feature.name }}
 {% endif %}
           </table>  
           <p>{{ feature|show_credit:'keywords' }}</P>
-          <ul class="list-disc sm:columns-2 list-inside">
+          <ul class="list-disc sm:columns-2 list-outside ps-4">
             <li><a href='{% url "feature_creators" feature_id=feature.id %}'>Creator List</a></li>
             <li><a href='{% url "feature_creator_names" feature_id=feature.id %}'>Creator Name List</a></li>
             <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue List</a></li>
@@ -110,7 +110,7 @@ GCD :: Feature :: {{ feature.name }}
   {% if feature.from_related_feature.count or feature.to_related_feature.count %}
   <hr>
   <h2> Feature Relations </h2>
-  <ol class="ms-2 list-disc sm:columns-2 px-6 list-outside [&>li]:pr-4">
+  <ol class="ms-2 list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
     {% for relation in feature.from_related_feature.all %}
     <li class="break-inside-avoid-column">
       <a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.reverse_description }}</a>:
