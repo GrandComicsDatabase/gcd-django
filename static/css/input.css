@@ -58,3 +58,21 @@ html {
 .btn-blue-disabled {
   @apply font-normal bg-blue-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
 }
+
+@layer components {
+  .object-page-numbered-list {
+    @apply ms-2 list-decimal sm:columns-2 list-outside ps-4;
+    li {
+      @apply pr-4;
+    }
+  }
+}
+
+@layer components {
+  .object-page-link-list {
+    @apply list-disc sm:columns-2 list-outside ps-4;
+    li {
+      @apply pr-2;
+    }
+  }
+}

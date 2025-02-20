@@ -528,8 +528,8 @@ def short_pub_type(publication_type):
 
 
 @register.filter
-def pre_process_relation(relation, creator):
-    return relation.pre_process_relation(creator)
+def pre_process_relation(relation, object):
+    return relation.pre_process_relation(object)
 
 
 @register.filter
@@ -539,6 +539,20 @@ def character_for_universe(character, universe):
         to_character = character.active_specifications()\
           .get(to_character__universe=universe).to_character
         return mark_safe(absolute_url(to_character,
-                                      descriptor=to_character.descriptor()))
+                                      descriptor=to_character.descriptor(
+                                        disambiguation=False)))
+    else:
+        return ''
+
+
+@register.filter
+def group_for_universe(group, universe):
+    if group.active_specifications().filter(
+       to_group__universe=universe).count() == 1:
+        to_group = group.active_specifications()\
+          .get(to_group__universe=universe).to_group
+        return mark_safe(absolute_url(to_group,
+                                      descriptor=to_group.descriptor(
+                                        disambiguation=False)))
     else:
         return ''

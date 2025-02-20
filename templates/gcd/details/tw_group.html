@@ -1,0 +1,238 @@
+{% extends "gcd/tw_object_base.html" %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+GCD :: Group :: {{ group.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=group %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[150px] md:w-[200px] mt-1">
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <table class="[&_:is(th,td):where(:nth-child(1),)]:align-top [&_:is(th,td):where(:nth-child(1),)]:text-right [&_:is(th,td):where(:nth-child(1),)]:font-bold">
+{% if group.disambiguation %}
+            <tr>
+              <td>Disambiguation:</td>
+              <td>{{ group.disambiguation }}</td>
+            </tr>
+{% endif %}
+{% if group.universe %}
+            <tr>
+              <td>Universe:</td>
+              <td>{{ group.universe|absolute_url }}</td>
+            </tr>
+{% endif %}
+{% if group.year_first_published %}
+            <tr>
+              <td class="sm:w-24">Created in:</td>
+              <td>{{ group.display_year_first_published }}</td>
+            </tr>
+{% endif %}
+{% if group.has_keywords %}
+            <tr>
+              <td>Keywords:</td>
+              <td>{{ group.display_keywords }}</td>
+            </tr>
+{% endif %}
+          </table>  
+          <ul class="object-page-link-list">
+            <li><a href='{% url "group_creators" group_id=group.id %}'>Creator List</a></li>
+            <li><a href='{% url "group_creator_names" group_id=group.id %}'>Creator Name List</a></li>
+            <li><a href='{% url "group_issues" group_id=group.id %}'>Issue List</a></li>
+            <li><a href='{% url "group_covers" group_id=group.id %}'>Cover List</a></li>
+            <li><a href='{% url "group_series" group_id=group.id %}'>Series List</a></li>
+            <li><a href='{% url "group_features" group_id=group.id %}'>Feature List</a></li>
+            <li><a href='{% url "group_sequences" group_id=group.id %}'>Sequences List</a></li>
+          </ul>
+      external links
+      {% if group.external_link.count %}
+          <ul class="list-disc md:columns-2 list-outside ps-4">
+        {% for external_link in group.external_link.all %}
+            <li><a href="{{ external_link.link }}">{{ external_link.site }}</a></li>
+        {% endfor %}
+          </ul>
+      {% endif %}
+        <h3>Name:</h3>
+          <ol class="ps-4">
+            <a href='{% url "group_name_issues" group_name_id=group.official_name.id %}'>{{ group.official_name.name }}</a>
+          </ol>
+      {% if additional_names %}
+        <h3>Additional Names:</h3>
+          <ol class="list-decimal sm:columns-2 list-outside ps-8 [&>li]:pr-4">
+        {% for name in additional_names %}
+            <li style="page-break-inside: avoid;">
+              <a href='{% url "group_name_issues" group_name_id=name.id %}'>{{ name.name }}</a>
+            </li>
+        {% endfor %}
+          </ol>
+      {% endif %}
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% if group.description %}
+<h3 class="mt-2">Description:</h3>
+{{ group.description|markdown }}
+{% endif %}
+{% if group.notes %}
+<h3 class="mt-2">Notes:</h3>
+{{ group.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+{% endblock %}
+
+{% block editing %}
+  {% with object=group object_class='group' object_name='group' %}
+    {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if request.user.is_authenticated %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_group_relation' group_id=group.id %}">
+    Add Group Relation</a></btn>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if group.active_universe_origins %}
+<hr>
+<h3>Appearances With a Group Origin Universe:</h3>
+<table>
+  <tr>
+    <td class="px-2">&bull;</td>
+    <td>
+      <a href='{% url "group_issues_per_universe" group_id=group.id universe_id=-1 %}'>without a universe</a>
+    </td>
+  </tr>
+  {% for universe in group.active_universe_origins %}
+  <tr>
+    <td class="px-2">&bull;</td>
+    <td class="pr-4">
+      <a href='{% url "group_issues_per_universe" group_id=group.id universe_id=universe.id %}'>{{ universe }}</a>
+    </td>
+    <td>{{ group|group_for_universe:universe.id }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% if group.active_universe_appearances %}
+<hr>
+<h3>Appearances With a Story Universe:</h3>
+<table >
+  <tr>
+    <td class="px-2">&bull;</td>
+    <td>
+      <a href='{% url "group_story_issues_per_universe" group_id=group.id story_universe_id=-1 %}'>without a universe</a>
+    </td>
+  </tr>
+  {% for universe in group.active_universe_appearances %}
+  <tr>
+    <td class="px-2">&bull;</td>
+    <td>
+    <a href='{% url "group_story_issues_per_universe" group_id=group.id story_universe_id=universe.id %}'>{{ universe }}</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% if group.active_relations_own %}
+<hr>
+<h3>Relations:</h3>
+<ol class="object-page-numbered-list list-disc">
+  {% for relation in group.active_relations_own %}
+    {% with relation_info=relation|pre_process_relation:group %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_group_relation' group_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_group' group_id=relation_info.0.id %}">{{ relation_info.0.descriptor }}</a>
+      {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+  </li>
+    {% endwith %}
+  {% endfor %}
+  </ol>
+{% endif %}
+
+{% if group.active_translations %}
+<hr>
+<h3>Translations:</h3>
+<ol class="object-page-numbered-list">
+  {% for relation in group.active_translations %}
+    {% with relation_info=relation|pre_process_relation:group %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_group_relation' group_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_group' group_id=relation_info.0.id %}">{{ relation_info.0.translation_descriptor }}</a>
+      {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+  </li>
+    {% endwith %}
+  {% endfor %}
+</ol>
+{% endif %}
+
+{% if group.active_alternate_universe_versions %}
+<hr>
+<h3>Alternate Universe Version:</h3>
+<ol class="object-page-numbered-list">
+  {% for relation in group.active_alternate_universe_versions %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_group' group_id=relation.to_group.id %}">{{ relation.to_group }}</a>
+    {% if relation.notes %}
+    <br><strong>Notes: </strong>{{ relation.notes }}
+    {% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+
+{% if group.active_members %}
+      <hr>
+      <h3>Group Members:</h3>
+      <ol class="object-page-numbered-list">
+  {% for member in group.active_members %}
+      <li class="break-inside-avoid-column">
+        <a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character.descriptor }}</a>
+        <br>
+        <a href="{% url 'show_group_membership' group_membership_id=member.id %}">{{ member.display_years }} ({{ member.membership_type }}</a>)
+      {% if member.notes %}
+        <br><strong>Notes: </strong>{{ member.notes }}
+      {% endif %}
+      </li>
+  {% endfor %}
+        </ol>
+{% endif %}
+
+{% endblock content %}
+
+{% block www_my_comics_cross_link %}
+  {% url "show_group" group_id=group.id as object_url %}
+  {% with model_name='Group' object_url=object_url %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block change_history %}
+  {% with model_name='group' object=group %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
+
+{% block listing %}
+{% endblock listing %}
+

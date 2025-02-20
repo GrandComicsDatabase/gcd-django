@@ -62,7 +62,7 @@ from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       CharacterCharacterTable
 from apps.gcd.models.feature import CreatorFeatureTable, \
                                     CharacterFeatureTable, \
-                                    FeatureLogoTable
+                                    GroupFeatureTable, FeatureLogoTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   BrandEmblemIssueTable, \
                                   IndiciaPublisherIssueTable, \
@@ -75,7 +75,7 @@ from apps.gcd.models.publisher import BrandEmblemPublisherTable, \
                                       BrandGroupPublisherTable, \
                                       IndiciaPublisherPublisherTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
-                                   CharacterSeriesTable
+                                   CharacterSeriesTable, GroupSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
                                   StoryTable
 from apps.gcd.views import paginate_response, ORDER_CHRONO, \
@@ -3591,12 +3591,50 @@ def character(request, character_id):
 
 
 def show_character(request, character, preview=False):
-    vars = {'character': character,
-            'additional_names': character.active_names()
-                                         .filter(is_official_name=False),
-            'error_subject': '%s' % character,
-            'preview': preview}
-    return render(request, 'gcd/details/character.html', vars)
+    if character.universe:
+        universe_id = character.universe.id
+        if character.active_generalisations():
+            filter_character = character.active_generalisations().get()\
+                                        .from_character
+        else:
+            filter_character = character
+            universe_id = None
+    else:
+        filter_character = character
+        universe_id = None
+
+    query = {'story__appearing_characters__character__character':
+             filter_character,
+             'story__appearing_characters__deleted': False,
+             'story__type__id': 6,
+             'story__deleted': False,
+             'cover__isnull': False,
+             'cover__deleted': False}
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+    if universe_id:
+        query['story__appearing_characters__universe_id'] = universe_id
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+
+    if issues:
+        selected_issue = issues[randint(0, issues.count()-1)]
+        image_tag = get_image_tag(cover=selected_issue.cover_set.first(),
+                                  zoom_level=ZOOM_MEDIUM,
+                                  alt_text='Random Cover from Character')
+    else:
+        image_tag = ''
+        selected_issue = None
+
+    context = {'character': character,
+               'additional_names': character.active_names()
+                                            .filter(is_official_name=False),
+               'error_subject': '%s' % character,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
+               'preview': preview}
+    return render(request, 'gcd/details/tw_character.html', context)
 
 
 def character_characters(request, character_id):
@@ -4182,12 +4220,81 @@ def group(request, group_id):
 
 
 def show_group(request, group, preview=False):
-    vars = {'group': group,
-            'error_subject': '%s' % group,
-            'additional_names': group.active_names()
-                                     .filter(is_official_name=False),
-            'preview': preview}
-    return render(request, 'gcd/details/group.html', vars)
+    if group.universe:
+        universe_id = group.universe.id
+        if group.active_generalisations():
+            filter_group = group.active_generalisations().get()\
+                                        .from_group
+        else:
+            filter_group = group
+            universe_id = None
+    else:
+        filter_group = group
+        universe_id = None
+
+    query = {'story__appearing_groups__group_name__group':
+             filter_group,
+             'story__appearing_groups__deleted': False,
+             'story__type__id': 6,
+             'story__deleted': False,
+             'cover__isnull': False,
+             'cover__deleted': False}
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+
+    if universe_id:
+        query['story__appearing_groups__universe_id'] = universe_id
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+
+    if issues:
+        selected_issue = issues[randint(0, issues.count()-1)]
+        image_tag = get_image_tag(cover=selected_issue.cover_set.first(),
+                                  zoom_level=ZOOM_MEDIUM,
+                                  alt_text='Random Cover from Group')
+    else:
+        image_tag = ''
+        selected_issue = None
+
+    context = {'group': group,
+               'additional_names': group.active_names()
+                                        .filter(is_official_name=False),
+               'error_subject': '%s' % group,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
+               'preview': preview}
+    return render(request, 'gcd/details/tw_group.html', context)
+
+
+def group_features(request, group_id):
+    group = get_gcd_object(Group, group_id)
+    features = Feature.objects.filter(
+      story__appearing_groups__group_name__group=group,
+      story__type__id__in=CORE_TYPES,
+      story__deleted=False,
+      deleted=False).distinct()
+
+    features = features.annotate(issue_count=Count(
+      'story__issue', distinct=True))
+    features = features.annotate(first_appearance=Min(
+      Case(When(story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'feature',
+        'plural_suffix': 's',
+        'heading': 'with an appearance of %s' % (group)
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = GroupFeatureTable(features,
+                              group=group,
+                              template_name=TW_SORT_TABLE_TEMPLATE,
+                              order_by=('feature'))
+    return generic_sortable_list(request, features, table, template, context)
 
 
 def group_issues(request, group_id, universe_id=None, story_universe_id=None):
@@ -4254,6 +4361,148 @@ def group_name_issues(request, group_name_id, universe_id=None):
     template = 'gcd/search/tw_list_sortable.html'
     table = _table_issues_list_or_grid(request, issues, context)
     return generic_sortable_list(request, issues, table, template, context)
+
+
+def group_issues_feature(request, group_id, feature_id):
+    group = get_gcd_object(Group, group_id)
+    feature = get_gcd_object(Feature, feature_id)
+
+    filter_group = group
+    universe_id = None
+    if group.universe:
+        if group.active_generalisations():
+            universe_id = group.universe.id
+            filter_group = group.active_generalisations()\
+                                .get().from_group
+
+    query = {'story__appearing_groups__group_name__group':
+             filter_group,
+             'story__appearing_groups__deleted': False,
+             'story__type__id__in': CORE_TYPES,
+             'story__feature_object__id': feature_id,
+             'story__deleted': False}
+
+    if universe_id:
+        query['story__appearing_groups__universe_id'] = universe_id
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+    filter = filter_issues(request, issues)
+    filter.filters.pop('language')
+    issues = filter.qs
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'for %s in  %s' % (group, feature),
+        'filter_form': filter.form
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = _table_issues_list_or_grid(request, issues, context)
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def group_issues_series(request, group_id, series_id):
+    group = get_gcd_object(Group, group_id)
+    series = get_gcd_object(Series, series_id)
+
+    filter_group = group
+    universe_id = None
+    if group.universe:
+        if group.active_generalisations():
+            universe_id = group.universe.id
+            filter_group = group.active_generalisations()\
+                                .get().from_group
+
+    query = {'story__appearing_groups__group_name__group':
+             filter_group,
+             'story__appearing_groups__deleted': False,
+             'story__type__id__in': CORE_TYPES,
+             'series__id': series_id,
+             'story__deleted': False}
+
+    if universe_id:
+        query['story__appearing_groups__universe_id'] = universe_id
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
+                          .select_related('series__publisher')
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': 'for group %s in %s' % (group, series),
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = IssueTable(issues,
+                       template_name=TW_SORT_TABLE_TEMPLATE,
+                       order_by=('publication_date'))
+    context['list_grid'] = True
+
+    if 'display' not in request.GET or request.GET['display'] == 'list':
+        table = IssueTable(issues,
+                           template_name=TW_SORT_TABLE_TEMPLATE,
+                           order_by=('publication_date'))
+    else:
+        table = IssueCoverTable(
+          issues,
+          template_name=TW_SORT_GRID_TEMPLATE,
+          order_by=('publication_date'))
+
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def group_series(request, group_id):
+    group = get_gcd_object(Group, group_id)
+    universe_id = None
+    heading = 'with group %s' % (group)
+    filter_group = group
+
+    if group.universe:
+        if group.active_generalisations():
+            universe_id = group.universe.id
+            filter_group = group.active_generalisations()\
+                                .get().from_group
+
+    if universe_id:
+        series = Series.objects.filter(
+          issue__story__appearing_groups__group_name__group=
+          filter_group,
+          issue__story__appearing_groups__universe_id=universe_id,
+          issue__story__appearing_groups__deleted=False,
+          issue__story__type__id__in=CORE_TYPES,
+          deleted=False).distinct().select_related('publisher')
+    else:
+        series = Series.objects.filter(
+          issue__story__appearing_groups__group_name__group=
+          filter_group,
+          issue__story__appearing_groups__deleted=False,
+          issue__story__type__id__in=CORE_TYPES,
+          deleted=False).distinct().select_related('publisher')
+    filter = filter_series(request, series)
+    filter.filters.pop('language')
+    series = filter.qs
+
+    series = series.annotate(appearances_count=Count('issue', distinct=True))
+    series = series.annotate(first_appearance=Min('issue__key_date'))
+
+    context = {
+        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'item_name': 'series',
+        'plural_suffix': '',
+        'heading': heading,
+        'filter_form': filter.form
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = GroupSeriesTable(series,
+                             group=group,
+                             template_name=TW_SORT_TABLE_TEMPLATE,
+                             order_by=('year'))
+    return generic_sortable_list(request, series, table, template, context)
 
 
 def group_creators(request, group_id, creator_names=False):
@@ -4324,6 +4573,48 @@ def group_sequences(request, group_id, country=None):
                        template_name=TW_SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, stories, table, template, context)
+
+
+def group_covers(request, group_id):
+    group = get_gcd_object(Group, group_id)
+    universe_id = None
+    heading = 'with group %s' % group
+
+    if group.universe:
+        if group.active_generalisations():
+            universe_id = group.universe.id
+            group = group.active_generalisations().get().from_group
+
+    if universe_id:
+        issues = Issue.objects.filter(
+          story__appearing_groups__group_name__group=group,
+          story__appearing_groups__universe_id=universe_id,
+          story__appearing_groups__deleted=False,
+          story__type__id=6,
+          story__deleted=False).distinct().select_related('series__publisher')
+    else:
+        issues = Issue.objects.filter(
+          story__appearing_groups__group_name__group=group,
+          story__appearing_groups__deleted=False,
+          story__type__id=6,
+          story__deleted=False).distinct().select_related('series__publisher')
+
+    filter = filter_issues(request, issues)
+    filter.filters.pop('language')
+    issues = filter.qs
+
+    context = {
+        'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'item_name': 'cover',
+        'plural_suffix': 's',
+        'heading': heading,
+        'filter_form': filter.form
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = CoverIssuePublisherTable(issues,
+                                     template_name=TW_SORT_TABLE_TEMPLATE,
+                                     order_by=('publication_date'))
+    return generic_sortable_list(request, issues, table, template, context)
 
 
 def group_relation(request, group_relation_id):

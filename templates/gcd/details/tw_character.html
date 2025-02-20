@@ -1,0 +1,244 @@
+{% extends "gcd/tw_object_base.html" %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+GCD :: Character :: {{ character.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=character %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[150px] md:w-[200px] mt-1">
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <table class="[&_:is(th,td):where(:nth-child(1),)]:align-top [&_:is(th,td):where(:nth-child(1),)]:text-right [&_:is(th,td):where(:nth-child(1),)]:font-bold">
+{% if character.disambiguation %}
+            <tr>
+              <td>Disambiguation:</td>
+              <td>{{ character.disambiguation }}</td>
+            </tr>
+{% endif %}
+{% if character.universe %}
+            <tr>
+              <td>Universe:</td>
+              <td>{{ character.universe|absolute_url }}</td>
+            </tr>
+{% endif %}
+{% if character.year_first_published %}
+            <tr>
+              <td class="sm:w-24">Created in:</td>
+              <td>{{ character.display_year_first_published }}</td>
+            </tr>
+{% endif %}
+{% if character.has_keywords %}
+            <tr>
+              <td>Keywords:</td>
+              <td>{{ character.display_keywords }}</td>
+            </tr>
+{% endif %}
+          </table>  
+          <ul class="object-page-link-list">
+            <li><a href='{% url "character_creators" character_id=character.id %}'>Creator List</a></li>
+            <li><a href='{% url "character_creator_names" character_id=character.id %}'>Creator Name List</a></li>
+            <li><a href='{% url "character_issues" character_id=character.id %}'>Issue List</a></li>
+      {% if character.active_specifications %}
+            <li class="break-inside-avoid-column"><a href='{% url "character_issues_down" character_id=character.id %}'>Issue List, including specifications</a></li>
+      {% endif %}
+      {% if character.active_generalisations and not character.universe %}
+            <li class="break-inside-avoid-column"><a href='{% url "character_issues_up" character_id=character.id %}'>Issue List, including generalisations</a></li>
+      {% endif %}
+                <li><a href='{% url "character_covers" character_id=character.id %}'>Cover List</a></li>
+            <li><a href='{% url "character_series" character_id=character.id %}'>Series List</a></li>
+            <li><a href='{% url "character_features" character_id=character.id %}'>Feature List</a></li>
+            <li><a href='{% url "character_characters" character_id=character.id %}'>Characters Appeared With</a></li>
+            <li><a href='{% url "character_sequences" character_id=character.id %}'>Sequences List</a></li>
+          </ul>
+      {% if character.external_link.count %}
+        external links
+          <ul class="list-disc md:columns-2 list-outside ps-4">
+        {% for external_link in character.external_link.all %}
+            <li><a href="{{ external_link.link }}">{{ external_link.site }}</a></li>
+        {% endfor %}
+          </ul>
+      {% endif %}
+        <h3>Name:</h3>
+          <ol class="ps-4">
+            <a href='{% url "character_name_issues" character_name_id=character.official_name.id %}'>{{ character.official_name.name }}</a>
+          </ol>
+      {% if additional_names %}
+        <h3>Additional Names:</h3>
+          <ol class="ps-6 object-page-numbered-list">
+        {% for name in additional_names %}
+            <li class="break-inside-avoid-column">
+              <a href='{% url "character_name_issues" character_name_id=name.id %}'>{{ name.name }}</a>
+            </li>
+        {% endfor %}
+          </ol>
+      {% endif %}
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% if character.description %}
+<h3 class="mt-2">Description:</h3>
+{{ character.description|markdown }}
+{% endif %}
+{% if character.notes %}
+<h3 class="mt-2">Notes:</h3>
+{{ character.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
+{% endblock %}
+
+{% block editing %}
+  {% with object=character object_class='character' object_name='character' %}
+    {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if request.user.is_authenticated %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_character_relation' character_id=character.id %}">
+    Add Character Relation</a></btn>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if character.active_universe_origins %}
+<hr>
+<h3>Appearances With a Character Origin Universe:</h3>
+<table>
+  <tr>
+    <td class="px-2 align-top">&bull;</td>
+    <td>
+      <a href='{% url "character_issues_per_universe" character_id=character.id universe_id=-1 %}'>without a universe</a>
+    </td>
+  </tr>
+  {% for universe in character.active_universe_origins %}
+  <tr>
+    <td class="px-2 align-top">&bull;</td>
+    <td class="pr-4 align-top">
+      <a href='{% url "character_issues_per_universe" character_id=character.id universe_id=universe.id %}'>{{ universe }}</a>
+    </td>
+    <td>{{ character|character_for_universe:universe.id }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% if character.active_universe_appearances %}
+<hr>
+<h3>Appearances With a Story Universe:</h3>
+<table >
+  <tr>
+    <td class="px-2">&bull;</td>
+    <td>
+      <a href='{% url "character_story_issues_per_universe" character_id=character.id story_universe_id=-1 %}'>without a universe</a>
+    </td>
+  </tr>
+  {% for universe in character.active_universe_appearances %}
+  <tr>
+    <td class="px-2 align-top">&bull;</td>
+    <td>
+    <a href='{% url "character_story_issues_per_universe" character_id=character.id story_universe_id=universe.id %}'>{{ universe }}</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% if character.active_relations_own %}
+<hr>
+<h3>Relations:</h3>
+<ol class="object-page-numbered-list list-disc">
+  {% for relation in character.active_relations_own %}
+    {% with relation_info=relation|pre_process_relation:character %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0.descriptor }}</a>
+      {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+  </li>
+    {% endwith %}
+  {% endfor %}
+  </ol>
+{% endif %}
+
+{% if character.active_translations %}
+<hr>
+<h3>Translations:</h3>
+<ol class="object-page-numbered-list">
+  {% for relation in character.active_translations %}
+    {% with relation_info=relation|pre_process_relation:character %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0.translation_descriptor }}</a>
+      {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+  </li>
+    {% endwith %}
+  {% endfor %}
+</ol>
+{% endif %}
+
+{% if character.active_alternate_universe_versions %}
+<hr>
+<h3>Alternate Universe Version:</h3>
+<ol class="object-page-numbered-list">
+  {% for relation in character.active_alternate_universe_versions %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_character' character_id=relation.to_character.id %}">{{ relation.to_character.descriptor }}</a>
+    {% if relation.notes %}
+    <br><strong>Notes: </strong>{{ relation.notes }}
+    {% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+
+{% if character.active_memberships %}
+<hr>
+<h3>Group Memberships:</h3>
+<ol class="object-page-numbered-list">
+  {% for membership in character.active_memberships %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group.descriptor }}</a>
+    <br>
+    <a href="{% url 'show_group_membership' group_membership_id=membership.id %}">{{ membership.display_years }} ({{ membership.membership_type }}</a>)
+    {% if membership.notes %}
+    <br><strong>Notes: </strong>{{ membership.notes }}
+    {% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
+{% endblock content %}
+
+{% block www_my_comics_cross_link %}
+  {% url "show_character" character_id=character.id as object_url %}
+  {% with model_name='Character' object_url=object_url %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block change_history %}
+  {% with model_name='character' object=character %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
+
+{% block listing %}
+{% endblock listing %}
+

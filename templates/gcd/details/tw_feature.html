@@ -60,7 +60,7 @@ GCD :: Feature :: {{ feature.name }}
             </tr>
 {% endif %}
           </table>  
-          <ul class="list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
+          <ul class="object-page-link-list">
             <li><a href='{% url "feature_creators" feature_id=feature.id %}'>Creator List</a></li>
             <li><a href='{% url "feature_creator_names" feature_id=feature.id %}'>Creator Name List</a></li>
             <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue List</a></li>
@@ -76,10 +76,6 @@ GCD :: Feature :: {{ feature.name }}
     </td>
   </tr> 
 </table>
-{% if feature.notes %}
-<span class="font-bold">Notes:</span>
-{{ feature.notes|urlizetrunc:75|linebreaksbr }}
-{% endif %}
 {% endblock %}
 
 {% block editing %}
@@ -97,6 +93,10 @@ GCD :: Feature :: {{ feature.name }}
 {% endblock %}
 
 {% block content %}
+{% if feature.notes %}
+<h3 class="mt-2">Notes:</h3>
+{{ feature.notes|urlizetrunc:75|linebreaksbr }}
+{% endif %}
 {% if page.object_list.count %}
 <hr>
   {% if feature.feature_type.id == 1 %}
@@ -112,7 +112,7 @@ GCD :: Feature :: {{ feature.name }}
 {% if feature.from_related_feature.count or feature.to_related_feature.count %}
 <hr>
 <h2> Feature Relations </h2>
-<ol class="ms-2 list-disc sm:columns-2 list-outside ps-4 [&>li]:pr-4">
+<ol class="object-page-numbered-list list-disc">
   {% for relation in feature.from_related_feature.all %}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_feature_relation' feature_relation_id=relation.id %}">{{ relation.relation_type.reverse_description }}</a>:

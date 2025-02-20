@@ -333,6 +333,7 @@ class CharacterFeatureTable(FeatureSearchTable):
 
     def __init__(self, *args, **kwargs):
         self.character = kwargs.pop('character')
+        self.resolve_name = 'character'
         super(CharacterFeatureTable, self).__init__(*args, **kwargs)
 
     # TODO: make the following a class mixin with CharacterTable and others
@@ -350,11 +351,23 @@ class CharacterFeatureTable(FeatureSearchTable):
 
     def render_issue_count(self, record):
         url = urlresolvers.reverse(
-                'character_issues_per_feature',
+                '%s_issues_per_feature' % self.resolve_name,
                 kwargs={'feature_id': record.id,
-                        'character_id': self.character.id})
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
+
+
+class GroupFeatureTable(CharacterFeatureTable):
+    class Meta:
+        models = Feature
+        fields = ('feature', 'year_created', 'first_appearance', 'issue_count')
+
+    def __init__(self, *args, **kwargs):
+        self.group = kwargs.pop('group')
+        self.resolve_name = 'group'
+        super(CharacterFeatureTable, self).__init__(*args, **kwargs)
 
 
 class CreatorFeatureTable(FeatureSearchTable):

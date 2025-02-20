@@ -5,8 +5,8 @@ from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericRelation
-from django.db import models, NotSupportedError
-from django.db.models import Sum, F, Value
+from django.db import models
+from django.db.models import Sum, Value
 from django.db.models.functions import NullIf
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc

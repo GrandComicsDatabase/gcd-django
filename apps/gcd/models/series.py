@@ -594,7 +594,7 @@ class CharacterSeriesTable(SeriesPublisherTable):
 
     def render_appearances_count(self, record):
         url = urlresolvers.reverse(
-                'character_issues_per_series',
+                '%s_issues_per_series' % self.resolve_name,
                 kwargs={'series_id': record.id,
                         '%s_id' % self.resolve_name:
                         getattr(self, self.resolve_name).id})
@@ -603,6 +603,13 @@ class CharacterSeriesTable(SeriesPublisherTable):
 
     def value_appearances_count(self, record):
         return record.appearances_count
+
+
+class GroupSeriesTable(CharacterSeriesTable):
+    def __init__(self, *args, **kwargs):
+        self.group = kwargs.pop('group')
+        self.resolve_name = 'group'
+        super(SeriesTable, self).__init__(*args, **kwargs)
 
 
 class CreatorSeriesTable(SeriesPublisherTable):
