@@ -7,7 +7,7 @@
     {% block table.thead %}
     {% if table.show_header %}
     <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
-        <tr class="align-top flex-col sm:table-row">
+        <tr class="align-top flex flex-col sm:table-row">
         {% if table.context.select_key %}
         <th> Selection </th>
         {% endif %}
