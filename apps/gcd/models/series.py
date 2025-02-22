@@ -447,7 +447,8 @@ class Series(GcdData):
             table_url = urlresolvers.reverse("series_scan_table",
                                              kwargs={'series_id': self.id})
             if not self.scan_needed_count:
-                return mark_safe('<a href="%s">Gallery</a>' % (gallery_url))
+                return mark_safe('<a href="%s">Gallery (%d)</a>' % (
+                  gallery_url, self.scan_count))
             elif self.has_gallery:
                 return mark_safe(
                   '<a href="%s">Have %d</a> (<a href="%s">Need %d</a>)'

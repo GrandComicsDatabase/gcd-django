@@ -1,0 +1,171 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: Publisher :: {{ publisher.name }}
+{% endblock %}
+
+{% block header %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ publisher.object_page_name }}
+  </div>
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+</nav>
+<nav class="max-md:hidden flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-lg">
+  </div>
+  {% include "gcd/bits/tw_alpha_pagination_bar.html" %}
+</nav>
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[100px] sm:w-[200px] mt-1">
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <ul class="md:columns-2">
+            <li><span class="font-bold">Comics Publishing:</span>
+              {{ publisher.year_began|default:'' }}
+              {% if publisher.year_began_uncertain %}?{% endif %}
+              -
+              {{ publisher.year_ended|default:'' }}
+              {% if publisher.year_ended_uncertain %}?{% endif %}
+            </li>
+            {% if publisher.year_overall_began or publisher.year_overall_ended %}
+              <li><span class="font-bold">Overall Publishing:</span>
+                {{ publisher.year_overall_began|default:'' }}
+                {% if publisher.year_overall_began_uncertain %}?{% endif %}
+                -
+                {{ publisher.year_overall_ended|default:'' }}
+                {% if publisher.year_overall_ended_uncertain %}?{% endif %}
+              </li>
+            {% endif %}
+          </ul>
+          <span class="font-bold">Country:</span> {{ publisher.country.name }}
+          <ul class="md:columns-2">
+{% if publisher.indicia_publisher_count %}
+            <li><span class="font-bold">Indicia / Colophon Publishers:</span>
+  {% if preview %}
+            {{ publisher.indicia_publisher_count }}
+  {% else %}
+              <a href="{{ publisher.get_absolute_url }}indicia_publishers/">{{ publisher.indicia_publisher_count }}</a>
+  {% endif %}
+            </li>
+{% endif %}
+{% if publisher.brand_count %}
+            <li><span class="font-bold">Publisher's Brand Groups:</span>
+  {% if preview %}
+            {{ publisher.brand_count }}
+  {% else %}
+              <a href="{{ publisher.get_absolute_url }}brands/">{{ publisher.brand_count }}</a>
+  {% endif %}
+            </li>
+{% endif %}
+{% if publisher.branduse_set.count %}
+            <li><span class="font-bold">Publisher's Brand Emblems:</span>
+  {% if preview %}
+              {{ publisher.branduse_set.count }}
+  {% else %}
+              <a href="{{ publisher.get_absolute_url }}brand_uses/">{{ publisher.branduse_set.count }}</a>
+  {% endif %}
+            </li>
+{% endif %}
+            <li><span class="font-bold">Number of Series:</span>
+          {{ publisher.series_count }}</li>
+          {% if not publisher.year_ended %}
+            <li><span class="font-bold">Number of Ongoing Series:</span> 
+              <a href="{{ publisher.get_absolute_url }}current_series/">{{ current.count }}</a></li>
+          {% endif %}
+            <li><span class="font-bold">Number of Issues:</span>
+              <a href="{{ publisher.get_absolute_url }}issues/">{{ publisher.issue_count }}</a></li>
+          </ul>
+          <ul class="md:columns-2">
+            <li><div class="flex flex-col sm:flex-row">
+              <div class="min-w-fit pe-1"><span class="font-bold">Covers by Month:</span></div>
+              <div> <a href='{% url "publisher_monthly_covers_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <br>
+                <a href='{% url "publisher_monthly_covers_pub_date" publisher_id=publisher.id %}'>using publication date</a>
+              </div></div></li>
+            <li><div class="flex flex-col sm:flex-row">
+              <div class="min-w-fit pe-1"><span class="font-bold">Issues by Month:</span></div> 
+              <div><a href='{% url "publisher_monthly_issues_on_sale" publisher_id=publisher.id %}'>using on-sale date</a> or <br>
+                <a href='{% url "publisher_monthly_issues_pub_date" publisher_id=publisher.id %}'>using publication date</a>
+              </div></div></li>
+          </ul>
+          <ul class="md:columns-2">
+            <li><div class="flex flex-col sm:flex-row">
+              <div class="min-w-fit pe-1"><span class="font-bold">Creator List:</span></div>
+            <a href='{% url "publisher_creators" publisher_id=publisher.id %}'>via linked story records</a>
+            </div></div></li> 
+          </ul>
+        </div>
+      </div> 
+      <table class="[&_:is(th,td):where(:nth-child(1),)]:font-bold">
+        {% if publisher.url %}
+        <tr>
+          <td class="ps-1">Web Site:</td>
+          <td><a href="{{ publisher.url }}">{{ publisher.url }}</a></td>
+        </tr>
+        {% endif %}
+        {% if publisher.has_keywords %}
+          <tr>
+            <td class="ps-1">Keywords:</td>
+            <td>{{ publisher.display_keywords }}</td>
+          </tr>
+        {% endif %}
+        </table>
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% if not page.has_previous %}
+  {% if publisher.notes %}
+  <h3 class="mt-2">Notes:</h3>
+    {{ publisher.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+{% endif %}
+{% render_table table %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=publisher object_class='publisher' object_name='publisher' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if user.is_authenticated and not publisher.pending_deletion %}
+  <btn class="btn btn-blue-editing"><a href="{% url "add_indicia_publisher" parent_id=publisher.id %}">
+    Add Indicia / Colophon Publisher</a></btn>
+
+    <btn class="btn btn-blue-editing"><a href="{% url "add_brand_group" parent_id=publisher.id %}">
+      Add Publisher's Brand Group
+      </a></btn>
+      <btn class="btn btn-blue-editing"><a href="{% url "add_brand_via_publisher" publisher_id=publisher.id %}">
+        Add Publisher's Brand Emblem
+        </a></btn>
+
+      <btn class="btn btn-blue-editing"><a href="{% url "add_series" publisher_id=publisher.id %}">
+        Add Series
+      </a></btn>
+
+    {% endif %} <!-- logged in -->
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='publisher' object=publisher %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

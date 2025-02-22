@@ -2,6 +2,7 @@
 
 
 from django.db import models
+from django.conf import settings
 from django.db.models import F
 import django.urls as urlresolvers
 from django.contrib.contenttypes.models import ContentType
@@ -217,6 +218,12 @@ class IndiciaPublisher(BasePublisher):
 
         return {'indicia publishers': 1}
 
+    def object_page_name(self):
+        parent_url = self.parent.get_absolute_url()
+        return mark_safe('<a href="%s">%s</a> : %s' % (parent_url,
+                                                       self.parent.name,
+                                                       self.name))
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_indicia_publisher',
@@ -257,6 +264,12 @@ class BrandGroup(BasePublisher):
             return {}
 
         return {'brands': 1}
+
+    def object_page_name(self):
+        parent_url = self.parent.get_absolute_url()
+        return mark_safe('<a href="%s">%s</a> : %s' % (parent_url,
+                                                       self.parent.name,
+                                                       self.name))
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -321,6 +334,7 @@ class BrandUse(GcdLink):
     class Meta:
         db_table = 'gcd_brand_use'
         app_label = 'gcd'
+        ordering = ['emblem__name', 'year_began']
 
     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE)
     emblem = models.ForeignKey(Brand, on_delete=models.CASCADE,
@@ -546,6 +560,10 @@ class BrandGroupSearchTable(IndiciaPublisherSearchTable):
                          (record.get_absolute_url(), value))
 
 
+class BrandGroupEmblemTable(BrandGroupSearchTable):
+    notes = tables.Column(orderable=False)
+
+
 class BrandGroupPublisherTable(BrandGroupSearchTable):
     parent = None
     emblem_count = tables.Column(accessor='brand_emblem_count',
@@ -583,7 +601,7 @@ class BrandEmblemSearchTable(PublisherBaseTable):
         return mark_safe(return_value)
 
     def render_emblem(self, value, record):
-        if value:
+        if not settings.FAKE_IMAGES and value:
             return mark_safe(
               f'<a href="{record.get_absolute_url()}">'
               f'<img src="{value.thumbnail.url}"></a>')
@@ -636,3 +654,16 @@ class BrandEmblemPublisherTable(BrandEmblemSearchTable):
                 return_value += '; '
         return_value = return_value[:-2]
         return mark_safe(return_value)
+
+
+class BrandEmblemGroupTable(BrandEmblemSearchTable):
+    group = None
+    notes = tables.Column(orderable=False)
+
+    class Meta:
+        fields = ('emblem', 'name', 'year_began', 'year_ended', 'issue_count',
+                  'notes')
+
+    def render_name(self, value, record):
+        return mark_safe('<a href="%s">%s</a>' %
+                         (record.get_absolute_url(), value))

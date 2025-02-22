@@ -1,0 +1,19 @@
+<div class="flex justify-end mt-1 h-8 items-center">
+  <div class="flex">
+    <ul class="max-md:hidden flex items-center h-8">
+    {% for a_page in alpha_paginator.page_range %}
+    <li>
+        {% if a_page %}
+        {% if a_page == alpha_page %}
+        <span class="flex items-center justify-center px-2 h-8 link-with-text-color border border-gray-400 bg-blue-300 hover:no-underline {% if forloop.first %}rounded-s-lg{% endif %}{% if forloop.last %}rounded-e-lg{% endif %}">{{ a_page }}</span>
+        {% else %}
+        <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 hover:bg-blue-300 hover:no-underline {% if forloop.first %}rounded-s-lg{% endif %}{% if forloop.last %}rounded-e-lg{% endif %}" href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
+        {% endif %}
+        {% else %}
+        <a>...</a>
+        {% endif %}
+    </li>
+    {% endfor %}
+    </ul>
+  </div>
+</div>

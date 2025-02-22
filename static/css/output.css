@@ -621,6 +621,45 @@ a:hover {
   color: rgb(0 0 0 );
 }
 
+.object-page-numbered-list {
+  margin-inline-start: 0.5rem;
+  list-style-position: outside;
+  list-style-type: decimal;
+  padding-inline-start: 1rem;
+}
+
+@media (min-width: 640px) {
+  .object-page-numbered-list {
+    -moz-columns: 2;
+         columns: 2;
+  }
+}
+
+.object-page-numbered-list {
+  li {
+    padding-right: 1rem;
+  }
+}
+
+.object-page-link-list {
+  list-style-position: outside;
+  list-style-type: disc;
+  padding-inline-start: 1rem;
+}
+
+@media (min-width: 640px) {
+  .object-page-link-list {
+    -moz-columns: 2;
+         columns: 2;
+  }
+}
+
+.object-page-link-list {
+  li {
+    padding-right: 0.5rem;
+  }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -686,6 +725,11 @@ a:hover {
   margin-right: auto;
 }
 
+.my-1 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -704,10 +748,6 @@ a:hover {
 
 .mr-4 {
   margin-right: 1rem;
-}
-
-.ms-2 {
-  margin-inline-start: 0.5rem;
 }
 
 .mt-1 {
@@ -794,10 +834,6 @@ a:hover {
   width: 12rem;
 }
 
-.w-56 {
-  width: 14rem;
-}
-
 .w-9 {
   width: 2.25rem;
 }
@@ -822,8 +858,13 @@ a:hover {
   min-width: 6rem;
 }
 
-.min-w-\[150px\] {
-  min-width: 150px;
+.min-w-\[100px\] {
+  min-width: 100px;
+}
+
+.min-w-fit {
+  min-width: -moz-fit-content;
+  min-width: fit-content;
 }
 
 .max-w-md {
@@ -856,6 +897,11 @@ a:hover {
 
 .list-disc {
   list-style-type: disc;
+}
+
+.columns-1 {
+  -moz-columns: 1;
+       columns: 1;
 }
 
 .columns-2 {
@@ -902,6 +948,10 @@ a:hover {
 
 .gap-4 {
   gap: 1rem;
+}
+
+.self-start {
+  align-self: flex-start;
 }
 
 .overflow-hidden {
@@ -1074,12 +1124,24 @@ a:hover {
   padding-inline-end: 0.5rem;
 }
 
+.pr-4 {
+  padding-right: 1rem;
+}
+
 .ps-1 {
   padding-inline-start: 0.25rem;
 }
 
 .ps-4 {
   padding-inline-start: 1rem;
+}
+
+.ps-6 {
+  padding-inline-start: 1.5rem;
+}
+
+.ps-8 {
+  padding-inline-start: 2rem;
 }
 
 .text-left {
@@ -1092,6 +1154,11 @@ a:hover {
 
 .align-top {
   vertical-align: top;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
 }
 
 .text-lg {
@@ -1536,6 +1603,11 @@ html {
 
 .\[\&\>li\]\:pr-4>li {
   padding-right: 1rem;
+}
+
+.\[\&\>th\]\:px-1>th {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
 }
 
 .\[\&_\:is\(th\2c td\)\:where\(\:nth-child\(1\)\2c \)\]\:text-right :is(th,td):where(:nth-child(1),) {

@@ -1,0 +1,105 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: Publisher's Brand Group :: {{ brand.name }}
+{% endblock %}
+
+{% block header %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ brand.object_page_name }}
+  </div>
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+</nav>
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[100px] sm:w-[200px] mt-1">
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <ul>
+            <li><span class="font-bold">{{ brand.parent }}: <a href="{{ brand.parent.get_absolute_url }}brands/">Publisher's Brand Groups</a></span></li>
+            <li><span class="font-bold">Years:</span>
+              {{ brand.year_began|default:'' }}
+              {% if brand.year_began_uncertain %}?{% endif %}
+              -
+              {{ brand.year_ended|default:'' }}
+              {% if brand.year_ended_uncertain %}?{% endif %}
+            </li>
+            {% if brand.year_overall_began or brand.year_overall_ended %}
+              <li><span class="font-bold">Overall Publishing:</span>
+                {{ brand.year_overall_began|default:'' }}
+                {% if brand.year_overall_began_uncertain %}?{% endif %}
+                -
+                {{ brand.year_overall_ended|default:'' }}
+                {% if brand.year_overall_ended_uncertain %}?{% endif %}
+              </li>
+            {% endif %}
+          </ul>
+          <ul class="md:columns-2">
+            <li><span class="font-bold">Number of Issues:</span>
+              {{ brand.issue_count }}</li>
+          </ul>
+        </div>
+      </div> 
+      <table class="[&_:is(th,td):where(:nth-child(1),)]:font-bold">
+        {% if brand.url %}
+        <tr>
+          <td class="ps-1">Web Site:</td>
+          <td><a href="{{ brand.url }}">{{ brand.url }}</a></td>
+        </tr>
+        {% endif %}
+        {% if brand.has_keywords %}
+          <tr>
+            <td class="ps-1">Keywords:</td>
+            <td>{{ brand.display_keywords }}</td>
+          </tr>
+        {% endif %}
+        </table>
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% if not page.has_previous %}
+  {% if brand.notes %}
+  <h3 class="mt-2">Notes:</h3>
+    {{ brand.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  <h3 class="mt-2">Publisher's Brand Emblems:</h3>
+  {% render_table brand_emblems_table %}
+{% endif %}
+<div class="mt-2"></div>
+{% render_table table %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=brand object_class='brand' object_name='brand' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  <btn class="btn btn-blue-editing"><a href="{% url "add_brand_via_group" brand_group_id=brand.id %}">
+    Add Publisher's Brand Emblem
+  </a></btn>
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='brand' object=brand %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

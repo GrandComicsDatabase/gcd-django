@@ -1,0 +1,181 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load editing %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: Publisher's Brand Emblem :: {{ brand.name }}
+{% endblock %}
+
+{% block header %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ brand.object_page_name }}
+  </div>
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+</nav>
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[100px] sm:w-[200px] mt-1">
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <ul>
+            <li><span class="font-bold">Years:</span>
+              {{ brand.year_began|default:'' }}
+              {% if brand.year_began_uncertain %}?{% endif %}
+              -
+              {{ brand.year_ended|default:'' }}
+              {% if brand.year_ended_uncertain %}?{% endif %}
+            </li>
+            {% if brand.year_overall_began or brand.year_overall_ended %}
+              <li><span class="font-bold">Overall Publishing:</span>
+                {{ brand.year_overall_began|default:'' }}
+                {% if brand.year_overall_began_uncertain %}?{% endif %}
+                -
+                {{ brand.year_overall_ended|default:'' }}
+                {% if brand.year_overall_ended_uncertain %}?{% endif %}
+              </li>
+            {% endif %}
+            <li><span class="font-bold">Number of Issues:</span>
+              {{ brand.issue_count }}</li>
+            <li><span class="font-bold">Publisher's Brand Emblem:</span>
+              {% if brand.emblem %}
+              <img src="{{ brand.emblem.scaled_image.url }}">
+              {% endif %}
+              {% if brand.generic %}
+              generic
+              {% endif %}
+            </li>
+          </ul>
+        </div>
+      </div> 
+      <table class="[&_:is(th,td):where(:nth-child(1),)]:font-bold">
+        {% if brand.url %}
+        <tr>
+          <td class="ps-1">Web Site:</td>
+          <td><a href="{{ brand.url }}">{{ brand.url }}</a></td>
+        </tr>
+        {% endif %}
+        {% if brand.has_keywords %}
+          <tr>
+            <td class="ps-1">Keywords:</td>
+            <td>{{ brand.display_keywords }}</td>
+          </tr>
+        {% endif %}
+        </table>
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% if not page.has_previous %}
+  {% if brand.notes %}
+  <h3 class="mt-2">Notes:</h3>
+    {{ brand.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% if brand.group.count %}
+<hr>
+<h3 class="mt-2">Publisher's brand emblem belongs to:</h3>
+    {% render_table groups_table %}
+  {% endif %}
+  {% if uses.count %}
+<hr>
+<h3 class="mt-2">Publisher's brand emblem is in use at:</h3>
+<table>
+  <tr class="bg-blue-100 [&>th]:px-1">
+    <th> Publisher </th>
+    <th> Began </th>
+    <th> Ended </th>
+    <th> Notes </th>
+    {% if user.is_authenticated %}
+    <th> Action </th>
+    {% endif %}
+  </tr>
+    {% for use in uses %}
+  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+    <td> <a href="{{ use.publisher.get_absolute_url }}">{{ use.publisher }}</a> </td>
+    <td> {{ use.year_began|default:"" }} </td>
+    <td> {{ use.year_ended|default:"" }} </td>
+    <td> {{ use.notes }} </td>
+      {% if user.is_authenticated and not MYCOMICS %}
+    <td>
+        {% if use|is_locked %}
+    is reserved
+        {% else %}
+    <div class="flex">
+    <btn class="btn btn-blue-editing">
+            <form method="POST"
+        action="{% url "reserve_revision" model_name='brand_use' id=use.id %}" style="display:inline">
+          {% csrf_token %}
+        <input id="edit" name="edit" type="submit" value="Edit"></input>
+      </form>
+    </btn>
+    <btn class="btn btn-blue-editing">
+      <form method="POST"
+        action="{% url "delete_revision" model_name='brand_use' id=use.id %}" style="display:inline">
+          {% csrf_token %}
+        <input type="submit" value="Delete"></input>
+      </form>
+    </btn>
+  </div>
+        {% endif %}
+    </td>
+      {% endif %}
+  </tr>
+    {% endfor %}
+</table>
+  {% endif %}
+{% endif %}
+<div class="mt-2"></div>
+{% render_table table %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=brand object_class='brand' object_name='brand' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if brand.emblem %}
+    {% if user.is_authenticated %}
+      {% if not brand.emblem|is_locked %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'replace_image' model_name='brand' id=brand.id image_id=brand.emblem.id %}">
+    Replace Publisher's Brand Image
+  </a></btn>
+  <btn class="btn btn-blue-editing"><a href="{% url 'delete_revision' model_name='image' id=brand.emblem.id %}">
+    Delete Publisher's Brand Image
+  </a></btn>
+      {% endif %}
+    {% endif %}
+  {% else %}
+    {% if user.is_authenticated and not brand.generic %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'upload_image' model_name='brand' id=brand.id image_type='BrandScan' %}">
+    Add Publisher's Brand Image
+  </a></btn>
+    {% endif %}
+  {% endif %}
+  {% if user.is_authenticated %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_brand_use' brand_id=brand.id %}">
+    Add Publisher's Brand Use
+  </a></btn>
+  {% endif %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='brand' object=brand %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

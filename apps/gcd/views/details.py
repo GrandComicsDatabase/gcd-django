@@ -73,7 +73,9 @@ from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   PublisherIssueCoverTable
 from apps.gcd.models.publisher import BrandEmblemPublisherTable, \
                                       BrandGroupPublisherTable, \
-                                      IndiciaPublisherPublisherTable
+                                      IndiciaPublisherPublisherTable, \
+                                      BrandEmblemGroupTable, \
+                                      BrandGroupEmblemTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
                                    CharacterSeriesTable, GroupSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
@@ -260,6 +262,25 @@ def _handle_date_picker(request, url_reverse,
         return requested_date, show_date
     elif monthly:
         return (year, month), True
+
+
+def _get_random_cover_image(request, object, object_filter, object_name):
+    page = request.GET.get('page', None)
+    image_tag = ''
+    selected_issue = None
+    if not page or page[-1] == '1':
+        covers = Cover.objects.filter(
+          **{'issue__%s' % object_filter: object},
+          deleted=False)
+
+        if covers.count() > 0:
+            selected_cover = covers[randint(0, covers.count()-1)]
+            selected_issue = selected_cover.issue
+            image_tag = get_image_tag(cover=selected_cover,
+                                      zoom_level=ZOOM_MEDIUM,
+                                      alt_text='Random Cover from %s'
+                                               % object_name)
+    return image_tag, selected_issue
 
 
 def creator(request, creator_id):
@@ -1167,11 +1188,17 @@ def publisher(request, publisher_id):
 
 def show_publisher(request, publisher, preview=False):
     publisher_series = publisher.active_series()
+    image_tag, selected_issue = _get_random_cover_image(request,
+                                                        publisher,
+                                                        'series__publisher',
+                                                        'Publisher')
 
     context = {'publisher': publisher,
                'current': publisher.series_set.filter(deleted=False,
                                                       is_current=True),
                'error_subject': publisher,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
                'preview': preview}
     paginator = ResponsePaginator(publisher_series, per_page=100, vars=context,
                                   alpha=True)
@@ -1192,7 +1219,7 @@ def show_publisher(request, publisher, preview=False):
         extra_string = ''
 
     table = SeriesTable(publisher_series, attrs={'class': 'sortable_listing'},
-                        template_name=SORT_TABLE_TEMPLATE,
+                        template_name=TW_SORT_TABLE_TEMPLATE,
                         order_by=('name'))
     RequestConfig(request, paginate={'per_page': 100,
                                      'page': page_number}).configure(table)
@@ -1200,7 +1227,7 @@ def show_publisher(request, publisher, preview=False):
     context['extra_string'] = extra_string
 
     return generic_sortable_list(request, publisher_series, table,
-                                 'gcd/details/publisher.html', context)
+                                 'gcd/details/tw_publisher.html', context)
 
 
 def show_publisher_issues(request, publisher_id):
@@ -1589,16 +1616,24 @@ def show_indicia_publisher(request, indicia_publisher, preview=False):
     indicia_publisher_issues = indicia_publisher.active_issues()\
                                                 .prefetch_related('series',
                                                                   'brand')
+    image_tag, selected_issue = _get_random_cover_image(request,
+                                                        indicia_publisher,
+                                                        'indicia_publisher',
+                                                        'Indicia Publisher')
+
     context = {'indicia_publisher': indicia_publisher,
                'error_subject': '%s' % indicia_publisher,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
                'preview': preview}
 
     table = IndiciaPublisherIssueTable(indicia_publisher_issues,
                                        attrs={'class': 'sortable_listing'},
-                                       template_name=SORT_TABLE_TEMPLATE,
+                                       template_name=TW_SORT_TABLE_TEMPLATE,
                                        order_by=('issue'))
     return generic_sortable_list(request, indicia_publisher_issues, table,
-                                 'gcd/details/indicia_publisher.html', context)
+                                 'gcd/details/tw_indicia_publisher.html',
+                                 context)
 
 
 def brand_group(request, brand_group_id):
@@ -1613,22 +1648,35 @@ def show_brand_group(request, brand_group, preview=False):
     brand_issues = brand_group.active_issues().order_by(
       'series__sort_name', 'sort_code').prefetch_related('series', 'brand',
                                                          'indicia_publisher')
+    image_tag, selected_issue = _get_random_cover_image(request,
+                                                        brand_group,
+                                                        'brand__group',
+                                                        'Brand')
 
     brand_emblems = brand_group.active_emblems()
+    brand_emblems_table = BrandEmblemGroupTable(
+      brand_emblems,
+      template_name=TW_SORT_TABLE_TEMPLATE,
+      order_by=('name'))
+    brand_emblems_table.no_export = True
+    RequestConfig(request,
+                  paginate={"paginator_class": LazyPaginator}).configure(
+                    brand_emblems_table)
 
     context = {'brand': brand_group,
-               'brand_emblems': brand_emblems,
+               'brand_emblems_table': brand_emblems_table,
                'error_subject': '%s' % brand_group,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
                'preview': preview
                }
 
     table = BrandGroupIssueTable(brand_issues,
-                                 attrs={'class': 'sortable_listing'},
                                  brand=brand_group,
-                                 template_name=SORT_TABLE_TEMPLATE,
+                                 template_name=TW_SORT_TABLE_TEMPLATE,
                                  order_by=('issue'))
     return generic_sortable_list(request, brand_issues, table,
-                                 'gcd/details/brand_group.html', context)
+                                 'gcd/details/tw_brand_group.html', context)
 
 
 def brand(request, brand_id):
@@ -1643,19 +1691,34 @@ def show_brand(request, brand, preview=False):
     brand_issues = brand.active_issues().order_by(
       'series__sort_name', 'sort_code').prefetch_related('series',
                                                          'indicia_publisher')
+    image_tag, selected_issue = _get_random_cover_image(request,
+                                                        brand,
+                                                        'brand',
+                                                        'Brand Emblem')
+
+    groups_table = BrandGroupEmblemTable(brand.group.all(),
+                                         template_name=TW_SORT_TABLE_TEMPLATE,
+                                         order_by=('name'))
+    groups_table.no_export = True
+    RequestConfig(request,
+                  paginate={"paginator_class": LazyPaginator}).configure(
+                    groups_table)
+
     uses = brand.in_use.all()
     context = {'brand': brand,
+               'groups_table': groups_table,
                'uses': uses,
                'error_subject': '%s' % brand,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
                'preview': preview
                }
 
     table = BrandEmblemIssueTable(brand_issues,
-                                  attrs={'class': 'sortable_listing'},
-                                  template_name=SORT_TABLE_TEMPLATE,
+                                  template_name=TW_SORT_TABLE_TEMPLATE,
                                   order_by=('issue'))
     return generic_sortable_list(request, brand_issues, table,
-                                 'gcd/details/brand.html', context)
+                                 'gcd/details/tw_brand_emblem.html', context)
 
 
 def imprint(request, imprint_id):

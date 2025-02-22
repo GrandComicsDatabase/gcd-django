@@ -24,12 +24,12 @@
             {% include "gcd/bits/tw_three_bars.html" %}
         </button>
       </div>
-      <div class="w-56 editing-menu max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0">
+      <div class="w-58 editing-menu max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0">
         {% block editing %}
         {% endblock %}    
         {% block change_history %}
           {% if not preview or preview and object.source or preview and object.revision.source %}
-        <div class="mt-1 bg-gcd font-bold px-2 py-1 text-center rounded hover:bg-blue-700">
+        <div class="my-1 bg-gcd font-bold px-2 py-1 text-center rounded hover:bg-blue-700">
             {% if preview %}
               {% if object.source %}
                 <a class="text-white visited:text-white" href="{% url "change_history" model_name=model_name id=object.source.id %}">View Change History</a>

@@ -47,7 +47,7 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
         img_class += ' w-[%spx]' % width
 
     if zoom_level in [1.5, ZOOM_MEDIUM]:
-        img_class += ' min-w-[150px]'
+        img_class += ' min-w-[100px] sm:min-w-[150px]'
 
     if cover is None:
         if not can_have_cover:

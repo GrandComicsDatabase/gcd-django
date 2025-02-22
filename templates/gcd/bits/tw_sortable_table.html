@@ -3,11 +3,11 @@
 
 <div class="sm:justify-center"> 
     {% block table %}
-<table class="border" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %} >
+  <table class="border" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %} >
     {% block table.thead %}
     {% if table.show_header %}
     <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
-        <tr class="flex flex-col sm:table-row">
+        <tr class="align-top flex-col sm:table-row">
         {% if table.context.select_key %}
         <th> Selection </th>
         {% endif %}
@@ -71,7 +71,7 @@
     </tfoot>
     {% endif %}
     {% endblock table.tfoot %}
-</table>
+  </table>
 {% endblock table %}
 {% if not table.no_export %}
 <p>Download the shown data as <a href="{% export_url "csv" %}"><code>.csv</code></a> or <a href="{% export_url "json" %}"><code>.json</code></a>.<br>
