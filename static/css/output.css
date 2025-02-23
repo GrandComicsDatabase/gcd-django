@@ -1432,6 +1432,10 @@ html {
     margin: 0.25rem;
   }
 
+  .max-sm\:ms-6 {
+    margin-inline-start: 1.5rem;
+  }
+
   .max-sm\:mt-8 {
     margin-top: 2rem;
   }
