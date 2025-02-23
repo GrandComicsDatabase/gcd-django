@@ -64,8 +64,11 @@ from apps.gcd.models.feature import CreatorFeatureTable, \
                                     CharacterFeatureTable, \
                                     GroupFeatureTable, FeatureLogoTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
+                                  BrandGroupIssueCoverTable, \
                                   BrandEmblemIssueTable, \
+                                  BrandEmblemIssueCoverTable, \
                                   IndiciaPublisherIssueTable, \
+                                  IndiciaPublisherIssueCoverTable, \
                                   IssuePublisherTable, PublisherIssueTable, \
                                   SeriesDetailsIssueTable, \
                                   IssueCoverTable, \
@@ -1635,11 +1638,18 @@ def show_indicia_publisher(request, indicia_publisher, preview=False):
                'image_tag': image_tag,
                'image_issue': selected_issue,
                'preview': preview}
+    context['list_grid'] = True
 
-    table = IndiciaPublisherIssueTable(indicia_publisher_issues,
-                                       attrs={'class': 'sortable_listing'},
-                                       template_name=TW_SORT_TABLE_TEMPLATE,
-                                       order_by=('issue'))
+    if 'display' not in request.GET or request.GET['display'] == 'list':
+        table = IndiciaPublisherIssueTable(indicia_publisher_issues,
+                                           template_name=TW_SORT_TABLE_TEMPLATE,
+                                           order_by=('issue'))
+    else:
+        table = IndiciaPublisherIssueCoverTable(
+          indicia_publisher_issues,
+          template_name=TW_SORT_GRID_TEMPLATE,
+          order_by=('issue'))
+
     return generic_sortable_list(request, indicia_publisher_issues, table,
                                  'gcd/details/tw_indicia_publisher.html',
                                  context)
@@ -1679,11 +1689,20 @@ def show_brand_group(request, brand_group, preview=False):
                'image_issue': selected_issue,
                'preview': preview
                }
+    context['list_grid'] = True
 
-    table = BrandGroupIssueTable(brand_issues,
-                                 brand=brand_group,
-                                 template_name=TW_SORT_TABLE_TEMPLATE,
-                                 order_by=('issue'))
+    if 'display' not in request.GET or request.GET['display'] == 'list':
+        table = BrandGroupIssueTable(brand_issues,
+                                     brand=brand_group,
+                                     template_name=TW_SORT_TABLE_TEMPLATE,
+                                     order_by=('issue'))
+    else:
+        table = BrandGroupIssueCoverTable(
+          brand_issues,
+          brand=brand_group,
+          template_name=TW_SORT_GRID_TEMPLATE,
+          order_by=('issue'))
+
     return generic_sortable_list(request, brand_issues, table,
                                  'gcd/details/tw_brand_group.html', context)
 
@@ -1722,10 +1741,16 @@ def show_brand(request, brand, preview=False):
                'image_issue': selected_issue,
                'preview': preview
                }
-
-    table = BrandEmblemIssueTable(brand_issues,
-                                  template_name=TW_SORT_TABLE_TEMPLATE,
-                                  order_by=('issue'))
+    context['list_grid'] = True
+    if 'display' not in request.GET or request.GET['display'] == 'list':
+        table = BrandEmblemIssueTable(brand_issues,
+                                      template_name=TW_SORT_TABLE_TEMPLATE,
+                                      order_by=('issue'))
+    else:
+        table = BrandEmblemIssueCoverTable(
+          brand_issues,
+          template_name=TW_SORT_GRID_TEMPLATE,
+          order_by=('issue'))
     return generic_sortable_list(request, brand_issues, table,
                                  'gcd/details/tw_brand_emblem.html', context)
 

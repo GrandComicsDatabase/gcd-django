@@ -779,6 +779,14 @@ class IndiciaPublisherIssueTable(IssueTable):
         return str(value)
 
 
+class IndiciaPublisherIssueCoverTable(IndiciaPublisherIssueTable, IssueCoverTable):
+    class Meta:
+        model = Issue
+        fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
+                  'brand')
+        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+
+
 class BrandEmblemIssueTable(IssueTable):
     indicia_publisher = tables.Column(accessor='indicia_publisher',
                                       verbose_name='Indicia Publisher',
@@ -811,6 +819,14 @@ class BrandEmblemIssueTable(IssueTable):
         return str(value)
 
 
+class BrandEmblemIssueCoverTable(BrandEmblemIssueTable, IssueCoverTable):
+    class Meta:
+        model = Issue
+        fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
+                  'indicia_publisher')
+        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+
+
 class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
     def __init__(self, *args, **kwargs):
         self.brand = kwargs.pop('brand')
@@ -829,6 +845,14 @@ class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
 
     def value_indicia_publisher(self, value):
         return str(value)
+
+
+class BrandGroupIssueCoverTable(BrandGroupIssueTable, IssueCoverTable):
+    class Meta:
+        model = Issue
+        fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
+                  'brand', 'indicia_publisher')
+        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
 
 
 class PublisherIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
