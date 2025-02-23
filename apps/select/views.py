@@ -799,6 +799,14 @@ class CommonFilter(FilterSet):
             self.form['publisher'].field.queryset = qs
 
 
+class FilterForLanguage(CommonFilter):
+    language = ModelMultipleChoiceFilter(queryset=Language.objects.all())
+
+    class Meta:
+        model = Series
+        fields = ['language',]
+
+
 class PublisherFilter(CommonFilter):
     country = ModelMultipleChoiceFilter(queryset=Country.objects.all())
 

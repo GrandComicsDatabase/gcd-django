@@ -56,7 +56,7 @@ from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, \
                                    IS_NONE, generic_sortable_list
 from apps.gcd.views.covers import get_image_tags_per_page
 from apps.select.views import filter_sequences, filter_issues, filter_haystack, \
-                              filter_publisher, filter_series
+                              filter_publisher, filter_series, FilterForLanguage
 # Should not be importing anything from oi, but we're doing this
 # in several places.
 # TODO: states should probably live somewhere else.
@@ -202,6 +202,10 @@ def generic_by_name(request, name, q_obj, sort,
                 order_by = 'feature'
                 if sort == ORDER_CHRONO:
                     order_by = 'year_created'
+                filter = FilterForLanguage(request.GET, things,
+                                           language='language')
+                things = filter.qs
+                context['filter_form'] = filter.form
 
                 table = FeatureSearchTable(
                   things,
@@ -215,7 +219,10 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.annotate(issue_count=Count(
                   'character_names__storycharacter__story__issue',
                   distinct=True))
-
+                filter = FilterForLanguage(request.GET, things,
+                                           language='language')
+                things = filter.qs
+                context['filter_form'] = filter.form
                 table = CharacterSearchTable(
                   things,
                   template_name='gcd/bits/tw_sortable_table.html',
@@ -227,6 +234,10 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.distinct()
                 things = things.annotate(issue_count=Count(
                   'group_names__storycharacter__story__issue', distinct=True))
+                filter = FilterForLanguage(request.GET, things,
+                                           language='language')
+                things = filter.qs
+                context['filter_form'] = filter.form
 
                 table = CharacterSearchTable(
                   things,

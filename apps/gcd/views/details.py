@@ -100,7 +100,8 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            Changeset, SeriesBondRevision, CreatorRevision, \
                            CTYPES
 from apps.select.views import KeywordUsedFilter, filter_series, \
-                              filter_issues, filter_covers, filter_sequences
+                              filter_issues, filter_covers, filter_sequences, \
+                              FilterForLanguage
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -408,6 +409,10 @@ def creator_characters(request, creator_id, country=None):
         'heading': 'for creator %s' % (creator)
     }
     template = 'gcd/search/tw_list_sortable.html'
+    filter = FilterForLanguage(request.GET, characters,
+                               language='language')
+    characters = filter.qs
+    context['filter_form'] = filter.form
     table = CreatorCharacterTable(characters,
                                   attrs={'class': 'sortable_listing'},
                                   creator=creator,
@@ -529,6 +534,10 @@ def creator_features(request, creator_id, country=None, language=None):
         'heading': 'for creator %s' % (creator),
     }
     template = 'gcd/search/tw_list_sortable.html'
+    filter = FilterForLanguage(request.GET, features,
+                               language='language')
+    features = filter.qs
+    context['filter_form'] = filter.form
     table = CreatorFeatureTable(features, attrs={'class': 'sortable_listing'},
                                 creator=creator,
                                 template_name=TW_SORT_TABLE_TEMPLATE,
