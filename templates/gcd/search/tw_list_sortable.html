@@ -78,11 +78,13 @@ Should be changed so that we have consistent display. Currently only the search 
   <button class="btn btn-blue ml-1 mt-1 h-8">Filter Results</button>
 </form>
 {% endif %}
+{% if filter_form %}
 <div class="sm:hidden bg-blue-100 h-7 pe-1 absolute left-0 flex">
   <button class="mobile-facet-menu-button">
     {% include "gcd/bits/tw_three_bars.html" %}
   </button>
 </div>
+{% endif %}
 <div class="px-0 lg:px-1">
   {% render_table table %}
 </div>
