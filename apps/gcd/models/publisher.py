@@ -456,6 +456,12 @@ class IndiciaPrinter(BasePublisher):
             self.parent.issue_count = F('issue_count') + deltas['issues']
             self.parent.save()
 
+    def object_page_name(self):
+        parent_url = self.parent.get_absolute_url()
+        return mark_safe('<a href="%s">%s</a> : %s' % (parent_url,
+                                                       self.parent.name,
+                                                       self.name))
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
           'show_indicia_printer', kwargs={'indicia_printer_id': self.id})
@@ -667,3 +673,6 @@ class BrandEmblemGroupTable(BrandEmblemSearchTable):
     def render_name(self, value, record):
         return mark_safe('<a href="%s">%s</a>' %
                          (record.get_absolute_url(), value))
+
+class PrinterSearchTable(PublisherBaseTable):
+    pass

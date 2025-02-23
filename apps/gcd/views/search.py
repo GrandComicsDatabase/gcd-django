@@ -44,7 +44,8 @@ from apps.gcd.models.issue import INDEXED, IssuePublisherTable, \
 from apps.gcd.models.publisher import PublisherSearchTable, \
                                       BrandGroupSearchTable, \
                                       BrandEmblemSearchTable, \
-                                      IndiciaPublisherSearchTable
+                                      IndiciaPublisherSearchTable, \
+                                      PrinterSearchTable
 from apps.gcd.models.story import StoryTable, MatchedSearchStoryTable, \
                                   HaystackMatchedStoryTable, HaystackStoryTable
 from apps.gcd.models.series import SeriesPublisherTable
@@ -54,7 +55,8 @@ from apps.gcd.forms.search import AdvancedSearch, \
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, \
                                    IS_NONE, generic_sortable_list
 from apps.gcd.views.covers import get_image_tags_per_page
-from apps.select.views import filter_sequences, filter_issues, filter_haystack
+from apps.select.views import filter_sequences, filter_issues, filter_haystack, \
+                              filter_publisher, filter_series
 # Should not be importing anything from oi, but we're doing this
 # in several places.
 # TODO: states should probably live somewhere else.
@@ -137,6 +139,16 @@ def generic_by_name(request, name, q_obj, sort,
                 table_format = IndiciaPublisherSearchTable
             elif class_ is Series:
                 table_format = SeriesPublisherTable
+                filter = filter_series(request, things)
+                things = filter.qs
+                context['filter_form'] = filter.form
+            elif class_ is Printer:
+                table_format = PrinterSearchTable
+
+            if class_ in [Publisher, IndiciaPublisher, Printer]:
+                filter = filter_publisher(request, things)
+                things = filter.qs
+                context['filter_form'] = filter.form
 
             table = table_format(
               things,

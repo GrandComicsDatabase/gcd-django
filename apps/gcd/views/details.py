@@ -1864,7 +1864,7 @@ def show_printer(request, printer, preview=False):
             'indicia_printers': indicia_printers,
             'error_subject': printer,
             'preview': preview}
-    return render(request, 'gcd/details/printer.html', vars)
+    return render(request, 'gcd/details/tw_printer.html', vars)
 
 
 def printer_issues(request, printer_id):
@@ -1883,9 +1883,9 @@ def printer_issues(request, printer_id):
         'filter_form': filter.form,
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = IssueTable(issues,
-                       template_name=TW_SORT_TABLE_TEMPLATE,
-                       order_by=('publication_date'))
+    table = IssuePublisherTable(issues,
+                                template_name=TW_SORT_TABLE_TEMPLATE,
+                                order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -1901,7 +1901,7 @@ def show_indicia_printer(request, indicia_printer, preview=False):
     context = {'indicia_printer': indicia_printer,
                'error_subject': '%s' % indicia_printer,
                'preview': preview}
-    return render(request, 'gcd/details/indicia_printer.html', context)
+    return render(request, 'gcd/details/tw_indicia_printer.html', context)
 
 
 def indicia_printer_issues(request, indicia_printer_id):
@@ -1920,10 +1920,10 @@ def indicia_printer_issues(request, indicia_printer_id):
         'filter_form': filter.form,
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = IssueTable(issues,
-                       attrs={'class': 'sortable_listing'},
-                       template_name=TW_SORT_TABLE_TEMPLATE,
-                       order_by=('publication_date'))
+    table = IssuePublisherTable(issues,
+                                attrs={'class': 'sortable_listing'},
+                                template_name=TW_SORT_TABLE_TEMPLATE,
+                                order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 

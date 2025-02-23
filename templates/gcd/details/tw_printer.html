@@ -1,0 +1,97 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: Printer :: {{ printer.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=printer %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          {% with object=printer function="Printing" %}
+            {% include "gcd/bits/publisher_years.html" %}
+          {% endwith %}
+          <span class="font-bold">Country:</span> {{ printer.country.name }}
+          <ul>
+            <li><span class="font-bold">Number of Indicia Printers:</span>
+              {{ printer.active_indicia_printers.count }}</li>
+            <li><span class="font-bold">Number of Issues:</span>
+              <a href='{% url "printer_issues" printer_id=printer.id %}'>{{ printer.issue_count }}</a>
+            </li>
+          </ul>
+        </div>
+      </div> 
+      <table class="[&_:is(th,td):where(:nth-child(1),)]:font-bold">
+        {% if printer.url %}
+        <tr>
+          <td>Web Site:</td>
+          <td><a href="{{ printer.url }}">{{ printer.url }}</a></td>
+        </tr>
+        {% endif %}
+        {% if printer.has_keywords %}
+          <tr>
+            <td>Keywords:</td>
+            <td>{{ printer.display_keywords }}</td>
+          </tr>
+        {% endif %}
+        </table>
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% if not page.has_previous %}
+  {% if printer.notes %}
+  <h3 class="mt-2">Notes:</h3>
+    {{ printer.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+{% endif %}
+<hr>
+<h3 id="indicia_printers">Indicia Printers:</h3>
+<table>
+  <tr class="bg-blue-100 [&>th]:px-1"> 
+    <th> Indicia Printer </th>
+    <th> Issues </th>
+    <th> Began</th>
+    <th> Ended</th>
+  </tr>
+{% for indicia_printer in indicia_printers %}
+  <tr>
+    <td> <a href="{{ indicia_printer.get_absolute_url }}">{{ indicia_printer.name }}</a> </td>
+    <td class="px-2 text-left sm:text-right">
+      <a href='{% url "indicia_printer_issues" indicia_printer_id=indicia_printer.id %}'>{{ indicia_printer.issue_count }}</a>
+    </td>
+    <td class="px-2"> {{ indicia_printer.year_began|default:"" }} </td>
+    <td class="px-2"> {{ indicia_printer.year_ended|default:"" }} </td>
+  </tr>
+{% endfor %}
+</table>
+{% endblock content %}
+
+{% block editing %}
+  {% with object=printer object_class='printer' object_name='printer' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_indicia_printer' parent_id=printer.id %}">
+    Add Indicia Printer</a></btn>
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='printer' object=printer %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

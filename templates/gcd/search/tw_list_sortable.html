@@ -46,7 +46,7 @@ Should be changed so that we have consistent display. Currently only the search 
 </form>
 {% endif %}
 {% if filter_form %}
-<form method="GET" class="max-sm:hidden flex">
+<form method="GET" class="results-filter max-sm:hidden flex">
   {% if request.GET.sort %}
   <input type="hidden" name="sort" value="{{ request.GET.sort }}">
   {% endif %}
@@ -54,7 +54,7 @@ Should be changed so that we have consistent display. Currently only the search 
   <input type="hidden" name="display" value="{{ request.GET.display }}">
   {% endif %}
     {% for field in filter_form %}
-    <div class="flex">
+    <div class="flex max-sm:flex-col">
         <label class="mt-1 font-medium px-1">{{ field.label }}</label>
       <div class="mt-1 relative">
         <div class="overflow-y-auto max-h-24 border rounded-md border-gray-300 p-1 inline-block">
@@ -78,9 +78,39 @@ Should be changed so that we have consistent display. Currently only the search 
   <button class="btn btn-blue ml-1 mt-1 h-8">Filter Results</button>
 </form>
 {% endif %}
+<div class="sm:hidden bg-blue-100 h-7 pe-1 absolute left-0 flex">
+  <button class="mobile-facet-menu-button">
+    {% include "gcd/bits/tw_three_bars.html" %}
+  </button>
+</div>
 <div class="px-0 lg:px-1">
   {% render_table table %}
 </div>
 
 {% include "gcd/search/tw_list_header.html" %}
+<script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", () => {
+    // Select all dropdown toggle buttons
+    const editingToggles = document.querySelectorAll(".mobile-facet-menu-button")
+      editingToggles.forEach((toggle) => {
+      toggle.addEventListener("click", () => {
+        // Find the next sibling element which is the dropdown menu
+        document.querySelectorAll(".results-filter").forEach((menu) => {
+            menu.classList.toggle("max-sm:hidden")
+        })
+      })
+    })
+
+    // Clicking outside of an open dropdown menu closes it
+    window.addEventListener("click", function (e) {
+      if (!e.target.matches(".mobile-facet-menu-button") ) {
+        document.querySelectorAll(".results-filter").forEach((menu) => {
+          if (!menu.contains(e.target)) {
+            menu.classList.add("max-sm:hidden")
+          }
+        })
+      }
+    })
+  })
+</script>
 {% endblock %}

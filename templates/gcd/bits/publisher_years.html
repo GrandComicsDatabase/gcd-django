@@ -1,0 +1,18 @@
+<ul class="md:columns-2">
+    <li><span class="font-bold">Comics {{ function }}:</span>
+      {{ object.year_began|default:'' }}
+      {% if object.year_began_uncertain %}?{% endif %}
+      -
+      {{ object.year_ended|default:'' }}
+      {% if object.year_ended_uncertain %}?{% endif %}
+    </li>
+{% if object.year_overall_began or object.year_overall_ended %}
+    <li><span class="font-bold">Overall {{ function }}:</span>
+      {{ object.year_overall_began|default:'' }}
+      {% if object.year_overall_began_uncertain %}?{% endif %}
+      -
+      {{ object.year_overall_ended|default:'' }}
+      {% if object.year_overall_ended_uncertain %}?{% endif %}
+    </li>
+{% endif %}
+  </ul>

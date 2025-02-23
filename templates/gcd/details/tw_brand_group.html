@@ -34,23 +34,10 @@
         <div>
           <ul>
             <li><span class="font-bold">{{ brand.parent }}: <a href="{{ brand.parent.get_absolute_url }}brands/">Publisher's Brand Groups</a></span></li>
-            <li><span class="font-bold">Years:</span>
-              {{ brand.year_began|default:'' }}
-              {% if brand.year_began_uncertain %}?{% endif %}
-              -
-              {{ brand.year_ended|default:'' }}
-              {% if brand.year_ended_uncertain %}?{% endif %}
-            </li>
-            {% if brand.year_overall_began or brand.year_overall_ended %}
-              <li><span class="font-bold">Overall Publishing:</span>
-                {{ brand.year_overall_began|default:'' }}
-                {% if brand.year_overall_began_uncertain %}?{% endif %}
-                -
-                {{ brand.year_overall_ended|default:'' }}
-                {% if brand.year_overall_ended_uncertain %}?{% endif %}
-              </li>
-            {% endif %}
           </ul>
+          {% with object=brand function="Publishing" %}
+            {% include "gcd/bits/publisher_years.html" %}
+          {% endwith %}
           <ul class="md:columns-2">
             <li><span class="font-bold">Number of Issues:</span>
               {{ brand.issue_count }}</li>

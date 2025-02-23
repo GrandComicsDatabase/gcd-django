@@ -763,34 +763,48 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
 
 class CommonFilter(FilterSet):
     def __init__(self, *args, **kwargs):
-        if 'countries' in kwargs:
-            countries = kwargs.pop('countries')
-            if countries == []:
-                countries = [-1,]
-        else:
-            countries = None
-        if 'languages' in kwargs:
-            languages = kwargs.pop('languages')
-            if languages == []:
-                languages = [-1,]
-        else:
-            languages = None
-        if 'publishers' in kwargs:
-            publishers = kwargs.pop('publishers')
-            if publishers == []:
-                publishers = [-1,]
-        else:
-            publishers = None
+        country = kwargs.pop('country', None)
+        language = kwargs.pop('language', None)
+        publisher = kwargs.pop('publisher', None)
         super(CommonFilter, self).__init__(*args, **kwargs)
+        needed_values = []
+        if country:
+            needed_values.append(country)
+        if language:
+            needed_values.append(language)
+        if publisher:
+            needed_values.append(publisher)
+        data = set(self.qs.values_list(*needed_values))
+        countries = []
+        languages = []
+        publishers = []
+        for i in data:
+            cnt = 0
+            if country:
+                countries.append(i[cnt])
+                cnt += 1
+            if language:
+                languages.append(i[cnt])
+                cnt += 1
+            if publisher:
+                publishers.append(i[cnt])
         if countries:
             qs = Country.objects.filter(id__in=countries)
-            self.filters['country'].queryset = qs
+            self.form['country'].field.queryset = qs
         if languages:
             qs = Language.objects.filter(id__in=languages)
-            self.filters['language'].queryset = qs
+            self.form['language'].field.queryset = qs
         if publishers:
             qs = Publisher.objects.filter(id__in=publishers)
-            self.filters['publisher'].queryset = qs
+            self.form['publisher'].field.queryset = qs
+
+
+class PublisherFilter(CommonFilter):
+    country = ModelMultipleChoiceFilter(queryset=Country.objects.all())
+
+    class Meta:
+        model = Series
+        fields = ['country',]
 
 
 class SeriesFilter(CommonFilter):
@@ -832,9 +846,9 @@ class IssueFilter(CommonFilter):
         super(IssueFilter, self).__init__(*args, **kwargs)
         if collections:
             qs = Collection.objects.filter(id__in=collections)
-            self.filters['collection'].queryset = qs
+            self.form['collection'].field.queryset = qs
         else:
-            self.filters.pop('collection')
+            self.form.fields.pop('collection')
 
 
 class CoverFilter(CommonFilter):
@@ -895,35 +909,25 @@ class KeywordUsedFilter(FilterSet):
             self.filters['content_type'].queryset = qs
 
 
+def filter_publisher(request, publisher):
+    filter = PublisherFilter(request.GET,
+                             queryset=publisher,
+                             country='country'
+                             )
+    return filter
+
+
 def filter_series(request, series):
-    data = set(series.values_list('country', 'language', 'publisher'))
-    countries = []
-    languages = []
-    publishers = []
-    for i in data:
-        countries.append(i[0])
-        languages.append(i[1])
-        publishers.append(i[2])
     filter = SeriesFilter(request.GET,
                           queryset=series,
-                          countries=countries,
-                          languages=languages,
-                          publishers=publishers,
+                          country='country',
+                          language='language',
+                          publisher='publisher'
                           )
     return filter
 
 
 def filter_issues(request, issues):
-    data = set(issues.values_list('series__country',
-                                  'series__language',
-                                  'series__publisher'))
-    countries = []
-    languages = []
-    publishers = []
-    for i in data:
-        countries.append(i[0])
-        languages.append(i[1])
-        publishers.append(i[2])
     if settings.MYCOMICS and request.user.is_authenticated:
         collections = request.user.collector.collections.all()\
                              .order_by('name').values_list('id', flat=True)
@@ -931,50 +935,29 @@ def filter_issues(request, issues):
         collections = None
     filter = IssueFilter(request.GET,
                          queryset=issues,
-                         countries=countries,
-                         languages=languages,
-                         publishers=publishers,
+                         country='series__country',
+                         language='series__language',
+                         publisher='series__publisher',
                          collections=collections
                          )
     return filter
 
 
 def filter_covers(request, covers):
-    data = set(covers.values_list('issue__series__country',
-                                  'issue__series__language',
-                                  'issue__series__publisher'))
-    countries = []
-    languages = []
-    publishers = []
-    for i in data:
-        countries.append(i[0])
-        languages.append(i[1])
-        publishers.append(i[2])
     filter = CoverFilter(request.GET,
                          queryset=covers,
-                         countries=countries,
-                         languages=languages,
-                         publishers=publishers,
-                         )
+                         country='issue__series__country',
+                         language='issue__series__language',
+                         publisher='issue__series__publisher')
     return filter
 
 
 def filter_sequences(request, sequences):
-    data = set(sequences.values_list('issue__series__country',
-                                     'issue__series__language',
-                                     'issue__series__publisher'))
-    countries = []
-    languages = []
-    publishers = []
-    for i in data:
-        countries.append(i[0])
-        languages.append(i[1])
-        publishers.append(i[2])
     filter = SequenceFilter(request.GET,
                             queryset=sequences,
-                            countries=countries,
-                            languages=languages,
-                            publishers=publishers)
+                            country='issue__series__country',
+                            language='issue__series__language',
+                            publisher='issue__series__publisher')
     return filter
 
 

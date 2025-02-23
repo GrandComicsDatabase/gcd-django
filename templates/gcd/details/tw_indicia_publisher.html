@@ -34,25 +34,12 @@
         <div>
           <ul>
             <li><span class="font-bold">{{ indicia_publisher.parent }}: <a href="{{ indicia_publisher.parent.get_absolute_url }}indicia_publishers/">Indicia / Colophon Publishers</a></span></li>
-            <li><span class="font-bold">Years:</span>
-              {{ indicia_publisher.year_began|default:'' }}
-              {% if indicia_publisher.year_began_uncertain %}?{% endif %}
-              -
-              {{ indicia_publisher.year_ended|default:'' }}
-              {% if indicia_publisher.year_ended_uncertain %}?{% endif %}
-            </li>
-            {% if indicia_publisher.year_overall_began or indicia_publisher.year_overall_ended %}
-              <li><span class="font-bold">Overall Publishing:</span>
-                {{ indicia_publisher.year_overall_began|default:'' }}
-                {% if indicia_publisher.year_overall_began_uncertain %}?{% endif %}
-                -
-                {{ indicia_publisher.year_overall_ended|default:'' }}
-                {% if indicia_publisher.year_overall_ended_uncertain %}?{% endif %}
-              </li>
-            {% endif %}
+          {% with object=indicia_publisher function="Publishing" %}
+            {% include "gcd/bits/publisher_years.html" %}
+          {% endwith %}
           </ul>
           <span class="font-bold">Country:</span> {{ indicia_publisher.country.name }}
-          <ul class="md:columns-2">
+          <ul>
             <li><span class="font-bold">Number of Issues:</span>
               {{ indicia_publisher.issue_count }}</li>
           </ul>

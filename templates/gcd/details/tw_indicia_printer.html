@@ -1,0 +1,76 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: Indicia Printer :: {{ indicia_printer.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=indicia_printer %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+          <li><span class="font-bold">{{ indicia_printer.parent }}: <a href="{{ indicia_printer.parent.get_absolute_url }}#indicia_printers">Indicia Printers</a></span></li>
+          </ul>
+          {% with object=indicia_printer function="Printing" %}
+            {% include "gcd/bits/publisher_years.html" %}
+          {% endwith %}
+          <span class="font-bold">Country:</span> {{ indicia_printer.country.name }}
+          <ul class="md:columns-2">
+            <li><span class="font-bold">Number of Issues:</span>
+              <a href='{% url "indicia_printer_issues" indicia_printer_id=indicia_printer.id %}'>{{ indicia_printer.issue_count }}</a>
+            </li>
+          </ul>
+        </div>
+      </div> 
+      <table class="[&_:is(th,td):where(:nth-child(1),)]:font-bold">
+        {% if indicia_printer.url %}
+        <tr>
+          <td class="ps-1">Web Site:</td>
+          <td><a href="{{ indicia_printer.url }}">{{ indicia_printer.url }}</a></td>
+        </tr>
+        {% endif %}
+        {% if indicia_printer.has_keywords %}
+          <tr>
+            <td class="ps-1">Keywords:</td>
+            <td>{{ indicia_printer.display_keywords }}</td>
+          </tr>
+        {% endif %}
+        </table>
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% if not page.has_previous %}
+  {% if indicia_printer.notes %}
+  <h3 class="mt-2">Notes:</h3>
+    {{ indicia_printer.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+{% endif %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=indicia_printer object_class='indicia_printer' object_name='indicia_printer' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='indicia_printer' object=indicia_printer %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

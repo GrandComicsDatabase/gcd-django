@@ -37,24 +37,9 @@
     <td class="align-top">
       <div class="flex ps-1">
         <div>
-          <ul class="md:columns-2">
-            <li><span class="font-bold">Comics Publishing:</span>
-              {{ publisher.year_began|default:'' }}
-              {% if publisher.year_began_uncertain %}?{% endif %}
-              -
-              {{ publisher.year_ended|default:'' }}
-              {% if publisher.year_ended_uncertain %}?{% endif %}
-            </li>
-            {% if publisher.year_overall_began or publisher.year_overall_ended %}
-              <li><span class="font-bold">Overall Publishing:</span>
-                {{ publisher.year_overall_began|default:'' }}
-                {% if publisher.year_overall_began_uncertain %}?{% endif %}
-                -
-                {{ publisher.year_overall_ended|default:'' }}
-                {% if publisher.year_overall_ended_uncertain %}?{% endif %}
-              </li>
-            {% endif %}
-          </ul>
+          {% with object=publisher function="Publishing" %}
+            {% include "gcd/bits/publisher_years.html" %}
+          {% endwith %}
           <span class="font-bold">Country:</span> {{ publisher.country.name }}
           <ul class="md:columns-2">
 {% if publisher.indicia_publisher_count %}
