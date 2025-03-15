@@ -1,20 +1,20 @@
 {% load display %}
 {% load gcdtable %}
 
-<div class="left" style="width:calc(100% - 200px);">
+<div>
 <table class="status">
-  <tr>
-    <td class="status_approved"> SoO and Indicia </td>
-    <td class="status_partial"> Indicia </td>
-    <td class="status_pending"> SoO </td>
-    <td class="status_available"> No Scans </td>
+  <tr class="flex flex-wrap font-bold [&_td]:px-3 [&_td]:border-t-2 [&_td]:border-b-2">
+    <td class="border-s-2 bg-green-500"> Statement of Ownership and Indicia </td>
+    <td class="bg-indigo-300"> Indicia </td>
+    <td class="bg-sky-300"> Statement of Ownership </td>
+    <td class="border-e-2"> No Scans </td>
   </tr>
 </table>
-  <div class="status_grid">
+  <div class="flex flex-wrap">
 {% for issue in image_resources %}
-    <div class="status_grid_flex status_{{ issue|issue_image_status_css }} {{ issue_status_width }}">
-      <a href="{{ issue.get_absolute_url }}image/">{{ issue.issue_descriptor_series_status|default:issue }}</a> </td>
-    </div>
+  <div class="border {{ issue|issue_image_status_color }} {{ issue_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
+    <a class="block hover:no-underline link-with-text-color font-bold" href="{{ issue.get_absolute_url }}image/">{{ issue.issue_descriptor_series_status|default:issue }}</a> </td>
+  </div>
 {% endfor %}
   </div>
 </div>

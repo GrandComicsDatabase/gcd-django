@@ -260,37 +260,42 @@ def show_indicia_pub(issue):
 
 
 @register.filter
-def index_status_css(issue):
+def index_status_color(issue):
     """
-    Text form of issue indexing status.  If clauses arranged in order of most
+    Color for issue indexing status. If clauses arranged in order of most
     likely case to least.
     """
     from apps.oi.templatetags.editing import is_locked
 
     if is_locked(issue):
         active = issue.revisions.get(changeset__state__in=states.ACTIVE)
-        return STATE_CSS_NAME[active.changeset.state]
+        if active.changeset.state == states.OPEN:
+            return 'bg-red-400'
+        else:
+            return 'bg-yellow-400'
     elif issue.is_indexed == INDEXED['full']:
-        return 'approved'
+        return 'bg-green-500'
     elif issue.is_indexed in [INDEXED['partial'], INDEXED['ten_percent']]:
-        return 'partial'
+        return 'bg-green-300'
+    elif issue.is_indexed == INDEXED['some_data']:
+        return 'bg-green-100'
     else:
-        return 'available'
+        return ''
 
 
 @register.filter
-def issue_image_status_css(issue):
+def issue_image_status_color(issue):
     """
-    Text form of issue image resources status.
+    Color for issue image resources status.
     """
-    if issue.num_scans == 1:
-        return 'partial'
-    elif issue.num_scans is None:
-        return 'available'
-    elif issue.num_scans == 2:
-        return 'pending'
+    if issue.sum_scans_code == 1:
+        return 'bg-indigo-300'
+    elif issue.sum_scans_code is None:
+        return ''
+    elif issue.sum_scans_code == 2:
+        return 'bg-sky-300'
     else:
-        return 'approved'
+        return 'bg-green-500'
 
 
 @register.filter

@@ -1,100 +1,93 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 
 {% load static %}
 {% load i18n %}
 {% load credits %}
 {% load display %}
 
-{% block title %} GCD :: Series :: {{ series.name }} :: {% if by_date %}Timeline{% else %}Details{% endif %} {% endblock %}
-
 {% block css %}
 <link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}">
-</link>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default/series.css" %}">
-</link>
+      href="{% static 'css/output.css' %}"/>
 {% endblock %}
 
+{% block title %} GCD :: Series :: {{ series.name }} :: Timeline {% endblock %}
+
 {% block view_body %}
+<h1 class="bg-blue-100 px-1 lg:px-2">
+  <a href="{{ series.get_absolute_url }}">{{ series.object_page_name }}</a>
+</h1>
+<div class="ps-1 md:px-2">
 
-{% with description=True %}
-{% include "gcd/bits/series_issue_header.html" %}
-{% endwith %}
-
-<div class="details">
-
-<h3> Series {% if by_date %}Timeline{% else %}Details{% endif %} </h3>
-<p>
-{% if by_date %}
+  <ul>
+    <li><span class="font-bold">Publisher:</span> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a></li>
+  </ul>  
   <a href="{% url "series_details" series_id=series.id %}">See series details by issue</a> (displays one row per issue with no gaps, by the regular issue sort order)
-{% else %}
-  <a href="{% url "series_timeline" series_id=series.id %}">See series timeline</a>
-  (depends on key dates being set correctly)
-{% endif %}
-</p>
-{% if by_date %}
-  {% if rows %}
+
+{% if rows %}
 <p>
 This page attempts to show how the issues in this series were published over time
-by laying them out in a timeline with alternately gray or white rows roughly
-corresponding to months.  The correspondence is less accurate for bi-monthly,
+by laying them out in a monthly timeline with alternately colored rows roughly
+corresponding to months.  The coloring is not meaningful for bi-monthly,
 quarterly or annual books.  Weekly or other more-frequent-than-monthly issues
-are simply grouped into the same color row by month.
+are grouped into the same color row by month.
+</p>
+<br>
 <p>
-The timeline feature depends on the key date field to order issues into a timeline.
+The timeline feature depends on the key date field to order issues into a monthly timeline.
 Please note that if the key dates are not filled out to correspond to the
 publication months of the issues, then the timeline will not be accurate.
 </p>
-    {% if no_date_rows %}
+<br>
+  {% if no_date_rows %}
 <p>
 Not all issues in this series have {% if bad_dates %}usable{% endif %}
 key dates, so not all can be sorted into a timeline.  The following issues
 can be sorted:
 </p>
-    {% endif %}
-  {% else %}
+  {% endif %}
+{% else %}
 <p>
 No issues in this series have {% if bad_dates %}usable{% endif %} key dates,
 so none can be sorted into a timeline.
 The following table is the same as the regular series detail table:
 </p>
-  {% endif %}
 {% endif %}
 
-<table class="listing">
-  <tr>
-    <th> Key Date </th>
-    <th> Pub. Date </th>
+<table class="border">
+  <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
+    <tr>
+      <th> Key Date </th>
+      <th> Pub. Date </th>
 {% if on_sale_date_present %}
-    <th> On-sale date </th>
+      <th> On-sale date </th>
 {% endif %}
 {% if volume_present %}
-    <th> Volume </th>
+      <th> Volume </th>
 {% endif %}
-    <th> Number </th>
+      <th> Number </th>
 {% if title_present %}
-    <th> Title </th>
+      <th> Title </th>
 {% endif %}
-    <th> Indicia Publisher </th>
+      <th> Indicia Publisher </th>
 {% if brand_present %}
-    <th> Publisher's Brand </th>
+      <th> Publisher's Brand </th>
 {% endif %}
-    <th> Pages </th>
-    <th> Price </th>
+      <th> Pages </th>
+      <th> Price </th>
 {% if frequency_present %}
-    <th> Frequency </th>
+      <th> Frequency </th>
 {% endif %}
 {% if isbn_present %}
-    <th> ISBN </th>
+      <th> ISBN </th>
 {% endif %}
 {% if barcode_present %}
-    <th> Barcode </th>
+      <th> Barcode </th>
 {% endif %}
 {% if rating_present %}
-    <th> Publisher's Age Guidelines </th>
+      <th> Publisher's Age Guidelines </th>
 {% endif %}
-  </tr>
+    </tr>
+  </thead>
 
 {% comment %}
 Note that we do not use {% cycle %} to generate the alternating class rows
@@ -109,7 +102,7 @@ divisible filter.
         {% for issue in row.issues %}
           {% include "gcd/bits/series_detail_row.html" %}
         {% empty %}
-  <tr class="row_even_{{ row_counter|divisibleby:"2" }}">
+  <tr class="{% if row_counter|divisibleby:'2' %}bg-blue-50{% endif %}">
     <td class="empty_month">{{ row.date|date:"Y-m-00" }}
     <td>&nbsp;</td>
           {% if volume_present %}
@@ -153,35 +146,37 @@ These issues have no {% if bad_dates %}usable{% endif %} key date and
 cannot be placed in a timeline:
 </p>
 <table class="listing">
-  <tr>
-    <th> Key Date </th>
-    <th> Pub. Date </th>
+  <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
+    <tr class="[&_th]:px-1">
+      <th> Key Date </th>
+      <th> Pub. Date </th>
     {% if on_sale_date_present %}
-    <th> On-sale date </th>
+      <th> On-sale date </th>
     {% endif %}
     {% if volume_present %}
-    <th> Volume </th>
+      <th> Volume </th>
     {% endif %}
-    <th> Number </th>
-    <th> Indicia Publisher </th>
+      <th> Number </th>
+      <th> Indicia Publisher </th>
     {% if brand_present %}
-    <th> Publisher's Brand </th>
+      <th> Publisher's Brand </th>
     {% endif %}
-    <th> Pages </th>
-    <th> Price </th>
+      <th> Pages </th>
+      <th> Price </th>
     {% if frequency_present %}
-    <th> Frequency </th>
+      <th> Frequency </th>
     {% endif %}
     {% if isbn_present %}
-    <th> ISBN </th>
+      <th> ISBN </th>
     {% endif %}
     {% if barcode_present %}
-    <th> Barcode </th>
+      <th> Barcode </th>
     {% endif %}
     {% if rating_present %}
-    <th> Publisher's Age Guidelines </th>
+      <th> Publisher's Age Guidelines </th>
     {% endif %}
-  </tr>
+    </tr>
+  </thead>
   {% endif %}
 
   {% if no_date_rows %}
@@ -192,7 +187,7 @@ cannot be placed in a timeline:
     {% endfor %}
   {% endif %}
 
-{%else %}
+{% else %}
   {% for issue in series.active_issues %}
     {% with forloop.counter as row_counter %}
       {% include "gcd/bits/series_detail_row.html" %}

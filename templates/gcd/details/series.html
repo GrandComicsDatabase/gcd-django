@@ -213,7 +213,7 @@
           </input>
         </form>
           {% endif %}
-        <form method="GET" action="{% url "add_series_bond" id=series.id %}">
+        <form method="GET" action="{% url "add_series_bond" series_id=series.id %}">
           <input id="add" name="add" type="submit" value="Add series bond">
           </input>
         </form>

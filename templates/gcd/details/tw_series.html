@@ -1,0 +1,202 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load display %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: Series :: {{ series.name }}
+{% endblock %}
+
+{% block header %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ series.object_page_name }}
+  </div>
+  <div class="font-bold">
+    {% if language %}
+      Published in {{ language }}
+    {% endif %}
+    {% if country %}
+      ({{ country }})
+      <img class="inline" src="{{ STATIC_URL }}img/gcd/flags/{{ series.country.code|lower }}.png" alt="{{ country }}">
+    {% endif %}  
+  </div>
+</nav>
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[100px] sm:w-[200px] mt-1 text-center">
+  {% if series.is_comics_publication and series.has_gallery %}
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.display_number }}</a><br>
+    {{ image_issue.publication_date }}<br>
+        <a href="{{ series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
+  {% endif %}
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <ul>
+            <li><span class="font-bold">Publisher:</span> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a></li>
+          </ul>
+          <ul class="md:columns-3">
+  {% if series.has_gallery %}
+            <li><a href="{{ series.get_absolute_url }}covers"><img class="inline" src="{% static 'img/gcd/icons/'|add:ICON_SET_SYMBOLIC|add:'/camera-photo-symbolic.svg' %}"> Cover Gallery</a>&nbsp;</li>
+  {% endif %}
+            <li><a href="{% url 'series_details' series_id=series.id %}"><img class="inline" src="{% static 'img/gcd/icons/'|add:ICON_SET_SYMBOLIC|add:'/columns-symbolic.svg' %}"> Details by Issue</a>&nbsp;</li>
+            <li><a href="{% url 'series_timeline' series_id=series.id %}"><img class="inline" src="{% static 'img/gcd/icons/'|add:ICON_SET_SYMBOLIC|add:'/month-symbolic.svg' %}"> Series Monthly Timeline</a></li>
+          </ul>
+          <ul class="object-page-link-list md:columns-2">
+            <li><a href='{% url "series_overview" series_id=series.id %}'>Cover and Main Story Overview</a></li>
+            <li><a href='{% url "series_creators" series_id=series.id %}'>Creator List</a></li>
+            <li><a href='{% url "series_creator_names" series_id=series.id %}'>Creator Name List</a></li>
+            <li><a href='{% url "series_characters" series_id=series.id %}'>Character List</a></li>
+  {% if series.issues_to_migrate.count %}
+            <li><a href='{% url "series_migrate" series_id=series.id %}'>{{ series.issues_to_migrate.count }} issues</a> with content to migrate.</li>
+  {% endif %}
+          </ul>
+          <ul>
+            <li><span class="font-bold">Publication Date{{ series.issue_count|pluralize }}:</span> {{ series.display_publication_dates }}</li>
+  {% if series.issue_count %}
+            <li><span class="font-bold">Number of Issues Published:</span> {{ series.issue_count }} 
+    {% if series.issue_count > 1 %}
+                ({{ series.first_issue.display_number }} - {{ series.last_issue.display_number}})
+    {% endif %}</li>
+  {% endif %}
+  {% if series.format %}
+            <li><span class="font-bold">Format:</span> {{ series.format }}</li>
+  {% endif %}
+  {% if series.color %}
+            <li><span class="font-bold">Color:</span> {{ series.color }}</li>
+  {% endif %}
+  {% if series.dimensions %}
+            <li><span class="font-bold">Dimensions:</span> {{ series.dimensions }}</li>
+  {% endif %}
+  {% if series.paper_stock %}
+            <li><span class="font-bold">Paper Stock:</span> {{ series.paper_stock }}</li>
+  {% endif %}
+  {% if series.binding %}
+            <li><span class="font-bold">Binding:</span> {{ series.binding }}</li>
+  {% endif %}
+  {% if series.publishing_format %}
+            <li><span class="font-bold">Publishing Format:</span> {{ series.publishing_format }}</li>
+  {% endif %}
+  {% if series.publication_type %}
+            <li><span class="font-bold">Publication Type:</span> {{ series.publication_type }}</li>
+  {% endif %}
+  {% if publisher.has_keywords %}
+            <li><span class="font-bold">Keywords:</span>  {{ series.display_keywords }}</li>
+  {% endif %}
+          </ul>
+
+  {% with brand_counts=series.brand_info_counts %}
+
+    {% if brand_counts.no_brand != series.active_issues.count %}
+          <div class="md:columns-2">
+            <h3>Publisher's Brands:</h3>
+            <ul class="break-inside-avoid-column columns-1 object-page-link-list">
+      {% for brand in series.ordered_brands %}
+              <li> {{ brand|absolute_url }}
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ brand|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand.used_issue_count }} issue{{ brand.used_issue_count|pluralize }}</a>)
+      {% endfor %}
+      {% if brand_counts.no_brand %}
+              <li> no publisher's brand
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_none }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.no_brand }} issue{{ brand_counts.no_brand|pluralize }}</a>)
+      {% endif %}
+      {% if brand_counts.unknown %}
+              <li> without publisher's brand data
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;brand_emblem={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ brand_counts.unknown }} issue{{ brand_counts.unknown|pluralize }}</a>)
+      {% endif %}
+            </ul>
+    {% endif %}
+  {% endwith %}
+{% if series.active_issues.count %}
+            <h3>Indicia Publishers:</h3>
+            <ul class="object-page-link-list columns-1">
+  {% for ip in series.ordered_indicia_publishers %}
+              <li> {{ ip|absolute_url }}
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ ip|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ ip.used_issue_count }} issue{{ ip.used_issue_count|pluralize }}</a>)
+  {% endfor %}
+  {% with indicia_publisher_counts=series.indicia_publisher_info_counts %}
+    {% if indicia_publisher_counts.unknown %}
+              <li> without indicia publisher data
+                 (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)
+    {% endif %}
+  {% endwith %}
+            </ul>
+          </div>
+{% endif %}
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+  {% if series.active_awards.count %}
+<h3>Awards:</h3>
+<ul class="object-page-link-list">
+    {{ series.active_awards|show_award_list }}
+</ul>
+  {% endif %}
+  {% if series.has_tracking %}
+<h3> Tracking: </h3>
+    {% if series.tracking_notes %}
+      {{ series.tracking_notes|linebreaksbr }}
+    {% endif %}
+  <ul class="object-page-link-list columns-1">
+    {{ series|show_series_tracking }}
+  </ul>
+  {% endif %}
+  {% if series.notes %}
+<h3 class="mt-2">Notes:</h3>
+    {{ series.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% if series.active_issues.count %}
+<a name="index_status"></a>
+<h3 class="my-1"> Index Status </h3>
+    {% include "gcd/bits/status_tables.html" %}
+    {% if series.is_comics_publication %}
+<a name="cover_status"></a>
+<h3 class="my-1"> Cover Status </h3>
+      {% include "gcd/bits/scan_tables.html" %}
+    {% endif %}
+  <a name="image_resources_status"></a>
+<h3 class="my-1"> Image Resources Status </h3>
+    {% include "gcd/bits/image_resources_tables.html" %}
+  {% endif %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=series object_class='series' object_name='series' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if user.is_authenticated and not series.pending_deletion %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_issues' series_id=series.id %}">
+    Add Issues</a></btn>
+    {% if perms.indexer.can_approve and series.issue_count %}
+    <btn class="btn btn-blue-editing"><a href="{% url 'reorder_series' series_id=series.id %}">
+    Reorder Issues</a></btn>
+    {% endif %}
+    {% if series.has_series_bonds %}
+    <btn class="btn btn-blue-editing"><a href="{% url 'edit_series_bonds' series_id=series.id %}">
+      Edit Series Bonds</a></btn>
+    {% endif %}
+    <btn class="btn btn-blue-editing"><a href="{% url 'add_series_bond' series_id=series.id %}">
+      Add Series Bond</a></btn>  
+  {% endif %} <!-- logged in -->
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='series' object=series %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

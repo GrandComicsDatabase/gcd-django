@@ -19,7 +19,7 @@ from taggit.managers import TaggableManager
 from .gcddata import GcdData
 from .publisher import IndiciaPublisher, Brand, IndiciaPrinter
 from .image import Image
-from .story import StoryType, STORY_TYPES, CreditType
+from .story import StoryType, STORY_TYPES, AD_TYPES, CreditType
 from .creator import CreatorNameDetail
 from .award import ReceivedAward
 from .datasource import ExternalLink
@@ -27,9 +27,10 @@ from .support_tables import render_publisher
 
 INDEXED = {
     'skeleton': 0,
-    'full': 1,
+    'some_data': 1,
     'partial': 2,
     'ten_percent': 3,
+    'full': 10,
 }
 
 # 1: variant with cover artwork and cover image identical to base
@@ -453,23 +454,40 @@ class Issue(GcdData):
         if not self.variant_of:
             is_indexed = INDEXED['skeleton']
             if Decimal(self.page_count or 0) > 0:
+                # ads and blank
+                FILTER_TYPES = AD_TYPES + [24]
                 total_count = self.active_stories()\
+                              .exclude(type__id__in=FILTER_TYPES)\
                               .aggregate(Sum('page_count'))['page_count__sum']
                 if total_count is None:
                     total_count = 0
+                ad_count = self.active_stories()\
+                               .filter(type__id__in=FILTER_TYPES)\
+                               .aggregate(Sum('page_count'))['page_count__sum']
+                if ad_count is None:
+                    ad_count = 0
                 if (total_count > 0 and
                         total_count >= Decimal('0.4') * self.page_count):
                     is_indexed = INDEXED['full']
                 elif (total_count > 0 and
-                        total_count >= Decimal('0.1') * self.page_count):
+                      total_count >= Decimal('0.5') * (self.page_count
+                                                       - ad_count)):
+                    is_indexed = INDEXED['full']
+                elif (total_count > 0 and
+                        total_count >= Decimal('0.1') * (self.page_count
+                                                         - ad_count)):
                     is_indexed = INDEXED['ten_percent']
 
-            if (is_indexed not in [INDEXED['full'], INDEXED['ten_percent']] and
-                self.active_stories()
-                    .filter(type=StoryType.objects.get(name='comic story'))
-                    .exists()):
-                is_indexed = INDEXED['partial']
-
+            if is_indexed not in [INDEXED['full'], INDEXED['ten_percent']]:
+                if self.active_stories()\
+                       .filter(type=StoryType.objects.get(name='comic story'))\
+                       .exists():
+                    is_indexed = INDEXED['partial']
+                elif self.active_stories()\
+                         .exists():
+                    is_indexed = INDEXED['some_data']
+                elif self.has_reprints():
+                    is_indexed = INDEXED['some_data']
             if is_indexed == INDEXED['full']:
                 if self.page_count_uncertain or self.active_stories()\
                        .filter(page_count_uncertain=True).exists():

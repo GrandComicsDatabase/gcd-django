@@ -40,7 +40,9 @@
           {% with object=publisher function="Publishing" %}
             {% include "gcd/bits/publisher_years.html" %}
           {% endwith %}
-          <span class="font-bold">Country:</span> {{ publisher.country.name }}
+          <span class="font-bold">Country:</span>
+          <img class="inline" src="{{ STATIC_URL }}img/gcd/flags/{{ publisher.country.code|lower }}.png" alt="{{ country }}">
+          {{ publisher.country.name }}
           <ul class="md:columns-2">
 {% if publisher.indicia_publisher_count %}
             <li><span class="font-bold">Indicia / Colophon Publishers:</span>

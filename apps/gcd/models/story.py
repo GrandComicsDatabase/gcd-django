@@ -309,8 +309,12 @@ def show_characters(story, url=True, css_style=True, compare=False):
                 disambiguation += ' - %s' % character.universe
         if reference_universe_id and character.universe:
             if character.universe_id != reference_universe_id:
-                characters += ' <i>(%s)</i>' % character.universe\
-                                                        .universe_name()
+                if url:
+                    characters += ' <i>(%s)</i>' % character.universe\
+                                                            .universe_name()
+                else:
+                    characters += ' (%s)' % character.universe\
+                                                     .universe_name()
         characters += character_notes(character)
 
     if story.characters:

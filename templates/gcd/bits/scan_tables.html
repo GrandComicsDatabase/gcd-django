@@ -1,21 +1,21 @@
 {% load gcdtable %}
 
-<div class="left" style="width:calc(100% - 200px);">
+<div>
   <table class="status">
-    <tr>
-      <td class="scan_status_3"> Scan available </td>
-      <td class="scan_status_4"> Needs Replacement </td>
-      <td class="scan_status_0"> No Scan available </td>
+    <tr class="flex flex-wrap font-bold [&_td]:px-3 [&_td]:border-t-2 [&_td]:border-b-2">
+      <td class="bg-green-500 border-s-2"> Scan Available </td>
+      <td class="bg-yellow-400"> Needs Replacement </td>
+      <td class="border-e-2"> No Scan Available </td>
     </tr>
   </table>
-  <div class="status_grid">
+  <div class="flex flex-wrap">
 {% for entry in scans %}
   {% if entry.issue %}
-    <div class="status_grid_flex {{ cover_status_width }} scan_status_{{ entry.get_cover_status }}">
-        <a href="{{ entry.get_status_url }}">{{ entry.issue.full_descriptor|default:entry }}</a>
+    <div class="border {{ entry.get_cover_color }} {{ cover_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
+      <a class="block hover:no-underline link-with-text-color font-bold" href="{{ entry.get_status_url }}">{{ entry.issue.full_descriptor|default:entry }}</a>
     {% else %}
-    <div class="status_grid_flex {{ cover_status_width }} scan_status_0">
-        <a href="{% if MYCOMICS %}https://www.comics.org/{% endif %}{% url "upload_cover" issue_id=entry.id %}">{{ entry.full_descriptor|default:entry }}</a>
+    <div class="border {{ cover_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
+      <a class="block hover:no-underline link-with-text-color font-bold" href="{% if MYCOMICS %}https://www.comics.org/{% endif %}{% url "upload_cover" issue_id=entry.id %}">{{ entry.full_descriptor|default:entry }}</a>
     {% endif %}
     </div>
 {% endfor %}

@@ -1,20 +1,21 @@
 {% load display %}
 {% load gcdtable %}
 
-<div class="left" style="width:calc(100% - 200px);">
+<div>
 <table class="status">
-  <tr>
-    <td class="status_approved"> Indexed </td>
-    <td class="status_partial"> Partially Indexed </td>
-    <td class="status_pending"> Pending Approval </td>
-    <td class="status_editing"> Reserved </td>
-    <td class="status_available"> Skeleton Data Only </td>
+  <tr class="flex flex-wrap font-bold [&_td]:px-3 [&_td]:border-t-2 [&_td]:border-b-2">
+    <td class="bg-green-500 border-s-2"> Indexed </td>
+    <td class="bg-green-300"> Partially Indexed </td>
+    <td class="bg-green-100"> Some Data </td>
+    <td class=""> Skeleton Data Only </td>
+    <td class="bg-yellow-400"> Pending Approval </td>
+    <td class="bg-red-400 border-e-2"> Reserved </td>
   </tr>
 </table>
-  <div class="status_grid">
-{% for issue in series.active_base_issues %}
-    <div class="status_grid_flex status_{{ issue|index_status_css }} {{ issue_status_width }}">
-      <a href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor_series_status|default:issue }}</a> </td>
+  <div class="flex flex-wrap">
+  {% for issue in series.active_base_issues %}
+    <div class="border {{ issue|index_status_color }} {{ issue_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
+      <a class="block hover:no-underline link-with-text-color font-bold" href="{{ issue.get_absolute_url }}">{{ issue.issue_descriptor_series_status|default:issue }}</a> </td>
     </div>
 {% endfor %}
   </div>

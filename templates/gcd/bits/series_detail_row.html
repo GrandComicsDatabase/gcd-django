@@ -1,7 +1,7 @@
 {% load credits %}
 {% load display %}
 
-<tr class="row_even_{{ row_counter|divisibleby:"2" }}">
+<tr class="{% if row_counter|divisibleby:'2' %}bg-blue-50{% endif %}">
   <td> {{ issue.key_date }} </td>
   <td> {{ issue.publication_date|default:"" }} </td>
   {% if on_sale_date_present %}

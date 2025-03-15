@@ -1990,23 +1990,23 @@ def show_series(request, series, preview=False):
     scans, image_tag, issue = _get_scan_table(series)
 
     if series.has_issue_title:
-        issue_status_width = "status_wide"
+        issue_status_width = "basis-96"
     else:
-        issue_status_width = "status_small"
+        issue_status_width = "basis-24"
 
     if series.has_issue_title:
-        cover_status_width = "status_wide"
+        cover_status_width = "basis-96"
     elif series.active_issues().exclude(variant_name='').count():
-        cover_status_width = "status_medium"
+        cover_status_width = "basis-48"
     else:
-        cover_status_width = "status_small"
+        cover_status_width = "basis-24"
 
     images = series.active_issues().filter(variant_of=None)\
-                   .annotate(num_scans=Sum('image_resources__type__id'))\
+                   .annotate(sum_scans_code=Sum('image_resources__type__id'))\
                    .order_by('sort_code')
 
     return render(
-      request, 'gcd/details/series.html',
+      request, 'gcd/details/tw_series.html',
       {
         'series': series,
         'scans': scans,
@@ -2199,15 +2199,14 @@ def series_details(request, series_id, by_date=False):
         template = 'gcd/details/series_details_sortable.html'
         issues = series.active_issues()
         table = SeriesDetailsIssueTable(issues,
-                                        attrs={'class': 'sortable_listing'},
-                                        template_name=SORT_TABLE_TEMPLATE,
-                                        order_by=('sort_code'),
+                                        template_name=TW_SORT_TABLE_TEMPLATE,
+                                        order_by=('key_date'),
                                         exclude_columns=exclude_columns)
         return generic_sortable_list(request, issues, table, template,
                                      context, 500)
 
     return render(
-      request, 'gcd/details/series_details.html',
+      request, 'gcd/details/series_timeline.html',
       {
         'series': series,
         'by_date': by_date,

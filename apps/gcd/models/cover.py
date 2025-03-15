@@ -74,10 +74,10 @@ class Cover(models.Model):
                 'issue_cover_view',
                 kwargs={'issue_id': self.issue.id, 'size': ZOOM_LARGE})
 
-    def get_cover_status(self):
+    def get_cover_color(self):
         if self.marked:
-            return 4
-        return 3
+            return 'bg-yellow-400'
+        return 'bg-green-500'
 
     def delete(self):
         self.deleted = True
