@@ -1521,6 +1521,10 @@ html {
     width: 50%;
   }
 
+  .max-sm\:max-w-\[25\%\] {
+    max-width: 25%;
+  }
+
   .max-sm\:flex-col {
     flex-direction: column;
   }
