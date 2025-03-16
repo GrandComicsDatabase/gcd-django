@@ -842,6 +842,10 @@ a:hover {
   width: 12rem;
 }
 
+.w-60 {
+  width: 15rem;
+}
+
 .w-9 {
   width: 2.25rem;
 }
