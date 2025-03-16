@@ -76,8 +76,8 @@ class Cover(models.Model):
 
     def get_cover_color(self):
         if self.marked:
-            return 'bg-yellow-400'
-        return 'bg-green-500'
+            return 'bg-green-300'
+        return 'bg-green-600'
 
     def delete(self):
         self.deleted = True

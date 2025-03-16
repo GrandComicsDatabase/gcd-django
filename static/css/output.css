@@ -1069,9 +1069,9 @@ a:hover {
   background-color: rgb(229 231 235 / var(--tw-bg-opacity));
 }
 
-.bg-green-100 {
+.bg-green-200 {
   --tw-bg-opacity: 1;
-  background-color: rgb(220 252 231 / var(--tw-bg-opacity));
+  background-color: rgb(187 247 208 / var(--tw-bg-opacity));
 }
 
 .bg-green-300 {
@@ -1079,9 +1079,14 @@ a:hover {
   background-color: rgb(134 239 172 / var(--tw-bg-opacity));
 }
 
-.bg-green-500 {
+.bg-green-400 {
   --tw-bg-opacity: 1;
-  background-color: rgb(34 197 94 / var(--tw-bg-opacity));
+  background-color: rgb(74 222 128 / var(--tw-bg-opacity));
+}
+
+.bg-green-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(22 163 74 / var(--tw-bg-opacity));
 }
 
 .bg-index-status-edit {

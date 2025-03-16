@@ -274,11 +274,11 @@ def index_status_color(issue):
         else:
             return 'bg-yellow-400'
     elif issue.is_indexed == INDEXED['full']:
-        return 'bg-green-500'
+        return 'bg-green-600'
     elif issue.is_indexed in [INDEXED['partial'], INDEXED['ten_percent']]:
-        return 'bg-green-300'
+        return 'bg-green-400'
     elif issue.is_indexed == INDEXED['some_data']:
-        return 'bg-green-100'
+        return 'bg-green-200'
     else:
         return ''
 
@@ -295,7 +295,7 @@ def issue_image_status_color(issue):
     elif issue.sum_scans_code == 2:
         return 'bg-sky-300'
     else:
-        return 'bg-green-500'
+        return 'bg-green-600'
 
 
 @register.filter
