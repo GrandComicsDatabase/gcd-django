@@ -1,0 +1,52 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Creator Art Influence :: {{ creator_art_influence.influence_name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=creator_art_influence %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Influence:</span>
+  {% if creator_art_influence.influence_name %}
+              {{ creator_art_influence.influence_name }}
+  {% endif %}
+  {% if creator_art_influence.influence_link %}
+              <a href="{{ creator_art_influence.influence_link.get_absolute_url }}">{{ creator_art_influence.influence_link }}</a>
+  {% endif %}
+  {% if creator_art_influence.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ creator_art_influence.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% with creator_art_influence.data_source.all as data_sources %}
+            {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block editing %}
+  {% with object=creator_art_influence object_class='creator_art_influence' object_name='creator_art_influence' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='creator_art_influence' object=creator_art_influence %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

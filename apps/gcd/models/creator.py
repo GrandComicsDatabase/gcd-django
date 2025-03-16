@@ -636,6 +636,10 @@ class CreatorSignature(GcdData):
     def full_name(self):
         return str(self)
 
+    def object_page_name(self):
+        return mark_safe("<a href='%s'>%s</a> - Signature" % (
+          self.creator.get_absolute_url(), self.creator))
+
     def __str__(self):
         return '%s signature %s' % (str(self.creator),
                                     self.name)
@@ -670,6 +674,11 @@ class CreatorRelation(GcdData):
         if self.to_creator == creator:
             return [self.from_creator, self.relation_type.reverse_type]
 
+    def object_page_name(self):
+        return mark_safe("<a href='%s'>%s</a> : <a href='%s'>%s</a>" % (
+          self.from_creator.get_absolute_url(), self.from_creator,
+          self.to_creator.get_absolute_url(), self.to_creator))
+
     def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_creator),
                                            str(self.to_creator),
@@ -693,6 +702,9 @@ class School(models.Model):
         return urlresolvers.reverse(
                 'show_school',
                 kwargs={'school_id': self.id})
+
+    def object_page_name(self):
+        return self
 
     def __str__(self):
         return str(self.school_name)
@@ -747,6 +759,10 @@ class CreatorSchool(GcdData):
                 'show_creator_school',
                 kwargs={'creator_school_id': self.id})
 
+    def object_page_name(self):
+        return mark_safe("<a href='%s'>%s</a> - School" % (
+          self.creator.get_absolute_url(), self.creator))
+
     def __str__(self):
         return '%s - %s' % (str(self.creator),
                             str(self.school.school_name))
@@ -798,6 +814,10 @@ class CreatorDegree(GcdData):
                 'show_creator_degree',
                 kwargs={'creator_degree_id': self.id})
 
+    def object_page_name(self):
+        return mark_safe("<a href='%s'>%s</a> - Degree" % (
+          self.creator.get_absolute_url(), self.creator))
+
     def __str__(self):
         return '%s - %s' % (str(self.creator),
                             str(self.degree.degree_name))
@@ -837,6 +857,11 @@ class CreatorArtInfluence(GcdData):
         return urlresolvers.reverse(
                 'show_creator_art_influence',
                 kwargs={'creator_art_influence_id': self.id})
+
+    def object_page_name(self):
+        return mark_safe("<a href='%s'>%s</a> - Influence: %s" % (
+          self.creator.get_absolute_url(), self.creator,
+          self.influence()))
 
     def __str__(self):
         return '%s > %s' % (self.influence(), self.creator.gcd_official_name)
@@ -908,6 +933,10 @@ class CreatorMembership(GcdData):
 
     def has_dependents(self):
         return self.creator.pending_deletion()
+
+    def object_page_name(self):
+        return mark_safe("<a href='%s'>%s</a> - Membership" % (
+          self.creator.get_absolute_url(), self.creator))
 
     def __str__(self):
         return '%s' % str(self.organization_name)
@@ -1007,6 +1036,10 @@ class CreatorNonComicWork(GcdData):
         return urlresolvers.reverse(
                 'show_creator_non_comic_work',
                 kwargs={'creator_non_comic_work_id': self.id})
+
+    def object_page_name(self):
+        return mark_safe("<a href='%s'>%s</a> - Other Work" % (
+          self.creator.get_absolute_url(), self.creator))
 
     def __str__(self):
         return '%s' % (str(self.publication_title))

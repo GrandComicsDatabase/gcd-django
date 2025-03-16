@@ -1,0 +1,57 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Creator Membership :: {{ creator_membership.creator }} - {{ creator_membership.organization_name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=creator_membership %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Organization:</span>
+              {{ creator_membership.organization_name }}</li>
+            <li><span class="font-bold">Membership Type:</span>
+              {{ creator_membership.membership_type }}</li>
+  {% if creator_membership.membership_year_began or creator_membership.membership_year_began_uncertain %}
+            <li><span class="font-bold">Year Began:</span>
+              {{ creator_membership.membership_year_began|default:'' }} {% if creator_membership.membership_year_began_uncertain %}?{% endif %}
+  {% endif %}
+  {% if creator_membership.membership_year_ended or creator_membership.membership_year_ended_uncertain %}
+            <li><span class="font-bold">Year Ended:</span>
+              {{ creator_membership.membership_year_ended|default:'' }} {% if creator_membership.membership_year_ended_uncertain %}?{% endif %}
+    {% endif %}
+  {% if creator_membership.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ creator_membership.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% with creator_membership.data_source.all as data_sources %}
+            {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block editing %}
+  {% with object=creator_membership object_class='creator_membership' object_name='creator_membership' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='creator_membership' object=creator_membership %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

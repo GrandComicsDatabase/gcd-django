@@ -1,0 +1,71 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Creator NonComicWork :: {{ creator_non_comic_work.publication_title }}
+{% endblock %}
+
+{% block header %}
+  {% with object=creator_non_comic_work %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Publication Title:</span>
+              {{ creator_non_comic_work.publication_title }}</li>
+  {% if creator_non_comic_work.work_type %}
+            <li><span class="font-bold">Work Type:</span>
+              {{ creator_non_comic_work.work_type }}</li>
+  {% endif %}
+  {% if creator_non_comic_work.employer_name %}
+            <li><span class="font-bold">Employer Name:</span>
+              {{ creator_non_comic_work.employer_name }}</li>
+  {% endif %}
+  {% if creator_non_comic_work.work_title %}
+            <li><span class="font-bold">Work Title:</span>    
+              {{ creator_non_comic_work.work_title }}</li>
+  {% endif %}
+  {% if creator_non_comic_work.work_role %}
+            <li><span class="font-bold">Work Role:</span>    
+              {{ creator_non_comic_work.work_role }}</li>
+  {% endif %}
+  {% if creator_non_comic_work.display_years %}
+            <li><span class="font-bold">Work Years:</span>    
+              {{ creator_non_comic_work.display_years }}</li>
+  {% endif %}
+  {% if creator_non_comic_work.work_urls %}
+            <li><span class="font-bold">Work URLs:</span>    
+              {{ creator_non_comic_work.work_urls|urlize|linebreaksbr }}</li>
+  {% endif %}
+  {% if creator_non_comic_work.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ creator_non_comic_work.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% with creator_non_comic_work.data_source.all as data_sources %}
+            {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block editing %}
+  {% with object=creator_non_comic_work object_class='creator_non_comic_work' object_name='creator_non_comic_work' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='creator_non_comic_work' object=creator_non_comic_work %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

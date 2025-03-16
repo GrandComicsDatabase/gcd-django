@@ -338,7 +338,7 @@
   <h3>Schools:</h3>
   <ol class="object-page-numbered-list">
 {% for school in creator.active_schools %}
-    <li>
+    <li class="break-inside-avoid-column">
       <p><a href="{{ school.get_absolute_url }}">{{ school.school }}</a>
 {% if school.school_year_began %}
   {{ school.school_year_began }}

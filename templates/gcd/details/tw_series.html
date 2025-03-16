@@ -118,19 +118,21 @@
     {% endif %}
   {% endwith %}
 {% if series.active_issues.count %}
-            <h3>Indicia Publishers:</h3>
-            <ul class="object-page-link-list columns-1">
+            <div class="break-inside-avoid-column">
+              <h3>Indicia Publishers:</h3>
+              <ul class="object-page-link-list columns-1">
   {% for ip in series.ordered_indicia_publishers %}
-              <li> {{ ip|absolute_url }}
+                <li> {{ ip|absolute_url }}
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ ip|urlencode }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ ip.used_issue_count }} issue{{ ip.used_issue_count|pluralize }}</a>)
   {% endfor %}
   {% with indicia_publisher_counts=series.indicia_publisher_info_counts %}
     {% if indicia_publisher_counts.unknown %}
-              <li> without indicia publisher data
+                <li> without indicia publisher data
                  (<a href="{% url "process_advanced_search" %}?target=issue&amp;method=iexact&amp;logic=False&amp;order1=series&amp;order2=date&amp;order3=&amp;pub_name={{ series.publisher.name|urlencode }}&amp;series={{ series.name|urlencode }}&amp;indicia_publisher={{ is_empty }}&amp;issue_count={{ series.issue_count }}&amp;series_year_began={{ series.year_began }}">{{ indicia_publisher_counts.unknown }} issue{{ indicia_publisher_counts.unknown|pluralize }}</a>)
     {% endif %}
   {% endwith %}
-            </ul>
+              </ul>
+            </div>
           </div>
 {% endif %}
         </div>

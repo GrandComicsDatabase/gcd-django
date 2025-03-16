@@ -1045,7 +1045,7 @@ def show_creator_membership(request, creator_membership, preview=False):
     vars = {'creator_membership': creator_membership,
             'error_subject': creator_membership,
             'preview': preview}
-    return render(request, 'gcd/details/creator_membership.html', vars)
+    return render(request, 'gcd/details/tw_creator_membership.html', vars)
 
 
 def creator_art_influence(request, creator_art_influence_id):
@@ -1059,7 +1059,7 @@ def show_creator_art_influence(request, creator_art_influence, preview=False):
     vars = {'creator_art_influence': creator_art_influence,
             'error_subject': creator_art_influence,
             'preview': preview}
-    return render(request, 'gcd/details/creator_art_influence.html', vars)
+    return render(request, 'gcd/details/tw_creator_art_influence.html', vars)
 
 
 def creator_degree(request, creator_degree_id):
@@ -1073,7 +1073,7 @@ def show_creator_degree(request, creator_degree, preview=False):
             'creator_degree': creator_degree,
             'error_subject': creator_degree,
             'preview': preview}
-    return render(request, 'gcd/details/creator_degree.html', vars)
+    return render(request, 'gcd/details/tw_creator_degree.html', vars)
 
 
 def creator_non_comic_work(request, creator_non_comic_work_id):
@@ -1089,7 +1089,7 @@ def show_creator_non_comic_work(request, creator_non_comic_work,
     vars = {'creator_non_comic_work': creator_non_comic_work,
             'error_subject': creator_non_comic_work,
             'preview': preview}
-    return render(request, 'gcd/details/creator_non_comic_work.html', vars)
+    return render(request, 'gcd/details/tw_creator_non_comic_work.html', vars)
 
 
 def creator_relation(request, creator_relation_id):
@@ -1103,7 +1103,7 @@ def show_creator_relation(request, creator_relation, preview=False):
     vars = {'creator_relation': creator_relation,
             'error_subject': creator_relation,
             'preview': preview}
-    return render(request, 'gcd/details/creator_relation.html', vars)
+    return render(request, 'gcd/details/tw_creator_relation.html', vars)
 
 
 def creator_school(request, creator_school_id):
@@ -1117,7 +1117,7 @@ def show_creator_school(request, creator_school, preview=False):
             'creator_school': creator_school,
             'error_subject': creator_school,
             'preview': preview}
-    return render(request, 'gcd/details/creator_school.html', vars)
+    return render(request, 'gcd/details/tw_creator_school.html', vars)
 
 
 def creator_signature(request, creator_signature_id):
@@ -1131,7 +1131,7 @@ def show_creator_signature(request, creator_signature, preview=False):
     vars = {'creator_signature': creator_signature,
             'error_subject': creator_signature,
             'preview': preview}
-    return render(request, 'gcd/details/creator_signature.html', vars)
+    return render(request, 'gcd/details/tw_creator_signature.html', vars)
 
 
 def award(request, award_id):
@@ -1186,7 +1186,7 @@ def show_school(request, school, preview=False):
             'preview': preview}
     return paginate_response(request,
                              students,
-                             'gcd/details/school.html',
+                             'gcd/details/tw_school.html',
                              vars)
 
 

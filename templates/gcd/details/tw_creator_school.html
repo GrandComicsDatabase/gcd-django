@@ -1,0 +1,55 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Creator School :: {{ creator_school.creator }} - {{ creator_school.school }}
+{% endblock %}
+
+{% block header %}
+  {% with object=creator_school %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">School:</span>
+              <a href="{{ creator_school.school.get_absolute_url }}">{{ creator_school.school }}</a></li>
+  {% if creator_school.school_year_began or creator_school.school_year_began_uncertain %}
+            <li><span class="font-bold">Year Began:</span>
+              {{ creator_school.school_year_began|default:'' }} {% if creator_school.school_year_began_uncertain %}?{% endif %}
+  {% endif %}
+  {% if creator_school.school_year_ended or creator_school.school_year_ended_uncertain %}
+            <li><span class="font-bold">Year Ended:</span>
+              {{ creator_school.school_year_ended|default:'' }} {% if creator_school.school_year_ended_uncertain %}?{% endif %}
+    {% endif %}
+  {% if creator_school.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ creator_school.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% with creator_school.data_source.all as data_sources %}
+            {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block editing %}
+  {% with object=creator_school object_class='creator_school' object_name='creator_school' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='creator_school' object=creator_school %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

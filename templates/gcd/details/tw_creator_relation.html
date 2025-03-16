@@ -1,0 +1,57 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Creator Relation :: {{ creator_relation.from_creator }} - {{ creator_relation.to_creator }}
+{% endblock %}
+
+{% block header %}
+  {% with object=creator_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Creator:</span>
+               <a href="{{ creator_relation.from_creator.get_absolute_url }}">{{ creator_relation.from_creator }}</a></li>
+            <li><span class="font-bold">Relation:</span>
+              {{ creator_relation.relation_type }}</li>
+            <li><span class="font-bold">Creator:</span>
+              <a href="{{ creator_relation.to_creator.get_absolute_url }}">{{ creator_relation.to_creator }}</a></li>
+  {% if creator_relation.creator_name.count %}
+            <li><span class="font-bold">Using Creator Name{{ creator_relation.creator_name.count|pluralize }}:</span>
+    {% for creator_name in creator_relation.creator_name.all %}
+                {{ creator_name.name }}{% if not forloop.last %};{%  endif %}
+    {% endfor %}
+  {% endif %}
+  {% if creator_relation.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ creator_relation.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% with creator_relation.data_source.all as data_sources %}
+            {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block editing %}
+  {% with object=creator_relation object_class='creator_relation' object_name='creator_relation' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='creator_relation' object=creator_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

@@ -1,0 +1,54 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Creator Degree :: {{ creator_degree.creator }} - {{ creator_degree.degree }}
+{% endblock %}
+
+{% block header %}
+  {% with object=creator_degree %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">School:</span>
+              <a href="{{ creator_degree.school.get_absolute_url }}">{{ creator_degree.school }}</a>
+            </li>
+            <li><span class="font-bold">Degree:</span>
+              {{ creator_degree.degree }}</li>
+  {% if creator_degree.degree_year or creator_degree.degree_year_uncertain %}
+            <li><span class="font-bold">Year:</span>
+              {{ creator_degree.degree_year|default:'' }} {% if creator_degree.degree_year_uncertain %}?{% endif %}
+  {% endif %}
+  {% if creator_degree.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ creator_degree.notes|urlizetrunc:75|linebreaksbr }}
+  {% endif %}
+  {% with creator_degree.data_source.all as data_sources %}
+            {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block editing %}
+  {% with object=creator_degree object_class='creator_degree' object_name='creator_degree' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='creator_degree' object=creator_degree %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

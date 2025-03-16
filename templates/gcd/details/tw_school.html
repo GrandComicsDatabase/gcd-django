@@ -1,0 +1,68 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: School :: {{ school.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=school %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+  {% if degrees.count %}
+  <table class="border">
+    <tr class="bg-blue-100 [&>th]:px-1">
+      <th> Degree </th>
+      <th> Creator </th>
+      <th> Year Received </th>
+    </tr>
+    {% for degree in degrees %}
+    <tr class="hover:bg-blue-50 [&>td]:px-1">
+      <td> <a href="{{ degree.get_absolute_url }}">{{ degree.degree }}</a> </td>
+      <td> <a href="{{ degree.creator.get_absolute_url }}">{{ degree.creator }}</a> </td>
+      <td> {{ degree.degree_year|default:"-" }} </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+  {% if page.object_list.count %}
+  <table class="border">
+    <tr class="bg-blue-100 [&>th]:px-1">
+      <th> Creator </th>
+      <th> Years </th>
+    </tr>
+    {% for study in page.object_list %}
+    <tr class="hover:bg-blue-50 [&>td]:px-1">
+      <td> <a href="{{ study.creator.get_absolute_url }}">{{ study.creator }}</a> </td>
+      <td> {{ study.display_years }} </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endblock content %}
+
+{% block editing %}
+{% endblock editing %}
+
+{% block change_history %}
+{% endblock change_history %}

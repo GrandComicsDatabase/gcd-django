@@ -289,11 +289,11 @@ def issue_image_status_color(issue):
     Color for issue image resources status.
     """
     if issue.sum_scans_code == 1:
-        return 'bg-indigo-300'
+        return 'bg-indigo-200'
     elif issue.sum_scans_code is None:
         return ''
     elif issue.sum_scans_code == 2:
-        return 'bg-sky-300'
+        return 'bg-cyan-400'
     else:
         return 'bg-green-600'
 
