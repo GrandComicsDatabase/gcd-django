@@ -1,0 +1,74 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Award :: {{ award.name }}
+{% endblock %}
+
+{% block header %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ award.object_page_name }}
+  </div>
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+</nav>
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          {% if award.notes and page.number == 1 %}
+          <h3>Notes:</h3>
+          {{ award.notes|urlizetrunc:75|linebreaksbr }}
+          {% endif %}
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+  {% if page.object_list.count %}
+  <table class="border">
+    <thead>
+      <tr class="bg-blue-100 [&>th]:px-1">
+        <th> Name </th>
+        <th> Recipient </th>
+        <th> Year Awarded </th>
+      </tr>
+    </thead>
+    {% for awarded in page.object_list %}
+    <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border-t-2 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
+      <td> <a href="{{ awarded.get_absolute_url }}">{{ awarded.display_name }}</a> </td>
+      <td> <a href="{{ awarded.recipient.get_absolute_url }}">{{ awarded.recipient }}</a> </td>
+      <td> {{ awarded.display_year }} </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=award object_class='award' object_name='award' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if request.user.is_authenticated %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'select_award_recipient' award_id=award.id %}">
+    Add Award</a></btn>
+  {% endif %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='award' object=award %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
+
