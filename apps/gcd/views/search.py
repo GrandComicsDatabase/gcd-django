@@ -627,8 +627,7 @@ def printer_search_hx(request):
                       {'object_name': 'Printers',
                        'object_type': 'printer'})
     printer_name = request.POST['search']
-    return printer_by_name(request, printer_name,
-                           template='gcd/search/printer_base_list.html')
+    return printer_by_name(request, printer_name)
 
 
 def printer_by_name(request, printer_name='', sort=ORDER_ALPHA):
