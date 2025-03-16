@@ -62,15 +62,17 @@
 {% endif %}
 <hr>
 <h3 id="indicia_printers">Indicia Printers:</h3>
-<table>
-  <tr class="bg-blue-100 [&>th]:px-1"> 
-    <th> Indicia Printer </th>
-    <th> Issues </th>
-    <th> Began</th>
-    <th> Ended</th>
-  </tr>
+<table class="border">
+  <thead>
+    <tr class="bg-blue-100 [&>th]:px-1">
+      <th> Indicia Printer </th>
+      <th> Issues </th>
+      <th> Began</th>
+      <th> Ended</th>
+    </tr>
+  </thead>
 {% for indicia_printer in indicia_printers %}
-  <tr>
+  <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border-t-2 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
     <td> <a href="{{ indicia_printer.get_absolute_url }}">{{ indicia_printer.name }}</a> </td>
     <td class="px-2 text-left sm:text-right">
       <a href='{% url "indicia_printer_issues" indicia_printer_id=indicia_printer.id %}'>{{ indicia_printer.issue_count }}</a>
@@ -86,8 +88,10 @@
   {% with object=printer object_class='printer' object_name='printer' %}
   {% include "gcd/bits/tw_status_banner.html" %}
   {% endwith %}
+  {% if request.user.is_authenticated %}
   <btn class="btn btn-blue-editing"><a href="{% url 'add_indicia_printer' parent_id=printer.id %}">
     Add Indicia Printer</a></btn>
+  {% endif %}
 {% endblock editing %}
 
 {% block change_history %}

@@ -92,5 +92,9 @@ class ReceivedAward(GcdData):
                 'show_received_award',
                 kwargs={'received_award_id': self.id})
 
+    def object_page_name(self):
+        return mark_safe('%s for <a href="%s">%s</a>' % (
+          self, self.recipient.get_absolute_url(), self.recipient))
+
     def __str__(self):
         return str(self.award_name)

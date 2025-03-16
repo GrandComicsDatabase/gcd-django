@@ -1,0 +1,58 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Received Award :: {{ received_award.award_name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=received_award %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+  {% if received_award.award %}
+            <li><span class="font-bold">Award:</span>
+            <a href="{{ received_award.award.get_absolute_url }}">{{ received_award.award }}</a></li>
+  {% endif %}
+            <li><span class="font-bold">Award Name:</span>
+            {{ received_award.display_name }}</li>
+  {% if received_award.award_year %}
+            <li><span class="font-bold">Award Year:</span>
+            {{ received_award.award_year }}</li>
+  {% endif %}
+  {% if received_award.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ received_award.notes|urlizetrunc:75|linebreaksbr }}</li>
+  {% endif %}
+  {% with received_award.data_source.all as data_sources %}
+    {% include "gcd/bits/show_sources.html" %}
+  {% endwith %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=received_award object_class='received_award' object_name='received_award' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='received_award' object=received_award %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

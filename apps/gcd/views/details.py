@@ -1062,19 +1062,6 @@ def show_creator_art_influence(request, creator_art_influence, preview=False):
     return render(request, 'gcd/details/creator_art_influence.html', vars)
 
 
-def received_award(request, received_award_id):
-    received_award = get_gcd_object(ReceivedAward, received_award_id,
-                                    model_name='received_award')
-    return show_received_award(request, received_award)
-
-
-def show_received_award(request, received_award, preview=False):
-    vars = {'received_award': received_award,
-            'error_subject': received_award,
-            'preview': preview}
-    return render(request, 'gcd/details/received_award.html', vars)
-
-
 def creator_degree(request, creator_degree_id):
     creator_degree = get_gcd_object(CreatorDegree, creator_degree_id,
                                     model_name='creator_degree')
@@ -1164,8 +1151,21 @@ def show_award(request, award, preview=False):
             'preview': preview}
     return paginate_response(request,
                              awards,
-                             'gcd/details/award.html',
+                             'gcd/details/tw_award.html',
                              vars)
+
+
+def received_award(request, received_award_id):
+    received_award = get_gcd_object(ReceivedAward, received_award_id,
+                                    model_name='received_award')
+    return show_received_award(request, received_award)
+
+
+def show_received_award(request, received_award, preview=False):
+    vars = {'received_award': received_award,
+            'error_subject': received_award,
+            'preview': preview}
+    return render(request, 'gcd/details/tw_received_award.html', vars)
 
 
 def school(request, school_id):
