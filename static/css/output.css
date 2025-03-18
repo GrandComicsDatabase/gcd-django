@@ -846,6 +846,10 @@ a:hover {
   right: 0px;
 }
 
+.right-1 {
+  right: 0.25rem;
+}
+
 .z-0 {
   z-index: 0;
 }
@@ -1664,6 +1668,10 @@ html {
 
   .max-md\:right-0 {
     right: 0px;
+  }
+
+  .max-md\:right-1 {
+    right: 0.25rem;
   }
 
   .max-md\:hidden {
