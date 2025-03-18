@@ -6,6 +6,10 @@
 {% load display %}
 {% load editing %}
 
+{% block css_raw %}
+<script type="text/javascript" src="{% static 'js/htmx.min.js' %}"></script>
+{% endblock %}
+
 {% block title %}
   GCD :: Issue :: {{ issue.short_name }}
 {% endblock %}
