@@ -1685,6 +1685,10 @@ html {
   .max-md\:overflow-hidden {
     overflow: hidden;
   }
+
+  .max-md\:border-2 {
+    border-width: 2px;
+  }
 }
 
 @media not all and (min-width: 640px) {
