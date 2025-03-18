@@ -135,6 +135,8 @@ def get_story_revision_form(revision=None, user=None,
             if issue.is_indexed == INDEXED['full']:
                 sequence_filter.extend(['cover',
                                         'illustration'])
+            elif issue.is_indexed == INDEXED['ten_percent']:
+                sequence_filter.extend(['cover',])
         queryset = StoryType.objects.filter(name__in=sequence_filter)
         # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:

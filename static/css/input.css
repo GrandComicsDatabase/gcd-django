@@ -25,6 +25,36 @@
     .link-with-text-color {
         @apply text-black visited:text-black
     }
+    .field-name-label {
+        @apply font-bold pe-1 align-top
+    }
+    .navigation-bar-box-link {
+      @apply link-with-text-color px-2 hover:bg-blue-300 hover:no-underline border border-gray-400
+    }
+    .btn {
+      @apply font-bold py-1 px-4 rounded;
+    }
+    .btn-blue-editing {
+      @apply font-normal block me-1 mt-1 max-sm:m-1 sm:mx-1 bg-blue-200 text-black text-sm text-center;
+      a {
+        @apply text-black visited:text-black hover:no-underline text-center;
+      };
+    }
+    .btn-blue {
+      @apply bg-blue-500 text-white;
+      a {
+        @apply text-white visited:text-white hover:no-underline;
+      }
+    }
+    .btn-blue:hover {
+      @apply bg-blue-700;
+    }
+    .btn-blue-editing:hover {
+      @apply bg-blue-400;
+    }
+    .btn-blue-disabled {
+      @apply font-normal bg-blue-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
+    }
 }
 
 html {
@@ -32,31 +62,6 @@ html {
   @screen sm {
     font-size: 15px;
   }
-}
-
-.btn {
-  @apply font-bold py-1 px-4 rounded;
-}
-.btn-blue {
-  @apply bg-blue-500 text-white;
-  a {
-    @apply text-white visited:text-white hover:no-underline;
-  }
-}
-.btn-blue:hover {
-  @apply bg-blue-700;
-}
-.btn-blue-editing {
-  @apply font-normal block me-1 mt-1 max-sm:m-1 sm:mx-1 bg-blue-200 text-black text-sm text-center;
-  a {
-    @apply text-black visited:text-black hover:no-underline text-center;
-  };
-}
-.btn-blue-editing:hover {
-  @apply bg-blue-400;
-}
-.btn-blue-disabled {
-  @apply font-normal bg-blue-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
 }
 
 @layer components {

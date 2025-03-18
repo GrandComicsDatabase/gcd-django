@@ -77,7 +77,7 @@ def show_award_list(awards):
 
 
 @register.filter
-def show_credit(story, credit, tailwind=False):
+def show_credit(story, credit, tailwind=False, bare_value=False):
     """
     For showing the credits on the search results page.
     As far as I can tell Django template filters can only take
@@ -217,27 +217,55 @@ def show_credit(story, credit, tailwind=False):
         else:
             display_genre = genres
         story.genre = display_genre
-        return __format_credit(story, credit)
+        return __format_credit(story, credit, tailwind=tailwind)
     elif credit == 'pages':
         if story.page_began:
             if story.page_ended:
                 story.pages = "%s - %s" % (story.page_began, story.page_ended)
             else:
                 story.pages = story.page_began
-            return __format_credit(story, credit)
+            return __format_credit(story, credit, tailwind=tailwind)
         return ""
     elif credit == 'show_awards':
         if story.active_awards().count():
             display_award = '<ul>%s</ul>' % show_award_list(story
                                                             .active_awards())
             story.show_awards = mark_safe(display_award)
-            return __format_credit(story, credit)
+            return __format_credit(story, credit, bare_value=bare_value)
         else:
             return ""
     elif hasattr(story, credit):
-        return __format_credit(story, credit, tailwind=tailwind)
+        return __format_credit(story, credit, tailwind=tailwind,
+                               bare_value=bare_value)
     else:
         return ""
+
+
+@register.filter
+def show_credit_tw_inline(story, credit):
+    return show_credit(story, credit, tailwind=True)
+
+
+@register.filter
+def show_credit_bare_value(story, credit):
+    value = show_credit(story, credit, bare_value=True)
+    if value:
+        return mark_safe(value[1][4:-5])
+    else:
+        return ''
+
+
+@register.filter
+def show_credit_description_list(story, credit):
+    try:
+        label, value = show_credit(story, credit, bare_value=True)
+    except ValueError as e:
+        if str(e) != 'not enough values to unpack (expected 2, got 0)':
+            raise
+        else:
+            return ''
+    return mark_safe('<dt class="field-name-label">' + label +
+                     ':</dt><dd>' + value + '</dd>')
 
 
 def __credit_visible(value):
@@ -248,7 +276,26 @@ def __credit_visible(value):
     return value is not None and value != ''
 
 
-def __format_credit(story, credit, computed_value='', tailwind=False):
+def __label(story, field):
+    if field == 'job_number':
+        return _('Job Number')
+    elif field == 'first_line':
+        return _('First Line of Dialogue or Text')
+    elif field == 'doi':
+        return 'DOI'
+    elif field == 'show_awards':
+        return 'Awards'
+    if (field in ['reprint_notes', 'reprint_original_notes']):
+        return _('Reprinted')
+    else:
+        return _(field.title())
+
+
+def __format_credit(story, credit, computed_value='', tailwind=False,
+                    bare_value=False):
+    if bare_value and tailwind:
+        raise ValueError('Cannot have both bare_value and tailwind')
+    label = __label(story, credit)
     if credit in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
         credit_value = __credit_value(story, credit, url=True)
     elif credit in ['characters', 'feature']:
@@ -262,19 +309,7 @@ def __format_credit(story, credit, computed_value='', tailwind=False):
     if not __credit_visible(credit_value):
         return ''
 
-    if (credit == 'job_number'):
-        label = _('Job Number')
-    elif (credit == 'first_line'):
-        label = _('First Line of Dialogue or Text')
-    elif (credit == 'doi'):
-        label = 'DOI'
-    elif (credit == 'show_awards'):
-        label = 'Awards'
-    else:
-        label = _(credit.title())
-
     if (credit in ['reprint_notes', 'reprint_original_notes']):
-        label = _('Reprinted')
         values = split_reprint_string(credit_value)
         credit_value = '<ul>'
         for value in values:
@@ -291,15 +326,16 @@ def __format_credit(story, credit, computed_value='', tailwind=False):
         if credit_value == '':
             return ''
     elif credit == 'feature_logo':
-        label = _('Feature Logo')
         credit_value = esc(story.show_feature_logo())
         if credit_value == '':
             return ''
     else:  # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     if tailwind:
-        return mark_safe('<span class="font-bold pe-1 align-top">' + label +
+        return mark_safe('<span class="field-name-label">' + label +
                          ':</span>' + credit_value)
+    elif bare_value:
+        return label, credit_value
     else:
         dt = '<dt class="credit_tag'
         dd = '<dd class="credit_def'
@@ -783,7 +819,7 @@ def follow_reprint_link(reprint, direction, level=0):
 
 
 @register.filter
-def show_reprints(story):
+def show_reprints(story, bare_value=False):
     """ Filter for our reprint line on the story level."""
     from_reprints = story.from_all_reprints \
                          .select_related('origin_issue__series__publisher',
@@ -813,6 +849,8 @@ def show_reprints(story):
             reprint += '<li> ' + esc(string) + ' </li>'
 
     if reprint != '':
+        if bare_value:
+            return mark_safe(reprint)
         label = _('Reprints')
         return mark_safe('<dt class="credit_tag">' +
                          '<span class="credit_label">' + label +
@@ -840,11 +878,8 @@ def show_reprints_for_issue(issue):
 
     if reprint != '':
         label = _('Parts of this issue are reprinted') + ': '
-        dt = '<dt class="credit_tag>'
-        dd = '<dd class="credit_def>'
 
-        return mark_safe(dt + '<span class="credit_label">' + label + '</span>'
-                         '</dt>' + dd + '<span class="credit_value">'
-                         '<ul>' + reprint + '</ul></span></dd>')
+        return mark_safe(label + '<ul class="object-page-link-list columns-1">'
+                          + reprint + '</ul>')
     else:
         return ""

@@ -1,0 +1,350 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load display %}
+{% load editing %}
+
+{% block title %}
+  GCD :: Issue :: {{ issue.short_name }}
+{% endblock %}
+
+{% block header %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ issue.object_page_name }}
+  </div>
+  <div class="font-bold text-lg">
+    {{ issue.publication_date}}
+  </div>
+</nav>
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-lg self-start">
+    {{ issue.series.publisher|absolute_url }},
+    {{ issue.series.year_began }}{% if issue.series.year_began_uncertain %}?{% endif %} Series
+  </div>
+  {% if issue.series.is_singleton %}
+  <div class="font-bold max-sm:max-w-[25%]">
+    {% if language %}
+      Published in {{ language }}
+    {% endif %}
+    {% if country %}
+      ({{ country }})
+      <img class="inline" src="{{ STATIC_URL }}img/gcd/flags/{{ issue.series.country.code|lower }}.png" alt="{{ country }}">
+    {% endif %}  
+  </div>
+  {% endif %}  
+  <div>
+    {% include "gcd/bits/tw_series_navigation.html" %}
+  </div>
+</nav>
+{% endblock %}
+
+{% block content_left %}
+<div class="max-md:w-[calc(100vw-36px)] max-md:min-h-20">
+  <div class="flex flex-wrap gap-x-4">
+  {% if not issue.no_volume and issue.series.has_volume %}
+    <div><span class="font-bold">Volume:</span> {{ issue.volume }}</div>
+  {% endif %}
+    <div><span class="font-bold">Price:</span> {{ issue.price|default:"?" }}</div>
+    <div><span class="font-bold">Pages:</span> {{ issue|show_page_count|default:"?" }}</div>
+  {% if issue.on_sale_date %}
+    <div><span class="font-bold">On-sale Date:</span> {{ issue.on_sale_date }}
+    {% if issue.on_sale_date_uncertain %} ? {% endif %}</div>
+  {% endif %}
+  </div>
+  <span class="font-bold">Editing:</span> {{ issue|show_creator_credit_bare:"editing" }}
+</div>
+<div class="flex">
+  <div class="w-[100px] sm:w-[200px] mt-1 text-center">
+    {% if issue.has_covers %}
+          <a href="cover/4/">{{ image_tag }}</a>
+      {% if not preview %}
+          <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url 'edit_covers' issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a><br>
+      {% endif %}
+          <a href="{{ issue.series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
+    {% else %}
+      {% if preview %}
+        {{ image_tag }}
+      {% else %}
+        {% if issue.series.is_comics_publication or issue.can_have_cover %}
+            <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url 'upload_cover' issue_id=issue.id %}">{{ image_tag }}</a>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+    {% if variant_image_tags %}
+      {% with num_variants=variant_image_tags|length %}
+        {% if num_variants > 5 %}
+    <details class="[&_svg]:open:rotate-90">
+      <summary class="list-none"> 
+              {% include 'gcd/bits/svg_details.html' %}
+              {{ num_variants }} variant cover scan{{ num_variants|pluralize }}
+      </summary>
+        {% endif %}
+      <div class="flex flex-wrap gap-1">
+      {% for variant, image_tag in variant_image_tags %}
+        <div class="w-[98px] flex"><a  href="{{ variant.get_absolute_url }}">{{ image_tag }}</a></div>
+      {% endfor %}
+      </div>
+        {% if num_variants > 5 %}
+    </details>
+        {% endif %}
+      {% endwith %}
+    {% endif %}
+    </div>
+    {% if cover_story %}
+  <div class="ps-2 flex-1">
+      {% with story=cover_story is_cover=1 %}
+      {% include "gcd/details/tw_single_story.html" %}
+      {% endwith %}
+  </div>
+    {% endif %}
+</div>
+<h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Issue Data </h3>
+<ul class="md:columns-2 ml-1">
+  {% if not issue.no_brand %}
+<li><span class="font-bold">Publisher's Brand:</span>
+    {% if issue.brand.emblem %}
+      {{ issue.brand|absolute_url:issue.brand.emblem|default:"?" }}</li>
+    {% else %}
+      {{ issue.brand|absolute_url|default:"?" }}
+    {% endif %}
+</li>
+  {% endif %}
+
+<li><span class="font-bold">Indicia&nbsp;/&nbsp;Colophon Publisher:</span> {{ issue|show_indicia_pub }}</a></li>
+
+  {% if not issue.no_indicia_frequency and issue.series.has_indicia_frequency %}
+<li><span class="font-bold">Indicia Frequency:</span> {{ issue.indicia_frequency|default:"?" }}</li>
+  {% endif %}
+
+  {% if issue.rating and issue.series.has_rating %}
+<li><span class="font-bold">Publisher's Age Guidelines:</span> {{ issue.rating }}</li>
+  {% endif %}
+  {% if issue.active_code_numbers.count %}
+    {% for code_number in issue.active_code_numbers %}
+  <li><span class="font-bold">{{ code_number.number_type }}:</span> {{ code_number.number }}</li>
+    {% endfor %}
+  {% endif %}
+
+  {% if not issue.no_indicia_printer and issue.series.has_indicia_printer and issue.active_printers.count %}
+<li><span class="font-bold">Printer:</span> {{ issue.show_printer }}</li>
+  {% endif %}
+
+  {% if not issue.no_isbn and issue.series.has_isbn %}
+<li><span class="font-bold">ISBN:</span>
+    {% if issue.valid_isbn %}
+        <a title="Search at WorldCat" href="http://worldcat.org/isbn/{{ issue.valid_isbn }}">
+          {{ issue.isbn|show_isbn }}
+          <img class="inline" src="{% static 'img/gcd/icons/worldcat_16.gif' %}" width="12px;" alt="Search at WorldCat" style="border:0;">
+        </a>
+    {% else %}
+      {{ issue.isbn|show_isbn|default:"?" }}
+    {% endif %}
+</li>
+  {% endif %}
+
+  {% if not issue.no_barcode and issue.series.has_barcode %}
+<li><span class="font-bold">Barcode:</span> {{ issue.barcode|show_barcode|default:"?" }}</li>
+  {% endif %}
+
+  {% if issue.external_link.count %}
+    {% for external_link in issue.external_link.all %}
+  <li><span class="font-bold">Link:</span> {{ external_link.link|urlize }}</li>
+    {% endfor %}
+  {% endif %}
+</ul>
+
+<div class="ml-1">
+  {% if issue.variant_of %}
+  This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ issue.variant_of.full_name }}</a>.
+  {% endif %}
+  {% if issue.other_variants %}
+    {% with num_variants=issue.other_variants|length %}
+      {% if num_variants > 5 %}
+  <details class="[&_svg]:open:rotate-90">
+    <summary class="list-none"> 
+            {% include 'gcd/bits/svg_details.html' %}
+      {% endif %}
+      {% if not issue.variant_of %}
+    This issue has {{ num_variants }} variant{{ num_variants|pluralize }}:
+      {% else %}
+        {% if num_variants <= 5 %}<br>{% endif %}
+        There exist {{ num_variants }} further variant{{ num_variants|pluralize }}:
+      {% endif %}
+      {% if num_variants > 5 %}
+    </summary>
+      {% endif %}
+    <dl class="contents">
+      <ul class="object-page-link-list columns-1">
+      {% for variant in issue.other_variants %}
+        <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
+      {% endfor %}
+      </ul>
+    </dl>
+      {% if num_variants > 5 %}
+  </details>
+      {% endif %}
+    {% endwith %}
+  {% endif %}
+
+  {% if issue.active_awards.count %}
+  <div class="field-name-label">Awards:</div>
+  <ul class="object-page-link-list columns-1">{{ issue|show_credit_bare_value:"show_awards" }}</ul>
+  {% endif %}
+
+  {% if issue.has_reprints %}
+<dl class="contents">
+{{ issue|show_reprints_for_issue }}
+</dl>
+{% endif %}
+
+</div>
+
+  {% if issue.notes %}
+<h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Indexer Notes </h3>
+<div class="ml-1">
+      {{ issue.notes|urlizetrunc:75|linebreaksbr }}
+</div>
+  {% endif %}
+
+  {% with no_show_sequence_types=request.user.indexer.no_show_sequences.all %}
+    {% for story in stories %}
+      {% if not not_shown_types or not request.user.indexer or story.type not in no_show_sequence_types %}
+        {% include "gcd/details/tw_single_story.html" %}
+      {% endif %}
+    {% endfor %}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block issue_links %}
+<div class="my-1 bg-gcd max-sm:hidden font-bold px-2 py-1 text-white rounded">
+Related Links
+</div>
+<ul class="ps-1 max-sm:hidden text-sm">
+  {% if not issue.series.is_singleton %}
+    {% if issue.series.has_gallery %}
+    <li> <a href="{{ issue.series.get_absolute_url }}covers">Series Cover Gallery</a>
+    {% endif %}
+    <li> <a href="{% url "series_details" series_id=issue.series.id %}">Series Details by Issue</a><br/>
+    <li> <a href="{% url "series_timeline" series_id=issue.series.id %}">Series Monthly Timeline</a>
+  {% endif %}
+  {% if issue.indicia_image or issue.soo_image %}
+    {% if issue.indicia_image %}
+    <li> <a href="{% url "issue_images" issue_id=issue.id %}">Indicia Scan</a></li>
+    {% endif %}
+    {% if issue.soo_image %}
+    <li> <a href="{% url "issue_images" issue_id=issue.id %}">Statement of Ownership Scan</a></li>
+    {% endif %}
+  {% else %}
+    <li> <a href="{% url "issue_images" issue_id=issue.id %}">No Issue Scans</a></li> 
+  {% endif %}
+</ul>
+{% endblock %}
+
+{% block issue_toc %}
+<div class="my-1 bg-gcd font-bold px-1 h-8 md:px-2 py-1 text-white rounded max-md:w-9 max-md:absolute max-md:right-0 max-md:overflow-hidden">
+  <span class="max-md:hidden">Table of Contents</span>
+  <span class="toc-bar-small md:hidden m-0 mobile-toc-button z-0">ToC</span>
+</div>
+<ol class="toc list-decimal ps-4 w-56 text-sm max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0">
+<div class="mobile-toc-button-expanded md:hidden my-1 bg-gcd font-bold px-1 h-8 md:hidden text-base sm:px-2 py-1 text-white rounded">
+  <span class="toc-bar-full">Table of Contents</span>
+</div>
+{% if cover_story %}
+  <li style="counter-reset: list-item -1;">
+    <span>
+      <a name="toc_{{ cover_story.id }}" href="#{{ cover_story.id }}">{{ cover_story|show_title:1 }}</a></span><br/>
+    <span>{{ cover_story.show_feature}}</span>
+{% endif %}
+{% for story in stories %}
+  <li>
+    <span>
+      <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}?show_all{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
+    <span>{{ story.show_feature}}</span>
+{% endfor %}
+</ol>
+{% endblock %}
+
+{% block editing %}
+  {% with object=issue object_class='issue' object_name='issue' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if user.is_authenticated and not series.pending_deletion %}
+    {% if not issue.variant_of %}
+    <btn class="btn btn-blue-editing font-normal"><a href="{% url 'add_variant_issue' issue_id=issue.id %}">
+      Add Variant Issue</a></btn>
+    {% endif %}
+    {% if issue.variant_of and not issue.variant_of|is_locked and not issue|is_locked %}
+    <btn class="btn btn-blue-editing font-normal">
+      <form method="POST"
+            action="{% url "reserve_two_issues" issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
+      {% csrf_token %}
+        <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit with base issue" />
+      </form>
+    </btn>
+    {% endif %}  
+  {% endif %} <!-- logged in -->
+  <btn class="btn btn-blue-editing">
+    <a href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}&amp;short_desc={{ issue|urlencode }}" target="_blank">Report Information</a>
+  </btn>
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='issue' object=issue %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
+
+{% block js %}
+  {{ block.super }}
+<script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", () => {
+      // Select all dropdown toggle buttons
+      const editingToggles = document.querySelectorAll(".mobile-toc-button, .mobile-toc-button-expanded")
+        editingToggles.forEach((toggle) => {
+        toggle.addEventListener("click", () => {
+          document.querySelectorAll(".toc").forEach((menu) => {
+              menu.classList.toggle("max-md:hidden")
+          })
+          document.querySelectorAll(".mobile-toc-button-expanded").forEach((menu) => {
+              menu.classList.toggle("md:hidden")
+          })
+          document.querySelectorAll(".toc-bar-small").forEach((menu) => {
+              menu.classList.toggle("md:hidden")
+          })
+        })
+      })
+    
+      // Clicking outside of an open dropdown menu closes it
+      window.addEventListener("click", function (e) {
+        if (!e.target.matches(".mobile-toc-button") && !e.target.matches(".mobile-toc-button-expanded") ) {
+          document.querySelectorAll(".toc").forEach((menu) => {
+            if (!menu.contains(e.target)) {
+              menu.classList.add("max-md:hidden")
+            }
+          })
+          document.querySelectorAll(".mobile-toc-button-expanded").forEach((menu) => {
+            if (!menu.contains(e.target)) {
+              menu.classList.add("md:hidden")
+            }
+            })
+          if (window.matchMedia('(max-width: 768px)').matches) {
+            // md breakpoint is typically 768px in Tailwind
+            // your md-specific code here
+            document.querySelectorAll(".toc-bar-small").forEach((menu) => {
+              if (!menu.contains(e.target)) {
+                menu.classList.remove("md:hidden")
+              }
+            })
+          }
+        }
+      })
+      
+    })
+</script>
+{% endblock %}

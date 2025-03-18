@@ -18,31 +18,31 @@
   {% endblock %}
   </div>
   <div class="flex justify-end"> <!-- editing -->
-    <div class="md:pe-1 mt-2">
+    <div class="md:pe-1 mt-1">
       <div class="max-md:hidden rounded flex bg-gcd text-white font-bold px-2 py-1">Editing</div>
-      <div class="md:hidden w-9 bg-gcd h-7 ps-1">
-        <button class="mobile-editing-menu-button">
+      <div class="md:hidden h-7 ">
+        <button class="mobile-editing-menu-button bg-gcd rounded w-9 ps-1 right-0 {{ absolute }}">
             {% include "gcd/bits/tw_three_bars.html" %}
         </button>
       </div>
-      <div class="w-58 editing-menu max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0">
+      <div class="w-56 editing-menu max-md:hidden max-md:absolute z-10 overflow-hidden bg-white max-md:right-0">
         {% block editing %}
         {% endblock %}    
         {% block change_history %}
           {% if not preview or preview and object.source or preview and object.revision.source %}
-        <div class="my-1 bg-gcd font-bold px-2 py-1 text-center rounded hover:bg-blue-700">
+        <btn class="btn btn-blue-editing font-bold px-2 py-1 text-base mx-0">
             {% if preview %}
               {% if object.source %}
-                <a class="text-white visited:text-white" href="{% url "change_history" model_name=model_name id=object.source.id %}">View Change History</a>
+                <a class="link-with-text-color" href="{% url "change_history" model_name=model_name id=object.source.id %}">View Change History</a>
               {% elif object.revision.source %}
-                <a class="text-white visited:text-white" href="{% url "change_history" model_name=model_name id=object.id %}">View Change History</a>
+                <a class="link-with-text-color" href="{% url "change_history" model_name=model_name id=object.id %}">View Change History</a>
               {% endif %}
             {% else %}
-              <a class="text-white visited:text-white" href="{% url "change_history" model_name=model_name id=object.id %}">View Change History</a>
+              <a class="link-with-text-color " href="{% url "change_history" model_name=model_name id=object.id %}">View Change History</a>
             {% endif %}
           {% endif %}
-        </div>
-        {% endblock change_history %}
+        </btn>
+      {% endblock change_history %}
 
         {% block www_my_comics_cross_link %}
           {% if object_url and not preview %}
@@ -65,6 +65,10 @@
         <a href="{% querystring 'display'='grid' %}" class="pe-1 {% if 'grid' == request.GET.display %}pointer-events-none"><svg class="fill-slate-400{% else %}"><svg class="{% endif %} border border-gray-400 px-1 py-1 w-9 h-9" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="m 1.992188 0 c -1.089844 0 -2.0000005 0.910156 -2.0000005 2 v 3 c 0 1.089844 0.9101565 2 2.0000005 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m 8 0 c -1.089844 0 -2 0.910156 -2 2 v 3 c 0 1.089844 0.910156 2 2 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m -8 2 h 3 v 3 h -3 z m 8 0 h 3 v 3 h -3 z m -8 6 c -1.089844 0 -2.0000005 0.910156 -2.0000005 2 v 3 c 0 1.089844 0.9101565 2 2.0000005 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m 8 0 c -1.089844 0 -2 0.910156 -2 2 v 3 c 0 1.089844 0.910156 2 2 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m -8 2 h 3 v 3 h -3 z m 8 0 h 3 v 3 h -3 z m 0 0"/></svg></a>
       </div>
       {% endif %}
+      {% block issue_links %}
+      {% endblock %}
+      {% block issue_toc %}
+      {% endblock %}
     </div>  
   </div>
 </div>

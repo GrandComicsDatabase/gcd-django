@@ -457,8 +457,9 @@ class Issue(GcdData):
                 # ads and blank
                 FILTER_TYPES = AD_TYPES + [24]
                 total_count = self.active_stories()\
-                              .exclude(type__id__in=FILTER_TYPES)\
-                              .aggregate(Sum('page_count'))['page_count__sum']
+                                  .exclude(type__id__in=FILTER_TYPES)\
+                                  .aggregate(Sum('page_count'))[
+                                    'page_count__sum']
                 if total_count is None:
                     total_count = 0
                 ad_count = self.active_stories()\
@@ -550,11 +551,10 @@ class Issue(GcdData):
             'show_issue',
             kwargs={'issue_id': self.id})
 
-    @property
-    def descriptor_addon(self):
+    def _descriptor_addon(self, show_code=True):
         add_on = ''
         code_number = ''
-        if self.active_code_numbers().filter(number_type__id=1):
+        if show_code and self.active_code_numbers().filter(number_type__id=1):
             code_number = "(%s)" % (self.active_code_numbers()
                                     .get(number_type__id=1).number)
         if self.variant_name:
@@ -562,6 +562,18 @@ class Issue(GcdData):
         if add_on and code_number:
             code_number = " " + code_number
         return "%s%s" % (add_on, code_number)
+
+    @property
+    def descriptor_addon(self):
+        return self._descriptor_addon()
+
+    @property
+    def issue_page_descriptor(self):
+        add_on = self._descriptor_addon(show_code=False)
+        issue_descriptor = self.display_number
+        if issue_descriptor and add_on:
+            add_on = ' ' + add_on
+        return "%s%s" % (issue_descriptor, add_on)
 
     @property
     def full_descriptor(self):
@@ -632,6 +644,15 @@ class Issue(GcdData):
                                    self.variant_name)
         else:
             return '%s %s' % (self.series.name, self.display_number)
+
+    def object_page_name(self):
+        issue_number = self.issue_page_descriptor
+        if self.series.is_singleton:
+            return mark_safe('%s %s' % (self.series.name, issue_number))
+        else:
+            return mark_safe('<a href="%s">%s</a> %s'
+                             % (self.series.get_absolute_url(),
+                                self.series.name, issue_number))
 
     def __str__(self):
         if self.variant_name:
@@ -797,7 +818,8 @@ class IndiciaPublisherIssueTable(IssueTable):
         return str(value)
 
 
-class IndiciaPublisherIssueCoverTable(IndiciaPublisherIssueTable, IssueCoverTable):
+class IndiciaPublisherIssueCoverTable(IndiciaPublisherIssueTable,
+                                      IssueCoverTable):
     class Meta:
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',

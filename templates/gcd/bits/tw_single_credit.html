@@ -2,9 +2,9 @@
 {% show_bare_creator_credits story credit_type show_sources as value %}
 {% if value %}
 <tr>
-  <td class="font-bold pe-1 align-top">
+  <td class="field-name-label">
   {% if story.changeset %}
-    Inks:
+  {{ credit_type|capfirst }}:
   {% else %}
     <a hx-get="/story/{{ story.id }}/{{ credit_type }}/history/" hx-target="body" hx-swap="beforeend" 
     style="cursor: pointer; color: #2727eb;">{{ credit_type|capfirst }}:</a>

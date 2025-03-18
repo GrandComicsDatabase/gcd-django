@@ -157,7 +157,8 @@ def get_civilian_identity(character, appearing_characters, url=True,
         return ''
 
 
-def show_characters(story, url=True, css_style=True, compare=False):
+def show_characters(story, url=True, css_style=True, compare=False,
+                    bare_value=False):
     first = True
     characters = ''
     disambiguation = ''
@@ -349,11 +350,14 @@ def show_characters(story, url=True, css_style=True, compare=False):
 
     if characters and url:
         if css_style:
-            dt = '<dt class="credit_tag"><span class="credit_label">' \
-                 'Characters</span></dt>'
-            return mark_safe(
-              dt + '<dd class="credit_def"><span class="credit_value">'
-              + characters + '</span></dd>')
+            if bare_value:
+                return mark_safe(characters)
+            else:
+                dt = '<dt class="credit_tag"><span class="credit_label">' \
+                  'Characters</span></dt>'
+                return mark_safe(
+                  dt + '<dd class="credit_def"><span class="credit_value">'
+                  + characters + '</span></dd>')
         else:
             if compare and disambiguation:
                 return mark_safe(characters +
@@ -628,12 +632,12 @@ class Story(GcdData):
         """
         return self.job_number or \
             self.genre or \
-            self.has_characters or \
+            self.has_characters() or \
             self.first_line or \
             self.synopsis or \
             self.has_keywords() or \
-            self.feature_object.values('genre') or \
             self.has_reprints() or \
+            self.feature_object.exclude(genre='').values('genre').exists() or \
             self.feature_logo.count() or \
             self.active_awards().count()
 
@@ -657,6 +661,9 @@ class Story(GcdData):
                self.from_all_reprints.count() or \
                self.to_all_reprints.count()
 
+    def reprint_count(self):
+        return self.from_all_reprints.count() + self.to_all_reprints.count()
+
     def has_data(self):
         """
         Simplifies UI checks for conditionals.  All non-heading fields
@@ -666,11 +673,16 @@ class Story(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
-    def _show_characters(cls, story, css_style=True):
-        return show_characters(story, css_style=css_style)
+    def _show_characters(cls, story, css_style=True, bare_value=False):
+        return show_characters(story, css_style=css_style,
+                               bare_value=bare_value)
 
     def show_characters(self, css_style=True):
         return self._show_characters(self, css_style=css_style)
+
+    def show_characters_bare_value(self, css_style=True):
+        return self._show_characters(self, css_style=css_style,
+                                     bare_value=True)
 
     def show_characters_as_text(self):
         return show_characters(self, url=False)

@@ -3,26 +3,37 @@
 {% load display %}
 {% load mathfilter %}
 
-<div>
+<div class="md:me-1">
   <a name="{{ story.id }}"></a>
-  <h2 class="bg-gcd">
-    <span>
+  <h2 class="bg-gcd mt-1 font-normal rounded-t">
+    <div class="flex">
+      <div class="flex-1">
 {% if modal %}
-      <a class="text-lg text-white visited:text-white px-1" href='{% url "show_issue" issue_id=story.issue.id %}#{{ story.id }}'>
+        <a class="text-white visited:text-white px-1" href='{% url "show_issue" issue_id=story.issue.id %}#{{ story.id }}'>
 {% endif %}
-  {{ story|show_title }}
+        <span class="text-white px-1">{{ story|show_title }}</span>
 {% if modal %}
-      </a>
+        </a>
 {% endif %}
-    </span>
+      </div>
+{% if not modal %}
+      <div class="text-base mt-0.5 text-white me-1">
+      {% if story.type.id in not_shown_types %}
+        <a class="text-white visited:text-white" href="?issue_detail=2">(Expand)</a> <span class="max-sm:hidden">/</span> 
+  {% endif %}
+        <a class="text-white max-sm:hidden visited:text-white" href="#toc_{{ story.id }}">(Table of Contents{% if forloop.counter %}: {{ forloop.counter }}{% endif %})</a>
+      </div>
+{% endif %}
+    </div>  
   </h2>
-  <h3 class="text-black visited:text-black bg-blue-100 px-1">
-    <span>
+  <h3 class="text-black visited:text-black rounded-b font-normal bg-blue-100 px-1">
+    <div class="flex">
+      <div class="flex-1">
 {% if story.has_feature %}
-      <span>{{ story.show_feature }}</span>
+        <span>{{ story.show_feature }}</span>
 {% endif %}
 {% if story.type or story.page_count %}
-      <span>
+        <span>
       <!-- needs to be stuck together to get display spacing right. -->
   {% if story.has_feature %} / {% endif %}
   {% if story.type %}{{ story.type }} / {% endif %}
@@ -30,9 +41,33 @@
   {% blocktrans with story.page_count|default:0|ceil|pluralize as suffix %}
     page{{ suffix }}
   {% endblocktrans %}
-      </span>
+        </span>
 {%endif %}
-    </span>
+      </div>
+      <div>
+{% if not preview and not modal %}
+  {% if user.is_authenticated and story and not MYCOMICS %}
+    {% if is_cover %}
+        <span>
+          <a class="text-base text-black visited:text-black" 
+             href="{% url "cache_cover" cover_story_id=story.id %}">
+             <span class="max-sm:hidden">(Remember Cover)</span>
+             <span class="sm:hidden">(RC)</span>
+          </a>
+        </span>
+    {% else %}
+        <span>
+          <a class="text-base text-black visited:text-black" 
+             href="{% url "cache_story" story_id=story.id %}">
+             <span class="max-sm:hidden">(Remember Story)</span>
+             <span class="sm:hidden">(RS)</span>
+            </a>
+        </span>
+    {% endif %}
+  {% endif %}
+{% endif %}
+      </div>
+    </div>
   </h3>
 {% if not not_shown_types or story.type.id not in not_shown_types %}
   <div class="ml-1">
@@ -41,27 +76,66 @@
 
   {% if story.has_content %}
   <hr></hr>
-  <h3 class="text-red-500 font-bold">The following content is not styled so far.</h3>
-  <dl>
-    {{ story|show_credit:"job_number" }}
-    {{ story|show_credit:"first_line" }}
-    {{ story|show_credit:"feature_logo" }}
-    {{ story|show_credit:"genre" }}
-    {{ story.show_characters|linebreaksbr }}
-    {% if story.universe.exists %}
-    {{ story.show_universe }}
+  <div class="ml-1">
+    <ul class="md:columns-2">
+      <li>{{ story|show_credit_tw_inline:"genre" }}</li>
+      <li>{{ story|show_credit_tw_inline:"feature_logo" }}</li>
+      <li>{{ story|show_credit_tw_inline:"job_number" }}</li>
+    </ul>
+    <ul>
+      <li>{{ story|show_credit_tw_inline:"first_line" }}</li>
+      <li>{{ story|show_credit_tw_inline:"keywords" }}</li>
+      {% if story.universe.exists %}
+      {{ story.show_universe }}
+      {% endif %}
+    </ul>
+    <dl>
+      {% if story.has_characters %}
+      <dt class="field-name-label">Characters:</dt>
+      <dd>{{ story.show_characters_bare_value|linebreaksbr }}</dd>
+      {% endif %}
+      {{ story|show_credit_description_list:"synopsis"|linebreaksbr }}
+      {% if story.active_awards %}
+      <dt class="field-name-label">Awards:</dt>
+      <dd><ul class="object-page-link-list columns-1">{{ story|show_credit_bare_value:"show_awards" }}</ul></dd>
+      {% endif %}
+      {% if story.has_reprints %}
+        {% if story.reprint_count > 5 %}
+        <details class="[&_svg]:open:rotate-90">
+            <summary class="list-none"> 
+              {% include 'gcd/bits/svg_details.html' %}
+            <span class="field-name-label">Reprints ({{ story.reprint_count }}):</span>
+          </summary>
+        {% else %}
+      <dt class="field-name-label">Reprints:</dt>
+        {% endif %}
+      <dd><ul class="object-page-link-list columns-1 [&_ul]:columns-1 [&_ul]:object-page-link-list ">{{ story|show_reprints:True|linebreaksbr }}</ul></dd>
+        {% if story.reprint_count > 5 %}
+        </details>
+        {% endif %}
+      {% endif %}
+    </dl>
+  </div>
+  {% endif %}
+  {% if story.issue.series.has_about_comics and story.biblioentry %}
+  <hr></hr>
+  <div class="ml-1">
+    <ul class="md:columns-2">
+      <li>{{ story.biblioentry|show_credit_tw_inline:"pages" }}</li>
+      <li>{{ story.biblioentry|show_credit_tw_inline:"doi" }}</li>
+    </ul>
+    {% if story.biblioentry.abstract %}
+    <div class="field-name-label">Abstract:</div>
+        {{ story.biblioentry.abstract|linebreaksbr }}
     {% endif %}
-    {{ story|show_credit:"synopsis"|linebreaksbr }}
-    {{ story|show_credit:"show_awards" }}
-    {{ story|show_reprints|linebreaksbr }}
-    {{ story|show_credit:"keywords" }}
-  </dl>
+  </div>
   {% endif %}
-
-  {% if not story.has_credits and not story.has_content and not story.notes or story.type.id in not_shown_types %}
-    <dl class="contents"></dl>
+  {% if story.notes %}
+  <h3 class="bg-blue-100 rounded px-1 mt-1"> Indexer Notes </h3>
+  <div class="ml-1">
+      {{ story.notes|urlizetrunc:75|linebreaksbr }}
+  </div>
   {% endif %}
-
 {% endif %} <!-- shown_types -->
 </div>
 

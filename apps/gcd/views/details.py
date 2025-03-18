@@ -4946,7 +4946,7 @@ def show_issue(request, issue, preview=False):
         language = None
 
     return render(
-      request, 'gcd/details/issue.html',
+      request, 'gcd/details/tw_issue.html',
       {'issue': issue,
        'prev_issue': prev_issue,
        'next_issue': next_issue,
@@ -4963,6 +4963,7 @@ def show_issue(request, issue, preview=False):
        'preview': preview,
        'not_shown_types': not_shown_types,
        'show_sources': show_sources,
+       'absolute': 'absolute', # for small screen
        'among_others': issue.created and issue.created.year <=
                         settings.NEW_SITE_CREATION_DATE.year,
        'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)

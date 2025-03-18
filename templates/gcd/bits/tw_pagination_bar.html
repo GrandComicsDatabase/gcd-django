@@ -7,33 +7,33 @@
   {% spaceless %}
     <li>
   {% if page.has_previous %}
-      <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-s-lg hover:bg-blue-300 hover:no-underline" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
+      <a class="flex items-center justify-center navigation-bar-box-link h-8 rounded-s-lg" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
   {% else %}
-      <span class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-s-lg" style="text-decoration: none">&#5176;</span>
+      <span class="flex items-center justify-center navigation-bar-box-link hover:bg-blue-100 h-8 rounded-s-lg" style="text-decoration: none">&#5176;</span>
   {% endif %} <!-- has_previous -->
     </li>
   {% for number in page.page_range %}
     <li>
     {% if number == page.number %}
-      <span class="flex items-center justify-center px-2 h-8 link-with-text-color border border-gray-400 bg-blue-300 hover:no-underline">{{ number }}</span>
+      <span class="flex items-center justify-center h-8 navigation-bar-box-link bg-blue-300">{{ number }}</span>
     {% else %}
-    {% if not number %}<span class="flex items-center justify-center px-2 h-8 link-text-color border border-gray-400 bg-blue-100 hover:no-underline"> ... {# literally dots #}</span>
+    {% if not number %}<span class="flex items-center justify-center h-8 navigation-bar-box-link hover:bg-blue-100"> ... {# literally dots #}</span>
       {% else %}{# pagelink num #}
-      <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 hover:bg-blue-300 hover:no-underline" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ number }}">{{ number }}</a>
+      <a class="flex items-center justify-center h-8 navigation-bar-box-link" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ number }}">{{ number }}</a>
       {% endif %}
     {% endif %}
     </li>
   {% endfor %}
     <li>
   {% if page.has_next %}
-    <a class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-e-lg hover:bg-blue-300 hover:no-underline" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
+    <a class="flex items-center justify-center h-8 navigation-bar-box-link rounded-e-lg" href="?{% if query_string %}{{ query_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
   {% else %}
-      <span class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded-e-lg" style="text-decoration: none">&#5171;</span>
+      <span class="flex items-center justify-center h-8 navigation-bar-box-link hover:bg-blue-100 rounded-e-lg" style="text-decoration: none">&#5171;</span>
   {% endif %} <!-- has_next -->
     </li>
   {% endspaceless %}
 {% else %}
-    <li> <span class="flex items-center justify-center px-2 h-8 link-with-text-color bg-blue-100 border border-gray-400 rounded" style="text-decoration: none">{{ page.number }}</span> </li>
+    <li> <span class="flex items-center justify-center h-8 navigation-bar-box-link hover:bg-blue-100 rounded" style="text-decoration: none">{{ page.number }}</span> </li>
 {% endif %}
   </ul>
 
