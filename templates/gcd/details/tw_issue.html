@@ -92,7 +92,7 @@
         {% endif %}
       {% endwith %}
     {% endif %}
-    </div>
+  </div>
     {% if cover_story %}
   <div class="ps-2 flex-1">
       {% with story=cover_story is_cover=1 %}
@@ -222,10 +222,10 @@
 {% endblock content %}
 
 {% block issue_links %}
-<div class="my-1 bg-gcd max-sm:hidden font-bold px-2 py-1 text-white rounded">
+<div class="my-1 bg-gcd max-md:hidden font-bold px-2 py-1 text-white rounded">
 Related Links
 </div>
-<ul class="ps-1 max-sm:hidden text-sm">
+<ul class="ps-1 max-md:hidden text-sm">
   {% if not issue.series.is_singleton %}
     {% if issue.series.has_gallery %}
     <li> <a href="{{ issue.series.get_absolute_url }}covers">Series Cover Gallery</a>
