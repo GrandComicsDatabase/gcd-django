@@ -21,7 +21,7 @@
       {% if story.type.id in not_shown_types %}
         <a class="text-white visited:text-white" href="?issue_detail=2">(Expand)</a> <span class="max-sm:hidden">/</span> 
   {% endif %}
-        <a class="text-white max-sm:hidden visited:text-white" href="#toc_{{ story.id }}">(Table of Contents{% if forloop.counter %}: {{ forloop.counter }}{% endif %})</a>
+        <a class="text-white max-md:hidden visited:text-white" href="#toc_{{ story.id }}">(Table of Contents{% if forloop.counter %}: {{ forloop.counter }}{% endif %})</a>
       </div>
 {% endif %}
     </div>  
