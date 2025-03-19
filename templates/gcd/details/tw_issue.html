@@ -77,25 +77,6 @@
         {% endif %}
       {% endif %}
     {% endif %}
-    {% if variant_image_tags %}
-      {% with num_variants=variant_image_tags|length %}
-        {% if num_variants > 5 %}
-    <details class="[&_svg]:open:rotate-90">
-      <summary class="list-none"> 
-              {% include 'gcd/bits/svg_details.html' %}
-              {{ num_variants }} variant cover scan{{ num_variants|pluralize }}
-      </summary>
-        {% endif %}
-      <div class="flex flex-wrap gap-1">
-      {% for variant, image_tag in variant_image_tags %}
-        <div class="w-[98px] flex"><a  href="{{ variant.get_absolute_url }}">{{ image_tag }}</a></div>
-      {% endfor %}
-      </div>
-        {% if num_variants > 5 %}
-    </details>
-        {% endif %}
-      {% endwith %}
-    {% endif %}
   </div>
     {% if cover_story %}
   <div class="ps-2 flex-1">
@@ -105,6 +86,27 @@
   </div>
     {% endif %}
 </div>
+{% if variant_image_tags %}
+  {% with num_variants=variant_image_tags|length %}
+    {% if num_variants > 5 %}
+<details class="[&_svg]:open:rotate-90">
+  <summary class="list-none">
+      {% include 'gcd/bits/svg_details.html' %}
+    <span class="btn btn-blue">
+        {{ num_variants }} variant cover scan{{ num_variants|pluralize }}
+    </span>
+  </summary>
+    {% endif %}
+  <div class="{% if num_variants > 5 %}mt-1{% endif %} flex flex-wrap gap-1">
+    {% for variant, image_tag in variant_image_tags %}
+    <div class="w-[98px] flex"><a href="{{ variant.get_absolute_url }}">{{ image_tag }}</a></div>
+    {% endfor %}
+  </div>
+    {% if num_variants > 5 %}
+</details>
+    {% endif %}
+  {% endwith %}
+{% endif %}
 <h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Issue Data </h3>
 <ul class="md:columns-2 ml-1">
   {% if not issue.no_brand %}
@@ -169,21 +171,23 @@
       {% if num_variants > 5 %}
   <details class="[&_svg]:open:rotate-90">
     <summary class="list-none"> 
-            {% include 'gcd/bits/svg_details.html' %}
+        {% include 'gcd/bits/svg_details.html' %}
+      <span class="btn btn-blue">
       {% endif %}
       {% if not issue.variant_of %}
-    This issue has {{ num_variants }} variant{{ num_variants|pluralize }}:
+    This issue has {{ num_variants }} variant{{ num_variants|pluralize }}
       {% else %}
         {% if num_variants <= 5 %}<br>{% endif %}
-        There exist {{ num_variants }} further variant{{ num_variants|pluralize }}:
+        There exist {{ num_variants }} further variant{{ num_variants|pluralize }}
       {% endif %}
       {% if num_variants > 5 %}
+      </span>
     </summary>
       {% endif %}
     <dl class="contents">
-      <ul class="object-page-link-list columns-1">
+      <ul class="object-page-link-list">
       {% for variant in issue.other_variants %}
-        <li><a href="{{ variant.get_absolute_url }}">{{ variant.full_name }}</a>
+        <li class="break-inside-avoid-column"><a href="{{ variant.get_absolute_url }}">{{ variant.display_full_descriptor }}</a>
       {% endfor %}
       </ul>
     </dl>
@@ -260,18 +264,31 @@ Related Links
   <span class="toc-bar-full">Table of Contents</span>
 </div>
 {% if cover_story %}
-  <li style="counter-reset: list-item -1;">
+  <li class="hover:bg-blue-50" style="counter-reset: list-item -1;">
     <span>
       <a name="toc_{{ cover_story.id }}" href="#{{ cover_story.id }}">{{ cover_story|show_title:1 }}</a></span><br/>
     <span>{{ cover_story.show_feature}}</span>
+  </li>
 {% endif %}
 {% for story in stories %}
-  <li>
+  <li class="hover:bg-blue-50">
     <span>
       <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}?show_all{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
     <span>{{ story.show_feature}}</span>
+  </li>
 {% endfor %}
 </ol>
+{% endblock %}
+
+{% block additional_information %}
+{% if oi_indexers %}
+<div class="bg-blue-100 max-sm:hidden font-bold text-sm rounded py-1 px-2">This issue was modified by{% if among_others %}, among others {% endif %}</div>
+<ul class="object-page-link-list columns-1 text-sm max-sm:hidden">
+{% for credit in oi_indexers %}
+  <li> {{ credit }}
+{% endfor %}
+</ul>
+{% endif %}
 {% endblock %}
 
 {% block editing %}

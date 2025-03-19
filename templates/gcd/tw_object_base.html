@@ -1,5 +1,6 @@
 {% extends "gcd/tw_base_view.html" %}
 {% load static %}
+{% load editing %}
 {% load django_tables2 %}
 {% block css %}
   <link rel="stylesheet" type="text/css"
@@ -21,7 +22,7 @@
     <div class="md:pe-1 mt-1">
       <div class="max-md:hidden rounded flex bg-gcd text-white font-bold px-2 py-1">Editing</div>
       <div class="md:hidden h-8">
-        <button class="mobile-editing-menu-button bg-gcd rounded w-9 py-0.5 ps-1 right-1 {{ absolute }}">
+        <button class="mobile-editing-menu-button {% if issue|is_locked %}bg-blue-100{% else %}bg-gcd{% endif %}  rounded w-9 py-0.5 ps-1 right-1 {{ absolute }}">
             {% include "gcd/bits/tw_three_bars.html" %}
         </button>
       </div>
@@ -68,6 +69,8 @@
       {% block issue_links %}
       {% endblock %}
       {% block issue_toc %}
+      {% endblock %}
+      {% block additional_information %}
       {% endblock %}
     </div>  
   </div>
