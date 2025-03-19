@@ -46,7 +46,7 @@
 {% endblock %}
 
 {% block content_left %}
-<div class="max-md:w-[calc(100vw-36px)] max-md:min-h-20">
+<div class="max-md:w-[calc(100vw-38px)] max-md:min-h-20">
   <div class="flex flex-wrap gap-x-4">
   {% if not issue.no_volume and issue.series.has_volume %}
     <div><span class="font-bold">Volume:</span> {{ issue.volume }}</div>
@@ -282,8 +282,8 @@ Related Links
 
 {% block additional_information %}
 {% if oi_indexers %}
-<div class="bg-blue-100 max-sm:hidden font-bold text-sm rounded py-1 px-2">This issue was modified by{% if among_others %}, among others {% endif %}</div>
-<ul class="object-page-link-list columns-1 text-sm max-sm:hidden">
+<div class="bg-blue-100 max-md:hidden font-bold w-56 text-sm rounded py-1 px-2">Issue was modified by{% if among_others %}, among others {% endif %}</div>
+<ul class="object-page-link-list columns-1 w-56 text-sm max-md:hidden">
 {% for credit in oi_indexers %}
   <li> {{ credit }}
 {% endfor %}

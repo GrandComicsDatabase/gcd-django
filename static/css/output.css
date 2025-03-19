@@ -1037,10 +1037,6 @@ a:hover {
   width: 200px;
 }
 
-.w-\[98px\] {
-  width: 98px;
-}
-
 .w-full {
   width: 100%;
 }
@@ -1686,8 +1682,8 @@ html {
     width: 2.25rem;
   }
 
-  .max-md\:w-\[calc\(100vw-36px\)\] {
-    width: calc(100vw - 36px);
+  .max-md\:w-\[calc\(100vw-38px\)\] {
+    width: calc(100vw - 38px);
   }
 
   .max-md\:overflow-hidden {
