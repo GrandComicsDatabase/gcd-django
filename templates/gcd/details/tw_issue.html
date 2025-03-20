@@ -112,6 +112,39 @@
     {% endif %}
   {% endwith %}
 {% endif %}
+{% if issue.variant_of %}
+This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ issue.variant_of.full_name }}</a>.
+{% endif %}
+{% if issue.other_variants %}
+  {% with num_variants=issue.other_variants|length %}
+    {% if num_variants > 6 %}
+<details class="[&_svg]:open:rotate-90 mt-1">
+  <summary class="list-none">
+      {% include 'gcd/bits/svg_details.html' %}
+    <span class="btn btn-blue">
+    {% endif %}
+    {% if not issue.variant_of %}
+  This issue has {{ num_variants }} variant{{ num_variants|pluralize }}
+    {% else %}
+      {% if num_variants <= 5 %}<br>{% endif %}
+      There exist {{ num_variants }} further variant{{ num_variants|pluralize }}
+    {% endif %}
+    {% if num_variants > 6 %}
+    </span>
+  </summary>
+    {% endif %}
+  <dl class="contents">
+    <ul class="object-page-link-list">
+    {% for variant in issue.other_variants %}
+      <li class="break-inside-avoid-column"><a href="{{ variant.get_absolute_url }}">{{ variant.display_full_descriptor }}</a>
+    {% endfor %}
+    </ul>
+  </dl>
+    {% if num_variants > 6 %}
+</details>
+    {% endif %}
+  {% endwith %}
+{% endif %}
 <h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Issue Data </h3>
 <ul class="md:columns-2 ml-1">
   {% if not issue.no_brand %}
@@ -168,40 +201,6 @@
 </ul>
 
 <div class="ml-1">
-  {% if issue.variant_of %}
-  This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ issue.variant_of.full_name }}</a>.
-  {% endif %}
-  {% if issue.other_variants %}
-    {% with num_variants=issue.other_variants|length %}
-      {% if num_variants > 6 %}
-  <details class="[&_svg]:open:rotate-90">
-    <summary class="list-none"> 
-        {% include 'gcd/bits/svg_details.html' %}
-      <span class="btn btn-blue">
-      {% endif %}
-      {% if not issue.variant_of %}
-    This issue has {{ num_variants }} variant{{ num_variants|pluralize }}
-      {% else %}
-        {% if num_variants <= 5 %}<br>{% endif %}
-        There exist {{ num_variants }} further variant{{ num_variants|pluralize }}
-      {% endif %}
-      {% if num_variants > 6 %}
-      </span>
-    </summary>
-      {% endif %}
-    <dl class="contents">
-      <ul class="object-page-link-list">
-      {% for variant in issue.other_variants %}
-        <li class="break-inside-avoid-column"><a href="{{ variant.get_absolute_url }}">{{ variant.display_full_descriptor }}</a>
-      {% endfor %}
-      </ul>
-    </dl>
-      {% if num_variants > 6 %}
-  </details>
-      {% endif %}
-    {% endwith %}
-  {% endif %}
-
   {% if issue.active_awards.count %}
   <div class="field-name-label">Awards:</div>
   <ul class="object-page-link-list columns-1">{{ issue|show_credit_bare_value:"show_awards" }}</ul>
