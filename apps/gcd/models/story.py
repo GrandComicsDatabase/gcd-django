@@ -656,13 +656,26 @@ class Story(GcdData):
         """
         return self.feature or self.feature_object.count()
 
-    def has_reprints(self, notes=True):
-        return (notes and self.reprint_notes) or \
-               self.from_all_reprints.count() or \
-               self.to_all_reprints.count()
+    def has_reprints(self, notes=True, ignore=STORY_TYPES['preview']):
+        if self.type_id not in [STORY_TYPES['preview'],
+                                STORY_TYPES['comics-form ad']]:
+            ignore = AD_TYPES
+        else:
+            ignore = None
+        return ((notes and self.reprint_notes) or
+                self.from_all_reprints.count() or
+                self.to_all_reprints.exclude(target__type__id__in=ignore)
+                                    .count())
 
     def reprint_count(self):
-        return self.from_all_reprints.count() + self.to_all_reprints.count()
+        if self.type_id not in [STORY_TYPES['preview'],
+                                STORY_TYPES['comics-form ad']]:
+            ignore = AD_TYPES
+        else:
+            ignore = None
+        return (self.from_all_reprints.count() +
+                self.to_all_reprints.exclude(target__type__id__in=ignore)
+                                    .count())
 
     def has_data(self):
         """
