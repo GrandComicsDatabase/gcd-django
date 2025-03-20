@@ -961,10 +961,6 @@ a:hover {
   display: contents;
 }
 
-.list-item {
-  display: list-item;
-}
-
 .hidden {
   display: none;
 }
@@ -1035,6 +1031,10 @@ a:hover {
 
 .w-\[200px\] {
   width: 200px;
+}
+
+.w-\[98px\] {
+  width: 98px;
 }
 
 .w-full {

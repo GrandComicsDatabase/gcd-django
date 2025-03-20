@@ -63,19 +63,26 @@
 <div class="flex">
   <div class="w-[100px] sm:w-[200px] mt-1 text-center">
     {% if issue.has_covers %}
-          <a href="cover/4/">{{ image_tag }}</a>
+    <a href="cover/4/">{{ image_tag }}</a>
       {% if not preview %}
-          <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url 'edit_covers' issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a><br>
+    <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url 'edit_covers' issue_id=issue.id %}">Edit cover{{ issue.active_covers.count|pluralize }}</a><br>
       {% endif %}
-          <a href="{{ issue.series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
+    <a href="{{ issue.series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
     {% else %}
       {% if preview %}
         {{ image_tag }}
       {% else %}
         {% if issue.series.is_comics_publication or issue.can_have_cover %}
-            <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url 'upload_cover' issue_id=issue.id %}">{{ image_tag }}</a>
+    <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url 'upload_cover' issue_id=issue.id %}">{{ image_tag }}</a>
         {% endif %}
       {% endif %}
+    {% endif %}
+    {% if variant_image_tags|length < 7 %}
+    <div class="flex flex-wrap gap-1">
+      {% for variant, image_tag in variant_image_tags %}
+      <div class="w-[98px] flex"><a href="{{ variant.get_absolute_url }}">{{ image_tag }}</a></div>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
     {% if cover_story %}
@@ -88,7 +95,7 @@
 </div>
 {% if variant_image_tags %}
   {% with num_variants=variant_image_tags|length %}
-    {% if num_variants > 5 %}
+    {% if num_variants > 6 %}
 <details class="[&_svg]:open:rotate-90">
   <summary class="list-none">
       {% include 'gcd/bits/svg_details.html' %}
@@ -96,13 +103,11 @@
         {{ num_variants }} variant cover scan{{ num_variants|pluralize }}
     </span>
   </summary>
-    {% endif %}
-  <div class="{% if num_variants > 5 %}mt-1{% endif %} flex flex-wrap gap-1 me-1">
-    {% for variant, image_tag in variant_image_tags %}
+  <div class="{% if num_variants > 6 %}mt-1{% endif %} flex flex-wrap gap-1 me-1">
+      {% for variant, image_tag in variant_image_tags %}
     <div class="w-[100px] flex"><a href="{{ variant.get_absolute_url }}">{{ image_tag }}</a></div>
-    {% endfor %}
+      {% endfor %}
   </div>
-    {% if num_variants > 5 %}
 </details>
     {% endif %}
   {% endwith %}
@@ -168,7 +173,7 @@
   {% endif %}
   {% if issue.other_variants %}
     {% with num_variants=issue.other_variants|length %}
-      {% if num_variants > 5 %}
+      {% if num_variants > 6 %}
   <details class="[&_svg]:open:rotate-90">
     <summary class="list-none"> 
         {% include 'gcd/bits/svg_details.html' %}
@@ -180,7 +185,7 @@
         {% if num_variants <= 5 %}<br>{% endif %}
         There exist {{ num_variants }} further variant{{ num_variants|pluralize }}
       {% endif %}
-      {% if num_variants > 5 %}
+      {% if num_variants > 6 %}
       </span>
     </summary>
       {% endif %}
@@ -191,7 +196,7 @@
       {% endfor %}
       </ul>
     </dl>
-      {% if num_variants > 5 %}
+      {% if num_variants > 6 %}
   </details>
       {% endif %}
     {% endwith %}
@@ -203,10 +208,10 @@
   {% endif %}
 
   {% if issue.has_reprints %}
-<dl class="contents">
-{{ issue|show_reprints_for_issue }}
-</dl>
-{% endif %}
+  <dl class="contents">
+    {{ issue|show_reprints_for_issue }}
+  </dl>
+  {% endif %}
 
 </div>
 
@@ -259,12 +264,12 @@ Related Links
   <span class="max-md:hidden">Table of Contents</span>
   <span class="toc-bar-small md:hidden m-0 mobile-toc-button z-0">ToC</span>
 </div>
-<ol class="toc list-decimal {% if stories|length > 9 %}ps-6{% else %}ps-4{% endif %} w-56 text-sm max-md:border-2 max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0">
-<div class="mobile-toc-button-expanded md:hidden my-1 bg-gcd font-bold px-1 h-8 md:hidden text-base sm:px-2 py-1 text-white rounded">
-  <span class="toc-bar-full">Table of Contents</span>
-</div>
+<ol class="toc list-decimal {% if stories|length > 9 %}ps-6{% else %}ps-4{% endif %} w-56 text-sm max-md:border-2 max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0" {% if cover_story %}start='0'{% endif %}>
+  <div class="mobile-toc-button-expanded md:hidden my-1 bg-gcd font-bold px-1 h-8 md:hidden text-base sm:px-2 py-1 text-white rounded">
+    <span class="toc-bar-full">Table of Contents</span>
+  </div>
 {% if cover_story %}
-  <li class="hover:bg-blue-50" style="counter-reset: list-item -1;">
+  <li class="hover:bg-blue-50">
     <span>
       <a name="toc_{{ cover_story.id }}" href="#{{ cover_story.id }}">{{ cover_story|show_title:1 }}</a></span><br/>
     <span>{{ cover_story.show_feature}}</span>
