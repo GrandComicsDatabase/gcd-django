@@ -19,7 +19,7 @@
     a {
       @apply text-link-gcd visited:text-visited-gcd hover:underline
     }
-  }
+}
 
 @layer components {
     .link-with-text-color {
@@ -58,6 +58,7 @@
 }
 
 html {
+  background-color: white;
   font-size: 14px;
   @screen sm {
     font-size: 15px;

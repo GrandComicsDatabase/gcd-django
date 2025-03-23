@@ -1,0 +1,35 @@
+{% load display %}
+
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+    <div class="flex-1 font-bold text-2xl self-start">
+      {% if issue_link %}
+        {{ issue.object_page_name_with_issue_link }}
+      {% else %}
+        {{ issue.object_page_name }}
+      {% endif %}
+    </div>
+    <div class="font-bold text-lg">
+      {{ issue.publication_date}}
+    </div>
+  </nav>
+  <nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+    <div class="flex-1 font-bold text-lg self-start">
+      {{ issue.series.publisher|absolute_url }},
+      {{ issue.series.year_began }}{% if issue.series.year_began_uncertain %}?{% endif %} Series
+    </div>
+    {% if issue.series.is_singleton %}
+    <div class="font-bold max-sm:max-w-[25%]">
+      {% if language %}
+        Published in {{ language }}
+      {% endif %}
+      {% if country %}
+        ({{ country }})
+        <img class="inline" src="{{ STATIC_URL }}img/gcd/flags/{{ issue.series.country.code|lower }}.png" alt="{{ country }}">
+      {% endif %}  
+    </div>
+    {% endif %}  
+    <div>
+      {% include "gcd/bits/tw_series_navigation.html" %}
+    </div>
+  </nav>
+  

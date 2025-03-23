@@ -367,7 +367,7 @@ def search_creator_credit(story, credit_type):
     return mark_safe(credit_value)
 
 
-def __credit_value(story, credit_type, url, show_sources=False):
+def __credit_value(story, credit_type, url, show_sources=False, use_div=False):
     # We use .credits.all() to allow prefetching of the credits when the
     # story is fetched from the db, otherwise the filter would invalidated
     # the prefetched data. Prefetching is done by
@@ -385,13 +385,20 @@ def __credit_value(story, credit_type, url, show_sources=False):
            not credit.deleted:
             displayed_credit = credit.creator.display_credit(
               credit, url=url, show_sources=show_sources)
-            if credit_value:
+            if use_div:
+                credit_value += '<div>' + displayed_credit + '</div>'
+            elif credit_value:
                 credit_value += '; %s' % displayed_credit
             else:
                 credit_value = displayed_credit
     old_credit_field = getattr(story, credit_type)
     if old_credit_field:
-        if credit_value:
+        if use_div:
+            old_credits = ''
+            for old_credit in old_credit_field.split(';'):
+                old_credits += '<div>' + esc(old_credit) + '</div>'
+            credit_value = '%s%s' % (credit_value, mark_safe(old_credits))
+        elif credit_value:
             credit_value = '%s; %s' % (credit_value, esc(old_credit_field))
         else:
             credit_value = esc(old_credit_field)
@@ -416,7 +423,7 @@ def show_bare_creator_credits(context, story, credit_type, show_sources=False):
                                                          'letters']):
                 return ''
     credit_value = __credit_value(story, credit_type, True,
-                                  show_sources)
+                                  show_sources, use_div=True)
     return credit_value
 
 
@@ -880,6 +887,6 @@ def show_reprints_for_issue(issue):
         label = _('Parts of this issue are reprinted') + ': '
 
         return mark_safe(label + '<ul class="object-page-link-list columns-1">'
-                          + reprint + '</ul>')
+                         + reprint + '</ul>')
     else:
         return ""

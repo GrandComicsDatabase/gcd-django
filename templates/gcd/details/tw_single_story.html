@@ -89,11 +89,40 @@
       {{ story.show_universe }}
       {% endif %}
     </ul>
+    {% if story.has_characters %}
+    <div class="field-name-label">Characters:</div>
+      {% with characters=story.process_appearing_characters %}
+        {% with group_list=characters.0 character_list=characters.1 %}
+          {% if group_list %}
+            {% for group in group_list %}
+    <a href="{{ group.0.group_name.group.get_absolute_url }}"><b>{{ group.0.group_name.name }}</b></a>
+              {% if group.1 %}
+    <span class=""><i>({{ group.1 }})</i></span>
+              {% endif %}
+              {% if group.notes %}
+    <span class="">({{ group.notes }})</span>
+              {% endif %}
+              {% if group.2 %}
+              {% with character_list=group.2 %}
+    <ul class="list-disc sm:columns-2 ps-8 lg:columns-3 gap-8">
+                {% include 'gcd/bits/tw_character_list.html' %}
+    </ul>
+              {% endwith %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+    <ul class="list-disc sm:columns-2 lg:columns-3 ps-4 gap-8">
+          {% if character_list %}
+            {% include 'gcd/bits/tw_character_list.html' %}
+          {% endif %}
+          {% for character in story.characters|split %}
+      <li>{{ character }}</li>
+          {% endfor %}
+    </ul>
+        {% endwith %}
+      {% endwith %}
+    {% endif %}
     <dl>
-      {% if story.has_characters %}
-      <dt class="field-name-label">Characters:</dt>
-      <dd>{{ story.show_characters_bare_value|linebreaksbr }}</dd>
-      {% endif %}
       {{ story|show_credit_description_list:"synopsis"|linebreaksbr }}
       {% if story.active_awards %}
       <dt class="field-name-label">Awards:</dt>

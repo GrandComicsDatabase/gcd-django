@@ -124,8 +124,7 @@ def character_notes(character):
     return note
 
 
-def get_civilian_identity(character, appearing_characters, url=True,
-                          compare=False):
+def _get_civilian_identity(character, appearing_characters):
     appearing_characters = appearing_characters.filter(
       universe=character.universe)
     civilian_identity = set(
@@ -134,8 +133,16 @@ def get_civilian_identity(character, appearing_characters, url=True,
                                                           flat=True))\
                  .intersection(appearing_characters.values_list(
                                'character__character', flat=True))
+    return civilian_identity
+
+
+def get_civilian_identity(character, appearing_characters, url=True,
+                          compare=False):
+    civilian_identity = _get_civilian_identity(character, appearing_characters)
+
     if civilian_identity:
         civilian_identity = appearing_characters.filter(
+              universe=character.universe,
               character__character__id=civilian_identity.pop())
         characters = ' ['
         several = False
@@ -157,16 +164,7 @@ def get_civilian_identity(character, appearing_characters, url=True,
         return ''
 
 
-def show_characters(story, url=True, css_style=True, compare=False,
-                    bare_value=False):
-    first = True
-    characters = ''
-    disambiguation = ''
-
-    all_appearing_characters = story.active_characters
-    in_group = all_appearing_characters.exclude(group_name=None)
-    groups = story.active_groups
-
+def _get_reference_universe(story):
     reference_universe_id = None
     if story.universe.count() == 1:
         reference_universe_id = story.universe.get().id
@@ -180,6 +178,75 @@ def show_characters(story, url=True, css_style=True, compare=False,
               .pop()
             reference_universe_id = Multiverse.objects.get(
               id=mainstream_universe_id).mainstream_id
+    return reference_universe_id
+
+
+def _process_single_character(character, appearing_characters,
+                              reference_universe_id):
+    universe = None
+    if reference_universe_id and character.universe:
+        if character.universe_id != reference_universe_id:
+            universe = character.universe
+    civilian_identity = _get_civilian_identity(character,
+                                               appearing_characters)
+    if civilian_identity:
+        civilian_identity = appearing_characters.filter(
+          universe=character.universe,
+          character__character__id=civilian_identity.pop())
+    return (character, civilian_identity, universe)
+
+
+def process_appearing_characters(story):
+    all_appearing_characters = story.active_characters
+    in_group = all_appearing_characters.exclude(group_name=None)
+    groups = story.active_groups
+
+    reference_universe_id = _get_reference_universe(story)
+
+    group_list = []
+    processed_appearances_ids = []
+    for group in groups:
+        group_universe = None
+        if reference_universe_id and group.universe:
+            if group.universe_id != reference_universe_id:
+                group_universe = group.universe
+        character_list = []
+        for member in in_group.filter(group_name=group.group_name_id,
+                                      group_universe=group.universe_id):
+            character_list.append(_process_single_character(
+              member, all_appearing_characters, reference_universe_id))
+            processed_appearances_ids.append(member.id)
+        group_list.append((group, group_universe, character_list))
+    appearing_characters = all_appearing_characters.exclude(
+      id__in=processed_appearances_ids)
+
+    character_list = []
+    for character in appearing_characters:
+        alias_identity = set(
+          character.character.character.from_related_character
+                   .filter(relation_type__id=2).values_list('from_character',
+                                                            flat=True))\
+                   .intersection(all_appearing_characters.filter(
+                      universe=character.universe).values_list(
+                      'character__character', flat=True))
+        if alias_identity:
+            continue
+        character_list.append(_process_single_character(
+          character, all_appearing_characters, reference_universe_id))
+    return (group_list, character_list)
+
+
+def show_characters(story, url=True, css_style=True, compare=False,
+                    bare_value=False):
+    first = True
+    characters = ''
+    disambiguation = ''
+
+    all_appearing_characters = story.active_characters
+    in_group = all_appearing_characters.exclude(group_name=None)
+    groups = story.active_groups
+
+    reference_universe_id = _get_reference_universe(story)
     for group in groups:
         first_member = True
         group_universe_name = ''
@@ -459,6 +526,9 @@ class StoryCharacter(GcdData):
 
     notes = models.TextField()
 
+    def show_notes(self):
+        return character_notes(self)
+
     def __str__(self):
         return "%s: %s" % (self.story, self.character)
 
@@ -686,6 +756,9 @@ class Story(GcdData):
     def active_awards(self):
         return self.awards.exclude(deleted=True)
 
+    def process_appearing_characters(self):
+        return process_appearing_characters(self)
+
     def _show_characters(cls, story, css_style=True, bare_value=False):
         return show_characters(story, css_style=css_style,
                                bare_value=bare_value)
@@ -731,13 +804,8 @@ class Story(GcdData):
             universes += absolute_url(universe) + '; '
         if universes:
             universes = universes[:-2]
-        dt = '<dt class="credit_tag"><span class="credit_label">' \
-             'Universe</span></dt>'
-        return mark_safe(
-              dt + '<dd class="credit_def"><span class="credit_value">'
-              + universes + '</span></dd>')
-
-        return mark_safe(universes)
+        label = '<span class="field-name-label">Universe:</span>'
+        return mark_safe(label + universes)
 
     def show_title(self, use_first_line=False):
         return show_title(self, use_first_line)

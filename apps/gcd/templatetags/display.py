@@ -40,6 +40,14 @@ STATE_CSS_NAME = {
 }
 
 
+@register.filter(name='split')
+def split(value):
+    if value:
+        return value.split(';')
+    else:
+        return ''
+
+
 @register.filter
 def absolute_url(item, popup=None, descriptor=''):
     if item is not None and hasattr(item, 'get_absolute_url'):
