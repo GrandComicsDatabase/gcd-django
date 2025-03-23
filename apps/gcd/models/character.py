@@ -650,7 +650,8 @@ class CharacterSearchTable(CharacterTable):
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
                                 attrs={'td': {'class':
-                                              TW_COLUMN_ALIGN_RIGHT}})
+                                              TW_COLUMN_ALIGN_RIGHT +
+                                              'shadow-md p-2'}})
 
     def order_character(self, query_set, is_descending):
         direction = '-' if is_descending else ''

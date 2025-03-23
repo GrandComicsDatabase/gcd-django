@@ -86,9 +86,12 @@ def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
         if variants:
             covers = covers | issue.variant_covers()
     else:
-        return mark_safe(get_image_tag(cover=None, zoom_level=zoom_level,
-                         alt_text=alt_text,
-                         can_have_cover=issue.can_have_cover()))
+        if as_list:
+            return []
+        else:
+            return mark_safe(get_image_tag(cover=None, zoom_level=zoom_level,
+                             alt_text=alt_text,
+                             can_have_cover=issue.can_have_cover()))
 
     if exclude_ids:
         covers = covers.exclude(id__in=exclude_ids)

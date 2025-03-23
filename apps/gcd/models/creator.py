@@ -1169,7 +1169,7 @@ class CreatorPortraitTable(CreatorTable):
     class Meta:
         model = Creator
         fields = ('creator', 'first_credit', 'issue_count', 'role')
-        row_attrs = {'class': 'w-[150px]'}
+        row_attrs = {'class': 'w-[154px] shadow-md p-[2px]'}
 
     def render_creator(self, record):
         from apps.gcd.templatetags.display import absolute_url

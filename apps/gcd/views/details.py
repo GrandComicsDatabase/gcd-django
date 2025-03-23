@@ -4768,9 +4768,8 @@ def cover(request, issue_id, size):
                                   issue__sort_code__lt=issue.sort_code,
                                   deleted=False)
     cover_page = int(covers.count()/COVERS_PER_GALLERY_PAGE) + 1
-
     return render(
-      request, 'gcd/details/cover.html',
+      request, 'gcd/details/tw_cover.html',
       {
         'issue': issue,
         'prev_issue': prev_issue,

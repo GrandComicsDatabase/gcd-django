@@ -645,14 +645,24 @@ class Issue(GcdData):
         else:
             return '%s %s' % (self.series.name, self.display_number)
 
-    def object_page_name(self):
+    def object_page_name(self, issue_link=False):
         issue_number = self.issue_page_descriptor
         if self.series.is_singleton:
             return mark_safe('%s %s' % (self.series.name, issue_number))
         else:
-            return mark_safe('<a href="%s">%s</a> %s'
-                             % (self.series.get_absolute_url(),
-                                self.series.name, issue_number))
+            series = '<a href="%s">%s</a>' % (self.series.get_absolute_url(),
+                                              self.series.name)
+            if issue_link:
+                return mark_safe('%s <a href="%s">%s</a>'
+                                 % (series,
+                                    self.get_absolute_url(),
+                                    issue_number))
+            else:
+                return mark_safe('%s %s' % (series,
+                                            issue_number))
+
+    def object_page_name_with_issue_link(self):
+        return self.object_page_name(issue_link=True)
 
     def __str__(self):
         if self.variant_name:

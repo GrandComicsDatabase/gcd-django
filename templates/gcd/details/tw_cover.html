@@ -1,0 +1,36 @@
+{% extends "gcd/tw_base_view.html" %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+  GCD :: Cover :: {{ issue.series.name }} {{ issue.display_number }}
+{% endblock %}
+
+{% block view_body %}
+  {% with issue_link=True %}
+    {% include "gcd/bits/tw_issue_header.html" %}
+  {% endwith %}
+
+<div>
+  <div class="mt-2 flex flex-wrap gap-x-16 gap-y-4 place-content-center">
+{% for cover in cover_tag %}
+  <div class="text-center shadow-md p-2">
+    <a href="{{ cover.0.issue.get_absolute_url }}">{{ cover.2 }}</a><br>
+    <div class="max-w-[400px]"><a href="{{ cover.0.issue.get_absolute_url }}">{{ cover.0.issue.full_descriptor }}</a></div>
+  </div>
+{% endfor %}
+  </div>
+  <div class="text-center">
+    <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url "edit_covers" issue_id=issue.id %}">Edit Covers</a>
+    <br><a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Series Covers</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block editing %}
+{% endblock %}
+
+{% block change_history %}
+{% endblock %}
+

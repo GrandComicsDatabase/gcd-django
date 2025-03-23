@@ -674,5 +674,6 @@ class BrandEmblemGroupTable(BrandEmblemSearchTable):
         return mark_safe('<a href="%s">%s</a>' %
                          (record.get_absolute_url(), value))
 
+
 class PrinterSearchTable(PublisherBaseTable):
     pass
