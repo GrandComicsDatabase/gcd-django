@@ -1,11 +1,15 @@
 {% for character in character_list %}
-<li class="break-inside-avoid-column"><a href="{{ character.0.character.get_absolute_url }}">{{ character.0.character.name }}</a>
+<li class="break-inside-avoid-column">
+    <div class="flex flex-wrap">
+        <span class="me-1">
+  <a href="{{ character.0.character.get_absolute_url }}">{{ character.0.character.name }}</a>
   {% for civilian in character.1 %}
     {% if forloop.first %}[{% endif %}<a href="{{ civilian.character.get_absolute_url }}">{{ civilian.character.name }}</a>{% if forloop.last %}]{% else %}; {% endif %}
-  {% endfor %}
-  {% if character.2 %}
-  <span class=""><i>({{ character.2.universe_name }})</i></span>
+  {% endfor %}</span>
+{% if character.2 %}
+  <div class="flex"><i>({{ character.2.universe_name }})</i></div>
   {% endif %}
-  {{ character.0.show_notes }}
+  <div class="flex">{{ character.0.show_notes }}</div>
+</div>
 </li>
 {% endfor %}

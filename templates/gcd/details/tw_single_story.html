@@ -115,12 +115,10 @@
           {% if character_list %}
             {% include 'gcd/bits/tw_character_list.html' %}
           {% endif %}
-          {% for character in story.characters|split %}
-      <li>{{ character }}</li>
-          {% endfor %}
     </ul>
         {% endwith %}
       {% endwith %}
+    {{ story.characters }}
     {% endif %}
     <dl>
       {{ story|show_credit_description_list:"synopsis"|linebreaksbr }}
