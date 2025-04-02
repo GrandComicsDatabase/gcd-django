@@ -1,0 +1,64 @@
+{% load display %}
+{% comment %}
+Center column beneath the search box.  This region is mostly built
+from various smaller templates that are managed via django-templatesadmin.
+{% endcomment %}
+
+<div id="front_page_content_inner">
+{% if USE_TEMPLATESADMIN %}
+  <h2>{% include front_page_title %}</h2>
+{% else %}
+  <h2>Welcome to the Grand Comics Database</h2>
+  {% include "gcd/bits/managed_content_dev_notice.html" %}
+{% endif %}
+
+{% if BETA %}
+  {% load statustags %}
+
+  <div class="instructions">
+    <h3>This is the BETA site.</h3>
+    <p>
+    If you have no particular reason to visit our BETA site, you probably want
+    to use the <a href="{% url 'home' %}?lang={{ language.code }}">real site.</a>
+    </p>
+  </div>
+{% endif %} {# BETA #}
+
+{% if USE_TEMPLATESADMIN %}
+  <div class="me-1">
+  <p class="sm:hidden font-bold">Welcome to the Grand Comics Database!</p>
+  <p class="max-sm:hidden"> The <b>Grand Comics Database (GCD)</b> is a nonprofit, internet-based organization of international volunteers
+    dedicated to building an open database covering all printed comics throughout the world.</p>
+  <p> Give <a class="link-no-visited font-bold" href="{% url 'haystack_search' %}">our search</a> a try, use <a class="link-no-visited font-bold" href="https://my.comics.org/">my.comics.org</a> to track and manage
+    your comic collection, or look how
+    you can <a class="link-no-visited font-bold" href="#how_to_contribute">contribute</a>.
+  </p>
+  </div>
+  {% include front_page_main %}
+  
+  <div class="flex">
+    <div class="max-sm:hidden w-64 me-1">
+      <div class="label-gcd-blue">Creators Calendar</div>
+      <iframe class="ps-1" src="/daily_creators/" style="border-width:0; visibility:hidden" width="100%" height="600" frameborder="0" id="daily_creators"></iframe>
+    </div>
+    <div class="flex-1">
+      <div class="label-gcd-blue me-1">GCD Comics Timeline</div>
+  {% for creator in creators %}
+      <div class="flex mb-1">
+        <div class="min-w-[100px] w-[100px] me-1">
+          <a href="{% url 'show_creator' creator.id %}">
+            <img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}">
+          </a>
+        </div>
+        <div>
+          <div class="font-bold text-lg">{{ creator|absolute_url }}</div>
+    {{ creator.display_birthday }}{% if creator.has_death_info %} - {{ creator.display_deathday }}{% endif %}<br>
+    {{ creator.bio|linebreaksbr }}
+        </div>
+      </div>
+  {% endfor %}
+    </div>
+  </div>
+  {% include front_page_lower %}
+{% endif %}
+</div>

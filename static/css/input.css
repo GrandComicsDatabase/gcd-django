@@ -15,7 +15,6 @@
       font-size: theme('fontSize.lg');
       font-weight: bold;
     }
-
     a {
       @apply text-link-gcd visited:text-visited-gcd hover:underline
     }
@@ -25,7 +24,10 @@
     .link-with-text-color {
         @apply text-black visited:text-black
     }
-    .field-name-label {
+    .link-no-visited {
+      @apply text-link-gcd visited:text-link-gcd
+  }
+  .field-name-label {
         @apply font-bold pe-1 align-top
     }
     .navigation-bar-box-link {
@@ -54,6 +56,9 @@
     }
     .btn-blue-disabled {
       @apply font-normal bg-blue-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
+    }
+    .label-gcd-blue {
+      @apply bg-gcd text-white rounded px-2 py-1 font-bold;
     }
 }
 

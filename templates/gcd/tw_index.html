@@ -1,0 +1,114 @@
+{% extends "gcd/tw_base_view.html" %}
+
+{% load statustags %}
+{% load humanize %}
+{% load i18n %}
+{% load compress %}
+{% load static %}
+
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+{{ site_name }}
+{% endblock %}
+
+{% block head %}
+{{ block.super }}
+<meta name="description"
+    content="The GCD is building the most comprehensive comics database. It is fully searchable and includes data on creator credits, story details, or other publication details for comic books worldwide." />
+<meta name="msvalidate.01" content="75FC73707997CA1DE7B4BC39F77C829A" />
+{% endblock %}
+
+<!-- grid-cols-3 sm:grid-cols-3 lg:grid-cols-7 -->
+{% block view_body %}
+<nav class="grid auto-cols-max grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 justify-center bg-blue-100 px-2 sm:px-4 py-1">
+        <div class="text-center"><a href="https://docs.comics.org/wiki/General_FAQ" class="link-with-text-color">{% trans "About the GCD" %}</a></div>
+        <div class="max-lg:hidden text-center"><a class="link-with-text-color" href="{% url 'contact_form' %} ">Contact Us</a></div>
+        <div class="text-center"><a href="https://docs.comics.org/wiki/Search_Tutorial" class="link-with-text-color">How to Search</a></div>
+        <div class="max-md:hidden text-center"><a href="https://docs.comics.org/wiki/How_To_Contribute_FAQ"
+            class="link-with-text-color">{% trans "How to Help" %}</a></div>
+        <div class="max-sm:hidden text-center"><a class="link-with-text-color" href="{% url "covers_today" %}">{% trans "Today's Covers" %}</a></div>
+        <div class="max-lg:hidden text-center"><a class="link-with-text-color" href="{% url "changes_today" %}">{% trans "Today's Changes" %}</a></div>
+        <div class="max-sm:hidden text-center"><a class="link-with-text-color" href="{% url "on_sale_this_week" %}">{% trans "On-sale Weekly" %}</a></div>
+        <div class="max-lg:hidden text-center"><a class="link-with-text-color" href="{% url "on_sale_this_month" %}">{% trans "On-sale Monthly" %}</a></div>
+</nav>
+<div class="flex px-1 md:px-2">
+  <div class="flex-1">
+    {% include "gcd/bits/tw_front_page_content.html" %}
+  </div>
+  <div class="flex w-1/3 sm:w-64"> <!-- rechts -->
+    <div>
+        <ul class="ps-1">
+          {% if language and language.code != 'en' %}
+          <li><a class="link-no-visited" href="{% url "home" %}">English start page</a></li>
+          {% endif %}
+          {% if language.code != 'de' %}
+          <li><a class="link-no-visited" href="{% url "home" %}?lang=de">Deutsche Startseite</a></li>
+          {% endif %}
+          {% if language.code != 'it' %}
+          <li><a class="link-no-visited" href="{% url "home" %}?lang=it">Homepage italiana</a></li>
+          {% endif %}
+          {% if language.code != 'nl' %}
+          <li><a class="link-no-visited" href="{% url "home" %}?lang=nl">Nederlandse startpagina</a></li>
+          {% endif %}
+          {% if language.code != 'sv' %}
+          <li><a class="link-no-visited" href="{% url "home" %}?lang=sv">Svensk startsida</a></li>
+          {% endif %}
+          </ul>
+        {% if language %}
+        <div>
+          <div class="label-gcd-blue">
+            {% trans "Last Updated Language Issues" %}
+          </div>
+            <div class="ps-1">
+              {% last_updated_issues language=language.code %}
+            </div>
+        </div>
+        <div>
+          <div class="label-gcd-blue">
+            {% trans "Statistics for Language Comics" %}
+          </div>
+          <div class="ps-1">
+            {% for stat in stats_for_language %}
+              {{ stat.count|intcomma }} {% trans stat.name %}<br>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div>
+          <div class="label-gcd-blue">
+            {% trans "Last Updated Issues" %}
+          </div>
+          <div class="ps-1">
+              {% last_updated_issues %}
+          </div>
+        </div>
+        <div>
+          <div class="label-gcd-blue">
+            {% trans "Statistics" %}
+          </div>
+          <div class="ps-1">
+            {% for stat in stats %}
+              {{ stat.count|intcomma }} {% trans stat.name %}<br>
+            {% endfor %}
+          </div>
+          <div class="label-gcd-blue">
+            {% trans "International Statistics" %}
+          </div> 
+            <ul class="ps-1">
+            <li><a class="link-no-visited" href="{% url "international_stats_language" %}">{% trans "by Language" %}</a>
+            <li><a class="link-no-visited" href="{% url "international_stats_country" %}">{% trans "by Country" %}</a>
+            </ul>
+        </div>
+      </div>
+  </div>  
+</div>
+<script>
+    document.getElementById("daily_creators").addEventListener("load", function() {
+        var top = this.contentWindow.document.getElementById("today").getBoundingClientRect().top;
+        this.style.visibility = "visible";
+        this.contentWindow.scrollTo(0, top);
+    });
+</script>
+{% endblock %}

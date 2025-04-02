@@ -72,7 +72,7 @@ def index(request):
         'stats_for_language': stats_for_language,
         'creators': creators[:10]
     })
-    return render(request, 'gcd/index.html', template_vars)
+    return render(request, 'gcd/tw_index.html', template_vars)
 
 
 class ResponsePaginator(object):
