@@ -2039,6 +2039,14 @@ html {
   color: rgb(39 39 235 );
 }
 
+.\[\&\>div\]\:text-center>div {
+  text-align: center;
+}
+
+.\[\&\>div\]\:font-bold>div {
+  font-weight: 700;
+}
+
 .\[\&\>li\]\:pr-4>li {
   padding-right: 1rem;
 }
