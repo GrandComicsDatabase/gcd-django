@@ -884,10 +884,6 @@ a:hover {
   z-index: 50;
 }
 
-.float-start {
-  float: inline-start;
-}
-
 .m-0 {
   margin: 0px;
 }
@@ -908,6 +904,10 @@ a:hover {
 
 .my-1 {
   margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.mb-1 {
   margin-bottom: 0.25rem;
 }
 
@@ -957,10 +957,6 @@ a:hover {
 
 .mt-\[1px\] {
   margin-top: 1px;
-}
-
-.mb-1 {
-  margin-bottom: 0.25rem;
 }
 
 .block {
@@ -1019,10 +1015,6 @@ a:hover {
   height: 100vh;
 }
 
-.h-16 {
-  height: 4rem;
-}
-
 .max-h-24 {
   max-height: 6rem;
 }
@@ -1033,10 +1025,6 @@ a:hover {
 
 .w-10 {
   width: 2.5rem;
-}
-
-.w-16 {
-  width: 4rem;
 }
 
 .w-4 {
@@ -1077,6 +1065,14 @@ a:hover {
 
 .w-\[200px\] {
   width: 200px;
+}
+
+.w-\[60px\] {
+  width: 60px;
+}
+
+.w-\[68px\] {
+  width: 68px;
 }
 
 .w-\[98px\] {
@@ -1566,10 +1562,6 @@ a:hover {
 
 .align-top {
   vertical-align: top;
-}
-
-.align-middle {
-  vertical-align: middle;
 }
 
 .text-2xl {
