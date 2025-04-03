@@ -18,9 +18,9 @@ def show_form_as_row(field):
     For showing form fields as table rows on a per-field basis instead
     of the whole-form approach of the standard as_table method.
     """
-    last_row_tag = '<tr class="last_row_for_field">'
+    last_row_tag = '<tr>'
 
-    label_cell = '<th>%s</th>' % field.label_tag()
+    label_cell = '<th class="lg:w-64 text-right pe-2">%s</th>' % field.label_tag()
     value_cell = '<td>%s</td>' % field
 
     main_row_tag = '<tr>'
@@ -32,11 +32,11 @@ def show_form_as_row(field):
         help_row_tag = '<tr>'
         if not field.errors:
             help_row_tag = last_row_tag
-        help_row = ('%s<td></td><td class="help_cell">%s</td></tr>' %
+        help_row = ('%s<td></td><td>%s</td></tr>' %
                     (help_row_tag, field.help_text))
         rows += help_row
     if field.errors:
-        error_row = ('%s<td></td><td class="error_cell">%s</td></tr>' %
+        error_row = ('%s<td></td><td>%s</td></tr>' %
                      (last_row_tag, field.errors))
         rows += error_row
 

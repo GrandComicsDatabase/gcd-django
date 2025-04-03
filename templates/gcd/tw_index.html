@@ -28,16 +28,33 @@
   <div><a href="https://docs.comics.org/wiki/Search_Tutorial" class="link-with-text-color">How to Search</a></div>
   <div class="max-md:hidden"><a href="https://docs.comics.org/wiki/How_To_Contribute_FAQ"
       class="link-with-text-color">{% trans "How to Help" %}</a></div>
-  <div class="max-sm:hidden"><a class="link-with-text-color" href="{% url "covers_today" %}">{% trans "Today's Covers" %}</a></div>
+  <div><a class="link-with-text-color" href="{% url "covers_today" %}">{% trans "Today's Covers" %}</a></div>
   <div class="max-lg:hidden"><a class="link-with-text-color" href="{% url "changes_today" %}">{% trans "Today's Changes" %}</a></div>
-  <div class="max-sm:hidden"><a class="link-with-text-color" href="{% url "on_sale_this_week" %}">{% trans "On-sale Weekly" %}</a></div>
+  <div><a class="link-with-text-color" href="{% url "on_sale_this_week" %}">{% trans "On-sale Weekly" %}</a></div>
   <div class="max-lg:hidden"><a class="link-with-text-color" href="{% url "on_sale_this_month" %}">{% trans "On-sale Monthly" %}</a></div>
 </nav>
+<ul class="sm:hidden ps-1 columns-2">
+  {% if language and language.code != 'en' %}
+  <li><a class="link-no-visited" href="{% url "home" %}">English start page</a></li>
+  {% endif %}
+  {% if language.code != 'de' %}
+  <li><a class="link-no-visited" href="{% url "home" %}?lang=de">Deutsche Startseite</a></li>
+  {% endif %}
+  {% if language.code != 'it' %}
+  <li><a class="link-no-visited" href="{% url "home" %}?lang=it">Homepage italiana</a></li>
+  {% endif %}
+  {% if language.code != 'nl' %}
+  <li><a class="link-no-visited" href="{% url "home" %}?lang=nl">Nederlandse startpagina</a></li>
+  {% endif %}
+  {% if language.code != 'sv' %}
+  <li><a class="link-no-visited" href="{% url "home" %}?lang=sv">Svensk startsida</a></li>
+  {% endif %}
+  </ul>
 <div class="flex px-1 md:px-2">
   <div class="flex-1">
     {% include "gcd/bits/tw_front_page_content.html" %}
   </div>
-  <div class="flex w-1/3 sm:w-64"> <!-- rechts -->
+  <div class="max-sm:hidden flex w-1/3 sm:w-64"> <!-- rechts -->
     <div>
         <ul class="ps-1">
           {% if language and language.code != 'en' %}

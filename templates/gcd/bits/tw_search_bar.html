@@ -47,10 +47,10 @@
           {% if MYCOMICS %}
         <a href="{% url "collections_list" %}">Collections</a>
           {% else %}
-        <a class="block px-3 py-1 text-white visited:text-white hover:bg-blue-100 hover:text-black hover:no-underline" href="{% url "editing" %}">Editing</a>
+        <a class="block px-3 py-1 text-white visited:text-white hover:bg-blue-700 hover:no-underline" href="{% url "editing" %}">Editing</a>
           {% endif %}
         {% else %}
-        <a class="block px-3 py-1 text-white visited:text-white hover:bg-blue-100 hover:text-black hover:no-underline" href="{% url "donate" %}">Donate</a>
+        <a class="block px-3 py-1 text-white visited:text-white hover:bg-blue-700 hover:no-underline" href="{% url "donate" %}">Donate</a>
         {% endif %}
         {% include "gcd/bits/user_menu.html" %}
       </div>
