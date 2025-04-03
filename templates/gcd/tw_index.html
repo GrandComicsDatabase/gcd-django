@@ -33,7 +33,7 @@
   <div><a class="link-with-text-color" href="{% url "on_sale_this_week" %}">{% trans "On-sale Weekly" %}</a></div>
   <div class="max-lg:hidden"><a class="link-with-text-color" href="{% url "on_sale_this_month" %}">{% trans "On-sale Monthly" %}</a></div>
 </nav>
-<ul class="sm:hidden ps-1 columns-2">
+<ul class="sm:hidden ps-1 columns-2 [&>li]:text-center">
   {% if language and language.code != 'en' %}
   <li><a class="link-no-visited" href="{% url "home" %}">English start page</a></li>
   {% endif %}

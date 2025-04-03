@@ -2220,6 +2220,10 @@ html {
   padding-right: 1rem;
 }
 
+.\[\&\>li\]\:text-center>li {
+  text-align: center;
+}
+
 .\[\&\>td\]\:px-1>td {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
