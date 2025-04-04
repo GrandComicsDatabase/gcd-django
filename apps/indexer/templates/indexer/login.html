@@ -1,19 +1,15 @@
-{% extends "gcd/base_view.html" %}
-{% load static %}
-
-{% block css %}
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
+{% extends "gcd/tw_base_view.html" %}
 
 {% block view_body %}
-<p>
 {% include "indexer/login_form.html" %}
-</p>
-<p>
-<a href="{% url "forgot_password" %}">Forgot password?</a>
-</p>
-<p>
-<a href="{% url "register" %}">Register a new account</a>
-</p>
+<div class="mt-2">
+  <btn class="btn btn-blue">
+    <a href="{% url "forgot_password" %}">Forgot Password?</a>
+  </btn>
+</div>
+<div class="mt-2">
+  <btn class="btn btn-blue">
+    <a href="{% url "register" %}">Sign Up for a New Account</a>
+  </btn>
+</div>
 {% endblock %}

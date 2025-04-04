@@ -380,7 +380,7 @@ Mentor this indexer: %s
                indexer.from_where,
                'http://' + request.get_host() +
                urlresolvers.reverse('mentor',
-                                    kwargs={'indexer_id': indexer.id}))
+                                    kwargs={'user_id': indexer.user.id}))
 
         if settings.BETA:
             email_subject = 'New BETA Indexer: %s' % indexer
@@ -617,7 +617,7 @@ def update_profile(request, user_id=None):
 
 
 @login_required
-def mentor(request, indexer_id):
+def mentor(request, user_id):
     """
     View for an approver to use to mentor a new user.
     GET: Displays whether the user needs a mentor or not, or who it is.
@@ -628,11 +628,12 @@ def mentor(request, indexer_id):
           request,
           'You are not allowed to mentor new Indexers', redirect=False)
 
-    indexer = get_object_or_404(Indexer, id=indexer_id)
+    user = get_object_or_404(User, id=user_id)
+    indexer = user.indexer
     if request.method == 'POST' and indexer.mentor is None:
         indexer.mentor = request.user
         indexer.save()
-        pending = indexer.user.changesets.filter(state=states.PENDING)
+        pending = user.changesets.filter(state=states.PENDING)
         for changeset in pending.all():
             try:
                 changeset.assign(approver=request.user, notes='')
@@ -647,17 +648,19 @@ def mentor(request, indexer_id):
         if 'HTTP_REFERER' in request.META:
             return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-    return render(request, 'indexer/mentor.html', {'indexer': indexer})
+    return render(request, 'indexer/mentor.html', {'user': user,
+                                                   'indexer': indexer})
 
 
 @login_required
-def unmentor(request, indexer_id):
+def unmentor(request, user_id):
     """
     Releases a user from being mentored.  POST only.
     This is NOT for "graduating" a user into not needing a mentor.
     It is for releasing the new user to find another mentor.
     """
-    indexer = get_object_or_404(Indexer, id=indexer_id)
+    user = get_object_or_404(User, id=user_id)
+    indexer = user.indexer
     if indexer.mentor is None:
         return render_error(request, "This indexer does not have a mentor.")
     if request.user != indexer.mentor:
@@ -674,7 +677,7 @@ def unmentor(request, indexer_id):
 
 
 @login_required
-def mentor_not_new(request, indexer_id):
+def mentor_not_new(request, user_id):
     """
     Marks a user as no longer needing a mentor and adjusts their limits
     accordingly.
@@ -685,7 +688,8 @@ def mentor_not_new(request, indexer_id):
           request,
           'You are not allowed to mentor new Indexers', redirect=False)
 
-    indexer = get_object_or_404(Indexer, id=indexer_id)
+    user = get_object_or_404(User, id=user_id)
+    indexer = user.indexer
     if indexer.mentor != request.user:
         return render_error(
           request,

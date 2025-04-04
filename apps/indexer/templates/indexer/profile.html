@@ -1,24 +1,7 @@
-{% extends "oi/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 {% load static %}
 
-<!--
-Account organization is messed up, leading to this template reaching over
-into the OI app as well as the GCD app for CSS and the base template.
-It should either be factored into a third app or made part of the OI,
-but there's just not enough time to rework it since this code base is supposed
-to have a limited lifespan anyway. <-(LOL 5+ years later)
-  -->
-
 {% load forms %}
-
-{% block css %}
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/indexer/default.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/oi/default.css" %}"/>
-{% endblock %}
 
 {% block title %} GCD :: {{ profile_user.indexer }} :: Profile {% endblock %}
 
@@ -32,9 +15,22 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
 </ul>
 {% endif %}
 
-<h1  style="margin-bottom: 0">{{ profile_user.indexer }}</h1>
+<h1>{{ profile_user.indexer }}</h1>
 {% if user != profile_user %}
-<h3 style="margin-top: 0"><a href="{% url "django_contact_form" user_id=profile_user.id %}"><img alt="email" src="{% static "img/gcd/social/email_32.png" %}" height="22" width="22"> Send E-Mail</a></h3>
+<h3><a href="{% url "django_contact_form" user_id=profile_user.id %}"><img class="inline" alt="email" src="{% static 'img/gcd/social/email_32.png' %}" height="22" width="22"> Send E-Mail</a></h3>
+{% endif %}
+{% if user == profile_user.indexer.mentor and profile_user.indexer.is_new %}
+<div class="flex mt-1">
+<form class="me-1" method="POST" action="{% url "mentor_not_new" user_id=profile_user.id %}">
+  {% csrf_token %}
+  <btn class="btn btn-blue"><input type="submit" name="mentor_not_new"
+         value="Understands Indexing - Release as Full Indexer"></input></btn>
+</form>
+<form action="{% url "unmentor" user_id=profile_user.id %}" method="POST">
+  {% csrf_token %}
+  <btn class="btn btn-blue"><input type="submit" value="Indexer Inactive - Return to Unmentored Status"></btn>
+</form>
+</div>
 {% endif %}
 
 {% include 'indexer/bits/profile_limits.html' %}
@@ -70,28 +66,25 @@ to have a limited lifespan anyway. <-(LOL 5+ years later)
       {{ form.use_tabs|show_form_as_row }}
     </table>
   </fieldset>
-  <fieldset>
+  <fieldset class="border-2 border-gray-400 p-1 mb-2">
     <legend>Change Password</legend>
-    <div class="instructions">
+    <div>
       Leave all three fields blank to leave your password unchanged.
     </div>
-    <ol>
-      {{ form.old_password|show_form }}
-      {{ form.new_password|show_form }}
-      {{ form.confirm_new_password|show_form }}
-    </ol>
+    <table>
+      {{ form.old_password|show_form_as_row }}
+      {{ form.new_password|show_form_as_row }}
+      {{ form.confirm_new_password|show_form_as_row }}
+    </table>
   </fieldset>
-  <p>
-    <input type="submit" value="Save"></td>
-  </p>
+    <btn class="btn btn-blue"><input type="submit" value="Save"></btn></td>
 </form>
 {% else %}
   {% include 'indexer/bits/profile_display.html' %}
 
   {% if profile_user == user %}
-<form action="{% url "edit_profile" user_id=profile_user.id %}" method="GET"
-      class="profile_form">
-  <input type="submit" value="Edit Profile">
+<form class="mt-1" action="{% url "edit_profile" user_id=profile_user.indexer.id %}" method="GET">
+  <btn class="btn btn-blue"><input type="submit" value="Edit Profile"></btn>
 </form>
   {% endif %}
 

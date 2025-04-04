@@ -1,6 +1,10 @@
 {% extends "gcd/tw_base.html" %}
 
 {% block body %}
+  {% block nav_bar %}
   {% include "gcd/bits/tw_search_bar.html" %}
+  {% endblock %}
+  <div class="px-1 md:px-2">
   {% block view_body %}{% endblock %}
+  </div>
 {% endblock %}

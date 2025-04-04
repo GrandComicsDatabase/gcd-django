@@ -1,5 +1,5 @@
 {% if form.errors %}
-<p class="error_message_text">
+<p>
 Your username and password didn't match. Please try again.
 </p>
 {% endif %}
@@ -17,7 +17,7 @@ Your username and password didn't match. Please try again.
 </tr>
 </table>
 
-<input type="submit" value="login" />
+<btn class="btn btn-blue"><input type="submit" value="Log In" /></btn>
 <input type="hidden" name="next" value="{{ next }}" />
 </form>
 

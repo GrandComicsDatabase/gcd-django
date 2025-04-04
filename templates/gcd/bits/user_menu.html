@@ -23,8 +23,8 @@
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
   </form>        
 {% else %}
-  <a href="{% url "register" %}" class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Sign Up</a>
-  <form class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white" action="{% url "login" %}" method="GET">
+  <a href="{% url 'register' %}" class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Sign Up</a>
+  <form class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white" action="{% url 'login' %}" method="GET">
     <input type="submit" name="login" value="Log In">
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
   </form>

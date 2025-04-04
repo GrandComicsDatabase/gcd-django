@@ -1,10 +1,5 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 {% load static %}
-
-{% block css %}
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
 
 {% block view_body %}
 <p>
@@ -16,7 +11,7 @@ To send an e-mail to {{ form.target_user.get_full_name }}, please enter the mess
 <table>
 {{ form.as_table }}
 </table>
-<input type="submit" value="Submit">
+<btn class="btn btn-blue"><input type="submit" value="Submit"></btn>
 </form>
 </p>
 {% endblock %}

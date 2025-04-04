@@ -1,19 +1,10 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 {% load static %}
 {% load forms %}
-
-{% block css %}
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/indexer/default.css" %}"/>
-{% endblock %}
 
 {% block title %} GCD :: Mentor an Indexer {% endblock %}
 
 {% block view_body %}
-
-<p><a href="{% url "mentoring" %}">New Indexers Mentoring Overview</a></p> 
 
 {% if indexer.mentor %}
   {% if indexer.mentor == user %}
@@ -27,9 +18,9 @@
   {% endif %}
 {% else %}
   {% if indexer.is_new %}
-    <form action="{% url "mentor" indexer_id=indexer.id %}" method="POST">
+    <form class="py-1" action="{% url 'mentor' user_id=user.id %}" method="POST">
       {% csrf_token %}
-      <input type="submit" value="Mentor this Indexer">
+      <btn class="btn btn-blue"><input type="submit" value="Mentor this Indexer"></btn>
     </form>
   {% else %}
     <p class="message">
@@ -37,8 +28,8 @@
     </p>
   {% endif %}
 {% endif %}
-{% with indexer.user as profile_user %}
-  {% include 'indexer/bits/profile_limits.html' %}
+{% with user as profile_user %}
+  {% include 'indexer/bits/profile_limits.html' %}<br>
   {% include 'indexer/bits/profile_display.html' %}
 {% endwith %}
 

@@ -20,8 +20,8 @@
 <meta name="msvalidate.01" content="75FC73707997CA1DE7B4BC39F77C829A" />
 {% endblock %}
 
-<!-- grid-cols-3 sm:grid-cols-3 lg:grid-cols-7 -->
-{% block view_body %}
+{% block nav_bar %}
+  {{ block.super }}
 <nav class="grid auto-cols-max grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 justify-center bg-blue-100 px-2 sm:px-4 py-1 [&>div]:text-center [&>div]:font-bold">
   <div><a href="https://docs.comics.org/wiki/General_FAQ" class="link-with-text-color">{% trans "About the GCD" %}</a></div>
   <div class="max-lg:hidden"><a class="link-with-text-color" href="{% url 'contact_form' %} ">Contact Us</a></div>
@@ -49,8 +49,11 @@
   {% if language.code != 'sv' %}
   <li><a class="link-no-visited" href="{% url "home" %}?lang=sv">Svensk startsida</a></li>
   {% endif %}
-  </ul>
-<div class="flex px-1 md:px-2">
+</ul>
+{% endblock %}
+
+{% block view_body %}
+<div class="flex">
   <div class="flex-1">
     {% include "gcd/bits/tw_front_page_content.html" %}
   </div>

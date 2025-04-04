@@ -7,8 +7,6 @@
 {% endblock %}
 
 {% block view_body %}
-
-<div class="px-1 md:px-2">
 {% if user.is_authenticated %}
   <p>
 Please
@@ -45,7 +43,7 @@ You might need to also check your spam folder.
 If you have other setups to prevent unsolicited email please
 make sure that our automatic email gets through, you may have to temporarily turn
 these off. Some email setups allow a white list, where you could put our domain comics.org.<br>
-If you do not get an email, and afterwards change some of the mentioned email setups, you can then register again with your email-address and will get another confirmation email. In this case it is enough to fill in the required fields since the other information is already stored in the database.
+If you <span class="font-bold">did not receive</span> an email please change some of the mentioned email setups. Afterwards, just register again with your email-address and you will get another confirmation email. In such a case of re-registering it is enough for you to fill in only the required fields since the other information is already stored in the database.
 </p>
 
 {{ form.non_field_errors }}
@@ -68,11 +66,10 @@ If you do not get an email, and afterwards change some of the mentioned email se
   {{ form.notify_on_approve|show_form_as_row }}
   {{ form.collapse_compare_view|show_form_as_row }}
   <tr><td></td><td>{{ form.captcha }}</td></tr>
-  <tr><td>&nbsp;</td><td><input type="submit" value="Register"></td></tr>
+  <tr><td>&nbsp;</td><td><btn class="btn btn-blue"><input type="submit" value="Register"></btn></td></tr>
 </table>
 </form>
 
 {% endif %}
-</div>
 {% endblock %}
 
