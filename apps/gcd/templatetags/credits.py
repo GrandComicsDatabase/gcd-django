@@ -16,6 +16,10 @@ from apps.stddata.models import Country, Language
 from apps.gcd.models.story import AD_TYPES, Story
 from apps.gcd.models.support import GENRES
 from apps.gcd.models import STORY_TYPES, CREDIT_TYPES
+from apps.gcd.markdown_extension import TailwindExtension, \
+                                        GCDFieldExtension, \
+                                        GCDFieldLinkNameExtension
+
 
 register = template.Library()
 
@@ -477,7 +481,10 @@ def show_cover_letterer_credit(story):
 @register.filter()
 @stringfilter
 def markdown(value):
-    return mark_safe(md.markdown(value))
+    return mark_safe(md.markdown(value,
+                                 extensions=[TailwindExtension(),
+                                             GCDFieldLinkNameExtension(),
+                                             GCDFieldExtension()]))
 
 
 def __format_keywords(keywords, join_on='; ', model_name='story', url=True):

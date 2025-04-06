@@ -83,7 +83,7 @@
   {% if uses.count %}
 <hr>
 <h3 class="mt-2">Publisher's brand emblem is in use at:</h3>
-<table>
+<table class="border border-gray-200">
   <tr class="bg-blue-100 [&>th]:px-1">
     <th> Publisher </th>
     <th> Began </th>
@@ -94,7 +94,7 @@
     {% endif %}
   </tr>
     {% for use in uses %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
+  <tr class="border border-gray-200">
     <td> <a href="{{ use.publisher.get_absolute_url }}">{{ use.publisher }}</a> </td>
     <td> {{ use.year_began|default:"" }} </td>
     <td> {{ use.year_ended|default:"" }} </td>

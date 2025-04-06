@@ -265,6 +265,9 @@ class BrandGroup(BasePublisher):
 
         return {'brands': 1}
 
+    def object_markdown_name(self):
+        return '%s : %s' % (self.parent.name, self.name)
+
     def object_page_name(self):
         parent_url = self.parent.get_absolute_url()
         return mark_safe('<a href="%s">%s</a> : %s' % (parent_url,

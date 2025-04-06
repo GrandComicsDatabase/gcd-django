@@ -72,7 +72,7 @@
     </tr>
   </thead>
 {% for indicia_printer in indicia_printers %}
-  <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border-t-2 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
+  <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border border-gray-200 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
     <td> <a href="{{ indicia_printer.get_absolute_url }}">{{ indicia_printer.name }}</a> </td>
     <td class="px-2 text-left sm:text-right">
       <a href='{% url "indicia_printer_issues" indicia_printer_id=indicia_printer.id %}'>{{ indicia_printer.issue_count }}</a>

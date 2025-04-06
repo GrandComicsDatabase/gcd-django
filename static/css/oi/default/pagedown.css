@@ -1,9 +1,11 @@
+/* based on demo.css from django-pagedown project */
+
 .wmd-panel
 {
-	margin-left: 0%;
+	/* margin-left: 0%;
 	margin-right: 25%;
-	width: 50%;
-	min-width: 500px;
+	width: 50%; */
+	/* min-width: 500px; */
 }
 
 .wmd-button-bar {
@@ -12,8 +14,130 @@
 }
 
 .wmd-input {
-    height: 300px;
-    width: 100%;
     background-color: white;
     border: 1px solid silver;
+}
+
+body 
+{ 
+	background-color: White;
+}
+
+blockquote {
+	border-left: 2px dotted #888;
+	padding-left: 5px;
+	background: #d0f0ff;
+}
+
+.wmd-preview 
+{ 
+	background-color: #c0e0ff; 
+}
+
+@media (min-width: 1024px) {
+	.wmd-preview {
+	  width: 80%;
+	}
+}
+
+.wmd-preview > ul {
+    list-style: disc;
+    padding-inline-start: 2rem;
+}
+
+.wmd-preview > ol {
+    list-style: decimal;
+    padding-inline-start: 2rem;
+}
+
+.wmd-preview > p {
+    padding-bottom: 1rem;    
+}
+
+.wmd-button-row 
+{
+	position: relative; 
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-bottom: 5px;
+	margin-top: 10px;
+	padding: 0px;  
+	height: 20px;
+}
+
+.wmd-spacer
+{
+	width: 1px; 
+	height: 20px; 
+	margin-left: 14px;
+	
+	position: absolute;
+	background-color: Silver;
+	display: inline-block; 
+	list-style: none;
+}
+
+.wmd-button {
+    width: 20px;
+    height: 20px;
+    padding-left: 2px;
+    padding-right: 3px;
+    position: absolute;
+    display: inline-block;
+    list-style: none;
+    cursor: pointer;
+}
+
+.wmd-button > span {
+    background-image: url(/static/pagedown/wmd-buttons.png);
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+}
+
+.wmd-spacer1
+{
+    left: 50px;
+}
+.wmd-spacer2
+{
+    left: 175px;
+}
+.wmd-spacer3
+{
+    left: 300px;
+}
+
+
+
+
+.wmd-prompt-background
+{
+	background-color: Black;
+}
+
+.wmd-prompt-dialog
+{
+	border: 1px solid #999999;
+	background-color: #F5F5F5;
+}
+
+.wmd-prompt-dialog > div {
+	font-size: 0.8em;
+	font-family: arial, helvetica, sans-serif;
+}
+
+
+.wmd-prompt-dialog > form > input[type="text"] {
+	border: 1px solid #999999;
+	color: black;
+}
+
+.wmd-prompt-dialog > form > input[type="button"]{
+	border: 1px solid #888888;
+	font-family: trebuchet MS, helvetica, sans-serif;
+	font-size: 0.8em;
+	font-weight: bold;
 }

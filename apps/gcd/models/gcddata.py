@@ -99,6 +99,9 @@ class GcdData(GcdBase):
         self.deleted = True
         self.save()
 
+    def object_markdown_name(self):
+        return self.object_page_name()
+
     def object_page_name(self):
         return str(self)
 

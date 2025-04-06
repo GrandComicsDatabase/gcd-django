@@ -2,8 +2,11 @@
 const colors = require('tailwindcss/colors')
 
 module.exports = {
-  content: ['./templates/*.html', './templates/**/*.html', './templates/**/**/*.html',
-            './apps/indexer/templates/indexer/*.html', './apps/indexer/templates/indexer/bits/*.html'],
+  content: ['./templates/*.html', './templates/**/*.html',
+            './templates/**/**/*.html',
+            './apps/indexer/templates/indexer/*.html',
+            './apps/indexer/templates/indexer/bits/*.html',
+            './apps/gcd/markdown_extension.py',],
   theme: {
   extend: {
       colors: {

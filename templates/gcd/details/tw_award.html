@@ -46,7 +46,7 @@ GCD :: Award :: {{ award.name }}
       </tr>
     </thead>
     {% for awarded in page.object_list %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border-t-2 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
+    <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border border-gray-200 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
       <td> <a href="{{ awarded.get_absolute_url }}">{{ awarded.display_name }}</a> </td>
       <td> <a href="{{ awarded.recipient.get_absolute_url }}">{{ awarded.recipient }}</a> </td>
       <td> {{ awarded.display_year }} </td>

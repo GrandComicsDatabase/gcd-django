@@ -160,7 +160,7 @@
   {% endif %}
   {% if series.notes %}
 <h3 class="mt-2">Notes:</h3>
-    {{ series.notes|urlizetrunc:75|linebreaksbr }}
+    {{ series.notes|markdown }}
   {% endif %}
   {% if series.active_issues.count %}
 <a name="index_status"></a>

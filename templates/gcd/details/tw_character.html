@@ -103,7 +103,7 @@ GCD :: Character :: {{ character.name }}
 {% endif %}
 {% if character.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ character.notes|urlizetrunc:75|linebreaksbr }}
+{{ character.notes|markdown }}
 {% endif %}
 {% endblock %}
 
