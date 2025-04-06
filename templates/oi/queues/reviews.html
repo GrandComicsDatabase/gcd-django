@@ -5,24 +5,15 @@
 GCD :: {{ user.indexer }} :: Changes Under Review
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/queues.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <div class="queues">
-<h1> Changes Under Review </h1>
+  <h1> Changes Under Review </h1>
 
-{% with 'oi/bits/approval_actions.html' as actions %}
-{% with 'preview' as link_target %}
-  {% include 'oi/bits/standard_queues.html' %}
-{% endwith %}
-{% endwith %}
+  {% with 'oi/bits/approval_actions.html' as actions %}
+    {% with 'preview' as link_target %}
+      {% include 'oi/bits/standard_queues.html' %}
+    {% endwith %}
+  {% endwith %}
 </div>
 {% endblock %}
 

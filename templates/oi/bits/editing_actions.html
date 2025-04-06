@@ -1,10 +1,10 @@
 <form action="{% url "process" id=changeset.id %}"
       method="POST">
   {% csrf_token %}
-  <input type="submit" name="discard" value="Discard"></input>
+  <btn class="btn-blue-editing"><input type="submit" name="discard" value="Discard"></input></btn>
 {% if changeset.state == states.PENDING %}
   {% if changeset.editable and section.object_type != "cover" %}
-  <input type="submit" name="retract" value="Retract And Edit Further"></input>
+  <btn class="btn-blue-editing"><input type="submit" name="retract" value="Retract And Edit Further"></input></btn>
   {% endif %}
 {% endif %}
   <input type="hidden" name="comments" class="comments" />

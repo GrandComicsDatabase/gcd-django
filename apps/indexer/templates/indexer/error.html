@@ -1,24 +1,18 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 {% load static %}
 
 {% block title %}
   GCD :: Error
 {% endblock %}
-{% block css %}
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
 
 {% block view_body %}
 <div>
-<h1 class="item_id search_id">
-<div class="left">
-Error
-</div>
-</h1>
+  <h1 class="item_id search_id">
+  Sorry, an error occurred.
+  </h1>
 </div>
 
-<div class="error_message">
+<div class="text-red-700 font-bold">
 {{ error_text }}
 </div>
 

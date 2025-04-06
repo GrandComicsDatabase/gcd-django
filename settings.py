@@ -359,7 +359,7 @@ BETA = False
 # templates/managed_content
 USE_TEMPLATESADMIN = False
 
-ADVERTISING = True
+ADVERTISING = False
 CALENDAR = True
 
 # Set to True to avoid hitting comics.org for every cover image.

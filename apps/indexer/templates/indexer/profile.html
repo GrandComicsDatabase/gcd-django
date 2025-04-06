@@ -83,7 +83,7 @@
   {% include 'indexer/bits/profile_display.html' %}
 
   {% if profile_user == user %}
-<form class="mt-1" action="{% url "edit_profile" user_id=profile_user.indexer.id %}" method="GET">
+<form class="mt-1" action="{% url "edit_profile" user_id=profile_user.id %}" method="GET">
   <btn class="btn btn-blue"><input type="submit" value="Edit Profile"></btn>
 </form>
   {% endif %}

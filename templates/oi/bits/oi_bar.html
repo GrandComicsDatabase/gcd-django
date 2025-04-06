@@ -1,36 +1,28 @@
 {% if user.is_authenticated %}
-<div class="oi_bar">
- <ul>
-  <li class="oi_bar_title" style="margin-left: -2em; padding-left: 2em"><a href="https://docs.comics.org/wiki/Formatting_Documentation">Help</a> </li>
-  <li class="oi_bar_title"><a href="https://docs.comics.org/wiki/OI_Tutorial">Tutorial</a></li>
-  <li><a href="{% url "editing" %}">Editing</a> </li>
-  <li><a href="{% url "pending" %}">Pending</a> </li>
-  <li><a href="{% url "pending_covers" %}">Covers</a> </li>
+<div class="bg-blue-200 pe-1 sm:pe-2">
+ <ul class="flex flex-wrap [&_a]:px-2 [&_a]:py-1 [&_a]:block [&_a]:hover:no-underline [&>li]:font-bold [&_a]:text-black">
+  <li><a class="[&:not(:hover)]:text-white bg-black hover:bg-blue-400" href="https://docs.comics.org/wiki/Formatting_Documentation">Help</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'editing' %}">Editing</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'pending' %}">Pending</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'pending_covers' %}">Covers</a> </li>
   {% if perms.indexer.can_approve %}
-  <li><a href="{% url "reviewing" %}">Reviewing</a> </li>
-  <li><a href="{% url "editor_log" %}">Editor Log</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'reviewing' %}">Reviewing</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'editor_log' %}">Editor Log</a> </li>
   {% endif %}
-  <li><a href="{% url "approved" %}">Approved</a> </li>
-  <li><a href="{% url "commented" %}">Commented</a> </li>
-  <li><a href="{% url "add" %}">Add New</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'approved' %}">Approved</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'commented' %}">Commented</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'add' %}">Add New</a> </li>
   {% if perms.indexer.can_mentor %}
-  <li><a href="{% url "mentoring" %}">Mentoring</a> </li>
+  <li><a class="hover:bg-blue-400" href="{% url 'mentoring' %}">Mentoring</a> </li>
   {% endif %}
-  <li><a href="{% url "voting_dashboard" %}">Voting</a> </li>
-  {% if not user.is_anonymous %}
-  <li><a href="{% url "view_profile" user_id=user.id %}">Profile</a> </li>
-  {% endif %}
-  {% if user.is_staff %}
-  <li><a href="/admin/">Admin</a> </li>
-  {% endif %}
-<a name="{{ position }}"></a>
-  <li class="oi_bar_nav">
-    <a title="go to the {{ link_direction }}" href="#{{ link_direction }}">
-      <svg style="height: 1em; width: 1em; fill: currentColor;">
+  <li><a class="hover:bg-blue-400" href="{% url 'voting_dashboard' %}">Voting</a> </li>
+  <!-- <li class="ml-auto mt-1">
+    <a name="{{ position }}" class="hover:bg-blue-400" title="go to the {{ link_direction }}" href="#{{ link_direction }}">
+      <svg class="w-4 h-4" style="fill: currentColor;">
         <use xlink:href="#go-{{ link_direction }}"></use>
       </svg>
     </a>
-  </li>
+  </li> -->
 </ul>
 </div>
 {% endif %}

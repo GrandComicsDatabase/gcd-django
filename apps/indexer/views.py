@@ -546,7 +546,7 @@ def profile(request, user_id=None, edit=False):
         else:
             return render_error(
               request,
-              "You may not edit other users' profiles")
+              "You may not edit other users' profiles.")
 
     if profile_user == request.user:
         context['ranking'] = ranking(profile_user.indexer)

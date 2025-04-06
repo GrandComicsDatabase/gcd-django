@@ -5,24 +5,27 @@
 GCD :: Changes Pending Review
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/queues.css" %}"/>
+{% block nav_bar %}
+  {{ block.super }}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  {% for section in data %}
+    {% if section.changesets.count %}
+    <a class="font-bold px-1 link-with-text-color hover:bg-blue-400 hover:no-underline" href="#{{ section.object_name }}">
+      {{ section.object_name }} ({{ section.changesets.count }})
+    </a>
+    {% endif %}
+  {% endfor %}
+</nav>
 {% endblock %}
 
 {% block view_body %}
 <div class="queues">
 <h1> Changes Pending Review </h1>
 
-{% with 'oi/bits/pending_actions.html' as actions %}
-{% with 'preview' as link_target %}
-  {% include 'oi/bits/standard_queues.html' %}
-{% endwith %}
-{% endwith %}
+  {% with 'oi/bits/pending_actions.html' as actions %}
+    {% with 'preview' as link_target %}
+      {% include 'oi/bits/standard_queues.html' %}
+    {% endwith %}
+  {% endwith %}
 </div>
 {% endblock %}
-

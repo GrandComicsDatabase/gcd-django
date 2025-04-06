@@ -6,68 +6,68 @@
 {% for section in data %}
   {% with section.changesets.count as section_count %}
     {% if section_count %}
-<h2>
+<h2 class="py-1" id="{{ section.object_name }}">
   {{ section.object_name }}
   ({{ section_count }} change{{ section_count|pluralize }})
 </h2>
-<table>
-  <tr>
+<table class="max-w-[calc(100vw-0.5rem)] border border-gray-200">
+  <tr class="bg-blue-100 [&>th]:px-1.5">
       {% if perms.indexer.can_approve or queue_name == 'editing' %}
         {% if queue_name == 'pending' and section.object_name == 'Issues' %}
-    <th> </th>
+    <th class="max-sm:hidden"> </th>
         {% endif %}
-    <th> </th>
+    <th class="max-sm:hidden"> </th>
       {% endif %}
-    <th> Name {{ queue_name }}</th>
+    <th> Change</th>
       {% if queue_name != 'editing' %}
     <th> Indexer</th>
       {% endif %}
       {% if queue_name != 'reviews' %}
-    <th> Approver</th>
+    <th class="max-sm:hidden"> Approver</th>
       {% endif %}
-    <th> State </th>
+    <th class="max-sm:hidden"> State </th>
       {% if queue_name == 'editing' %}
-    <th> Last State Change </th>
+    <th class="max-sm:hidden"> Last State Change </th>
     <th> Expires </th>
       {% else %}
-    <th> Last Activity </th>
+    <th class="max-sm:hidden"> Last Activity </th>
       {% endif %}
     <th> Actions </th>
   </tr>
       {% for changeset in section.changesets %}
-  <tr>
+  <tr class="hover:bg-blue-50 [&>td]:px-1.5 border border-gray-200">
         {% if perms.indexer.can_approve or queue_name == 'editing' %}
           {% if queue_name == 'pending' and section.object_name == 'Issues' %}
-    <td style="text-align: right">
+    <td class="max-sm:hidden text-right">
           {{ forloop.counter }}.
     </td>
           {% endif %}
-    <td style="text-align: right">
+    <td class="max-sm:hidden text-right">
           {% if queue_name != 'editing' or changeset.state > states.OPEN %} {{ changeset.magnitude }} {% endif %}
     </td>
         {% endif %}
     <td>
         {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
-      <a style="display: block;" href="{% url "compare" id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">
+      <a href="{% url "compare" id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">
         {% else %}
-      <a style="display: block;" href="{% url "edit" id=changeset.id %}">
+      <a href="{% url "edit" id=changeset.id %}">
         {% endif %}
         {% if changeset.country %}
           {% with country_names|key:changeset.country as name %}
-      <img {{ countries|key:changeset.country|show_country_info_by_code:name }} class="embedded_flag">
+      <img {{ countries|key:changeset.country|show_country_info_by_code:name }} class="inline">
           {% endwith %}
         {% endif %}
         {{ changeset.queue_name }}
       <span class="{{ changeset.changeset_action }}">{{ changeset.queue_descriptor }}</span></a>
     </td>
         {% if queue_name != 'editing' %}
-    <td class="no_visited"> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
+    <td> {{ changeset.indexer.indexer|absolute_url|default:"None" }} </td>
         {% endif %}
         {% if queue_name != 'reviews' %}
-    <td class="no_visited"> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
+    <td  class="max-sm:hidden"> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
         {% endif %}
-    <td> {{ changeset.display_state }} </td>
-    <td> {{ changeset.modified|naturaltime }} </td>
+    <td class="max-sm:hidden"> {{ changeset.display_state }} </td>
+    <td class="max-sm:hidden"> {{ changeset.modified|naturaltime }} </td>
       {% if queue_name == 'editing' %}
     <td {{ changeset|is_overdue }} > {{ changeset.expires|naturaltime }} </td>
       {% endif %}
@@ -82,4 +82,3 @@
 All queues are empty.
 </p>
 {% endfor %}
-

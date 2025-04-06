@@ -138,9 +138,9 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
 CTYPES_BULK = frozenset((CTYPES['issue_bulk'],
                          CTYPES['issue_add']))
 
-ACTION_ADD = 'add'
-ACTION_DELETE = 'delete'
-ACTION_MODIFY = 'modify'
+ACTION_ADD = 'bg-green-400'
+ACTION_DELETE = 'bg-red-400'
+ACTION_MODIFY = 'bg-white'
 
 IMP_BONUS_ADD = 10
 IMP_COVER_VALUE = 5
@@ -632,7 +632,7 @@ class Changeset(models.Model):
 
     def changeset_action(self):
         """
-        Produce a human-readable description of whether we're adding, removing
+        Produce a color representation of whether we're adding, removing
         or modifying data with this changeset.
         """
         if self.change_type in [CTYPES['issue_add'], CTYPES['variant_add']]:
@@ -2620,6 +2620,14 @@ class PublisherRevision(PublisherRevisionBase):
         if field_name == 'country':
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
+
+
+    def has_keywords(self):
+        return self.keywords
+
+
+    def display_keywords(self):
+        return self.keywords
 
 
 class IndiciaPublisherRevision(PublisherRevisionBase):
@@ -7214,6 +7222,12 @@ class PreviewCharacter(Character):
     def official_name(self):
         return self.revision.character_name_revisions.get(
           is_official_name=True)
+
+    def has_keywords(self):
+        return self.revision.has_keywords()
+
+    def display_keywords(self):
+        return self.revision.keywords
 
 
 class CharacterNameDetailRevision(Revision):

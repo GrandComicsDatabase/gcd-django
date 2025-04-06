@@ -738,7 +738,7 @@ class IssueCoverTable(IssueTable):
     class Meta:
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date')
-        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+        row_attrs = {'class': 'w-[150px] md:w-[200px] shadow-md p-[2px]'}
 
     def render_cover(self, record):
         from apps.gcd.views.covers import get_image_tag
@@ -834,7 +834,7 @@ class IndiciaPublisherIssueCoverTable(IndiciaPublisherIssueTable,
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'brand')
-        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+        row_attrs = {'class': 'w-[150px] md:w-[200px] shadow-md p-[2px]'}
 
 
 class BrandEmblemIssueTable(IssueTable):
@@ -874,7 +874,7 @@ class BrandEmblemIssueCoverTable(BrandEmblemIssueTable, IssueCoverTable):
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'indicia_publisher')
-        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+        row_attrs = {'class': 'w-[150px] md:w-[200px] shadow-md p-[2px]'}
 
 
 class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
@@ -902,7 +902,7 @@ class BrandGroupIssueCoverTable(BrandGroupIssueTable, IssueCoverTable):
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'brand', 'indicia_publisher')
-        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+        row_attrs = {'class': 'w-[150px] md:w-[200px] shadow-md p-[2px]'}
 
 
 class PublisherIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
@@ -919,7 +919,7 @@ class PublisherIssueCoverTable(PublisherIssueTable, IssueCoverTable):
     class Meta:
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'brand', 'indicia_publisher')
-        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+        row_attrs = {'class': 'w-[150px] md:w-[200px] shadow-md p-[2px]'}
 
 
 class SeriesDetailsIssueTable(PublisherIssueTable):

@@ -137,7 +137,7 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
                                  verbose_name='On-sale')
     publication_date = tables.Column(accessor='issue__publication_date',
                                      verbose_name='Publication Date')
-    edit_cover = tables.Column(accessor='issue',
+    edit_cover = tables.Column(accessor='issue', attrs={"div":{"class": "mt-auto"}},
                                verbose_name='', orderable=False)
     publisher = tables.Column(accessor='issue__series__publisher')
 
@@ -145,7 +145,7 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
         model = Cover
         fields = ('cover', 'issue', 'publisher', 'publication_date',
                   'on_sale_date', 'edit_cover')
-        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+        row_attrs = {'class': 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'}
 
     def render_cover(self, record):
         from apps.gcd.views.covers import get_image_tag
@@ -157,7 +157,9 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
     def render_edit_cover(self, value):
         link = urlresolvers.reverse("edit_covers",
                                     kwargs={'issue_id': value.id})
-        return mark_safe('<a href="%s">%s</a>' % (link, 'add/replace cover'))
+        return mark_safe('<btn class="btn-blue-editing">'
+                         '<a href="%s">%s</a></btn>' % (link,
+                                                        'add/replace cover'))
 
     def render_issue(self, value):
         return mark_safe('<a href="%s">%s (%s series)</a>' % (
@@ -203,7 +205,7 @@ class OnSaleCoverIssueTable(CoverIssuePublisherEditTable):
         model = Cover
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'edit_cover')
-        row_attrs = {'class': 'w-[150px] md:w-[200px]'}
+        row_attrs = {'class': 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'}
 
     def render_issue(self, value):
         return mark_safe('<a href="%s">%s</a>' % (value.get_absolute_url(),
@@ -217,7 +219,7 @@ class CoverSeriesTable(CoverIssuePublisherEditTable):
         model = Cover
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'edit_cover')
-        row_attrs = {'class': 'w-[154px] md:w-[204px] shadow-md p-[2px]'}
+        row_attrs = {'class': 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'}
 
     def render_issue(self, value):
         return mark_safe('<a href="%s">%s</a>' % (value.get_absolute_url(),

@@ -1,4 +1,4 @@
-{% extends "gcd/tw_base_view.html" %}
+{% extends "oi/base_view.html" %}
 {% load static %}
 {% load humanize %}
 
@@ -7,49 +7,48 @@ GCD :: Mentoring New Indexers
 {% endblock %}
 
 {% block view_body %}
-<div class="queues">
-<h2>My mentees</h2>
-<table>
-  <tr class="bg-blue-100 [&>th]:px-1">
-    <th> Indexer </th>
-    <th> Country </th>
-    <th> Last Login </th>
-    <th> Actions </th>
-  </tr>
-{% for indexer in my_mentees %}
-  <tr class="hover:bg-blue-50 [&>td]:px-1">
-    <td><a href="{% url "view_profile" user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
-    <td>{{ indexer.indexer.country }}</td>
-    <td>{{ indexer.last_login|naturaltime }}</td>
-    <td> 
-      <form class="my-1" method="POST" action="{% url "mentor_not_new" user_id=indexer.id %}">
-        {% csrf_token %}
-        <btn class="block btn btn-blue"><input type="submit" name="mentor_not_new"
-               value="Understands Indexing - Release as Full Indexer"></input></btn>
-      </form>
-      <form class="mb-1" action="{% url "unmentor" user_id=indexer.id %}" method="POST">
-        {% csrf_token %}
-        <btn class="block btn btn-blue"><input type="submit" value="Indexer Inactive - Return to Unmentored Status"></btn>
-      </form>
-    </td>
-  </tr>
-{% endfor %}
-</table>
-<h2>New indexers with a mentor</h2>
-<table>
-  <tr class="bg-blue-100 [&>th]:px-1">
-    <th> Indexer </th>
-    <th> Country </th>
-    <th> Mentor </th>
-  </tr>
-{% for indexer in mentees %}
-  <tr class="hover:bg-blue-50 [&>td]:px-1">
-    <td><a href="{% url "view_profile" user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
-    <td>{{ indexer.indexer.country }}</td>
-    <td> <a href="{% url "view_profile" user_id=indexer.indexer.mentor.id %}">{{ indexer.indexer.mentor.indexer }}</a></td>
-  </tr>
-{% endfor %}
-</table>
+<div>
+  <h2>My mentees</h2>
+  <table>
+    <tr class="bg-blue-100 [&>th]:px-1">
+      <th> Indexer </th>
+      <th> Country </th>
+      <th> Last Login </th>
+      <th> Actions </th>
+    </tr>
+  {% for indexer in my_mentees %}
+    <tr class="hover:bg-blue-50 [&>td]:px-1">
+      <td><a href="{% url "view_profile" user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
+      <td>{{ indexer.indexer.country }}</td>
+      <td>{{ indexer.last_login|naturaltime }}</td>
+      <td>
+        <form class="my-1" method="POST" action="{% url "mentor_not_new" user_id=indexer.id %}">
+          {% csrf_token %}
+          <btn class="block btn btn-blue"><input type="submit" name="mentor_not_new"
+                value="Understands Indexing - Release as Full Indexer"></input></btn>
+        </form>
+        <form class="mb-1" action="{% url "unmentor" user_id=indexer.id %}" method="POST">
+          {% csrf_token %}
+          <btn class="block btn btn-blue"><input type="submit" value="Indexer Inactive - Return to Unmentored Status"></btn>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </table>
+  <h2>New indexers with a mentor</h2>
+  <table>
+    <tr class="bg-blue-100 [&>th]:px-1">
+      <th> Indexer </th>
+      <th> Country </th>
+      <th> Mentor </th>
+    </tr>
+  {% for indexer in mentees %}
+    <tr class="hover:bg-blue-50 [&>td]:px-1">
+      <td><a href="{% url "view_profile" user_id=indexer.id %}">{{ indexer.indexer }}</a><br></td>
+      <td>{{ indexer.indexer.country }}</td>
+      <td> <a href="{% url "view_profile" user_id=indexer.indexer.mentor.id %}">{{ indexer.indexer.mentor.indexer }}</a></td>
+    </tr>
+  {% endfor %}
+  </table>
 </div>
 {% endblock %}
-

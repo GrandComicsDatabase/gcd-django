@@ -2,7 +2,7 @@
   {% if changeset.approver == user %}
 <form action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
-  <input type="submit" name="release" value="Unassign" />
+  <btn class="btn-blue-editing"><input type="submit" name="release" value="Unassign" /></btn>
   <input type="hidden" name="comments" class="comments" />
 </form>
   {% else %}
@@ -18,15 +18,15 @@
   {% csrf_token %}
   <input type="hidden" name="comments" class="comments" />
     {% if changeset.indexer != user %}
-  <input type="submit" name="assign"
+  <btn class="btn-blue-editing"><input type="submit" name="assign"
     {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and section.object_type != "cover" %}
     value="Assign And Mentor"
     {% else %}
     value="Assign"
     {% endif %}
-  ></input>
+  ></input></btn>
     {% else %}
-  <input type="submit" name="retract" value="Retract And Edit Further">
+    <btn class="btn-blue-editing"><input type="submit" name="retract" value="Retract And Edit Further"></btn>
     {% endif %}
 </form>
   {% else %}

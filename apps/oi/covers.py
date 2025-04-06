@@ -148,7 +148,7 @@ def get_preview_image_tags_per_page(page, series=None):
         alt_string = issue.series.name + ' #' + issue.number
         cover_tags.append([cover, issue, get_preview_image_tag(cover,
                                                                alt_string,
-                                                               ZOOM_SMALL)])
+                                                               ZOOM_MEDIUM)])
     return cover_tags
 
 
