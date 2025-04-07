@@ -1,0 +1,40 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Multiverse :: {{ multiverse.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=multiverse %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content %}
+<h3>Universes</h3>
+<table class="border">
+  <thead>
+    <tr class="bg-blue-100 [&>th]:px-1">
+      <th> Name</th>
+      <th> Designation</th>
+      <th> First Published </th>
+    </tr>
+  </thead>
+  {% for universe in multiverse.active_universes %}
+  <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border border-gray-200 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
+    <td> <a href ="{{ universe.get_absolute_url }}">{{ universe.name }}</a> </td>
+    <td> <a href ="{{ universe.get_absolute_url }}">{{ universe.designation }}</a> </td>
+    <td> {{ universe.year_first_published|default:"" }} </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock content %}
+
+{% block change_history %}
+{% endblock change_history %}
+

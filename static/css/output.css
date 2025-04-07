@@ -837,9 +837,16 @@ a:hover {
 .btn-blue-editing {
   margin-inline-end: 0.25rem;
   margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
   display: block;
+  cursor: pointer;
+  border-radius: 0.25rem;
   --tw-bg-opacity: 1;
   background-color: rgb(191 219 254 / var(--tw-bg-opacity));
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   text-align: center;
   font-size: 0.875rem;
   line-height: 1.25rem;
@@ -862,6 +869,9 @@ a:hover {
 }
 
 .btn-blue-editing {
+  a {
+    display: block;
+  }
   a {
     text-align: center;
   }
@@ -1102,6 +1112,10 @@ a:hover {
   margin-left: 0.5rem;
 }
 
+.ml-auto {
+  margin-left: auto;
+}
+
 .mr-4 {
   margin-right: 1rem;
 }
@@ -1128,6 +1142,10 @@ a:hover {
 
 .mt-\[1px\] {
   margin-top: 1px;
+}
+
+.mt-auto {
+  margin-top: auto;
 }
 
 .block {
@@ -1196,6 +1214,10 @@ a:hover {
 
 .w-10 {
   width: 2.5rem;
+}
+
+.w-3\/4 {
+  width: 75%;
 }
 
 .w-4 {
@@ -1275,6 +1297,10 @@ a:hover {
   max-width: 400px;
 }
 
+.max-w-\[calc\(100vw-0\.5rem\)\] {
+  max-width: calc(100vw - 0.5rem);
+}
+
 .max-w-md {
   max-width: 28rem;
 }
@@ -1314,6 +1340,10 @@ a:hover {
 
 .transform {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 .list-outside {
@@ -1393,10 +1423,6 @@ a:hover {
 
 .gap-1 {
   gap: 0.25rem;
-}
-
-.gap-4 {
-  gap: 1rem;
 }
 
 .gap-8 {
@@ -1501,10 +1527,6 @@ a:hover {
   border-inline-start-width: 2px;
 }
 
-.border-t-2 {
-  border-top-width: 2px;
-}
-
 .border-dashed {
   border-style: dashed;
 }
@@ -1512,6 +1534,11 @@ a:hover {
 .border-black {
   --tw-border-opacity: 1;
   border-color: rgb(0 0 0 / var(--tw-border-opacity));
+}
+
+.border-gray-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-border-opacity));
 }
 
 .border-gray-300 {
@@ -1524,9 +1551,19 @@ a:hover {
   border-color: rgb(156 163 175 / var(--tw-border-opacity));
 }
 
+.bg-black {
+  --tw-bg-opacity: 1;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity));
+}
+
 .bg-blue-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(219 234 254 / var(--tw-bg-opacity));
+}
+
+.bg-blue-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(191 219 254 / var(--tw-bg-opacity));
 }
 
 .bg-blue-300 {
@@ -1687,6 +1724,10 @@ a:hover {
   padding-bottom: 0.5rem;
 }
 
+.pb-4 {
+  padding-bottom: 1rem;
+}
+
 .pe-1 {
   padding-inline-end: 0.25rem;
 }
@@ -1787,6 +1828,11 @@ a:hover {
   color: rgb(29 78 216 / var(--tw-text-opacity));
 }
 
+.text-blue-900 {
+  --tw-text-opacity: 1;
+  color: rgb(30 58 138 / var(--tw-text-opacity));
+}
+
 .text-gray-600 {
   --tw-text-opacity: 1;
   color: rgb(75 85 99 / var(--tw-text-opacity));
@@ -1795,6 +1841,16 @@ a:hover {
 .text-gray-700 {
   --tw-text-opacity: 1;
   color: rgb(55 65 81 / var(--tw-text-opacity));
+}
+
+.text-normal {
+  --tw-text-opacity: 1;
+  color: rgb(10 10 10 / var(--tw-text-opacity));
+}
+
+.text-red-700 {
+  --tw-text-opacity: 1;
+  color: rgb(185 28 28 / var(--tw-text-opacity));
 }
 
 .text-white {
@@ -1855,6 +1911,26 @@ html {
   @media (min-width: 640px) {
     font-size: 15px;
   }
+}
+
+[type='text'],
+[type='email'],
+[type='url'],
+[type='password'],
+[type='number'],
+[type='date'],
+[type='datetime-local'],
+[type='month'],
+[type='search'],
+[type='tel'],
+[type='time'],
+[type='week'],
+[multiple],
+textarea,
+select {
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  padding-inline-start: 0.5rem;
 }
 
 .\[\&_ul\]\:object-page-link-list ul {
@@ -2007,11 +2083,6 @@ html {
     flex-direction: column;
   }
 
-  .max-sm\:px-1 {
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
-  }
-
   .max-sm\:odd\:clear-left:nth-child(odd) {
     clear: left;
   }
@@ -2090,6 +2161,10 @@ html {
     padding-right: 1rem;
   }
 
+  .sm\:pe-2 {
+    padding-inline-end: 0.5rem;
+  }
+
   .sm\:text-right {
     text-align: right;
   }
@@ -2110,6 +2185,10 @@ html {
 
   .md\:hidden {
     display: none;
+  }
+
+  .md\:w-3\/4 {
+    width: 75%;
   }
 
   .md\:w-\[200px\] {
@@ -2161,6 +2240,14 @@ html {
     height: 2rem;
   }
 
+  .lg\:w-3\/4 {
+    width: 75%;
+  }
+
+  .lg\:w-4\/5 {
+    width: 80%;
+  }
+
   .lg\:w-64 {
     width: 16rem;
   }
@@ -2186,11 +2273,6 @@ html {
     align-items: center;
   }
 
-  .lg\:px-1 {
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
-  }
-
   .lg\:px-2 {
     padding-left: 0.5rem;
     padding-right: 0.5rem;
@@ -2200,6 +2282,11 @@ html {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
   }
+}
+
+.\[\&\:not\(\:hover\)\]\:text-white:not(:hover) {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
 .\[\&\>a\]\:visited\:text-link-gcd:visited>a {
@@ -2222,14 +2309,28 @@ html {
   text-align: center;
 }
 
+.\[\&\>li\]\:font-bold>li {
+  font-weight: 700;
+}
+
 .\[\&\>td\]\:px-1>td {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
 }
 
+.\[\&\>td\]\:px-1\.5>td {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+}
+
 .\[\&\>th\]\:px-1>th {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
+}
+
+.\[\&\>th\]\:px-1\.5>th {
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
 }
 
 .\[\&_\:is\(th\2c td\)\:where\(\:nth-child\(1\)\2c \)\]\:text-right :is(th,td):where(:nth-child(1),) {
@@ -2241,6 +2342,33 @@ html {
 }
 
 .\[\&_\:is\(th\2c td\)\:where\(\:nth-child\(1\)\2c \)\]\:font-bold :is(th,td):where(:nth-child(1),) {
+  font-weight: 700;
+}
+
+.\[\&_a\]\:block a {
+  display: block;
+}
+
+.\[\&_a\]\:px-2 a {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.\[\&_a\]\:py-1 a {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.\[\&_a\]\:text-black a {
+  --tw-text-opacity: 1;
+  color: rgb(0 0 0 / var(--tw-text-opacity));
+}
+
+.\[\&_a\]\:hover\:no-underline:hover a {
+  text-decoration-line: none;
+}
+
+.\[\&_span\]\:font-bold span {
   font-weight: 700;
 }
 
@@ -2265,6 +2393,29 @@ html {
 .\[\&_th\]\:px-1 th {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
+}
+
+.\[\&_th\]\:px-2 th {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.\[\&_th\]\:text-right th {
+  text-align: right;
+}
+
+.\[\&_th\]\:align-top th {
+  vertical-align: top;
+}
+
+.\[\&_th\]\:font-normal th {
+  font-weight: 400;
+}
+
+@media (min-width: 640px) {
+  .\[\&_th\]\:sm\:w-44 th {
+    width: 11rem;
+  }
 }
 
 .\[\&_ul\]\:columns-1 ul {

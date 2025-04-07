@@ -1,0 +1,64 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+
+{% block title %}
+GCD :: Universe :: {{ universe.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=universe %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul class="[&_span]:font-bold">
+            <li><span>Multiverse:</span> <a href="{{ universe.verse.get_absolute_url }}">{{ universe.verse }}</a></li>
+            <li><span>First Published In:</span>
+              {{ universe.year_first_published }}</li>
+          </ul>
+  {% if universe.description %}
+          <h3>Description:</h3>
+    {{ universe.description|markdown }}
+  {% endif %}
+  {% if universe.notes %}
+          <h3>Notes:</h3>
+    {{ universe.notes|markdown }}
+  {% endif %}
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+<hr>
+<ul class="object-page-link-list">
+  <li><a href='{% url "universe_characters" universe_id=universe.id %}'>Characters from this universe</a></li>
+  <li><a href='{% url "universe_issues" universe_id=universe.id %}'>Issues in this universe</a></li>
+  <li><a href='{% url "universe_sequences" universe_id=universe.id %}'>Sequences in this universe</a></li>
+</ul>
+{% endblock %}
+
+{% block editing %}
+  {% with object=universe object_class='universe' object_name='universe' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='universe' object=universe %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
+

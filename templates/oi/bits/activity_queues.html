@@ -1,0 +1,60 @@
+{% load static %}
+{% load display %}
+{% load humanize %}
+
+<table class="border border-gray-200">
+  <tr class="bg-blue-100 [&>th]:px-1.5">
+    <th> Changeset </th>
+    <th> Current Data </th>
+    {% if not no_indexer %}
+    <th> Indexer </th>
+    {% endif %}
+    {% if not no_approver %}
+    <th> Approver </th>
+    {% endif %}
+    {% if no_approver or no_indexer %}
+    <th> Last Activity </th>
+    {% else %}
+    <th> Last Comment </th>
+    {% endif %}
+  </tr>
+
+{% for changeset in items %}
+<tr class="hover:bg-blue-50 [&>td]:px-1.5 border border-gray-200">
+{% if changeset.inline %}
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">{{ changeset.inline_revision.source_name }}</a></td>
+    <td><a href="{{ changeset.inline_revision.source.get_absolute_url }}">{{ changeset }}</a></td>
+{% else %}
+    {% if changeset.change_type == CTYPES.issue %}
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue</a></td>
+    <td><a href="{{ changeset.issuerevisions.all.0.source.get_absolute_url }}">{{ changeset }}</a></td>
+    {% else %}
+      {% if changeset.change_type == CTYPES.issue_add %}
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue skeletons</a></td>
+      {% else %}
+        {% if changeset.change_type == CTYPES.issue_bulk %}
+    <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue bulk changes</a></td>
+        {% else %}
+        <td class="{{ changeset.changeset_action }}"><a href="{% url "compare" id=changeset.id %}">issue variant add (with base)</a></td>
+        {% endif %}
+      {% endif %}
+    <td>
+        {{ changeset }}
+    </td>
+    {% endif %}
+{% endif %}
+    {% if not no_indexer %}
+    <td>{{ changeset.indexer.indexer|absolute_url }}</td>
+    {% endif %}
+    {% if not no_approver %}
+    <td>{{ changeset.approver.indexer|absolute_url }}</td>
+    {% endif %}
+    {% if no_approver or no_indexer %}
+    <td>{{ changeset.modified|naturaltime }}</td>
+    {% else %}
+    <td>{{ changeset.last_remark|naturaltime }}</td>
+    {% endif %}
+</tr>
+{% endfor %}
+</table>
+

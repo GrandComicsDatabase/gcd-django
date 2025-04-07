@@ -633,7 +633,8 @@ class HiddenInputWithHelp(forms.TextInput):
 
 def _get_comments_form_field():
     return forms.CharField(
-        widget=forms.Textarea, required=False,
+        widget=forms.Textarea(attrs={'class': 'w-full lg:w-4/5',
+                                     'rows': 5}), required=False,
         help_text='Information about the changes submitted. Will not '
                   'displayed, but is stored in the change history. '
                   'Note that emojis currently are not supported.')
@@ -672,9 +673,10 @@ def init_data_source_fields(field_name, revision, fields):
 
 def add_data_source_fields(form, field_name):
     form.fields['%s_source_description' % field_name] = forms.CharField(
-                                    widget=forms.Textarea, required=False)
+      widget=forms.Textarea(attrs={'class': 'w-full', 'rows': '3'}),
+      required=False)
     form.fields['%s_source_type' % field_name] = forms.ModelChoiceField(
-                        queryset=SourceType.objects.all(), required=False)
+      queryset=SourceType.objects.all(), required=False)
 
 
 def insert_data_source_fields(field_name, ordering, fields, insert_after):
@@ -682,7 +684,8 @@ def insert_data_source_fields(field_name, ordering, fields, insert_after):
 
     ordering.insert(index+1, '%s_source_description' % field_name)
     fields.update({'%s_source_description' % field_name: forms.CharField(
-                                    widget=forms.Textarea, required=False)})
+      widget=forms.Textarea(attrs={'class': 'w-full lg:w-4/5', 'rows': '3'}),
+      required=False)})
 
     ordering.insert(index+2, '%s_source_type' % field_name)
     fields.update({'%s_source_type' % field_name: forms.ModelChoiceField(
@@ -815,17 +818,34 @@ class BrandEmblemSelect(forms.Select):
 
 class ModifiedPagedownWidget(PagedownWidget):
     class Media:
+        extend = False
         css = {
-            'all': ('css/oi/default/pagedown.css',)
+            'all': ('css/oi/default/pagedown.css',
+                    'pagedown.css')
         }
+        js = ('pagedown/Markdown.Converter.js',
+              'pagedown-extra/pagedown/Markdown.Converter.js',
+              'pagedown/Markdown.Sanitizer.js',
+              'pagedown/Markdown.Editor.js',
+              'pagedown-extra/Markdown.Extra.js',
+              'pagedown_init.js')
 
 
 class BaseForm(forms.ModelForm):
-    notes = forms.CharField(widget=ModifiedPagedownWidget(), required=False)
-    description = forms.CharField(widget=ModifiedPagedownWidget(),
-                                  required=False)
+    notes = forms.CharField(widget=ModifiedPagedownWidget(
+      attrs={'class': 'w-full lg:w-4/5', 'rows': 7}), required=False)
 
     comments = _get_comments_form_field()
 
+
+class KeywordBaseForm(BaseForm):
+    keywords = forms.CharField(widget=forms.Textarea(
+      attrs={'class': 'w-full lg:w-4/5', 'rows': '3'}), required=False)
+
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
+
+
+class CharacterBaseForm(KeywordBaseForm):
+    description = forms.CharField(widget=ModifiedPagedownWidget(
+      attrs={'class': 'w-full lg:w-4/5', 'rows': 7}), required=False)

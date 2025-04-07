@@ -21,7 +21,7 @@ from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
                             UniverseRevision)
 
 from .support import (_get_comments_form_field, HiddenInputWithHelp,
-                      GENERIC_ERROR_MESSAGE, BaseForm,
+                      GENERIC_ERROR_MESSAGE, CharacterBaseForm,
                       combine_reverse_relations)
 
 
@@ -38,7 +38,7 @@ def get_universe_revision_form(revision=None, user=None):
     return RuntimeUniverseRevisionForm
 
 
-class UniverseRevisionForm(BaseForm):
+class UniverseRevisionForm(CharacterBaseForm):
     class Meta:
         model = UniverseRevision
         fields = model._base_field_list
@@ -54,8 +54,6 @@ class UniverseRevisionForm(BaseForm):
                 'Earth 1, Earth-982'
         }
 
-    comments = _get_comments_form_field()
-
     def clean(self):
         cd = self.cleaned_data
         if not cd['name'] and not cd['designation']:
@@ -70,6 +68,9 @@ class CharacterNameDetailRevisionForm(forms.ModelForm):
     class Meta:
         model = CharacterNameDetailRevision
         fields = model._base_field_list
+        widgets = {
+            'name': forms.TextInput(attrs={'autofocus': ''}),
+            }
 
     def __init__(self, *args, **kwargs):
         super(CharacterNameDetailRevisionForm, self).__init__(*args, **kwargs)
@@ -127,7 +128,7 @@ def get_character_revision_form(revision=None, user=None):
     return RuntimeCharacterRevisionForm
 
 
-class CharacterRevisionForm(BaseForm):
+class CharacterRevisionForm(CharacterBaseForm):
     class Meta:
         model = CharacterRevision
         fields = model._base_field_list
@@ -172,7 +173,7 @@ class CharacterRevisionForm(BaseForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
                           url='universe_autocomplete',
-                          attrs={'style': 'width: 60em'}),
+                          attrs={'class': 'w-full lg:w-4/5', }),
       required=False,
       help_text='Select the universe, if any, from which the character '
                 'originates.'

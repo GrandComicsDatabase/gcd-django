@@ -8,10 +8,10 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.forms.widgets import HiddenInput
 
 from .support import (
-    _get_comments_form_field, _set_help_labels, _clean_keywords,
+    _get_comments_form_field, _set_help_labels,
     _create_embedded_image_revision, _save_runtime_embedded_image_revision,
     GENERIC_ERROR_MESSAGE, PUBLISHER_HELP_LINKS, PUBLISHER_HELP_TEXTS,
-    INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS)
+    INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS, KeywordBaseForm)
 
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision, BrandGroupRevision,
@@ -53,19 +53,16 @@ def _get_publisher_fields(middle=None):
     return first
 
 
-class PublisherRevisionForm(forms.ModelForm):
+class PublisherRevisionForm(KeywordBaseForm):
     class Meta:
         model = PublisherRevision
         fields = _get_publisher_fields(middle=('country',))
-        widgets = {'name': forms.TextInput(attrs={'autofocus': ''})}
+        widgets = {'name': forms.TextInput(attrs={'class': 'w-full lg:w-4/5',
+                                                  'autofocus': ''}), }
         help_texts = PUBLISHER_HELP_TEXTS
 
     country = forms.ModelChoiceField(
         queryset=Country.objects.exclude(code='xx'))
-    comments = _get_comments_form_field()
-
-    def clean_keywords(self):
-        return _clean_keywords(self.cleaned_data)
 
     def clean(self):
         cd = self.cleaned_data
@@ -135,7 +132,7 @@ def get_brand_group_revision_form(source=None, user=None):
     return RuntimeBrandGroupRevisionForm
 
 
-class BrandGroupRevisionForm(forms.ModelForm):
+class BrandGroupRevisionForm(KeywordBaseForm):
     class Meta:
         model = BrandGroupRevision
         fields = _get_publisher_fields()
@@ -168,11 +165,6 @@ class BrandGroupRevisionForm(forms.ModelForm):
         help_text='The official web site of the brand.  Leave blank if the '
                   'publisher does not have a specific web site for the brand '
                   'group.')
-
-    comments = _get_comments_form_field()
-
-    def clean_keywords(self):
-        return _clean_keywords(self.cleaned_data)
 
     def clean(self):
         cd = self.cleaned_data
@@ -287,7 +279,7 @@ def get_brand_revision_form(user=None, revision=None,
     return RuntimeBrandRevisionForm
 
 
-class BrandRevisionForm(forms.ModelForm):
+class BrandRevisionForm(KeywordBaseForm):
     class Meta:
         model = BrandRevision
         fields = _get_publisher_fields(middle=('group',))
@@ -342,8 +334,6 @@ class BrandRevisionForm(forms.ModelForm):
     brand_emblem_image = forms.ImageField(widget=forms.FileInput,
                                           required=False)
 
-    comments = _get_comments_form_field()
-
     def save(self, commit=True):
         instance = super(BrandRevisionForm, self).save(commit=commit)
         brand_emblem_image = self.cleaned_data['brand_emblem_image']
@@ -352,9 +342,6 @@ class BrandRevisionForm(forms.ModelForm):
                                                        brand_emblem_image,
                                                        'BrandScan')
         return instance
-
-    def clean_keywords(self):
-        return _clean_keywords(self.cleaned_data)
 
     def clean(self):
         cd = self.cleaned_data

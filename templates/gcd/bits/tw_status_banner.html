@@ -38,7 +38,9 @@
     <form method="POST"
           action="{% url "reserve_revision" model_name=object_class id=object.id %}">
       {% csrf_token %}
-      <btn class="mt-1 btn btn-blue-editing">  <input id="edit" name="edit" type="submit" value="Edit"></input></btn>
+      <btn class="mt-1 btn btn-blue-editing" onclick="document.getElementById('edit').click()">
+        <input id="edit" name="edit" type="submit" value="Edit">
+      </btn>
     </form>
     {% if not object.deletable %}
     <btn class="mt-1 btn btn-blue-disabled">Delete

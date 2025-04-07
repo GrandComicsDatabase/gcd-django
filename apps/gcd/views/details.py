@@ -3580,7 +3580,7 @@ def show_multiverse(request, multiverse, preview=False):
     vars = {'multiverse': multiverse,
             'error_subject': '%s' % multiverse,
             'preview': preview}
-    return render(request, 'gcd/details/multiverse.html', vars)
+    return render(request, 'gcd/details/tw_multiverse.html', vars)
 
 
 def universe(request, universe_id):
@@ -3595,7 +3595,7 @@ def show_universe(request, universe, preview=False):
     vars = {'universe': universe,
             'error_subject': '%s' % universe,
             'preview': preview}
-    return render(request, 'gcd/details/universe.html', vars)
+    return render(request, 'gcd/details/tw_universe.html', vars)
 
 
 def universe_sequences(request, universe_id):

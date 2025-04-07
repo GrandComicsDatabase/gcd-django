@@ -37,9 +37,9 @@
       @apply font-bold py-1 px-4 rounded;
     }
     .btn-blue-editing {
-      @apply font-normal block me-1 mt-1 max-sm:m-1 sm:mx-1 bg-blue-200 text-black text-sm text-center;
+      @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-blue-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer;
       a {
-        @apply text-black visited:text-black hover:no-underline text-center;
+        @apply text-black block visited:text-black hover:no-underline text-center;
       };
     }
     .btn-blue {
@@ -86,4 +86,22 @@ html {
       @apply pr-2;
     }
   }
+}
+
+[type='text'],
+[type='email'],
+[type='url'],
+[type='password'],
+[type='number'],
+[type='date'],
+[type='datetime-local'],
+[type='month'],
+[type='search'],
+[type='tel'],
+[type='time'],
+[type='week'],
+[multiple],
+textarea,
+select {
+  @apply py-[0.2em] ps-[0.5rem];
 }

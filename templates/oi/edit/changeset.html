@@ -8,31 +8,14 @@
 {{ changeset }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/widgets.css" %}">
-{% endblock %}
-
 {% block view_body %}
 {% include "oi/bits/jquery.html" %}
-{% include "oi/bits/multi_selector.html" %}
 <h1>
 {{ changeset|header_link }}
 </h1>
 
 <div class="edit">
 <p>
-{% if changeset.state == states.BASELINE %}
-  This changeset is stored for future data migration, and is not intended
-  to be user-visibile.  This is not the changeset you are looking for.
-  Move along :-)
-{% endif %}
 {% if changeset.state == states.PENDING %}
   This change has been submitted for approval, but is not yet under review.
   {% if changeset.indexer == user %}
@@ -113,12 +96,12 @@
       </td>
     </tr>
   </table>
-  <input type="submit" name="submit" value="Submit Changes For Approval">
+  <btn class="btn-blue-editing inline-block"><input type="submit" name="submit" value="Submit Changes For Approval"></btn>
       {% if changeset.approver %}
-  <input type="submit" name="discuss" value="Discuss">
+  <btn class="btn-blue-editing inline-block"><input type="submit" name="discuss" value="Discuss"></btn>
       {% endif %}
-  <input type="submit" name="discard" value="Discard All Changes">
-  <input type="submit" name="add_comment" value="Add Comment">
+  <btn class="btn-blue-editing inline-block"><input type="submit" name="discard" value="Discard All Changes"></btn>
+  <btn class="btn-blue-editing inline-block"><input type="submit" name="add_comment" value="Add Comment"></btn>
 </form>
       {% endif %}
       {% if changeset.change_type == CTYPES.series_bond %}

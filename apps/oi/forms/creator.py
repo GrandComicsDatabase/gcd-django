@@ -36,7 +36,7 @@ from .support import (GENERIC_ERROR_MESSAGE, CREATOR_MEMBERSHIP_HELP_TEXTS,
                       init_data_source_fields, insert_data_source_fields,
                       _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision,
-                      HiddenInputWithHelp)
+                      BaseForm, HiddenInputWithHelp, ModifiedPagedownWidget)
 
 
 # if we want/need to have more specific control, we can use
@@ -115,9 +115,9 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
               or form.instance.creator_name_detail.issuecredit_set\
                                                 .filter(deleted=False).count()\
               or form.instance.creator_name_detail.storycreditrevision_set\
-                                                    .active_set().exists()\
+                                                  .active_set().exists()\
               or form.instance.creator_name_detail.issuecreditrevision_set\
-                                                    .active_set().exists():
+                                                  .active_set().exists():
                 form.cleaned_data['DELETE'] = False
                 return False
         if form.instance.creator_name_detail:
@@ -165,7 +165,7 @@ def get_creator_revision_form(revision=None, user=None):
     return RuntimeCreatorRevisionForm
 
 
-class CreatorRevisionForm(forms.ModelForm):
+class CreatorRevisionForm(BaseForm):
     class Meta:
         model = CreatorRevision
         fields = get_creator_field_list()
@@ -175,6 +175,9 @@ class CreatorRevisionForm(forms.ModelForm):
         labels = {'bio': 'Biography', 'whos_who': "Who's Who",
                   'birth_province': 'Birth province or state',
                   'death_province': 'Death province or state'}
+        widgets = {'bio': ModifiedPagedownWidget(attrs={'class':
+                                                        'w-full lg:w-4/5',
+                                                        'rows': 7})}
 
     def __init__(self, *args, **kwargs):
         super(CreatorRevisionForm, self).__init__(*args, **kwargs)
@@ -225,12 +228,11 @@ class CreatorRevisionForm(forms.ModelForm):
     death_country = forms.ModelChoiceField(
         queryset=Country.objects.exclude(code='xx'), required=False)
 
-    comments = _get_comments_form_field()
-
     creator_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text="<ul><li>All commonly known names for a creator can be "
+        help_text="<ul class='list-disc list-outside ps-4'>"
+                  "<li>All commonly known names for a creator can be "
                   "recorded, where we use various types of names.</li>"
                   "Besides legal names we use 'pen name' and 'common "
                   "alternative name' for known alias and common name "

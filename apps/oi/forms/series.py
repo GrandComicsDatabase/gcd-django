@@ -5,7 +5,8 @@ from django import forms
 
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
-    SERIES_HELP_LINKS, SERIES_HELP_TEXTS, GENERIC_ERROR_MESSAGE)
+    SERIES_HELP_LINKS, SERIES_HELP_TEXTS, GENERIC_ERROR_MESSAGE,
+    KeywordBaseForm)
 
 from apps.oi.models import (
     SeriesRevision, SeriesBondRevision, get_series_field_list,
@@ -32,7 +33,7 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
 
             def __init__(self, *args, **kwargs):
                 super(RuntimeAddSeriesRevisionForm, self).__init__(*args,
-                                                                **kwargs)
+                                                                   **kwargs)
                 self.fields['is_singleton'].help_text += \
                   ' Series notes for an added singleton series will be '\
                   'copied to the added issue.'
@@ -98,21 +99,23 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
         return RuntimeSeriesRevisionForm
 
 
-class SeriesRevisionForm(forms.ModelForm):
+class SeriesRevisionForm(KeywordBaseForm):
 
     class Meta:
         model = SeriesRevision
         fields = get_series_field_list()
-        exclude = ['publisher']
+        exclude = ['publisher',]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
-            'year_began': forms.TextInput(attrs={'class': 'year'}),
-            'year_ended': forms.TextInput(attrs={'class': 'year'}),
-            'color': forms.TextInput(attrs={'class': 'wide'}),
-            'dimensions': forms.TextInput(attrs={'class': 'wide'}),
-            'paper_stock': forms.TextInput(attrs={'class': 'wide'}),
-            'binding': forms.TextInput(attrs={'class': 'wide'}),
-            'publishing_format': forms.TextInput(attrs={'class': 'wide'})
+            'name': forms.TextInput(attrs={'class': 'w-full lg:w-4/5',
+                                           'autofocus': ''}),
+            'color': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'dimensions': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'paper_stock': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'binding': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'publishing_format': forms.TextInput(attrs={'class':
+                                                        'w-full lg:w-4/5'}),
+            'tracking_notes': forms.Textarea(attrs={'class': 'w-full lg:w-4/5',
+                                                    'rows': '3'}),
         }
         labels = {
             'has_isbn': 'Has ISBN',
@@ -123,11 +126,6 @@ class SeriesRevisionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(SeriesRevisionForm, self).__init__(*args, **kwargs)
         self.fields['country'].queryset = Country.objects.exclude(code='xx')
-
-    comments = _get_comments_form_field()
-
-    def clean_keywords(self):
-        return _clean_keywords(self.cleaned_data)
 
     def clean(self):
         cd = self.cleaned_data

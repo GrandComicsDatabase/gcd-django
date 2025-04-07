@@ -122,6 +122,7 @@ REVISION_CLASSES = {
     'indicia_publisher': IndiciaPublisherRevision,
     'brand_group': BrandGroupRevision,
     'brand': BrandRevision,
+    'brand_emblem': BrandRevision,
     'brand_use': BrandUseRevision,
     'printer': PrinterRevision,
     'indicia_printer': IndiciaPrinterRevision,
@@ -160,6 +161,7 @@ DISPLAY_CLASSES = {
     'indicia_publisher': IndiciaPublisher,
     'brand_group': BrandGroup,
     'brand': Brand,
+    'brand_emblem': Brand,
     'brand_use': BrandUse,
     'printer': Printer,
     'indicia_printer': IndiciaPrinter,
@@ -5960,6 +5962,10 @@ def preview(request, id, model_name):
                               'creator_membership', 'creator_non_comic_work',
                               'creator_school', 'universe']:
             model_object.keywords = revision.keywords
+            if revision.keywords:
+                model_object.has_keywords = True
+            else:
+                model_object.has_keywords = False
         return globals()['show_%s' % (model_name)](request, model_object, True)
     return render_error(request,
                         'No preview for "%s" revisions.' % model_name)
