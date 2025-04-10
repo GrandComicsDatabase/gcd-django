@@ -1,0 +1,128 @@
+{% load i18n %}
+{% load display %}
+{% load credits %}
+{% load static %}
+
+<ul>
+  <li><span class="font-bold">Publisher:</span> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher }}</a></li>
+  <li><span class="font-bold">Brand:</span> <a href="{{ issue.brand.get_absolute_url }}">{{ issue.brand }}</a></li>
+  <li><span class="font-bold">Indicia&nbsp;/&nbsp;Colophon Publisher:</span> <a href="{{ issue.indicia_publisher.get_absolute_url }}">{{ issue.indicia_publisher }}</a></li>
+  <li><span class="font-bold">Editing:</span> <a href="{{ issue.editor.get_absolute_url }}">{{ issue.editor }}</a></li>
+  <li><span class="font-bold">Cover:</span> <a href="{{ issue.cover.get_absolute_url }}">{{ issue.cover }}</a></li>
+  <li><span class="font-bold">Series:</span> <a href="{{ issue.series.get_absolute_url }}">{{ issue.series }}</a></li>
+  <li><span class="font-bold">Issue:</span> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a></li>
+  <li><span class="font-bold">Publication Date:</span> {{ issue.publication_date }}</li>
+  <li><span class="font-bold">Indicia Frequency:</span> {{ issue.indicia_frequency }}</li>
+  <li><span class="font-bold">Price:</span> {{ issue.price }}</li>
+  <li><span class="font-bold">Pages:</span> {{ issue.page_count }}</li>
+  <li><span class="font-bold">ISBN:</span> {{ issue.isbn }}</li>
+  <li><span class="font-bold">Barcode:</span> {{ issue.barcode }}</li>
+  <li><span class="font-bold">On-sale Date:</span> {{ issue.on_sale_date }}</li>
+  <li><span class="font-bold">Rating:</span> {{ issue.rating }}</li>
+  <li><span class="font-bold">Notes:</span> {{ issue.notes }}</li>
+  <li><span class="font-bold">Keywords:</span> {{ issue.keywords }}</li>
+  <li><span class="font-bold">Editing:</span> {{ issue.editor }}</li>
+</ul>
+      <dl id="issue_data_list">
+{% if not issue.no_volume and issue.series.has_volume %}
+        <dt> {% trans "Volume" %}</dt>
+        <dd> {{ issue|show_volume }}</dd>
+{% endif %}
+        <dt> {% trans "Price" %}</dt>
+        <dd id="issue_price"> {{ issue.price|default:"?" }}</dd>
+        <dt> {% trans "Pages" %}</dt>
+        <dd id="issue_pages"> {{ issue|show_page_count|default:"?" }}</dd>
+{% if not issue.no_indicia_frequency and issue.series.has_indicia_frequency %}
+        <dt> {% trans "Indicia Frequency" %}</dt>
+        <dd id="indicia_frequency"> {{ issue.indicia_frequency|default:"?" }}</dd>
+{% endif %}
+{% if issue.on_sale_date %}
+        <dt> {% trans "On-sale Date" %}</dt>
+        <dd id="on_sale_date">
+        {{ issue.on_sale_date }}{% if issue.on_sale_date_uncertain %} ? {% endif %}</dd>
+{% endif %}
+{% if issue.rating and issue.series.has_rating %}
+        <dt> {% trans "Publisher's Age Guidelines" %}</dt>
+        <dd id="rating">
+        {{ issue.rating }}</dd>
+{% endif %}
+        <dt> {% trans "Indicia&nbsp;/&nbsp;Colophon Publisher" %}</dt>
+        <dd id="issue_indicia_publisher"> {{ issue|show_indicia_pub }}</dd>
+{% if not issue.no_brand %}
+        <dt> {% trans "Publisher's Brand" %}</dt>
+        <dd id="issue_brand">
+          {% if issue.brand.emblem %}
+            {{ issue.brand|absolute_url:issue.brand.emblem|default:"?" }}
+          {% else %}
+            {{ issue.brand|absolute_url|default:"?" }}
+          {% endif %}
+        </dd>
+{% endif %}
+{% if not issue.no_isbn and issue.series.has_isbn %}
+        <dt>ISBN</dt>
+        <dd id="issue_isbn">
+  {% if issue.valid_isbn %}
+          <a title="Search at WorldCat" href="http://worldcat.org/isbn/{{ issue.valid_isbn }}">
+            {{ issue.isbn|show_isbn }}
+            <img src="{% static "img/gcd/icons/worldcat_16.gif" %}" width="12px;" alt="Search at WorldCat" style="border:0;">
+          </a>
+  {% else %}
+        {{ issue.isbn|show_isbn|default:"?" }}
+  {% endif %}</dd>
+{% endif %}
+{% if not issue.no_barcode and issue.series.has_barcode %}
+            <dt>Barcode</dt>
+            <dd id="barcode">{{ issue.barcode|show_barcode|default:"?" }}</dd>
+{% endif %}
+{% if issue.active_code_numbers.count %}
+  {% for code_number in issue.active_code_numbers %}
+    <dt>{{ code_number.number_type }}</dt> <dd>{{ code_number.number }}</dd>
+  {% endfor %}
+{% endif %}
+{% if not issue.no_indicia_printer and issue.series.has_indicia_printer and issue.active_printers.count %}
+            <dt>Printer</dt>
+            <dd id="printer">{{ issue.show_printer }}</dd>
+{% endif %}
+</dl>
+<dl id="issue_data_list">
+{% if issue.external_link.count %}
+  {% for external_link in issue.external_link.all %}
+    <dt>Link</dt> <dd>{{ external_link.link|urlize }}</dd>
+  {% endfor %}
+{% endif %}
+</dl>
+<dl>
+{{ issue|show_creator_credit:"editing" }}
+</dl>
+{% if issue.series.is_singleton %}
+{% with issue.series as s %}
+  {% if s.format or s.color or s.dimensions or s.paper_stock or s.binding or s.publishing_format %}
+      <dl class="issue_format">
+    {% if s.format %}
+        <dt>Format</dt>
+        <dd id="format_data" style="float:none">{{ s.format }}</dd>
+    {% endif %}
+    {% if s.color %}
+        <dt> Color</dt>
+        <dd id="format_color">{{ s.color }}</dd>
+    {% endif %}
+    {% if s.dimensions %}
+        <dt> Dimensions</dt>
+        <dd id="format_dimensions">{{ s.dimensions }}</dd>
+    {% endif %}
+    {% if s.paper_stock %}
+        <dt> Paper Stock</dt>
+        <dd id="format_paper_stock">{{ s.paper_stock }}</dd>
+    {% endif %}
+    {% if s.binding %}
+        <dt> Binding</dt>
+        <dd id="format_binding">{{ s.binding }}</dd>
+    {% endif %}
+    {% if s.publishing_format %}
+        <dt> Publishing Format</dt>
+        <dd id="format_publishing_format">{{ s.publishing_format }}</dd>
+    {% endif %}
+      </dl>
+  {% endif %}
+{% endwith %}
+{% endif %}

@@ -1088,6 +1088,11 @@ a:hover {
   margin-bottom: 0.5rem;
 }
 
+.my-\[0\.5px\] {
+  margin-top: 0.5px;
+  margin-bottom: 0.5px;
+}
+
 .mb-1 {
   margin-bottom: 0.25rem;
 }
@@ -1206,6 +1211,10 @@ a:hover {
 
 .max-h-24 {
   max-height: 6rem;
+}
+
+.max-h-60 {
+  max-height: 15rem;
 }
 
 .w-1\/3 {
@@ -1549,6 +1558,11 @@ a:hover {
 .border-gray-400 {
   --tw-border-opacity: 1;
   border-color: rgb(156 163 175 / var(--tw-border-opacity));
+}
+
+.border-gray-500 {
+  --tw-border-opacity: 1;
+  border-color: rgb(107 114 128 / var(--tw-border-opacity));
 }
 
 .bg-black {
@@ -1928,6 +1942,8 @@ html {
 [multiple],
 textarea,
 select {
+  --tw-border-opacity: 1;
+  border-color: rgb(107 114 128 / var(--tw-border-opacity));
   padding-top: 0.2em;
   padding-bottom: 0.2em;
   padding-inline-start: 0.5rem;
@@ -2395,13 +2411,12 @@ select {
   padding-right: 0.25rem;
 }
 
-.\[\&_th\]\:px-2 th {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+.\[\&_th\]\:pe-2 th {
+  padding-inline-end: 0.5rem;
 }
 
-.\[\&_th\]\:text-right th {
-  text-align: right;
+.\[\&_th\]\:text-left th {
+  text-align: left;
 }
 
 .\[\&_th\]\:align-top th {
@@ -2415,6 +2430,24 @@ select {
 @media (min-width: 640px) {
   .\[\&_th\]\:sm\:w-44 th {
     width: 11rem;
+  }
+
+  .\[\&_th\]\:sm\:text-right th {
+    text-align: right;
+  }
+}
+
+.\[\&_tr\]\:flex tr {
+  display: flex;
+}
+
+.\[\&_tr\]\:flex-col tr {
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .\[\&_tr\]\:sm\:table-row tr {
+    display: table-row;
   }
 }
 

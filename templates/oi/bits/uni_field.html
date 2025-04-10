@@ -13,7 +13,7 @@
         {% endif %}
 {% endcomment %}
 <tr>
-  <th style="width:150px">
+  <th>
   {% if field.label %}
     <label for="{{ field.id_for_label }}" {% if field.field.required %}class="requiredField"{% endif %}>
     {{ field.label|safe }}{% if request.user.indexer.show_wiki_links %}{{ doc_links|show_doc_link:field.name }}{% endif %}{% if field.field.label_suffix != None %}{{ field.field.label_suffix }}{% else %}{{ field.form.label_suffix }}{% endif %}

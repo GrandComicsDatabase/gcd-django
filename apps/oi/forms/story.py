@@ -73,7 +73,9 @@ def _genre_choices(language=None, additional_genres=None):
             choices.insert(0, [genre, genre + ' (deprecated)'])
     return forms.MultipleChoiceField(
         required=False,
-        widget=FilteredSelectMultiple('Genres', False),
+        widget=forms.CheckboxSelectMultiple(attrs={
+          'class': 'overflow-y-auto max-h-60 border border-gray-500 '
+                   'px-1 inline-block'}),
         choices=choices)
 
 

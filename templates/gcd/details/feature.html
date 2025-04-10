@@ -37,7 +37,7 @@ GCD :: Feature :: {{ feature.name }}
 {% endif %}
 {% if feature.notes %}
         <dt> Notes:
-        <dd> {{ feature.notes|urlizetrunc:75|linebreaksbr }}
+        <dd> {{ feature.notes|markdown }}
 {% endif %}
 <p>{{ feature|show_credit:'keywords' }}</P>
       </dl>

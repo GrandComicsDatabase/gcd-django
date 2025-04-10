@@ -12,7 +12,7 @@ from apps.gcd.models.support import GENRES
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, remove_leading_article)
 
-from .support import (_set_help_labels, _clean_keywords,
+from .support import (_set_help_labels, _clean_keywords, KeywordBaseForm,
                       _get_comments_form_field, combine_reverse_relations,
                       GENERIC_ERROR_MESSAGE, _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision)
@@ -53,15 +53,10 @@ def get_feature_revision_form(revision=None, user=None):
     return RuntimeFeatureRevisionForm
 
 
-class FeatureRevisionForm(forms.ModelForm):
+class FeatureRevisionForm(KeywordBaseForm):
     class Meta:
         model = FeatureRevision
         fields = model._base_field_list
-
-    comments = _get_comments_form_field()
-
-    def clean_keywords(self):
-        return _clean_keywords(self.cleaned_data)
 
     def clean(self):
         cd = self.cleaned_data

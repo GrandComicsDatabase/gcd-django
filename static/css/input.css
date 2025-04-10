@@ -103,5 +103,5 @@ html {
 [multiple],
 textarea,
 select {
-  @apply py-[0.2em] ps-[0.5rem];
+  @apply py-[0.2em] ps-[0.5rem] border-gray-500;
 }

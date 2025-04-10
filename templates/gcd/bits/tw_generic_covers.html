@@ -1,0 +1,18 @@
+<div class="flex flex-wrap gap-1">
+{% for issue in page %}
+  <div class="flex even flex-col" style="width: 200px;">
+    <a href="{{ issue.get_absolute_url }}">{{ issue.tag }}</a>
+    <div>
+      <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher }}</a><br>
+      <a href="{{ issue.series.get_absolute_url }}">{{ issue.series.name }}</a> 
+      ({{ issue.series.year_began }}) <a href="{{ issue.get_absolute_url }}">{{ issue.display_full_descriptor }}</a><br>
+      {% if issue.publication_date %}
+      {{ issue.publication_date }}<br>
+      {% endif %}
+      {% if issue.on_sale_date %}
+      {{ issue.on_sale_date }}<br>
+      {% endif %}
+    </div>
+  </div>
+{% endfor %}
+</div>

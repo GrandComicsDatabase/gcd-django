@@ -1,7 +1,7 @@
 {% load crispy_forms_tags %}
 <form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
-  <table class="[&_th]:text-right [&_th]:font-normal [&_th]:px-2 [&_th]:align-top [&_th]:sm:w-44">
+  <table class="[&_tr]:flex [&_tr]:flex-col [&_tr]:sm:table-row [&_th]:text-left [&_th]:sm:text-right [&_th]:font-normal [&_th]:pe-2 [&_th]:align-top [&_th]:sm:w-44">
   {% if form.helper %}
     {% crispy form %}
   {% else %}
