@@ -3,7 +3,6 @@
 
 from django import forms
 from django.conf import settings
-from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.forms.models import inlineformset_factory
 
 from dal import autocomplete, forward
@@ -34,7 +33,7 @@ from .custom_layout_object import Formset
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP, KEYWORDS_HELP,
-    SEQUENCE_HELP_LINKS, BIBLIOGRAPHIC_ENTRY_HELP_LINKS,
+    SEQUENCE_HELP_LINKS, BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
     BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
 
@@ -306,7 +305,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
         }
         labels = {'credit_name': 'Credit description'}
         widgets = {
-            'sourced_by': forms.TextInput(attrs={'class': 'wide'}),
+            'sourced_by': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -334,7 +333,9 @@ class StoryCreditRevisionForm(forms.ModelForm):
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
-                                       attrs={'style': 'width: 60em'}),
+                                       attrs={'class': 'w-full lg:w-4/5',
+                                              'style': 'width: 80%'},
+                                       ),
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
@@ -342,14 +343,16 @@ class StoryCreditRevisionForm(forms.ModelForm):
       label='<button hx-get="/select/creator/by_detail/" '
             'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
             'hx-on="htmx:afterRequest: setSelectValue(event)" '
-            'hx-swap="none">To Official</button> Creator'
+            'hx-swap="none" class="btn-blue-editing inline">To Official'
+            '</button> Creator'
     )
 
     signature = forms.ModelChoiceField(
       queryset=CreatorSignature.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_signature_autocomplete',
                                        attrs={'data-html': True,
-                                              'style': 'width: 40em'},
+                                              'class': 'w-full lg:w-4/5',
+                                              'style': 'width: 80%'},
                                        forward=['creator']),
       help_text='Select an existing signature for the creator.',
       required=False,
@@ -419,7 +422,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
                   'is_origin': 'Origin',
                   'is_death': 'Death'}
         widgets = {
-            'notes': forms.TextInput(attrs={'class': 'wide'}),
+            'notes': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -448,7 +451,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='character_name_autocomplete',
                                        forward=['language_code'],
-                                       attrs={'style': 'width: 60em'}),
+                                       attrs={'class': 'w-full lg:w-4/5',
+                                              'style': 'width: 80%'}),
       required=True,
       help_text='By entering (any part of) a name select a character from the'
                 ' database.'
@@ -458,7 +462,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='group_name_autocomplete',
-        attrs={'data-html': True, 'style': 'min-width: 60em'},
+        attrs={'data-html': True, 'class': 'w-full lg:w-4/5',
+               'style': 'width: 80%'},
         forward=[forward.Field('character', 'character_name'),
                  'language_code']),
       help_text='Select a group the character is appearing as a member of.',
@@ -474,7 +479,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
                           url='universe_autocomplete',
-                          attrs={'style': 'width: 60em'}),
+                          attrs={'class': 'w-full lg:w-4/5',
+                                 'style': 'width: 80%'}),
       required=False,
       help_text='Select the universe, if any, from which the character '
                 'originates. Use "mainstream" for the principal universe '
@@ -485,7 +491,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
                           url='universe_autocomplete',
-                          attrs={'style': 'width: 60em'}),
+                          attrs={'class': 'w-full lg:w-4/5',
+                                 'style': 'width: 80%'}),
       required=False,
       help_text='Select the universe, if any, for the group of the character. '
                 'If left empty, the value will default to the selected '
@@ -509,7 +516,7 @@ class StoryGroupRevisionForm(forms.ModelForm):
         model = StoryCharacterRevision
         fields = ['group_name', 'universe', 'notes']
         widgets = {
-            'notes': forms.TextInput(attrs={'class': 'wide'}),
+            'notes': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -531,7 +538,8 @@ class StoryGroupRevisionForm(forms.ModelForm):
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='group_name_autocomplete',
                                        forward=['language_code'],
-                                       attrs={'style': 'width: 60em'}),
+                                       attrs={'class': 'w-full lg:w-4/5',
+                                              'style': 'width: 80%'}),
       required=True,
       help_text='By entering (any part of) a name select a group from the'
                 ' database.'
@@ -541,7 +549,8 @@ class StoryGroupRevisionForm(forms.ModelForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
                           url='universe_autocomplete',
-                          attrs={'style': 'width: 60em'}),
+                          attrs={'class': 'w-full lg:w-4/5',
+                                 'style': 'width: 80%'}),
       required=False,
       help_text='Select the universe, if any, from which the group '
                 'originates. Use "mainstream" for the principal universe '
@@ -565,7 +574,7 @@ class BaseField(Field):
         return fields
 
 
-class StoryRevisionForm(forms.ModelForm):
+class StoryRevisionForm(KeywordBaseForm):
     class Meta:
         model = StoryRevision
         fields = get_story_field_list()
@@ -603,19 +612,11 @@ class StoryRevisionForm(forms.ModelForm):
         fields.insert(fields.index('characters'), 'group_members_notes')
         fields.insert(fields.index('characters'), 'one_character_help')
         widgets = {
-            'feature': forms.TextInput(attrs={'class': 'wide'}),
+            'feature': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
         help_texts = {
             'keywords':
                 KEYWORDS_HELP,
-            'reprint_notes':
-                'Textual reprint notes can be used for comic material that '
-                'is not in our database, either because the issue is not '
-                'indexed at all or because it cannot such as newspaper strips.'
-                '<br>For newspaper strips the format is <i>from &lt;comic strip'
-                '&gt; (&lt;syndicate name&gt;) &lt;date&gt;</i>, example:<br> '
-                '<i>from Calvin and Hobbes daily (Universal Press Syndicate) '
-                '1985-11-18 - 1988-10-01</i>.'
         }
 
     def __init__(self, *args, **kwargs):
@@ -629,12 +630,26 @@ class StoryRevisionForm(forms.ModelForm):
         self.helper.disable_csrf = True
         self.fields['characters'].label = 'd) Characters'
         fields = list(self.fields)
-        credits_start = fields.index('creator_help')
+        genres = fields.index('genre')
         field_list = [BaseField(Field(field,
                                       template='oi/bits/uni_field.html'))
-                      for field in fields[:credits_start-7]]
-        field_list.append(HTML('<tr><td><hr>&nbsp;<strong>Creator Credits:'
-                               '</strong></td><th><hr></th></tr>'))
+                      for field in fields[:genres]]
+        field_list.append(HTML(
+          '<tr class="mb-2"><th>Selected Genre:</th>'
+          '<td id="selected-genres"></td></tr>'))
+
+        credits_start = fields.index('creator_help')
+        # field_list = [BaseField(Field(field,
+        #                               template='oi/bits/uni_field.html'))
+        #               for field in fields[:credits_start-7]]
+        field_list.extend([BaseField(Field(field,
+                                     template='oi/bits/uni_field.html'))
+                           for field in fields[genres:credits_start-7]])
+        field_list.append(HTML(
+          '<tr><th><hr style="height:2px; background-color:#000;">&nbsp;'
+          '<strong>Creator Credits:</strong></th>'
+          '<td class="align-top">'
+          '<hr style="height:2px; background-color:#000;"></td></tr>'))
         field_list.extend([BaseField(Field(field,
                                      template='oi/bits/uni_field.html'))
                            for field in fields[credits_start-7:credits_start]])
@@ -645,8 +660,11 @@ class StoryRevisionForm(forms.ModelForm):
                                            template='oi/bits/uni_field.html'))
                            for field in fields[credits_start:
                                                characters_start-19]])
-        field_list.append(HTML('<tr><td><hr>&nbsp;<strong>Characters:</strong>'
-                               '</td><th><hr></th></tr>'))
+        field_list.append(HTML(
+          '<tr><th><hr style="height:2px; background-color:#000;">&nbsp;'
+          '<strong>Characters:</strong></th>'
+          '<td class="align-top">'
+          '<hr style="height:2px; background-color:#000;"></td></tr>'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[characters_start-19:
@@ -674,18 +692,19 @@ class StoryRevisionForm(forms.ModelForm):
         else:
             self.helper.layout = Layout(TabHolder(
               Tab('Sequence Details',
-                  *(f for f in field_list[:credits_start-7]),
+                  *(f for f in field_list[:credits_start-6]),
                   *(f for f in field_list[characters_end:-2]),
-                  template='oi/bits/tab.html', css_class='editing',
+                  template='oi/bits/tab.html',
                   ),
               Tab('Creator Credits',
-                  *(f for f in field_list[credits_start-6:credits_end+7]),
-                  template='oi/bits/tab.html', css_class='editing',
+                  *(f for f in field_list[credits_start-5:credits_end+7]),
+                  template='oi/bits/tab.html',
                   ),
               Tab('Characters',
                   *(f for f in field_list[credits_end+8:characters_end]),
-                  template='oi/bits/tab.html', css_class='editing',
+                  template='oi/bits/tab.html',
                   ),
+              template='oi/bits/tab-bar.html',
             ),
               HTML('<table class="editing">'),
               *(f for f in field_list[-2:]),
@@ -696,7 +715,8 @@ class StoryRevisionForm(forms.ModelForm):
     sequence_number = forms.IntegerField(widget=forms.HiddenInput)
 
     title = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
+        widget=forms.TextInput(attrs={'class': 'w-full lg:w-4/5',
+                                      'autofocus': ''}),
         required=False,
         help_text='If no title can be determined from a story, our '
                   'documentation gives a list of possible choices.')
@@ -704,7 +724,8 @@ class StoryRevisionForm(forms.ModelForm):
         required=False, label='Unofficial title', help_text='')
 
     first_line = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'wide', 'autofocus': ''}),
+        widget=forms.TextInput(attrs={'class': 'w-full lg:w-4/5',
+                                      'autofocus': ''}),
         required=False,
         help_text='First line of text/dialogue in the first panel of the '
                   ' story, ignoring reoccurring blurbs or promotional text.')
@@ -717,7 +738,7 @@ class StoryRevisionForm(forms.ModelForm):
       widget=autocomplete.ModelSelect2Multiple(
                           url='feature_autocomplete',
                           forward=['language_code', 'type'],
-                          attrs={'style': 'min-width: 60em'}),
+                          attrs={'class': 'w-full lg:w-4/5'}),
       required=False,
       help_text='Only features for the series language can be selected. Enter '
                 '"&lt;space&gt;[&lt;text&gt;" to search the disambiguation. '
@@ -731,7 +752,7 @@ class StoryRevisionForm(forms.ModelForm):
                           url='feature_logo_autocomplete',
                           forward=['language_code', 'type'],
                           attrs={'data-html': True,
-                                 'style': 'min-width: 60em'}),
+                                 'class': 'w-full lg:w-4/5'}),
       required=False,
       help_text='Only select a feature logo if it is present <b>directly</b> '
                 'on the sequence. The feature corresponding to the selected '
@@ -765,17 +786,18 @@ class StoryRevisionForm(forms.ModelForm):
     character_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text='Characters can be entered in several ways:<br>'
-                  'a) select several characters in the first autocomplete '
+        help_text='Characters can be entered in several ways:'
+                  '<ul class="list-[lower-alpha] list-outside ps-4">'
+                  '<li>select several characters in the first autocomplete '
                   '<i>Appearing characters</i>, each without additional '
-                  'details about the appearance,<br>'
-                  'b) select a group in the second autocomplete <i>Group</i>'
+                  'details about the appearance,</li>'
+                  '<li>select a group in the second autocomplete <i>Group</i>'
                   ' with the appearing group members in the third autocomplete'
                   ' <i>Group members</i>, again '
-                  'without additional details about the appearance,<br>'
-                  'c) each character (with its groups) separately, where '
-                  'additional details about the appearance can be entered.<br>'
-                  'd) the old text field for characters,<br>'
+                  'without additional details about the appearance,</li>'
+                  '<li>each character (with its groups) separately, where '
+                  'additional details about the appearance can be entered.</li>'
+                  '<li>the old text field for characters,</li></ul>'
                   'For a selected superhero the linked civilian identity will '
                   'be added automatically. In the later character display both'
                   ' are shown together as <i>Superhero [Civilian Name]</i>, '
@@ -795,7 +817,8 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
                           url='universe_autocomplete',
-                          attrs={'style': 'width: 60em'}),
+                          attrs={'class': 'w-full lg:w-4/5',
+                                 'style': 'width: 80%'}),
       required=False,
       help_text='Select the universes, if any, in which the story takes place.'
                 ' Use "mainstream" for the principal universe of a publisher.'
@@ -809,24 +832,29 @@ class StoryRevisionForm(forms.ModelForm):
                   'If more than one universe is selected above, this '
                   'flag has no effect.')
 
-    script = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+    script = forms.CharField(widget=forms.TextInput(attrs={'class':
+                                                           'w-full lg:w-4/5'}),
                              required=False,
                              help_text='')
-    pencils = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+    pencils = forms.CharField(widget=forms.TextInput(attrs={
+      'class': 'w-full lg:w-4/5'}),
                               required=False,
                               help_text='')
-    inks = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+    inks = forms.CharField(widget=forms.TextInput(attrs={'class':
+                                                         'w-full lg:w-4/5'}),
                            required=False,
                            help_text='')
-    colors = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+    colors = forms.CharField(widget=forms.TextInput(attrs={'class':
+                                                           'w-full lg:w-4/5'}),
                              required=False,
                              help_text='')
     letters = forms.CharField(
-        widget=forms.TextInput(attrs={'class': 'wide'}),
+        widget=forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         required=False,
         help_text='If the lettering is produced as normal printed text rather '
                   'than comic-style lettering, enter the word "typeset" here.')
-    editing = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+    editing = forms.CharField(widget=forms.TextInput(attrs={
+      'class': 'w-full lg:w-4/5'}),
                               required=False,
                               help_text='')
 
@@ -866,8 +894,31 @@ class StoryRevisionForm(forms.ModelForm):
                   'whole issue.<br><br>'
                   'If a creator cannot be found in the creator box, '
                   'the corresponding credit field can also be used.')
+
+    characters = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'w-full lg:w-4/5',
+                                     'rows': 6}),
+        required=False,
+        )
+
+    reprint_notes = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'w-full lg:w-4/5',
+                                     'rows': 4}),
+        required=False,
+        help_text='Textual reprint notes can be used for comic material that '
+                  'is not in our database, either because the issue is not '
+                  'indexed at all or because it cannot such as newspaper '
+                  'strips.<br>For newspaper strips the format is '
+                  '<i>from &lt;comic strip&gt; (&lt;syndicate name&gt;) '
+                  '&lt;date&gt;</i>, example:<br> '
+                  '<i>from Calvin and Hobbes daily (Universal Press Syndicate)'
+                  ' 1985-11-18 - 1988-10-01</i>.'
+
+        )
+
     synopsis = forms.CharField(
-        widget=forms.Textarea(attrs={'style': 'height: 9em'}),
+        widget=forms.Textarea(attrs={'class': 'w-full lg:w-4/5',
+                                     'rows': 6}),
         required=False,
         help_text='A brief description of the contents. Do not use any text '
                   'that may be copyrighted, such as solicitation or other '
@@ -877,7 +928,8 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(
         url='group_name_autocomplete',
-        attrs={'data-html': True, 'style': 'width: 60em'},
+        attrs={'data-html': True, 'class': 'w-full lg:w-4/5',
+               'style': 'width: 80%'},
         forward=['language_code']),
       help_text='Select a group and enter its characters.',
       label='b) Group',
@@ -888,7 +940,8 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
-        attrs={'data-html': True, 'style': 'width: 60em'},
+        attrs={'data-html': True, 'class': 'w-full lg:w-4/5',
+               'style': 'width: 80%'},
         forward=['language_code', 'group_name']),
       help_text='Select the appearing members of the group.',
       required=False,
@@ -898,7 +951,8 @@ class StoryRevisionForm(forms.ModelForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
-        attrs={'data-html': True, 'style': 'width: 60em'},
+        attrs={'data-html': True, 'class': 'w-full lg:w-4/5',
+               'style': 'width: 80%'},
         forward=['language_code', ]),
       help_text='Select one or more appearing characters without additional '
                 'details.',
@@ -1133,7 +1187,8 @@ class BiblioRevisionForm(forms.ModelForm):
         fields = ['page_began', 'page_ended', 'abstract', 'doi']
         help_texts = BIBLIOGRAPHIC_ENTRY_HELP_TEXT
 
-    doi = forms.CharField(widget=forms.TextInput(attrs={'class': 'wide'}),
+    doi = forms.CharField(widget=forms.TextInput(attrs={'class':
+                                                        'w-full lg:w-4/5'}),
                           required=False, label='DOI',
                           help_text=BIBLIOGRAPHIC_ENTRY_HELP_TEXT['doi'])
 

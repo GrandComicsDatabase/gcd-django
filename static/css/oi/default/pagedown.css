@@ -41,13 +41,15 @@ blockquote {
 }
 
 .wmd-preview > ul {
-    list-style: disc;
-    padding-inline-start: 2rem;
+	list-style: disc;
+	padding-inline-start: 2rem;
+	padding-bottom: 1rem;
 }
 
 .wmd-preview > ol {
-    list-style: decimal;
-    padding-inline-start: 2rem;
+	list-style: decimal;
+	padding-inline-start: 2rem;
+	padding-bottom: 1rem;
 }
 
 .wmd-preview > p {

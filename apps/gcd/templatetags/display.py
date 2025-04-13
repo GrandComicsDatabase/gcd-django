@@ -12,7 +12,7 @@ from django.template.defaultfilters import title
 
 from apps.oi import states
 from apps.oi.models import CTYPES
-from apps.gcd.templatetags.credits import show_page_count, show_title
+from apps.gcd.templatetags.credits import show_page_count
 from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
                                     CreatorDegree, CreatorRelation, \
@@ -80,10 +80,10 @@ def show_story_short(story, no_number=False, markup=True):
         story_line = '%s.' % story.sequence_number
 
     if story.title or story.first_line:
-        title = show_title(story, True)
+        title = story.show_title(True)
     else:
         if markup:
-            title = mark_safe('<span class="no_data">no title</span>')
+            title = mark_safe('<span class="italic">no title</span>')
         else:
             title = 'no title'
     if story.has_feature():
@@ -98,7 +98,7 @@ def show_story_short(story, no_number=False, markup=True):
             story_line = '%s %s (%s)' % (
               esc(story_line),
               title,
-              '<span class="no_data">no feature</span>')
+              '<span class="italic">no feature</span>')
         else:
             story_line = '%s %s (no feature)' % (esc(story_line), title)
 
@@ -108,7 +108,7 @@ def show_story_short(story, no_number=False, markup=True):
         story_line += ', %sp' % page_count
     else:
         if markup:
-            story_line += '<span class="no_data"> no page count</span>'
+            story_line += '<span class="italic"> no page count</span>'
         else:
             story_line += 'no page count'
     if markup:

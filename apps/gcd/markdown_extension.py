@@ -118,8 +118,8 @@ class TailwindTreeProcessor(Treeprocessor):
 
     classes = {
         "p": "pb-4 text-normal",
-        "ul": "list-disc list-outside ps-8",
-        "ol": "list-decimal list-outside ps-8",
+        "ul": "list-disc list-outside ps-8 pb-4",
+        "ol": "list-decimal list-outside ps-8 pb-4",
     }
 
     def run(self, root):

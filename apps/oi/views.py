@@ -5483,7 +5483,7 @@ def show_approved(request):
       request,
       changes,
       'oi/queues/approved.html',
-      {'CTYPES': CTYPES, 'EDITING': True},
+      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'approved'},
       per_page=50)
 
 
@@ -5510,7 +5510,7 @@ def show_commented(request):
       request,
       changes,
       'oi/queues/commented.html',
-      {'CTYPES': CTYPES, 'EDITING': True},
+      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'commented'},
       per_page=50)
 
 
@@ -5527,7 +5527,7 @@ def show_editor_log(request):
       request,
       changes,
       'oi/queues/editor_log.html',
-      {'CTYPES': CTYPES, 'EDITING': True},
+      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'editor_log'},
       per_page=50)
 
 
@@ -5545,7 +5545,7 @@ def show_cover_queue(request):
       request,
       covers,
       'oi/queues/covers.html',
-      {'table_width': table_width, 'EDITING': True},
+      {'table_width': table_width, 'EDITING': True, 'queue_name': 'covers'},
       per_page=50,
       callback_key='tags',
       callback=get_preview_image_tags_per_page)
@@ -6013,7 +6013,8 @@ def mentoring(request):
         'new_indexers': new_indexers,
         'my_mentees': my_mentees,
         'mentees': mentees,
-        'max_show_new': max_show_new
+        'max_show_new': max_show_new,
+        'queue_name': 'mentoring',
       })
 
 

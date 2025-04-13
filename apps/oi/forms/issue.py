@@ -17,7 +17,7 @@ from crispy_forms.layout import Layout, Field, HTML
 from .custom_layout_object import Formset, BaseField
 from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       VARIANT_NAME_HELP_TEXT, VARIANT_COVER_STATUS_HELP_TEXT,
-                      ISSUE_LABELS, ISSUE_HELP_TEXTS,
+                      ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
                       HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
@@ -250,7 +250,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     'same time.')
 
             if cd['no_editing']:
-                nr_credit_forms = self.data['issue_credit_revisions-TOTAL_FORMS']
+                nr_credit_forms = self.data[
+                  'issue_credit_revisions-TOTAL_FORMS']
                 seq_type_found = False
                 for i in range(int(nr_credit_forms)):
                     delete_i = 'issue_credit_revisions-%d-DELETE' % i
@@ -350,7 +351,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
                 widgets['variant_name'] = \
-                    forms.TextInput(attrs={'class': 'wide'})
+                    forms.TextInput(attrs={'class': 'w-full lg:w-4/5'})
                 help_texts = RuntimeIssueRevisionForm.Meta.help_texts
                 help_texts['variant_name'] = VARIANT_NAME_HELP_TEXT
                 help_texts['variant_cover_status'] = \
@@ -427,7 +428,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
                 widgets = RuntimeIssueRevisionForm.Meta.widgets
                 widgets['variant_name'] = \
-                    forms.TextInput(attrs={'class': 'wide'})
+                    forms.TextInput(attrs={'class': 'w-full lg:w-4/5'})
                 help_texts = RuntimeIssueRevisionForm.Meta.help_texts
                 help_texts['variant_name'] = VARIANT_NAME_HELP_TEXT
         return RuntimeBaseIssueRevisionForm
@@ -472,8 +473,12 @@ class IssueCreditRevisionForm(forms.ModelForm):
 
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
-      widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
-                                       attrs={'style': 'min-width: 60em'}),
+      widget=autocomplete.ModelSelect2(
+          url='creator_name_autocomplete',
+          attrs={
+              'class': 'w-full lg:w-4/5',
+              'data-placeholder': 'select a creator',
+          }),
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database.'
@@ -532,7 +537,7 @@ PublisherCodeNumberFormSet = inlineformset_factory(
     can_delete=True, extra=1)
 
 
-class IssueRevisionForm(forms.ModelForm):
+class IssueRevisionForm(KeywordBaseForm):
     class Meta:
         model = IssueRevision
         fields = get_issue_field_list()
@@ -541,18 +546,20 @@ class IssueRevisionForm(forms.ModelForm):
         fields.insert(fields.index('year_on_sale'), 'on_sale_date')
         fields.insert(fields.index('keywords') + 1, 'turned_off_help')
         widgets = {
-            'number': forms.TextInput(attrs={'class': 'wide',
+            'number': forms.TextInput(attrs={'class': 'w-full lg:w-4/5',
                                              'autofocus': ''}),
-            'title': forms.TextInput(attrs={'class': 'wide'}),
-            'volume': forms.TextInput(attrs={'class': 'wide'}),
-            'publication_date': forms.TextInput(attrs={'class': 'wide'}),
+            'title': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'volume': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'publication_date': forms.TextInput(attrs={'class':
+                                                       'w-full lg:w-4/5'}),
             'key_date': forms.TextInput(attrs={'class': 'key_date'}),
-            'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
-            'price': forms.TextInput(attrs={'class': 'wide'}),
-            'editing': forms.TextInput(attrs={'class': 'wide'}),
-            'isbn': forms.TextInput(attrs={'class': 'wide'}),
-            'barcode': forms.TextInput(attrs={'class': 'wide'}),
-            'rating': forms.TextInput(attrs={'class': 'wide'}),
+            'indicia_frequency': forms.TextInput(attrs={'class':
+                                                        'w-full lg:w-4/5'}),
+            'price': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'editing': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'isbn': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'barcode': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'rating': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'page_count': PageCountInput,
             'brand': BrandEmblemSelect,
         }
@@ -588,7 +595,8 @@ class IssueRevisionForm(forms.ModelForm):
         queryset=IndiciaPrinter.objects.all(),
         widget=autocomplete.ModelSelect2Multiple(
             url='indicia_printer_autocomplete',
-            attrs={'style': 'min-width: 60em'}),
+            attrs={'class': 'w-full lg:w-4/5',
+                   'data-placeholder': 'select an indicia printer'}),
         required=False,
         help_text='The exact printer listed in the indicia or colophon, '
                   'if any.'
@@ -709,8 +717,9 @@ class BulkIssueRevisionForm(forms.ModelForm):
         fields = get_issue_field_list()
         exclude = ['number']
         widgets = {
-            'indicia_frequency': forms.TextInput(attrs={'class': 'wide'}),
-            'editing': forms.TextInput(attrs={'class': 'wide'}),
+            'indicia_frequency': forms.TextInput(attrs={'class':
+                                                        'w-full lg:w-4/5'}),
+            'editing': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'page_count': PageCountInput,
             'brand': BrandEmblemSelect
         }

@@ -731,7 +731,7 @@ class Story(GcdData):
                                 STORY_TYPES['comics-form ad']]:
             ignore = AD_TYPES
         else:
-            ignore = None
+            ignore = []
         return ((notes and self.reprint_notes) or
                 self.from_all_reprints.count() or
                 self.to_all_reprints.exclude(target__type__id__in=ignore)

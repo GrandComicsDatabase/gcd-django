@@ -1,19 +1,19 @@
 {% if user.is_authenticated %}
 <div class="bg-blue-200 pe-1 sm:pe-2">
  <ul class="flex flex-wrap [&_a]:px-2 [&_a]:py-1 [&_a]:block [&_a]:hover:no-underline [&>li]:font-bold [&_a]:text-black">
-  <li><a class="[&:not(:hover)]:text-white bg-black hover:bg-blue-400" href="https://docs.comics.org/wiki/Formatting_Documentation">Help</a> </li>
-  <li><a class="hover:bg-blue-400" href="{% url 'editing' %}">Editing</a> </li>
-  <li><a class="hover:bg-blue-400" href="{% url 'pending' %}">Pending</a> </li>
-  <li><a class="hover:bg-blue-400" href="{% url 'pending_covers' %}">Covers</a> </li>
+  <li class=""><a class="[&:not(:hover)]:text-white bg-black hover:bg-blue-400" href="https://docs.comics.org/wiki/Formatting_Documentation">Help</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'editing' %}bg-blue-400{% endif %}" href="{% url 'editing' %}">Editing</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'pending' %}bg-blue-400{% endif %}" href="{% url 'pending' %}">Pending</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'covers' %}bg-blue-400{% endif %}" href="{% url 'pending_covers' %}">Covers</a> </li>
   {% if perms.indexer.can_approve %}
-  <li><a class="hover:bg-blue-400" href="{% url 'reviewing' %}">Reviewing</a> </li>
-  <li><a class="hover:bg-blue-400" href="{% url 'editor_log' %}">Editor Log</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'reviews' %}bg-blue-400{% endif %}" href="{% url 'reviewing' %}">Reviewing</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'editor_log' %}bg-blue-400{% endif %}" href="{% url 'editor_log' %}">Editor Log</a> </li>
   {% endif %}
-  <li><a class="hover:bg-blue-400" href="{% url 'approved' %}">Approved</a> </li>
-  <li><a class="hover:bg-blue-400" href="{% url 'commented' %}">Commented</a> </li>
-  <li><a class="hover:bg-blue-400" href="{% url 'add' %}">Add New</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'approved' %}bg-blue-400{% endif %}" href="{% url 'approved' %}">Approved</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'commented' %}bg-blue-400{% endif %}" href="{% url 'commented' %}">Commented</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'add_new' %}bg-blue-400{% endif %}" href="{% url 'add' %}">Add New</a> </li>
   {% if perms.indexer.can_mentor %}
-  <li><a class="hover:bg-blue-400" href="{% url 'mentoring' %}">Mentoring</a> </li>
+  <li><a class="hover:bg-blue-400 {% if queue_name == 'mentoring' %}bg-blue-400{% endif %}" href="{% url 'mentoring' %}">Mentoring</a> </li>
   {% endif %}
   <li><a class="hover:bg-blue-400" href="{% url 'voting_dashboard' %}">Voting</a> </li>
   <!-- <li class="ml-auto mt-1">

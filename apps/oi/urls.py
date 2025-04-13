@@ -26,14 +26,15 @@ register_converter(SignedIntConverter, 'signed_int')
 urlpatterns = [
     # General-purpose new record add page.
     path('add/',
-        login_required(
-          bv.TemplateView.as_view(template_name='oi/edit/add.html')),
-        name='add'),
+      login_required(
+        bv.TemplateView.as_view(template_name='oi/edit/add.html',
+        extra_context={'queue_name': 'add_new'})),
+      name='add'),
 
     path('mentoring/', oi_views.mentoring,
-        name='mentoring'),
+      name='mentoring'),
     path('contacting/', oi_views.contacting,
-        name='contacting'),
+      name='contacting'),
 
 
     path('award/add/',

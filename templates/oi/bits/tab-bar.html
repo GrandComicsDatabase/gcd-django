@@ -1,0 +1,6 @@
+<ul{% if tabs.css_id %} id="{{ tabs.css_id }}"{% endif %} class="mb-2 nav nav-tabs bg-blue-100 flex flex-row [&_a]:px-2 [&_a]:py-1 [&_a]:block [&_a]:hover:no-underline [&>li.active]:bg-blue-400 hover:[&>li]:bg-blue-400 [&>li]:font-bold [&_a]:text-black">
+    {{ links }}
+</ul>
+<div class="tab-content panel-body">
+    {{ content }}
+</div>

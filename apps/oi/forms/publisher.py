@@ -228,7 +228,9 @@ def get_brand_revision_form(user=None, revision=None,
 
         group = forms.ModelMultipleChoiceField(
             required=True,
-            widget=FilteredSelectMultiple('Brand Groups', False),
+            widget=forms.CheckboxSelectMultiple(attrs={
+              'class': 'overflow-y-auto max-h-60 border border-gray-500 '
+                       'px-1 inline-block'}),
             queryset=queryset,
             initial=initial)
         # TODO currently a second group can only added for existing brands

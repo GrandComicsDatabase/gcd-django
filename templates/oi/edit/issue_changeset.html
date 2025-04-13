@@ -2,173 +2,171 @@
 {% load display %}
 {% load compare %}
 
-<table class="story_list">
-{% for issue_revision in changeset.issuerevisions.all %}
-  <tr>
-    <td>
-  {% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}
-            <span class="comparison_highlight"><a href="{{ issue_revision.series.get_absolute_url }}">
-  {% endif %}
-  {{ issue_revision.full_name }}
-  {% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}
-            </a></span>
-  {% endif %}
-  {% if issue_revision.variant_of %} (variant of {{ issue_revision.variant_of }}) {% endif %}
-    </td>
-    <td align="right">
-    {% if issue_revision.editing and not issue_revision.editing == '?' %}
-      <form class="changeset" action="{% url 'migrate_issue_revision' id=issue_revision.id %}" method="POST">
-        {% csrf_token %}
-        <input type="submit" value="Migrate Editing">
-      </form>
-    {% endif %}
-      <form class="changeset" method="GET"
-            action="{% url "edit_revision" model_name='issue' id=issue_revision.id %}">
-        <input type="submit" id="edit_issue_{{ issue_revision.id }}"
-               name="edit_issue_{{ issue_revision.id }}" value="Edit Issue Fields">
-      </form>
-    </td>
-  </tr>
-  {% if issue_revision.variant_of or issue_revision.issue.get_prev_next_issue.0 or issue_revision.after %}
-  <tr>
-    {% if issue_revision.issue.get_prev_next_issue.0 %}
-    <td>
-      <a href="{% url "compare_issues_copy" issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">
-        <button type="button">Compare With & Copy From Preceding Issue</button>
-      </a>
-    </td>
-    {% elif issue_revision.after and not issue_revision.variant_of %}
-    <td>
-      <a href="{% url "compare_issues_copy" issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">
-        <button type="button">Compare With & Copy From Preceding Issue</button>
-      </a>
-    </td>
-    {% else %}
-    <td></td>
-    {% endif %}
-    {% if issue_revision.variant_of %}
-    <td align='right'>
-      <a href="{% url "compare_issues_copy" issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.id %}">
-        <button type="button">Compare With & Copy From Base Issue</button>
-      </a>
-    </td>
-    {% else %}
-    <td></td>
-    {% endif %}
 
-  </tr>
+{% for issue_revision in changeset.issuerevisions.all %}
+<div class="sm:w-3/4 border border-gray-300">
+  <div class="ps-1 flex justify-between border border-gray-300">
+    <div class="flex items-center">
+  {% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}
+      <a href="{{ issue_revision.series.get_absolute_url }}">
   {% endif %}
+    {{ issue_revision.full_name }}
+  {% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}
+      </a>
+  {% endif %}
+  {% if issue_revision.variant_of %}
+    (variant of {{ issue_revision.variant_of }})
+  {% endif %}
+    </div>
+    <div class="sm:flex sm:items-center">
+  {% if issue_revision.editing and not issue_revision.editing == '?' %}
+    <form class="sm:inline-block" action="{% url 'migrate_issue_revision' id=issue_revision.id %}" method="POST">
+      {% csrf_token %}
+      <btn class="btn-blue-editing"><input type="submit" value="Migrate Editing"></btn>
+    </form>
+  {% endif %}
+    <form class="sm:inline-block" method="GET"
+          action="{% url "edit_revision" model_name='issue' id=issue_revision.id %}">
+      <btn class="btn-blue-editing"><input type="submit" id="edit_issue_{{ issue_revision.id }}"
+           name="edit_issue_{{ issue_revision.id }}" value="Edit Issue Fields"></btn>
+    </form>
+    </div>
+  </div>
+
+  {% if issue_revision.variant_of or issue_revision.issue.get_prev_next_issue.0 or issue_revision.after %}
+  <div class="flex justify-between border border-gray-300">
+    <div class="my-1">
+    {% if issue_revision.issue.get_prev_next_issue.0 %}
+      <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">
+        <btn class="btn-blue-editing inline no-underline">Compare With & Copy From Preceding Issue</btn>
+      </a>
+    {% elif issue_revision.after and not issue_revision.variant_of %}
+      <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">
+        <btn class="btn-blue-editing inline">Compare With & Copy From Preceding Issue</btn>
+      </a>
+    {% endif %}
+    </div>
+    <div class="my-1">
+    {% if issue_revision.variant_of %}
+      <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.id %}">
+        <btn class="btn-blue-editing inline">Compare With & Copy From Base Issue</btn>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
-  <tr>
-    <td colspan="2" align="left">
+  <div class="border border-gray-300">
+    <div class="my-1 px-1">
       A cover sequence exists for the cover artwork, which is different between variant and base. <br>
       Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
-    </td>
-  </tr>
+    </div>
+  </div>
   {% else %}
     {% if issue_revision.issue or issue_revision.variant_of %}
       {% if not issue_revision.variant_of or issue_revision.variant_cover_status is 3 %}
-  <tr>
-    <td colspan="2" align="left">
-      <form class="changeset" method="GET"
-        action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
-        <div class="left">
-          <input type="submit" id="add_story" name="add" value="Add Sequence">
+  <div class="border border-gray-300">
+    <form class="changeset" method="GET"
+          action="{% url "add_story" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+      <div class="flex justify-between">
+        <div class="flex items-center">
+          <btn class="btn-blue-editing inline mt-1"><input type="submit" id="add_story" name="add" value="Add Sequence"></btn>
         {% if issue_revision.variant_of %}
           {% if issue_revision.issue %}
-          <input type="submit" id="copy_cover" name="copy_cover" value="Copy Sequence">
+          <btn class="btn-blue-editing inline"><input type="submit" id="copy_cover" name="copy_cover" value="Copy Cover Sequence"></btn>
           {% endif %}
-          <br>A cover sequence can be added in case the cover artwork is different between variant and base. <br>
-          Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
           <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
         {% else %}
-          <input type="submit" id="copy_story" name="copy" value="Copy Sequence">
+          <btn class="btn-blue-editing inline"><input type="submit" id="copy_story" name="copy" value="Copy Sequence"></btn>
+        {% endif %}
         </div>
-        <div class="right">
-          &nbsp;sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
+        {% if not issue_revision.variant_of %}
+        <div class="my-1">
+          sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
           <input type="text" size="4" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
         </div>
         {% endif %}
-      </form>
-    </td>
-  </tr>
+      </div>
+    </form>
+        {% if issue_revision.variant_of %}
+    <div class="px-1">
+      A cover sequence can be added in case the cover artwork is different between variant and base. <br>
+    Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
+    </div>
+        {% endif %}
+  </div>
       {% endif %}
     {% endif %}
   {% endif %}
-  {% if issue_revision.source and issue_revision.story_set.count > 1 %}
-  <tr>
-    <td colspan="2">
-      <form class="changeset" method="GET"
-            action="{% url "reorder_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
-        <input type="submit" id="reorder_issue_{{ issue.id }}"
-               name="reorder_issue_{{ issue.id }}"
-               value="Reorder Issue Sequences">
-      </form>
-    </td>
-  </tr>
+
+  {% if issue_revision.source and issue_revision.story_set.count > 1 or issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
+  <div class="flex justify-between border border-gray-300">
+    {% if issue_revision.source and issue_revision.story_set.count > 1 %}
+    <form class="my-1" method="GET"
+          action="{% url "reorder_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
+      <btn class="btn-blue-editing inline"><input type="submit" id="reorder_issue_{{ issue.id }}"
+           name="reorder_issue_{{ issue.id }}"
+           value="Reorder Issue Sequences"></btn>
+    </form>
+    {% else %}
+    <div></div>
+    {% endif %}
+    {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
+    <form method="GET"
+          action="{% url "add_variant_to_issue_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+      <btn class="btn-blue-editing"><input type="submit" id="add_variant_to_issue_revision_{{ issue_revision.id }}"
+           name="add_variant_to_issue_revision_{{ issue_revision.id }}"
+           value="Add Variant Issue"></btn>
+    </form>
+    {% endif %}
+  </div>
   {% endif %}
+
   {% if issue_revision.source and changeset.change_type == CTYPES.issue %}
-  <tr>
-    <td>
-      <form class="changeset" method="GET"
-            action="{% url "list_issue_reprints" id=issue_revision.id %}">
-        <input type="submit" id="list_reprints_{{ issue_revision.id }}"
-               name="list_issue_reprints_{{ issue_revision.id }}" value="Edit Issue & Sequence Reprint Links">
-      </form>
-    </td>
-    <td align="right">
+  <div class="flex justify-between border border-gray-300">
+    <form method="GET"
+          action="{% url "list_issue_reprints" id=issue_revision.id %}">
+      <btn class="btn-blue-editing"><input type="submit" id="list_reprints_{{ issue_revision.id }}"
+           name="list_issue_reprints_{{ issue_revision.id }}" value="Edit Issue & Sequence Reprint Links"></btn>
+    </form>
     {% if issue_revision.can_add_reprints %}
-      <form class="changeset" method="GET"
+      <form method="GET"
             action="{% url "add_issue_reprint" issue_id=issue_revision.id changeset_id=changeset.id %}">
-        <input type="submit" value="Add Reprint">
+        <btn class="btn-blue-editing"><input type="submit" value="Add Reprint"></btn>
       </form>
     {% endif %}
-    </td>
-  </tr>
+  </div>
   {% endif %}
-  {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
-  <tr>
-    <td colspan="2">
-      <form class="changeset" method="GET"
-            action="{% url "add_variant_to_issue_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
-        <input type="submit" id="add_variant_to_issue_revision_{{ issue_revision.id }}"
-               name="add_variant_to_issue_revision_{{ issue_revision.id }}"
-               value="Add Variant Issue">
-      </form>
-    </td>
-  </tr>
-  {% endif %}
-  {% if issue_revision.issue %}
-  <tr>
-    <td colspan="2">
-      <form method="GET"
-        action="{% url "move_issue" issue_revision_id=issue_revision.id series_id=0 %}">
-        <input type="submit" value="Move To Series With ID">
-        <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"> brand/indicia publisher values might reset
-      </form>
-    </td>
-  </tr>
-  {% endif %}
+  <form method="GET" action="{% url 'move_issue' issue_revision_id=issue_revision.id series_id=0 %}">
+    <div class="my-1">
+      <btn class="btn-blue-editing inline"><input type="submit" value="Move To Series With ID"></btn>
+        <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"> 
+    <span class="px-1">brand/indicia publisher values might reset</span>
+    </div>
+  </form>
+</div>
 {% endfor %}
-</table>
 
 {% if changeset.change_type == CTYPES.variant_add or changeset.change_type == CTYPES.two_issues %}
   {% if changeset.coverrevisions.count %}
-<div>
     {% for cover in changeset.coverrevisions.all %}
+<div class="mt-2">
       {{ cover.cover|cover_image_tag:'1, moved_cover' }}
-<br>Cover is moved from {{ cover.issue }}.
+Cover is moved from {{ cover.issue }}.
   <form action="{% url "undo_move_cover" id=changeset.id cover_id=cover.id %}" method="POST">
       {% csrf_token %}
-    <input type="submit" value="Undo Cover Move">
+    <btn class="btn-blue-editing inline"><input type="submit" value="Undo Cover Move"></btn>
   </form>
-  <br>
-    {% endfor %}
 </div>
+    {% endfor %}
   {% endif %}
   {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}
-<form action="{% url "move_cover" id=changeset.id %}" method="GET"><input type="submit" value="Move Covers Between Both Issues"></form>
-<br>
+<div class="my-2 ">
+  <form action="{% url "move_cover" id=changeset.id %}" method="GET">
+    <btn class="btn-blue-editing inline"><input type="submit" value="Move Covers Between Both Issues"></btn>
+  </form>
+</div>
   {% endif %}
 {% endif %} <!-- variant_add or two_issues -->
 
@@ -180,34 +178,37 @@
 <p>No stories for this issue/variant.</p>
       {% endif %}
     {% endif %}
-<table class="story_list">
+<table class="border border-gray-300 mt-2">
+  <tbody>
     {% for story in issuerevision.ordered_story_revisions %}
-  <tr{% if story.deleted %} class="deleted"{% endif %}>
-    <td>{{ story|show_story_short }}</td>
-    <td>{{ story|show_credit_status }}</td>
-    <td>
+    <tr class="border-y border-gray-300{% if story.deleted %} bg-red-400 {% endif %}">
+      <td class="">{{ story|show_story_short }}</td>
+      <td class="w-24">{{ story|show_credit_status }}</td>
+      <td class="py-1 flex">
       {% if not story.deleted %}
-      <form class="changeset" method="GET"
-            action="{% url "edit_revision" model_name='story' id=story.id %}">
-        <input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
-               value="Edit">
-      </form>
-      <a style="padding-left: 2em" href="{% url 'story_select_compare' story_revision_id=story.id  %}">
-        <button type="button">Compare & Copy</button>
-      </a>
+        <form method="GET"
+              action="{% url 'edit_revision' model_name='story' id=story.id %}">
+          <btn class="btn-blue-editing inline"><input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
+                value="Edit"></btn>
+        </form>
+        <form method="GET"
+              action="{% url 'story_select_compare' story_revision_id=story.id  %}">
+          <btn class="btn-blue-editing inline"><input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
+                value="Compare & Copy"></btn>
+        </form>
         {% if changeset.change_type == CTYPES.issue %}
-      <form class="story_button" method="GET"
-            action="{% url "add_story_reprint" story_id=story.id changeset_id=changeset.id reprint_note=story.reprint_notes|default:" "|urlencode %}">
-        <input type="submit" id="reprint_{{ story.id }}" name="reprint_{{ story.id }}"
-               value="Add Reprint">
-      </form>
+        <form method="GET"
+              action="{% url 'add_story_reprint' story_id=story.id changeset_id=changeset.id reprint_note=story.reprint_notes|default:" "|urlencode %}">
+          <btn class="btn-blue-editing inline"><input type="submit" id="reprint_{{ story.id }}" name="reprint_{{ story.id }}"
+                value="Add Reprint"></btn>
+        </form>
         {% endif %}
         {% if not story.story and not story.has_reprint_revisions %}
-      <form class="story_button" method="GET"
-            action="{% url "remove_story_revision" id=story.id %}">
-        <input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
-               value="Remove New Sequence">
-      </form>
+        <form method="GET"
+              action="{% url 'remove_story_revision' id=story.id %}">
+          <btn class="btn-blue-editing inline"><input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
+                value="Remove New Sequence"></btn>
+        </form>
         {% else %}
           {% if story.issue %}
             {% comment %}
@@ -219,98 +220,100 @@
                 just issue variants.
             {% endcomment %}
             {% if story.deletable %}
-      <form class="story_button" method="POST"
-            action="{% url "toggle_delete_story_revision" id=story.id %}">
-              {% csrf_token %}
-        <input type="submit" value="Mark To Delete">
-      </form>
+        <form method="POST"
+              action="{% url "toggle_delete_story_revision" id=story.id %}">
+                {% csrf_token %}
+          <btn class="btn-blue-editing inline"><input type="submit" value="Mark To Delete"></btn>
+        </form>
             {% endif %}
           {% endif %}
         {% endif %}
         {% if story.moveable %}
-      <form class="story_button" method="POST"
-            action="{% url "move_story_revision" id=story.id %}">
-          {% csrf_token %}
-        <input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
-               value="Move To Other Issue">
-      </form>
+        <form method="POST"
+              action="{% url "move_story_revision" id=story.id %}">
+            {% csrf_token %}
+          <btn class="btn-blue-editing inline"><input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
+                value="Move To Other Issue"></btn>
+        </form>
         {% endif %}
         {% if story.old_credits %}
-      <form class="story_button" method="POST" style="color: red"
-            action="{% url "migrate_story_revision" id=story.id %}">
-        {% csrf_token %}
-        <input type="submit" value="Migrate Credits" style="color: red">
-      </form>
+        <form method="POST" class="text-red-400"
+              action="{% url 'migrate_story_revision' id=story.id %}">
+          {% csrf_token %}
+          <btn class="btn-blue-editing inline"><input type="submit" value="Migrate Credits" style="color: red"></btn>
+        </form>
         {% endif %}
       {% else %}
         {% if issuerevision.variant_cover_status == 3 %}
-      <form class="story_button" method="POST"
-            action="{% url "toggle_delete_story_revision" id=story.id %}">
-        {% csrf_token %}
-        <input type="submit" value="Restore">
-      </form>
+        <form class="story_button" method="POST"
+              action="{% url 'toggle_delete_story_revision' id=story.id %}">
+          {% csrf_token %}
+          <btn class="btn-blue-editing inline"><input type="submit" value="Restore"></btn>
+        </form>
         {% endif %}
       {% endif %}
-    </td>
-  </tr>
+      </td>
+    </tr>
     {% endfor %}
+  </tbody>
 </table>
   {% endfor %}
 
   {% if changeset.issuerevisions.count == 1 and not changeset.issuerevisions.get.variant_of %}
     {% with issue_revision=changeset.issuerevisions.get %}
-<table class="story_list">
-  <form class="changeset" method="GET"
-      action="{% url "copy_story_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
-    <td colspan="2" align="left">
-      <div class="left">
-      <input type="submit" id="copy_story_revision" name="copy_story_revision" value="Copy Sequence">
-      </div>
-      <div class="right">
-      &nbsp;number of sequence to copy
-      <input type="text" size="4" id="copied_sequence_number" name="copied_sequence_number" value="">
-      </div>
-    </td>
-  </form>
-</table>
+<form class="border border-gray-300 w-fit pe-1 mt-2" method="GET"
+    action="{% url "copy_story_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+  <div class="flex items-center w-auto">
+    <btn class="btn-blue-editing inline"><input type="submit" id="copy_story_revision" name="copy_story_revision" value="Copy Sequence"></btn>
+    <div class="my-1">
+    &nbsp;number of sequence to copy
+    <input type="text" size="4" id="copied_sequence_number" name="copied_sequence_number" value="">
+    </div>
+  </div>
+</form>
     {% endwith %}
   {% endif %}
 {% endif %} <!-- changeset.storyrevisions.count -->
 
 {% with changeset.issuerevisions.all.0 as issue_revision %}
   {% if issue_revision.issue and not issue_revision.variant_of %}
-<table class="story_list">
+<table class="border border-gray-300 mt-2">
     {% if not changeset.storyrevisions.count %}
-  <tr colspan="2" align="left">
-  <form class="changeset" method="POST" enctype="multipart/form-data"
-                action="{% url "import_issue" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
-      {% csrf_token %}
-    <td>
-      Select file: <input type="file" name="flatfile">
-    </td>
-    <td>
-      <input type="submit" name="tab" value="Import Issue (Tab Separated)">
-      <input type="submit" name="csv" value="Import Issue (CSV)">
-    </td>
-  </form>
+  <tr class="border border-gray-300">
+    <form class="" method="POST" enctype="multipart/form-data"
+                  action="{% url "import_issue" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
+        {% csrf_token %}
+      <td>
+        Select file: <input type="file" name="flatfile">
+      </td>
+      <td class="flex">
+        <btn class="btn-blue-editing inline"><input type="submit" name="tab" value="Import Issue (Tab Separated)"></btn>
+      </td>
+      <td>
+        <btn class="btn-blue-editing inline"><input type="submit" name="csv" value="Import Issue (CSV)"></btn>
+      </td>
+    </form>
   </tr>
-    {% endif %}
-  <tr colspan="2" align="left">
-  <form class="changeset" method="POST" enctype="multipart/form-data"
-            action="{% url "import_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
+
+  {% endif %}
+  <tr class="border border-gray-300">
+    <form class="changeset" method="POST" enctype="multipart/form-data"
+         action="{% url "import_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
     {% csrf_token %}
-    <td>
-      Select file: <input type="file" name="flatfile">
-    </td>
-    <td>
-      <input type="submit" name="tab" value="Import Sequences (Tab Separated)">
-      <input type="submit" name="csv" value="Import Sequences (CSV)">
-    </td>
-  </form>
+      <td>
+        Select file: <input type="file" name="flatfile">
+      </td>
+      <td class="flex">
+        <btn class="btn-blue-editing inline"><input type="submit" name="tab" value="Import Sequences (Tab Separated)"></btn>
+      </td>
+      <td>
+        <btn class="btn-blue-editing inline"><input type="submit" name="csv" value="Import Sequences (CSV)"></btn>
+      </td>
+    </form>
   </tr>
   <tr>
-    <td class="import_info">
-      <a class="new_window" href="https://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information<span>opens in a new window</span></a> about the file format for imports.
+    <td colspan="3">
+      <a class="new_window" href="https://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> about the file format for imports.
     </td>
     <td>
     </td>
@@ -321,7 +324,7 @@
 <p>
   <a href="{% url "compare" id=changeset.id %}">Compare Changes</a>
 {% for issue_revision in changeset.issuerevisions.all %}
-  | <a class="new_window" href="{% url "preview_revision" model_name='issue' id=issue_revision.id %}" target=_blank>Preview<span>opens in a new window</span>
+  {% if not forloop.first %}&nbsp;{% endif %} | <a class="new_window" href="{% url "preview_revision" model_name='issue' id=issue_revision.id %}" target=_blank>Preview
   {% if issue_revision.variant_of %} (Variant) {% endif %}</a>
 {% endfor %}
 </p>

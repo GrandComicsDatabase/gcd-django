@@ -1,0 +1,6 @@
+{% load django_tables2 %}
+<div>
+  {% render_table table %}
+</div>
+{{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}
+

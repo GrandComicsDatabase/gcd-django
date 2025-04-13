@@ -10,60 +10,81 @@
 {{ changeset }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}"/>
-{% endblock %}
 {% block css_raw %}
-{% comment %} this css doesn't like compressing {% endcomment %}
-{% if revision.source_name == 'issue' %}
+  {% comment %} this css doesn't like compressing {% endcomment %}
+  {% if revision.source_name == 'issue' %}
 <link rel="stylesheet" type="text/css"
       href="{% static "jquery/css/msdropdown/dd.css" %}"/>
-{% endif %}
+  {% endif %}
 <script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
 {% block view_body %}
-{% include "oi/bits/jquery.html" %}
-{{ credits_formset.media }}
-{{ form.media }}
-{% include "oi/bits/multi_selector.html" %}
+  {% include "oi/bits/jquery.html" %}
+  {{ credits_formset.media }}
+  {{ form.media }}
+
 <h1>
-{{ changeset|header_link }}
+  {{ changeset|header_link }}
 </h1>
 
 <div class="edit">
-<form action="{% url "process_revision" model_name=revision.source_name id=revision.id %}" method="POST">
+  <form action="{% url "process_revision" model_name=revision.source_name id=revision.id %}" method="POST">
   {% csrf_token %}
-  <table class="editing">
+    <table class="editing">
   {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
     {% crispy form %}
   {% else %}
     {{ form.as_table }}
   {% endif %}
-  </table>
+    </table>
   {% with changeset.comments as comments %}
-  {% include 'oi/bits/comments.html' %}
+    {% include 'oi/bits/comments.html' %}
   {% endwith %}
 
-<input type="submit" name="save" value="Save And Continue Editing">
-<input type="submit" name="save_return" value="Save And Return To Changeset">
-<input type="submit" name="cancel_return"
-       value="Return To Changeset Without Saving">
-{% if revision.source_name == 'story' and revision.old_credits %}
-  <input type="submit" name="save_migrate" value="Save And Migrate Credits">
-{% endif %}
-</form>
+    <btn class="btn-blue-editing inline"><input type="submit" name="save" value="Save And Continue Editing"></btn>
+    <btn class="btn-blue-editing inline"><input type="submit" name="save_return" value="Save And Return To Changeset"></btn>
+    <btn class="btn-blue-editing inline"><input type="submit" name="cancel_return"
+         value="Return To Changeset Without Saving"></btn>
+  {% if revision.source_name == 'story' and revision.old_credits %}
+    <btn class="btn-blue-editing inline"><input type="submit" name="save_migrate" value="Save And Migrate Credits"></btn>
+  {% endif %}
+  </form>
 </div>
 {% endblock %}
 
 {% block footer %}
   {% if revision.source_name in 'issue story' %}
     {% include 'oi/bits/revision_form_utils.html' %}
+  {% endif %}
+  {% if revision.source_name in 'story' %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('input[name="genre"]');
+        const selectedDisplay = document.getElementById('selected-genres');
+
+        function updateSelectedGenres() {
+            const selected = Array.from(checkboxes)
+                .filter(checkbox => checkbox.checked)
+                .map(checkbox => checkbox.value);
+
+            if (selected.length) {
+                selectedDisplay.innerHTML = selected.join('; ');
+                selectedDisplay.style.display = 'block';
+            } else {
+                selectedDisplay.style.display = 'none';
+            }
+        }
+
+        // Initial display
+        updateSelectedGenres();
+
+        // Add event listeners to all checkboxes
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedGenres);
+        });
+    });
+    </script>
   {% endif %}
 {% endblock %}
 

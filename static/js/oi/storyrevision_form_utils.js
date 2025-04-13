@@ -7,9 +7,9 @@ $(function() {
             var legend = $('#id_synopsis_length');
             legend.text('Characters: ' + len + ' / ' + limitSynopsisLength);
             if (len > limitSynopsisLength) {
-                legend.addClass('errorlist');
+                legend.addClass('text-red-400 font-bold');
             } else {
-                legend.removeClass('errorlist');
+                legend.removeClass('text-red-400 font-bold');
             }
         }).trigger('input');
 });

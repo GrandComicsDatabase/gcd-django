@@ -81,18 +81,15 @@
     {% endcomment %}
       {% if changeset.issuerevisions.count %}
         {% include 'oi/edit/issue_changeset.html' %}
-        {% with changeset.comments as comments %}
-          {% include 'oi/bits/comments.html' %}
-        {% endwith %}
 <form method="POST" action="{% url "process" id=changeset.id %}">
   {% csrf_token %}
-  <table class="editing">
+  <table>
     <tr>
-      <th> <label for="comments"> Comments:</label> </th>
+      <th class="align-top pe-2 font-normal"> <label for="comments"> Comments:</label> </th>
       <td>
-        <textarea name="comments" id="comments"></textarea>
+        <textarea name="comments" id="comments" class="w-full lg:w-4/5'" rows="5"></textarea>
         <br>
-        Information about the changes submitted. Will not displayed, but is stored in the change history.
+        Information about the changes submitted. Will not be displayed, but is stored in the change history. Note that emojis are currently not supported.
       </td>
     </tr>
   </table>
@@ -103,6 +100,9 @@
   <btn class="btn-blue-editing inline-block"><input type="submit" name="discard" value="Discard All Changes"></btn>
   <btn class="btn-blue-editing inline-block"><input type="submit" name="add_comment" value="Add Comment"></btn>
 </form>
+        {% with changeset.comments as comments %}
+          {% include 'oi/bits/comments.html' %}
+        {% endwith %}
       {% endif %}
       {% if changeset.change_type == CTYPES.series_bond %}
         {% include 'oi/edit/series_bond_changeset.html' %}
