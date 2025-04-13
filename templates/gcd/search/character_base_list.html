@@ -1,10 +1,13 @@
 {% load display %}
 {% load credits %}
-<table class="sortable_listing">
-  <tr>
+<table class="border">
+  <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
+  <tr class="align-top flex flex-col sm:table-row">
     <th colspan="2">{{ item_name|capfirst }}</th>
     <th> Year of First Publication </th>
   </tr>
+  </thead>
+  <tbody class="sortable_listing">
   {% for character in items %}
     {% with character|object_filter as character %}
     <tr>
@@ -13,6 +16,7 @@
     </tr>
     {% endwith %}
   {% endfor %}
+  </tbody>
 </table>
 {% if not no_result_count %}
 Displaying {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }}

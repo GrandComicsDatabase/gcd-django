@@ -55,8 +55,9 @@ from apps.gcd.forms.search import AdvancedSearch, \
 from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, \
                                    IS_NONE, generic_sortable_list
 from apps.gcd.views.covers import get_image_tags_per_page
-from apps.select.views import filter_sequences, filter_issues, filter_haystack, \
-                              filter_publisher, filter_series, FilterForLanguage
+from apps.select.views import filter_sequences, filter_issues, \
+                              filter_haystack, filter_publisher, \
+                              filter_series, FilterForLanguage
 # Should not be importing anything from oi, but we're doing this
 # in several places.
 # TODO: states should probably live somewhere else.
@@ -76,7 +77,8 @@ def generic_by_name(request, name, q_obj, sort,
                     related=[],
                     sqs=None,
                     things=None,
-                    selected=None):
+                    selected=None,
+                    table_inline=False):
     """
     Helper function for the most common search cases.
     """
@@ -155,6 +157,11 @@ def generic_by_name(request, name, q_obj, sort,
               template_name='gcd/bits/tw_sortable_table.html',
               order_by=(order_by))
             template = 'gcd/search/tw_list_sortable.html'
+            if table_inline:
+                template = 'gcd/bits/tw_render_table.html'
+                table.no_export = True
+                table.orderable = False
+
             return generic_sortable_list(request, things, table, template,
                                          context)
 
@@ -186,10 +193,10 @@ def generic_by_name(request, name, q_obj, sort,
         heading = '%s Search Results' % display_name
     elif class_ in [Creator, Character, Group, Feature]:
         context = {'item_name': item_name,
-                    'plural_suffix': plural_suffix,
-                    'selected': base_name,
-                    'search_term': name,
-                    'heading': heading}
+                   'plural_suffix': plural_suffix,
+                   'selected': base_name,
+                   'search_term': name,
+                   'heading': heading}
         if things is None:
             things = class_.objects.exclude(deleted=True).filter(q_obj)
         if related:
@@ -202,7 +209,7 @@ def generic_by_name(request, name, q_obj, sort,
             if sort == ORDER_CHRONO:
                 order_by = 'year_created'
             filter = FilterForLanguage(request.GET, things,
-                                        language='language')
+                                       language='language')
             things = filter.qs
             context['filter_form'] = filter.form
 
@@ -219,7 +226,7 @@ def generic_by_name(request, name, q_obj, sort,
                 'character_names__storycharacter__story__issue',
                 distinct=True))
             filter = FilterForLanguage(request.GET, things,
-                                        language='language')
+                                       language='language')
             things = filter.qs
             context['filter_form'] = filter.form
             table = CharacterSearchTable(
@@ -234,7 +241,7 @@ def generic_by_name(request, name, q_obj, sort,
             things = things.annotate(issue_count=Count(
                 'group_names__storycharacter__story__issue', distinct=True))
             filter = FilterForLanguage(request.GET, things,
-                                        language='language')
+                                       language='language')
             things = filter.qs
             context['filter_form'] = filter.form
 
@@ -250,10 +257,10 @@ def generic_by_name(request, name, q_obj, sort,
             things = things.distinct()
             things = things.annotate(
                 first_credit=Min(Case(When(
-                creator_names__storycredit__story__issue__key_date='',
-                then=Value('9999-99-99'),
+                  creator_names__storycredit__story__issue__key_date='',
+                  then=Value('9999-99-99'),
                 ),
-                default=F(
+                  default=F(
                     'creator_names__storycredit__story__issue__key_date'))))
             things = things.annotate(issue_count=Count(
                 'creator_names__storycredit__story__issue',
@@ -263,8 +270,12 @@ def generic_by_name(request, name, q_obj, sort,
                 template_name='gcd/bits/tw_sortable_table.html',
                 order_by=(order_by))
         template = 'gcd/search/tw_list_sortable.html'
+        if table_inline:
+            template = 'gcd/bits/tw_render_table.html'
+            table.no_export = True
+            table.orderable = False
         return generic_sortable_list(request, things, table, template,
-                                        context)
+                                     context)
     elif class_ in [Universe,]:
         if sqs is None:
             sort_name = "name"
@@ -557,21 +568,22 @@ def publisher_search_hx(request):
                       {'object_name': 'Publishers',
                        'object_type': 'publisher'})
     publisher_name = request.POST['search']
-    return publisher_by_name(request, publisher_name)
+    return publisher_by_name(request, publisher_name, table_inline=True)
 
 
-def publisher_by_name(request, publisher_name='', sort=ORDER_ALPHA):
+def publisher_by_name(request, publisher_name='', sort=ORDER_ALPHA,
+                      table_inline=False):
     if settings.USE_ELASTICSEARCH and not publisher_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(publisher_name)) \
                               .models(Publisher)
         publisher_ids = sqs.values_list('pk', flat=True)
         things = Publisher.objects.filter(id__in=publisher_ids)
         return generic_by_name(request, publisher_name, None, sort, Publisher,
-                               things=things)
+                               things=things, table_inline=table_inline)
     else:
         q_obj = Q(name__icontains=publisher_name)
         return generic_by_name(request, publisher_name, q_obj, sort,
-                               Publisher)
+                               Publisher, table_inline=table_inline)
 
 
 def brand_group_by_name(request, brand_group_name='', sort=ORDER_ALPHA):
@@ -627,21 +639,23 @@ def printer_search_hx(request):
                       {'object_name': 'Printers',
                        'object_type': 'printer'})
     printer_name = request.POST['search']
-    return printer_by_name(request, printer_name)
+    return printer_by_name(request, printer_name, table_inline=True)
 
 
-def printer_by_name(request, printer_name='', sort=ORDER_ALPHA):
+def printer_by_name(request, printer_name='', sort=ORDER_ALPHA,
+                    table_inline=False):
     if settings.USE_ELASTICSEARCH and not printer_name == '':
         sqs = SearchQuerySet().filter(
           name=GcdNameQuery(printer_name)).models(Printer)
         printer_ids = sqs.values_list('pk', flat=True)
         things = Printer.objects.filter(id__in=printer_ids)
         return generic_by_name(request, printer_name, None, sort, Printer,
-                               things=things)
+                               things=things, table_inline=table_inline)
     else:
         q_obj = Q(name__icontains=printer_name)
         return generic_by_name(
-          request, printer_name, q_obj, sort, Printer)
+          request, printer_name, q_obj, sort, Printer,
+          table_inline=table_inline)
 
 
 def creator_search_hx(request):
@@ -650,12 +664,12 @@ def creator_search_hx(request):
                       {'object_name': 'Creators',
                        'object_type': 'creator'})
     creator_name = request.POST['search']
-    return creator_by_name(request, creator_name,
-                           template='gcd/search/creator_base_list.html')
+    return creator_by_name(request, creator_name, table_inline=True)
 
 
 def creator_by_name(request, creator_name='', sort=ORDER_ALPHA,
-                    template='gcd/search/creator_list.html'):
+                    template='gcd/search/creator_list.html',
+                    table_inline=False):
     if settings.USE_ELASTICSEARCH and not creator_name == '':
         # TODO use name instead ?
         sqs = SearchQuerySet().filter(
@@ -663,12 +677,13 @@ def creator_by_name(request, creator_name='', sort=ORDER_ALPHA,
         creator_ids = sqs.values_list('pk', flat=True)
         things = Creator.objects.filter(id__in=creator_ids)
         return generic_by_name(request, creator_name, None, sort, Creator,
-                               things=things, template=template)
+                               things=things, template=template,
+                               table_inline=table_inline)
     else:
         q_obj = Q(creator_names__name__icontains=creator_name) | Q(
             gcd_official_name__icontains=creator_name)
         return generic_by_name(request, creator_name, q_obj, sort,
-                               Creator, template)
+                               Creator, template, table_inline=table_inline)
 
 
 def creator_membership_by_name(request, creator_membership_name,
@@ -780,20 +795,22 @@ def character_search_hx(request):
                       {'object_name': 'Characters',
                        'object_type': 'character'})
     character_name = request.POST['search']
-    return character_by_name(request, character_name)
+    return character_by_name(request, character_name, table_inline=True)
 
 
-def character_by_name(request, character_name='', sort=ORDER_ALPHA):
+def character_by_name(request, character_name='', sort=ORDER_ALPHA,
+                      table_inline=False):
     if settings.USE_ELASTICSEARCH and not character_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(character_name)) \
                               .models(Character)
         character_ids = sqs.values_list('pk', flat=True)
         things = Character.objects.filter(id__in=character_ids)
         return generic_by_name(request, character_name, None, sort, Character,
-                               things=things)
+                               things=things, table_inline=table_inline)
     else:
         q_obj = Q(name__icontains=character_name)
-        return generic_by_name(request, character_name, q_obj, sort, Character)
+        return generic_by_name(request, character_name, q_obj, sort, Character,
+                               table_inline=table_inline)
 
 
 def group_search_hx(request):
@@ -802,20 +819,22 @@ def group_search_hx(request):
                       {'object_name': 'Groups',
                        'object_type': 'group'})
     group_name = request.POST['search']
-    return group_by_name(request, group_name)
+    return group_by_name(request, group_name, table_inline=True)
 
 
-def group_by_name(request, group_name='', sort=ORDER_ALPHA):
+def group_by_name(request, group_name='', sort=ORDER_ALPHA,
+                  table_inline=False):
     if settings.USE_ELASTICSEARCH and not group_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(group_name)) \
                               .models(Group)
         group_ids = sqs.values_list('pk', flat=True)
         things = Group.objects.filter(id__in=group_ids)
         return generic_by_name(request, group_name, None, sort, Group,
-                               things=things)
+                               things=things, table_inline=table_inline)
     else:
         q_obj = Q(name__icontains=group_name)
-        return generic_by_name(request, group_name, q_obj, sort, Group)
+        return generic_by_name(request, group_name, q_obj, sort, Group,
+                               table_inline=table_inline)
 
 
 def universe_search_hx(request):
@@ -851,20 +870,22 @@ def feature_search_hx(request):
                       {'object_name': 'Feature',
                        'object_type': 'feature'})
     feature_name = request.POST['search']
-    return feature_by_name(request, feature_name)
+    return feature_by_name(request, feature_name, table_inline=True)
 
 
-def feature_by_name(request, feature_name='', sort=ORDER_ALPHA):
+def feature_by_name(request, feature_name='', sort=ORDER_ALPHA,
+                    table_inline=False):
     if settings.USE_ELASTICSEARCH and not feature_name == '':
         sqs = SearchQuerySet().filter(name=GcdNameQuery(feature_name)) \
                               .models(Feature)
         feature_ids = sqs.values_list('pk', flat=True)
         things = Feature.objects.filter(id__in=feature_ids)
         return generic_by_name(request, feature_name, None, sort, Feature,
-                               things=things)
+                               things=things, table_inline=table_inline)
     else:
         q_obj = Q(name__icontains=feature_name)
-        return generic_by_name(request, feature_name, q_obj, sort, Feature)
+        return generic_by_name(request, feature_name, q_obj, sort, Feature,
+                               table_inline=table_inline)
 
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):
@@ -1015,23 +1036,24 @@ def series_search_hx(request):
                       {'object_name': 'Series',
                        'object_type': 'series'})
     series_name = request.POST['search']
-    return series_by_name(request, series_name)
+    return series_by_name(request, series_name, table_inline=True)
 
 
 def series_by_name(request, series_name='', sort=ORDER_ALPHA,
-                   template='gcd/search/series_list.html'):
+                   template='gcd/search/series_list.html', table_inline=False):
     if settings.USE_ELASTICSEARCH and not series_name == '':
         sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name)) \
                               .models(Series)
         series_ids = sqs.values_list('pk', flat=True)
         things = Series.objects.filter(id__in=series_ids)
         return generic_by_name(request, series_name, None, sort, Series,
-                               things=things, template=template)
+                               things=things, template=template,
+                               table_inline=table_inline)
     else:
         q_obj = Q(name__icontains=series_name) | \
                 Q(issue__title__icontains=series_name)
         return generic_by_name(request, series_name, q_obj, sort,
-                               Series, template)
+                               Series, template, table_inline=table_inline)
 
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):

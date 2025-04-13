@@ -1,10 +1,13 @@
 {% load display %}
 {% load credits %}
 
-<table class="sortable_listing">
-  <tr>
-  <th colspan="2"> Award </th>
-  </tr>
+<table>
+  <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
+    <tr>
+      <th colspan="2"> Award </th>
+    </tr>
+  </thead>
+  <tbody class="sortable_listing">
   {% for award in items %}
     {% with award|object_filter as award %}
     <tr>
@@ -12,4 +15,5 @@
     </tr>
     {% endwith %}
   {% endfor %}
+  </tbody>
 </table>

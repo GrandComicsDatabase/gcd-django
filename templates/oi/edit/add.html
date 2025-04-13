@@ -5,15 +5,6 @@
 GCD :: Add Data Objects
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default/listing.css" %}"/>
-{% endblock %}
-
 {% block css_raw %}
 <script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
@@ -24,22 +15,22 @@ GCD :: Add Data Objects
 <table class="add_page">
   <tr>
     <td>
-      <a href="{% url "add_award" %}"><button type="button">Add Award</button></a>
+      <btn class="btn-blue-editing"><a href="{% url 'add_award' %}">Add Award</a></btn>
     </td>
     <td>
-      {% include "gcd/bits/_htmx_search.html" with target='award' %}</td>
+      {% include "gcd/bits/_htmx_search.html" with target='award' %}
     </td>
   </tr>
   <tr>
     <td>
-      <a href="{% url "add_character" %}"><button type="button">Add Character</button></a>
+      <btn class="btn-blue-editing"><a href="{% url 'add_character' %}">Add Character</a></btn>
     </td>
     <td>
       {% include "gcd/bits/_htmx_search.html" with target='character' %}</td>
   </tr>
   <tr>
     <td>
-      <a href="{% url "add_creator" %}"><button type="button">Add Creator</button></a>
+      <btn class="btn-blue-editing"><a href="{% url 'add_creator' %}">Add Creator</a></btn>
     </td>
     <td>
       {% include "gcd/bits/_htmx_search.html" with target='creator' %}</td>
@@ -47,7 +38,7 @@ GCD :: Add Data Objects
   </tr>
   <tr>
     <td>
-      <a href="{% url "add_feature" %}"><button type="button">Add Feature</button></a>
+      <btn class="btn-blue-editing"><a href="{% url 'add_feature' %}">Add Feature</a></btn>
     </td>
     <td>
       {% include "gcd/bits/_htmx_search.html" with target='feature' %}</td>
@@ -55,7 +46,7 @@ GCD :: Add Data Objects
   </tr>
   <tr>
     <td>
-      <a href="{% url "add_group" %}"><button type="button">Add Group</button></a>
+      <btn class="btn-blue-editing"><a href="{% url 'add_group' %}">Add Group</a></btn>
     </td>
     <td>
       {% include "gcd/bits/_htmx_search.html" with target='group' %}</td>
@@ -63,7 +54,7 @@ GCD :: Add Data Objects
   </tr>
   <tr>
     <td>
-      <a href="{% url "add_printer" %}"><button type="button">Add Printer</button></a>
+      <btn class="btn-blue-editing"><a href="{% url 'add_printer' %}">Add Printer</a></btn>
     </td>
     <td>
       {% include "gcd/bits/_htmx_search.html" with target='printer' %}</td>
@@ -71,7 +62,7 @@ GCD :: Add Data Objects
   </tr>
   <tr>
     <td>
-      <a href="{% url "add_publisher" %}"><button type="button">Add Publisher</button></a>
+      <btn class="btn-blue-editing"><a href="{% url 'add_publisher' %}">Add Publisher</a></btn>
     </td>
     <td>
       {% include "gcd/bits/_htmx_search.html" with target='publisher' %}</td>
@@ -79,7 +70,7 @@ GCD :: Add Data Objects
   </tr>
   <tr>
     <td>
-      <a href="{% url "add_universe" %}"><button type="button">Add Universe</button></a>
+      <btn class="btn-blue-editing"><a href="{% url 'add_universe' %}">Add Universe</a></btn>
     </td>
     <td>
       {% include "gcd/bits/_htmx_search.html" with target='universe' %}</td>

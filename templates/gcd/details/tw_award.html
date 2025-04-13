@@ -38,19 +38,21 @@ GCD :: Award :: {{ award.name }}
 {% block content %}
   {% if page.object_list.count %}
   <table class="border">
-    <thead>
+    <thead class="sortable_heading">
       <tr class="bg-blue-100 [&>th]:px-1">
         <th> Name </th>
         <th> Recipient </th>
         <th> Year Awarded </th>
       </tr>
     </thead>
+    <tbody class="sortable_listing">
     {% for awarded in page.object_list %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 sm:table-row border border-gray-200 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left">
-      <td> <a href="{{ awarded.get_absolute_url }}">{{ awarded.display_name }}</a> </td>
-      <td> <a href="{{ awarded.recipient.get_absolute_url }}">{{ awarded.recipient }}</a> </td>
-      <td> {{ awarded.display_year }} </td>
-    </tr>
+      <tr class="[&>td]:ps-1 [&>td]:pe-2">
+        <td> <a href="{{ awarded.get_absolute_url }}">{{ awarded.display_name }}</a> </td>
+        <td> <a href="{{ awarded.recipient.get_absolute_url }}">{{ awarded.recipient }}</a> </td>
+        <td> {{ awarded.display_year }} </td>
+      </tr>
+    </tbody>
     {% endfor %}
   </table>
   {% endif %}
