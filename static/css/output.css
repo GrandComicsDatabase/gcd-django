@@ -1076,6 +1076,21 @@ a:hover {
   color: rgb(248 113 113 / var(--tw-text-opacity));
 }
 
+.added {
+  --tw-bg-opacity: 1;
+  background-color: rgb(74 222 128 / var(--tw-bg-opacity));
+}
+
+.changed {
+  --tw-bg-opacity: 1;
+  background-color: rgb(250 204 21 / var(--tw-bg-opacity));
+}
+
+.deleted {
+  --tw-bg-opacity: 1;
+  background-color: rgb(248 113 113 / var(--tw-bg-opacity));
+}
+
 .object-page-numbered-list {
   margin-inline-start: 0.5rem;
   list-style-position: outside;
@@ -2594,6 +2609,15 @@ select {
 .\[\&_th\]\:px-1 th {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
+}
+
+.\[\&_tr\]\:border tr {
+  border-width: 1px;
+}
+
+.\[\&_tr\]\:border-gray-400 tr {
+  --tw-border-opacity: 1;
+  border-color: rgb(156 163 175 / var(--tw-border-opacity));
 }
 
 .\[\&_ul\]\:columns-1 ul {

@@ -5,7 +5,7 @@
   {% if revision.deleted %}
 <tr class="deleted">
   {% else %}
-<tr class="{{ revision.changed|check_changed:field }}">
+<tr class="{% if revision.changed|check_changed:field %}changed{% endif %}">
   {% endif %}
 {% else %}
 <tr class="added">

@@ -22,9 +22,8 @@
     {% if changeset.editable %}
   <form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    <input type="submit" name="retract" value="Retract change and edit further" />
-    <label for="comments">Comments</label>
-    <input type="textarea" name="comments">
+    <btn class="btn-blue-editing inline"><input type="submit" name="retract" value="Retract And Edit Further" /></btn>
+    <input type="hidden" name="comments">
   </form>
     {% else %}
   This type of changeset may not be retracted for further edit.

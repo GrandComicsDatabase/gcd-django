@@ -40,7 +40,7 @@
     @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-blue-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer;
     a {
       @apply text-black block visited:text-black hover:no-underline text-center;
-    };
+    }
   }
   .btn-blue {
     @apply bg-blue-500 text-white;
@@ -88,6 +88,15 @@
   }
   .errorlist {
     @apply text-red-400 font-bold;
+  }
+  .added {
+    @apply bg-green-400;
+  }
+  .changed {
+    @apply bg-yellow-400;
+  }
+  .deleted {
+    @apply bg-red-400;
   }
 }
 

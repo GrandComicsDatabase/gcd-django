@@ -5,23 +5,14 @@
 Confirm discard of {{ changeset }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <h2>Are you sure you want to discard the change for {{ changeset }}?</h2>
 
 <div class="edit">
   <form action="{{ object_url }}" method="POST">
     {% csrf_token %}
-    <input type="submit" name="discard" value="Confirm"></input>
-    <input type="submit" name="cancel" value="Cancel"></input>
+    <btn class="btn-blue-editing inline"><input type="submit" name="discard" value="Confirm"></input></btn>
+    <btn class="btn-blue-editing inline"><input type="submit" name="cancel" value="Cancel"></input></btn>
   </form>
 </div>
 {% endblock %}

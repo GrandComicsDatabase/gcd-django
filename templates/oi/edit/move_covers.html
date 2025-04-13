@@ -8,15 +8,6 @@
 Move Covers :: {{ issue }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <h2>Move covers between
 {{ changeset.issuerevisions.all.0 }} and {{ changeset.issuerevisions.all.1 }}
@@ -40,7 +31,7 @@ Zoom:
 <div>
   <form action="{% url "move_cover" id=changeset.id cover_id=cover.id %}" method="POST">
     {% csrf_token %}
-    <input type="submit" value="Move cover">
+    <btn class="btn-blue-editing inline"><input type="submit" value="Move Cover"></btn>
   </form>
 </div>
     {% endif %}

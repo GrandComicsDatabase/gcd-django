@@ -279,8 +279,8 @@ Related Links
     {% endif %}
     {% if issue.variant_of and not issue.variant_of|is_locked and not issue|is_locked %}
     <btn class="btn btn-blue-editing font-normal">
-      <form method="POST"
-            action="{% url "reserve_two_issues" issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
+      <form method="POST" onclick="document.getElementById('edit_with_base').click()"
+            action="{% url 'reserve_two_issues' issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
       {% csrf_token %}
         <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit With Base Issue" />
       </form>
@@ -288,9 +288,9 @@ Related Links
     {% endif %}
     {% if not issue|is_locked %}
     <btn class="btn btn-blue-editing font-normal">
-      <form method="GET"
+      <form method="GET" class="block" onclick="document.getElementById('edit_with_another').click()"
             action="{% url "edit_two_issues" issue_id=issue.id %}">
-        <input type="submit" value="{% trans 'Edit With Another Issue' %}">
+        <input id="edit_with_another" type="submit" value="{% trans 'Edit With Another Issue' %}">
       </form>
     </btn>
     {% endif %}

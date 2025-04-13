@@ -2,60 +2,60 @@
   {% csrf_token %}
   <div>
   <label for="comments">Comment:</label> <br>
-  <textarea id="comments" name="comments"></textarea>
+  <textarea id="comments" class="w-full lg:w-4/5", rows='5' name="comments"></textarea>
   </div>
 {% if user == changeset.indexer %}
   {% if changeset.state == states.OPEN %}
-  <input type="submit" name="submit" value="Submit changes for approval">
+  <btn class="btn-blue-editing inline"><input type="submit" name="submit" value="Submit changes for approval"></btn>
   {% endif %}
   {% if changeset.state == states.REVIEWING or changeset.state == states.OPEN %}
     {% if changeset.approver %}
-  <input type="submit" name="discuss" value="Discuss">
+  <btn class="btn-blue-editing inline"><input type="submit" name="discuss" value="Discuss"></btn>
     {% endif %}
   {% endif %}
   {% if changeset.state not in states.CLOSED %}
-  <input type="submit" name="discard" value="Discard all changes">
+  <btn class="btn-blue-editing inline"><input type="submit" name="discard" value="Discard all changes"></btn>
   {% endif %}
 {% endif %}
 
 {% if changeset.state == states.PENDING %}
   {% if user != changeset.indexer %}
     {% if perms.indexer.can_approve %}
-  <input type="submit" name="assign"
+  <btn class="btn-blue-editing inline"><input type="submit" name="assign"
       {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and not is_cover %}
     value="Assign and mentor"
       {% else %}
     value="Assign"
       {% endif %}
-  >
+  ></btn>
     {% endif %}
   {% else %}
     {% if changeset.editable and not is_cover %}
-  <input type="submit" name="retract" value="Retract and edit further">
+  <btn class="btn-blue-editing inline"><input type="submit" name="retract" value="Retract and edit further"></btn>
     {% endif %}
   {% endif %}
 {% endif %}
 
 {% if changeset.state == states.REVIEWING or changeset.state == states.DISCUSSED %}
   {% if user == changeset.approver %}
-  <input type="submit" name="approve" value="Approve">
+  <btn class="btn-blue-editing inline"><input type="submit" name="approve" value="Approve"></btn>
     {% if changeset.state != states.DISCUSSED %}
-  <input type="submit" name="discuss" value="Discuss">
+  <btn class="btn-blue-editing inline"><input type="submit" name="discuss" value="Discuss"></btn>
     {% endif %}
     {% if changeset.editable %}
-  <input type="submit" name="disapprove" value="Send Back to Indexer">
+  <btn class="btn-blue-editing inline"><input type="submit" name="disapprove" value="Send Back to Indexer"></btn>
     {% endif %}
-  <input type="submit" name="cancel" value="Reject Permanently">
+  <btn class="btn-blue-editing inline"><input type="submit" name="cancel" value="Reject Permanently"></btn>
   {% else %}
     {% if changeset.state == states.REVIEWING and perms.indexer.can_approve and changeset.review_is_overdue %}
-  <input type="submit" name="assign"value="Assign"></input>
+  <btn class="btn-blue-editing inline"><input type="submit" name="assign"value="Assign"></input></btn>
     {% endif %}
   {% endif %}
 {% endif %}
 {% if changeset.approver and user == changeset.approver and changeset.state not in states.CLOSED  %}
-  <input type="submit" name="release" value="Unassign">
+  <btn class="btn-blue-editing inline"><input type="submit" name="release" value="Unassign"></btn>
 {% endif %}
 
-  <input type="submit" name="add_comment" value="Add Comment">
+<btn class="btn-blue-editing inline"><input type="submit" name="add_comment" value="Add Comment"></btn>
 </form>
 

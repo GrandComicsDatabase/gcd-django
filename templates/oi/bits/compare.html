@@ -6,7 +6,7 @@
 {% if revision.source_name == 'story' %}
 <h3>
 <a name="{{ revision.id }}"></a> <!-- for link from comments on story to work -->
-<table class="comparison {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
+<table class="border border-gray-400 mb-1 {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
 <tr class="story_edit">
     <td>{{ revision|show_story_short }}</td>
     <td>{{ revision|show_credit_status }}</td>
@@ -55,7 +55,7 @@
 {% endif %}
 
 <table class="comparison {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
-  <tr>
+  <tr class="bg-blue-100">
     <th> Field </th>
     {% if revision.deleted %}
       {% if prev_rev %}

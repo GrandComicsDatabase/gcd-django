@@ -9,23 +9,14 @@
 GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}">
-{% endblock %}
-
 {% block view_body %}
 <h1>
 {{ changeset|header_link }}
 </h1>
 <p>
-Highlighted fields represent <span class="added_highlight">added</span>,
-<span class="comparison_highlight">changed</span>, and
-<span class="deleted_highlight">deleted</span> data.
+Highlighted fields represent <span class="added border border-gray-400 p-1">added</span>,
+<span class="changed border border-gray-400 p-1">changed</span>, and
+<span class="deleted border border-gray-400 p-1">deleted</span> data.
 {% if changeset.state != states.APPROVED and not revision.deleted %}
 <a class="new_window" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview changes</a>
 {% endif %}

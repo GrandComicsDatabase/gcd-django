@@ -49,9 +49,9 @@
       </span>
     </btn>
     {% else %}
-    <form method="GET" action="{% url "delete_revision" model_name=object_class id=object.id %}">
-      <btn class="mt-1 btn btn-blue-editing">
-        <input type="submit" value="Delete">
+    <form method="GET" action="{% url 'delete_revision' model_name=object_class id=object.id %}">
+      <btn class="mt-1 btn btn-blue-editing" onclick="document.getElementById('delete_{{ object.id }}').click()">
+        <input type="submit" value="Delete" id="delete_{{ object.id }}">
       </btn>
     {% endif %}
     </form>

@@ -3,15 +3,6 @@
 {% load credits %}
 {% load display %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/gcd/{{ style|default:'default' }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/select/{{ style|default:'default' }}.css"/>
-{% endblock %}
-
 {% block view_body %}
 {{ heading }}
 Search for {{ target }} by entering the relevant information here:
@@ -35,7 +26,7 @@ Search for {{ target }} by entering the relevant information here:
       <option value="publisher"> Publisher </option>
 {% endif %}
     </select>
-    <input type="submit" value="Search">
+    <btn class="btn-blue-editing inline"><input type="submit" value="Search"></btn>
   </p>
 </form>
 
@@ -60,19 +51,19 @@ Search for {{ target }} by entering the relevant information here:
     </tr>
   </table>
 {% if story %}
-  <input type="submit" name="search_story" value="Search for stories"></input>
+<btn class="btn-blue-editing inline"><input type="submit" name="search_story" value="Search for stories"></input></btn>
 {% endif %}
 {% if story or cover %}
-  <input type="submit" name="search_cover" value="Search for covers"></input>
+<btn class="btn-blue-editing inline"><input type="submit" name="search_cover" value="Search for covers"></input></btn>
 {% endif %}
 {% if issue or story %}
-  <input type="submit" name="search_issue" value="Search for issues"></input>
+<btn class="btn-blue-editing inline"><input type="submit" name="search_issue" value="Search for issues"></input></btn>
 {% endif %}
 {% if series %}
-  <input type="submit" name="search_series" value="Search for series"></input>
+<btn class="btn-blue-editing inline"><input type="submit" name="search_series" value="Search for series"></input></btn>
 {% endif %}
 {% if publisher %}
-  <input type="submit" name="search_publisher" value="Search for publisher"></input>
+<btn class="btn-blue-editing inline"><input type="submit" name="search_publisher" value="Search for publisher"></input></btn>
 {% endif %}
 </form>
 
@@ -82,7 +73,7 @@ or select from the data cache:
 {% for radio in cache_form.object_choice %}
 <form action="{% url "select_object" select_key=select_key %}" method="POST">
 {% csrf_token %}
- <input type="submit" name="select_object" value="Select">
+<btn class="btn-blue-editing inline"><input type="submit" name="select_object" value="Select"></btn>
  <input type="hidden" name="object_choice" value="{{ radio.data.value }}">
 {{ radio.choice_label }}
 </form>
@@ -95,7 +86,7 @@ or select from the data cache:
 {% csrf_token %}
 <p>
 or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;)
-  <br><input type="submit" value="Select issue">
+<btn class="btn-blue-editing inline"><input type="submit" value="Select issue"></btn>
   <input title="Enter the id of the issue from its url: www.comics.org/issue/&lt;issue_id&gt;" type="text" name="entered_issue_id" size="7"></input>
 </p>
 </form>
@@ -105,7 +96,7 @@ or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;
 {% csrf_token %}
 <p>
 or enter the id of a story (from its url in the table contents: www.comics.org/issue/&lt;issue_id&gt;/#&lt;story_id&gt;)
-  <br><input type="submit" value="Select story">
+<btn class="btn-blue-editing inline"><input type="submit" value="Select story"></btn>
   <input title="Enter the id of the story from its url: www.comics.org/issue/&lt;issue_id&gt;/#&lt;story_id&gt;" type="text" name="entered_story_id" size="7"></input>
 </form>
   {% endif %}
@@ -114,7 +105,7 @@ or enter the id of a story (from its url in the table contents: www.comics.org/i
 <p>
   <form action="{% url "select_object" select_key=select_key %}" method="POST">
   {% csrf_token %}
-  <input type="submit" name="cancel" value="Cancel"></input>
+  <btn class="btn-blue-editing inline"><input type="submit" name="cancel" value="Cancel"></input></btn>
   </form>
 </p>
 {% endblock %}
