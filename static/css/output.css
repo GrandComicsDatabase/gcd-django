@@ -2257,6 +2257,10 @@ select {
     margin-top: 2rem;
   }
 
+  .max-sm\:flex {
+    display: flex;
+  }
+
   .max-sm\:hidden {
     display: none;
   }
