@@ -86,6 +86,9 @@
       @apply align-top flex flex-col sm:table-row;
     }
   }
+  .errorlist {
+    @apply text-red-400 font-bold;
+  }
 }
 
 html {
