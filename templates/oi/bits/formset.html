@@ -34,9 +34,11 @@
 
 <script type="text/javascript">
     $('.formset_row-{{ formset.prefix }}').formset({
-        addText: 'add another',
-        deleteText: 'remove above',
+        addText: 'Add Another',
+        deleteText: 'Remove Above',
         prefix: '{{ formset.prefix }}',
+        addCssClass: 'btn-blue-editing inline-block hover:no-underline',
+        deleteCssClass: 'btn-blue-editing inline hover:no-underline',
 	added: function (row) {
     row.find('input[type=checkbox]').change();htmx.process(document.body);},
     });
