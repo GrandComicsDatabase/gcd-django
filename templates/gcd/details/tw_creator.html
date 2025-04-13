@@ -74,11 +74,11 @@
 </table>
 {% if creator.bio %}
 <h3 class="mt-2">Biography:</h3>
-{{ creator.bio|linebreaksbr }}
+{{ creator.bio|markdown }}
 {% endif %}
 {% if creator.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ creator.notes|urlizetrunc:75|linebreaksbr }}
+{{ creator.notes|markdown }}
 {% endif %}
 
 <!-- Creator's Names -->
