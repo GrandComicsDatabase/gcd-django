@@ -543,8 +543,9 @@ class CreatorSignatureAutocomplete(LoginRequiredMixin,
     def get_result_label(self, creator_signature):
         if creator_signature.signature:
             return format_html(
-              '%s <img src="%s">' % (creator_signature.name,
-                                     creator_signature.signature.icon.url))
+              '%s <img class="inline" src="%s">' % (
+                creator_signature.name,
+                creator_signature.signature.icon.url))
         else:
             return format_html('%s [generic]' % creator_signature.name)
 
