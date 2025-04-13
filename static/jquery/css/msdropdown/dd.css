@@ -24,7 +24,7 @@ color:#999999;
 .borderRadiusBtm .shadow{-moz-box-shadow:-5px -5px 5px -5px #888888;-webkit-box-shadow:-5px -5px 5px -5px #888888;box-shadow: -5px -5px 5px -5px #888888}
 .borderRadiusTp .border, .borderRadius .border{-moz-border-radius:0 0 5px 5px ; border-radius:0 0 5px 5px;}
 .borderRadiusBtm .border{-moz-border-radius:5px 5px 0 0; border-radius:5px 5px 0 0;}
-img.fnone{float:none !important}
+img.fnone{display:inline; float:none !important}
 .ddcommon .divider{width:0; height:100%; position:absolute;}
 .ddcommon .ddArrow{display:inline-block; position:absolute; top:50%; right:4px;}
 .ddcommon .ddArrow:hover{background-position:0 100%;}
