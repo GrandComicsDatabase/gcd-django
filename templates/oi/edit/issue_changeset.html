@@ -279,7 +279,7 @@ Cover is moved from {{ cover.issue }}.
   {% if issue_revision.issue and not issue_revision.variant_of %}
 <table class="border border-gray-300 mt-2">
     {% if not changeset.storyrevisions.count %}
-  <tr class="border border-gray-300">
+  <tr class="max-sm:flex max-sm:flex-col border border-gray-300">
     <form class="" method="POST" enctype="multipart/form-data"
                   action="{% url "import_issue" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
         {% csrf_token %}
@@ -296,7 +296,7 @@ Cover is moved from {{ cover.issue }}.
   </tr>
 
   {% endif %}
-  <tr class="border border-gray-300">
+  <tr class="border border-gray-300 max-sm:flex max-sm:flex-col">
     <form class="changeset" method="POST" enctype="multipart/form-data"
          action="{% url "import_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
     {% csrf_token %}
