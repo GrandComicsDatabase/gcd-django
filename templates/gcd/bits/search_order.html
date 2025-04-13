@@ -1,15 +1,15 @@
 <select name="sort" class="bg-blue-100" size="1">
-    <option value="alpha" selected> Name
-    <option value="chrono"> Date
+    <option value="alpha" {% if not 'chrono' in request.path %}selected{% endif %}> Name</option>
+    <option value="chrono" {% if 'chrono' in request.path %}selected{% endif %}> Date</option>
 </select>
 <script>
-    function updateSortSelect() {
+    function updateSortSelect(event) {
         var searchType = document.querySelector('select[name="search_type"]').value;
         var sortSelect = document.querySelector('select[name="sort"]');
         if (searchType.endsWith('haystack')) {
             sortSelect.disabled = true;
             sortSelect.value = '';
-        } else {
+        } else if (event && event.type === 'change') {
             sortSelect.disabled = false;
             sortSelect.selectedIndex = 0;
         }
