@@ -49,7 +49,7 @@
   {% if user.is_authenticated and story and not MYCOMICS %}
     {% if is_cover %}
         <span>
-          <a class="text-base visited:text-link-gcd"
+          <a class="text-base"
              href="{% url 'cache_cover' cover_story_id=story.id %}">
              <span class="max-sm:hidden">(Remember Cover)</span>
              <span class="sm:hidden">(RC)</span>
@@ -57,7 +57,7 @@
         </span>
     {% else %}
         <span>
-          <a class="text-base visited:text-link-gcd"
+          <a class="text-base"
              href="{% url "cache_story" story_id=story.id %}">
              <span class="max-sm:hidden">(Remember Story)</span>
              <span class="sm:hidden">(RS)</span>
