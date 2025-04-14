@@ -37,7 +37,7 @@
     @apply font-bold py-1 px-4 rounded;
   }
   .btn-blue-editing {
-    @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-blue-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer;
+    @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer;
     a {
       @apply text-black block visited:text-black hover:no-underline text-center;
     }
@@ -52,13 +52,13 @@
     @apply bg-blue-700;
   }
   .btn-blue-editing:hover {
-    @apply bg-blue-400;
+    @apply bg-stone-400;
   }
   .btn-blue-disabled {
-    @apply font-normal bg-blue-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
+    @apply font-normal bg-stone-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
   }
   .label-gcd-blue {
-    @apply bg-gcd text-white rounded px-2 py-1 font-bold;
+    @apply bg-stone-600 text-white rounded px-2 py-1 font-bold;
   }
   .new_window {
       @apply bg-[url('/static/img/gcd/icons/adwaita/external-link-symbolic.svg')] bg-[size:12px] bg-no-repeat bg-right pr-4;

@@ -283,6 +283,8 @@ def __credit_visible(value):
 def __label(story, field):
     if field == 'job_number':
         return _('Job Number')
+    elif field == 'feature_logo':
+        return 'Feature Logo'
     elif field == 'first_line':
         return _('First Line of Dialogue or Text')
     elif field == 'doi':

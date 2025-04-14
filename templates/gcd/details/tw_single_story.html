@@ -49,15 +49,15 @@
   {% if user.is_authenticated and story and not MYCOMICS %}
     {% if is_cover %}
         <span>
-          <a class="text-base text-black visited:text-black" 
-             href="{% url "cache_cover" cover_story_id=story.id %}">
+          <a class="text-base visited:text-link-gcd"
+             href="{% url 'cache_cover' cover_story_id=story.id %}">
              <span class="max-sm:hidden">(Remember Cover)</span>
              <span class="sm:hidden">(RC)</span>
           </a>
         </span>
     {% else %}
         <span>
-          <a class="text-base text-black visited:text-black" 
+          <a class="text-base visited:text-link-gcd"
              href="{% url "cache_story" story_id=story.id %}">
              <span class="max-sm:hidden">(Remember Story)</span>
              <span class="sm:hidden">(RS)</span>
@@ -79,10 +79,10 @@
   <div class="ml-1">
     <ul class="md:columns-2">
       <li>{{ story|show_credit_tw_inline:"genre" }}</li>
-      <li>{{ story|show_credit_tw_inline:"feature_logo" }}</li>
       <li>{{ story|show_credit_tw_inline:"job_number" }}</li>
     </ul>
     <ul>
+      <li>{{ story|show_credit_tw_inline:"feature_logo" }}</li>
       <li>{{ story|show_credit_tw_inline:"first_line" }}</li>
       <li>{{ story|show_credit_tw_inline:"keywords" }}</li>
       {% if story.universe.exists %}
