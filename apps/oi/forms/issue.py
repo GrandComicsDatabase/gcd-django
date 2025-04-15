@@ -263,9 +263,10 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                         credit_type = \
                             self.data['issue_credit_revisions-%d-credit_type'
                                       % i]
-                        if credit_type == '6':
+                        if credit_type == '6' and self.data[
+                          'issue_credit_revisions-%d-creator' % i]:
                             seq_type_found = True
-                        elif credit_type:
+                        elif credit_type != '6':
                             raise forms.ValidationError(
                               ['Unsupported credit type.'])
 

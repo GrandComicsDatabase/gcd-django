@@ -37,8 +37,9 @@
         addText: 'Add Another',
         deleteText: 'Remove Above',
         prefix: '{{ formset.prefix }}',
-        addCssClass: 'btn-blue-editing inline-block hover:no-underline',
-        deleteCssClass: 'btn-blue-editing inline hover:no-underline',
+        addCssClass: 'btn-blue-editing inline-block',
+        deleteCssClass: 'btn-blue-editing inline',
+        // something like hover:underline, likely due to the :
 	added: function (row) {
     row.find('input[type=checkbox]').change();htmx.process(document.body);},
     });

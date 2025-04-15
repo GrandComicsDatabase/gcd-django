@@ -37,7 +37,7 @@
     @apply font-bold py-1 px-4 rounded;
   }
   .btn-blue-editing {
-    @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer;
+    @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline;
     a {
       @apply text-black block visited:text-black hover:no-underline text-center;
     }
@@ -88,6 +88,9 @@
   }
   .errorlist {
     @apply text-red-400 font-bold;
+  }
+  .alert {
+      @apply text-red-400 font-bold;
   }
   .added {
     @apply bg-green-400;
