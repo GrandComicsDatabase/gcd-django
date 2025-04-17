@@ -86,7 +86,7 @@
     <tr>
       <th class="align-top pe-2 font-normal"> <label for="comments"> Comments:</label> </th>
       <td>
-        <textarea name="comments" id="comments" class="w-full lg:w-4/5'" rows="5"></textarea>
+        <textarea name="comments" id="comments" class="w-full lg:w-4/5" rows="5"></textarea>
         <br>
         Information about the changes submitted. Will not be displayed, but is stored in the change history. Note that emojis are currently not supported.
       </td>
@@ -115,7 +115,7 @@ This change is being edited by {{ changeset.indexer.indexer }}.
 
 {% else %} <!--- change is not OPEN --->
 <p>
-  <a href="{% url "compare" id=changeset.id %}">Compare Changes</a>
+  <a href="{% url 'compare' id=changeset.id %}">Compare Changes</a>
 </p>
 {% endif %}
 </div>

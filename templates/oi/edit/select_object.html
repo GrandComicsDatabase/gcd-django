@@ -4,7 +4,7 @@
 {% load display %}
 
 {% block view_body %}
-{{ heading }}
+  {{ heading }}
 Search for {{ target }} by entering the relevant information here:
 
 <form method="get" action="{% url "select_object_search_haystack" select_key=select_key %}">
@@ -13,18 +13,18 @@ Search for {{ target }} by entering the relevant information here:
     {{ haystack_form.q }}
     <select name="search_object" size="1">
       <option value="all"> All </option>
-{% if story %}
+  {% if story %}
       <option value="story"> Story </option>
-{% endif %}
-{% if issue or story %}
+  {% endif %}
+  {% if issue or story %}
       <option value="issue"> Issue </option>
-{% endif %}
-{% if series %}
+  {% endif %}
+  {% if series %}
       <option value="series"> Series </option>
-{% endif %}
-{% if publisher %}
+  {% endif %}
+  {% if publisher %}
       <option value="publisher"> Publisher </option>
-{% endif %}
+  {% endif %}
     </select>
     <btn class="btn-blue-editing inline"><input type="submit" value="Search"></btn>
   </p>
@@ -33,79 +33,71 @@ Search for {{ target }} by entering the relevant information here:
 <form action="{% url "select_object_search" select_key=select_key %}" method="GET">
   <table class="select_search">
     <tr>
-{% for field in search_form.visible_fields %}
+  {% for field in search_form.visible_fields %}
       <th>{{ field.label_tag }}</th>
-{% endfor %}
-    </tr>
-{% if search_form.errors %}
-    <tr>
-  {% for field in search_form %}
-      <td>{{ field.errors }}</td>
   {% endfor %}
     </tr>
-{% endif %}
+  {% if search_form.errors %}
     <tr>
-{% for field in search_form %}
+    {% for field in search_form %}
+      <td>{{ field.errors }}</td>
+    {% endfor %}
+    </tr>
+  {% endif %}
+    <tr>
+  {% for field in search_form %}
       <td>{{ field }}</td>
-{% endfor %}
+  {% endfor %}
     </tr>
   </table>
-{% if story %}
-<btn class="btn-blue-editing inline"><input type="submit" name="search_story" value="Search for stories"></input></btn>
-{% endif %}
-{% if story or cover %}
-<btn class="btn-blue-editing inline"><input type="submit" name="search_cover" value="Search for covers"></input></btn>
-{% endif %}
-{% if issue or story %}
-<btn class="btn-blue-editing inline"><input type="submit" name="search_issue" value="Search for issues"></input></btn>
-{% endif %}
-{% if series %}
-<btn class="btn-blue-editing inline"><input type="submit" name="search_series" value="Search for series"></input></btn>
-{% endif %}
-{% if publisher %}
-<btn class="btn-blue-editing inline"><input type="submit" name="search_publisher" value="Search for publisher"></input></btn>
-{% endif %}
+  {% if story %}
+<button class="btn-blue-editing inline"><input type="submit" name="search_story" value="Search For Stories"></input></button>
+  {%endif %}
+  {% if story or cover %}
+<button class="btn-blue-editing inline"><input type="submit" name="search_cover" value="Search For Covers"></input></button>
+  {% endif %}
+  {% if issue or story %}
+<button class="btn-blue-editing inline"><input type="submit" name="search_issue" value="Search For Issues"></input></button>
+  {% endif %}
+  {% if series %}
+<button class="btn-blue-editing inline"><input type="submit" name="search_series" value="Search For Series"></input></button>
+  {% endif %}
+  {% if publisher %}
+<button class="btn-blue-editing inline"><input type="submit" name="search_publisher" value="Search For Publisher"></input></button>
+  {% endif %}
 </form>
 
-{% if cache_form.visible_fields %}
-<p>
+  {% if cache_form.visible_fields %}
 or select from the data cache:
-{% for radio in cache_form.object_choice %}
+    {% for radio in cache_form.object_choice %}
 <form action="{% url "select_object" select_key=select_key %}" method="POST">
-{% csrf_token %}
-<btn class="btn-blue-editing inline"><input type="submit" name="select_object" value="Select"></btn>
+      {% csrf_token %}
+<button><input class="btn-blue-editing inline" type="submit" name="select_object" value="Select"></button>
  <input type="hidden" name="object_choice" value="{{ radio.data.value }}">
-{{ radio.choice_label }}
+      {{ radio.choice_label }}
 </form>
-{% endfor %}
-</p>
-{% endif %}
-{% if story or issue %}
-  {% if issue %}
-<form action="{% url "select_object" select_key=select_key %}" method="POST">
-{% csrf_token %}
-<p>
-or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;)
-<btn class="btn-blue-editing inline"><input type="submit" value="Select issue"></btn>
-  <input title="Enter the id of the issue from its url: www.comics.org/issue/&lt;issue_id&gt;" type="text" name="entered_issue_id" size="7"></input>
-</p>
-</form>
+    {% endfor %}
   {% endif %}
-  {% if story %}
+  {% if story or issue %}
+    {% if issue %}
 <form action="{% url "select_object" select_key=select_key %}" method="POST">
-{% csrf_token %}
-<p>
+      {% csrf_token %}
+or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;)
+<button class="btn-blue-editing inline"><input type="submit" value="Select Issue"></button>
+  <input title="Enter the id of the issue from its url: www.comics.org/issue/&lt;issue_id&gt;" type="text" name="entered_issue_id" size="7"></input>
+</form>
+    {% endif %}
+    {% if story %}
+<form action="{% url "select_object" select_key=select_key %}" method="POST">
+      {% csrf_token %}
 or enter the id of a story (from its url in the table contents: www.comics.org/issue/&lt;issue_id&gt;/#&lt;story_id&gt;)
-<btn class="btn-blue-editing inline"><input type="submit" value="Select story"></btn>
+  <button class="btn-blue-editing inline"><input type="submit" value="Select Story"></button>
   <input title="Enter the id of the story from its url: www.comics.org/issue/&lt;issue_id&gt;/#&lt;story_id&gt;" type="text" name="entered_story_id" size="7"></input>
 </form>
+    {% endif %}
   {% endif %}
-</p>
-{% endif %}
-<p>
-  <form action="{% url "select_object" select_key=select_key %}" method="POST">
+<form action="{% url "select_object" select_key=select_key %}" method="POST">
   {% csrf_token %}
-  <btn class="btn-blue-editing inline"><input type="submit" name="cancel" value="Cancel"></input></btn>
-  </form>
-</p>
+  <button class="btn-blue-editing inline"><input type="submit" name="cancel" value="Cancel"></input></button>
+</form>
 {% endblock %}
