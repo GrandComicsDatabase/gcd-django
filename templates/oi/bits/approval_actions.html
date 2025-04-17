@@ -1,6 +1,8 @@
 <form action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
-  <btn class="btn-blue-editing"><input type="submit" name="release" value="Unassign" /></btn>
+  <button>
+    <input class="w-full min-w-24 btn-blue-editing" type="submit" name="release" value="Unassign">
+  </button>
   <input type="hidden" name="comments" class="comments" />
 </form>
 

@@ -21,6 +21,33 @@ var limitSynopsisLength = {{ settings.LIMIT_SYNOPSIS_LENGTH }};
 </script>
 <script type='text/javascript' src='{% static "bootstrap/js/bootstrap.min.js" %}'></script>
   {% endif %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('input[name="genre"]');
+    const selectedDisplay = document.getElementById('selected-genres');
+
+    function updateSelectedGenres() {
+        const selected = Array.from(checkboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+
+        if (selected.length) {
+            selectedDisplay.innerHTML = selected.join('; ');
+            selectedDisplay.style.display = 'block';
+        } else {
+            selectedDisplay.style.display = 'none';
+        }
+    }
+
+    // Initial display
+    updateSelectedGenres();
+
+    // Add event listeners to all checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedGenres);
+    });
+  });
+</script>
 {% endif %}
 
 {% if object_name == 'Creator' %}

@@ -43,9 +43,9 @@
         {% if cover.changeset.indexer != user %}
       <form action="{% url 'process' id=cover.changeset.id %}" method="POST">
           {% csrf_token %}
-        <btn class="btn-blue-editing cursor-pointer" onclick="document.getElementById('assign_{{ cover.changeset.id }}').click();">
-          <input type="submit" id="assign_{{ cover.changeset.id }}" name="assign" value="Assign"/>
-        </btn>
+        <button class="w-full">
+          <input class="w-full btn-blue-editing" type="submit" id="assign_{{ cover.changeset.id }}" name="assign" value="Assign"/>
+        </button>
         <input type="hidden" name="comments" value=""/>
       </form>
         {% else %}

@@ -42,12 +42,12 @@
     {% include 'oi/bits/comments.html' %}
   {% endwith %}
 
-    <btn class="btn-blue-editing inline"><input type="submit" name="save" value="Save And Continue Editing"></btn>
-    <btn class="btn-blue-editing inline"><input type="submit" name="save_return" value="Save And Return To Changeset"></btn>
-    <btn class="btn-blue-editing inline"><input type="submit" name="cancel_return"
-         value="Return To Changeset Without Saving"></btn>
+    <button><input class="btn-blue-editing" type="submit" name="save" value="Save And Continue Editing"></button>
+    <button><input class="btn-blue-editing" type="submit" name="save_return" value="Save And Return To Changeset"></button>
+    <button><input class="btn-blue-editing" type="submit" name="cancel_return"
+         value="Return To Changeset Without Saving"></button>
   {% if revision.source_name == 'story' and revision.old_credits %}
-    <btn class="btn-blue-editing inline"><input type="submit" name="save_migrate" value="Save And Migrate Credits"></btn>
+    <button><input class="btn-blue-editing" type="submit" name="save_migrate" value="Save And Migrate Credits"></button>
   {% endif %}
   </form>
 </div>
@@ -56,35 +56,6 @@
 {% block footer %}
   {% if revision.source_name in 'issue story' %}
     {% include 'oi/bits/revision_form_utils.html' %}
-  {% endif %}
-  {% if revision.source_name in 'story' %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const checkboxes = document.querySelectorAll('input[name="genre"]');
-        const selectedDisplay = document.getElementById('selected-genres');
-
-        function updateSelectedGenres() {
-            const selected = Array.from(checkboxes)
-                .filter(checkbox => checkbox.checked)
-                .map(checkbox => checkbox.value);
-
-            if (selected.length) {
-                selectedDisplay.innerHTML = selected.join('; ');
-                selectedDisplay.style.display = 'block';
-            } else {
-                selectedDisplay.style.display = 'none';
-            }
-        }
-
-        // Initial display
-        updateSelectedGenres();
-
-        // Add event listeners to all checkboxes
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelectedGenres);
-        });
-    });
-    </script>
   {% endif %}
 {% endblock %}
 

@@ -2,8 +2,9 @@
   {% if changeset.approver == user %}
 <form action="{% url "process" id=changeset.id %}" method="POST">
   {% csrf_token %}
-  <btn class="btn-blue-editing" onclick="document.getElementById('unassign_{{ changeset.id }}').click()">
-    <input id='unassign_{{ changeset.id }}' type="submit" name="release" value="Unassign" /></btn>
+  <btn>
+    <input class="w-full min-w-24 btn-blue-editing" id='unassign_{{ changeset.id }}' type="submit" name="release" value="Unassign" />
+  </btn>
   <input type="hidden" name="comments" class="comments" />
 </form>
   {% else %}
@@ -15,12 +16,12 @@
   {% endif %}
 {% else %}
   {% if perms.indexer.can_approve and changeset.indexer != user or changeset.indexer == user and changeset.editable and section.object_type != 'cover' %}
-<form action="{% url "process" id=changeset.id %}" method="POST">
+<form action="{% url 'process' id=changeset.id %}" method="POST">
   {% csrf_token %}
   <input type="hidden" name="comments" class="comments" />
     {% if changeset.indexer != user %}
-  <btn class="btn-blue-editing" onclick="document.getElementById('assign_{{ changeset.id }}').click()">
-    <input id='assign_{{ changeset.id }}' type="submit" name="assign"
+  <btn>
+    <input class="w-full min-w-24 btn-blue-editing" id='assign_{{ changeset.id }}' type="submit" name="assign"
     {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and section.object_type != "cover" %}
     value="Assign And Mentor"
     {% else %}
@@ -28,7 +29,7 @@
     {% endif %}
   ></input></btn>
     {% else %}
-    <btn class="btn-blue-editing"><input type="submit" name="retract" value="Retract And Edit Further"></btn>
+    <btn><input class="w-full btn-blue-editing" type="submit" name="retract" value="Retract And Edit Further"></btn>
     {% endif %}
 </form>
   {% else %}

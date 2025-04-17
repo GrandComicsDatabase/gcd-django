@@ -1,10 +1,14 @@
 <form action="{% url "process" id=changeset.id %}"
       method="POST">
   {% csrf_token %}
-  <btn class="btn-blue-editing" onclick="document.getElementById('discard_{{ changeset.id }}').click()"><input id="discard_{{ changeset.id }}" type="submit" name="discard" value="Discard"></input></btn>
+  <button>
+    <input class="w-full min-w-24 btn-blue-editing" type="submit" name="discard" value="Discard">
+  </button>
 {% if changeset.state == states.PENDING %}
   {% if changeset.editable and section.object_type != "cover" %}
-  <btn class="btn-blue-editing"><input type="submit" name="retract" value="Retract And Edit Further"></input></btn>
+  <button>
+    <input class="w-full btn-blue-editing" type="submit" name="retract" value="Retract And Edit Further">
+  </button>
   {% endif %}
 {% endif %}
   <input type="hidden" name="comments" class="comments" />

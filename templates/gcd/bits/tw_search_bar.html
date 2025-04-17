@@ -57,21 +57,27 @@
     </div><!-- Mobile Menu Button Medium -->
       <!-- Primary Navigation -->
     <div class="max-md:right-0 hidden flex-col lg:flex lg:flex-row md:flex-col justify-end text-white items-center">
-      <button class="btn hover:bg-blue-700">
-        <a class="text-white visited:text-white hover:no-underline" href="{% url "advanced_search" %}">Advanced Query</a>
-      </button>
+      <a class="text-white visited:text-white hover:no-underline" href="{% url 'advanced_search' %}">
+        <button class="btn hover:bg-blue-700">
+          Advanced Query
+        </button>
+      </a>
       {% if user.is_authenticated %}
         {% if MYCOMICS %}
       <a href="{% url 'collections_list' %}">Collections</a>
         {% else %}
-      <button class="btn hover:bg-blue-700">
-        <a class=" text-white visited:text-white hover:no-underline" href="{% url "editing" %}">Editing</a>
-      </button>
+      <a class="text-white visited:text-white hover:no-underline" href="{% url "editing" %}">
+        <button class="btn hover:bg-blue-700">
+          Editing
+        </button>
+      </a>
     {% endif %}
       {% else %}
-      <button class="btn hover:bg-blue-700">
-        <a class="text-white visited:text-white hover:no-underline" href="{% url "donate" %}">Donate</a>
-      </button>
+      <a class="text-white visited:text-white hover:no-underline" href="{% url "donate" %}">
+        <button class="btn hover:bg-blue-700">
+          Donate
+        </button>
+      </a>
       {% endif %}
       <!-- Dropdown Menu -->
       <div class="inline z-50">
