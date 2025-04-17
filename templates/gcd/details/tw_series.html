@@ -46,14 +46,11 @@
           <ul>
             <li><span class="font-bold">Publisher:</span> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a></li>
           </ul>
-          <ul class="md:columns-3">
-  {% if series.has_gallery %}
-            <li><a href="{{ series.get_absolute_url }}covers"><img class="inline" src="{% static 'img/gcd/icons/'|add:ICON_SET_SYMBOLIC|add:'/camera-photo-symbolic.svg' %}"> Cover Gallery</a>&nbsp;</li>
-  {% endif %}
-            <li><a href="{% url 'series_details' series_id=series.id %}"><img class="inline" src="{% static 'img/gcd/icons/'|add:ICON_SET_SYMBOLIC|add:'/columns-symbolic.svg' %}"> Details by Issue</a>&nbsp;</li>
-            <li><a href="{% url 'series_timeline' series_id=series.id %}"><img class="inline" src="{% static 'img/gcd/icons/'|add:ICON_SET_SYMBOLIC|add:'/month-symbolic.svg' %}"> Series Monthly Timeline</a></li>
+          <ul class="object-page-link-list">
+            <li><a href="{% url 'series_details' series_id=series.id %}">Details by Issue</a></li>
+            <li><a href="{% url 'series_timeline' series_id=series.id %}">Series Monthly Timeline</a></li>
           </ul>
-          <ul class="object-page-link-list md:columns-2">
+          <ul class="object-page-link-list">
             <li><a href='{% url "series_overview" series_id=series.id %}'>Cover and Main Story Overview</a></li>
             <li><a href='{% url "series_creators" series_id=series.id %}'>Creator List</a></li>
             <li><a href='{% url "series_creator_names" series_id=series.id %}'>Creator Name List</a></li>

@@ -1373,6 +1373,10 @@ a:hover {
   width: 2.5rem;
 }
 
+.w-16 {
+  width: 4rem;
+}
+
 .w-24 {
   width: 6rem;
 }
@@ -2416,11 +2420,6 @@ select {
          columns: 2;
   }
 
-  .md\:columns-3 {
-    -moz-columns: 3;
-         columns: 3;
-  }
-
   .md\:grid-cols-5 {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -2549,6 +2548,10 @@ select {
 .\[\&\>td\]\:px-1\.5>td {
   padding-left: 0.375rem;
   padding-right: 0.375rem;
+}
+
+.\[\&\>td\]\:pe-1>td {
+  padding-inline-end: 0.25rem;
 }
 
 .\[\&\>td\]\:pe-2>td {

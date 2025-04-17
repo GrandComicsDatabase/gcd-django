@@ -12,11 +12,15 @@
 
 {% block title %} GCD :: Series :: {{ series.name }} :: Timeline {% endblock %}
 
-{% block view_body %}
+{% block nav_bar %}
+  {{ block.super }}
 <h1 class="bg-blue-100 px-1 lg:px-2">
   <a href="{{ series.get_absolute_url }}">{{ series.object_page_name }}</a>
 </h1>
-<div class="ps-1 md:px-2">
+{% endblock %}
+
+{% block view_body %}
+<div>
 
   <ul>
     <li><span class="font-bold">Publisher:</span> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher }}</a></li>
