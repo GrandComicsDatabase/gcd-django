@@ -8,51 +8,43 @@
 {{ series }} Issue Order
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <h1> <a href="{{ series.get_absolute_url }}">{{ series }}</a> Issue Order </h1>
 
-<p class="instructions">
-<span class="important">Note:</span> Pressing the commit button at the
+<p>
+Pressing the commit button at the
 bottom of the page is the only way to make the changes go live.  Pressing
 any preview button reloads this page with the issues in the proposed new order.
 Pressing return or enter in one of the text boxes also just previews the changes.
 </p>
-<p class="instructions">
+<p>
 You can use the key date or issue number reordering preview, and then do further
 changes in the "custom reordering" section before committing the entire change
 or even previewing a second time.
 </p>
-<hr>
+<hr class="border-black">
 <form method="POST" action="{% url "reorder_series_key_date" series_id=series.id %}">
   {% csrf_token %}
-  <input type="submit" name="submit" value="Preview reorder by key_date">
+  <button><input class="btn-blue-editing" type="submit" name="submit" value="Preview Reorder By Key Date"></button>
 <p>
 Reordering by key date when there are duplicate key dates will produce
 unpredictable results, and may not even sort the same way if you try it multiple
 times.
 </form>
-<hr>
+<hr class="border-black">
 <form method="POST"
       action="{% url "reorder_series_issue_number" series_id=series.id %}">
   {% csrf_token %}
-  <input type="submit" name="submit" value="Preview reorder by issue number">
+  <button><input class="btn-blue-editing" type="submit" name="submit" value="Preview Reorder By Issue Number"></button>
 </form>
 <p>
 Reordering by issue number works only for issues where all numbers are whole
 numbers with no punctuation.  So an issue "-1" is OK (but will sort between
--2 and 0, which is usually not how such issues should sort) but "1,000,000"
-will not work.
-<hr>
+-2 and 0, which is usually not how such issues should sort) but "1,000
+<hr class="border-black">
 
 <h3> Custom Reordering </h3>
-<ul>
+<ul class="list-disc list-outside ps-4">
   <li> You may use negative numbers
   <li> You may use decimal numbers using a decimal point (i.e. 2.5, -10.125, etc.)
   <li> You may *NOT* use commas (our apologies to folks who would prefer to write
@@ -65,15 +57,15 @@ will not work.
 <form method="POST" action="{% url "reorder_series" series_id=series.id %}">
 {% csrf_token %}
 <table>
-  <tr>
+  <tr class="bg-blue-100">
     <th> Sort Code </th>
     <th> Issue </th>
     <th> Publication Date </th>
     <th> Key Date </th>
   </tr>
 {% for issue, new_sort_code in issue_list %}
-  <tr>
-    <td> <input type="text"
+  <tr class="[&>td]:pe-1">
+    <td> <input type="text" class="w-24"
                 id="sort_code_{{ issue.id }}"
                 name="sort_code_{{ issue.id }}"
   {% if new_sort_code %}
@@ -92,7 +84,7 @@ will not work.
   </tr>
 {% endfor %}
 </table>
-<input type="submit" name="preview" value="Preview custom reordering">
-<input type="submit" name="commit" value="Commit to database!">
+<button><input class="btn-blue-editing" type="submit" name="preview" value="Preview Custom Reordering"></button>
+<button><input class="btn-blue-editing" type="submit" name="commit" value="Commit To Database"></button>
 </form>
 {% endblock %}
