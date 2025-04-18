@@ -55,7 +55,7 @@
 {% endif %}
 
 <table class="comparison {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
-  <tr class="bg-blue-100">
+  <tr class="bg-blue-100  flex flex-col sm:table-row">
     <th> Field </th>
     {% if revision.deleted %}
       {% if prev_rev %}
@@ -137,9 +137,9 @@
 
     {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
       {% if revision.has_reprint_revisions %}
-  <tr class="True">
+  <tr class="True flex flex-col sm:table-row">
       {% else %}
-  <tr class="False">
+  <tr class="False flex flex-col sm:table-row">
       {% endif %}
     <td class="field_name"> Reprint Links </td>
       {% if prev_rev %}

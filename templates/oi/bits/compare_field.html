@@ -5,7 +5,7 @@
   {% if revision.deleted %}
 <tr class="deleted">
   {% else %}
-<tr class="{% if revision.changed|check_changed:field %}changed{% endif %}">
+<tr class="flex flex-col max-sm:border sm:table-row {% if revision.changed|check_changed:field %}changed{% endif %}">
   {% endif %}
 {% else %}
 <tr class="added">
