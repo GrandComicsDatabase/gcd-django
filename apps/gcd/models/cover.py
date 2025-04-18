@@ -159,7 +159,7 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
                                     kwargs={'issue_id': value.id})
         return mark_safe('<btn class="btn-blue-editing">'
                          '<a href="%s">%s</a></btn>' % (link,
-                                                        'add/replace cover'))
+                                                        'Add / Replace Cover'))
 
     def render_issue(self, value):
         return mark_safe('<a href="%s">%s (%s series)</a>' % (

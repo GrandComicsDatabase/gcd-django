@@ -4,23 +4,23 @@
   {% with object|is_locked as lock %}
     {% if lock %}
       {% with lock.changeset as changeset %}
-    <div class="mt-1 max-sm:m-1 w-60 rounded px-1 {% if changeset.state == states.OPEN %}bg-index-status-edit{% else %}bg-index-status-in-queue{% endif %}">
+    <div class="mt-1 mx-1 max-sm:m-1 w-54 rounded px-1 {% if changeset.state == states.OPEN %}bg-index-status-edit{% else %}bg-index-status-in-queue{% endif %}">
       <span>
         {% if changeset.state == states.OPEN %}
         This {{ object_name }} is currently being edited by
         {{ changeset.indexer.indexer|default:"[no one, please contact the editors to fix this reservation]" }}
         (since {{ changeset.created|date:"Y-m-d" }},
           {% if changeset.indexer == request.user %}
-        <a href="{% url "edit" id=changeset.id %}"> edit this change</a>)
+        <a href="{% url 'edit' id=changeset.id %}"> edit this change</a>)
           {% else %}
         last edit {{ changeset.modified|date:"Y-m-d" }})
           {% endif %}
         {% endif %}
         {% if changeset.state == states.PENDING %}
         Edits to this {{ object_name }}
-        are currently awaiting review by a GCD Editor
-          {% if request.user.is_authenticated %}
-        (<a href="{% url "compare" id=changeset.id %}">view the edits</a>)
+        are currently awaiting review by a GCD Editor{% if not request.user.is_authenticated %}.
+          {% else %}
+        (<a href="{% url 'compare' id=changeset.id %}">view the edits</a>).
           {% endif %}
         {% endif %}
         {% if changeset.state == states.REVIEWING or changeset.state == states.DISCUSSED %}

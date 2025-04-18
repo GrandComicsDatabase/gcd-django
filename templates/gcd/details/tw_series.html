@@ -190,7 +190,34 @@
       Edit Series Bonds</a></btn>
     {% endif %}
     <btn class="btn btn-blue-editing"><a href="{% url 'add_series_bond' series_id=series.id %}">
-      Add Series Bond</a></btn>  
+      Add Series Bond</a></btn>
+    {% if series.is_current and not series.ongoing_reservation %}
+    <form method="POST" action="{% url "reserve_ongoing" %}">
+          {% csrf_token %}
+      <input id="series" name="series" type="hidden" value="{{ series.id }}">
+      </input>
+      <btn class="btn btn-blue-editing" onclick="document.getElementById('reserve').click()">
+        <input id="reserve" name="reserve" type="submit" value="Reserve Upcoming Issues">
+      </input></btn>
+    </form>
+    {% endif %}
+    {% if series.ongoing_reservation %}
+      {% if series.is_current %}
+      <div class="bg-green-300 px-1 mx-1 mt-1 rounded"><span>
+      The ongoing issue reservation for this series is held by
+      {{ series.ongoing_reservation.indexer.indexer }}.
+      </span></div>
+      {% endif %}
+      {% if request.user == series.ongoing_reservation.indexer and not series.pending_deletion %}
+      <form method="POST" action="{% url 'delete_ongoing' series_id=series.id %}">
+        {% csrf_token %}
+        <btn class="btn btn-blue-editing" onclick="document.getElementById('delete_ongoing').click()">
+          <input id="delete_ongoing" name="delete_ongoing" type="submit"
+                value="Free ongoing reservation"></input>
+        </btn>
+      </form>
+      {% endif %}
+    {% endif %}
   {% endif %} <!-- logged in -->
 {% endblock editing %}
 

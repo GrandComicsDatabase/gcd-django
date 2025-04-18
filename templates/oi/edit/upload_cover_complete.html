@@ -7,65 +7,61 @@
 GCD :: Cover for {{ issue.series.name }} {{ issue.display_number }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/cover.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 
 <h1 class="item_id search_id">
-<div class="left">
-Cover {{ already }} uploaded for
-</div>
+  <div class="left">
+  Cover {{ already }} uploaded for
+  </div>
 </h1>
+
 <div class="item_id">
-<div class="left">
+  <div class="left">
 {{ issue|absolute_url }}
-</div>
+  </div>
 </div>
 
 <div class="success">
 This cover upload has been successfully submitted and is awaiting approval by an editor.
 </div>
 
-<div>
-  <div id="cover_uploaded">
-    <a href="{% url "compare" id=revision.changeset.id %}">{{ tag|safe }}</a><br/>
-    <a href="{% url "compare" id=revision.changeset.id %}">Zoom / Compare</a><br>
-    <a href="{{ issue.series.get_absolute_url}}scans">Cover Scan Status</a><br/>
-    <a href="{{ issue.series.get_absolute_url }}covers">Cover Gallery</a><br>
-    <br>
-    <a href="{{ issue.series.get_absolute_url }}">Back to the series</a><br>
-    <a href="{{ issue.get_absolute_url }}">Back to the issue</a>
+<div class="flex">
+  <div class="w-1/2 text-center">
+    <div class="shadow-md">
+      <div class="w-[154px] md:w-[204px] mx-auto">
+        <a href="{% url 'compare' id=revision.changeset.id %}">{{ tag|safe }}</a>
+      </div>
+      <a href="{% url 'compare' id=revision.changeset.id %}">Zoom / Compare</a><br>
+      <a href="{{ issue.series.get_absolute_url}}scans">Cover Scan Status</a><br/>
+      <a href="{{ issue.series.get_absolute_url }}covers">Cover Gallery</a><br>
+      <br>
+      <a href="{{ issue.series.get_absolute_url }}">Back to the Series</a><br>
+      <a href="{{ issue.get_absolute_url }}">Back to the Issue</a>
+    </div>
   </div>
-  <div id="cover_needed">
-{% if blank_issues %}
-    <ul>
-    Issues missing covers
-  {% for issue in blank_issues %}
-      <li><a href="{% url "upload_cover" issue_id=issue.id %}">{{ issue.short_name }}</a>
+  <div class="ps-2">
+  {% if blank_issues %}
+Issues missing covers
+    <ul class="object-page-link-list columns-1 ps-8">
+    {% for issue in blank_issues %}
+      <li><a href="{% url 'upload_cover' issue_id=issue.id %}">{{ issue.short_name }}</a>
       </li>
-  {% endfor %}
+    {% endfor %}
     </ul>
-{% endif %}
-{% if marked_covers %}
-    <ul>
+  {% endif %}
+  {% if marked_covers %}
+    <ul class="object-page-link-list columns-1 ps-8">
     Covers marked for replacement
-  {% for cover in marked_covers %}
+    {% for cover in marked_covers %}
       <li><a href="{{ cover.get_status_url }}">{{ cover.issue.short_name }}</a>
       </li>
-  {% endfor %}
+    {% endfor %}
     </ul>
-{% endif %}
-    <ul>
-    Add a variant cover
-    <li><a href="{% url "upload_variant" issue_id=issue.id %}">{{ issue.short_name }}</a>
-    </li>
+  {% endif %}
+  Add a variant cover
+    <ul class="object-page-link-list columns-1 ps-8">
+      <li><a href="{% url 'upload_variant' issue_id=issue.id %}">{{ issue.short_name }}</a>
+      </li>
     </ul>
   </div>
 </div>

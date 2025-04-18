@@ -1,4 +1,4 @@
-{% extends "gcd/base.html" %}
+{% extends "gcd/tw_base.html" %}
 
 {% load static %}
 
@@ -7,9 +7,8 @@ Select front cover for {{ issue }}
 {% endblock %}
 
 {% block css %}
-  <link rel='stylesheet' href='{% static "css/gcd/default.css" %}' type='text/css'>
-  <link rel='stylesheet' href='{% static "css/oi/default/cover.css" %}' type='text/css'>
-  <link rel='stylesheet' href='{% static "jquery/css/jquery.Jcrop.css" %}' type='text/css'>
+  {{ block.super }}
+<link rel='stylesheet' href='{% static "jquery/css/jquery.Jcrop.css" %}' type='text/css'>
 {% endblock %}
 
 {% block body %}
@@ -19,19 +18,18 @@ Select front cover for {{ issue }}
   <p>Please select the front part of the cover for {{ issue }}. Note that if you leave this page without
      clicking "Submit", your upload will be lost.</p>
   <img src='{{ MEDIA_URL }}img/gcd/new_covers/tmp/{{ scan_name }}' id='cropbox' width='{{ width }}'>
-  <div id='preview_box'>
+  <div class="flex">
+    <div id='preview_box' style="overflow: hidden; margin: 0.5em; width: 200px;">
   </div>
   <form method='post' action='{% url "gatefold_cover" %}'>
   {% csrf_token %}
-  <ul id='coords'>
-    {{ form.as_ul }}
-    <li><input type='submit' name='submit' value='Submit'></li>
-    <li><input type='submit' name='discard' value='Discard'></li>
-  </ul>
+    <ul id='coords' class="flex gap-4 mt-2 flex-row">
+      {{ form.as_ul }}
+      <li><button><input class="btn-blue-editing" type='submit' name='submit' value='Submit'></button></li>
+      <li><button><input class="btn-blue-editing" type='submit' name='discard' value='Discard'></button></li>
+    </ul>
   </form>
 {% endblock %}
-
-{% block fine_print %}{% endblock %}
 
 {% block footer %}
   {% include 'oi/bits/select_cover_section.html' %}

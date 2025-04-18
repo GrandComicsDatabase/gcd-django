@@ -1221,6 +1221,11 @@ a:hover {
   margin-right: 0px;
 }
 
+.mx-1 {
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
+}
+
 .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -1397,10 +1402,6 @@ a:hover {
   width: 14rem;
 }
 
-.w-60 {
-  width: 15rem;
-}
-
 .w-64 {
   width: 16rem;
 }
@@ -1458,6 +1459,10 @@ a:hover {
   min-width: 6rem;
 }
 
+.min-w-28 {
+  min-width: 7rem;
+}
+
 .min-w-\[100px\] {
   min-width: 100px;
 }
@@ -1465,14 +1470,6 @@ a:hover {
 .min-w-fit {
   min-width: -moz-fit-content;
   min-width: fit-content;
-}
-
-.min-w-36 {
-  min-width: 9rem;
-}
-
-.min-w-28 {
-  min-width: 7rem;
 }
 
 .max-w-48 {
@@ -2321,6 +2318,10 @@ select {
     height: 2rem;
   }
 
+  .sm\:w-1\/2 {
+    width: 50%;
+  }
+
   .sm\:w-24 {
     width: 6rem;
   }
@@ -2640,6 +2641,14 @@ select {
 .\[\&_th\]\:px-1 th {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
+}
+
+.\[\&_th\]\:text-right th {
+  text-align: right;
+}
+
+.\[\&_th\]\:font-normal th {
+  font-weight: 400;
 }
 
 .\[\&_tr\]\:border tr {

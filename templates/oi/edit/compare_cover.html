@@ -9,17 +9,6 @@
 Reviewing :: {{ revision }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/cover.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <h1>
 {{ changeset|header_link }}
@@ -102,18 +91,18 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
     <p><span class="comparison_highlight">cover is marked for replacement</span></p>
   {% if changeset.state == states.REVIEWING %}
     {% if user == changeset.approver %}
-    <form action="{% url "unmark_cover_revision" revision_id=revision.id %}" method="POST">
+    <form action="{% url 'unmark_cover_revision' revision_id=revision.id %}" method="POST">
       {% csrf_token %}
-      <input type="submit" value="Remove mark for replacement">
+      <button><input class="btn-blue-editing" type="submit" value="Remove Mark For Replacement"></button>
     </form>
     {% endif %}
   {% endif %}
 {% else %}
   {% if changeset.state == states.REVIEWING %}
     {% if user == changeset.approver %}
-    <form action="{% url "mark_cover_revision" revision_id=revision.id %}" method="POST">
+    <form action="{% url 'mark_cover_revision' revision_id=revision.id %}" method="POST">
       {% csrf_token %}
-      <input type="submit" value="Mark for replacement">
+      <button><input class="btn-blue-editing" type="submit" value="Mark For Replacement"></button>
     </form>
     {% endif %}
   {% endif %}
@@ -128,9 +117,9 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   </p>
   {% if changeset.state == states.REVIEWING %}
     {% if user == changeset.approver %}
-      <form action="{% url "flip_artwork_flag" revision_id=revision.id %}" method="POST">
+      <form action="{% url 'flip_artwork_flag' revision_id=revision.id %}" method="POST">
         {% csrf_token %}
-        <input type="submit" name="flip_artwork_flag" value="Flip the variant artwork flag" />
+        <button><input class="btn-blue-editing" type="submit" name="flip_artwork_flag" value="Flip the variant artwork flag" /></button>
       </form>
     {% endif %}
   {% endif %}

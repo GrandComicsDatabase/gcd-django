@@ -10,15 +10,6 @@
 GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/cover.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <h1 class="item_id search_id">
   <div class="left">
@@ -30,40 +21,43 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 {{ issue|absolute_url }}
   </div>
 </div>
+
 {% if info %}
 <h2>{{ info }}<br/></h2>
 {% endif %}
+
 {% if not perms.indexer.can_vote %}
 <div class="cover_guidelines">
 {% include "oi/bits/cover_guidelines.html" %}
 </div>
 {% endif %}
-<div>
-  <fieldset class="universal">
+
+<div class="flex">
+  <fieldset class="border border-gray-300 sm:w-1/2">
     <ol>
 {% if upload_type == 'replacement' %}
-      <form action="{% url "replace_cover" cover_id=cover.id %}" method="post" enctype="multipart/form-data">
+      <form action="{% url 'replace_cover' cover_id=cover.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
 {% else %}
   {% if upload_type == 'variant' %}
-      <form action="{% url "upload_variant" issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+      <form action="{% url 'upload_variant' issue_id=issue.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
   {% else %}
-      <form action="{% url "upload_cover" issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+      <form action="{% url 'upload_cover' issue_id=issue.id %}" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {% endif %}
   {% endif %}
         <table class="editing">
-          <input type="submit" value="Upload">
+          <button><input class="btn-blue-editing" type="submit" value="Upload"></button>
     {{ form.as_table }}
         </table>
-        <input type="submit" value="Upload">
+        <button><input class="btn-blue-editing" type="submit" value="Upload"></button>
       </form>
     </ol>
   </fieldset>
 
   {% if replace_cover %}
-  <div id="display_cover">
+  <div class="px-1">
     {{ replace_cover }}
     <div class="issue_cover_links">
       <a href="{{ issue.get_absolute_url }}cover/4">Zoom</a>
@@ -79,81 +73,73 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
     </div>
   </div>
   {% else %}
-  <div id="display_cover">
+  <div class="px-1">
     {% if current_covers or active_covers %}
-      Please upload covers currently <span class="comparison_highlight">existing or pending</span> only as a replacement.<br>
+      Please upload covers currently <span class="changed p-1">existing or pending</span> only as a replacement.<br>
     {% endif %}
     {% if current_covers %}
-    <span class="instructions">
+    <span class="font-bold">
       <a href="#current_covers">{{ current_covers|length }} current cover{{ current_covers|length|pluralize }}</a>
     </span> for this issue.
     {% endif %}
     {% if active_covers %}
-    <span class="instructions">
+    <span class="font-bold">
       <br><a href="#pending_covers">{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }}</a>
     </span> for this issue.
     {% endif %}
     {% if pending_variant_adds %}
-    <p>Please do not upload covers which belong to a <span class="comparison_highlight">pending variant add.</span>
-      <span class="instructions">
+    <p>Please do not upload covers which belong to a <span class="changed p-1">pending variant add.</span>
+      <span class="font-bold">
         <br><a href="#pending_variant_adds">{{ pending_variant_adds|length }} pending variant add{{ pending_variant_adds|length|pluralize }}</a>
       </span> for this issue.
     </p>
     {% endif %}
   </div>
-{% endif %}
+  {% endif %}
 </div> <!-- main -->
 
-<div style="clear:both">
 {% if current_covers %}
 <a name="current_covers"></a>
-<h2> current cover{{ current_covers|length|pluralize }} </h2>
-<table id="covers">
-  <tr>
-  {% for cover, issue, tag, count in current_covers %}
-    <td class="cover_grid">
+<h2> Current Cover{{ current_covers|length|pluralize }} </h2>
+<div>
+  <div class="flex flex-wrap gap-1">
+{% for cover, issue, tag, count in current_covers %}
+    <div class="w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col even text-center">
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
-      <br>
-       <span class="cover_links">Zoom:
-<a class="new_window" href="{{ issue.get_absolute_url }}cover/4" target="_blank">Large<span>opens in new window</span></a></span> <br>
-   </td>
-    {% if forloop.counter|divisibleby:table_width %}
-  </tr>
-  <tr>
-    {% endif %}
-  {% endfor %}
-  </tr>
-</table>
+      <div class="max-w-[400px]"><a href="{{ cover.issue.get_absolute_url }}">{{ cover.issue.full_descriptor }}</a></div>
+      <div class="mt-auto">Zoom:
+        <a class="new_window" href="{{ issue.get_absolute_url }}cover/4" target="_blank">Large</a>
+      </div>
+    </div>
+{% endfor %}
+  </div>
+</div>
 {% endif %}
 
 {% if active_covers %}
 <a name="pending_covers"></a>
-<h2> pending cover{{ active_covers|length|pluralize }} </h2>
-<table id="covers">
-  <tr>
+<h2> Pending Cover{{ active_covers|length|pluralize }} </h2>
+<div>
+  <div class="flex flex-wrap gap-1">
   {% for cover, tag in active_covers %}
-    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
-    </td>
-    {% if forloop.counter|divisibleby:table_width %}
-  </tr>
-  <tr>
-    {% endif %}
+    <div class="w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col even text-center">
+      <a href="{% url 'compare' id=cover.changeset.id %}">{{ tag }}</a>
+    </div>
   {% endfor %}
-  </tr>
-</table>
+  </div>
+</div>
 {% endif %}
 
 {% if pending_variant_adds %}
 <a name="pending_variant_adds"></a>
-<h2> pending variant add{{ pending_variant_adds|length|pluralize }} </h2>
-  <ul>
+<h2> Pending Variant Add{{ pending_variant_adds|length|pluralize }} </h2>
+<ul class="object-page-link-list columns-1">
   {% for variant in pending_variant_adds %}
-  <li><a href="{% url "compare" id=variant.id %}">{{ variant }}</a>
+  <li><a href="{% url 'compare' id=variant.id %}">{{ variant }}</a>
   {% endfor %}
-  </ul>
+</ul>
 {% endif %}
-</div>
+
 <div id="guidelines">
 {% include "oi/bits/cover_guidelines.html" %}
 </div>

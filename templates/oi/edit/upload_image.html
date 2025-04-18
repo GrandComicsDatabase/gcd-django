@@ -9,15 +9,6 @@
 GCD :: Image upload for {{ display_obj }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/cover.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <h1 class="item_id search_id">
   <div class="left">
@@ -40,10 +31,10 @@ GCD :: Image upload for {{ display_obj }}
       {% csrf_token %}
 {% endif %}
         <table class="editing">
-          <input type="submit" value="Upload">
+          <button><input class="btn-blue-editing" type="submit" value="Upload"></button>
     {{ form.as_table }}
         </table>
-        <input type="submit" value="Upload">
+        <button><input class="btn-blue-editing" type="submit" value="Upload"></button>
       </form>
     </ol>
   </fieldset>
@@ -61,19 +52,13 @@ GCD :: Image upload for {{ display_obj }}
   {% endif %}
 </div> <!-- main -->
 
-<div style="clear:both">
-</div>
-<p/>
 <div id="guidelines">
-<B>Guidelines:</B>
-<UL>
+  <b>Guidelines:</b>
+  <ul class="object-page-link-list columns-1 ps-8">
   {% for line in guidelines %}
-  <li>{{ line }}</li>
+    <li>{{ line }}</li>
   {% endfor %}
-</UL>
+  </ul>
 </div>
-</p>
-
-<p/>
 {% endblock %}
 
