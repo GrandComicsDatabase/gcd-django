@@ -1,14 +1,9 @@
-{% extends "gcd/base_view.html" %}
+{% extends "oi/base_view.html" %}
 
 {% load static %}
 
 {% block title %}
 Confirm deletion of {{ object }}
-{% endblock %}
-
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -19,9 +14,9 @@ Confirm deletion of {{ object }}
   <div {% if no_comment %}class="error_message_text"{% endif %}>
     <label for="comments">Please explain the reason for deletion (required):</label>
     <br>
-    <textarea name="comments"></textarea>
+    <textarea name="comments" class="w-full lg:w-4/5" rows="5"></textarea>
   </div>
-  <input type="submit" name="delete" value="Confirm Deletion"></input>
-  <input type="submit" name="cancel" value="Cancel"></input>
+  <button><input class="btn-blue-editing" type="submit" name="delete" value="Confirm Deletion"></button>
+  <button><input class="btn-blue-editing" type="submit" name="cancel" value="Cancel"></button>
 </form>
 {% endblock %}

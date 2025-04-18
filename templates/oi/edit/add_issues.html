@@ -36,8 +36,8 @@ you must wait until those issues are approved.<br>
 <tr>
   <td>
     <form method="GET" action="{% url "add_issue" series_id=series.id %}">
-      <btn class="btn-blue-editing"><input id="add" type="submit" value="Add single">
-      </input></btn>
+      <button><input class="px-3 btn-blue-editing" id="add" type="submit" value="Add single">
+      </input></button>
     </form>
   </td>
   <td> Add a single issue </td>
@@ -48,8 +48,8 @@ you must wait until those issues are approved.<br>
   <td>
     <form method="GET"
           action="{% url "add_multiple_issues" method='number' series_id=series.id %}">
-      <btn class="btn-blue-editing"><input id="add" type="submit" value="Add multiple">
-      </input></btn>
+      <button><input class="btn-blue-editing" id="add" type="submit" value="Add multiple">
+      </input></button>
     </form>
   </td>
   <td> Add multiple issues with whole issue numbers </td>
@@ -61,8 +61,8 @@ you must wait until those issues are approved.<br>
   <td>
     <form method="GET"
           action="{% url "add_multiple_issues" method='volume' series_id=series.id %}">
-      <btn class="btn-blue-editing"><input id="add" type="submit" value="Add multiple">
-      </input></btn>
+      <button><input class="btn-blue-editing" id="add" type="submit" value="Add multiple">
+      </input></button>
     </form>
   </td>
   <td> Add multiple issues that renumber with each volume </td>
@@ -74,8 +74,8 @@ you must wait until those issues are approved.<br>
   <td>
     <form method="GET"
           action="{% url "add_multiple_issues" method='year' series_id=series.id %}">
-      <btn class="btn-blue-editing"><input id="add" type="submit" value="Add multiple">
-      </input></btn>
+      <button><input class="btn-blue-editing" id="add" type="submit" value="Add multiple">
+      </input></button>
     </form>
   </td>
   <td> Add multiple issues that renumber with each year </td>
@@ -87,8 +87,8 @@ you must wait until those issues are approved.<br>
   <td>
     <form method="GET"
           action="{% url "add_multiple_issues" method='year_volume' series_id=series.id %}">
-      <btn class="btn-blue-editing"><input id="add" type="submit" value="Add multiple">
-      </input></btn>
+      <button><input class="btn-blue-editing" id="add" type="submit" value="Add multiple">
+      </input></button>
     </form>
   </td>
   <td> Add multiple issues that renumber with each year and volume </td>

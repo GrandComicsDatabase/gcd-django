@@ -2,23 +2,23 @@
 {% load display %}
 {% load l10n %}
 
-<table class="max-w-[calc(100vw-0.5rem)] border border-gray-200">
+<table class="max-w-[calc(100vw-0.5rem)] border border-gray-200 max-w-full">
 <tr class="bg-blue-100 [&>th]:px-1.5">
   <th> Commenter </th>
-  <th class="comment_text"> Comment </th>
+  <th> Comment </th>
   {% if not no_links %}
-  <th> Revision </th>
+  <th class="max-sm:hidden"> Revision </th>
   {% endif %}
   <th> Timestamp </th>
-  <th> Old State </th>
+  <th class="max-sm:hidden"> Old State </th>
   <th> New State </th>
 </tr>
 {% for comment in comments.all %}
 <tr class="hover:bg-blue-50 [&>td]:px-1.5 border border-gray-200">
   <td> {{ comment.commenter.indexer|absolute_url }} </td>
-  <td class="comment_text"> {{ comment.text|urlizetrunc:75|linebreaksbr }} </td>
+  <td> {{ comment.text|urlizetrunc:75|linebreaksbr }} </td>
   {% if not no_links %}
-  <td class="comment_revision"> 
+  <td class="max-sm:hidden"> 
     {% if comment.revision %} 
       <a href="#{{ comment.revision.id }}"> {{ comment.revision|show_revision_short }} </a> 
     {% endif %} 
@@ -27,7 +27,7 @@
   {% localize off %}
   <td> {{ comment.created }} </td>
   {% endlocalize %}
-  <td> {{ comment.display_old_state }} </td>
+  <td class="max-sm:hidden"> {{ comment.display_old_state }} </td>
   <td> {{ comment.display_new_state }} </td>
 </tr>
 {% endfor %}

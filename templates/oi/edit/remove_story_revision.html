@@ -8,19 +8,6 @@
   GCD :: Issue :: {{ issue.series.name }} {{ issue.display_number }}
 {% endblock %}
 
-{% block css %}
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default/issue.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default/single_story.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/oi/default.css" %}"/>
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/oi/default/edit.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 
 <h3>
@@ -29,20 +16,24 @@ Are you sure you want to remove the following story (sequence number: {{ story.s
 <form style="display:inline;" method="POST"
     action="{% url "remove_story_revision" id=story.revision.id %}">
 {% csrf_token %}
-<input type="submit" id="remove_{{ story.revision.id }}" name="remove_{{ story.revision.id }}"
+  <button>
+    <input class="btn-blue-editing" type="submit" id="remove_{{ story.revision.id }}" name="remove_{{ story.revision.id }}"
        value="Yes">
-</input>
+    </input>
+  </button>
 </form>
 <form style="display:inline;" method="GET"
     action="{% url "edit" id=story.revision.changeset.id %}">
-<input type="submit" id="remove_{{ story.revision.id }}" name="remove_{{ story.revision.id }}"
+  <button>
+    <input class="btn-blue-editing" type="submit" id="remove_{{ story.revision.id }}" name="remove_{{ story.revision.id }}"
        value="No">
-</input>
+    </input>
+  </button>
 </form>
 <hr class="divider">
 {% with 1 as preview %}
 <div id="story_data">
-  {% include "gcd/details/single_story.html" %}
+  {% include "gcd/details/tw_single_story.html" %}
 </div>
 {% endwith %}
 

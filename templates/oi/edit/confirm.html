@@ -5,24 +5,14 @@
 GCD :: Confirm {{ type }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 
 <h2>{{ header_text }}</h2>
 <form method="POST" action="{{ url }}">
 {% csrf_token %}
-<p>
-<input type="hidden" name="comments">
-</p>
-<input type="submit" value="Confirm {{ confirm_button }}"></input>
-<input type="submit" name="cancel" value="{{ cancel_button }}"></input>
+  <input type="hidden" name="comments">
+  <button><input class="btn-blue-editing" type="submit" value="Confirm {{ confirm_button }}"></input></button>
+  <button><input class="btn-blue-editing" type="submit" name="cancel" value="{{ cancel_button }}"></input></button>
 </form>
-<br>
 {% endblock %}
 

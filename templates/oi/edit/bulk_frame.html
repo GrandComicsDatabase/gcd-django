@@ -5,18 +5,10 @@
 Changing {{ object_name }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}"/>
-{% endblock %}
 {% block css_raw %}
 {% comment %} this css doesn't like compressing {% endcomment %}
 <link rel="stylesheet" type="text/css"
-      href="{% static "jquery/css/msdropdown/dd.css" %}"/>
+      href="{% static 'jquery/css/msdropdown/dd.css' %}"/>
 {% endblock %}
 
 {% block view_body %}
@@ -38,11 +30,11 @@ Changing {{ object_name }}
       <table class="editing">
 {{ form.as_table }}
       </table>
-<input type="submit" name="add" value="{{ action_label}} {{ object_name }}">
+      <button><input class="btn-blue-editing" type="submit" name="add" value="{{ action_label}} {{ object_name }}"></button>
 {% if object_name == "Story" %}
-  <input type="submit" name="cancel_return" value="Cancel">
+<button><input class="btn-blue-editing" type="submit" name="cancel_return" value="Cancel"></button>
 {% else %}
-  <input type="submit" name="cancel" value="Cancel">
+<button><input class="btn-blue-editing" type="submit" name="cancel" value="Cancel"></button>
 {% endif %}
     </form>
   </div>

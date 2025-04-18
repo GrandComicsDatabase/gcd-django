@@ -7,18 +7,6 @@
 Reviewing :: {{ revision }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default/status.css" %}">
-</link>
-{% endblock %}
-
 {% block view_body %}
 <h1>
 {{ changeset|header_link }}
@@ -27,10 +15,10 @@ Reviewing :: {{ revision }}
 This change adds to {{ revision.series|absolute_url }}
 published by {{ revision.series.publisher|absolute_url }}
 after issue
-<span class="comparison_highlight">{{ changeset.ordered_issue_revisions.0.after }}</span>
+<span class="changed p-1">{{ changeset.ordered_issue_revisions.0.after }}</span>
 {% if changeset.issuerevisions.count > 1 %}
 the following issues (links open in new windows):
-<table class="comparison added">
+<table>
 <tr>
   <th> Volume </th>
   <th> Issue Number</th>
@@ -66,7 +54,7 @@ the following issue:
   {% include 'oi/bits/compare_variant_issue.html' %}
 {% else %}
 <p>
-Highlighted fields represent <span class="added_highlight">added</span> data.
+Highlighted fields represent <span class="added p-1">added</span> data.
 </p>
 {% endif %}
 

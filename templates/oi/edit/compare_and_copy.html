@@ -7,18 +7,6 @@
 Comparing :: {{ revision }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/edit.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default/status.css" %}">
-</link>
-{% endblock %}
-
 {% block view_body %}
 <div class="body_content">
   <h1>
@@ -28,8 +16,8 @@ Comparing :: {{ revision }}
 
     <form action="" method="POST">
   {% csrf_token %}
-      <table class="comparison modified">
-        <tr>
+      <table>
+        <tr class="bg-blue-100">
           <th> Select </th>
           <th> Field </th>
           <th> Source </th>
@@ -42,11 +30,11 @@ Comparing :: {{ revision }}
 {% endwith %}
       </table>
       <div style="clear: both;"></div>
-      <input type="submit" name="copy_select" value="Copy Selected Values">
+      <button><input class="btn-blue-editing" type="submit" name="copy_select" value="Copy Selected Values"></button>
       {% if is_story %}
-      <input type="submit" name="copy_select_with_qualifiers" value="Copy Selected Values With Credit Qualifiers">
+      <button><input class="btn-blue-editing" type="submit" name="copy_select_with_qualifiers" value="Copy Selected Values With Credit Qualifiers"></button>
       {% endif %}
-      <input type="submit" name="cancel" value="Cancel">
+      <button><input class="btn-blue-editing" type="submit" name="cancel" value="Cancel"></button>
     </form>
   </div>
 </div>
