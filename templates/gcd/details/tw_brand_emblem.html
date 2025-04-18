@@ -139,25 +139,25 @@
   {% if brand.emblem %}
     {% if user.is_authenticated %}
       {% if not brand.emblem|is_locked %}
-  <btn class="btn btn-blue-editing"><a href="{% url 'replace_image' model_name='brand' id=brand.id image_id=brand.emblem.id %}">
-    Replace Publisher's Brand Image
-  </a></btn>
-  <btn class="btn btn-blue-editing"><a href="{% url 'delete_revision' model_name='image' id=brand.emblem.id %}">
-    Delete Publisher's Brand Image
-  </a></btn>
+  <a class="hover:no-underline" href="{% url 'replace_image' model_name='brand' id=brand.id image_id=brand.emblem.id %}">
+    <btn class="btn btn-blue-editing">Replace Publisher's Brand Image</btn>
+  </a>
+  <a class="hover:no-underline" href="{% url 'delete_revision' model_name='image' id=brand.emblem.id %}">
+    <btn class="btn btn-blue-editing">Delete Publisher's Brand Image</btn>
+  </a>
       {% endif %}
     {% endif %}
   {% else %}
     {% if user.is_authenticated and not brand.generic %}
-  <btn class="btn btn-blue-editing"><a href="{% url 'upload_image' model_name='brand' id=brand.id image_type='BrandScan' %}">
-    Add Publisher's Brand Image
-  </a></btn>
+  <a class="hover:no-underline" href="{% url 'upload_image' model_name='brand' id=brand.id image_type='BrandScan' %}">
+    <btn>Add Publisher's Brand Image</btn>
+  </a>
     {% endif %}
   {% endif %}
   {% if user.is_authenticated %}
-  <btn class="btn btn-blue-editing"><a href="{% url 'add_brand_use' brand_id=brand.id %}">
-    Add Publisher's Brand Use
-  </a></btn>
+  <a class="hover:no-underline" href="{% url 'add_brand_use' brand_id=brand.id %}">
+    <btn class="btn btn-blue-editing">Add Publisher's Brand Use</btn>
+  </a>
   {% endif %}
 {% endblock editing %}
 

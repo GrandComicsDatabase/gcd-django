@@ -274,25 +274,22 @@ Related Links
   {% endwith %}
   {% if user.is_authenticated and not series.pending_deletion %}
     {% if not issue.variant_of %}
-    <btn class="btn btn-blue-editing font-normal"><a href="{% url 'add_variant_issue' issue_id=issue.id %}">
-      Add Variant Issue</a></btn>
+    <a class="hover:no-underline" href="{% url 'add_variant_issue' issue_id=issue.id %}">
+      <btn class="btn btn-blue-editing">Add Variant Issue</btn>
+    </a>
     {% endif %}
     {% if issue.variant_of and not issue.variant_of|is_locked and not issue|is_locked %}
-    <btn class="btn btn-blue-editing font-normal">
-      <form method="POST" onclick="document.getElementById('edit_with_base').click()"
-            action="{% url 'reserve_two_issues' issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
-      {% csrf_token %}
-        <input id="edit_with_base" name="edit_with_base" type="submit" value="Edit With Base Issue" />
-      </form>
-    </btn>
+    <form method="POST" onclick="document.getElementById('edit_with_base').click()"
+          action="{% url 'reserve_two_issues' issue_one_id=issue.id issue_two_id=issue.variant_of.id %}">
+    {% csrf_token %}
+      <button class="w-full pe-2"><input class="mt-0 w-full btn btn-blue-editing" id="edit_with_base" name="edit_with_base" type="submit" value="Edit With Base Issue" /></button>
+    </form>
     {% endif %}
     {% if not issue|is_locked %}
-    <btn class="btn btn-blue-editing font-normal">
-      <form method="GET" class="block" onclick="document.getElementById('edit_with_another').click()"
-            action="{% url "edit_two_issues" issue_id=issue.id %}">
-        <input id="edit_with_another" type="submit" value="{% trans 'Edit With Another Issue' %}">
-      </form>
-    </btn>
+    <form method="GET" class="block" onclick="document.getElementById('edit_with_another').click()"
+          action="{% url 'edit_two_issues' issue_id=issue.id %}">
+      <button class="w-full pe-2"><input class="my-0 w-full btn btn-blue-editing" id="edit_with_another" type="submit" value="{% trans 'Edit With Another Issue' %}"></button>
+    </form>
     {% endif %}
   {% endif %} <!-- logged in -->
   <a class="hover:no-underline" href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}&amp;short_desc={{ issue|urlencode }}" target="_blank">

@@ -3499,7 +3499,7 @@ def show_feature_logo(request, feature_logo, preview=False):
     vars = {'feature_logo': feature_logo,
             'error_subject': '%s' % feature_logo,
             'preview': preview}
-    return render(request, 'gcd/details/feature_logo.html', vars)
+    return render(request, 'gcd/details/tw_feature_logo.html', vars)
 
 
 def feature_logo_sequences(request, feature_logo_id, country=None):
@@ -3565,7 +3565,7 @@ def show_feature_relation(request, feature_relation, preview=False):
     vars = {'feature_relation': feature_relation,
             'error_subject': feature_relation,
             'preview': preview}
-    return render(request, 'gcd/details/feature_relation.html', vars)
+    return render(request, 'gcd/details/tw_feature_relation.html', vars)
 
 
 def multiverse(request, multiverse_id):
@@ -4304,7 +4304,7 @@ def show_character_relation(request, character_relation, preview=False):
     vars = {'character_relation': character_relation,
             'error_subject': character_relation,
             'preview': preview}
-    return render(request, 'gcd/details/character_relation.html', vars)
+    return render(request, 'gcd/details/tw_character_relation.html', vars)
 
 
 def group(request, group_id):
@@ -4724,7 +4724,7 @@ def show_group_relation(request, group_relation, preview=False):
     vars = {'group_relation': group_relation,
             'error_subject': group_relation,
             'preview': preview}
-    return render(request, 'gcd/details/group_relation.html', vars)
+    return render(request, 'gcd/details/tw_group_relation.html', vars)
 
 
 def group_membership(request, group_membership_id):
@@ -4738,7 +4738,7 @@ def show_group_membership(request, group_membership, preview=False):
     vars = {'group_membership': group_membership,
             'error_subject': group_membership,
             'preview': preview}
-    return render(request, 'gcd/details/group_membership.html', vars)
+    return render(request, 'gcd/details/tw_group_membership.html', vars)
 
 
 def cover(request, issue_id, size):

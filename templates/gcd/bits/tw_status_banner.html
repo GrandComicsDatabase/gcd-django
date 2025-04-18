@@ -57,10 +57,10 @@
     </form>
       {% else %}
     <form action="{% url "login" %}" method="GET">
-      <btn class="mt-1 btn btn-blue-editing">
-        <input type="submit" name="login" value="Log in to edit">
+      <button class="w-full pe-2">
+        <input class="mt-1 btn btn-blue-editing w-full mb-0" type="submit" name="login" value="Log in to edit">
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
-      </btn>
+      </button>
     </form>
       {% endif %}
     {% endif %}

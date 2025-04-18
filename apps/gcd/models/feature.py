@@ -202,6 +202,14 @@ class FeatureRelation(GcdLink):
                                       related_name='relation_type')
     notes = models.TextField()
 
+    def object_page_name(self):
+        return mark_safe('<a href="%s">%s</a> - <a href="%s">%s</a>' % (
+          self.from_feature.get_absolute_url(),
+          self.from_feature.name,
+          self.to_feature.get_absolute_url(),
+          self.to_feature.name))
+
+
     def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_feature),
                                            str(self.to_feature),

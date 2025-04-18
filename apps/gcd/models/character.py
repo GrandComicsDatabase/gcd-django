@@ -362,6 +362,13 @@ class CharacterRelation(GcdLink):
                 'show_character_relation',
                 kwargs={'character_relation_id': self.id})
 
+    def object_page_name(self):
+        return mark_safe('<a href="%s">%s</a> - <a href="%s">%s</a>' % (
+          self.from_character.get_absolute_url(),
+          self.from_character.official_name().name,
+          self.to_character.get_absolute_url(),
+          self.to_character.official_name().name))
+
     def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_character),
                                            str(self.to_character),
@@ -527,6 +534,13 @@ class GroupRelation(GcdLink):
                 'show_group_relation',
                 kwargs={'group_relation_id': self.id})
 
+    def object_page_name(self):
+        return mark_safe('<a href="%s">%s</a> - <a href="%s">%s</a>' % (
+          self.from_group.get_absolute_url(),
+          self.from_group.official_name().name,
+          self.to_group.get_absolute_url(),
+          self.to_group.official_name().name))
+
     def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_group),
                                            str(self.to_group),
@@ -593,6 +607,13 @@ class GroupMembership(GcdLink):
         return urlresolvers.reverse(
                 'show_group_membership',
                 kwargs={'group_membership_id': self.id})
+
+    def object_page_name(self):
+        return mark_safe('<a href="%s">%s</a> in <a href="%s">%s</a>' % (
+          self.character.get_absolute_url(),
+          self.character.official_name().name,
+          self.group.get_absolute_url(),
+          self.group.official_name().name))
 
     def __str__(self):
         return '%s is %s member of %s' % (str(self.character),

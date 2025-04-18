@@ -28,7 +28,7 @@
 </h3>
   {% if prev_rev %}
     {% if revision.changeset.change_type == CTYPES.two_issues and revision.issue != prev_rev.issue or revision.changeset.change_type == CTYPES.variant_add and revision.issue != prev_rev.issue %}
-<h3>This sequence is <span class="comparison_highlight">moved from the other issue</span>.</h3>
+<h3>This sequence is <span class="changed">moved from the other issue</span>.</h3>
     {% endif %}
   {% endif %}
 {% endif %} <!-- story -->
@@ -45,10 +45,10 @@
   {% endif %}
   to this {% if revision.source_name == 'story' %}sequence{% else %}issue{% endif %}
   {% if prev_rev %}
-    / <a href="{% url "compare" id=prev_rev.changeset_id %}?collapse=1"> Previous </a>
+    / <a href="{% url 'compare' id=prev_rev.changeset_id %}?collapse=1"> Previous </a>
   {% endif %}
   {% if post_rev %}
-    / <a href="{% url "compare" id=post_rev.changeset_id %}?collapse=1"> Next </a>
+    / <a href="{% url 'compare' id=post_rev.changeset_id %}?collapse=1"> Next </a>
   {% endif %}
 </h3>
 </summary>
@@ -59,7 +59,7 @@
     <th> Field </th>
     {% if revision.deleted %}
       {% if prev_rev %}
-    <th> <a href="{% url "compare" id=prev_rev.changeset_id %}?collapse=1"> Previous </a> / Deleted </th>
+    <th> <a href="{% url 'compare' id=prev_rev.changeset_id %}?collapse=1"> Previous </a> / Deleted </th>
       {% else %}
         Deleted
       {% endif %}
@@ -68,17 +68,17 @@
         {% if no_prev_link %}
     <th> Current </th>
         {% else %}
-    <th><a href="{% url "compare" id=prev_rev.changeset_id %}?collapse=1"> Previous </a></th>
+    <th><a href="{% url 'compare' id=prev_rev.changeset_id %}?collapse=1"> Previous </a></th>
         {% endif %}
     <th> Change
         {% if post_rev %}
-        / <a href="{% url "compare" id=post_rev.changeset_id %}?collapse=1"> Next </a>
+        / <a href="{% url 'compare' id=post_rev.changeset_id %}?collapse=1"> Next </a>
         {% endif %}
     </th>
       {% else %}
     <th> Added
         {% if post_rev %}
-        / <a href="{% url "compare" id=post_rev.changeset_id %}?collapse=1"> Next </a>
+        / <a href="{% url 'compare' id=post_rev.changeset_id %}?collapse=1"> Next </a>
         {% endif %}
     </th>
       {% endif %}

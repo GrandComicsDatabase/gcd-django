@@ -1231,6 +1231,11 @@ a:hover {
   margin-right: auto;
 }
 
+.my-0 {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
 .my-1 {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
@@ -1244,6 +1249,10 @@ a:hover {
 .my-\[0\.5px\] {
   margin-top: 0.5px;
   margin-bottom: 0.5px;
+}
+
+.mb-0 {
+  margin-bottom: 0px;
 }
 
 .mb-1 {
@@ -1404,6 +1413,10 @@ a:hover {
 
 .w-56 {
   width: 14rem;
+}
+
+.w-60 {
+  width: 15rem;
 }
 
 .w-64 {
@@ -1904,11 +1917,6 @@ a:hover {
 .px-3 {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
-}
-
-.px-3\.5 {
-  padding-left: 0.875rem;
-  padding-right: 0.875rem;
 }
 
 .px-6 {
