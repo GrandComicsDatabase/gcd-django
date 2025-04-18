@@ -1,0 +1,53 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+GCD :: Feature Relation :: {{ feature_relation.from_relation }} - {{ feature_relation.to_relation }}
+{% endblock %}
+
+{% block header %}
+  {% with object=feature_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Feature:</span>
+              <a href="{{ feature_relation.from_feature.get_absolute_url }}">{{ feature_relation.from_feature }}</a>
+            </li>
+            <li><span class="font-bold">Relation:</span>
+              {{ feature_relation.relation_type }}</li>
+            <li><span class="font-bold">Feature:</span>
+              <a href="{{ feature_relation.to_feature.get_absolute_url }}">{{ feature_relation.to_feature }}</a>
+            </li>
+  {% if feature_relation.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ feature_relation.notes|urlizetrunc:75|linebreaksbr }}</li>
+  {% endif %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=feature_relation object_class='feature_relation' object_name='feature_relation' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='feature_relation' object=feature_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

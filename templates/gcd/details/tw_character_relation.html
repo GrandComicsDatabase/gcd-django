@@ -1,0 +1,53 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Character Relation :: {{ character_relation.from_character }} - {{ character_relation.to_character }}
+{% endblock %}
+
+{% block header %}
+  {% with object=character_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Character:</span>
+              <a href="{{ character_relation.from_character.get_absolute_url }}">{{ character_relation.from_character }}</a>
+            </li>
+            <li><span class="font-bold">Relation:</span>
+              {{ character_relation.relation_type }}</li>
+            <li><span class="font-bold">Character:</span>
+              <a href="{{ character_relation.to_character.get_absolute_url }}">{{ character_relation.to_character }}</a>
+            </li>
+  {% if character_relation.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ character_relation.notes|urlizetrunc:75|linebreaksbr }}</li>
+  {% endif %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=character_relation object_class='character_relation' object_name='character_relation' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='character_relation' object=character_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

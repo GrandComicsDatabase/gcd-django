@@ -1,0 +1,55 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Group Membership :: {{ group_membership.character }} in {{ group_membership.group }}
+{% endblock %}
+
+{% block header %}
+  {% with object=group_membership %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Character:</span>
+              <a href="{{ group_membership.character.get_absolute_url }}">{{ group_membership.character }}</a>
+            </li>
+            <li><span class="font-bold">Relation:</span>
+              {{ group_membership.membership_type }}</li>
+            <li><span class="font-bold">Group:</span>
+              <a href="{{ group_membership.group.get_absolute_url }}">{{ group_membership.group }}</a>
+            </li><span class="font-bold">Years:</span>
+              {{ group_membership.display_years }}
+            </li>
+  {% if group_membership.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ group_membership.notes|urlizetrunc:75|linebreaksbr }}</li>
+  {% endif %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=group_membership object_class='group_membership' object_name='group_membership' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='group_membership' object=group_membership %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

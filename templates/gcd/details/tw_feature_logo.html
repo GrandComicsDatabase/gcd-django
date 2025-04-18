@@ -1,0 +1,90 @@
+  {% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load editing %}
+{% load django_tables2 %}
+
+{% block title %}
+    GCD :: Feature Logo :: {{ feature_logo }}
+{% endblock %}
+
+{% block header %}
+  {% with object=feature_logo %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<div>
+  <ul>
+    <li><span class="font-bold">Feature:</span>
+  {% for feature in feature_logo.feature.all %}
+      <a href="{{ feature.get_absolute_url }}">{{ feature }}</a>
+    {% if not forloop.last %}; {% endif %}
+  {%  endfor %}
+    </li>
+    <li><span class="font-bold">Years:</span>
+  {{ feature_logo.display_years }}
+    </li>
+    <li><span class="font-bold">Feature Logo:</span>
+  {% if feature_logo.logo %}
+    <img src="{{ feature_logo.logo.scaled_image.url }}">
+  {% endif %}
+  {% if feature_logo.generic %}
+    generic
+  {% endif %}
+    </li>
+  {% if feature_logo.notes %}
+    <li><span class="font-bold">Notes:</span>
+    {{ feature_logo.notes|urlizetrunc:75|linebreaksbr }}
+    </li>
+  {% endif %}
+  </ul>
+  <ul class="object-page-link-list">
+    <li><a href='{% url "feature_logo_issuelist_by_id" feature_logo_id=feature_logo.id %}'>Issue Checklist (via linked story records)</a></li>
+    <li><a href='{% url "feature_logo_sequences" feature_logo_id=feature_logo.id %}'>Sequences List (via linked story records)</a></li>
+  </ul>    
+</div>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=feature_logo object_class='feature_logo' object_name='feature_logo' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if feature_logo.logo %}
+    {% if feature_logo.logo|is_locked %}
+  <div class="changed">
+  Logo Changes Pending
+  </div>
+    {% else %}
+      {% if user.is_authenticated %}
+  <form method="GET"
+    action="{% url 'replace_image' model_name='feature_logo' id=feature_logo.id image_id=feature_logo.logo.id %}">
+    <button class="w-full pe-2"><input class="mt-0 w-full btn-blue-editing" type="submit" value="{% trans 'Replace Feature Logo Scan' %}"></button>
+  </form>
+  <form method="GET"
+    action="{% url 'delete_revision' model_name='image' id=feature_logo.logo.id %}">
+    <button class="w-full pe-2"><input class="my-0 w-full btn-blue-editing" type="submit" value="{% trans 'Delete Feature Logo Scan' %}"></button>
+  </form>
+    {% endif %}
+  {% endif %}
+{% else %}
+    {% if user.is_authenticated and not feature_logo.generic %}
+  <form method="GET"
+    action="{% url 'upload_image' model_name='feature_logo' id=feature_logo.id image_type='FeatureLogo' %}">
+    <button class="w-full pe-2"><input class="my-0 w-full btn-blue-editing" type="submit" value="{% trans 'Add Feature Logo Scan' %}"></button>
+  </form>
+  {% endif %}
+{% endif %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='feature_logo' object=feature_logo %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

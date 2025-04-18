@@ -1,0 +1,53 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+  GCD :: Group Relation :: {{ group_relation.from_group }} - {{ group_relation.to_group }}
+{% endblock %}
+
+{% block header %}
+  {% with object=group_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Group:</span>
+              <a href="{{ group_relation.from_group.get_absolute_url }}">{{ group_relation.from_group }}</a>
+            </li>
+            <li><span class="font-bold">Relation:</span>
+              {{ group_relation.relation_type }}</li>
+            <li><span class="font-bold">Group:</span>
+              <a href="{{ group_relation.to_group.get_absolute_url }}">{{ group_relation.to_group }}</a>
+            </li>
+  {% if group_relation.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ group_relation.notes|urlizetrunc:75|linebreaksbr }}</li>
+  {% endif %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=group_relation object_class='group_relation' object_name='group_relation' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='group_relation' object=group_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
