@@ -3,21 +3,12 @@
 {% load credits %}
 {% load display %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/gcd/{{ style|default:'default' }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
-{% endblock %}
-
 {% block view_body %}
 <h1>Reprint links for {{ issue_revision }}
 {% if issue_revision.can_add_reprints %}
-  <form class="changeset" method="GET"
-        action="{% url "add_issue_reprint" issue_id=issue_revision.id changeset_id=changeset.id %}">
-  <input type="submit" value="Add Reprint">
+  <form class="inline" method="GET"
+        action="{% url 'add_issue_reprint' issue_id=issue_revision.id changeset_id=changeset.id %}">
+  <button><input class="btn-blue-editing" type="submit" value="Add Reprint"></button>
   </form>
 {% endif %}
 </h1>
@@ -87,10 +78,10 @@
 {% for story_revision in issue_revision.ordered_story_revisions %}
 <h2>{{ story_revision|show_story_short }}
   {% if not story_revision.deleted %}
-  <form class="story_button" method="GET"
-            action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id %}">
-        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
-               value="Add Reprint">
+  <form class="inline" method="GET"
+        action="{% url 'add_story_reprint' story_id=story_revision.id changeset_id=changeset.id %}">
+    <button><input class="btn-blue-editing inline" type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_revision.id }}"
+                   value="Add Reprint"></button>
   </form>
   {% endif %}
 </h2>
@@ -101,10 +92,10 @@
     {% for reprint in story_revision.reprint_notes|split_reprint_string %}
   <li>{{ reprint }}
       {% if not story_revision.deleted %}
-    <form class="story_button" method="GET"
-            action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id reprint_note=reprint %}">
-        <input type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
-               value="Add Reprint">
+    <form class="inline" method="GET"
+          action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id reprint_note=reprint %}">
+      <button><input class="btn-blue-editing" type="submit" id="reprint_{{ story_revision.id }}" name="reprint_{{ story_re.id }}"
+                     value="Add Reprint"></button>
     </form>
       {% endif %}
   </li>

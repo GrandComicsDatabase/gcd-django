@@ -3565,7 +3565,7 @@ def save_added_series_bond(request, data, object_type, selected_id):
 @permission_required('indexer.can_reserve')
 def add_series_bond(request, series_id):
     series = get_object_or_404(Series, id=series_id)
-    data = {'series_id': id,
+    data = {'series_id': series_id,
             'series': True,
             'issue': True,
             'heading': mark_safe('<h2>Select other side of the bond</h2>'),

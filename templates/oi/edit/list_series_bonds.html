@@ -4,22 +4,13 @@
 {% load display %}
 {% load editing %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/gcd/{{ style|default:'default' }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}.css"/>
-<link rel="stylesheet" type="text/css"
-      href="{{ STATIC_URL }}css/oi/{{ style|default:'default' }}/edit.css"/>
-{% endblock %}
-
 {% block view_body %}
-<h1>Series bonds for {{ series }} </h1>
+<h1>Series bonds for {{ series|absolute_url }} </h1>
 
+<table>
   {% if series.from_series_bond.count %}
-<table class="story_list">
     {% for bond in series.from_series_bond.all %}
-  <tr>
+  <tr class="border border-gray-300">
     <td> {{ bond }} </td>
       {% if bond|is_locked %}
     <td colspan="2">
@@ -30,25 +21,23 @@
         {% if user.is_authenticated %}
       <form method="POST" action="{% url "reserve_revision" model_name='series_bond' id=bond.id %}">
           {% csrf_token %}
-        <input id="edit" name="edit" type="submit" value="Edit"></input>
+        <button><input class="btn-blue-editing" id="edit" name="edit" type="submit" value="Edit"></input>
       </form>
     </td>
     <td>
         <form method="GET" action="{% url "delete_revision" model_name='series_bond' id=bond.id %}">
-          <input type="submit" value="Delete">
+          <button><input class="btn-blue-editing" type="submit" value="Delete">
         </form>
         {% endif %}
     </td>
       {% endif %}
   </tr>
     {% endfor %}
-</table>
   {% endif %}
 
   {% if series.to_series_bond.count %}
-<table class="story_list">
     {% for bond in series.to_series_bond.all %}
-  <tr>
+  <tr class="border border-gray-300">
     <td> {{ bond }} </td>
       {% if bond|is_locked %}
     <td colspan="2">
@@ -59,19 +48,19 @@
         {% if user.is_authenticated %}
       <form method="POST" action="{% url "reserve_revision" model_name='series_bond' id=bond.id %}">
           {% csrf_token %}
-        <input id="edit" name="edit" type="submit" value="Edit"></input>
+        <button><input class="btn-blue-editing" id="edit" name="edit" type="submit" value="Edit"></input>
       </form>
     </td>
     <td>
         <form method="GET" action="{% url "delete_revision" model_name='series_bond' id=bond.id %}">
-          <input type="submit" value="Delete">
+          <button><input class="btn-blue-editing" type="submit" value="Delete">
         </form>
         {% endif %}
     </td>
       {% endif %}
   </tr>
     {% endfor %}
-</table>
   {% endif %}
+</table>
 
 {% endblock %}

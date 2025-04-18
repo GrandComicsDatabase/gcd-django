@@ -112,11 +112,11 @@ urlpatterns = [
         oi_views.edit_series_bonds, name='edit_series_bonds'),
     path('series/revision/<int:series_revision_id>/move/<int:publisher_id>/',
         oi_views.move_series, name='move_series'),
-
-    path('series_bond/revision/<int:series_id>/',
-        oi_views.edit_series_bond, name='edit_series_bond'),
     path('series_bond/add/<int:series_id>/',
         oi_views.add_series_bond, name='add_series_bond'),
+    # Series Bond URLs
+    path('series_bond/revision/<int:id>/',
+        oi_views.edit_series_bond, name='edit_series_bond'),
 
     # Issue URLs
     path('series/<int:series_id>/add_issue/', oi_views.add_issue,

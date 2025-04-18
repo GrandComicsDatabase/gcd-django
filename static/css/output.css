@@ -1467,6 +1467,14 @@ a:hover {
   min-width: fit-content;
 }
 
+.min-w-36 {
+  min-width: 9rem;
+}
+
+.min-w-28 {
+  min-width: 7rem;
+}
+
 .max-w-48 {
   max-width: 12rem;
 }

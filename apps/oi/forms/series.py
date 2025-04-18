@@ -195,7 +195,8 @@ class SeriesBondRevisionForm(forms.ModelForm):
         model = SeriesBondRevision
         fields = get_series_bond_field_list()
         widgets = {
-            'notes': forms.TextInput(attrs={'class': 'wide'})
+            'notes': forms.TextInput(attrs={'class':
+                                     'w-full lg:w-4/5'})
         }
         help_texts = {
             'notes': 'Notes about the series bond.',
