@@ -1,4 +1,4 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 
 {% load static %}
 {% load humanize %}
@@ -7,32 +7,31 @@
 
 {% block title %} GCD :: International Statistics {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
-<div style='margin: 1em 0'>
+<div class="px-1 my-1">
 Statistics by {{ type }}, ordered by number of 
-<form style='display:inline;' action="{% if type == 'language' %}{% url "international_stats_language" %}{% else %}{% url "international_stats_country" %}{% endif %}" method="get">
+  <form class="inline" method="get"
+        action="{% if type == 'language' %}{% url 'international_stats_language' %}{% else %}{% url 'international_stats_country' %}{% endif %}">
     {{ form }}
     <input type="submit" name="submit" value="reorder">
-</form>
+  </form>
 </div>
-{% for object, stats_for_object in stats %}
-<div class="stats">
-        <h3 class="stats">
-        <div class='stats_header'>
-            Statistics for Comics {% if type == 'country' %} published in <img style="vertical-align:middle" src="{{ STATIC_URL }}img/gcd/flags/{{ object.code|lower }}.png" alt="{{ object }}">{% else %} in {% endif %} <a href="{% url "process_advanced_search" %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{{ type }}={{ object.code }}">{{ object }}{% if object.native_name %} ({{ object.native_name }}) {% endif %}</a>
-        </div>
-        </h3>
-        <div class='stats_content'>
-            {% for stat in stats_for_object %}
-            {{ stat.count|intcomma }} {% trans stat.name %}<br>
-            {% endfor %}
-        </div>
+<div class="flex flex-wrap">
+  {% for object, stats_for_object in stats %}
+  <div class="w-full sm:w-1/2 px-1">
+    <div class="text-lg label-gcd-blue">
+        Statistics for Comics {% if type == 'country' %} Published {% endif %} in
+        <a class="text-white visited:text-white underline"
+           href="{% url 'process_advanced_search' %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{{ type }}={{ object.code }}">
+    {% if type == 'country' %} <img class="inline mb-1" src="{{ STATIC_URL }}img/gcd/flags/{{ object.code|lower }}.png" alt="{{ object }}">{% endif %}
+      {{ object }} {% if object.native_name %} ({{ object.native_name }}) {% endif %}</a>
+    </div>
+    <div class="px-2">
+    {% for stat in stats_for_object %}
+      {{ stat.count|intcomma }} {% trans stat.name %}<br>
+    {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
 </div>
-{% endfor %}
-
 {% endblock %}
