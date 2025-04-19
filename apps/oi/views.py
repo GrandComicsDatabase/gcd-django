@@ -5476,14 +5476,29 @@ def show_queue(request, queue_name):
 
 @login_required
 def show_approved(request):
+    from django_filters import FilterSet, MultipleChoiceFilter
+    choices = [[v, k] for k, v in CTYPES.items() if k not in ['unknown',]]
+
+    class ChangesetTypeFilter(FilterSet):
+        change_type = MultipleChoiceFilter(choices=choices,
+                                           label='Change Type')
+
+        class Meta:
+            model = Changeset
+            fields = ['change_type',]
+
     changes = Changeset.objects.order_by('-modified')\
-                .filter(state=(states.APPROVED), indexer=request.user)
+                       .filter(state=(states.APPROVED), indexer=request.user)
+
+    filter = ChangesetTypeFilter(request.GET, changes)
+    changes = filter.qs
 
     return paginate_response(
       request,
       changes,
       'oi/queues/approved.html',
-      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'approved'},
+      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'approved',
+       'filter_form': filter.form},
       per_page=50)
 
 
