@@ -167,8 +167,9 @@ def get_story_revision_form(revision=None, user=None,
             super(RuntimeStoryRevisionForm, self).__init__(*args, **kwargs)
             if revision and revision.feature != '':
                 self.fields['feature'].label = \
+                  '<btn class="btn-blue-editing inline">' \
                   '<input type="submit" name="save_migrate_feature"' \
-                  ' value="Migrate"/></td> Feature'
+                  ' value="Migrate"></btn></td> Feature'
 
         def save(self, commit=True):
             instance = super(RuntimeStoryRevisionForm,
