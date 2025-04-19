@@ -13,7 +13,7 @@ Statistics by {{ type }}, ordered by number of
   <form class="inline" method="get"
         action="{% if type == 'language' %}{% url 'international_stats_language' %}{% else %}{% url 'international_stats_country' %}{% endif %}">
     {{ form }}
-    <button class="btn btn-blue ml-1 mb-2 h-8">
+    <button class="btn btn-blue ml-1 mb-1 h-8">
     <input type="submit" name="submit" value="Reorder">
     </button>
   </form>
