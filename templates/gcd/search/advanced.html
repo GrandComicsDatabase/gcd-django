@@ -1,4 +1,4 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 
 {% load static %}
 {% load forms %}
@@ -6,33 +6,7 @@
 
 {% block title %} GCD :: Advanced Query {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}">
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default/advanced_search.css" %}">
-{% endblock %}
-
 {% block view_body %}
-
-{% include "oi/bits/jquery.html" %}
-<script type='text/javascript'
-         src='{% static "admin/js/jquery.init.js" %}'></script>
-{% include "oi/bits/multi_selector.html" %}
-{% comment %}
-TODO for some reason without this second time of jquery.min.js the
-override of SelectFilter does not seem to work
-{% endcomment %}
-{% compress js %}
-<script type='text/javascript'
-        src='{% static "admin/js/vendor/jquery/jquery.min.js" %}'></script>
-{% endcompress %}
-<script type='text/javascript'>
-<!--- overriding SelectFilter function for small windows --->
-if ($(window).width() < 1240) {
-    SelectFilter = function() {};
-}
-</script>
 
 <b>Advanced Query</b> allows field specific queries. It is a somewhat experimental query builder and has <a href="#blithering">known oddities and limitations</a>, see below for more information.
 
@@ -41,208 +15,226 @@ if ($(window).width() < 1240) {
 {{ error_text }}
 </div>
 {% endif %}
+
 {{ form.non_field_errors }}
 <form id="advanced_search_form"
       action="{% url 'process_advanced_search' %}"
       method="get">
-<fieldset class="submit" style="margin-bottom: 0em">
-  <input type="submit" value="Query">
-</fieldset>
-
-<div class="search_left">
-<fieldset class="control">
-<legend>Query Control</legend>
-<ol>
-  {{ form.target|show_form }}
-  {{ form.method|show_form }}
-  {{ form.logic|show_form }}
-  {{ form.keywords|show_form }}
-  {{ form.credit_is_linked|show_form }}
-</ol>
-</fieldset>
-
-<fieldset class="sequence">
-  <legend> Story Fields </legend>
-  <ol>
-    {{ form.title|show_form }}
-    {{ form.feature|show_form }}
-    {{ form.job_number|show_form }}
-    {{ form.pages|show_form }}
-    {{ form.pages_uncertain|show_form }}
-    {{ form.type|show_form }}
-  </ol>
-
-  <fieldset class="credits">
-    <legend> Credits </legend>
-    <ol>
-      {{ form.script|show_form }}
-      {{ form.pencils|show_form }}
-      {{ form.inks|show_form }}
-      {{ form.colors|show_form }}
-      {{ form.letters|show_form }}
-      {{ form.story_editing|show_form }}
-    </ol>
+  <fieldset class="submit" style="margin-bottom: 0em">
+    <btn class="btn-blue-editing inline"><input type="submit" value="Query"></btn>
   </fieldset>
 
-  <fieldset class="contents">
-    <legend> Contents </legend>
-    <ol>
-      {{ form.genre|show_form }}
-      {{ form.first_line|show_form }}
-      {{ form.characters|show_form }}
-      {{ form.synopsis|show_form }}
-      {{ form.reprint_notes|show_form }}
-      {{ form.story_reprinted|show_form }}
-    </ol>
-  </fieldset>
-  <fieldset class="notes">
-    <legend> Indexer Notes </legend>
-    <ol>
-      {{ form.notes|show_form }}
-    </ol>
-  </fieldset>
-</fieldset>
-<fieldset class="issue" id="issue_fieldset">
-  <legend>
-    Issue Fields
-  </legend>
-  <ol>
-    {{ form.issues|show_form }}
-    {{ form.volume|show_form }}
-    {{ form.issue_title|show_form }}
-    {{ form.variant_name|show_form }}
-    {{ form.is_variant|show_form }}
-    {{ form.issue_date|show_form }}
-    {{ form.indicia_frequency|show_form }}
-    {{ form.price|show_form }}
-    {{ form.issue_pages|show_form }}
-    {{ form.issue_pages_uncertain|show_form }}
-    {{ form.issue_editing|show_form }}
-    {{ form.isbn|show_form }}
-    {{ form.barcode|show_form }}
-    {{ form.rating|show_form }}
-    {{ form.issue_notes|show_form }}
-    {{ form.issue_reprinted|show_form }}
-    {{ form.cover_needed|show_form }}
-    {{ form.is_indexed|show_form }}
-    {{ form.image_resources|show_form }}
-    {% if user.is_authenticated %}
-      {{ form.in_collection|show_form }}
-      {{ form.in_selected_collection|show_form }}
-    {% endif %}
-  </ol>
-</fieldset>
-</div>
+  <div class="sm:flex [&_legend]:font-bold [&_legend]:px-1 [&_fieldset]:border [&_fieldset]:border-gray-600 
+    [&_fieldset]:rounded [&_fieldset]:mb-2">
+    <div class="sm:w-1/2 pe-2">
+      <fieldset>
+        <legend>Query Control</legend>
+        <ol>
+          {{ form.target|show_form }}
+          {{ form.method|show_form }}
+          {{ form.logic|show_form }}
+          {{ form.keywords|show_form }}
+          {{ form.credit_is_linked|show_form }}
+        </ol>
+      </fieldset>
 
-<div class="search_right">
-<fieldset class="ordering">
-<legend>Ordering</legend>
-<ol>
-  {{ form.order1|show_form }}
-  {{ form.order2|show_form }}
-  {{ form.order3|show_form }}
-</ol>
-</fieldset>
+      <fieldset>
+        <legend> Story Fields </legend>
+        <ol>
+          {{ form.title|show_form }}
+          {{ form.feature|show_form }}
+          {{ form.job_number|show_form }}
+          {{ form.pages|show_form }}
+          {{ form.pages_uncertain|show_form }}
+          <li><label class="me-2 w-36 sm:w-24 lg:w-44 text-right inline-block">Selected Type:</label>
+            <div class="inline" id="selected-types"></div></li>
+          {{ form.type|show_form }}
+        </ol>
 
-<fieldset class="universal">
-<legend>Date Fields</legend>
-<ol>
-  {{ form.start_date|show_form }}
-  {{ form.end_date|show_form }}
-  {{ form.use_on_sale_date|show_form }}
-  {{ form.updated_since|show_form }}
-</ol>
-</fieldset>
+        <fieldset>
+          <legend> Credits </legend>
+          <ol>
+            {{ form.script|show_form }}
+            {{ form.pencils|show_form }}
+            {{ form.inks|show_form }}
+            {{ form.colors|show_form }}
+            {{ form.letters|show_form }}
+            {{ form.story_editing|show_form }}
+          </ol>
+        </fieldset>
 
-<fieldset class="publisher" id="publisher_fieldset">
-  <legend>
-    Publisher Fields
-  </legend>
-  <ol>
-    {{ form.pub_name|show_form }}
-    {{ form.country|show_form }}
-    {{ form.pub_notes|show_form }}
-  </ol>
-</fieldset>
+        <fieldset>
+          <legend> Contents </legend>
+          <ol>
+            <li><label class="me-2 w-36 sm:w-24 lg:w-44 text-right inline-block">Selected Genre:</label>
+            <div class="inline" id="selected-genres"></div></li>
+            {{ form.genre|show_form }}
+            {{ form.first_line|show_form }}
+            {{ form.characters|show_form }}
+            {{ form.synopsis|show_form }}
+            {{ form.reprint_notes|show_form }}
+            {{ form.story_reprinted|show_form }}
+          </ol>
+        </fieldset>
 
-<fieldset class="brand" id="brand_fieldset">
-  <legend>
-    Publisher Brand Fields
-  </legend>
-  <ol>
-    {{ form.brand_group|show_form }}
-    {{ form.brand_emblem|show_form }}
-    {{ form.brand_notes|show_form }}
-  </ol>
-</fieldset>
+        <fieldset>
+          <legend> Indexer Notes </legend>
+          <ol>
+            {{ form.notes|show_form }}
+          </ol>
+        </fieldset>
+      </fieldset>
+      <fieldset id="issue_fieldset">
+        <legend>
+          Issue Fields
+        </legend>
+        <ol>
+          {{ form.issues|show_form }}
+          {{ form.volume|show_form }}
+          {{ form.issue_title|show_form }}
+          {{ form.variant_name|show_form }}
+          {{ form.is_variant|show_form }}
+          {{ form.issue_date|show_form }}
+          {{ form.indicia_frequency|show_form }}
+          {{ form.price|show_form }}
+          {{ form.issue_pages|show_form }}
+          {{ form.issue_pages_uncertain|show_form }}
+          {{ form.issue_editing|show_form }}
+          {{ form.isbn|show_form }}
+          {{ form.barcode|show_form }}
+          {{ form.rating|show_form }}
+          {{ form.issue_notes|show_form }}
+          {{ form.issue_reprinted|show_form }}
+          {{ form.cover_needed|show_form }}
+          {{ form.is_indexed|show_form }}
+          {{ form.image_resources|show_form }}
+          {% if user.is_authenticated %}
+            {{ form.in_collection|show_form }}
+            {{ form.in_selected_collection|show_form }}
+          {% endif %}
+        </ol>
+      </fieldset>
+    </div>
 
-<fieldset class="indicia_publisher" id="indicia_publisher_fieldset">
-  <legend>
-    Indicia / Colophon Publisher Fields
-  </legend>
-  <ol>
-    {{ form.indicia_publisher|show_form }}
-    {{ form.is_surrogate|show_form }}
-    {{ form.ind_pub_notes|show_form }}
-  </ol>
-</fieldset>
+    <div class="sm:w-1/2">
+      <fieldset>
+        <legend>Ordering</legend>
+        <ol>
+          {{ form.order1|show_form }}
+          {{ form.order2|show_form }}
+          {{ form.order3|show_form }}
+        </ol>
+      </fieldset>
 
-<fieldset class="series" id="series_fieldset">
-  <legend>
-    Series Fields
-  </legend>
+      <fieldset>
+        <legend>Date Fields</legend>
+        <ol>
+          {{ form.start_date|show_form }}
+          {{ form.end_date|show_form }}
+          {{ form.use_on_sale_date|show_form }}
+          {{ form.updated_since|show_form }}
+        </ol>
+      </fieldset>
 
-  <ol id="series_list">
-    {{ form.series|show_form }}
-    {{ form.series_year_began|show_form }}
-    {{ form.series_notes|show_form }}
-    {{ form.publication_type|show_form }}
-    {{ form.tracking_notes|show_form }}
-    {{ form.issue_count|show_form }}
-    {{ form.not_reserved|show_form }}
-    {{ form.is_current|show_form }}
-    {{ form.is_comics|show_form }}
-    {{ form.language|show_form }}
-  </ol>
+      <fieldset id="publisher_fieldset">
+        <legend>
+          Publisher Fields
+        </legend>
+        <ol>
+          {{ form.pub_name|show_form }}
+          <li><label class="me-2 w-36 sm:w-24 lg:w-44 text-right inline-block">Selected Country:</label>
+            <div class="inline" id="selected-countries"></div></li>
+          {{ form.country|show_form }}
+          {{ form.pub_notes|show_form }}
+        </ol>
+      </fieldset>
 
-  <fieldset class="format" id="format_fieldset">
-    <legend>
-    Format Fields
-    </legend>
-    <ol>
-    {{ form.color|show_form }}
-    {{ form.dimensions|show_form }}
-    {{ form.paper_stock|show_form }}
-    {{ form.binding|show_form }}
-    {{ form.publishing_format|show_form }}
-    </ol>
-  </fieldset>
-</fieldset>
+      <fieldset id="brand_fieldset">
+        <legend>
+          Publisher Brand Fields
+        </legend>
+        <ol>
+          {{ form.brand_group|show_form }}
+          {{ form.brand_emblem|show_form }}
+          {{ form.brand_notes|show_form }}
+        </ol>
+      </fieldset>
 
-<fieldset class="indexer" id="indexer_fieldset">
-  <legend>
-    Indexer
-  </legend>
-  <ol>
-    {{ form.indexer|show_form }}
-  </ol>
-</fieldset>
-</div>
-<div class='search_left'>
-<fieldset class="submit">
-  <input type="submit" value="Query">
-</fieldset>
-<fieldset class="submit">
-  <input type="submit" name="random_search" value="Random Query Result">
-</fieldset>
-</div>
+      <fieldset id="indicia_publisher_fieldset">
+        <legend>
+          Indicia / Colophon Publisher Fields
+        </legend>
+        <ol>
+          {{ form.indicia_publisher|show_form }}
+          {{ form.is_surrogate|show_form }}
+          {{ form.ind_pub_notes|show_form }}
+        </ol>
+      </fieldset>
+
+      <fieldset id="series_fieldset">
+        <legend>
+          Series Fields
+        </legend>
+
+        <ol id="series_list">
+          {{ form.series|show_form }}
+          {{ form.series_year_began|show_form }}
+          {{ form.series_notes|show_form }}
+          {{ form.publication_type|show_form }}
+          {{ form.tracking_notes|show_form }}
+          {{ form.issue_count|show_form }}
+          {{ form.not_reserved|show_form }}
+          {{ form.is_current|show_form }}
+          {{ form.is_comics|show_form }}
+          <li><label class="me-2 w-36 sm:w-24 lg:w-44 text-right inline-block">Selected Language:</label>
+            <div class="inline" id="selected-languages"></div></li>
+          {{ form.language|show_form }}
+        </ol>
+
+        <fieldset id="format_fieldset">
+          <legend>
+          Format Fields
+          </legend>
+          <ol>
+          {{ form.color|show_form }}
+          {{ form.dimensions|show_form }}
+          {{ form.paper_stock|show_form }}
+          {{ form.binding|show_form }}
+          {{ form.publishing_format|show_form }}
+          </ol>
+        </fieldset>
+      </fieldset>
+
+      <fieldset id="indexer_fieldset">
+        <legend>
+          Indexer
+        </legend>
+        <ol class="ps-1">
+          <li><label class="me-2 w-36 sm:w-24 lg:w-44 text-right inline-block">Selected Indexer:</label>
+            <div class="inline" id="selected-indexers"></div>
+          </li>
+          {{ form.indexer|show_form }}
+        </div>
+        </ol>
+      </fieldset>
+    </div>
+  </div>
+
+  <div class='flex'>
+    <fieldset class="submit">
+      <btn class="btn-blue-editing inline"><input type="submit" value="Query"></btn>
+    </fieldset>
+    <fieldset class="submit">
+      <btn class="btn-blue-editing inline"><input type="submit" name="random_search" value="Random Query Result"></btn>
+    </fieldset>
+  </div>
 </form>
 
-<div class="search_left">
+<div class="mt-2">
   <div id="blithering">
   <a name="blithering"></a>
     <b>Advanced Query</b> is somewhat experimental and has known oddities and limitations
-    <ul>
+    <ul class="object-page-link-list columns-1">
       <li> All searches match <b>exact substrings</b>.  Punctuation is not
            ignored.  "Jack Kirby; Joe Simon" and "Joe Simon; Jack Kirby" are
            two different searches. This is fundamentally different to how our
@@ -282,6 +274,50 @@ if ($(window).width() < 1240) {
   </div>
 </div>
 <hr style="border-bottom:0; height:1px">
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle all three checkbox groups
+    const checkboxGroups = [
+      { name: 'country', display: 'selected-countries' },
+      { name: 'genre', display: 'selected-genres' },
+      { name: 'indexer', display: 'selected-indexers' },
+      { name: 'language', display: 'selected-languages' },
+      { name: 'type', display: 'selected-types' },
+    ];
+    
+    checkboxGroups.forEach(group => {
+      const checkboxes = document.querySelectorAll(`input[name="${group.name}"]`);
+      const selectedDisplay = document.getElementById(group.display);
+      
+      if (checkboxes.length && selectedDisplay) {
+        // Initial display
+        updateSelected(checkboxes, selectedDisplay);
+        
+        // Add event listeners to all checkboxes
+        checkboxes.forEach(checkbox => {
+          checkbox.addEventListener('change', () => updateSelected(checkboxes, selectedDisplay));
+        });
+      }
+    });
+    
+    function updateSelected(checkboxes, displayElement) {
+      const selected = Array.from(checkboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => {
+          // Find the label text associated with this checkbox
+          const label = checkbox.parentElement.textContent.trim();
+          return label || checkbox.value; // Fallback to value if label not found
+        });
+      
+      if (selected.length) {
+        displayElement.innerHTML = selected.join('; ');
+      } else {
+        displayElement.innerHTML = '';
+      }
+    }
+  });
+</script>
 
 {% endblock %}
 

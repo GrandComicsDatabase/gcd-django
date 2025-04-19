@@ -1,17 +1,9 @@
 <div class='search_terms'>
   <a name="search_terms"></a>
-  <table class='search_terms'>
-    <tr>
-      <th colspan="2">Advanced search for {{ target }} with search method '{{ method }}', behavior '{{ logic }}' and the search terms:</th>
-    </tr>
-    <tr>
+  <span class="font-bold">Advanced search for {{ target }} with search method '{{ method }}', behavior '{{ logic }}' and the search terms:</span>
+  <div class="columns-2">
   {% for search, b in used_search_terms %}
-      <td><span class="search_terms">{{ search }}:</span> {{ b }} </td>
-    {% if forloop.counter|divisibleby:2 %}
-    </tr>
-    <tr>
-    {% endif %}
+    <div><span class="font-bold">{{ search }}:</span> {{ b }} </div>
   {% endfor %}
-    </tr>
-  </table>
+  </div>
 </div>

@@ -3,7 +3,6 @@ from re import match
 from decimal import Decimal, InvalidOperation
 
 from django import forms
-from django.contrib.admin.widgets import FilteredSelectMultiple
 
 from apps.stddata.models import Country, Language
 from apps.indexer.models import Indexer
@@ -45,18 +44,23 @@ class AdvancedSearch(forms.Form):
         super(AdvancedSearch, self).__init__(*args, **kwargs)
         self.fields['country'] = forms.MultipleChoiceField(
           required=False,
-          widget=FilteredSelectMultiple('Countries', False),
+          widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'overflow-y-auto max-h-60 border border-gray-500 '
+                     'px-1 inline-block'}),
           choices=([c.code, c.name.title()]
                    for c in Country.objects.order_by('name')))
         self.fields['language'] = forms.MultipleChoiceField(
           required=False,
           choices=([L.code, L.name]
                    for L in Language.objects.order_by('name')),
-          widget=FilteredSelectMultiple('Languages', False))
+          widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'overflow-y-auto max-h-60 border border-gray-500 '
+                     'px-1 inline-block'}),
+          )
         if user and user.is_authenticated:
             self.fields['in_collection'] = forms.ModelMultipleChoiceField(
               label='',
-              widget=FilteredSelectMultiple('Collections', False),
+              # widget=FilteredSelectMultiple('Collections', False),
               queryset=user.collector.collections.all(),
               required=False)
             self.user = user
@@ -64,11 +68,11 @@ class AdvancedSearch(forms.Form):
               label="Is in the selected collections", required=False,
               initial=True)
 
-    target = forms.ChoiceField(choices=[['publisher', 'Publishers'],
+    target = forms.ChoiceField(choices=[['publisher', 'Publisher'],
                                         ['brand_group',
-                                         'Publisher Brand Group'],
+                                         "Publisher's Brand Group"],
                                         ['brand_emblem',
-                                         'Publisher Brand Emblem'],
+                                         "Publisher's Brand Emblem"],
                                         ['indicia_publisher',
                                          'Indicia / Colophon Publisher'],
                                         ['series', 'Series'],
@@ -168,7 +172,8 @@ class AdvancedSearch(forms.Form):
     publication_type = forms.ModelMultipleChoiceField(
                              label='Publication Type',
                              queryset=SeriesPublicationType.objects.all(),
-                             required=False)
+                             required=False,
+                             widget=forms.SelectMultiple(attrs={'size': '3'}))
 
     issues = forms.CharField(label='Issues', required=False)
     volume = forms.CharField(label='Volume', required=False)
@@ -201,7 +206,8 @@ class AdvancedSearch(forms.Form):
                ('has_reprints', "parts of the issue are reprints"),
                ('is_reprinted', "parts of the issue are reprinted"),
                ('issue_level_reprints', "issue level reprints from sequences"),
-               ('issue_level_reprinted', "issue level reprinted in sequences")])
+               ('issue_level_reprinted',
+                "issue level reprinted in sequences")])
 
     cover_needed = forms.BooleanField(label="Cover is Needed",
                                       required=False)
@@ -212,7 +218,7 @@ class AdvancedSearch(forms.Form):
                                    (False, "no"))))
     image_resources = forms.MultipleChoiceField(
       label='Image Resources',
-      widget=FilteredSelectMultiple('Image Resources', False),
+      # widget=FilteredSelectMultiple('Image Resources', False),
       choices=(('has_soo', 'Has Statement of Ownership Scan'),
                ('needs_soo', 'Needs Statement of Ownership Scan'),
                ('has_indicia', 'Has Indicia Scan'),
@@ -222,13 +228,17 @@ class AdvancedSearch(forms.Form):
       required=False, label='',
       queryset=Indexer.objects.filter(imps__gt=0).
       order_by('user__first_name', 'user__last_name').select_related('user'),
-      widget=FilteredSelectMultiple('Indexers', False, attrs={'size': '6'}))
+      widget=forms.CheckboxSelectMultiple(attrs={
+        'class': 'overflow-y-auto max-h-60 border border-gray-500 '
+                 'px-1 inline-block'}),
+     )
 
     feature = forms.CharField(required=False)
     type = forms.ModelMultipleChoiceField(
       queryset=StoryType.objects.exclude(name__in=[i for i in OLD_TYPES]),
-      widget=FilteredSelectMultiple('Story Types', False,
-                                    attrs={'size': '6'}),
+      widget=forms.CheckboxSelectMultiple(attrs={
+          'class': 'overflow-y-auto max-h-60 border border-gray-500 '
+                   'px-1 inline-block'}),
       required=False)
 
     title = forms.CharField(required=False)
@@ -256,7 +266,9 @@ class AdvancedSearch(forms.Form):
     first_line = forms.CharField(required=False)
     genre = forms.MultipleChoiceField(
       required=False,
-      widget=FilteredSelectMultiple('Genres', False),
+      widget=forms.CheckboxSelectMultiple(attrs={
+          'class': 'overflow-y-auto max-h-60 border border-gray-500 '
+                   'px-1 inline-block'}),
       choices=([c, c] for c in GENRES['en']))
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
@@ -324,7 +336,8 @@ class AdvancedSearch(forms.Form):
                     not_allowed = True
                     break
             if not_allowed:
-                raise forms.ValidationError('The following characters are '
+                raise forms.ValidationError(
+                  'The following characters are '
                   'not allowed in a keyword: < > { } : / \\ | @ ,')
 
         return keywords

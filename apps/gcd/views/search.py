@@ -15,6 +15,7 @@ from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
 from django.shortcuts import render
+from django.utils.safestring import mark_safe
 from urllib.parse import quote, unquote_plus
 
 from djqscsv import render_to_csv_response
@@ -36,6 +37,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, \
                             Award, ReceivedAward, Character, Group, Universe, \
                             Printer
 from apps.gcd.models.character import CharacterSearchTable
+from apps.gcd.models.cover import CoverIssuePublisherEditTable
 from apps.gcd.models.creator import CreatorSearchTable
 from apps.gcd.models.feature import FeatureSearchTable
 from apps.gcd.models.issue import INDEXED, IssuePublisherTable, \
@@ -52,9 +54,11 @@ from apps.gcd.models.series import SeriesPublisherTable
 from apps.gcd.views import paginate_response, ORDER_ALPHA, ORDER_CHRONO
 from apps.gcd.forms.search import AdvancedSearch, \
                                   PAGE_RANGE_REGEXP, COUNT_RANGE_REGEXP
-from apps.gcd.views.details import issue, COVER_TABLE_WIDTH, IS_EMPTY, \
-                                   IS_NONE, generic_sortable_list
-from apps.gcd.views.covers import get_image_tags_per_page
+from apps.gcd.views.details import issue, IS_EMPTY, \
+                                   IS_NONE, generic_sortable_list, \
+                                   TW_SORT_TABLE_TEMPLATE, \
+                                   TW_SORT_GRID_TEMPLATE
+
 from apps.select.views import filter_sequences, filter_issues, \
                               filter_haystack, filter_publisher, \
                               filter_series, FilterForLanguage
@@ -1289,7 +1293,7 @@ def search(request):
 
 
 def advanced_search(request):
-    """Displays the advanced search page."""
+    """Displays the advanced search form."""
 
     if ('target' not in request.GET):
         return render(request, 'gcd/search/advanced.html',
@@ -1595,7 +1599,6 @@ def process_advanced(request, export_csv=False):
         return render_to_csv_response(items.values(*fields),
                                       append_datestamp=True)
 
-    heading = target.title() + ' Search Results'
     # Store the URL minus the page setting so that we can use
     # it to build the URLs for the links to other pages.
     get_copy = request.GET.copy()
@@ -1612,61 +1615,71 @@ def process_advanced(request, export_csv=False):
             urlresolvers.reverse(advanced_search), query_string),
           redirect=False, is_safe=True)
 
+    heading = mark_safe('matching your <a href="#search_terms">query</a>')
+
+    context = {'object': target,
+               'heading': heading,
+               'plural_suffix': 's',
+               'query_string': query_string,
+               'used_search_terms': used_search_terms,
+               'method': method,
+               'logic': logic,
+               'advanced_search': True,
+               }
+
+    template = 'gcd/search/tw_generic_list_sortable.html'
+
+    if target in ['cover', 'issue_cover']:
+        context['item_name'] = 'cover'
+        if target == 'issue_cover':
+            context['item_name'] = 'covers for issue'
+        table = CoverIssuePublisherEditTable(
+          items, template_name=TW_SORT_GRID_TEMPLATE)
+        return generic_sortable_list(request, items, table, template, context,
+                                     50)
+
     if target == 'sequence':
-        table = StoryTable(items, attrs={'class': 'sortable_listing'},
-                           template_name='gcd/bits/sortable_table.html',
-                           order_by=('issue__series__sort_name',
-                                     'issue__sort_code', 'sequence_number'))
-        context = {'object': target,
-                   'heading': heading,
-                   'item_name': 'sequence',
-                   'plural_suffix': 's',
-                   'query_string': query_string,
-                   'used_search_terms': used_search_terms,
-                   'target': 'Stories',
-                   'method': method,
-                   'logic': logic,
-                   'advanced_search': True,
-                   }
-        return generic_sortable_list(request, items, table,
-                                     'gcd/search/generic_list.html', context)
+        table = StoryTable(items, template_name=TW_SORT_TABLE_TEMPLATE)
+        context['item_name'] = 'sequence'
+
     if target == 'issue':
-        table = IssuePublisherTable(
-          items, attrs={'class': 'sortable_listing'},
-          template_name='gcd/bits/sortable_table.html',)
-        context = {'object': target,
-                   'heading': heading,
-                   'item_name': 'issue',
-                   'plural_suffix': 's',
-                   'query_string': query_string,
-                   'used_search_terms': used_search_terms,
-                   'target': 'Issues',
-                   'method': method,
-                   'logic': logic,
-                   'advanced_search': True,
-                   }
+        table = IssuePublisherTable(items,
+                                    template_name=TW_SORT_TABLE_TEMPLATE)
+        context['item_name'] = 'issue'
         if request.user.is_authenticated and not settings.MYCOMICS:
             context['bulk_edit'] = urlresolvers.reverse('edit_issues_in_bulk')
-        return generic_sortable_list(request, items, table,
-                                     'gcd/search/generic_list.html', context)
 
     if target == 'series':
-        table = SeriesPublisherTable(
-          items, attrs={'class': 'sortable_listing'},
-          template_name='gcd/bits/sortable_table.html',)
-        context = {'object': target,
-                   'heading': heading,
-                   'item_name': 'series',
-                   'plural_suffix': '',
-                   'query_string': query_string,
-                   'used_search_terms': used_search_terms,
-                   'target': 'Series',
-                   'method': method,
-                   'logic': logic,
-                   'advanced_search': True,
-                   }
-        return generic_sortable_list(request, items, table,
-                                     'gcd/search/generic_list.html', context)
+        table = SeriesPublisherTable(items,
+                                     template_name=TW_SORT_TABLE_TEMPLATE)
+        context['item_name'] = 'series'
+        context['plural_suffix'] = ''
+
+    if target == 'publisher':
+        table = PublisherSearchTable(items,
+                                     template_name=TW_SORT_TABLE_TEMPLATE)
+        context['item_name'] = 'publisher'
+
+    if target == 'indicia_publisher':
+        table = IndiciaPublisherSearchTable(
+          items, template_name=TW_SORT_TABLE_TEMPLATE)
+        context['item_name'] = 'indicia publisher'
+
+    if target == 'brand_group':
+        table = BrandGroupSearchTable(
+          items, template_name=TW_SORT_TABLE_TEMPLATE)
+        context['item_name'] = 'brand group'
+
+    if target == 'brand_emblem':
+        table = BrandEmblemSearchTable(
+          items, template_name=TW_SORT_TABLE_TEMPLATE)
+        context['item_name'] = 'brand emblem'
+
+    return generic_sortable_list(request, items, table, template, context)
+
+    raise ValueError
+
+    heading = target.title() + ' Search Results'
 
     item_name = target
     plural_suffix = 's'
@@ -1686,22 +1699,14 @@ def process_advanced(request, export_csv=False):
         'query_string': query_string,
     }
 
-    template = 'gcd/search/%s_list.html' % \
-               ('content' if target == 'sequence' else item_name)
+    template = 'gcd/search/%s_list.html' % item_name
 
     context['target'] = display_target
     context['method'] = method
     context['logic'] = logic
     context['used_search_terms'] = used_search_terms
 
-    if item_name in ['cover', 'issue_cover']:
-        context['table_width'] = COVER_TABLE_WIDTH
-        context['NO_ADS'] = True
-        return paginate_response(request, items, template, context,
-                                 per_page=50, callback_key='tags',
-                                 callback=get_image_tags_per_page)
-    else:
-        return paginate_response(request, items, template, context)
+    return paginate_response(request, items, template, context)
 
 
 def combine_q(data, *qobjs):

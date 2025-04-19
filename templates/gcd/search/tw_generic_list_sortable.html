@@ -1,0 +1,44 @@
+{% extends "gcd/tw_base_view.html" %}
+
+{% load static %}
+{% load credits %}
+{% load display %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: {{ heading }}
+{% endblock %}
+
+{% block css_raw %}
+<script type="text/javascript" src="{% static 'js/htmx.min.js' %}"></script>
+{% endblock %}
+
+{% block nav_bar %}
+  {{ block.super }}
+  {% include "gcd/search/tw_list_header.html" %}
+{% endblock %}
+
+{% block view_body %}
+<div>
+  Refine your query using an <a href="{% url 'advanced_search' %}?{{ query_string }}">advanced query</a> or go to the <a href="{% url "haystack_search" %}?q={{ search_term }}">standard search</a>.
+  {% if bulk_edit %}
+    {% if page.paginator.num_pages == 1 %}
+  &nbsp;Use this search result for a <a href="{{ bulk_edit }}?{{ query_string }}">bulk change</a>.
+    {% else %}
+  &nbsp;Note that for a bulk change the number of {{ item_name }}{{ page.paginator.count|pluralize:plural_suffix }} cannot be larger than 100.
+    {% endif %}
+</div>
+{% endif %}
+<div>
+  {% render_table table %}
+</div>
+
+{% if used_search_terms %}
+{% include "gcd/bits/search_terms.html" %}
+{% endif %}
+
+{% endblock %}
+
+{% block bottom_nav_bar %}
+  {% include "gcd/search/tw_list_header.html" %}
+{% endblock %}

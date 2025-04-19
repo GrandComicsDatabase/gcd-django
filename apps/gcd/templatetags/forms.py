@@ -4,14 +4,18 @@ from django import template
 
 register = template.Library()
 
+
 def show_form(field):
     """
     For showing form fields for credits and similar fields as list items
     on a per-field bases instead of the whole-form approach of the standard
     list display methods.
     """
-    return mark_safe('<li>%s%s%s</li>' %
-                     (field.label_tag(), field, field.errors))
+    return mark_safe('<li class="my-1">%s%s%s</li>' %
+                     (field.label_tag(attrs={'class':
+                      'me-2 w-36 sm:w-24 lg:w-44 text-right inline-block'}),
+                      field, field.errors))
+
 
 def show_form_as_row(field):
     """
@@ -20,7 +24,8 @@ def show_form_as_row(field):
     """
     last_row_tag = '<tr>'
 
-    label_cell = '<th class="lg:w-64 text-right pe-2">%s</th>' % field.label_tag()
+    label_cell = '<th class="lg:w-64 text-right pe-2">%s</th>' % \
+                 field.label_tag()
     value_cell = '<td>%s</td>' % field
 
     main_row_tag = '<tr>'
@@ -42,6 +47,6 @@ def show_form_as_row(field):
 
     return mark_safe(rows)
 
+
 register.filter(show_form)
 register.filter(show_form_as_row)
-
