@@ -47,10 +47,10 @@
     </td>
         {% endif %}
     <td>
-        {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING %}
-      <a href="{% url "compare" id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">
+        {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING or changeset.state == states.DISCUSSED %}
+      <a href="{% url 'compare' id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">
         {% else %}
-      <a href="{% url "edit" id=changeset.id %}">
+      <a href="{% url 'edit' id=changeset.id %}">
         {% endif %}
         {% if changeset.country %}
           {% with country_names|key:changeset.country as name %}
