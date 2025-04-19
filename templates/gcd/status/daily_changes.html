@@ -1,4 +1,4 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 
 {% load static %}
 {% load i18n %}
@@ -7,46 +7,46 @@
 
 {% block title %} GCD :: Daily Changes {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
+{% block nav_bar %}
+  {{ block.super }}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-3">
+  <div class="flex-1 font-bold text-lg">
+  {% trans "Changes for "%}{{ date }}
+  </div>
+  <div class="flex justify-end">
+  {% include "gcd/bits/choose_date.html" %}
+  </div>
+</nav>
 {% endblock %}
 
 {% block view_body %}
 
-<h1 class="item_id search_id">
-<div class="left">
-  {% trans "Changes for "%}{{ date }}
-</div>
-{% include "gcd/bits/choose_date.html" %}
-</h1>
-
-{% if request.user.is_authenticated and request.user.indexer.imps > 0 %}
+  {% if request.user.is_authenticated and request.user.indexer.imps > 0 %}
 <div class="left">
 Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all changes{% else %}my changes{% endif %}</a>.
 </div>
-{% endif %}
+  {% endif %}
 
-{% if creators %}
-<table class="listing">
-  <tr>
+  {% if creators %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th> Creator ({{ creators.count }}) </th>
     <th> Change History </th>
   </tr>
-  {% for creator in creators %}
+    {% for creator in creators %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ creator.get_absolute_url }}">{{ creator }}</a> </td>
     <td>
       <a href="{% url "change_history" model_name='creator' id=creator.id %}">Change History</a>
     </td>
   </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
-{% if publishers %}
-<table class="listing">
-  <tr>
+  {% if publishers %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th colspan="2"> Publisher ({{ publishers.count }}) </th>
     <th> #&nbsp;Brands </th>
     <th> #&nbsp;Indicia Publishers </th>
@@ -54,23 +54,23 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
     <th> #&nbsp;Issues </th>
     <th> Change History </th>
   </tr>
-  {% for publisher in publishers %}
+    {% for publisher in publishers %}
     <tr class="{% cycle 'listing_even' 'listing_odd' %}">
       <td class="listing_country"> <img {{ publisher.country|show_country_info }}></td>
       <td class="listing_publisher"> <a href="{{ publisher.get_absolute_url }}">{{ publisher.name }}</a></td>
       <td>
-        {% if publisher.brand_count %}
+      {% if publisher.brand_count %}
           <a href="{{ publisher.get_absolute_url}}brands/">{{ publisher.brand_count }}</a>
-        {% else %}
+      {% else %}
           {{ publisher.brand_count }}
-        {% endif %}
+      {% endif %}
       </td>
       <td>
-        {% if publisher.indicia_publisher_count %}
+      {% if publisher.indicia_publisher_count %}
           <a href="{{ publisher.get_absolute_url}}indicia_publishers/">{{ publisher.indicia_publisher_count }}</a>
-        {% else %}
+      {% else %}
           {{ publisher.indicia_publisher_count }}
-        {% endif %}
+      {% endif %}
       </td>
       <td> {{ publisher.series_count }} </td>
       <td> {{ publisher.issue_count }} </td>
@@ -78,13 +78,13 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
         <a href="{% url "change_history" model_name='publisher' id=publisher.id %}">Change History</a>
       </td>
     </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
-{% if brand_groups %}
-<table class="listing">
-  <tr>
+  {% if brand_groups %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th> Brand Group  ({{ brand_groups.count }}) </th>
     <th colspan="2"> Parent </th>
     <th> #&nbsp;Issues </th>
@@ -92,7 +92,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
     <th> Year Ended</th>
     <th> Change History </th>
   </tr>
-  {% for brand in brand_groups %}
+    {% for brand in brand_groups %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
     <td class="listing_country"> <img {{ brand.parent.country|show_country_info }}></td>
@@ -104,13 +104,13 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
       <a href="{% url "change_history" model_name='brand_group' id=brand.id %}">Change History</a>
     </td>
   </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
-{% if brands %}
-<table class="listing">
-  <tr>
+  {% if brands %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th> Brand  ({{ brands.count }}) </th>
     <th> Group </th>
     <th> #&nbsp;Issues </th>
@@ -118,14 +118,14 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
     <th> Year Ended</th>
     <th> Change History </th>
   </tr>
-  {% for brand in brands %}
+    {% for brand in brands %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ brand.get_absolute_url }}">{{ brand.name }}</a></td>
     <td class="listing_country"> 
-    {% for group in brand.group.all %}
+      {% for group in brand.group.all %}
     <img align="top" {{ group.parent.country|show_country_info }}>
     <a href="{{ group.get_absolute_url }}">{{ group.name }}</a>
-    {% endfor %}
+      {% endfor %}
     </td>
     <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }}</td>
@@ -134,13 +134,13 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
       <a href="{% url "change_history" model_name='brand' id=brand.id %}">Change History</a>
     </td>
   </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
-{% if indicia_publishers %}
-<table class="listing">
-  <tr>
+  {% if indicia_publishers %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th> Indicia Publisher  ({{ indicia_publishers.count }}) </th>
     <th colspan="2"> Parent </th>
     <th> #&nbsp;Issues </th>
@@ -149,7 +149,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
     <th> Surrogate? </th>
     <th> Change History </th>
   </tr>
-  {% for ind_pub in indicia_publishers %}
+    {% for ind_pub in indicia_publishers %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ ind_pub.get_absolute_url }}">{{ ind_pub.name }}</a> </td>
     <td class="listing_country"> <img {{ ind_pub.parent.country|show_country_info }}></td>
@@ -162,13 +162,13 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
       <a href="{% url "change_history" model_name='indicia_publisher' id=ind_pub.id %}">Change History</a>
     </td>
   </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
-{% if series %}
-<table class="listing">
-  <tr>
+  {% if series %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th> Series  ({{ series.count }}) </th>
     <th colspan="2"> Publisher </th>
     <th> Year </th>
@@ -177,7 +177,7 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
     <th> Published </th>
     <th> Change History </th>
   </tr>
-  {% for series in series %}
+    {% for series in series %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> </td>
     <td class="listing_country"> <img {{ series.country|show_country_info }}></td>
@@ -185,36 +185,36 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
     <td> {{ series.year_began }} </td>
     <td> {{ series.issue_count }} issue{{ series.issue_count|pluralize }}</td>
     <td>
-    {% if not series.scan_needed_count %}
+      {% if not series.scan_needed_count %}
     <a href="{% url "series_covers" series_id=series.id %}">Gallery</a>
-    {% else %}
-      {% if series.has_gallery %}
-        <a href="{% url "series_covers" series_id=series.id %}">Have
-        {{ series.scan_count}}</a>
-        (<a href="{% url "series_scan_table" series_id=series.id %}">Need
-        {{ series.scan_needed_count }}</a>)
       {% else %}
+        {% if series.has_gallery %}
+        <a href="{% url "series_covers" series_id=series.id %}">Have
+          {{ series.scan_count}}</a>
+        (<a href="{% url "series_scan_table" series_id=series.id %}">Need
+          {{ series.scan_needed_count }}</a>)
+        {% else %}
         <a href="{% url "series_scan_table" series_id=series.id %}">Add</a>
+        {% endif %}
       {% endif %}
-    {% endif %}
     </td>
     <td> {{ series.display_publication_dates }} </td>
     <td>
       <a href="{% url "change_history" model_name='series' id=series.id %}">Change History</a>
     </td>
   </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
-{% if series_bonds %}
-<table class="listing">
-  <tr>
+  {% if series_bonds %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th> Numbering From </th>
     <th> Continues In </th>
     <th> Change History </th>
   </tr>
-  {% for series_bond in series_bonds %}
+    {% for series_bond in series_bonds %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ series_bond.origin.get_absolute_url }}">{{ series_bond.origin }}</a> </td>
     <td> <a href="{{ series_bond.target.get_absolute_url }}">{{ series_bond.target }}</a> </td>
@@ -222,19 +222,19 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
       <a href="{% url "change_history" model_name='series_bond' id=series_bond.id %}">Change History</a>
     </td>
   </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
-{% if issues %}
-<table class="listing">
-  <tr>
+  {% if issues %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th> Issue ({{ issues.count }}) </th>
     <th colspan="2"> Publisher </th>
     <th> Date </th>
     <th> Change History </th>
   </tr>
-  {% for issue in issues %}
+    {% for issue in issues %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> {{ issue|show_issue }} </td>
     <td class="listing_country"> <img {{ issue.series.country|show_country_info }}></td>
@@ -244,34 +244,38 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
       <a href="{% url "change_history" model_name='issue' id=issue.id %}">Change History</a>
     </td>
   </tr>
-  {% endfor %}
+    {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
 
-{% if all_images %}
-<table class="listing">
-  <tr>
+  {% if all_images %}
+<table class="sortable_listing mb-2">
+  <tr class="sortable_heading">
     <th> Image </th>
     <th> Change History </th>
   </tr>
-  {% for images, sub_url, type, model in all_images %}
-    {% for object in images %}
+    {% for images, sub_url, type, model in all_images %}
+      {% for object in images %}
   <tr class="{% cycle 'listing_even' 'listing_odd' %}">
     <td> <a href="{{ object.get_absolute_url }}{{ sub_url }}">{{ object }}</a>: {{ type }}</td>
     <td>
       <a href="{% url "change_history" model_name=model id=object.id %}">Change History</a>
     </td>
   </tr>
+      {% endfor %}
     {% endfor %}
-  {% endfor %}
 </table>
-{% endif %}
+  {% endif %}
+{% endblock %}
 
-<h1 class="item_id search_id">
-<div class="left">
+{% block bottom_nav_bar %}
+  {{ block.super }}
+  <nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-3">
+    <div class="flex-1 font-bold text-lg">
   {% trans "Changes for "%}{{ date }}
-</div>
-{% include "gcd/bits/choose_date.html" %}
-</h1>
-<hr>
+    </div>
+    <div class="flex justify-end">
+      {% include "gcd/bits/choose_date.html" %}
+    </div>
+  </nav>
 {% endblock %}

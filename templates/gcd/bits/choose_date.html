@@ -2,7 +2,7 @@
 
 <div class="right">
   {% if daily %}
-  <a class="link-with-text-color" href="{{ choose_url_before }}">&#5176; {% trans "day before" %}</a> |
+  <a class="link-with-text-color" href="{{ choose_url_before }}">&#5176; {% trans "day before" %}</a>
   {% elif yearly %}
   <a class="link-with-text-color" href="{{ choose_url_before }}">&#5176; {% trans "year before" %}</a> |
   {% else %}
@@ -42,7 +42,7 @@
     </form>
   {% if choose_url_after %}
     {% if daily %}
-   | <a class="link-with-text-color" href="{{ choose_url_after }}">{% trans "day after" %} &#5171;</a>
+   <a class="link-with-text-color" href="{{ choose_url_after }}">{% trans "day after" %} &#5171;</a>
     {% elif yearly %}
    | <a class="link-with-text-color" href="{{ choose_url_after }}">{% trans "year after" %} &#5171;</a>
     {% else %}
