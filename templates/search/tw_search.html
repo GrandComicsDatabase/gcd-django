@@ -8,14 +8,12 @@
   GCD :: {{ heading }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" href="{% static 'css/output.css' %}" type="text/css">
-{% endblock %}
 {% block css_raw %}
 <script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
 {% endblock %}
 
-{% block view_body %}
+{% block nav_bar %}
+  {{ block.super }}
 <nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-3">
   <div class="flex-1 font-bold text-lg">
   {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} result{{ page.paginator.count|pluralize:'s' }} matching your search for '{{ request.GET.q }}'
@@ -24,7 +22,9 @@
     {% include "gcd/bits/tw_pagination_bar.html" %}
   {% endwith %}
 </nav>
+{% endblock %}
 
+{% block view_body %}
 <div class="flex">
   <div class="max-lg:hidden invisible font-bold px-2 rounded">
   {% include "gcd/bits/hs_sort_bar.html" %}
@@ -274,12 +274,6 @@
         </ul>
       Special characters, e.g. ,;/, are ignored.
       </div>
-<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-3">
-    <div></div>
-  {% with query_string=query|add:facet_page|add:sort %}
-    {% include "gcd/bits/tw_pagination_bar.html" %}
-  {% endwith %}
-</nav>
   {% include 'oi/bits/jquery.html' with details=True %}
 
 <script type="text/javascript">
@@ -307,4 +301,14 @@
       })
     })
 </script>
+{% endblock %}
+
+{% block bottom_nav_bar %}
+  {{ block.super }}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-3">
+  <div></div>
+{% with query_string=query|add:facet_page|add:sort %}
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+{% endwith %}
+</nav>
 {% endblock %}
