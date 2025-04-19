@@ -2231,11 +2231,19 @@ def search_stories(data, op):
                                 data[field]}))
 
     if data['feature']:
-        q_and_only.append(Q(**{'%s%s__%s' % (prefix,
-                                             'feature_object__name', op):
-                          data['feature']}) |
-                          Q(**{'%s%s__%s' % (prefix, 'feature', op):
-                            data['feature']}))
+        if data['feature_is_linked'] is None:
+            q_and_only.append(Q(**{'%s%s__%s' % (prefix,
+                                                 'feature_object__name', op):
+                              data['feature']}) |
+                              Q(**{'%s%s__%s' % (prefix, 'feature', op):
+                                   data['feature']}))
+        elif data['feature_is_linked'] is True:
+            q_and_only.append(Q(**{'%s%s__%s' % (prefix,
+                                                 'feature_object__name', op):
+                              data['feature']}))
+        else:
+            q_and_only.append(Q(**{'%s%s__%s' % (prefix, 'feature', op):
+                                   data['feature']}))
 
     if data['type']:
         q_and_only.append(Q(**{'%stype__in' % prefix: data['type']}))

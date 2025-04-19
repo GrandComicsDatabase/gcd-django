@@ -3303,10 +3303,18 @@ def feature_sequences(request, feature_id, country=None):
     return generic_sortable_list(request, stories, table, template, context)
 
 
-def feature_issuelist_by_id(request, feature_id):
+def feature_issues(request, feature_id, to_be_migrated=False):
     feature = get_gcd_object(Feature, feature_id)
+    heading = 'for feature %s' % (feature)
 
-    if feature.feature_type.id == 1:
+    if to_be_migrated:
+        name = feature.name
+        issues = Issue.objects.filter(story__feature__icontains=name,
+                                      deleted=False).distinct()\
+                              .select_related('series__publisher')
+        result_disclaimer = ''
+        heading = 'to be migrated for feature %s' % (feature)
+    elif feature.feature_type.id == 1:
         issues = Issue.objects.filter(story__feature_object=feature,
                                       story__type__id__in=CORE_TYPES,
                                       story__deleted=False).distinct()\
@@ -3326,7 +3334,7 @@ def feature_issuelist_by_id(request, feature_id):
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'for feature %s' % (feature),
+        'heading': heading,
         'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'

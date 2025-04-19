@@ -63,10 +63,11 @@ GCD :: Feature :: {{ feature.name }}
           <ul class="object-page-link-list">
             <li><a href='{% url "feature_creators" feature_id=feature.id %}'>Creator List</a></li>
             <li><a href='{% url "feature_creator_names" feature_id=feature.id %}'>Creator Name List</a></li>
-            <li><a href='{% url "feature_issuelist_by_id" feature_id=feature.id %}'>Issue List</a></li>
+            <li><a href='{% url "feature_issues" feature_id=feature.id %}'>Issue List</a></li>
 {% if feature.feature_type.id == 1%}
             <li><a href='{% url "feature_overview" feature_id=feature.id %}'>Issue Overview </a></li>
 {% endif %}
+            <li><a href='{% url "feature_issues_to_migrate" feature_id=feature.id %}'>Issues to be Migrated (text search for "{{ feature.name }}")</a></li>
             <li><a href='{% url "feature_covers" feature_id=feature.id %}'>Cover List</a></li>
             <li><a href='{% url "feature_characters" feature_id=feature.id %}'>Character List</a></li>
             <li><a href='{% url "feature_sequences" feature_id=feature.id %}'>Sequences List</a></li>

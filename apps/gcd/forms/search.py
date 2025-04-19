@@ -234,6 +234,11 @@ class AdvancedSearch(forms.Form):
      )
 
     feature = forms.CharField(required=False)
+    feature_is_linked = forms.NullBooleanField(
+      label="Linked and Text Feature", required=False,
+      widget=forms.Select(choices=((None, "both linked and text features"),
+                                   (True, "linked features only"),
+                                   (False, "text features only"))))
     type = forms.ModelMultipleChoiceField(
       queryset=StoryType.objects.exclude(name__in=[i for i in OLD_TYPES]),
       widget=forms.CheckboxSelectMultiple(attrs={

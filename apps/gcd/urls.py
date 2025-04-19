@@ -375,7 +375,10 @@ urlpatterns = [
 
     # Feature
     path('feature/<int:feature_id>/issues/',
-      gcd_views.details.feature_issuelist_by_id, name='feature_issuelist_by_id'),
+      gcd_views.details.feature_issues, name='feature_issues'),
+    path('feature/<int:feature_id>/issues_to_migrate/',
+      gcd_views.details.feature_issues, {'to_be_migrated': True},
+      name='feature_issues_to_migrate',),
     path('feature/<int:feature_id>/overview/',
       gcd_views.details.feature_overview, name='feature_overview'),
     path('feature/<int:feature_id>/creator/<int:creator_id>/issues/',
