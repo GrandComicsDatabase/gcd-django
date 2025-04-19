@@ -1271,6 +1271,10 @@ a:hover {
   margin-inline-end: 0.25rem;
 }
 
+.me-2 {
+  margin-inline-end: 0.5rem;
+}
+
 .ml-1 {
   margin-left: 0.25rem;
 }
@@ -1401,6 +1405,10 @@ a:hover {
 
 .w-3\/4 {
   width: 75%;
+}
+
+.w-36 {
+  width: 9rem;
 }
 
 .w-4 {
@@ -2497,6 +2505,10 @@ select {
     width: 80%;
   }
 
+  .lg\:w-44 {
+    width: 11rem;
+  }
+
   .lg\:w-64 {
     width: 16rem;
   }
@@ -2643,6 +2655,32 @@ select {
 
 .\[\&_a\]\:hover\:no-underline:hover a {
   text-decoration-line: none;
+}
+
+.\[\&_fieldset\]\:mb-2 fieldset {
+  margin-bottom: 0.5rem;
+}
+
+.\[\&_fieldset\]\:rounded fieldset {
+  border-radius: 0.25rem;
+}
+
+.\[\&_fieldset\]\:border fieldset {
+  border-width: 1px;
+}
+
+.\[\&_fieldset\]\:border-gray-600 fieldset {
+  --tw-border-opacity: 1;
+  border-color: rgb(75 85 99 / var(--tw-border-opacity));
+}
+
+.\[\&_legend\]\:px-1 legend {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.\[\&_legend\]\:font-bold legend {
+  font-weight: 700;
 }
 
 .\[\&_span\]\:font-bold span {

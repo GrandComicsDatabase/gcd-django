@@ -21,6 +21,9 @@ var limitSynopsisLength = {{ settings.LIMIT_SYNOPSIS_LENGTH }};
 </script>
 <script type='text/javascript' src='{% static "bootstrap/js/bootstrap.min.js" %}'></script>
   {% endif %}
+{% endif %}
+
+{% if revision.source_name in 'story feature' or object_name in 'Story Feature' %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('input[name="genre"]');
@@ -48,8 +51,4 @@ var limitSynopsisLength = {{ settings.LIMIT_SYNOPSIS_LENGTH }};
     });
   });
 </script>
-{% endif %}
-
-{% if object_name == 'Creator' %}
-  {% include 'oi/bits/creatorrevision_form_utils.html' %}
 {% endif %}

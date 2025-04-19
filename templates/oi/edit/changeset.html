@@ -123,7 +123,7 @@ This change is being edited by {{ changeset.indexer.indexer }}.
 
 {% block footer %}
   {{ form.media }}
-  {% if changeset.state == states.OPEN and changeset.indexer == user and object_name == 'Creator' %}
+  {% if changeset.state == states.OPEN and changeset.indexer == user and revision.source_name in 'feature' %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}
 {% endblock %}

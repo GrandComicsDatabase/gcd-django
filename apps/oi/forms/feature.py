@@ -6,17 +6,20 @@ from dal import autocomplete
 
 from collections import OrderedDict
 
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, HTML
+
 from apps.gcd.models import Feature, FeatureRelationType
 from apps.gcd.models.support import GENRES
 
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, remove_leading_article)
 
-from .support import (_set_help_labels, _clean_keywords, KeywordBaseForm,
+from .support import (_set_help_labels, KeywordBaseForm,
                       _get_comments_form_field, combine_reverse_relations,
                       GENERIC_ERROR_MESSAGE, _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision)
-from .story import _genre_choices
+from .story import _genre_choices, BaseField
 
 
 def get_feature_revision_form(revision=None, user=None):
@@ -57,6 +60,28 @@ class FeatureRevisionForm(KeywordBaseForm):
     class Meta:
         model = FeatureRevision
         fields = model._base_field_list
+
+    def __init__(self, *args, **kwargs):
+        super(FeatureRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.form_tag = False
+        self.helper.disable_csrf = True
+        fields = list(self.fields)
+        genres = fields.index('genre')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields[:genres]]
+        field_list.append(HTML(
+          '<tr class="mb-2"><th>Selected Genre:</th>'
+          '<td id="selected-genres"></td></tr>'))
+        field_list.extend([BaseField(Field(field,
+                                     template='oi/bits/uni_field.html'))
+                           for field in fields[genres:]])
+        self.helper.layout = Layout(*(f for f in field_list))
+        # self.helper.doc_links = FEATURE_HELP_LINKS
 
     def clean(self):
         cd = self.cleaned_data
@@ -205,9 +230,8 @@ def get_feature_relation_revision_form(revision=None, user=None):
     class RuntimeFeatureRelationRevisionForm(FeatureRelationRevisionForm):
         choices = list(FeatureRelationType.objects.values_list('id',
                                                                'description'))
-        additional_choices = FeatureRelationType.objects\
-                                                .values_list('id',
-                                                             'reverse_description')
+        additional_choices = FeatureRelationType.objects.values_list(
+                             'id', 'reverse_description')
         choices = combine_reverse_relations(choices, additional_choices)
         relation_type = forms.ChoiceField(choices=choices)
 

@@ -19,14 +19,13 @@ Adding {{ object_name }}
 {% include "oi/bits/jquery.html" %}
 {{ credits_formset.media }}
 {{ form.media }}
-{% include "oi/bits/multi_selector.html" %}
 <h1>Adding {{ object_name }} {{ extra_adding_info }}</h1>
 
-<div class="edit">
+<div class="mb-1">
 <form action="{{ object_url }}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
   <table class="editing">
-  {% if object_name == 'Story' or object_name == 'Creator' or object_name == 'Issue' or object_name == 'Variant Issue' or object_name == 'Character' or object_name == 'Group' %}
+  {% if object_name in 'Character Creator Feature Group Issue Story' or object_name == 'Variant Issue' %}
     {% crispy form %}
   {% else %}
     {{ form.as_table }}
@@ -46,7 +45,7 @@ Adding {{ object_name }}
 {% endblock %}
 
 {% block footer %}
-  {% if object_name in 'Issues Story Creator' or 'Variant Issue' in object_name %}
+  {% if object_name in 'Feature Issues Story' or 'Variant Issue' in object_name %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}
 {% endblock %}
