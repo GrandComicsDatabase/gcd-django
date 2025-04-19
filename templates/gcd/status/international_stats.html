@@ -13,14 +13,16 @@ Statistics by {{ type }}, ordered by number of
   <form class="inline" method="get"
         action="{% if type == 'language' %}{% url 'international_stats_language' %}{% else %}{% url 'international_stats_country' %}{% endif %}">
     {{ form }}
-    <input type="submit" name="submit" value="reorder">
+    <button class="btn btn-blue ml-1 mb-2 h-8">
+    <input type="submit" name="submit" value="Reorder">
+    </button>
   </form>
 </div>
 <div class="flex flex-wrap">
   {% for object, stats_for_object in stats %}
   <div class="w-full sm:w-1/2 px-1">
     <div class="text-lg label-gcd-blue">
-        Statistics for Comics {% if type == 'country' %} Published {% endif %} in
+        Statistics for comics {% if type == 'country' %} published {% endif %} in
         <a class="text-white visited:text-white underline"
            href="{% url 'process_advanced_search' %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{{ type }}={{ object.code }}">
     {% if type == 'country' %} <img class="inline mb-1" src="{{ STATIC_URL }}img/gcd/flags/{{ object.code|lower }}.png" alt="{{ object }}">{% endif %}
