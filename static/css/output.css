@@ -922,7 +922,7 @@ a:hover {
   margin-inline-end: 0.25rem;
   display: block;
   --tw-bg-opacity: 1;
-  background-color: rgb(250 250 249 / var(--tw-bg-opacity));
+  background-color: rgb(245 245 244 / var(--tw-bg-opacity));
   text-align: center;
   font-size: 0.875rem;
   line-height: 1.25rem;
@@ -2191,6 +2191,11 @@ select {
 .\[\&_ul\]\:object-page-link-list ul {
 }
 
+.odd\:bg-stone-200:nth-child(odd) {
+  --tw-bg-opacity: 1;
+  background-color: rgb(231 229 228 / var(--tw-bg-opacity));
+}
+
 .visited\:text-black:visited {
   color: rgb(0 0 0 );
 }
@@ -2231,6 +2236,11 @@ select {
 .hover\:bg-stone-200:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(231 229 228 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-stone-300:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(214 211 209 / var(--tw-bg-opacity));
 }
 
 .hover\:bg-stone-400:hover {

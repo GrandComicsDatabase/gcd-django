@@ -241,14 +241,14 @@ Related Links
     <span class="toc-bar-full">Table of Contents</span>
   </div>
 {% if cover_story %}
-  <li class="hover:bg-blue-50">
+  <li class="hover:bg-stone-300">
     <span>
       <a name="toc_{{ cover_story.id }}" href="#{{ cover_story.id }}">{{ cover_story|show_title:1 }}</a></span><br/>
     <span>{{ cover_story.show_feature}}</span>
   </li>
 {% endif %}
 {% for story in stories %}
-  <li class="hover:bg-blue-50">
+  <li class="hover:bg-stone-300 odd:bg-stone-200">
     <span>
       <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}?show_all{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
     <span>{{ story.show_feature}}</span>

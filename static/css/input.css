@@ -55,7 +55,7 @@
     @apply bg-stone-400;
   }
   .btn-blue-disabled {
-    @apply font-normal bg-stone-50 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
+    @apply font-normal bg-stone-100 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
   }
   .label-gcd-blue {
     @apply bg-stone-600 text-white rounded px-2 py-1 font-bold;
