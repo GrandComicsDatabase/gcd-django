@@ -6560,6 +6560,21 @@ class PreviewStory(Story):
                 self.editing or
                 self.active_credits.exists())
 
+    def has_content(self):
+        """
+        Simplifies UI checks for conditionals.  Content fields
+        """
+        return self.job_number or \
+            self.genre or \
+            self.has_characters() or \
+            self.first_line or \
+            self.synopsis or \
+            self.has_keywords() or \
+            self.has_reprints() or \
+            self.feature_object.exclude(genre='').values('genre').exists() or \
+            self.feature_logo.count() or \
+            self.active_awards().count()
+
     @property
     def from_all_reprints(self):
         return self.revision.from_reprints_oi(preview=True)
