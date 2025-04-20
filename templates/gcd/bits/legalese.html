@@ -15,13 +15,15 @@
     {% trans 'Cover thumbnails are used for identification purposes only.' %}
     {% trans 'All rights to cover images reserved by the respective copyright holders.' %}
   </div>
-  <div class="no_visited footer_item">
+  <div class="flex">
     <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">
-      <img alt="Creative Commons License" src="{% static "img/cc_sa_license88x31.png" %}"></a>
+      <img class='inline w-48 pe-1' alt="Creative Commons License" src="{% static 'img/cc_sa_license88x31.png' %}"></a>
+    <div>
     {% blocktrans %}
 All portions of <a href="http://www.comics.org/" rel="cc:attributionURL">the {{ site_name }}</a>&trade;, except where noted otherwise, are
 copyrighted by the GCD and are licensed under a <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>. This includes but is not necessarily limited to our database schema and data distribution format.
     {% endblocktrans %}
+    </div>
   </div>
   <div class="no_visited footer_item">
     The GCD <a href="{% url "privacy" %}">{% trans 'Privacy Policy' %}</a>.

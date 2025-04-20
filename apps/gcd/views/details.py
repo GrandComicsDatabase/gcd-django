@@ -2966,9 +2966,10 @@ def do_on_sale_weekly(request, year=None, week=None):
             week = int(week)
     except ValueError:
         year = None
+
     if year is None:
         year, week = date.today().isocalendar()[0:2]
-    # gregorian calendar date of the first day of the given ISO year
+    # Gregorian calendar date of the first day of the given ISO year
     fourth_jan = date(int(year), 1, 4)
     delta = timedelta(fourth_jan.isoweekday()-1)
     year_start = fourth_jan - delta
@@ -2994,8 +2995,8 @@ def do_on_sale_weekly(request, year=None, week=None):
         next_week = (monday + timedelta(weeks=1)).isocalendar()[0:2]
     else:
         next_week = None
-    heading = "Issues on-sale in week %s/%s" % (week, year)
-    dates = "from %s to %s" % (monday.isoformat(), sunday.isoformat())
+    dates = "%s to %s" % (monday.isoformat(), sunday.isoformat())
+    heading = "on-sale in week %s/%s from %s" % (week, year, dates)
     query_val = {'target': 'issue',
                  'method': 'icontains'}
     query_val['start_date'] = monday.isoformat()
@@ -3017,7 +3018,7 @@ def do_on_sale_weekly(request, year=None, week=None):
     vars = {
         'items': issues_on_sale,
         'heading': heading,
-        'dates': dates,
+        'choose_week': True,
         'choose_url': choose_url,
         'choose_url_after': choose_url_after,
         'choose_url_before': choose_url_before,
@@ -3027,8 +3028,8 @@ def do_on_sale_weekly(request, year=None, week=None):
 
 
 def on_sale_weekly(request, year=None, week=None, variant=True):
-    issues_on_sale, vars = do_on_sale_weekly(request, year, week)
-    if vars is None:
+    issues_on_sale, context = do_on_sale_weekly(request, year, week)
+    if context is None:
         # MYCOMICS
         return issues_on_sale
 
@@ -3043,25 +3044,38 @@ def on_sale_weekly(request, year=None, week=None, variant=True):
     filter = filter_issues(request, issues_on_sale)
     issues_on_sale = filter.qs
     table = CoverIssueStoryPublisherTable(issues_on_sale,
-                                          attrs={'class': 'sortable_listing'},
-                                          template_name=SORT_TABLE_TEMPLATE,
+                                          template_name=TW_SORT_TABLE_TEMPLATE,
                                           order_by=('issues'))
-    vars['filter'] = filter
-    vars['variant'] = variant
+
     if variant:
         if year:
-            vars['path'] = urlresolvers.reverse("on_sale_weekly_no_variant",
-                                                kwargs={'year': year,
-                                                        'week': week})
+            switch_url = urlresolvers.reverse("on_sale_weekly_no_variant",
+                                              kwargs={'year': year,
+                                                      'week': week})
         else:
-            vars['path'] = urlresolvers.reverse("on_sale_this_week_no_variant")
+            switch_url = urlresolvers.reverse("on_sale_this_week_no_variant")
+        switch_name = 'Show Without Variants'
     else:
         if year:
-            vars['path'] = urlresolvers.reverse("on_sale_weekly",
-                                                kwargs={'year': year,
-                                                        'week': week})
+            switch_url = urlresolvers.reverse("on_sale_weekly",
+                                              kwargs={'year': year,
+                                                      'week': week})
         else:
-            vars['path'] = urlresolvers.reverse("on_sale_this_week")
+            switch_url = urlresolvers.reverse("on_sale_this_week")
+        switch_name = 'Show With Variants'
+
+    switch_link = '<div class="mt-1"><a href="%s">' \
+                  '<button class="btn btn-blue">%s</button></a></div>' % (
+                    switch_url, switch_name)
+    context['result_disclaimer'] = mark_safe(switch_link)
+    context['item_name'] = 'issue'
+    context['plural_suffix'] = 's'
+    context['filter_form'] = filter.form
+    context['variant'] = variant
+
+    return generic_sortable_list(request, issues_on_sale, table,
+                                 'gcd/search/tw_list_sortable.html',
+                                 context, 50)
 
     return generic_sortable_list(request, issues_on_sale, table,
                                  'gcd/status/issues_on_sale.html', vars, 50)
@@ -3167,7 +3181,6 @@ def on_sale_monthly(request, year=None, month=None, variant=True):
     context['filter_form'] = filter.form
     context['variant'] = variant
     table = CoverIssueStoryPublisherTable(issues_on_sale,
-                                          attrs={'class': 'sortable_listing'},
                                           template_name=TW_SORT_TABLE_TEMPLATE,
                                           order_by=('issues'))
     return generic_sortable_list(request, issues_on_sale, table,
@@ -4970,7 +4983,7 @@ def show_issue(request, issue, preview=False):
        'preview': preview,
        'not_shown_types': not_shown_types,
        'show_sources': show_sources,
-       'absolute': 'absolute', # for small screen
+       'absolute': 'absolute',  # for small screen
        'among_others': issue.created and issue.created.year <=
                         settings.NEW_SITE_CREATION_DATE.year,
        'RANDOM_IMAGE': _publisher_image_content(issue.series.publisher_id)

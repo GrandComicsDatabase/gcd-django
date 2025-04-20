@@ -1,15 +1,20 @@
 {% load i18n %}
 
-<div class="right">
-  <a href="{{ choose_url_before }}">&lt; {% trans "week before" %}</a> |
-    <form method="GET"
+<div class="h-8 flex">
+  <a class="rounded-s-lg flex items-center justify-center h-8 navigation-bar-box-link" href="{{ choose_url_before }}">&#5176;
+{% trans "week before" %}</a>
+    <form class="items-center flex px-1" method="GET"
           action="{{ choose_url }}"
-          style="display:inline">
-      year: <input type="text" name="year" id="year" size="4">
-      week: <input type="text" name="week" id="week" size="2">
-      <input type="submit" value="{% trans 'Go' %}">
+          >
+      <span class="flex items-center h-8 justify-center navigation-bar-box-link">year:</span>
+      <input type="text" name="year" id="year" size="4">
+      <span class="flex items-center h-8 justify-center navigation-bar-box-link">week:</span>
+      <input type="text" name="week" id="week" size="2">
+      <input class="px-2 py-0 h-7 bg-blue-100 border border-gray-400 hover:bg-blue-300 rounded" type="submit" value="{% trans 'Go' %}">
     </form>
   {% if choose_url_after %}
-   | <a href="{{ choose_url_after }}">{% trans "week after" %} &gt;</a>
+  <a class="rounded-e-lg flex items-center justify-center h-8 navigation-bar-box-link" href="{{ choose_url_before }}">
+    {% trans "week after" %} &#5171;</a>
+
   {% endif %}
 </div>

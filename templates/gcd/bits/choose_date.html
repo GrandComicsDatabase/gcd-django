@@ -1,17 +1,19 @@
 {% load i18n %}
 
-<div class="right">
+<div class="h-8 flex">
+  <a class="rounded-s-lg flex items-center justify-center h-8 navigation-bar-box-link" href="{{ choose_url_before }}">&#5176;
   {% if daily %}
-  <a class="link-with-text-color" href="{{ choose_url_before }}">&#5176; {% trans "day before" %}</a>
+    {% trans "day before" %}
   {% elif yearly %}
-  <a class="link-with-text-color" href="{{ choose_url_before }}">&#5176; {% trans "year before" %}</a> |
+    {% trans "year before" %}
   {% else %}
-  <a class="link-with-text-color" href="{{ choose_url_before }}">&#5176; {% trans "month before" %}</a> |
+    {% trans "month before" %}
   {% endif %}
+  </a>
     <form method="GET"
           action="{{ choose_url }}"
           style="display:inline">
-      {% if sort%}
+      {% if sort %}
       <select hidden name="sort" id="sort">
         <option value="{{ sort }}">{{ sort }}</option>
       </select>
@@ -38,15 +40,17 @@
     {% if daily %}
       <input type="text" name="day" id="day" size="2">
     {% endif %}
-      <input class="px-1 py-0 h-6 bg-blue-100 border border-gray-400 hover:bg-blue-300 rounded" type="submit" value="{% trans 'Go' %}">
+      <input class="px-2 py-0 h-7 bg-blue-100 border border-gray-400 hover:bg-blue-300 me-1 rounded" type="submit" value="{% trans 'Go' %}">
     </form>
   {% if choose_url_after %}
+  <a class="rounded-e-lg flex items-center justify-center h-8 navigation-bar-box-link" href="{{ choose_url_before }}">
     {% if daily %}
-   <a class="link-with-text-color" href="{{ choose_url_after }}">{% trans "day after" %} &#5171;</a>
+      {% trans "day after" %}
     {% elif yearly %}
-   | <a class="link-with-text-color" href="{{ choose_url_after }}">{% trans "year after" %} &#5171;</a>
+      {% trans "year after" %}
     {% else %}
-   | <a class="link-with-text-color" href="{{ choose_url_after }}">{% trans "month after" %} &#5171;</a>
+      {% trans "month after" %}a>
     {% endif %}
+    &#5171;</a>
   {% endif %}
 </div>

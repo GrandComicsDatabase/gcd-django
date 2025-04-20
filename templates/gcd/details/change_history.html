@@ -1,4 +1,4 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 
 {% load static %}
 {% load i18n %}
@@ -7,84 +7,48 @@
 
 {% block title %} GCD :: {{ description }} :: {{ object.name }} :: Change History {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}">
-</link>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default/series.css" %}">
-</link>
+{% block nav_bar %}
+  {{ block.super }}
+  {% if description == 'Issue' %}
+    {% with issue=object issue_link=True %}
+      {% include "gcd/bits/tw_issue_header.html" %}
+    {% endwith %}
+  {% elif description == 'Series' %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    <a href="{{ object.get_absolute_url }}">{{ object.object_page_name }}</a>
+  </div>
+  <div class="font-bold max-sm:max-w-[25%]">
+    {% if object.language %}
+      Published in {{ object.language.name }}
+    {% endif %}
+    {% if object.country %}
+      ({{ object.country.name }})
+      <img class="inline" src="{{ STATIC_URL }}img/gcd/flags/{{ object.country.code|lower }}.png" alt="{{ country }}">
+    {% endif %}
+  </div>
+</nav>
+  {% else %}
+<h1 class="bg-blue-100 px-1 lg:px-2">
+  <a href="{{ object.get_absolute_url }}">{{ object.object_page_name }}</a>
+</h1>
+  {% endif %}
 {% endblock %}
 
 {% block view_body %}
-
-{% if description == "Publisher" %}
-  {% with object as publisher %}
-    {% include "gcd/bits/publisher_header.html" %}
-  {% endwith %}
-{% endif %}
-
-{% if description == "Imprint" %}
-  {% with object as publisher %}
-    {% include "gcd/bits/publisher_header.html" %}
-  {% endwith %}
-{% endif %}
-
-{% if description == "Brand Group" %}
-  {% with object as publisher %}
-  {% with "brand_groups" as url_suffix %}
-    {% include "gcd/bits/publisher_header.html" %}
-  {% endwith %}
-  {% endwith %}
-{% endif %}
-
-{% if description == "Brand" %}
-  {% with object as publisher %}
-  {% with "brands" as url_suffix %}
-    {% include "gcd/bits/publisher_header.html" %}
-  {% endwith %}
-  {% endwith %}
-{% endif %}
-
-{% if description == "Indicia Publisher" %}
-  {% with object as publisher %}
-  {% with "indicia_publishers" as url_suffix %}
-    {% include "gcd/bits/publisher_header.html" %}
-  {% endwith %}
-  {% endwith %}
-{% endif %}
-
-{% if description == "Series" %}
-  {% with object as series %}
-    {% include "gcd/bits/series_issue_header.html" %}
-  {% endwith %}
-{% endif %}
-
-{% if description == "Issue" %}
-  {% with object as issue %}
-  {% with object.series as series %}
-  {% with object.display_number as issue_number %}
-  {% with "history" as extra %}
-    {% include "gcd/bits/series_issue_header.html" %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-  {% endwith %}
-{% endif %}
-
 <div class="details">
 {% include "gcd/bits/change_history_details.html" %}
 </div>
 
 {% if description == "Issue" and object.series.is_singleton %}
-<h3 style="margin-bottom: 0em; clear: both;">Change History For Series Data</h3>
+<h3>Change History For Series Data</h3>
   {% with object=object.series changesets=object.series.approved_changesets %}
     {% include "gcd/bits/change_history_details.html" %}
   {% endwith %}
 {% endif %}
 
 {% if description == "Issue" and perms.indexer.can_vote and object.cover_set.count %}
-<h3 style="margin-bottom: 0em; clear: both;">Change History For Cover Scans</h3>
+<h3>Change History For Cover Scans</h3>
   {% for cover in object.cover_set.all %}
     {% with object=cover changesets=cover.approved_changesets %}
       {% include "gcd/bits/change_history_details.html" %}
@@ -94,13 +58,13 @@
 
 {% if description == "Issue" and object.indicia_image or object.soo_image %}
   {% if object.indicia_image %}
-  <h3 style="margin-bottom: 0em; clear: both;">Change History For Indicia Scan</h3>
+  <h3>Change History For Indicia Scan</h3>
     {% with model_name='image' object=object.indicia_image changesets=object.indicia_image.approved_changesets %}
       {% include "gcd/bits/change_history_details.html" %}
     {% endwith %}
   {% endif %}
   {% if object.soo_image %}
-  <h3 style="margin-bottom: 0em; clear: both;">Change History For Statement of Ownership Scan</h3>
+  <h3>Change History For Statement of Ownership Scan</h3>
     {% with model_name='image' object=object.soo_image changesets=object.soo_image.approved_changesets %}
       {% include "gcd/bits/change_history_details.html" %}
     {% endwith %}
@@ -108,15 +72,15 @@
 {% endif %}
 
 {% if description == "Series" and object.has_series_bonds %}
-<h3 style="margin-bottom: 0em; clear: both;">Change History For Series Bonds</h3>
+<h3>Change History For Series Bonds</h3>
   {% for bond in object.to_series_bond.all %}
-<h3 style="margin-bottom: 0em; clear: both;">{{ bond }}</h3>
+<h3>{{ bond }}</h3>
     {% with object=bond changesets=bond.approved_changesets %}
       {% include "gcd/bits/change_history_details.html" %}
     {% endwith %}
   {% endfor %}
   {% for bond in object.from_series_bond.all %}
-<h3 style="margin-bottom: 0em; clear: both;">{{ bond }}</h3>
+<h3>{{ bond }}</h3>
     {% with object=bond changesets=bond.approved_changesets %}
       {% include "gcd/bits/change_history_details.html" %}
     {% endwith %}
@@ -124,25 +88,24 @@
 {% endif %}
 
 {% if description == "Brand" and object.emblem %}
-<h3 style="margin-bottom: 0em; clear: both;">Change History For Publisher's Brand Emblem Scan</h3>
+<h3>Change History For Publisher's Brand Emblem Scan</h3>
   {% with model_name='image' object=object.emblem changesets=object.emblem.approved_changesets %}
     {% include "gcd/bits/change_history_details.html" %}
   {% endwith %}
 {% endif %}
 
 {% if description == "Creator" and object.portrait %}
-<h3 style="margin-bottom: 0em; clear: both;">Change History For Creator Portrait Image</h3>
+<h3>Change History For Creator Portrait Image</h3>
   {% with model_name='image' object=object.portrait changesets=object.portrait.approved_changesets %}
     {% include "gcd/bits/change_history_details.html" %}
   {% endwith %}
 {% endif %}
 
 {% if description == "Creator" and object.samplescan %}
-<h3 style="margin-bottom: 0em; clear: both;">Change History For Sample Scan</h3>
+<h3>Change History For Sample Scan</h3>
   {% with model_name='image' object=object.samplescan changesets=object.samplescan.approved_changesets %}
     {% include "gcd/bits/change_history_details.html" %}
   {% endwith %}
 {% endif %}
 
 {% endblock %}
-

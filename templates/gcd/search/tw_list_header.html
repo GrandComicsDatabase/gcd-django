@@ -13,3 +13,11 @@
   </div>
 </nav>
 {% endif %}
+{% if choose_week %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-3">
+  <div class="flex-1 font-bold text-lg"></div>
+  <div class="flex justify-end">
+    {% include "gcd/bits/choose_week.html" %}
+  </div>
+</nav>
+{% endif %}

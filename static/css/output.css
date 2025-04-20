@@ -1355,10 +1355,6 @@ a:hover {
   height: 1rem;
 }
 
-.h-6 {
-  height: 1.5rem;
-}
-
 .h-7 {
   height: 1.75rem;
 }
@@ -2713,6 +2709,10 @@ select {
 .\[\&_td\]\:px-3 td {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
+}
+
+.\[\&_td\]\:align-top td {
+  vertical-align: top;
 }
 
 .\[\&_th\]\:px-1 th {
