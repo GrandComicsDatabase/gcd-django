@@ -91,6 +91,9 @@
   {% if publisher.has_keywords %}
             <li><span class="font-bold">Keywords:</span>  {{ series.display_keywords }}</li>
   {% endif %}
+  {% with object=series %}
+    {% include "gcd/bits/external_links.html" %}
+  {% endwith %}
           </ul>
 
   {% with brand_counts=series.brand_info_counts %}

@@ -70,14 +70,9 @@ GCD :: Character :: {{ character.name }}
             <li><a href='{% url "character_characters" character_id=character.id %}'>Characters Appeared With</a></li>
             <li><a href='{% url "character_sequences" character_id=character.id %}'>Sequences List</a></li>
           </ul>
-      {% if character.external_link.count %}
-        external links
-          <ul class="list-disc md:columns-2 list-outside ps-4">
-        {% for external_link in character.external_link.all %}
-            <li><a href="{{ external_link.link }}">{{ external_link.site }}</a></li>
-        {% endfor %}
-          </ul>
-      {% endif %}
+      {% with object=character %}
+        {% include "gcd/bits/external_links.html" %}
+      {% endwith %}
         <h3>Name:</h3>
           <ol class="ps-4">
             <a href='{% url "character_name_issues" character_name_id=character.official_name.id %}'>{{ character.official_name.name }}</a>

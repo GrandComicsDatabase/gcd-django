@@ -21,6 +21,7 @@ from .cover import Cover
 from .seriesbond import SeriesRelativeBond
 from .award import ReceivedAward
 from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT
+from .datasource import ExternalLink
 
 
 class SeriesPublicationType(models.Model):
@@ -59,6 +60,7 @@ class Series(GcdData):
                                          null=True,
                                          blank=True)
     notes = models.TextField()
+    external_link = models.ManyToManyField(ExternalLink)
     keywords = TaggableManager()
 
     year_began = models.IntegerField(db_index=True)

@@ -8,6 +8,10 @@ from .support import (
     SERIES_HELP_LINKS, SERIES_HELP_TEXTS, GENERIC_ERROR_MESSAGE,
     KeywordBaseForm)
 
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, HTML
+from .custom_layout_object import Formset, BaseField
+
 from apps.oi.models import (
     SeriesRevision, SeriesBondRevision, get_series_field_list,
     get_series_bond_field_list, remove_leading_article)
@@ -126,6 +130,19 @@ class SeriesRevisionForm(KeywordBaseForm):
     def __init__(self, *args, **kwargs):
         super(SeriesRevisionForm, self).__init__(*args, **kwargs)
         self.fields['country'].queryset = Country.objects.exclude(code='xx')
+
+        self.helper = FormHelper()
+        fields = list(self.fields)
+        description_pos = fields.index('notes')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields[:description_pos]]
+        field_list.append(Formset('external_link_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[description_pos:]])
+        self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = SERIES_HELP_LINKS
 
     def clean(self):
         cd = self.cleaned_data

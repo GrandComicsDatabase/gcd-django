@@ -72,6 +72,9 @@ GCD :: Feature :: {{ feature.name }}
             <li><a href='{% url "feature_characters" feature_id=feature.id %}'>Character List</a></li>
             <li><a href='{% url "feature_sequences" feature_id=feature.id %}'>Sequences List</a></li>
           </ul>
+{% with object=feature %}
+  {% include "gcd/bits/external_links.html" %}
+{% endwith %}
         </div>
       </div> 
     </td>

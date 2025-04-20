@@ -19,7 +19,8 @@ from .support import (_set_help_labels, KeywordBaseForm,
                       _get_comments_form_field, combine_reverse_relations,
                       GENERIC_ERROR_MESSAGE, _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision)
-from .story import _genre_choices, BaseField
+from .story import _genre_choices
+from .custom_layout_object import Formset, BaseField
 
 
 def get_feature_revision_form(revision=None, user=None):
@@ -77,9 +78,15 @@ class FeatureRevisionForm(KeywordBaseForm):
         field_list.append(HTML(
           '<tr class="mb-2"><th>Selected Genre:</th>'
           '<td id="selected-genres"></td></tr>'))
+        description_pos = fields.index('notes')
+
         field_list.extend([BaseField(Field(field,
-                                     template='oi/bits/uni_field.html'))
-                           for field in fields[genres:]])
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[genres:description_pos]])
+        field_list.append(Formset('external_link_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[description_pos:]])
         self.helper.layout = Layout(*(f for f in field_list))
         # self.helper.doc_links = FEATURE_HELP_LINKS
 

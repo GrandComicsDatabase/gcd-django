@@ -364,7 +364,8 @@ class Changeset(models.Model):
                     self.storyrevisions.all())
 
         if self.change_type == CTYPES['feature']:
-            return (self.featurerevisions.all(),)
+            return (self.featurerevisions.all(),
+                    self.externallinkrevisions.all(),)
 
         if self.change_type == CTYPES['feature_logo']:
             return (self.featurelogorevisions.all(),
@@ -399,7 +400,8 @@ class Changeset(models.Model):
                     self.issuerevisions.all().select_related('issue'),
                     self.issuecreditrevisions.all(),
                     self.storyrevisions.all(),
-                    self.storycreditrevisions.all())
+                    self.storycreditrevisions.all(),
+                    self.externallinkrevisions.all())
 
         if self.change_type == CTYPES['series_bond']:
             return (self.seriesbondrevisions.all()
@@ -407,7 +409,8 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['publisher']:
             return (self.publisherrevisions.all(), self.brandrevisions.all(),
-                    self.indiciapublisherrevisions.all())
+                    self.indiciapublisherrevisions.all(),
+                    self.externallinkrevisions.all())
 
         if self.change_type == CTYPES['brand']:
             return (self.brandrevisions.all(), self.branduserevisions.all(),
@@ -2257,7 +2260,7 @@ class Revision(models.Model):
 
     def calculate_imps(self):
         """
-        Calculate and return the number of Index Measurment Points that this
+        Calculate and return the number of Index Measurement Points that this
         revision is worth.  Relies on self.changed being set.
         """
         imps = 0
@@ -2343,6 +2346,21 @@ class Revision(models.Model):
                     external_link_revision.deleted = self.deleted
                     external_link_revision.save()
         self._do_create_dependent_revisions(delete, **kwargs)
+
+    def _create_external_link_formset(self, request):
+        from apps.oi.forms import ExternalLinkRevisionFormSet
+
+        return (ExternalLinkRevisionFormSet(
+          request.POST or None,
+          instance=self,
+          queryset=self.external_link_revisions.filter(deleted=False)))
+
+    def _process_external_link_formset(self, extra_forms):
+        external_link_formset = extra_forms['external_link_formset']
+        _process_formset(self, external_link_formset, generic=True)
+        removed_external_links = external_link_formset.deleted_forms
+        if removed_external_links:
+            _removed_related_objects(removed_external_links, 'external_link')
 
     def _do_create_dependent_revisions(self, delete=False, **kwargs):
         """
@@ -2546,6 +2564,7 @@ class PublisherRevision(PublisherRevisionBase):
     parent = models.ForeignKey('gcd.Publisher', on_delete=models.CASCADE,
                                default=None, null=True, blank=True,
                                db_index=True, related_name='imprint_revisions')
+    external_link_revisions = GenericRelation(ExternalLinkRevision)
 
     date_inferred = models.BooleanField(default=False)
 
@@ -2588,6 +2607,13 @@ class PublisherRevision(PublisherRevisionBase):
                 brand_use_revision.deleted = True
                 brand_use_revision.save()
 
+    def extra_forms(self, request):
+        external_link_formset = self._create_external_link_formset(request)
+        return {'external_link_formset': external_link_formset}
+
+    def process_extra_forms(self, extra_forms):
+        self._process_external_link_formset(extra_forms)
+
     def get_absolute_url(self):
         if self.publisher is None:
             return "/publisher/revision/%i/preview" % self.id
@@ -2621,10 +2647,8 @@ class PublisherRevision(PublisherRevisionBase):
             return 1
         return PublisherRevisionBase._imps_for(self, field_name)
 
-
     def has_keywords(self):
         return self.keywords
-
 
     def display_keywords(self):
         return self.keywords
@@ -3392,6 +3416,7 @@ class SeriesRevision(Revision):
     is_singleton = models.BooleanField(default=False)
 
     notes = models.TextField(blank=True)
+    external_link_revisions = GenericRelation(ExternalLinkRevision)
     keywords = models.TextField(blank=True, default='')
 
     # Country and Language info.
@@ -3511,6 +3536,13 @@ class SeriesRevision(Revision):
             if len(str(self.year_began)) == 4:
                 issue_revision.key_date = '%d-00-00' % self.year_began
             issue_revision.save()
+
+    def extra_forms(self, request):
+        external_link_formset = self._create_external_link_formset(request)
+        return {'external_link_formset': external_link_formset}
+
+    def process_extra_forms(self, extra_forms):
+        self._process_external_link_formset(extra_forms)
 
     def get_absolute_url(self):
         if self.series is None:
@@ -4113,7 +4145,7 @@ class IssueRevision(Revision):
         super(IssueRevision, self).compare_changes(
           compare_revision=compare_revision)
         if not self.deleted and not self.changed['editing'] \
-          and not self.changeset.change_type == CTYPES['issue_bulk']:
+           and not self.changeset.change_type == CTYPES['issue_bulk']:
             credits = self.issue_credit_revisions.filter(
                            credit_type__id=6)
             if not compare_revision:
@@ -4400,7 +4432,7 @@ class IssueRevision(Revision):
 
     def extra_forms(self, request):
         from apps.oi.forms import IssueRevisionFormSet, \
-            PublisherCodeNumberFormSet, ExternalLinkRevisionFormSet
+            PublisherCodeNumberFormSet
         credits_formset = IssueRevisionFormSet(
           request.POST or None,
           instance=self,
@@ -4414,10 +4446,7 @@ class IssueRevision(Revision):
               )
         else:
             code_number_formset = None
-        external_link_formset = ExternalLinkRevisionFormSet(
-          request.POST or None,
-          instance=self,
-          queryset=self.external_link_revisions.filter(deleted=False))
+        external_link_formset = self._create_external_link_formset(request)
         return {'credits_formset': credits_formset,
                 'code_number_formset': code_number_formset,
                 'external_link_formset': external_link_formset}
@@ -4429,11 +4458,7 @@ class IssueRevision(Revision):
         if removed_credits:
             _removed_related_objects(removed_credits, 'issue_credit')
 
-        external_link_formset = extra_forms['external_link_formset']
-        _process_formset(self, external_link_formset, generic=True)
-        removed_external_links = external_link_formset.deleted_forms
-        if removed_external_links:
-            _removed_related_objects(removed_external_links, 'external_link')
+        self._process_external_link_formset(extra_forms)
 
         if self.series.has_publisher_code_number:
             code_number_formset = extra_forms['code_number_formset']
@@ -5624,7 +5649,7 @@ class StoryRevision(Revision):
                     break
 
         if 'genre' in self.changed and self.changed['genre'] \
-          and self.previous():
+           and self.previous():
             if self.previous().genre.lower() == self.genre.lower():
                 self.changed['genre'] = False
 
@@ -5639,7 +5664,6 @@ class StoryRevision(Revision):
                 current = _compare_string_genre(self)
                 if previous != current:
                     self.changed['genre'] = True
-
 
     def _do_complete_added_revision(self, issue):
         """
@@ -6714,6 +6738,8 @@ class FeatureRevision(Revision):
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
 
+    external_link_revisions = GenericRelation(ExternalLinkRevision)
+
     source_name = 'feature'
     source_class = Feature
 
@@ -6735,6 +6761,13 @@ class FeatureRevision(Revision):
             self.feature.sort_name = remove_leading_article(self.name)
         else:
             self.feature.sort_name = self.name
+
+    def extra_forms(self, request):
+        external_link_formset = self._create_external_link_formset(request)
+        return {'external_link_formset': external_link_formset}
+
+    def process_extra_forms(self, extra_forms):
+        self._process_external_link_formset(extra_forms)
 
     def get_absolute_url(self):
         if self.feature is None:
@@ -7158,17 +7191,13 @@ class CharacterRevision(CharacterGroupRevisionBase):
                 character_name.save()
 
     def extra_forms(self, request):
-        from apps.oi.forms import CharacterRevisionFormSet, \
-                                            ExternalLinkRevisionFormSet
-        # from apps.oi.forms.support import CREATOR_HELP_LINKS
+        from apps.oi.forms import CharacterRevisionFormSet
 
         character_names_formset = CharacterRevisionFormSet(
           request.POST or None, instance=self,
           queryset=self.character_name_revisions.filter(deleted=False))
-        external_link_formset = ExternalLinkRevisionFormSet(
-          request.POST or None,
-          instance=self,
-          queryset=self.external_link_revisions.filter(deleted=False))
+
+        external_link_formset = self._create_external_link_formset(request)
 
         return {'character_names_formset': character_names_formset,
                 'external_link_formset': external_link_formset
@@ -7204,11 +7233,7 @@ class CharacterRevision(CharacterGroupRevisionBase):
                 else:
                     removed_name.cleaned_data['id'].delete()
 
-        external_link_formset = extra_forms['external_link_formset']
-        _process_formset(self, external_link_formset, generic=True)
-        removed_external_links = external_link_formset.deleted_forms
-        if removed_external_links:
-            _removed_related_objects(removed_external_links, 'external_link')
+        self._process_external_link_formset(extra_forms)
 
     def _pre_save_object(self, changes):
         name = self.changeset.characternamedetailrevisions\
@@ -7217,7 +7242,8 @@ class CharacterRevision(CharacterGroupRevisionBase):
         self.character.sort_name = name.sort_name
 
     def _handle_dependents(self, changes):
-        # for new character, we need to save the record_id in the name revisions
+        # for new a character, we need to save the record_id in the
+        # name revisions
         if self.added:
             for name in self.changeset.characternamedetailrevisions.all():
                 name.creator = self.character
@@ -8700,8 +8726,7 @@ class CreatorRevision(Revision):
     def extra_forms(self, request):
         from apps.oi.forms.creator import CreatorRevisionFormSet
         from apps.oi.forms.support import CREATOR_HELP_LINKS
-        from apps.oi.forms import get_date_revision_form, \
-                                  ExternalLinkRevisionFormSet
+        from apps.oi.forms import get_date_revision_form
 
         creator_names_formset = CreatorRevisionFormSet(
           request.POST or None, instance=self,
@@ -8717,10 +8742,8 @@ class CreatorRevision(Revision):
                                      instance=self.death_date)
         birth_date_form.fields['date'].label = 'Birth date'
         death_date_form.fields['date'].label = 'Death date'
-        external_link_formset = ExternalLinkRevisionFormSet(
-          request.POST or None,
-          instance=self,
-          queryset=self.external_link_revisions.filter(deleted=False))
+
+        external_link_formset = self._create_external_link_formset(request)
 
         return {'creator_names_formset': creator_names_formset,
                 'birth_date_form': birth_date_form,
@@ -8776,11 +8799,8 @@ class CreatorRevision(Revision):
         process_data_source(death_date_form, 'death_date', self.changeset,
                             revision=data_source_revision,
                             sourced_revision=self)
-        external_link_formset = extra_forms['external_link_formset']
-        _process_formset(self, external_link_formset, generic=True)
-        removed_external_links = external_link_formset.deleted_forms
-        if removed_external_links:
-            _removed_related_objects(removed_external_links, 'external_link')
+
+        self._process_external_link_formset(extra_forms)
 
     def _pre_save_object(self, changes):
         name = self.changeset.creatornamedetailrevisions.get(

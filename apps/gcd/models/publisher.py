@@ -17,6 +17,7 @@ from apps.stddata.models import Country
 from .gcddata import GcdData, GcdLink
 from .image import Image
 from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT
+from .datasource import ExternalLink
 
 
 def _display_year(year, flag):
@@ -89,6 +90,7 @@ class Publisher(BasePublisher):
     indicia_publisher_count = models.IntegerField(default=0, db_index=True)
     series_count = models.IntegerField(default=0)
     issue_count = models.IntegerField(default=0)
+    external_link = models.ManyToManyField(ExternalLink)
 
     def active_brand_groups(self):
         return self.brandgroup_set.exclude(deleted=True)

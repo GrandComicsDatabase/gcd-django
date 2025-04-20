@@ -114,6 +114,11 @@
           </tr>
         {% endif %}
         </table>
+        <div class="px-1">
+        {% with object=publisher %}
+          {% include "gcd/bits/external_links.html" %}
+        {% endwith %}
+        </div>
     </td>
   </tr> 
 </table>

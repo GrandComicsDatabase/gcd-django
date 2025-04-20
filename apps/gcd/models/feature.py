@@ -15,6 +15,7 @@ from apps.stddata.models import Language
 from .gcddata import GcdData, GcdLink
 from .image import Image
 from .support_tables import TW_COLUMN_ALIGN_RIGHT
+from .datasource import ExternalLink
 
 
 class FeatureRelationType(models.Model):
@@ -60,6 +61,7 @@ class Feature(GcdData):
     year_created = models.IntegerField(db_index=True, null=True)
     year_created_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
+    external_link = models.ManyToManyField(ExternalLink)
     keywords = TaggableManager()
 
     def has_dependents(self):

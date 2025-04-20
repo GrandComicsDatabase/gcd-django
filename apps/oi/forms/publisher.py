@@ -7,6 +7,10 @@ from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.forms.widgets import HiddenInput
 
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, HTML
+from .custom_layout_object import Formset, BaseField
+
 from .support import (
     _get_comments_form_field, _set_help_labels,
     _create_embedded_image_revision, _save_runtime_embedded_image_revision,
@@ -33,10 +37,6 @@ def get_publisher_revision_form(source=None, user=None):
             country = forms.ModelChoiceField(queryset=country_queryset,
                                              empty_label=None)
 
-        def as_table(self):
-            if not user or user.indexer.show_wiki_links:
-                _set_help_labels(self, PUBLISHER_HELP_LINKS)
-            return super(RuntimePublisherRevisionForm, self).as_table()
     return RuntimePublisherRevisionForm
 
 
@@ -60,6 +60,21 @@ class PublisherRevisionForm(KeywordBaseForm):
         widgets = {'name': forms.TextInput(attrs={'class': 'w-full lg:w-4/5',
                                                   'autofocus': ''}), }
         help_texts = PUBLISHER_HELP_TEXTS
+
+    def __init__(self, *args, **kwargs):
+        super(PublisherRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        fields = list(self.fields)
+        description_pos = fields.index('notes')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields[:description_pos]]
+        field_list.append(Formset('external_link_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[description_pos:]])
+        self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = PUBLISHER_HELP_LINKS
 
     country = forms.ModelChoiceField(
         queryset=Country.objects.exclude(code='xx'))
