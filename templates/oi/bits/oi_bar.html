@@ -16,13 +16,13 @@
   <li><a class="hover:bg-blue-400 {% if queue_name == 'mentoring' %}bg-blue-400{% endif %}" href="{% url 'mentoring' %}">Mentoring</a> </li>
   {% endif %}
   <li><a class="hover:bg-blue-400" href="{% url 'voting_dashboard' %}">Voting</a> </li>
-  <!-- <li class="ml-auto mt-1">
+  <li class="ml-auto mt-1">
     <a name="{{ position }}" class="hover:bg-blue-400" title="go to the {{ link_direction }}" href="#{{ link_direction }}">
       <svg class="w-4 h-4" style="fill: currentColor;">
         <use xlink:href="#go-{{ link_direction }}"></use>
       </svg>
     </a>
-  </li> -->
+  </li>
 </ul>
 </div>
 {% endif %}
