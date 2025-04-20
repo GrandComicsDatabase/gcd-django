@@ -1,0 +1,8 @@
+{% if object.external_link.count %}
+    <b>External Links:</b>
+  <ul class="list-disc md:columns-2 list-outside ps-4">
+{% for external_link in object.external_link.all %}
+    <li><a href="{{ external_link.link }}">{{ external_link.site }}</a></li>
+{% endfor %}
+  </ul>
+{% endif %}
