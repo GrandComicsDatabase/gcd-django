@@ -263,6 +263,19 @@ CHARACTER_HELP_LINKS = {
     'site': 'External_Sites',
     'description': 'Description_(Characters)',
     'notes': 'Notes_(Characters)',
+    'keywords': KEYWORDS_HELP,
+    'comments': 'Comments '
+}
+
+GROUP_HELP_LINKS = {
+    'name': 'Character_Table#Groups',
+    'universe': 'Universe',
+    'year_first_published': 'Year_first_published',
+    'site': 'External_Sites',
+    'description': 'Description_(Characters)',
+    'notes': 'Notes_(Characters)',
+    'keywords': KEYWORDS_HELP,
+    'comments': 'Comments '
 }
 
 CREATOR_HELP_TEXTS = {
@@ -331,6 +344,7 @@ FEATURE_HELP_LINKS = {
     'year_first_published': 'Year_first_published',
     'feature_type': 'Adding_a_Missing_Feature',
     'site': 'External_Sites',
+    'comments': 'Comments '
 }
 
 PUBLISHER_HELP_TEXTS = {

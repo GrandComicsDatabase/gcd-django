@@ -22,7 +22,8 @@ from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
 
 from .support import (_get_comments_form_field, HiddenInputWithHelp,
                       GENERIC_ERROR_MESSAGE, CharacterBaseForm,
-                      combine_reverse_relations, CHARACTER_HELP_LINKS)
+                      combine_reverse_relations, CHARACTER_HELP_LINKS,
+                      GROUP_HELP_LINKS)
 
 
 def get_universe_revision_form(revision=None, user=None):
@@ -247,6 +248,7 @@ class GroupRevisionForm(CharacterRevisionForm):
                                            template='oi/bits/uni_field.html'))
                            for field in fields[:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = GROUP_HELP_LINKS
 
     additional_names_help = forms.CharField(
         widget=HiddenInputWithHelp,
