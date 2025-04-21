@@ -119,7 +119,7 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
   {% endwith %}
 {% endif %}
 <h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Issue Data </h3>
-<ul class="md:columns-2 ml-1">
+<ul class="md:columns-2 ml-1 [&_li]:break-inside-avoid-column">
   {% if not issue.no_brand %}
 <li><span class="font-bold">Publisher's Brand:</span>
     {% if issue.brand.emblem %}
@@ -300,6 +300,7 @@ Related Links
   <btn class="btn btn-blue-editing hover:bg-stone-200">
     <div class="flex justify-center">
     Download:
+  {% if user.is_authenticated %}
       <a
     {% if preview %}
             class="hover:bg-stone-400" href="{% url 'export_issue_revision_csv' issue.revision.id %}"
@@ -315,10 +316,10 @@ Related Links
             class="hover:bg-stone-400" href="{% url 'export_issue' issue.id %}"
     {% endif %}
       ><span class="px-1">(TSV)</span></a>
-
-    {% if not preview %}
+  {% endif %}
+  {% if not preview %}
       <a class="hover:bg-stone-400" href="/api{% url 'show_issue' issue.id %}?format=json"><span class="px-1">(JSON)</span></a>
-    {% endif %}
+  {% endif %}
     </div>
   </btn>
   <a class="hover:no-underline" href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}&amp;short_desc={{ issue|urlencode }}" target="_blank">

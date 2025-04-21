@@ -53,6 +53,10 @@ class ReprintRevisionForm(forms.ModelForm):
         fields = get_reprint_field_list()
 
 
+class GenreCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
+    option_template_name = 'forms/widgets/checkbox_option.html'
+
+
 def _genre_choices(language=None, additional_genres=None):
     fantasy_id = GENRES['en'].index('fantasy')
     if language and language.code != 'en' and language.code in GENRES:
@@ -72,7 +76,7 @@ def _genre_choices(language=None, additional_genres=None):
             choices.insert(0, [genre, genre + ' (deprecated)'])
     return forms.MultipleChoiceField(
         required=False,
-        widget=forms.CheckboxSelectMultiple(attrs={
+        widget=GenreCheckboxSelectMultiple(attrs={
           'class': 'overflow-y-auto max-h-60 border border-gray-500 '
                    'px-1 inline-block'}),
         choices=choices)

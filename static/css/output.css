@@ -2699,6 +2699,11 @@ select {
   font-weight: 700;
 }
 
+.\[\&_li\]\:break-inside-avoid-column li {
+  -moz-column-break-inside: avoid;
+       break-inside: avoid-column;
+}
+
 .\[\&_span\]\:font-bold span {
   font-weight: 700;
 }

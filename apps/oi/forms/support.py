@@ -801,7 +801,7 @@ class KeywordsField(forms.CharField):
 
 
 class BrandEmblemSelect(forms.Select):
-    option_template_name = 'oi/forms/widgets/select_brand.html'
+    option_template_name = 'forms/widgets/select_brand.html'
 
     def create_option(self, name, value, label, selected, index, subindex=None,
                       attrs=None):
