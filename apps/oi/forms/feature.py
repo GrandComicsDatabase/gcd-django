@@ -15,7 +15,7 @@ from apps.gcd.models.support import GENRES
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, remove_leading_article)
 
-from .support import (_set_help_labels, KeywordBaseForm,
+from .support import (KeywordBaseForm, FEATURE_HELP_LINKS,
                       _get_comments_form_field, combine_reverse_relations,
                       GENERIC_ERROR_MESSAGE, _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision)
@@ -48,11 +48,6 @@ def get_feature_revision_form(revision=None, user=None):
                 revision.genre = selected_genres
 
         genre = _genre_choices(language=language)
-
-        def as_table(self):
-            # if not user or user.indexer.show_wiki_links:
-            #       _set_help_labels(self, FEATURE_HELP_LINKS)
-            return super(FeatureRevisionForm, self).as_table()
 
     return RuntimeFeatureRevisionForm
 
@@ -88,7 +83,7 @@ class FeatureRevisionForm(KeywordBaseForm):
                                            template='oi/bits/uni_field.html'))
                            for field in fields[description_pos:]])
         self.helper.layout = Layout(*(f for f in field_list))
-        # self.helper.doc_links = FEATURE_HELP_LINKS
+        self.helper.doc_links = FEATURE_HELP_LINKS
 
     def clean(self):
         cd = self.cleaned_data

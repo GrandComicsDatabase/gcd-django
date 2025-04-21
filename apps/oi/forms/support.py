@@ -50,6 +50,7 @@ PUBLISHER_HELP_LINKS = {
     'year_ended_uncertain': 'Years_of_Publication',
     'country': 'Country',
     'url': 'URL',
+    'site': 'External_Sites',
     'notes': 'Notes_%28on_Publisher_Screen%29',
     'keywords': 'Keywords',
     'comments': 'Comments '
@@ -81,6 +82,7 @@ CREATOR_HELP_LINKS = {
     'death_city': 'Country_/_Province_/_City_Fields',
     'bio': 'Biography',
     'whos_who': 'Biography',
+    'site': 'External_Sites',
     'notes': 'Notes_(Creators)'
 }
 
@@ -148,33 +150,27 @@ ISSUE_HELP_LINKS = {
     'number': 'Issue_Numbers',
     'variant_name': 'Variant_Issues',
     'title': 'Issue_Title',
-    'no_title': 'Issue_Title',
     'volume': 'Volume',
-    'no_volume': 'Volume',
     'display_volume_with_number': 'Display_Volume_with_Issue_Number',
     'publication_date': 'Published_Date',
     'indicia_frequency': 'Indicia_frequency',
-    'no_indicia_frequency': 'Indicia_frequency',
     'key_date': 'Keydate',
     'on_sale_date': 'On-sale_date',
     'year_on_sale': 'On-sale_date',
     'month_on_sale': 'On-sale_date',
     'day_on_sale': 'On-sale_date',
     'indicia_publisher': 'Indicia_publisher',
-    'indicia_pub_not_printed': 'Indicia_publisher',
     'brand': 'Brand',
-    'no_brand': 'Brand',
     'price': 'Cover_Price',
     'page_count': 'Page_Count',
-    'page_count_uncertain': 'Page_Count',
+    'creator': 'Editing',
     'editing': 'Editing',
     'no_editing': 'Editing',
+    'indicia_printer': 'Indicia Printer',
     'isbn': 'ISBN',
-    'no_isbn': 'ISBN',
     'barcode': 'Barcode',
-    'no_barcode': 'Barcode',
     'rating': "Publisher's_Age_Guidelines",
-    'no_rating': "Publisher's_Age_Guidelines",
+    'site': 'External_Sites',
     'notes': 'Notes_%28issue%29',
     'keywords': 'Keywords',
     'comments': 'Comments'
@@ -183,14 +179,16 @@ ISSUE_HELP_LINKS = {
 SEQUENCE_HELP_LINKS = {
     'type': 'Type',
     'title': 'Title',
-    'title_inferred': 'Title',
     'first_line': 'First_Line',
     'feature': 'Feature',
     'feature_object': 'Feature',
     'feature_logo': 'Feature_Logo',
     'page_count': 'Page_Count',
-    'page_count_uncertain': 'Page_Count',
     'genre': 'Genre',
+    'creator': 'Credits',
+    'credit_type': 'Credits#Credit_Types',
+    'is_credited': 'Credits#Credited',
+    'is_signed': 'Credits#Signed',
     'script': 'Script',
     'no_script': 'Script',
     'pencils': 'Pencils',
@@ -203,7 +201,13 @@ SEQUENCE_HELP_LINKS = {
     'no_letters': 'Letters',
     'editing': 'Editing',
     'no_editing': 'Editing',
+    'universe': 'Universe',
     'characters': 'Character_Appearances',
+    'appearing_characters': 'Character_Appearances#Character_Records',
+    'group_name': 'Character_Appearances#Character_Records',
+    'group_members': 'Character_Appearances#Character_Records',
+    'character': 'Character_Appearances#Character_Records',
+    'group': 'Character_Appearances#Character_Records',
     'synopsis': 'Synopsis',
     'job_number': 'Job_Number',
     'reprint_notes': 'Reprints',
@@ -248,7 +252,17 @@ SERIES_HELP_LINKS = {
     'has_rating': "Publisher's_Age_Guidelines",
     'has_about_comics': 'About_Comics',
     'has_volume': 'Volume',
+    'site': 'External_Sites',
     'comments': 'Comments'
+}
+
+CHARACTER_HELP_LINKS = {
+    'name': 'Character_Table#Character_Table',
+    'universe': 'Universe',
+    'year_first_published': 'Year_first_published',
+    'site': 'External_Sites',
+    'description': 'Description_(Characters)',
+    'notes': 'Notes_(Characters)',
 }
 
 CREATOR_HELP_TEXTS = {
@@ -308,6 +322,15 @@ CREATOR_SIGNATURE_HELP_TEXTS = {
             "visual of the associated scan.",
     'generic': "A generic signature is used to record the text of a signature "
                "without being specific of the individual visual form."
+}
+
+FEATURE_HELP_LINKS = {
+    'name': 'Feature',
+    'genre': 'Genre',
+    'year_first_created': 'Year_first_published',
+    'year_first_published': 'Year_first_published',
+    'feature_type': 'Adding_a_Missing_Feature',
+    'site': 'External_Sites',
 }
 
 PUBLISHER_HELP_TEXTS = {

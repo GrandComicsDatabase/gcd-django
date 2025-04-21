@@ -348,7 +348,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
       label='<button hx-get="/select/creator/by_detail/" '
             'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
             'hx-on="htmx:afterRequest: setSelectValue(event)" '
-            'hx-swap="none" class="btn-blue-editing inline">To Official'
+            'hx-swap="none" class="mx-0 btn-blue-editing inline">To Official'
             '</button> Creator'
     )
 

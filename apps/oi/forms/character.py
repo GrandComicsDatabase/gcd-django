@@ -22,18 +22,13 @@ from apps.oi.models import (CharacterRevision, CharacterNameDetailRevision,
 
 from .support import (_get_comments_form_field, HiddenInputWithHelp,
                       GENERIC_ERROR_MESSAGE, CharacterBaseForm,
-                      combine_reverse_relations)
+                      combine_reverse_relations, CHARACTER_HELP_LINKS)
 
 
 def get_universe_revision_form(revision=None, user=None):
     class RuntimeUniverseRevisionForm(UniverseRevisionForm):
         def __init__(self, *args, **kwargs):
             super(RuntimeUniverseRevisionForm, self).__init__(*args, **kwargs)
-
-        # def as_table(self):
-        #     # if not user or user.indexer.show_wiki_links:
-        #         # _set_help_labels(self, FEATURE_HELP_LINKS)
-        #     return super(FeatureRevisionForm, self).as_table()
 
     return RuntimeUniverseRevisionForm
 
@@ -159,6 +154,7 @@ class CharacterRevisionForm(CharacterBaseForm):
                                            template='oi/bits/uni_field.html'))
                            for field in fields[description_pos:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = CHARACTER_HELP_LINKS
 
     additional_names_help = forms.CharField(
         widget=HiddenInputWithHelp,
