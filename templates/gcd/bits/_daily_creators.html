@@ -1,5 +1,5 @@
 {% load display %}
-<p><b>{{ day|date:"l, jS F" }}</b></p>
+<p class="mt-4"><b>{{ day|date:"l, jS F" }}</b></p>
   {% for creator in creators %}
     {{ creator|absolute_url }}<br>
   {% endfor %}

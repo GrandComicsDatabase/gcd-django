@@ -12,23 +12,20 @@
 {% endcompress %}
 <base target="_parent">
 </head>
+
 <body>
-
 <div>
-
   <div id="top-sentinel">...</div>
-  <div class="mb-4" id="top-scroll-element">
+  <div id="top-scroll-element">
     {% include "gcd/bits/_daily_creators.html" with creators=creators_yesterday day=yesterday %}
   </div>
 
-  <div class="mb-4">
-  <p id="today"><b>{{ today|date:"l, jS F" }}</b></p>
+  <p class="mt-4" id="today"><b>{{ today|date:"l, jS F" }}</b></p>
   {% for creator in creators_today %}
     {{ creator|absolute_url }}<br>
   {% endfor %}
-  </div>
 
-  <div class="mb-4" id="bottom-scroll-element">
+  <div id="bottom-scroll-element">
     {% include "gcd/bits/_daily_creators.html" with creators=creators_tomorrow day=tomorrow %}
   </div>
   <div id="bottom-sentinel">...</div>

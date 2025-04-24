@@ -1311,6 +1311,10 @@ a:hover {
   margin-top: 0.5rem;
 }
 
+.mt-4 {
+  margin-top: 1rem;
+}
+
 .mt-\[1px\] {
   margin-top: 1px;
 }
