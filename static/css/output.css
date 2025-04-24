@@ -1492,6 +1492,10 @@ a:hover {
   min-width: 100px;
 }
 
+.min-w-\[120px\] {
+  min-width: 120px;
+}
+
 .min-w-fit {
   min-width: -moz-fit-content;
   min-width: fit-content;
@@ -1648,6 +1652,11 @@ a:hover {
 .gap-x-16 {
   -moz-column-gap: 4rem;
        column-gap: 4rem;
+}
+
+.gap-x-2 {
+  -moz-column-gap: 0.5rem;
+       column-gap: 0.5rem;
 }
 
 .gap-x-4 {
@@ -2348,6 +2357,14 @@ select {
   .max-sm\:border {
     border-width: 1px;
   }
+
+  .max-sm\:pe-1 {
+    padding-inline-end: 0.25rem;
+  }
+
+  .max-sm\:pt-1 {
+    padding-top: 0.25rem;
+  }
 }
 
 @media (min-width: 640px) {
@@ -2443,8 +2460,16 @@ select {
     padding-right: 1rem;
   }
 
+  .sm\:pe-1 {
+    padding-inline-end: 0.25rem;
+  }
+
   .sm\:pe-2 {
     padding-inline-end: 0.5rem;
+  }
+
+  .sm\:text-center {
+    text-align: center;
   }
 
   .sm\:text-right {

@@ -483,6 +483,9 @@ class StoryCredit(GcdData):
     # record for a wider range of creative work types, or how it is credited
     credit_name = models.CharField(max_length=255)
 
+    def display_credit(self):
+        return self.creator.display_credit(self)
+
     def __str__(self):
         return "%s: %s (%s)" % (self.story, self.creator, self.credit_type)
 
@@ -578,6 +581,30 @@ class StoryType(models.Model):
         return self.name
 
 
+def check_credited_signed(first_credit, credit):
+    if first_credit.is_credited == credit.is_credited and \
+       first_credit.is_signed == credit.is_signed and \
+       first_credit.signature == credit.signature and \
+       first_credit.signed_as == credit.signed_as and \
+       first_credit.credited_as == credit.credited_as and \
+       first_credit.is_sourced == credit.is_sourced and \
+       first_credit.sourced_by == credit.sourced_by and \
+       first_credit.uncertain == credit.uncertain:
+        return True
+    else:
+        return False
+
+
+def extend_credit_roles(credit, added_type_name):
+    credit_type_name = '%s, %s' % (credit.credit_type_name, added_type_name)
+    if credit_type_name == 'pencils (painting), inks (painting), ' \
+                           'colors (painting)':
+        credit_type_name = 'painting'
+
+    credit.credit_type_name = credit_type_name
+    return credit
+
+
 class Story(GcdData):
     class Meta:
         app_label = 'gcd'
@@ -648,6 +675,55 @@ class Story(GcdData):
     @property
     def to_issue_reprints(self):
         return self.to_reprints.filter(target=None)
+
+    @property
+    def creator_credits(self):
+        credits = self.credits.exclude(deleted=True)\
+                              .select_related('creator__creator',
+                                              'creator__type')\
+                              .order_by('credit_type__sort_code',
+                                        'id')
+        creator_credits = {}
+        creator_doubled = {}
+        if credits:
+            for credit in credits:
+                if credit.credit_name:
+                    added_type_name = '%s (%s)' % (credit.credit_type.name,
+                                                   credit.credit_name)
+                    credit.credit_name = ''
+                else:
+                    added_type_name = credit.credit_type.name
+
+                if credit.creator.id in creator_credits:
+                    # TODO, we can use show_sources to turn off display
+                    # of sourced in creator name display and add it after
+                    # the credit type
+
+                    if not check_credited_signed(creator_credits[
+                                                 credit.creator.id], credit):
+                        if credit.creator.id in creator_doubled:
+                            if not check_credited_signed(
+                               creator_doubled[credit.creator.id], credit):
+                                credit.credit_type_name = added_type_name
+                                creator_credits['%d-%d' % (credit.creator.id,
+                                                           credit.id)] = credit
+                            else:
+                                extend_credit_roles(creator_doubled[
+                                                    credit.creator.id],
+                                                    added_type_name)
+                        else:
+                            credit.credit_type_name = added_type_name
+                            creator_credits['%d-%d' % (credit.creator.id,
+                                                       credit.id)] = credit
+                            creator_doubled[credit.creator.id] = credit
+                    else:
+                        extend_credit_roles(creator_credits[credit.creator.id],
+                                            added_type_name)
+                    continue
+                else:
+                    credit.credit_type_name = added_type_name
+                    creator_credits[credit.creator.id] = credit
+        return creator_credits
 
     @property
     def active_credits(self):

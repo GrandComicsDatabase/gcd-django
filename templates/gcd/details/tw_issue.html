@@ -5,6 +5,7 @@
 {% load credits %}
 {% load display %}
 {% load editing %}
+{% load django_tables2 %}
 
 {% block css_raw %}
 <script type="text/javascript" src="{% static 'js/htmx.min.js' %}"></script>
@@ -20,18 +21,39 @@
 
 {% block content_left %}
 <div class="max-md:w-[calc(100vw-38px)] max-md:min-h-20">
-  <div class="flex flex-wrap gap-x-4">
-  {% if not issue.no_volume and issue.series.has_volume %}
-    <div><span class="font-bold">Volume:</span> {{ issue.volume }}</div>
-  {% endif %}
-    <div><span class="font-bold">Price:</span> {{ issue.price|default:"?" }}</div>
-    <div><span class="font-bold">Pages:</span> {{ issue|show_page_count|default:"?" }}</div>
-  {% if issue.on_sale_date %}
-    <div><span class="font-bold">On-sale Date:</span> {{ issue.on_sale_date }}
-    {% if issue.on_sale_date_uncertain %} ? {% endif %}</div>
-  {% endif %}
+  <div class="flex">
+    <div class="flex-1">
+      <div class="flex flex-wrap gap-x-4">
+      {% if not issue.no_volume and issue.series.has_volume %}
+        <div><span class="font-bold">Volume:</span> {{ issue.volume }}</div>
+      {% endif %}
+        <div><span class="font-bold">Price:</span> {{ issue.price|default:"?" }}</div>
+        <div><span class="font-bold">Pages:</span> {{ issue|show_page_count|default:"?" }}</div>
+      {% if issue.on_sale_date %}
+        <div><span class="font-bold">On-sale Date:</span> {{ issue.on_sale_date }}
+        {% if issue.on_sale_date_uncertain %} ? {% endif %}</div>
+      {% endif %}
+      </div>
+      <span class="font-bold">Editing:</span> {{ issue|show_creator_credit_bare:"editing" }}
+    </div>
+
+    <div class="max-sm:pt-1 max-sm:pe-1 sm:flex justify-end items-center">
+      <a href="{% querystring 'display'='list' %}"
+        class="sm:pe-1
+        {% if not request.GET.display or 'list' == request.GET.display %}pointer-events-none{% endif %}
+        "><svg class="
+        {% if not request.GET.display or 'list' == request.GET.display %}fill-slate-400{% endif %}
+        border border-gray-400 px-1 py-1 h-9" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g><path d="m 9 3 h 6 v 2 h -6 z m 0 0"/><path d="m 9 7 h 6 v 2 h -6 z m 0 0"/><path d="m 9 11 h 6 v 2 h -6 z m 0 0"/><path d="m 1 3 h 6 v 2 h -6 z m 0 0"/><path d="m 1 7 h 6 v 2 h -6 z m 0 0"/><path d="m 1 11 h 6 v 2 h -6 z m 0 0"/></g></svg>
+      </a>
+      <a href="{% querystring 'display'='grid' %}"
+        class="sm:pe-1
+        {% if 'grid' == request.GET.display %}pointer-events-none{% endif %}
+        ">
+        <svg class="
+        {% if 'grid' == request.GET.display %}fill-slate-400{% endif %}
+        border border-gray-400 px-1 py-1 w-9 h-9" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="m 1.992188 0 c -1.089844 0 -2.0000005 0.910156 -2.0000005 2 v 3 c 0 1.089844 0.9101565 2 2.0000005 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m 8 0 c -1.089844 0 -2 0.910156 -2 2 v 3 c 0 1.089844 0.910156 2 2 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m -8 2 h 3 v 3 h -3 z m 8 0 h 3 v 3 h -3 z m -8 6 c -1.089844 0 -2.0000005 0.910156 -2.0000005 2 v 3 c 0 1.089844 0.9101565 2 2.0000005 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m 8 0 c -1.089844 0 -2 0.910156 -2 2 v 3 c 0 1.089844 0.910156 2 2 2 h 3 c 1.089843 0 2 -0.910156 2 -2 v -3 c 0 -1.089844 -0.910157 -2 -2 -2 z m -8 2 h 3 v 3 h -3 z m 8 0 h 3 v 3 h -3 z m 0 0"/></svg></a>
+    </div>
   </div>
-  <span class="font-bold">Editing:</span> {{ issue|show_creator_credit_bare:"editing" }}
 </div>
 <div class="flex">
   <div class="w-[100px] sm:w-[200px] mt-1 text-center">
@@ -250,7 +272,7 @@ Related Links
 {% for story in stories %}
   <li class="hover:bg-stone-300 odd:bg-stone-200">
     <span>
-      <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}?show_all{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
+      <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}{% querystring 'issue_detail'='2' %}{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
     <span>{{ story.show_feature}}</span>
   </li>
 {% endfor %}

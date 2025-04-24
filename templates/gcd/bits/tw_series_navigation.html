@@ -1,17 +1,17 @@
 {% load i18n %}
-
+{% load django_tables2 %}
 {% if issue.series.issue_count > 1 %}
   <div>
   {% if prev_issue %}
     {% if description %}
-    <a class="navigation-bar-box-link py-1 rounded-s-lg" href="{% url "change_history" model_name='issue' id=prev_issue.id %}">&#5176; {% trans "Previous Issue" %}</a>
+    <a class="navigation-bar-box-link py-1 rounded-s-lg" href="{% url 'change_history' model_name='issue' id=prev_issue.id %}">&#5176; {% trans "Previous Issue" %}</a>
     {% else %}
-    <a class="navigation-bar-box-link py-1 rounded-s-lg" href="{{ prev_issue.get_absolute_url }}{{ extra }}">&#5176; {% trans "Previous Issue" %}</a>
+    <a class="navigation-bar-box-link py-1 rounded-s-lg" href="{{ prev_issue.get_absolute_url }}{{ extra }}{% querystring 'issue_detail'='' %}">&#5176; {% trans "Previous Issue" %}</a>
     {% endif %}
   {% endif %}
     <form class="inline max-sm:hidden" method="GET"
-          action="{% url "issue_select_form" %}">
-      <input type="hidden" name="extra" value="{{ extra }}">
+          action="{% url 'issue_select_form' %}">
+      <input type="hidden" name="extra" value="{{ extra }}{% querystring 'issue_detail'='' %}">
       <select class="bg-blue-100 hover:bg-blue-300 rounded border-2 border-gray-300 py-0.5" name="id" id="id">
     {% for other_issue in issue.series.active_base_issues_variant_count %}
         <option value="{{ other_issue.id }}"
@@ -28,7 +28,7 @@
     {% if description %}
     <a class="link-with-text-color navigation-bar-box-link py-1 rounded-e-lg" href="{% url "change_history" model_name='issue' id=next_issue.id %}">{% trans "Next Issue" %} &#5171;</a>
     {% else %}
-    <a class="link-with-text-color navigation-bar-box-link py-1 rounded-e-lg" href="{{ next_issue.get_absolute_url }}{{ extra }}">{% trans "Next Issue" %} &#5171;</a>
+    <a class="link-with-text-color navigation-bar-box-link py-1 rounded-e-lg" href="{{ next_issue.get_absolute_url }}{{ extra }}{% querystring 'issue_detail'='' %}">{% trans "Next Issue" %} &#5171;</a>
     {% endif %}
   {% endif %}
   </div>

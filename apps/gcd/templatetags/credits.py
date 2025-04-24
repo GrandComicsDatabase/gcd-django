@@ -418,7 +418,8 @@ def show_full_credits(story, credit_type, show_sources):
 
 
 @register.simple_tag(takes_context=True)
-def show_bare_creator_credits(context, story, credit_type, show_sources=False):
+def show_bare_creator_credits(context, story, credit_type, show_sources=False,
+                              list_grid=None):
     if credit_type == 'letters' and story.type_id == STORY_TYPES['cover']:
         request = context['request']
         preview = context.get('preview')
@@ -428,8 +429,11 @@ def show_bare_creator_credits(context, story, credit_type, show_sources=False):
               story.active_credits.filter(credit_type_id=CREDIT_TYPES[
                                                          'letters']):
                 return ''
-    credit_value = __credit_value(story, credit_type, True,
-                                  show_sources, use_div=True)
+    if list_grid == 'grid':
+        return getattr(story, credit_type)
+    else:
+        credit_value = __credit_value(story, credit_type, True,
+                                      show_sources, use_div=True)
     return credit_value
 
 

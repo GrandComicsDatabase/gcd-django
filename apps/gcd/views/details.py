@@ -4852,10 +4852,11 @@ def issue_form(request):
         del params['extra']
     else:
         extra = ''
+    if params:
+        extra += '?' + params.urlencode()
     try:
         return HttpResponseRedirect(
-          urlresolvers.reverse(issue, kwargs={'issue_id': int(id)}) + extra +
-          '?' + params.urlencode())
+          urlresolvers.reverse(issue, kwargs={'issue_id': int(id)}) + extra)
     except ValueError:
         raise Http404
 
@@ -4965,6 +4966,11 @@ def show_issue(request, issue, preview=False):
         country = None
         language = None
 
+    if 'display' in request.GET:
+        list_or_face = request.GET['display']
+    else:
+        list_or_face = 'list'
+
     return render(
       request, 'gcd/details/tw_issue.html',
       {'issue': issue,
@@ -4981,6 +4987,7 @@ def show_issue(request, issue, preview=False):
        'language': language,
        'error_subject': '%s' % issue,
        'preview': preview,
+       'list_or_face': list_or_face,
        'not_shown_types': not_shown_types,
        'show_sources': show_sources,
        'absolute': 'absolute',  # for small screen

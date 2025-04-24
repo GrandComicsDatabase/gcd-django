@@ -71,6 +71,23 @@
   </h3>
 {% if not not_shown_types or story.type.id not in not_shown_types %}
   <div class="ml-1">
+    {% if 'grid' == list_or_face %}
+    <div class="flex flex-wrap gap-x-2">
+      {% for credit in story.creator_credits.values %}
+          <div class="sm:text-center min-w-[120px]">
+            <a href='{{ credit.creator.creator.get_absolute_url }}'></a>
+              <img class="inline w-[100px] border-2 rounded-full" src="{{ credit.creator.creator.get_portrait_url}}">
+            </a>
+            <div>
+              {{ credit.display_credit }}
+            </div>
+            <div>
+              {{ credit.credit_type_name }}
+            </div>
+          </div>
+    {% endfor %}
+    </div>
+    {% endif %}
   {% include "gcd/bits/story_creator_credits.html" %}
   </div>
 
