@@ -8,25 +8,27 @@
 {% load static %}
 {% compress css inline %}
   <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
+        href="{% static 'css/output.css' %}"/>
 {% endcompress %}
 <base target="_parent">
 </head>
 <body>
 
-<div style="font-size: 0.9em;">
+<div>
 
   <div id="top-sentinel">...</div>
-  <div id="top-scroll-element">
+  <div class="mb-4" id="top-scroll-element">
     {% include "gcd/bits/_daily_creators.html" with creators=creators_yesterday day=yesterday %}
   </div>
 
+  <div class="mb-4">
   <p id="today"><b>{{ today|date:"l, jS F" }}</b></p>
   {% for creator in creators_today %}
     {{ creator|absolute_url }}<br>
   {% endfor %}
+  </div>
 
-  <div id="bottom-scroll-element">
+  <div class="mb-4" id="bottom-scroll-element">
     {% include "gcd/bits/_daily_creators.html" with creators=creators_tomorrow day=tomorrow %}
   </div>
   <div id="bottom-sentinel">...</div>
@@ -34,7 +36,7 @@
 
 {% compress js %}
 <script type="text/javascript"
-        src="{% static "js/infinite_scroll.js" %}"></script>
+        src="{% static 'js/infinite_scroll.js' %}"></script>
 <script>
   window.addEventListener("load", () => {
     let baseUrl = "{% url 'daily_creators' %}";
