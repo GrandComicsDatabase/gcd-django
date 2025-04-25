@@ -8,18 +8,18 @@
 <a name="{{ revision.id }}"></a> <!-- for link from comments on story to work -->
 <table class="border border-gray-400 mb-1 {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
 <tr class="story_edit">
-    <td>{{ revision|show_story_short }}</td>
-    <td>{{ revision|show_credit_status }}</td>
+    <td class="px-2">{{ revision|show_story_short }}</td>
+    <td class="px-2">{{ revision|show_credit_status }}</td>
   {% if user == revision.changeset.indexer and changeset.state == states.OPEN %}
     <td>
       {% if revision.deleted %}
   <form class="story_button" method="POST"
-        action="{% url "toggle_delete_story_revision" id=revision.id %}">
+        action="{% url 'toggle_delete_story_revision' id=revision.id %}">
     {% csrf_token %}
     <input type="submit" value="Restore"></input>
   </form>
       {% else %}
-  <a href="{% url "edit_revision" model_name=revision.source_name id=revision.id %}">edit sequence</a>
+  <a href="{% url 'edit_revision' model_name=revision.source_name id=revision.id %}">edit sequence</a>
       {% endif %}
     </td>
   {% endif %}
@@ -35,9 +35,9 @@
 
 
 {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
-<details {% if revision.is_changed or not request.GET.collapse %}open="open"{% endif %}>
+<details class="mb-2" {% if revision.is_changed or not request.GET.collapse %}open="open"{% endif %}>
 <summary>
-<h3 style="display: inline" class="comparison">
+<h3 class="border inline border-gray-400 px-2">
   {% if revision.is_changed %}
   There are changes
   {% else %}
@@ -54,8 +54,8 @@
 </summary>
 {% endif %}
 
-<table class="comparison {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
-  <tr class="bg-blue-100  flex flex-col sm:table-row">
+<table class="comparison mb-2 {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
+  <tr class="border bg-blue-100 flex flex-col sm:table-row">
     <th> Field </th>
     {% if revision.deleted %}
       {% if prev_rev %}
@@ -136,11 +136,7 @@
     {% endif %}
 
     {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
-      {% if revision.has_reprint_revisions %}
-  <tr class="True flex flex-col sm:table-row">
-      {% else %}
-  <tr class="False flex flex-col sm:table-row">
-      {% endif %}
+  <tr class="border flex flex-col sm:table-row{% if revision.has_reprint_revisions %} changed {% endif %}">
     <td class="field_name"> Reprint Links </td>
       {% if prev_rev %}
     <td>

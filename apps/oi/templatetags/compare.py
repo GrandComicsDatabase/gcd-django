@@ -470,12 +470,12 @@ def compare_current_reprints(object_type, changeset):
             kept_target = kept_target.filter(target=None, target_revision=None)
 
     if active_origin.exists() or active_target.exists():
+        reprint_string = 'The following reprint links are edited in '
         if object_type.changeset_id != changeset.id:
-            reprint_string = '<ul>The following reprint links are edited in ' \
-                             'the compared changeset.'
+            reprint_string += 'the compared changeset.'
         else:
-            reprint_string = '<ul>The following reprint links are edited ' \
-                             'in this changeset.'
+            reprint_string += ' this changeset.'
+        reprint_string += '<ul class="list-disc list-outside ps-8">'
 
         active_target = active_target.select_related(
                         'origin_issue__series__publisher',
@@ -531,8 +531,9 @@ def compare_current_reprints(object_type, changeset):
                     kept_string += '<br>reserved in a different changeset'
                 kept_string += '</li>'
         if kept_string != '':
-            reprint_string += '</ul>The following reprint links are not ' \
-                'part of this change.<ul>' + kept_string
+            reprint_string += '</ul>The following reprint links are not part' \
+                              ' of this change.<ul class='\
+                              '"list-disc list-outside ps-8">' + kept_string
 
     return mark_safe(reprint_string)
 
@@ -619,9 +620,9 @@ def show_credit_status(story):
         else:
             status.append('E')
 
-    completion = 'complete'
+    completion = 'text-green-500'
     if required_remaining:
-        completion = 'incomplete'
+        completion = 'text-red-500'
     snippet = '[<span class="%s">' % completion
     snippet += ' '.join(status)
     snippet += '</span>]'
