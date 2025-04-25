@@ -20,7 +20,7 @@ def get_generic_image_tag(image, alt_text):
 
 
 def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
-                  img_class='cover_img'):
+                  img_class='cover_img', title=''):
     css_width = ''
 
     if zoom_level == ZOOM_SMALL:
@@ -62,20 +62,25 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
         return mark_safe(no_cover_url + 'img/nocover_' + size + '.png" '
                          + 'alt="No image yet"' + 'class="' + img_class + '">')
 
+    if title:
+        add_info = ' title="%s" alt="%s" ' % (esc(title), esc(alt_text))
+    else:
+        add_info = ' alt="%s" ' % esc(alt_text)
+
     if settings.FAKE_IMAGES:
         return mark_safe('<img src="' + settings.STATIC_URL +
-                         'img/placeholder_' + size + '.jpg"' +
+                         'img/placeholder_' + size + '.jpg"' + add_info +
                          'class="' + img_class + '">')
 
     img_url = cover.get_base_url()+("/w%d/%d.jpg" % (width, cover.id))
 
     # For replacement and variant cover uploads we should make sure that no
     # cached cover is displayed. Adding a changing query string seems the
-    # prefered solution found on the net.
+    # preferred solution found on the net.
     img_url = img_url + '?' + str(hash(cover.last_upload))
 
-    return mark_safe('<img src="' + img_url + '" alt="' + esc(alt_text) +
-                     '" ' + ' class="' + img_class + '">')
+    return mark_safe('<img src="' + img_url + add_info +
+                     'class="' + img_class + '">')
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,

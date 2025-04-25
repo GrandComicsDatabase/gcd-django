@@ -4928,7 +4928,8 @@ def show_issue(request, issue, preview=False):
           [variant_cover.issue,
            get_image_tag(variant_cover, zoom_level=ZOOM_SMALL,
                          alt_text='Cover Thumbnail for %s' %
-                                  str(variant_cover.issue))])
+                                  str(variant_cover.issue),
+                         title=variant_cover.issue.display_full_descriptor)])
 
     series = issue.series
     [prev_issue, next_issue] = issue.get_prev_next_issue()
