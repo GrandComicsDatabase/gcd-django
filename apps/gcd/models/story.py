@@ -542,10 +542,7 @@ class StoryGroup(GcdData):
         db_table = 'gcd_group_character'
         ordering = ['group_name__sort_name']
 
-    # TODO: remove group, remove null=True from group_name
-    # rename group_name to group
-    group = models.ForeignKey(Group, null=True,
-                              on_delete=models.CASCADE)
+    # TODO: rename group_name to group ?
     group_name = models.ForeignKey(GroupNameDetail,
                                    on_delete=models.CASCADE)
     universe = models.ForeignKey(Universe, null=True,
@@ -555,7 +552,7 @@ class StoryGroup(GcdData):
     notes = models.TextField()
 
     def __str__(self):
-        return "%s: %s" % (self.story, self.group)
+        return "%s: %s" % (self.story, self.group_name)
 
 
 class StoryTypeManager(models.Manager):

@@ -128,11 +128,15 @@
               {% endif %}
             {% endfor %}
           {% endif %}
-    <ul class="list-disc sm:columns-2 lg:columns-3 ps-4 gap-8">
           {% if character_list %}
+            {% if character_list|length > 1 %}
+    <ul class="list-disc sm:columns-2 lg:columns-3 ps-4 gap-8">
+            {% else %}
+    <ul class="list-disc ps-4 gap-8">
+            {% endif %}
             {% include 'gcd/bits/tw_character_list.html' %}
-          {% endif %}
     </ul>
+          {% endif %}
         {% endwith %}
       {% endwith %}
     {{ story.characters }}

@@ -431,7 +431,7 @@ class Group(CharacterGroupBase):
 
     def active_universe_origins(self):
         from .story import StoryGroup
-        appearances = StoryGroup.objects.filter(group=self,
+        appearances = StoryGroup.objects.filter(group_name__group=self,
                                                 deleted=False)
         universes = set(appearances.values_list('universe',
                                                 flat=True).distinct())
@@ -440,7 +440,8 @@ class Group(CharacterGroupBase):
     def active_universe_appearances(self):
         from .story import Story
         appearances = Story.objects.filter(
-          appearing_groups__group=self,
+          appearing_groups__group_name__group=self,
+          appearing_groups__deleted=False,
           deleted=False)
         universes = set(appearances.values_list('universe',
                                                 flat=True).distinct())
