@@ -72,7 +72,7 @@
         {% endif %}
       {% endif %}
     {% endif %}
-    {% if variant_image_tags|length < 7 %}
+    {% if variant_image_tags|length < 3 %}
     <div class="flex flex-wrap gap-1">
       {% for variant, image_tag in variant_image_tags %}
       <div class="w-[98px] flex"><a href="{{ variant.get_absolute_url }}">{{ image_tag }}</a></div>
@@ -90,8 +90,13 @@
 </div>
 {% if variant_image_tags %}
   {% with num_variants=variant_image_tags|length %}
-    {% if num_variants > 6 %}
+    {% if num_variants > 2 %}
+
+      {% if num_variants > request.user.indexer.variant_threshold|default:6 %}
 <details class="[&_svg]:open:rotate-90">
+      {% else %}
+<details class="[&_svg]:open:rotate-90" open="">
+      {% endif %}
   <summary class="list-none">
       {% include 'gcd/bits/svg_details.html' %}
     <span class="btn btn-blue">
@@ -112,22 +117,21 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
 {% endif %}
 {% if issue.other_variants %}
   {% with num_variants=issue.other_variants|length %}
-    {% if num_variants > 6 %}
+    {% if num_variants > request.user.indexer.variant_threshold|default:6 %}
 <details class="[&_svg]:open:rotate-90 mt-1">
+    {% else %}
+<details class="[&_svg]:open:rotate-90 mt-1" open="">
+    {% endif %}
   <summary class="list-none">
       {% include 'gcd/bits/svg_details.html' %}
     <span class="btn btn-blue">
-    {% endif %}
     {% if not issue.variant_of %}
   This issue has {{ num_variants }} variant{{ num_variants|pluralize }}
     {% else %}
-      {% if num_variants <= 5 %}<br>{% endif %}
       There exist {{ num_variants }} further variant{{ num_variants|pluralize }}
     {% endif %}
-    {% if num_variants > 6 %}
     </span>
   </summary>
-    {% endif %}
   <dl class="contents">
     <ul class="object-page-link-list">
     {% for variant in issue.other_variants %}
@@ -135,9 +139,7 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
     {% endfor %}
     </ul>
   </dl>
-    {% if num_variants > 6 %}
 </details>
-    {% endif %}
   {% endwith %}
 {% endif %}
 <h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Issue Data </h3>

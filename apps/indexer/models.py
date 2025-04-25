@@ -73,6 +73,8 @@ class Indexer(models.Model):
     collapse_compare_view = models.BooleanField(db_index=True, default=False)
     show_wiki_links = models.BooleanField(db_index=True, default=True)
     use_tabs = models.BooleanField(db_index=True, default=True)
+    variant_threshold = models.IntegerField(default=6)
+    reprint_threshold = models.IntegerField(default=5)
 
     def can_reserve_another(self):
         from apps.oi.models import CTYPES
