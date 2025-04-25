@@ -541,6 +541,9 @@ def profile(request, user_id=None, edit=False):
               profile_user.indexer.collapse_compare_view,
               'show_wiki_links': profile_user.indexer.show_wiki_links,
               'use_tabs': profile_user.indexer.use_tabs,
+              'cache_size': profile_user.indexer.cache_size,
+              'variant_threshold': profile_user.indexer.variant_threshold,
+              'reprint_threshold': profile_user.indexer.reprint_threshold,
             })
             context['form'] = form
         else:
@@ -609,6 +612,9 @@ def update_profile(request, user_id=None):
     indexer.no_show_sequences.set(form.cleaned_data['no_show_sequences'])
     indexer.cover_letterer_creator_only = form.cleaned_data['cover_letterer_creator_only']
     indexer.use_tabs = form.cleaned_data['use_tabs']
+    indexer.cache_size = form.cleaned_data['cache_size']
+    indexer.variant_threshold = form.cleaned_data['variant_threshold']
+    indexer.reprint_threshold = form.cleaned_data['reprint_threshold']
     indexer.save()
 
     return HttpResponseRedirect(

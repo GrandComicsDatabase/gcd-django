@@ -389,13 +389,13 @@ def get_cached_covers(request):
     return _process_cached_stories(cached_covers_list)
 
 
-def _process_caching(cached_list, object_id):
+def _process_caching(cached_list, object_id, cache_size):
     """
     Doing the caching. Limit of three might become a user option.
     """
     if not cached_list:
         cached_list = [object_id, ]
-    elif len(cached_list) < 3:
+    elif len(cached_list) < cache_size:
         cached_list.append(object_id)
     else:
         cached_list.pop(0)
@@ -408,20 +408,25 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
     """
     Store an issue_id, story_id, or cover_id in the session.
     """
+    cache_size = request.user.indexer.cache_size
+
     if issue_id:
         cached_issues = request.session.get('cached_issues', None)
         request.session['cached_issues'] = _process_caching(cached_issues,
-                                                            issue_id)
+                                                            issue_id,
+                                                            cache_size)
     if story_id:
         cached_stories = request.session.get('cached_stories', None)
         request.session['cached_stories'] = _process_caching(cached_stories,
-                                                             story_id)
+                                                             story_id,
+                                                             cache_size)
         return HttpResponseRedirect(request.META['HTTP_REFERER'] + '#%s' %
                                     story_id)
     if cover_story_id:
         cached_covers = request.session.get('cached_covers', None)
         request.session['cached_covers'] = _process_caching(cached_covers,
-                                                            cover_story_id)
+                                                            cover_story_id,
+                                                            cache_size)
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 

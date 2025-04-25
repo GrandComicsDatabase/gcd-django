@@ -1,7 +1,7 @@
 {% load accounts %}
 
 <ul>
-  <li> First Name: {{ profile_user.first_name }}<br/>
+  <li> First Name: {{ profile_user.first_name }}
   <li> Last Name: {{ profile_user.last_name }}
 {% if user|can_view_profile_details:profile_user %}
   <li> Email: <a href="mailto:{{ profile_user.email }}">{{ profile_user.email }}</a>
@@ -13,6 +13,9 @@
   <li> Collapse compare view by default: {{ profile_user.indexer.collapse_compare_view|yesno }}
   <li> Show links to the wiki documentation: {{ profile_user.indexer.show_wiki_links|yesno }}
   <li> Use tabbed view while editing stories: {{ profile_user.indexer.use_tabs|yesno }}
+  <li> Size of data cache: {{ profile_user.indexer.cache_size }} </li>
+  <li> Summary view of variants for more than: {{ profile_user.indexer.variant_threshold }} </li>
+  <li> Summary view of reprints for more than: {{ profile_user.indexer.reprint_threshold }}</li>
 {% endif %}
   <li> Country: <img class="inline" src="{{ STATIC_URL }}img/gcd/flags/{{ profile_user.indexer.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
        {{ profile_user.indexer.country }} <br>

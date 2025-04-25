@@ -68,13 +68,14 @@ class Indexer(models.Model):
       StoryType, related_name='indexers',
       db_table='gcd_indexer_no_show_sequences')
     cover_letterer_creator_only = models.BooleanField(default=False)
+    variant_threshold = models.IntegerField(default=6)
+    reprint_threshold = models.IntegerField(default=5)
     # editing options
     notify_on_approve = models.BooleanField(db_index=True, default=True)
     collapse_compare_view = models.BooleanField(db_index=True, default=False)
     show_wiki_links = models.BooleanField(db_index=True, default=True)
     use_tabs = models.BooleanField(db_index=True, default=True)
-    variant_threshold = models.IntegerField(default=6)
-    reprint_threshold = models.IntegerField(default=5)
+    cache_size = models.IntegerField(default=3)
 
     def can_reserve_another(self):
         from apps.oi.models import CTYPES
