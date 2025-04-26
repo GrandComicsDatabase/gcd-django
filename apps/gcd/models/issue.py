@@ -23,7 +23,7 @@ from .story import StoryType, STORY_TYPES, AD_TYPES, CreditType
 from .creator import CreatorNameDetail
 from .award import ReceivedAward
 from .datasource import ExternalLink
-from .support_tables import render_publisher
+from .support_tables import render_publisher, DailyChangesTable
 
 INDEXED = {
     'skeleton': 0,
@@ -779,6 +779,17 @@ class IssuePublisherTable(IssueTable):
 
     def value_publisher(self, value):
         return str(value)
+
+
+class DailyChangesIssueTable(IssuePublisherTable, DailyChangesTable):
+    def __init__(self, *args, **kwargs):
+        kwargs['column_to_count'] = 'issue'
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model = Issue
+        fields = ('issue', 'publisher', 'publication_date', 'on_sale_date',
+                  'change_history')
 
 
 class IssueCoverPublisherTable(IssuePublisherTable, IssueCoverTable):

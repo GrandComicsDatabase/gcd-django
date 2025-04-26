@@ -20,7 +20,8 @@ from .issue import Issue, INDEXED
 from .cover import Cover
 from .seriesbond import SeriesRelativeBond
 from .award import ReceivedAward
-from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT
+from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT, \
+                            DailyChangesTable
 from .datasource import ExternalLink
 
 
@@ -548,7 +549,7 @@ class SeriesPublisherTable(SeriesTable):
 
     class Meta:
         model = Series
-        fields = ('publisher', 'name', 'year_began', 'issue_count', 'covers',
+        fields = ('name', 'year_began', 'publisher', 'issue_count', 'covers',
                   'published')
 
     def order_publisher(self, query_set, is_descending):
@@ -671,3 +672,10 @@ class CreatorSeriesTable(SeriesPublisherTable):
         if record.letters:
             role += 'letters (%d); ' % record.letters
         return role[:-2]
+
+
+class DailyChangesSeriesTable(SeriesPublisherTable, DailyChangesTable):
+    class Meta:
+        model = Series
+        fields = ('name', 'year_began', 'publisher', 'issue_count', 'covers',
+                  'published', 'change_history')

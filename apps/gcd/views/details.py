@@ -59,10 +59,12 @@ from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       UniverseCharacterTable, \
                                       SeriesCharacterTable, \
                                       FeatureCharacterTable, \
-                                      CharacterCharacterTable
+                                      CharacterCharacterTable, \
+                                      DailyChangesCharacterTable
 from apps.gcd.models.feature import CreatorFeatureTable, \
                                     CharacterFeatureTable, \
-                                    GroupFeatureTable, FeatureLogoTable
+                                    GroupFeatureTable, FeatureLogoTable, \
+                                    DailyChangesFeatureTable
 from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   BrandGroupIssueCoverTable, \
                                   BrandEmblemIssueTable, \
@@ -73,14 +75,17 @@ from apps.gcd.models.issue import IssueTable, BrandGroupIssueTable, \
                                   SeriesDetailsIssueTable, \
                                   IssueCoverTable, \
                                   IssueCoverPublisherTable, \
-                                  PublisherIssueCoverTable
+                                  PublisherIssueCoverTable, \
+                                  DailyChangesIssueTable
 from apps.gcd.models.publisher import BrandEmblemPublisherTable, \
                                       BrandGroupPublisherTable, \
                                       IndiciaPublisherPublisherTable, \
                                       BrandEmblemGroupTable, \
-                                      BrandGroupEmblemTable
+                                      BrandGroupEmblemTable, \
+                                      DailyChangesPublisherTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
-                                   CharacterSeriesTable, GroupSeriesTable
+                                   CharacterSeriesTable, GroupSeriesTable, \
+                                   DailyChangesSeriesTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
                                   StoryTable
 from apps.gcd.views import paginate_response, ORDER_CHRONO, \
@@ -101,6 +106,7 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            BrandGroupRevision, BrandRevision, CoverRevision, \
                            IndiciaPublisherRevision, ImageRevision, \
                            Changeset, SeriesBondRevision, CreatorRevision, \
+                           FeatureRevision, CharacterRevision, GroupRevision, \
                            CTYPES
 from apps.select.views import KeywordUsedFilter, filter_series, \
                               filter_issues, filter_covers, filter_sequences, \
@@ -672,7 +678,7 @@ def creator_series(request, creator_id, country=None, language=None):
         'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = CreatorSeriesTable(series, attrs={'class': 'sortable_listing'},
+    table = CreatorSeriesTable(series,
                                creator=creator,
                                template_name=TW_SORT_TABLE_TEMPLATE,
                                order_by=('name'))
@@ -1230,7 +1236,7 @@ def show_publisher(request, publisher, preview=False):
     else:
         extra_string = ''
 
-    table = SeriesTable(publisher_series, attrs={'class': 'sortable_listing'},
+    table = SeriesTable(publisher_series,
                         template_name=TW_SORT_TABLE_TEMPLATE,
                         order_by=('name'))
     RequestConfig(request, paginate={'per_page': 100,
@@ -2849,27 +2855,41 @@ def daily_changes(request, show_date=None, user=False):
     else:
         user = None
 
+    data = []
     # TODO what about awards, memberships, etc. Display separately,
     # or display the affected creator for such changes as well.
     creator_revisions = list(_get_daily_revisions(CreatorRevision, args,
                                                   'creator', user=user))
     creators = Creator.objects.filter(id__in=creator_revisions).distinct()
+    creators.object_name = 'Creators'
+    data.append(creators)
 
     publisher_revisions = list(_get_daily_revisions(PublisherRevision, args,
                                                     'publisher', user=user))
     publishers = Publisher.objects.filter(id__in=publisher_revisions)\
                                   .distinct().select_related('country')
+    publisher_table = DailyChangesPublisherTable(
+      publishers, template_name=TW_SORT_TABLE_TEMPLATE, order_by=('name'))
+    publisher_table.no_export = True
+    publisher_table.count = publishers.count()
+    publisher_table.object_name = 'Publishers'
+    RequestConfig(request, paginate=False).configure(publisher_table)
+    data.append(publisher_table)
 
     brand_group_revisions = list(_get_daily_revisions(BrandGroupRevision,
                                                       args, 'brand_group',
                                                       user=user))
     brand_groups = BrandGroup.objects.filter(id__in=brand_group_revisions)\
                              .distinct().select_related('parent__country')
+    brand_groups.object_name = 'Brand Groups'
+    data.append(brand_groups)
 
     brand_revisions = list(_get_daily_revisions(BrandRevision, args, 'brand',
                                                 user=user))
     brands = Brand.objects.filter(id__in=brand_revisions).distinct()\
                           .prefetch_related('group__parent__country')
+    brands.object_name = 'Brand Emblems'
+    data.append(brands)
 
     ind_pub_revisions = list(_get_daily_revisions(IndiciaPublisherRevision,
                                                   args, 'indicia_publisher',
@@ -2877,18 +2897,65 @@ def daily_changes(request, show_date=None, user=False):
     indicia_publishers = IndiciaPublisher.objects.filter(
       id__in=ind_pub_revisions).distinct()\
                                .select_related('parent__country')
+    indicia_publishers.object_name = 'Indicia Publishers'
+    data.append(indicia_publishers)
 
     series_revisions = list(_get_daily_revisions(SeriesRevision, args,
                                                  'series', user=user))
     series = Series.objects.filter(id__in=series_revisions).distinct()\
                    .select_related('publisher', 'country',
                                    'first_issue', 'last_issue')
+    series_table = DailyChangesSeriesTable(
+      series, template_name=TW_SORT_TABLE_TEMPLATE, order_by=('name'))
+    series_table.no_export = True
+    series_table.count = series.count()
+    series_table.object_name = 'Series'
+    RequestConfig(request, paginate=False).configure(series_table)
+    data.append(series_table)
 
     series_bond_revisions = list(_get_daily_revisions(SeriesBondRevision,
                                                       args, 'series_bond',
                                                       user=user))
     series_bonds = SeriesBond.objects.filter(id__in=series_bond_revisions)\
                              .distinct().select_related('origin', 'target')
+    series_bonds.object_name = 'Series Bonds'
+    data.append(series_bonds)
+
+    feature_revisions = list(_get_daily_revisions(FeatureRevision, args,
+                                                  'feature', user=user))
+    features = Feature.objects.filter(id__in=feature_revisions).distinct()\
+                      .select_related('language',)
+    feature_table = DailyChangesFeatureTable(
+      features, template_name=TW_SORT_TABLE_TEMPLATE, order_by=('name'))
+    feature_table.no_export = True
+    feature_table.count = features.count()
+    feature_table.object_name = 'Features'
+    RequestConfig(request, paginate=False).configure(feature_table)
+    data.append(feature_table)
+
+    character_revisions = list(_get_daily_revisions(CharacterRevision, args,
+                                                    'character', user=user))
+    characters = Character.objects.filter(id__in=character_revisions)\
+                          .distinct().select_related('language',)
+    character_table = DailyChangesCharacterTable(
+      characters, template_name=TW_SORT_TABLE_TEMPLATE, order_by=('name'))
+    character_table.no_export = True
+    character_table.count = characters.count()
+    character_table.object_name = 'Characters'
+    RequestConfig(request, paginate=False).configure(character_table)
+    data.append(character_table)
+
+    group_revisions = list(_get_daily_revisions(GroupRevision, args,
+                                                'group', user=user))
+    groups = Group.objects.filter(id__in=group_revisions).distinct()\
+                          .select_related('language',)
+    group_table = DailyChangesCharacterTable(
+      groups, template_name=TW_SORT_TABLE_TEMPLATE, order_by=('name'))
+    group_table.no_export = True
+    group_table.count = groups.count()
+    group_table.object_name = 'Groups'
+    RequestConfig(request, paginate=False).configure(group_table)
+    data.append(group_table)
 
     issue_revisions = list(_get_daily_revisions(IssueRevision, args, 'issue',
                                                 user=user))
@@ -2897,6 +2964,13 @@ def daily_changes(request, show_date=None, user=False):
                                                      user=user)))
     issues = Issue.objects.filter(id__in=issue_revisions).distinct()\
                   .select_related('series__publisher', 'series__country')
+    issue_table = DailyChangesIssueTable(
+      issues, template_name=TW_SORT_TABLE_TEMPLATE)
+    issue_table.no_export = True
+    issue_table.count = issues.count()
+    issue_table.object_name = 'Issues'
+    RequestConfig(request, paginate=False).configure(issue_table)
+    data.append(issue_table)
 
     images = []
     image_revisions = _get_daily_revisions(ImageRevision, args, 'image',
@@ -2936,14 +3010,18 @@ def daily_changes(request, show_date=None, user=False):
           '%schanges_by_date' % ('my_' if user is False else ''),
           kwargs={'show_date': requested_date}),
         'creators': creators,
-        'publishers': publishers,
+        'publisher_table': publisher_table,
         'brand_groups': brand_groups,
         'brands': brands,
         'indicia_publishers': indicia_publishers,
-        'series': series,
+        'series_table': series_table,
         'series_bonds': series_bonds,
-        'issues': issues,
-        'all_images': images
+        'feature_table': feature_table,
+        'character_table': character_table,
+        'group_table': group_table,
+        'issue_table': issue_table,
+        'all_images': images,
+        'data': data
       })
 
 

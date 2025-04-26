@@ -16,7 +16,8 @@ from apps.oi import states
 from apps.stddata.models import Country
 from .gcddata import GcdData, GcdLink
 from .image import Image
-from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT
+from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT, \
+                            DailyChangesTable
 from .datasource import ExternalLink
 
 
@@ -529,6 +530,10 @@ class PublisherSearchTable(PublisherBaseTable):
     def render_series_count(self, value, record):
         return mark_safe('<a href="%s">%d</a>' %
                          (record.get_absolute_url(), value))
+
+
+class DailyChangesPublisherTable(PublisherSearchTable, DailyChangesTable):
+    pass
 
 
 class IndiciaPublisherSearchTable(PublisherBaseTable):

@@ -11,7 +11,7 @@ import django_tables2 as tables
 from .gcddata import GcdData, GcdLink
 from apps.stddata.models import Language
 from .datasource import ExternalLink
-from .support_tables import TW_COLUMN_ALIGN_RIGHT
+from .support_tables import TW_COLUMN_ALIGN_RIGHT, DailyChangesTable
 
 
 class Multiverse(GcdData):
@@ -623,17 +623,16 @@ class GroupMembership(GcdLink):
 
 
 class CharacterTable(tables.Table):
-    character = tables.Column(accessor='name',
-                              verbose_name='Character')
+    name = tables.Column(verbose_name='Character')
     year_first_published = tables.Column(verbose_name='First Published')
 
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group', None)
         if self.group:
-            self.base_columns['character'].verbose_name = 'Group'
+            self.base_columns['name'].verbose_name = 'Group'
             self.group = False
         else:
-            self.base_columns['character'].verbose_name = 'Character'
+            self.base_columns['name'].verbose_name = 'Character'
         super(CharacterTable, self).__init__(*args, **kwargs)
 
     def order_year_first_published(self, query_set, is_descending):
@@ -649,7 +648,7 @@ class CharacterTable(tables.Table):
                                            'language__code')
         return (query_set, True)
 
-    def order_character(self, query_set, is_descending):
+    def order_name(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name',
                                        direction + 'disambiguation',
@@ -658,14 +657,18 @@ class CharacterTable(tables.Table):
                                        'language__code')
         return (query_set, True)
 
-    def render_character(self, record):
+    def render_name(self, record):
         name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
                                                   esc(record.disambiguated),
                                                   record.language.name)
         return mark_safe(name_link)
 
-    def value_character(self, value):
+    def value_name(self, value):
         return value
+
+
+class DailyChangesCharacterTable(CharacterTable, DailyChangesTable):
+    pass
 
 
 class CharacterSearchTable(CharacterTable):
@@ -675,7 +678,7 @@ class CharacterSearchTable(CharacterTable):
                                               TW_COLUMN_ALIGN_RIGHT +
                                               'shadow-md p-2'}})
 
-    def order_character(self, query_set, is_descending):
+    def order_name(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name',
                                        direction + 'disambiguation',

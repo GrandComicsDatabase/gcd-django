@@ -2,6 +2,7 @@ from django.db import models
 
 from .gcddata import GcdData, GcdLink
 
+
 class SourceType(models.Model):
     """
     The data source type for each data source record should be recorded.

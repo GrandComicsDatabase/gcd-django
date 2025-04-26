@@ -14,7 +14,7 @@ import django_tables2 as tables
 from apps.stddata.models import Language
 from .gcddata import GcdData, GcdLink
 from .image import Image
-from .support_tables import TW_COLUMN_ALIGN_RIGHT
+from .support_tables import TW_COLUMN_ALIGN_RIGHT, DailyChangesTable
 from .datasource import ExternalLink
 
 
@@ -211,7 +211,6 @@ class FeatureRelation(GcdLink):
           self.to_feature.get_absolute_url(),
           self.to_feature.name))
 
-
     def __str__(self):
         return '%s >Relation< %s :: %s' % (str(self.from_feature),
                                            str(self.to_feature),
@@ -220,11 +219,11 @@ class FeatureRelation(GcdLink):
 
 
 class FeatureTable(tables.Table):
-    feature = tables.Column(accessor='name',
-                            verbose_name='Feature')
+    name = tables.Column(accessor='name',
+                         verbose_name='Feature')
     year_created = tables.Column(verbose_name='First Published')
 
-    def order_feature(self, query_set, is_descending):
+    def order_name(self, query_set, is_descending):
         from django.db.models import F
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name',
@@ -248,14 +247,18 @@ class FeatureTable(tables.Table):
                                            'language__code')
         return (query_set, True)
 
-    def render_feature(self, record):
+    def render_name(self, record):
         name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
                                                   esc(record.name),
                                                   record.language.name)
         return mark_safe(name_link)
 
-    def value_feature(self, value):
+    def value_name(self, value):
         return value
+
+
+class DailyChangesFeatureTable(FeatureTable, DailyChangesTable):
+    pass
 
 
 class FeatureSearchTable(FeatureTable):
@@ -264,7 +267,7 @@ class FeatureSearchTable(FeatureTable):
                                 attrs={'td': {'class':
                                               TW_COLUMN_ALIGN_RIGHT}})
 
-    def order_feature(self, query_set, is_descending):
+    def order_name(self, query_set, is_descending):
         direction = '-' if is_descending else ''
         query_set = query_set.order_by(direction + 'sort_name',
                                        direction + 'disambiguation',
@@ -300,7 +303,7 @@ class FeatureSearchTable(FeatureTable):
         return (query_set, True)
 
     def render_issue_count(self, record):
-        url = urlresolvers.reverse('feature_issuelist_by_id',
+        url = urlresolvers.reverse('feature_issues',
                                    kwargs={'feature_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
@@ -330,7 +333,7 @@ class FeatureLogoTable(tables.Table):
                                              esc(record.name))
         return mark_safe(name_link)
 
-    def value_feature(self, value):
+    def value_name(self, value):
         return value
 
 

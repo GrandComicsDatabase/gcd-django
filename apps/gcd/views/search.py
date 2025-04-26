@@ -209,7 +209,7 @@ def generic_by_name(request, name, q_obj, sort,
         if class_ == Feature:
             things = things.annotate(issue_count=Count(
                     'story__issue', distinct=True))
-            order_by = 'feature'
+            order_by = 'name'
             if sort == ORDER_CHRONO:
                 order_by = 'year_created'
             filter = FilterForLanguage(request.GET, things,
@@ -222,7 +222,7 @@ def generic_by_name(request, name, q_obj, sort,
                 template_name='gcd/bits/tw_sortable_table.html',
                 order_by=(order_by))
         elif class_ == Character:
-            order_by = 'character'
+            order_by = 'name'
             if (sort == ORDER_CHRONO):
                 order_by = 'year_first_published'
             things = things.distinct()
@@ -238,7 +238,7 @@ def generic_by_name(request, name, q_obj, sort,
                 template_name='gcd/bits/tw_sortable_table.html',
                 order_by=(order_by))
         elif class_ == Group:
-            order_by = 'character'
+            order_by = 'name'
             if (sort == ORDER_CHRONO):
                 order_by = 'year_first_published'
             things = things.distinct()
