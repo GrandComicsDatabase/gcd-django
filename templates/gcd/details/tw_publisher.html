@@ -160,3 +160,17 @@
     {{ block.super }}
   {% endwith %}
 {% endblock change_history %}
+
+{% block bottom_nav_bar %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ publisher.object_page_name }}
+  </div>
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+</nav>
+<nav class="max-md:hidden flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-lg">
+  </div>
+  {% include "gcd/bits/tw_alpha_pagination_bar.html" %}
+</nav>
+{% endblock bottom_nav_bar %}
