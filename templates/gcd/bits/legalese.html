@@ -1,16 +1,24 @@
 {% load i18n %}
 {% load static %}
 
-<div class="footer_disclaimer">
+<div>
+  <div class="flex">
+    <div class="px-2">
+      <a href="{% url 'contact_form' %} ">contact us</a>
+    </div>
+    <div class="px-2">
+      <a href="{% url "donate" %}">donate</a>
+    </div>
   {% if error_link %}
-  <div class="footer_item">
+    <div class="px-2">
     {% blocktrans with request.build_absolute_uri as uri and error_subject|urlencode as error_sub %}
     If you believe any of this data to be incorrect, please
-    <a class="new_window" href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ uri }}&amp;short_desc={{ error_sub }}"
-       target="_blank">let us know</a>.
+      <a class="new_window" href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ uri }}&amp;short_desc={{ error_sub }}"
+         target="_blank">let us know</a>.
     {% endblocktrans %}
-  </div>
+    </div>
   {% endif %}
+  </div>
   <div class="footer_item">
     {% trans 'Cover thumbnails are used for identification purposes only.' %}
     {% trans 'All rights to cover images reserved by the respective copyright holders.' %}
