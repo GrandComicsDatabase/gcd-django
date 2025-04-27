@@ -729,7 +729,7 @@ class CreatorCharacterTable(CharacterSearchTable):
 
     class Meta:
         model = Character
-        fields = ('character', 'year_first_published', 'first_credit',
+        fields = ('name', 'year_first_published', 'first_credit',
                   'issue_count', 'role')
 
     def __init__(self, *args, **kwargs):
@@ -776,7 +776,7 @@ class UniverseCharacterTable(CharacterSearchTable):
 
     class Meta:
         model = Character
-        fields = ('character', 'year_first_published', 'first_appearance')
+        fields = ('name', 'year_first_published', 'first_appearance')
 
     def __init__(self, *args, **kwargs):
         self.universe = kwargs.pop('universe')
@@ -805,7 +805,7 @@ class UniverseCharacterTable(CharacterSearchTable):
 class CharacterCharacterTable(UniverseCharacterTable):
     class Meta:
         model = Character
-        fields = ('character', 'year_first_published', 'first_appearance')
+        fields = ('name', 'year_first_published', 'first_appearance')
 
     def __init__(self, *args, **kwargs):
         self.character = kwargs.pop('character')
@@ -823,7 +823,7 @@ class CharacterCharacterTable(UniverseCharacterTable):
 class FeatureCharacterTable(UniverseCharacterTable):
     class Meta:
         model = Character
-        fields = ('character', 'year_first_published', 'first_appearance')
+        fields = ('name', 'year_first_published', 'first_appearance')
 
     def __init__(self, *args, **kwargs):
         self.feature = kwargs.pop('feature')
@@ -841,7 +841,7 @@ class FeatureCharacterTable(UniverseCharacterTable):
 class SeriesCharacterTable(UniverseCharacterTable):
     class Meta:
         model = Character
-        fields = ('character', 'year_first_published', 'first_appearance')
+        fields = ('name', 'year_first_published', 'first_appearance')
 
     def __init__(self, *args, **kwargs):
         self.series = kwargs.pop('series')

@@ -550,7 +550,7 @@ def creator_features(request, creator_id, country=None, language=None):
     table = CreatorFeatureTable(features, attrs={'class': 'sortable_listing'},
                                 creator=creator,
                                 template_name=TW_SORT_TABLE_TEMPLATE,
-                                order_by=('feature'))
+                                order_by=('name'))
     return generic_sortable_list(request, features, table, template, context)
 
 
@@ -2391,7 +2391,7 @@ def series_characters(request, series_id):
     table = SeriesCharacterTable(characters,
                                  series=series,
                                  template_name=TW_SORT_TABLE_TEMPLATE,
-                                 order_by=('character'))
+                                 order_by=('name'))
     return generic_sortable_list(request, characters, table, template, context)
 
 
@@ -2950,7 +2950,8 @@ def daily_changes(request, show_date=None, user=False):
     groups = Group.objects.filter(id__in=group_revisions).distinct()\
                           .select_related('language',)
     group_table = DailyChangesCharacterTable(
-      groups, template_name=TW_SORT_TABLE_TEMPLATE, order_by=('name'))
+      groups, template_name=TW_SORT_TABLE_TEMPLATE, order_by=('name'),
+      group=True)
     group_table.no_export = True
     group_table.count = groups.count()
     group_table.object_name = 'Groups'
@@ -3905,7 +3906,7 @@ def character_features(request, character_id):
     table = CharacterFeatureTable(features,
                                   character=character,
                                   template_name=TW_SORT_TABLE_TEMPLATE,
-                                  order_by=('feature'))
+                                  order_by=('name'))
     return generic_sortable_list(request, features, table, template, context)
 
 
@@ -4488,7 +4489,7 @@ def group_features(request, group_id):
     table = GroupFeatureTable(features,
                               group=group,
                               template_name=TW_SORT_TABLE_TEMPLATE,
-                              order_by=('feature'))
+                              order_by=('name'))
     return generic_sortable_list(request, features, table, template, context)
 
 

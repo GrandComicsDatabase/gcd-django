@@ -342,7 +342,7 @@ class CharacterFeatureTable(FeatureSearchTable):
 
     class Meta:
         models = Feature
-        fields = ('feature', 'year_created', 'first_appearance', 'issue_count')
+        fields = ('name', 'year_created', 'first_appearance', 'issue_count')
 
     def __init__(self, *args, **kwargs):
         self.character = kwargs.pop('character')
@@ -375,7 +375,7 @@ class CharacterFeatureTable(FeatureSearchTable):
 class GroupFeatureTable(CharacterFeatureTable):
     class Meta:
         models = Feature
-        fields = ('feature', 'year_created', 'first_appearance', 'issue_count')
+        fields = ('name', 'year_created', 'first_appearance', 'issue_count')
 
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group')
@@ -389,7 +389,7 @@ class CreatorFeatureTable(FeatureSearchTable):
 
     class Meta:
         models = Feature
-        fields = ('feature', 'year_created', 'first_credit', 'issue_count',
+        fields = ('name', 'year_created', 'first_credit', 'issue_count',
                   'role')
 
     def __init__(self, *args, **kwargs):
