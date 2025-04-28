@@ -3094,6 +3094,11 @@ def do_on_sale_weekly(request, year=None, week=None):
                                                   'week': next_week[1]})
     else:
         choose_url_after = ""
+
+    cross_link = urlresolvers.reverse("on_sale_monthly",
+                                      kwargs={'year': monday.year,
+                                              'month': monday.month})
+
     vars = {
         'items': issues_on_sale,
         'heading': heading,
@@ -3102,6 +3107,7 @@ def do_on_sale_weekly(request, year=None, week=None):
         'choose_url_after': choose_url_after,
         'choose_url_before': choose_url_before,
         'query_string': urlencode(query_val),
+        'cross_link': cross_link,
     }
     return issues_on_sale, vars
 
@@ -3143,15 +3149,18 @@ def on_sale_weekly(request, year=None, week=None, variant=True):
             switch_url = urlresolvers.reverse("on_sale_this_week")
         switch_name = 'Show With Variants'
 
-    switch_link = '<div class="mt-1"><a href="%s">' \
+    switch_link = '<div class="flex"><div class="mt-1 flex-1"><a href="%s">' \
                   '<button class="btn btn-blue">%s</button></a></div>' % (
                     switch_url, switch_name)
-    context['result_disclaimer'] = mark_safe(switch_link)
+    cross_link = '<div class="mt-1"><a href="%s">' \
+                 '<button class="btn btn-blue">Switch to Monthly</button>' \
+                 '</a></div></div>' % (
+                   context['cross_link'])
+    context['result_disclaimer'] = mark_safe(switch_link + cross_link)
     context['item_name'] = 'issue'
     context['plural_suffix'] = 's'
     context['filter_form'] = filter.form
     context['variant'] = variant
-
     return generic_sortable_list(request, issues_on_sale, table,
                                  'gcd/search/tw_list_sortable.html',
                                  context, 50)
@@ -3204,6 +3213,11 @@ def do_on_sale_monthly(request, year=None, month=None):
                                               'month': date_after.month})
     oldest = Issue.objects.exclude(on_sale_date='').order_by('on_sale_date')[0]
 
+    cross_link = urlresolvers.reverse("on_sale_weekly",
+                                      kwargs={'year': start_date.year,
+                                              'week': start_date.isocalendar()
+                                                                .week+1})
+
     vars = {
         'items': issues_on_sale,
         'years': range(date.today().year, int(oldest.on_sale_date[:4]), -1),
@@ -3214,6 +3228,7 @@ def do_on_sale_monthly(request, year=None, month=None):
         'choose_date': True,
         'query_string': urlencode(query_val),
         'date': start_date,
+        'cross_link': cross_link,
     }
     return issues_on_sale, vars
 
@@ -3251,10 +3266,15 @@ def on_sale_monthly(request, year=None, month=None, variant=True):
             switch_url = urlresolvers.reverse("on_sale_this_month")
         switch_name = 'Show With Variants'
 
-    switch_link = '<div class="mt-1"><a href="%s">' \
+    switch_link = '<div class="flex"><div class="mt-1 flex-1"><a href="%s">' \
                   '<button class="btn btn-blue">%s</button></a></div>' % (
                     switch_url, switch_name)
-    context['result_disclaimer'] = mark_safe(switch_link)
+    cross_link = '<div class="mt-1"><a href="%s">' \
+                 '<button class="btn btn-blue">Switch to Weekly</button>' \
+                 '</a></div></div>' % (
+                   context['cross_link'])
+
+    context['result_disclaimer'] = mark_safe(switch_link + cross_link)
     context['item_name'] = 'issue'
     context['plural_suffix'] = 's'
     context['filter_form'] = filter.form
