@@ -49,7 +49,7 @@
             <li><a href='{% url "creator_creators" creator_id=creator.id %}'>Co-Creator List</a></li>
 
           </ul>
-          via credit search for "{{ creator.gcd_official_name }}"
+          via story credit search for "{{ creator.gcd_official_name }}"
           <ul class="object-page-link-list lg:columns-3">
             <li><a href='{% url "creator_migrate_checklist" creator=creator.gcd_official_name %}'>Issues to be Migrated</a></li>
             <li class="break-inside-avoid-column"><a href='{% url "checklist_by_name" creator=creator.gcd_official_name %}'>Issue List</a></li>
