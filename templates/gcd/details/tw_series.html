@@ -88,8 +88,8 @@
   {% if series.publication_type %}
             <li><span class="font-bold">Publication Type:</span> {{ series.publication_type }}</li>
   {% endif %}
-  {% if publisher.has_keywords %}
-            <li><span class="font-bold">Keywords:</span>  {{ series.display_keywords }}</li>
+  {% if series.has_keywords %}
+            <li><span class="font-bold">Keywords:</span>  {{ series|show_keywords:'series' }}</li>
   {% endif %}
   {% with object=series %}
     {% include "gcd/bits/external_links.html" %}

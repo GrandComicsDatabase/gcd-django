@@ -50,7 +50,7 @@ GCD :: Group :: {{ group.name }}
 {% if group.has_keywords %}
             <tr>
               <td>Keywords:</td>
-              <td>{{ group.display_keywords }}</td>
+              <td>{{ group|show_keywords:'group' }}</td>
             </tr>
 {% endif %}
           </table>  

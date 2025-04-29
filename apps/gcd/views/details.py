@@ -61,7 +61,7 @@ from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       FeatureCharacterTable, \
                                       CharacterCharacterTable, \
                                       DailyChangesCharacterTable
-from apps.gcd.models.feature import CreatorFeatureTable, \
+from apps.gcd.models.feature import FeatureTable, CreatorFeatureTable, \
                                     CharacterFeatureTable, \
                                     GroupFeatureTable, FeatureLogoTable, \
                                     DailyChangesFeatureTable
@@ -2468,12 +2468,18 @@ def keyword(request, keyword, model_name=''):
     Display the objects associated to a keyword.
     """
     if 'content_type' in request.GET:
-        if request.GET['content_type'] == '13':
+        if request.GET['content_type'] == '11':
+            model_name = 'series'
+        elif request.GET['content_type'] == '13':
             model_name = 'story'
         elif request.GET['content_type'] == '12':
             model_name = 'issue'
+        elif request.GET['content_type'] == '127':
+            model_name = 'feature'
         elif request.GET['content_type'] == '147':
             model_name = 'character'
+        elif request.GET['content_type'] == '149':
+            model_name = 'group'
 
     if model_name:
         from apps.oi.views import DISPLAY_CLASSES
@@ -2492,11 +2498,27 @@ def keyword(request, keyword, model_name=''):
                                     template_name=TW_SORT_TABLE_TEMPLATE,
                                     order_by=('issue'))
         object_type = 'issue'
+    elif model_name == 'series':
+        table = SeriesTable(objs,
+                            template_name=TW_SORT_TABLE_TEMPLATE,
+                            order_by=('name'))
+        object_type = 'series'
+        plural_suffix = ''
     elif model_name == 'character':
         table = CharacterTable(objs,
                                template_name=TW_SORT_TABLE_TEMPLATE,
-                               order_by=('character'))
+                               order_by=('name'))
         object_type = 'character'
+    elif model_name == 'group':
+        table = CharacterTable(objs,
+                               template_name=TW_SORT_TABLE_TEMPLATE,
+                               order_by=('name'), group=True)
+        object_type = 'group'
+    elif model_name == 'feature':
+        table = FeatureTable(objs,
+                             template_name=TW_SORT_TABLE_TEMPLATE,
+                             order_by=('name'))
+        object_type = 'feature'
     else:
         objs = TaggedItem.objects.filter(tag__name=keyword).exclude(
           content_type__id__in=[72, 75])
@@ -3164,9 +3186,6 @@ def on_sale_weekly(request, year=None, week=None, variant=True):
     return generic_sortable_list(request, issues_on_sale, table,
                                  'gcd/search/tw_list_sortable.html',
                                  context, 50)
-
-    return generic_sortable_list(request, issues_on_sale, table,
-                                 'gcd/status/issues_on_sale.html', vars, 50)
 
 
 def do_on_sale_monthly(request, year=None, month=None):

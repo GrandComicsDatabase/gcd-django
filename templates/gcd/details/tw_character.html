@@ -50,7 +50,7 @@ GCD :: Character :: {{ character.name }}
 {% if character.has_keywords %}
             <tr>
               <td>Keywords:</td>
-              <td>{{ character.display_keywords }}</td>
+              <td>{{ character|show_keywords:'character' }}</td>
             </tr>
 {% endif %}
           </table>  

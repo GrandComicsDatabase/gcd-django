@@ -56,7 +56,7 @@ GCD :: Feature :: {{ feature.name }}
 {% if feature.has_keywords %}
             <tr>
               <td>Keywords:</td>
-              <td>{{ feature.display_keywords }}</td>
+              <td>{{ feature|show_keywords:'feature' }}</td>
             </tr>
 {% endif %}
           </table>  

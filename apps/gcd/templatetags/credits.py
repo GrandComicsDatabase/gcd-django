@@ -499,7 +499,8 @@ def __format_keywords(keywords, join_on='; ', model_name='story', url=True):
     else:
         keyword_list = list()
         for i in keywords.all().order_by('name'):
-            if model_name in ['story', 'issue'] and url:
+            if model_name in ['story', 'issue', 'character', 'group',
+                              'feature', 'series'] and url:
                 keyword_list.append('<a href="%s%s/">%s</a>' % (
                                     urlresolvers.reverse(
                                       'show_keyword', kwargs={'keyword': i}),
@@ -511,8 +512,8 @@ def __format_keywords(keywords, join_on='; ', model_name='story', url=True):
 
 
 @register.filter
-def show_keywords(object):
-    return __format_keywords(object.keywords)
+def show_keywords(object, model_name=None):
+    return __format_keywords(object.keywords, model_name=model_name)
 
 
 @register.filter
