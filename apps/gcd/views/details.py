@@ -2008,7 +2008,8 @@ def show_series(request, series, preview=False):
         cover_status_width = "basis-24"
 
     images = series.active_issues().filter(variant_of=None)\
-                   .annotate(sum_scans_code=Sum('image_resources__type__id'))\
+                   .annotate(sum_scans_code=Sum('image_resources__type__id',
+                             filter=Q(image_resources__deleted=False)))\
                    .order_by('sort_code')
 
     return render(
