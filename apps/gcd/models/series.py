@@ -481,21 +481,8 @@ class PublishedColumn(tables.Column):
         return record.display_publication_dates()
 
 
-class NameColumn(tables.Column):
-    def render(self, record):
-        name_link = '<a href="%s">%s</a> %s' % (record.get_absolute_url(),
-                                                esc(record.name),
-                                                record.short_pub_type())
-        return mark_safe(name_link)
-
-    def order(self, QuerySet, is_descending):
-        QuerySet = QuerySet.order_by(('-' if is_descending else '')
-                                     + 'sort_name', 'year_began')
-        return (QuerySet, True)
-
-
 class SeriesTable(tables.Table):
-    name = NameColumn(verbose_name='Series')
+    name = tables.Column(verbose_name='Series')
     year_began = tables.Column(accessor='year_began', verbose_name='Year')
     issue_count = tables.Column(verbose_name='Issues',
                                 initial_sort_descending=True,
@@ -524,6 +511,11 @@ class SeriesTable(tables.Table):
                                        'year_began')
         return (query_set, True)
 
+    def order_name(self, QuerySet, is_descending):
+        QuerySet = QuerySet.order_by(('-' if is_descending else '')
+                                     + 'sort_name', 'year_began')
+        return (QuerySet, True)
+
     def order_year_began(self, QuerySet, is_descending):
         QuerySet = QuerySet.order_by(('-' if is_descending else '')
                                      + 'year_began', 'sort_name')
@@ -538,6 +530,12 @@ class SeriesTable(tables.Table):
     def render_issue_count(self, record):
         return '%d issues (%d indexed)' % (record.issue_count,
                                            record.issue_indexed_count)
+
+    def render_name(self, record):
+        name_link = '<a href="%s">%s</a> %s' % (record.get_absolute_url(),
+                                                esc(record.name),
+                                                record.short_pub_type())
+        return mark_safe(name_link)
 
     def value_name(self, value):
         return str(value)
