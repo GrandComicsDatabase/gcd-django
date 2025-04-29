@@ -2765,6 +2765,10 @@ select {
   padding-right: 0.75rem;
 }
 
+.\[\&_td\]\:text-center td {
+  text-align: center;
+}
+
 .\[\&_td\]\:align-top td {
   vertical-align: top;
 }
