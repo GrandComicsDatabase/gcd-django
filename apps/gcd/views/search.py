@@ -779,15 +779,11 @@ def story_by_character(request, character, sort=ORDER_ALPHA):
                                credit="characters:" + character,
                                selected="by_character", sqs=sqs)
     else:
-        if settings.DEBUG:
-            q_obj = Q(appearing_characters__character__name__icontains=
-                      character)
-        else:
-            q_obj = Q(characters__icontains=character) | \
-                    Q(feature__icontains=character) | \
-                    Q(appearing_characters__character__name__icontains=
-                      character) \
-                    | Q(feature_object__name__icontains=character)
+        q_obj = Q(appearing_characters__character__name__icontains=character)
+        if not settings.DEBUG:
+            q_obj |= Q(characters__icontains=character) | \
+                     Q(feature__icontains=character) | \
+                     Q(feature_object__name__icontains=character)
         return generic_by_name(request, character, q_obj, sort,
                                credit="characters:" + character,
                                selected="by_character")
@@ -1305,6 +1301,7 @@ def advanced_search(request):
         search_values['indexer'] = search_values.getlist('indexer')
         search_values['country'] = search_values.getlist('country')
         search_values['language'] = search_values.getlist('language')
+        search_values['genre'] = search_values.getlist('genre')
         return render(request, 'gcd/search/advanced.html',
                       {'form': AdvancedSearch(user=request.user,
                                               initial=search_values)})
@@ -1565,6 +1562,13 @@ def used_search(search_values):
             used_search_terms.append(('credit_is_linked',
                                       'linked credits only'))
         del search_values['credit_is_linked']
+    if 'genre' in search_values:
+        genres = ''
+        for genre in search_values.getlist('genre'):
+            genres += '%s, ' % genre
+        genres = genres[:-2]
+        used_search_terms.append(('genre', genres))
+        del search_values['genre']
     for i in search_values:
         if search_values[i] and search_values[i] not in ['None', 'False']:
             used_search_terms.append((i, search_values[i]))
@@ -2250,7 +2254,9 @@ def search_stories(data, op):
 
     if data['genre']:
         for genre in data['genre']:
-            q_and_only.append(Q(**{'%sgenre__icontains' % prefix: genre}))
+            q_and_only.append(Q(**{'%sgenre__icontains' % prefix: genre}) |
+                              Q(**{'%sfeature_object__genre__icontains' %
+                                   prefix: genre}))
 
     if data['story_reprinted'] != '':
         if data['story_reprinted'] == 'from':
