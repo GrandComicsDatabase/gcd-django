@@ -146,6 +146,7 @@ def get_civilian_identity(character, appearing_characters, url=True,
               character__character__id=civilian_identity.pop())
         characters = ' ['
         several = False
+        compare_characters = ''
         for identity in civilian_identity:
             if several:
                 characters += '; '
@@ -156,9 +157,14 @@ def get_civilian_identity(character, appearing_characters, url=True,
             else:
                 characters += '%s' % identity.character.name
             if compare:
-                return ' [%s]' % identity.character.character.disambiguated
+                if several:
+                    compare_characters += '; '
+                compare_characters += ' [%s' % identity.character.character\
+                                                       .disambiguated
             several = True
         characters += ']'
+        if compare:
+            return compare_characters + ']'
         return characters
     else:
         return ''
@@ -336,9 +342,16 @@ def show_characters(story, url=True, css_style=True, compare=False,
     if groups and first_member is True:
         characters = characters[:-2]
 
-    appearing_characters = all_appearing_characters.exclude(
+    appearing_characters_ids = list(all_appearing_characters.exclude(
       character__id__in=in_group.values_list('character'),
-      group_name__isnull=False)
+      group_name__isnull=False).values_list('character', flat=True))
+    # We do not give the QuerySet to the filter, but the IDs.
+    # In get_civilian_identity we need to filter the appearing_characters
+    # once more, which otherwise would still use the above exclude,
+    # which for StoryCharacterRevision is somehow expensive.
+    appearing_characters = all_appearing_characters.filter(
+      character_id__in=appearing_characters_ids)
+
     for character in appearing_characters:
         alias_identity = set(
           character.character.character.from_related_character

@@ -174,6 +174,7 @@ INSTALLED_APPS = (
     'pagedown.apps.PagedownConfig',
     'rosetta',
     'django_filters',
+    'drf_spectacular'
 )
 
 # Used to provide a seed in secret-key hashing algorithms.
@@ -268,6 +269,12 @@ CRISPY_TEMPLATE_PACK = 'bootstrap3'
 # set to True for production
 COMPRESS_OFFLINE = False
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'GCD API',
+    'DESCRIPTION': 'Grand Comics Database',
+    'VERSION': '0.1.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
 
 #################################################################################
 # Haystack and search
@@ -347,7 +354,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '30/hour',
         'user': '2000/day'
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 #################################################################################

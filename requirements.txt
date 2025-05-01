@@ -24,6 +24,7 @@ django-tables2<2.8
 django-model-utils<4.6
 git+https://github.com/GrandComicsDatabase/django-taggit.git@django42
 git+https://github.com/GrandComicsDatabase/django-templatesadmin.git@django-42
+drf-spectacular<0.29
 chardet<5.3
 elasticsearch>7.0,<8.0
 numpy<2.3

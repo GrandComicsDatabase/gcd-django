@@ -937,6 +937,7 @@ class Changeset(models.Model):
                        isinstance(revision, StoryCreditRevision) or \
                        isinstance(revision, IssueCreditRevision) or \
                        isinstance(revision, ReprintRevision) or \
+                       isinstance(revision, CharacterNameDetailRevision) or \
                        isinstance(revision, CreatorNameDetailRevision) or \
                        isinstance(revision, DataSourceRevision) or \
                        isinstance(revision, StoryCharacterRevision) or \
@@ -6419,6 +6420,7 @@ class StoryRevision(Revision):
         from_reprints = self.story.from_reprints.all()
         if self.story.target_reprint_revisions.active_set().count() \
                 or RevisionLock.objects.filter(
+                  changeset=self.changeset,
                   object_id__in=from_reprints.values_list(
                                               'id', flat=True)).exists():
             new_revisions = self.story.target_reprint_revisions\
@@ -6468,6 +6470,7 @@ class StoryRevision(Revision):
         to_reprints = self.story.to_reprints.all()
         if self.story.origin_reprint_revisions.active_set().count() \
                 or RevisionLock.objects.filter(
+                  changeset=self.changeset,
                   object_id__in=to_reprints.values_list(
                                             'id', flat=True)).exists():
             new_revisions = self.story.origin_reprint_revisions\
