@@ -2436,6 +2436,10 @@ select {
     width: 75%;
   }
 
+  .sm\:w-36 {
+    width: 9rem;
+  }
+
   .sm\:w-64 {
     width: 16rem;
   }
@@ -2446,10 +2450,6 @@ select {
 
   .sm\:w-\[200px\] {
     width: 200px;
-  }
-
-  .sm\:w-28 {
-    width: 7rem;
   }
 
   .sm\:min-w-\[150px\] {
