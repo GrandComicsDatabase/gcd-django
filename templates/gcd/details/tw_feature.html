@@ -47,10 +47,10 @@ GCD :: Feature :: {{ feature.name }}
               <td>{{ feature.feature_type }}</td>
             </tr>
 {% endif %}
-{% if feature.year_created %}
+{% if feature.year_first_published %}
             <tr>
               <td class="sm:w-24">Created in:</td>
-              <td>{{ feature.display_year_created }}</td>
+              <td>{{ feature.display_year_first_published }}</td>
             </tr>
 {% endif %}
 {% if feature.has_keywords %}

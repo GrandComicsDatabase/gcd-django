@@ -6733,8 +6733,8 @@ class FeatureRevision(Revision):
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
     feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
-    year_created = models.IntegerField(db_index=True, blank=True, null=True)
-    year_created_uncertain = models.BooleanField(default=False)
+    year_first_published = models.IntegerField(db_index=True, blank=True, null=True)
+    year_first_published_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
 
@@ -6781,8 +6781,10 @@ class FeatureRevision(Revision):
     # TODO old methods, t.b.c
 
     _base_field_list = ['name', 'leading_article', 'disambiguation',
-                        'genre', 'language', 'feature_type', 'year_created',
-                        'year_created_uncertain', 'notes', 'keywords']
+                        'genre', 'language', 'feature_type',
+                        'year_first_published',
+                        'year_first_published_uncertain',
+                        'notes', 'keywords']
 
     def _field_list(self):
         return self._base_field_list
@@ -6795,27 +6797,27 @@ class FeatureRevision(Revision):
             'genre': '',
             'language': None,
             'feature_type': None,
-            'year_created': None,
-            'year_created_uncertain': False,
+            'year_first_published': None,
+            'year_first_published_uncertain': False,
             'notes': '',
             'keywords': '',
         }
 
     def _start_imp_sum(self):
-        self._seen_year_created = False
+        self._seen_year_first_published = False
 
     def _imps_for(self, field_name):
-        if field_name in ('year_created',
-                          'year_created_uncertain'):
-            if not self._seen_year_created:
-                self._seen_year_created = True
+        if field_name in ('year_first_published',
+                          'year_first_published_uncertain'):
+            if not self._seen_year_first_published:
+                self._seen_year_first_published = True
                 return 1
         elif field_name in self._field_list():
             return 1
         return 0
 
     def _queue_name(self):
-        return '%s (%s, %s)' % (self.name, self.year_created,
+        return '%s (%s, %s)' % (self.name, self.year_first_published,
                                 self.language.code.upper())
 
 

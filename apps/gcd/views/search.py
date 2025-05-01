@@ -211,7 +211,7 @@ def generic_by_name(request, name, q_obj, sort,
                     'story__issue', distinct=True))
             order_by = 'name'
             if sort == ORDER_CHRONO:
-                order_by = 'year_created'
+                order_by = 'year_first_published'
             filter = FilterForLanguage(request.GET, things,
                                        language='language')
             things = filter.qs

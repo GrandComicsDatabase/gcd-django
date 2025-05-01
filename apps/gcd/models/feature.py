@@ -58,8 +58,8 @@ class Feature(GcdData):
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
     feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
-    year_created = models.IntegerField(db_index=True, null=True)
-    year_created_uncertain = models.BooleanField(default=False)
+    year_first_published  = models.IntegerField(db_index=True, null=True)
+    year_first_published_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
     external_link = models.ManyToManyField(ExternalLink)
     keywords = TaggableManager()
@@ -84,12 +84,12 @@ class Feature(GcdData):
             return other_translations.exclude(to_feature=self)
         return None
 
-    def display_year_created(self):
-        if not self.year_created:
+    def display_year_first_published(self):
+        if not self.year_first_published:
             return '?'
         else:
-            return '%d%s' % (self.year_created,
-                             '?' if self.year_created_uncertain else '')
+            return '%d%s' % (self.year_first_published,
+                             '?' if self.year_first_published_uncertain else '')
 
     def get_absolute_url(self):
         return urlresolvers.reverse(
@@ -221,26 +221,27 @@ class FeatureRelation(GcdLink):
 class FeatureTable(tables.Table):
     name = tables.Column(accessor='name',
                          verbose_name='Feature')
-    year_created = tables.Column(verbose_name='First Published')
+    year_first_published = tables.Column(verbose_name='First Published')
 
     def order_name(self, query_set, is_descending):
         from django.db.models import F
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'sort_name',
-                                       direction + 'disambiguation',
-                                       F('year_created').asc(nulls_last=True),
-                                       'language__code')
+        query_set = query_set.order_by(
+          direction + 'sort_name',
+          direction + 'disambiguation',
+          F('year_first_published').asc(nulls_last=True),
+          'language__code')
         return (query_set, True)
 
-    def order_year_created(self, query_set, is_descending):
+    def order_year_first_published(self, query_set, is_descending):
         if is_descending:
-            query_set = query_set.order_by(F('year_created')
+            query_set = query_set.order_by(F('year_first_published')
                                            .desc(nulls_last=True),
                                            'sort_name',
                                            'disambiguation',
                                            'language__code')
         else:
-            query_set = query_set.order_by(F('year_created')
+            query_set = query_set.order_by(F('year_first_published')
                                            .asc(nulls_last=True),
                                            'sort_name',
                                            'disambiguation',
@@ -269,23 +270,24 @@ class FeatureSearchTable(FeatureTable):
 
     def order_name(self, query_set, is_descending):
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'sort_name',
-                                       direction + 'disambiguation',
-                                       F('year_created').asc(nulls_last=True),
-                                       '-issue_count',
-                                       'language__code')
+        query_set = query_set.order_by(
+          direction + 'sort_name',
+          direction + 'disambiguation',
+          F('year_first_published').asc(nulls_last=True),
+          '-issue_count',
+          'language__code')
         return (query_set, True)
 
-    def order_year_created(self, query_set, is_descending):
+    def order_year_first_published(self, query_set, is_descending):
         if is_descending:
-            query_set = query_set.order_by(F('year_created')
+            query_set = query_set.order_by(F('year_first_published')
                                            .desc(nulls_last=True),
                                            'sort_name',
                                            'disambiguation',
                                            '-issue_count',
                                            'language__code')
         else:
-            query_set = query_set.order_by(F('year_created')
+            query_set = query_set.order_by(F('year_first_published')
                                            .asc(nulls_last=True),
                                            'sort_name',
                                            'disambiguation',
@@ -295,11 +297,12 @@ class FeatureSearchTable(FeatureTable):
 
     def order_issue_count(self, query_set, is_descending):
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'issue_count',
-                                       'sort_name',
-                                       'disambiguation',
-                                       F('year_created').asc(nulls_last=True),
-                                       'language__code')
+        query_set = query_set.order_by(
+          direction + 'issue_count',
+          'sort_name',
+          'disambiguation',
+          F('year_first_published').asc(nulls_last=True),
+          'language__code')
         return (query_set, True)
 
     def render_issue_count(self, record):
@@ -342,7 +345,8 @@ class CharacterFeatureTable(FeatureSearchTable):
 
     class Meta:
         models = Feature
-        fields = ('name', 'year_created', 'first_appearance', 'issue_count')
+        fields = ('name', 'year_first_published', 'first_appearance',
+                  'issue_count')
 
     def __init__(self, *args, **kwargs):
         self.character = kwargs.pop('character')
@@ -375,7 +379,8 @@ class CharacterFeatureTable(FeatureSearchTable):
 class GroupFeatureTable(CharacterFeatureTable):
     class Meta:
         models = Feature
-        fields = ('name', 'year_created', 'first_appearance', 'issue_count')
+        fields = ('name', 'year_first_published', 'first_appearance',
+                  'issue_count')
 
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group')
@@ -389,8 +394,8 @@ class CreatorFeatureTable(FeatureSearchTable):
 
     class Meta:
         models = Feature
-        fields = ('name', 'year_created', 'first_credit', 'issue_count',
-                  'role')
+        fields = ('name', 'year_first_published', 'first_credit',
+                  'issue_count', 'role')
 
     def __init__(self, *args, **kwargs):
         self.creator = kwargs.pop('creator')
