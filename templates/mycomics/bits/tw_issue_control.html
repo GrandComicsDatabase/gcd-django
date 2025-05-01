@@ -1,0 +1,65 @@
+{% load collecting %}
+
+{% if MYCOMICS %}
+<details class="[&_svg]:open:rotate-90" open="">
+  {% else %}
+<details class="[&_svg]:open:rotate-90">
+  {% endif %}
+<summary class="list-none">
+  <div class="bg-my-comics text-white mt-1 font-bold px-2 py-1 text-center rounded">
+    <svg class="inline rotate-0 transform text-blue-700 transition-all duration-300" fill="none" height="20" width="20" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+      <polyline points="6 3 12 9 6 15"></polyline>
+    </svg>
+  my.comics.org
+  </div>
+</summary>
+<div class="mx-1">
+  <div>
+Tracked in {{ issue.collectionitem_set.count }} collections.
+  {% if request.user.is_authenticated %}
+    {% with for_sale=issue|for_sale %}
+      {% if for_sale %}
+    <br>Recorded as for sale by {{ for_sale }} user{{ for_sale|pluralize }}.
+      {% endif %}
+    {% endwith %}
+  {% endif %}
+</div>
+  {% if request.user.is_authenticated %}
+    {{ issue|show_have_want:request.user }}
+    {% for item in issue|item_collections:request.user %}
+      {% if forloop.first %}
+<ul>
+      {% endif %}
+      {% for collection in item.collections.all %}
+<li>
+  <form class="inline-block"><button class="m-0 mb-0.5 btn btn-blue-editing" formaction='{{ item|item_url:collection }}#edit-item'>Change</button></form>
+  <a href='{{ item|item_url:collection }}'>{{ collection }}</a>
+      {% endfor %}
+      {% if forloop.last %}
+</ul>
+      {% endif %}
+    {% endfor %}
+<form method="POST" action="{% url 'my_issue' issue_id=issue.id %}">
+    {% csrf_token %}
+<div>
+  <input class="m-0 mb-0.5 btn btn-blue-editing" type="submit" name="confirm_selection" value="Add this issue to">
+  <select class="ms-1" name="collection_id">
+    {% for col_item in request.user.collector.ordered_collections %}
+    <option value="{{ col_item.id }}" {% if request.session.collection_id == col_item.id %}selected{% endif %}>{{ col_item.name }}
+    {% endfor %}
+  </select>
+</div>
+</form>
+  {% endif %}
+</div>
+  {% url "show_issue" issue_id=issue.id as object_url %}
+  {% if MYCOMICS %}
+<div class="bg-gcd mt-1 font-bold px-2 py-1 text-center rounded">
+<a class="text-white visited:text-white" href="http://www.comics.org{{ object_url }}">Issue at www.comics.org</a>
+</div>
+  {% else %}
+<div class="bg-my-comics mt-1 font-bold px-2 py-1 text-center rounded">
+<a class="text-white visited:text-white" href="http://my.comics.org{{ object_url }}">Issue at my.comics.org</a>
+</div>
+  {% endif %}
+</details>

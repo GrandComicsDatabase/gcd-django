@@ -1,4 +1,4 @@
-<select name="sort" class="bg-blue-100" size="1">
+<select name="sort" class="{% if MYCOMICS %} bg-red-200 {% else %} bg-blue-100 {% endif %}" size="1">
     <option value="alpha" {% if not 'chrono' in request.path %}selected{% endif %}> Name</option>
     <option value="chrono" {% if 'chrono' in request.path %}selected{% endif %}> Date</option>
 </select>

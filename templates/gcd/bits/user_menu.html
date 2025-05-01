@@ -1,31 +1,31 @@
 {% load static %}
-<button class="block dropdown-toggle py-1 px-1 rounded hover:bg-blue-700">
+<button class="block dropdown-toggle py-1 px-1 rounded {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %}">
   <span class="pointer-events-none">
     <img class="w-10" src='{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/avatar-default-symbolic.svg" %}'>
   </span>
 </button>
-<div class="dropdown-menu absolute right-0 hidden bg-gcd text-white rounded-b-lg pb-2 w-48">
+<div class="dropdown-menu absolute right-0 hidden {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} text-white rounded-b-lg pb-2 w-48">
 {% if not user.is_anonymous %}
-  <a href="{% url "view_profile" user_id=user.id %}" class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Profile</a>
+  <a href="{% url 'view_profile' user_id=user.id %}" class="block px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white">Profile</a>
 {% endif %}
-<a href="https://docs.comics.org/wiki/OI_Tutorial" class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Tutorial</a>
-<a href="https://docs.comics.org/" class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Documentation</a>
+<a href="https://docs.comics.org/wiki/OI_Tutorial" class="block px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white">Tutorial</a>
+<a href="https://docs.comics.org/" class="block px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white">Documentation</a>
 <a href="https://docs.comics.org/wiki/Email_Lists_FAQ"
-  class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Mailing Lists</a>
+  class="block px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white">Mailing Lists</a>
 {% if user.is_staff %}
-  <a href="/admin/" class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Admin</a>
+  <a href="/admin/" class="block px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white">Admin</a>
 {% endif %}
 {% if user.is_authenticated %}
-  <a href="{% url 'donate' %}" class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Donate</a>
+  <a href="{% url 'donate' %}" class="block px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white">Donate</a>
   <form action="{% url 'logout' %}" method="POST">
     {% csrf_token %}
-    <input class="w-full text-left px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white" type="submit" name="logout" value="Log Out">
+    <input class="w-full text-left px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white" type="submit" name="logout" value="Log Out">
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
   </form>        
 {% else %}
-  <a href="{% url 'register' %}" class="block px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white">Sign Up</a>
+  <a href="{% url 'register' %}" class="block px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white">Sign Up</a>
   <form action="{% url 'login' %}" method="GET">
-    <input class="w-full text-left px-3 py-1 hover:bg-blue-700 hover:no-underline text-white visited:text-white" type="submit" name="login" value="Log In">
+    <input class="w-full text-left px-3 py-1 {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline text-white visited:text-white" type="submit" name="login" value="Log In">
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
   </form>
 {% endif %}   

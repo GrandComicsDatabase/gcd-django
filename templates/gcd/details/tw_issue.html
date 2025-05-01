@@ -360,6 +360,7 @@ Related Links
 {% endblock editing %}
 
 {% block change_history %}
+  {% include "mycomics/bits/tw_issue_control.html" %}
   {% with model_name='issue' object=issue %}
     {{ block.super }}
   {% endwith %}

@@ -155,6 +155,13 @@
     {% endif %} <!-- logged in -->
 {% endblock editing %}
 
+{% block www_my_comics_cross_link %}
+  {% url "show_publisher" publisher_id=publisher.id as object_url %}
+  {% with model_name='Publisher' object_url=object_url %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
 {% block change_history %}
   {% with model_name='publisher' object=publisher %}
     {{ block.super }}

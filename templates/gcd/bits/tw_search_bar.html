@@ -1,7 +1,7 @@
 {% load static %}
-<nav class="flex items-center justify-between flex-wrap bg-gcd px-2 sm:px-4">
+<nav class="flex items-center justify-between flex-wrap {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} px-2 sm:px-4">
   <div class="flex-1 ">
-    <div class="w-[68px] hover:bg-blue-700 p-1">
+    <div class="w-[68px] {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} p-1">
       <a href="/"><img class="w-[60px]" src="{% static 'img/gcd_logo.png' %}" alt="GCD"></a>
     </div>
   </div>
@@ -41,16 +41,16 @@
         </svg>
         </span>
       </button>
-      <div class="navigation-menu hidden absolute right-0 bg-gcd text-white rounded-b-lg pb-2 w-48">
-        <a class="block px-3 py-1 text-white visited:text-white hover:bg-blue-700 hover:no-underline" href="{% url "advanced_search" %}">Advanced Query</a>
+      <div class="navigation-menu hidden absolute right-0 {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} text-white rounded-b-lg pb-2 z-50 w-48">
+        <a class="block px-3 py-1 text-white visited:text-white {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline" href="{% url "advanced_search" %}">Advanced Query</a>
         {% if user.is_authenticated %}
           {% if MYCOMICS %}
-        <a href="{% url "collections_list" %}">Collections</a>
+        <a class="block px-3 py-1 text-white visited:text-white hover:bg-red-900 hover:no-underline" href="{% url "collections_list" %}">Collections</a>
           {% else %}
         <a class="block px-3 py-1 text-white visited:text-white hover:bg-blue-700 hover:no-underline" href="{% url "editing" %}">Editing</a>
           {% endif %}
         {% else %}
-        <a class="block px-3 py-1 text-white visited:text-white hover:bg-blue-700 hover:no-underline" href="{% url "donate" %}">Donate</a>
+        <a class="block px-3 py-1 text-white visited:text-white {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline" href="{% url "donate" %}">Donate</a>
         {% endif %}
         {% include "gcd/bits/user_menu.html" %}
       </div>
@@ -58,13 +58,17 @@
       <!-- Primary Navigation -->
     <div class="max-md:right-0 hidden flex-col lg:flex lg:flex-row md:flex-col justify-end text-white items-center">
       <a class="text-white visited:text-white hover:no-underline" href="{% url 'advanced_search' %}">
-        <button class="btn hover:bg-blue-700">
+        <button class="btn {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %}">
           Advanced Query
         </button>
       </a>
       {% if user.is_authenticated %}
         {% if MYCOMICS %}
-      <a href="{% url 'collections_list' %}">Collections</a>
+      <a class="text-white visited:text-white hover:no-underline" href="{% url 'collections_list' %}">
+        <button class="btn hover:bg-red-900">
+          Collections
+        </button>
+      </a>
         {% else %}
       <a class="text-white visited:text-white hover:no-underline" href="{% url "editing" %}">
         <button class="btn hover:bg-blue-700">
@@ -74,7 +78,7 @@
     {% endif %}
       {% else %}
       <a class="text-white visited:text-white hover:no-underline" href="{% url "donate" %}">
-        <button class="btn hover:bg-blue-700">
+        <button class="btn {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %}">
           Donate
         </button>
       </a>

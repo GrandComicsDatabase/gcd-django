@@ -105,6 +105,7 @@ elif settings.MYCOMICS:
                     read_only_patterns
 else:
     urlpatterns = basic_patterns + \
+                    [path('', include('apps.mycomics.urls'))] + \
                     [path('', include('apps.gcd.urls'))] + \
                     [path('', include('apps.stats.urls'))] + \
                     [path('', include('apps.indexer.urls'))] + \

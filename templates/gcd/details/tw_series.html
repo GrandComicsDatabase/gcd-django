@@ -225,6 +225,7 @@
 {% endblock editing %}
 
 {% block change_history %}
+  {% include "mycomics/bits/tw_series_control.html" %}
   {% with model_name='series' object=series %}
     {{ block.super }}
   {% endwith %}
