@@ -306,6 +306,7 @@ def issue_image_status_color(issue):
         return 'bg-green-600'
 
 
+# TODO: move to an oi-templatetags file
 @register.filter
 def show_revision_type(cover):
     if cover.deleted:

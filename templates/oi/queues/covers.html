@@ -1,8 +1,6 @@
 {% extends "oi/base_view.html" %}
 
-{% load static %}
 {% load i18n %}
-{% load credits %}
 {% load display %}
 {% load l10n %}
 
@@ -23,7 +21,7 @@
   {% for cover, issue, tag in tags %}
   <div class="w-[154px] md:w-[204px] shadow-md p-[2px] even flex flex-col">
     <div>
-      <a href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
+      <a href="{% url 'compare' id=cover.changeset.id %}">{{ tag }}</a>
     </div>
     <div class="text-center {{ cover.changeset.changeset_action }}">{{ cover|show_revision_type }}</div>
     <div>        {{ issue.series.name }} {{ issue.display_full_descriptor }}</div>

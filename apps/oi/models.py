@@ -140,7 +140,7 @@ CTYPES_BULK = frozenset((CTYPES['issue_bulk'],
 
 ACTION_ADD = 'bg-green-400'
 ACTION_DELETE = 'bg-red-400'
-ACTION_MODIFY = 'bg-white'
+ACTION_MODIFY = 'bg-yellow-400'
 
 IMP_BONUS_ADD = 10
 IMP_COVER_VALUE = 5
