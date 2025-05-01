@@ -19,8 +19,8 @@ Reviewing :: {{ revision }}
 <tr>
 <td class="cover_grid{% if old_cover.marked %} marked{% endif %}">
   <h2>cover to be replaced</h2>
-  <div class="cover_large">
-    <a href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_tag }}</a>
+  <div class="justify-center text-center">
+    <a class="inline-block" href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_tag }}</a>
   {% if old_cover_width %}
   <div>The full cover file has a width of {{ old_cover_width }} pixels.</div>
   {% endif %}
@@ -58,8 +58,8 @@ Reviewing :: {{ revision }}
 </h2>
   {% endif %}
 {% endif %}
-<div class="cover_large">
-  <a href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
+<div class="justify-center text-center">
+  <a class="inline-block" href="{{ revision.issue.get_absolute_url }}">{{ cover_tag }}</a>
 {% if cover_width %}
   <div>The full cover file has a width of {{ cover_width }} pixels.</div>
   {% if perms.indexer.can_vote and revision.created > settings.NEW_SITE_COVER_CREATION_DATE and not settings.BETA %}
@@ -164,7 +164,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   <tr>
   {% for cover, tag in pending_covers %}
     <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
+      <a class="inline-block" href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
       <br>
       <div class="cover_caption">
         {% localize off %}
