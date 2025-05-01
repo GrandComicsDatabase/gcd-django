@@ -103,7 +103,7 @@
         {{ num_variants }} variant cover scan{{ num_variants|pluralize }}
     </span>
   </summary>
-  <div class="{% if num_variants > 6 %}mt-1{% endif %} flex flex-wrap gap-1 me-1">
+  <div class="mt-1 flex flex-wrap gap-1 me-1">
       {% for variant, image_tag in variant_image_tags %}
     <div class="w-[100px] flex"><a href="{{ variant.get_absolute_url }}">{{ image_tag }}</a></div>
       {% endfor %}
