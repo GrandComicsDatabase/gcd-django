@@ -25,6 +25,11 @@ class ObjectIndex(object):
             return 9999
 
     def prepare(self, obj):
+        from haystack.exceptions import SkipDocument
+        if obj.deleted == True:
+            self.remove_object(obj)
+            raise SkipDocument
+
         self.prepared_data = super(ObjectIndex, self).prepare(obj)
 
         self.prepared_data['sort_name'] = \
