@@ -79,7 +79,7 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
     # preferred solution found on the net.
     img_url = img_url + '?' + str(hash(cover.last_upload))
 
-    return mark_safe('<img src="' + img_url + add_info +
+    return mark_safe('<img src="' + img_url + '"' + add_info +
                      'class="' + img_class + '">')
 
 
