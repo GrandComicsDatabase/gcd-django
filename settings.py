@@ -235,10 +235,13 @@ TIME_ZONE = 'UTC'
 # International DateTime string format
 DATETIME_FORMAT = 'Y-m-d H:i:s'
 
-# Even though we are using pytest-django and don't use a Django test runner,
-# Django 1.7 and 1.8 will emit warnings every time manage.py is run unless
-# this line is here.  The false positive warning is removed in Django 1.9.
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+# TODO:
+# A boolean that specifies if localized formatting of data will be enabled by
+# default or not.
+# This setting is deprecated. Starting with Django 5.0, localized formatting of
+# data will always be enabled. For example Django will display numbers and
+# dates using the format of the current locale.
+# USE_L10N = False
 
 # for series reorders with many issues
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 5120
@@ -319,14 +322,14 @@ RQ_QUEUES = {
 #################################################################################
 REST_FRAMEWORK = {
 
-    'DEFAULT_PARSER_CLASSES': (
-        'rest_framework_yaml.parsers.YAMLParser',
-    ),
+    # 'DEFAULT_PARSER_CLASSES': (
+    #     'rest_framework_yaml.parsers.YAMLParser',
+    # ),
 
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.BrowsableAPIRenderer',
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework_yaml.renderers.YAMLRenderer',
+        # 'rest_framework_yaml.renderers.YAMLRenderer',
     ),
     # Use Django's standard `django.contrib.auth` permissions, 
     # or allow read-only access for unauthenticated users.
