@@ -17,10 +17,10 @@
   <div class="mx-1">
   {% if request.user.is_authenticated %}
     {% if series.is_current %}
-    <form method="POST" action="{% url "series_subscribe" series_id=series.id %}">
+    <form method="POST" action="{% url 'series_subscribe' series_id=series.id %}">
     {% csrf_token %}
       <div>
-        <input class="mx-0 my-1 btn btn-blue-editing" type="submit" name="confirm_selection" value="{% trans 'Subscribe Series For' %}">
+        <button class="w-full"><input class="mx-0 my-1 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="{% trans 'Subscribe Series For' %}"></button>
         <select class="ms-1" name="collection_id">
     {% for col_item in request.user.collector.ordered_collections %}
           <option value="{{ col_item.id }}">{{ col_item.name }}</option>
@@ -40,7 +40,7 @@
   <hr>
     {% endif %}
   <form action="{% url 'my_series_issues' series_id=series.id %}" method="get">
-    <input class="inline mx-0 my-1 btn btn-blue-editing" type="submit" name="submit" value="Select Issues From This Series"> 
+    <button class="w-full"><input class="mx-0 my-1 w-full btn btn-blue-editing" type="submit" name="submit" value="Select Issues From This Series"></button>
     <select class="ms-1" name="which_issues">
       <option value="base_issues">without variants</option>
       <option value="all_issues">with variants</option>
@@ -51,7 +51,7 @@
   <form method="POST" action="{% url "my_series_issues" series_id=series.id %}">
     {% csrf_token %}
     <div>
-      <input class="mt-1 m-0 mb-0.5 btn btn-blue-editing" type="submit" name="confirm_selection" value="Add All Issues">
+      <button class="w-full"><input class="mt-1 m-0 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="Add All Issues"></button>
       <span class="ms-1">(without variants) to</span> 
       <select class="ms-1" name="collection_id">
     {% for col_item in request.user.collector.ordered_collections %}
@@ -61,10 +61,10 @@
     </div>
   </form>
   <form method="POST" enctype="multipart/form-data"
-          action="{% url "my_series_issues" series_id=series.id %}">
+          action="{% url 'my_series_issues' series_id=series.id %}">
   {% csrf_token %}
     <div>
-      <input class="inline mx-0 my-1 btn btn-blue-editing" type="submit" name="import_issues" value="Import Issues From File">
+      <button class="w-full"><input class="m-0 my-1 w-full btn btn-blue-editing" type="submit" name="import_issues" value="Import Issues From File"></button>
       <input class="ms-1" type="file" name="import_my_issues_to_series">
     </div>
   </form>
