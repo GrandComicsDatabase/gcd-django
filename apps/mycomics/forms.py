@@ -1,11 +1,14 @@
 from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect, \
                          ValidationError
-from apps.mycomics.models import *
+from apps.mycomics.models import Collector, Collection, CollectionItem, \
+                                 Location, PurchaseLocation, ConditionGrade
+
 
 # TODO: Should not be reaching into OI form internals and importing an
 #       internal (leading underscore) function.  Should move the function
 #       if we need it more broadly.
 from apps.oi.forms.support import _clean_keywords
+
 
 class CollectorForm(ModelForm):
     class Meta:
@@ -13,7 +16,7 @@ class CollectorForm(ModelForm):
         exclude = ('user',)
 
     def __init__(self, collector, *args, **kwargs):
-        kwargs['instance']=collector
+        kwargs['instance'] = collector
         super(CollectorForm, self).__init__(*args, **kwargs)
         collections = Collection.objects.filter(collector=collector)
         self.fields['default_have_collection'].queryset = collections
@@ -24,16 +27,25 @@ class CollectionForm(ModelForm):
     class Meta:
         model = Collection
         exclude = ('collector',)
-        widgets = {'own_default': RadioSelect(choices = ((None, "---"),
-                                              (True, "I own this comic."),
-                                              (False, "I want this comic."))),}
+        widgets = {'own_default': RadioSelect(
+          choices=((None, "---"),
+                   (True, "I own this comic."),
+                   (False, "I want this comic."))), }
+        widgets = {'for_sale_default': RadioSelect(
+          choices=((True, "comic is for sale"),
+                   (False, "comic is not for sale"))), }
 
     def clean(self):
         cd = self.cleaned_data
-        if cd['own_default'] is not None and cd['own_used'] == False:
+        if cd['own_default'] is not None and cd['own_used'] is False:
             raise ValidationError('To use "Default ownership status" the '
-              '"Show own/want status" needs to be activated.')
+                                  '"Show own/want status" needs to be '
+                                  'activated.')
 
+        if cd['for_sale_default'] is True and cd['for_sale_used'] is False:
+            raise ValidationError('To use "Default for sale status" the '
+                                  '"Show for sale status" needs to be '
+                                  'activated.')
 
 
 class LocationForm(ModelForm):
@@ -47,13 +59,14 @@ class PurchaseLocationForm(ModelForm):
         model = PurchaseLocation
         exclude = ('user',)
 
+
 class CollectionItemForm(ModelForm):
     class Meta:
         model = CollectionItem
         exclude = ('collections', 'issue', 'acquisition_date', 'sell_date')
-        widgets = {'own': Select(choices = ((None, "---"),
-                                            (True, "I own this comic."),
-                                            (False, "I want this comic."))),}
+        widgets = {'own': Select(choices=((None, "---"),
+                                          (True, "I own this comic."),
+                                          (False, "I want this comic."))), }
 
     def __init__(self, user, *args, **kwargs):
         super(CollectionItemForm, self).__init__(*args, **kwargs)
@@ -103,8 +116,9 @@ class CollectionSelectForm(Form):
 
     def __init__(self, collector, excluded_collections=None, *args, **kwargs):
         super(CollectionSelectForm, self).__init__(*args, **kwargs)
-        choices = [(collection.id, collection) for collection in collector.ordered_collections()]
+        choices = [(collection.id, collection)
+                   for collection in collector.ordered_collections()]
         if excluded_collections:
-            choices[:] = [choice for choice in choices \
-                             if choice[1] not in excluded_collections]
+            choices[:] = [choice for choice in choices
+                          if choice[1] not in excluded_collections]
         self.fields['collection'].choices = choices

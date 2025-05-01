@@ -73,14 +73,16 @@ def is_default_collection(collection):
 def collection_status(issue, user):
     items = item_collections(issue, user)
     if items.count() == 0:
-        return "collection_status_empty"
+        return ""
     if items.count() >= 2:
-        return "collection_status_several"
+        if len(set(items.values_list('own',
+                                     flat=True).exclude(own=None))) == 2:
+            return "bg-yellow-400"
     if items[0].own:
-        return "collection_status_own"
+        return "bg-green-600"
     if items[0].own is False:
-        return "collection_status_want"
-    return "collection_status_collected"
+        return "bg-red-400"
+    return "bg-indigo-200"
 
 
 @register.filter
@@ -88,6 +90,7 @@ def issue_in_collection(series, collection):
     items = series.active_issues()\
                   .filter(collectionitem__collections__id=collection.id)
     return items.count()
+
 
 @register.filter
 def for_sale(issue):

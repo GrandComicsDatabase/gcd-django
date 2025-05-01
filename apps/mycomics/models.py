@@ -126,6 +126,10 @@ class Collection(models.Model):
                                         verbose_name="show read status")
     for_sale_used = models.BooleanField(default=False,
                                         verbose_name="show for sale status")
+    for_sale_default = models.BooleanField(
+      default=False,
+      verbose_name="default for sale status when "
+                   "adding items to this collection")
     signed_used = models.BooleanField(default=False,
                                       verbose_name="show signed status")
     price_paid_used = models.BooleanField(default=False,

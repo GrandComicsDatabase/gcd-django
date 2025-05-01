@@ -334,16 +334,12 @@ def delete_item(request, item_id, collection_id):
 
     check_item_is_in_collection(request, item, collection)
 
-    position = collection.items.filter(issue__series__sort_name__lte=
-                                       item.issue.series.sort_name)\
-                               .exclude(issue__series__sort_name=
-                                        item.issue.series.sort_name,
-                                        issue__series__year_began__gt=
-                                        item.issue.series.year_began)\
-                               .exclude(issue__series_id=
-                                        item.issue.series.id,
-                                        issue__sort_code__gte=
-                                        item.issue.sort_code).count()
+    position = collection.items.filter(
+      issue__series__sort_name__lte=item.issue.series.sort_name)\
+        .exclude(issue__series__sort_name=item.issue.series.sort_name,
+                 issue__series__year_began__gt=item.issue.series.year_began)\
+        .exclude(issue__series_id=item.issue.series.id,
+                 issue__sort_code__gte=item.issue.sort_code).count()
 
     collection.items.remove(item)
     messages.success(
@@ -396,6 +392,16 @@ def move_item(request, item_id, collection_id):
                       mark_safe(_("Item status for own/want differed from"
                                   " default of new collection <b>%s</b> and "
                                   "was changed." % esc(to_collection.name))))
+            if to_collection.for_sale_used and \
+               to_collection.for_sale_default is True:
+                if to_collection.for_sale_default != item.for_sale:
+                    item.for_sale = to_collection.for_sale_default
+                    item.save()
+                    messages.warning(
+                      request,
+                      mark_safe(_("Item status is set to for sale due to "
+                                  "default of new collection <b>%s</b>."
+                                  % esc(to_collection.name))))
             return HttpResponseRedirect(
               urlresolvers.reverse('view_item',
                                    kwargs={'item_id': item_id,
@@ -408,6 +414,17 @@ def move_item(request, item_id, collection_id):
                 if to_collection.own_default != item.own:
                     messages.warning(request, _("Own/want default for new "
                                      "collection differs from item status."))
+            if to_collection.for_sale_used and \
+               to_collection.for_sale_default is True:
+                if to_collection.for_sale_default != item.for_sale:
+                    item.for_sale = to_collection.for_sale_default
+                    item.save()
+                    messages.warning(
+                      request,
+                      mark_safe(_("Item status is set to for sale due to "
+                                  "default of new collection <b>%s</b>."
+                                  % esc(to_collection.name))))
+
         else:
             messages.error(request, _("Item unchanged"))
     else:
@@ -464,42 +481,30 @@ def view_item(request, item_id, collection_id):
         other_collections = None
 
     # TODO with django1.6 use first/last here
-    item_before = collection.items.filter(issue__series__sort_name__lte=
-                                          item.issue.series.sort_name)\
-                                  .exclude(issue__series__sort_name=
-                                           item.issue.series.sort_name,
-                                           issue__series__year_began__gt=
-                                           item.issue.series.year_began)\
-                                  .exclude(issue__series_id=
-                                           item.issue.series.id,
-                                           issue__sort_code__gt=
-                                           item.issue.sort_code)\
-                                  .exclude(issue__series_id=
-                                           item.issue.series.id,
-                                           issue__sort_code=
-                                           item.issue.sort_code,
-                                           id__gte=item.id).reverse()
+    item_before = collection.items.filter(
+      issue__series__sort_name__lte=item.issue.series.sort_name)\
+        .exclude(issue__series__sort_name=item.issue.series.sort_name,
+                 issue__series__year_began__gt=item.issue.series.year_began)\
+        .exclude(issue__series_id=item.issue.series.id,
+                 issue__sort_code__gt=item.issue.sort_code)\
+        .exclude(issue__series_id=item.issue.series.id,
+                 issue__sort_code=item.issue.sort_code,
+                 id__gte=item.id).reverse()
 
     if item_before:
         page = int(item_before.count() / DEFAULT_PER_PAGE + 1)
         item_before = item_before[0]
     else:
         page = 1
-    item_after = collection.items.filter(issue__series__sort_name__gte=
-                                         item.issue.series.sort_name)\
-                                 .exclude(issue__series__sort_name=
-                                          item.issue.series.sort_name,
-                                          issue__series__year_began__lt=
-                                          item.issue.series.year_began)\
-                                 .exclude(issue__series_id=
-                                          item.issue.series.id,
-                                          issue__sort_code__lt=
-                                          item.issue.sort_code)\
-                                 .exclude(issue__series_id=
-                                          item.issue.series.id,
-                                          issue__sort_code=
-                                          item.issue.sort_code,
-                                          id__lte=item.id)
+    item_after = collection.items.filter(
+      issue__series__sort_name__gte=item.issue.series.sort_name)\
+        .exclude(issue__series__sort_name=item.issue.series.sort_name,
+                 issue__series__year_began__lt=item.issue.series.year_began)\
+        .exclude(issue__series_id=item.issue.series.id,
+                 issue__sort_code__lt=item.issue.sort_code)\
+        .exclude(issue__series_id=item.issue.series.id,
+                 issue__sort_code=item.issue.sort_code,
+                 id__lte=item.id)
     if item_after:
         item_after = item_after[0]
 

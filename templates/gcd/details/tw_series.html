@@ -163,6 +163,12 @@
     {{ series.notes|markdown }}
   {% endif %}
   {% if series.active_issues.count %}
+
+    {% if MYCOMICS and user.is_authenticated %}
+<h3 class="my-1"> Collection Status </h3>
+      {% include 'mycomics/bits/series_collection_status.html' %}
+    {% endif %}
+
 <a name="index_status"></a>
 <h3 class="my-1"> Index Status </h3>
     {% include "gcd/bits/status_tables.html" %}

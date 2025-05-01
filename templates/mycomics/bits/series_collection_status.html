@@ -1,20 +1,20 @@
 {% load gcdtable %}
 {% load collecting %}
 
-<div class="left" style="width:calc(100% - 200px);">
+<div>
   <table class="status">
-  <tr>
-    <td class="collection_status_own"> Issue Owned </td>
-    <td class="collection_status_want"> On Wantlist </td>
-    <td class="collection_status_collected"> In a Collection </td>
-    <td class="collection_status_several"> Several Copies </td>
-    <td class="collection_status_empty"> Not in a Collection </td>
-  </tr>
+    <tr class="flex flex-wrap font-bold [&_td]:px-3 [&_td]:border-t-2 [&_td]:border-b-2">
+      <td class="bg-green-600 border-s-2"> Owned </td>
+      <td class="bg-red-400"> Wanted </td>
+      <td class="bg-yellow-400">Owned and Wanted</td>
+      <td class="bg-indigo-200"> In a Collection </td>
+      <td> Not in a Collection </td>
+    </tr>
   </table>
-  <div class="status_grid">
+  <div class="flex flex-wrap">
   {% for issue in series.active_issues %}
-    <div class="status_grid_flex {{ cover_status_width }} {{ issue|collection_status:request.user }}">
-      <a href="{{ issue.get_absolute_url }}">{{ issue.full_descriptor }}</a>
+    <div class="border {{ issue|collection_status:request.user }} {{ issue_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
+      <a class="block hover:no-underline link-with-text-color font-bold" href="{{ issue.get_absolute_url }}">{{ issue.full_descriptor }}</a> </td>
     </div>
   {% endfor %}
   </div>
