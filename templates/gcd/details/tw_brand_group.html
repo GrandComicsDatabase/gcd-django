@@ -80,9 +80,11 @@
   {% with object=brand object_class='brand' object_name='brand' %}
   {% include "gcd/bits/tw_status_banner.html" %}
   {% endwith %}
-  <btn class="btn btn-blue-editing"><a href="{% url "add_brand_via_group" brand_group_id=brand.id %}">
+  {% if request.user.is_authenticated %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_brand_via_group' brand_group_id=brand.id %}">
     Add Publisher's Brand Emblem
   </a></btn>
+  {% endif %}
 {% endblock editing %}
 
 {% block change_history %}
