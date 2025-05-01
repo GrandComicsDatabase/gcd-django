@@ -105,6 +105,12 @@ class Feature(GcdData):
             base_name += ' [%s]' % self.feature_type.name[0]
         return base_name
 
+    def object_page_name(self):
+        base_name = str('%s (%s)' % (self.name, self.language.name))
+        if self.feature_type.id != 1:
+            base_name += ' [%s]' % self.feature_type.name[0]
+        return base_name
+
     def __str__(self):
         extra = ''
         if self.disambiguation:

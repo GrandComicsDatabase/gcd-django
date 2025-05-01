@@ -2448,6 +2448,10 @@ select {
     width: 200px;
   }
 
+  .sm\:w-28 {
+    width: 7rem;
+  }
+
   .sm\:min-w-\[150px\] {
     min-width: 150px;
   }
