@@ -1798,6 +1798,11 @@ a:hover {
   border-color: rgb(107 114 128 / var(--tw-border-opacity));
 }
 
+.border-orange-400 {
+  --tw-border-opacity: 1;
+  border-color: rgb(251 146 60 / var(--tw-border-opacity));
+}
+
 .bg-black {
   --tw-bg-opacity: 1;
   background-color: rgb(0 0 0 / var(--tw-bg-opacity));
@@ -1881,6 +1886,11 @@ a:hover {
 .bg-my-comics {
   --tw-bg-opacity: 1;
   background-color: rgb(169 48 42 / var(--tw-bg-opacity));
+}
+
+.bg-orange-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(251 146 60 / var(--tw-bg-opacity));
 }
 
 .bg-preview {

@@ -59,6 +59,9 @@
   </div>
   <div class="max-sm:hidden flex w-1/3 sm:w-64"> <!-- rechts -->
     <div>
+      {% if USE_TEMPLATESADMIN %}
+        {% include "managed_content/gcd/messages/front_page_notice.html" %}
+      {% endif %}
         <ul class="ps-1">
           {% if language and language.code != 'en' %}
           <li><a class="link-no-visited" href="{% url "home" %}">English start page</a></li>
