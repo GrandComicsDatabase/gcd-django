@@ -14,6 +14,13 @@
   </div>
 </summary>
 <div class="mx-1">
+  {% if messages %}
+  <ul class="bg-red-100 rounded px-1 mt-1">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
   <div>
 Tracked in {{ issue.collectionitem_set.count }} collections.
   {% if request.user.is_authenticated %}
@@ -32,8 +39,8 @@ Tracked in {{ issue.collectionitem_set.count }} collections.
       {% endif %}
       {% for collection in item.collections.all %}
 <li>
-  <form class="inline-block"><button class="m-0 mb-0.5 btn btn-blue-editing" formaction='{{ item|item_url:collection }}#edit-item'>Change</button></form>
-  <a href='{{ item|item_url:collection }}'>{{ collection }}</a>
+  <form class="inline-block"><button class="m-0 mb-0.5 btn btn-blue-editing" formaction='{% if not MYCOMICS %}https://my.comics.org/{% endif %}{{ item|item_url:collection }}#edit-item'>Change</button></form>
+  <a href='{% if not MYCOMICS %}https://my.comics.org/{% endif %}{{ item|item_url:collection }}'>{{ collection }}</a>
       {% endfor %}
       {% if forloop.last %}
 </ul>
@@ -55,11 +62,11 @@ Tracked in {{ issue.collectionitem_set.count }} collections.
   {% url "show_issue" issue_id=issue.id as object_url %}
   {% if MYCOMICS %}
 <div class="bg-gcd mt-1 font-bold px-2 py-1 text-center rounded">
-<a class="text-white visited:text-white" href="http://www.comics.org{{ object_url }}">Issue at www.comics.org</a>
+<a class="text-white visited:text-white" href="https://www.comics.org{{ object_url }}">Issue at www.comics.org</a>
 </div>
   {% else %}
 <div class="bg-my-comics mt-1 font-bold px-2 py-1 text-center rounded">
-<a class="text-white visited:text-white" href="http://my.comics.org{{ object_url }}">Issue at my.comics.org</a>
+<a class="text-white visited:text-white" href="https://my.comics.org{{ object_url }}">Issue at my.comics.org</a>
 </div>
   {% endif %}
 </details>

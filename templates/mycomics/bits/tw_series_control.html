@@ -15,31 +15,38 @@
     </div>
   </summary>
   <div class="mx-1">
-  {% if request.user.is_authenticated %}
-    {% if series.is_current %}
+    {% if messages %}
+    <ul class="bg-red-100 rounded px-1 mt-1">
+      {% for message in messages %}
+      <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% if request.user.is_authenticated %}
+      {% if series.is_current %}
     <form method="POST" action="{% url 'series_subscribe' series_id=series.id %}">
-    {% csrf_token %}
+        {% csrf_token %}
       <div>
         <button class="w-full"><input class="mx-0 my-1 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="{% trans 'Subscribe Series For' %}"></button>
         <select class="ms-1" name="collection_id">
-    {% for col_item in request.user.collector.ordered_collections %}
+        {% for col_item in request.user.collector.ordered_collections %}
           <option value="{{ col_item.id }}">{{ col_item.name }}</option>
-    {% endfor %}
+        {% endfor %}
         </select>
       </div>
     </form>
-  {% for subscription in series|subscribed:request.user %}
-    {% if forloop.first %}
+      {% for subscription in series|subscribed:request.user %}
+        {% if forloop.first %}
   <ul class="ms-1 list-disc list-inside">
-    {% endif %}
-    <li>{% trans "subscribed for" %} <a href="{% url 'subscriptions_collection' collection_id=subscription.collection.id %}">{{ subscription.collection }}</a></li>
-    {% if forloop.last %}
+        {% endif %}
+    <li>{% trans "subscribed for" %} <a href="{% if not MYCOMICS %}https://my.comics.org/{% endif %}{% url 'subscriptions_collection' collection_id=subscription.collection.id %}">{{ subscription.collection }}</a></li>
+        {% if forloop.last %}
   </ul>
-    {% endif %}
-  {% endfor %}
+        {% endif %}
+      {% endfor %}
   <hr>
     {% endif %}
-  <form action="{% url 'my_series_issues' series_id=series.id %}" method="get">
+  <form action="{% if not MYCOMICS %}https://my.comics.org/{% endif %}{% url 'my_series_issues' series_id=series.id %}" method="get">
     <button class="w-full"><input class="mx-0 my-1 w-full btn btn-blue-editing" type="submit" name="submit" value="Select Issues From This Series"></button>
     <select class="ms-1" name="which_issues">
       <option value="base_issues">without variants</option>
@@ -48,7 +55,7 @@
     </select>
   to add.
   </form>
-  <form method="POST" action="{% url "my_series_issues" series_id=series.id %}">
+  <form method="POST" action="{% url 'my_series_issues' series_id=series.id %}">
     {% csrf_token %}
     <div>
       <button class="w-full"><input class="mt-1 m-0 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="Add All Issues"></button>

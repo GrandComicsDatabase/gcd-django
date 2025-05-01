@@ -843,8 +843,10 @@ def add_series_issues_to_collection(request, series_id):
             page = ""
         messages.success(
           request,
-          mark_safe("All issues added to your <a href='%s%s'>%s</a> "
-                    "collection." % (collection.get_absolute_url(), page,
+          mark_safe("All issues added to your <a href='%s%s%s'>%s</a> "
+                    "collection." % ('' if settings.LOGIN_URL else
+                                     'https://my.comics.org/',
+                                     collection.get_absolute_url(), page,
                                      esc(collection.name))))
         return add_issues_to_collection(
           request, collection_id, issues,
@@ -943,7 +945,7 @@ def subscribe_series(request, series_id):
                                                collection=collection)
     if subscription.exists():
         messages.error(
-          request, mark_safe(_('Series %s is already subscribed for the '
+          request, mark_safe(_('%s is already subscribed for the '
                              'collection %s.' % (esc(series),
                                                  esc(collection)))))
     elif series.is_current:
