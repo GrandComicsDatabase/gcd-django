@@ -636,9 +636,9 @@ urlpatterns = [
       gcd_views.search.story_by_job_number_name),
     path('job_number/name/<path:number>/',
       gcd_views.search.story_by_job_number_name),
-    path('job_number/<str:number>/sort/<str:sort>/',
+    path('job_number/<path:number>/sort/<str:sort>/',
       gcd_views.search.story_by_job_number, name='story_by_job_number'),
-    path('job_number/<str:number>/',
+    path('job_number/<path:number>/',
       gcd_views.search.story_by_job_number, name='story_by_job_number'),
 
     # show covers/changes from a particular date
