@@ -337,8 +337,8 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     relations_weight = indexes.FloatField()
 
     def prepare_year(self, obj):
-        if obj.year_created:
-            return obj.year_created
+        if obj.year_first_published:
+            return obj.year_first_published
         else:
             return 9999
 
