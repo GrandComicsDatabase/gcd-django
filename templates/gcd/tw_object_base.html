@@ -108,24 +108,19 @@
   {% block js %}
 <script type="text/javascript">
     document.addEventListener("DOMContentLoaded", () => {
-      // Select all dropdown toggle buttons
-      const editingToggles = document.querySelectorAll(".mobile-editing-menu-button")
-        editingToggles.forEach((toggle) => {
-        toggle.addEventListener("click", () => {
-          // Find the next sibling element which is the dropdown menu
-          document.querySelectorAll(".editing-menu").forEach((menu) => {
-              menu.classList.toggle("max-md:hidden")
-          })
-        })
-      })
     
       // Clicking outside of an open dropdown menu closes it
       window.addEventListener("click", function (e) {
-        if (!e.target.matches(".mobile-editing-menu-button") ) {
+        if (!e.target.closest(".mobile-editing-menu-button") ) {
           document.querySelectorAll(".editing-menu").forEach((menu) => {
             if (!menu.contains(e.target)) {
               menu.classList.add("max-md:hidden")
             }
+          })
+        }
+        else {
+          document.querySelectorAll(".editing-menu").forEach((menu) => {
+            menu.classList.toggle("max-md:hidden")
           })
         }
       })
