@@ -32,6 +32,8 @@
     user: 200000
     grade_system: 1
     default_language: 25 # English
+    default_have_collection: 200000
+    default_want_collection: 200002
 
 - model: mycomics.collection
   pk: 200000
@@ -88,6 +90,8 @@
     user: 300000
     grade_system: 1
     default_language: 25 # English
+    default_have_collection: 300000
+    default_want_collection: 300003
 
 - model: mycomics.collection
   pk: 300000
