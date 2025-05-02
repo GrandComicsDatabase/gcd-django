@@ -3017,6 +3017,12 @@ def daily_changes(request, show_date=None, user=False):
     if soo_issues:
         images.append((soo_issues, 'image/', 'Statement of ownership',
                        'issue'))
+    if date_after != None:
+        choose_url_after = urlresolvers.reverse(
+          '%schanges_by_date' % ('my_' if user else ''),
+          kwargs={'show_date': date_after})
+    else:
+        choose_url_after = ""
 
     return render(
       request, 'gcd/status/daily_changes.html',
@@ -3027,9 +3033,7 @@ def daily_changes(request, show_date=None, user=False):
         'choose_url_before': urlresolvers.reverse(
           '%schanges_by_date' % ('my_' if user else ''),
           kwargs={'show_date': date_before}),
-        'choose_url_after': urlresolvers.reverse(
-          '%schanges_by_date' % ('my_' if user else ''),
-          kwargs={'show_date': date_after}),
+        'choose_url_after': choose_url_after,
         'other_url': urlresolvers.reverse(
           '%schanges_by_date' % ('my_' if user is False else ''),
           kwargs={'show_date': requested_date}),
