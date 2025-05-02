@@ -48,11 +48,14 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             position = self.helper['editing'].slice[0].positions[0]
             if revision and revision.editing not in ['', '?']:
                 disabled = ''
+                css_class = 'class="mx-0 btn-blue-editing inline"'
             else:
                 disabled = 'disabled'
+                css_class = 'class="btn-blue-disabled py-1 px-2 inline"'
             self.helper.layout[position].append(
               HTML('<th></th><td><input type="submit" name="save_migrate"'
-                   ' value="save and migrate editing" %s /></td>' % disabled))
+                   ' value="save and migrate editing" %s %s/></td>' % (
+                    css_class, disabled)))
 
             issue_year = None
             if revision and revision.key_date:
