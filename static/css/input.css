@@ -3,101 +3,144 @@
 @tailwind utilities;
 
 @layer base {
-    h1 {
-      font-size: theme('fontSize.2xl');
-      font-weight: bold;
-    }
-    h2 {
-      font-size: theme('fontSize.xl');
-      font-weight: bold;
-    }
-    h3 {
-      font-size: theme('fontSize.lg');
-      font-weight: bold;
-    }
-    a {
-      @apply text-link-gcd visited:text-visited-gcd hover:underline
-    }
+  h1 {
+    font-size: theme('fontSize.2xl');
+    font-weight: bold;
+  }
+
+  h2 {
+    font-size: theme('fontSize.xl');
+    font-weight: bold;
+  }
+
+  h3 {
+    font-size: theme('fontSize.lg');
+    font-weight: bold;
+  }
+
+  a {
+    @apply text-link-gcd visited:text-visited-gcd hover:underline
+  }
 }
 
 @layer components {
   .link-with-text-color {
-      @apply text-black visited:text-black
+    @apply text-black visited:text-black
   }
+
   .link-no-visited {
     @apply text-link-gcd visited:text-link-gcd
   }
+
   .field-name-label {
-        @apply font-bold pe-1 align-top
+    @apply font-bold pe-1 align-top
   }
+
   .navigation-bar-box-link {
     @apply link-with-text-color px-2 hover:bg-blue-300 hover:no-underline border border-gray-400
   }
+
   .btn {
     @apply font-bold py-1 px-4 rounded;
   }
+
   .btn-blue-editing {
     @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline;
+
     a {
       @apply text-black block visited:text-black hover:no-underline text-center;
     }
   }
+
   .btn-blue {
     @apply bg-blue-500 text-white;
+
     a {
-      @apply text-white visited:text-white hover:no-underline ;
-    };
+      @apply text-white visited:text-white hover:no-underline;
+    }
+
+    ;
   }
+
   .btn-blue:hover {
     @apply bg-blue-700;
   }
+
   .btn-blue-editing:hover {
     @apply bg-stone-400;
   }
+
   .btn-blue-disabled {
     @apply font-normal bg-stone-100 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
   }
+
+  .btn-queue-action {
+    @apply font-normal block my-1 bg-stone-200 text-black text-sm text-center py-1 px-1 sm:px-2 sm:w-full w-24 rounded cursor-pointer hover:no-underline;
+
+    a {
+      @apply text-black block visited:text-black hover:no-underline text-center;
+    }
+  }
+
+  .btn-queue-action:hover {
+    @apply bg-stone-400;
+  }
+
   .label-gcd-blue {
     @apply bg-stone-600 text-white rounded px-2 py-1 font-bold;
   }
+
   .new_window {
-      @apply bg-[url('/static/img/gcd/icons/adwaita/external-link-symbolic.svg')] bg-[size:12px] bg-no-repeat bg-right pr-4;
+    @apply bg-[url('/static/img/gcd/icons/adwaita/external-link-symbolic.svg')] bg-[size:12px] bg-no-repeat bg-right pr-4;
   }
+
   .tab-pane {
     @apply block;
-    &:not(.active) table, &:not(.active) tbody {
+
+    &:not(.active) table,
+    &:not(.active) tbody {
       @apply hidden;
     }
   }
+
   .editing {
     @apply [&_tr]:flex [&_tr]:flex-col [&_tr]:sm:table-row [&_th]:text-left [&_th]:sm:text-right [&_th]:font-normal [&_th]:pe-2 [&_th]:align-top [&_th]:sm:w-44;
   }
+
   .sortable_listing {
     tr {
       @apply hover:bg-blue-50 flex flex-col mb-4 sm:table-row border border-gray-200 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left;
     }
+
     td {
       @apply ps-1 pe-2;
     }
   }
+
   .sortable_heading {
     @apply bg-blue-100 md:top-0;
+
     tr {
       @apply align-top flex flex-col sm:table-row;
     }
   }
+
   .errorlist {
     @apply text-red-400 font-bold;
   }
+
   .alert {
-      @apply text-red-400 font-bold;
+    @apply text-red-400 font-bold;
   }
+
   .added {
     @apply bg-green-400;
   }
+
   .changed {
     @apply bg-yellow-400;
   }
+
   .deleted {
     @apply bg-red-400;
   }
@@ -106,6 +149,7 @@
 html {
   background-color: white;
   font-size: 14px;
+
   @screen sm {
     font-size: 15px;
   }
@@ -114,6 +158,7 @@ html {
 @layer components {
   .object-page-numbered-list {
     @apply ms-2 list-decimal sm:columns-2 list-outside ps-4;
+
     li {
       @apply pr-4;
     }
@@ -123,6 +168,7 @@ html {
 @layer components {
   .object-page-link-list {
     @apply list-disc sm:columns-2 list-outside ps-4;
+
     li {
       @apply pr-2;
     }

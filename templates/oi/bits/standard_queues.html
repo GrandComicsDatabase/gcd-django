@@ -10,13 +10,13 @@
   {{ section.object_name }}
   ({{ section_count }} change{{ section_count|pluralize }})
 </h2>
-<table class="max-w-[calc(100vw-0.5rem)] border border-gray-200">
+<table class="border border-gray-200">
   <tr class="bg-blue-100 [&>th]:px-1.5">
       {% if perms.indexer.can_approve or queue_name == 'editing' %}
         {% if queue_name == 'pending' and section.object_name == 'Issues' %}
-    <th class="max-sm:hidden"> </th>
+    <th class="max-lg:hidden"> </th>
         {% endif %}
-    <th class="max-sm:hidden"> </th>
+    <th> </th>
       {% endif %}
     <th> Change</th>
       {% if queue_name != 'editing' %}
@@ -35,14 +35,14 @@
     <th> Actions </th>
   </tr>
       {% for changeset in section.changesets %}
-  <tr class="hover:bg-blue-50 [&>td]:px-1.5 border border-gray-200">
+  <tr class="hover:bg-blue-50 [&>td]:px-0.5 [&>td]:sm:px-1.5 border border-gray-200">
         {% if perms.indexer.can_approve or queue_name == 'editing' %}
           {% if queue_name == 'pending' and section.object_name == 'Issues' %}
-    <td class="max-sm:hidden text-right">
+    <td class="max-lg:hidden text-right">
           {{ forloop.counter }}.
     </td>
           {% endif %}
-    <td class="max-sm:hidden text-right">
+    <td class="text-right">
           {% if queue_name != 'editing' or changeset.state > states.OPEN %} {{ changeset.magnitude }} {% endif %}
     </td>
         {% endif %}

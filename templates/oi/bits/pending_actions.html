@@ -1,9 +1,9 @@
 {% if changeset.state == states.REVIEWING or changeset.state == states.DISCUSSED %}
   {% if changeset.approver == user %}
-<form action="{% url "process" id=changeset.id %}" method="POST">
+<form action="{% url 'process' id=changeset.id %}" method="POST">
   {% csrf_token %}
   <btn>
-    <input class="w-full min-w-24 btn-blue-editing" id='unassign_{{ changeset.id }}' type="submit" name="release" value="Unassign" />
+    <input class="sm:min-w-24 btn-queue-action" id='unassign_{{ changeset.id }}' type="submit" name="release" value="Unassign" />
   </btn>
   <input type="hidden" name="comments" class="comments" />
 </form>
@@ -20,16 +20,15 @@
   {% csrf_token %}
   <input type="hidden" name="comments" class="comments" />
     {% if changeset.indexer != user %}
-  <btn>
-    <input class="w-full min-w-24 btn-blue-editing" id='assign_{{ changeset.id }}' type="submit" name="assign"
+    <button class="sm:min-w-36 btn-queue-action" id='assign_{{ changeset.id }}' type="submit" name="assign">
     {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and section.object_type != "cover" %}
-    value="Assign And Mentor"
+    Assign And Mentor
     {% else %}
-    value="Assign"
+    Assign
     {% endif %}
-  ></input></btn>
+    </button>
     {% else %}
-    <btn><input class="w-full btn-blue-editing" type="submit" name="retract" value="Retract And Edit Further"></btn>
+    <button class="sm:min-w-44 btn-queue-action" type="submit" name="retract">Retract And Edit Further</button>
     {% endif %}
 </form>
   {% else %}

@@ -2,13 +2,11 @@
       method="POST">
   {% csrf_token %}
   <button>
-    <input class="w-full min-w-24 btn-blue-editing" type="submit" name="discard" value="Discard">
+    <input class="sm:min-w-44 btn-queue-action" type="submit" name="discard" value="Discard">
   </button>
 {% if changeset.state == states.PENDING %}
   {% if changeset.editable and section.object_type != "cover" %}
-  <button>
-    <input class="w-full btn-blue-editing" type="submit" name="retract" value="Retract And Edit Further">
-  </button>
+  <button class="sm:min-w-44 btn-queue-action" type="submit" name="retract">Retract And Edit Further</button>
   {% endif %}
 {% endif %}
   <input type="hidden" name="comments" class="comments" />
