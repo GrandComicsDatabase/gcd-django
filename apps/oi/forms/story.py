@@ -676,6 +676,7 @@ class StoryRevisionForm(KeywordBaseForm):
                                                characters_start-1]])
         field_list.append(HTML(
           '<tr><th><input type="submit" name="save_and_set_universe"'
+          ' class="mx-0 btn-blue-editing inline"'
           ' value="Set Character Universe"></th>'
           '<td>Set the above universe for the characters below that '
           'do not already have an assigned universe.</td></tr>'))
