@@ -1,4 +1,4 @@
-{% extends "voting/base_view.html" %}
+{% extends "oi/base_view.html" %}
 {% load static %}
 
 {% load display %}
@@ -6,105 +6,107 @@
 
 {% block title %} Ballot :: {{ topic.name|truncatewords:4 }} {% endblock %}
 
-{% block css %}
-{{ block.super }}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/queues.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <h2> {{ topic.name }} </h2>
-<dl>
-  <dt>Agenda:</dt>
-  <dd>{{ topic.agenda|absolute_url }}</dd>
-  <dt>Agenda Items:</dt>
-  <dd>
-    <ul>
-{% for item in topic.agenda_items.all %}
-      <li> {{ item }}
-{% empty %}
-      <li> [This topic is not attached to any agenda items.]
-{% endfor %}
-    </ul>
-  </dd>
-  <dt>Voting Period:</dt>
-  <dd>{{ topic.created|date:"Y-m-d" }} - {{ topic.deadline|date:"Y-m-d" }}</dd>
-  <dt>Text:</dt>
-  <dd>{{ topic.text|default:'[no text]'|linebreaksbr }}</dd>
-</dl>
+<table>
+  <tr>
+    <td class="w-24 align-top text-right pe-1">Agenda:</td>
+    <td>{{ topic.agenda|absolute_url }}</td>
+  </tr>
+  <tr>
+    <td class="align-top text-right pe-1">Agenda Items:</td>
+    <td>
+      <ul>
+  {% for item in topic.agenda_items.all %}
+        <li> {{ item }}
+  {% empty %}
+        <li> [This topic is not attached to any agenda items.]
+  {% endfor %}
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td class="w-28 align-top text-right pe-1">Voting Period:</td>
+    <td>{{ topic.created|date:"Y-m-d" }} - {{ topic.deadline|date:"Y-m-d" }}</td>
+  </tr>
+  <tr>
+    <td class="align-top text-right pe-1">Text:</td>
+    <td>{{ topic.text|default:'[no text]'|linebreaksbr }}</td>
+  </tr>
+</table>
 
-{% if voted or closed or topic.pending %}
+  {% if voted or closed or topic.pending %}
 <p>
-  {% if voted and not closed %}
+    {% if voted and not closed %}
 Thank you for voting on this topic!
 <p>
-    {% if topic.agenda.secret_ballot %}
+      {% if topic.agenda.secret_ballot %}
 This is a secret ballot, and the voting system does not keep direct links between
 voters and votes in order to preserve secrecy.  You will receive an email
 confirming your vote, with data that the voting administrator can use to identify
 your vote if there is any problem with it.
-    {% else %}
+      {% else %}
 Your current vote{{ votes.count|pluralize }}:
-      {% if topic.vote_type.max_votes == 1 %}
+        {% if topic.vote_type.max_votes == 1 %}
 {{ votes.all.0.name }}
 <p>
-      {% else %}
-        {% if not topic.vote_type.max_votes %}
+        {% else %}
+          {% if not topic.vote_type.max_votes %}
 <table>
-  <tr>
+  <tr class="bg-blue-100 md:top-0">
     <th> Option </th>
     <th> Rank </th>
     <th> Text </th>
   </tr>
-          {% for vote in votes|order_by:"votes__rank" %}
-  <tr>
+            {% for vote in votes|order_by:"votes__rank" %}
+  <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
     <td> {{ vote.name }} </td>
     <td> {{ vote|show_rank:request.user }} </td>
     <td> {{ vote.text }}</td>
   </tr>
-          {% endfor %}
+            {% endfor %}
 </table>
-        {% else %}
+          {% else %}
 <ul>
-          {% for vote in votes %}
+            {% for vote in votes %}
   <li> {{ vote.name }}
-          {% endfor %}
+            {% endfor %}
 </ul>
+          {% endif %}
         {% endif %}
       {% endif %}
-    {% endif %}
 
-    {% if not closed %}
+      {% if not closed %}
 If you wish to change your vote, please
 <a href="mailto:{{ settings.EMAIL_VOTING_ADMIN }}">contact an administrator</a>.
 Vote changing will be implemented in the future.
+      {% endif %}
     {% endif %}
-  {% endif %}
 
-  {% if topic.pending %}
+    {% if topic.pending %}
 This topic is awaiting verification by a vote administrator.  Email will
 be sent to the appropriate list when it is available for voting.
-  {% endif %}
+    {% endif %}
 
-  {% if closed %}
-    {% if topic.invalid %}
+    {% if closed %}
+      {% if topic.invalid %}
 This ballot did not produce a valid result due to a tie, lack of quorum, or
 other condition.
-    {% else %}
+      {% else %}
 Total number of voters: {{ topic.num_voters }}
-      {% with topic.agenda as agenda %}
+        {% with topic.agenda as agenda %}
 <!-- queues class for CSS.  TODO: refactor CSS -->
 <div class="queues">
-        {% include "voting/tally.html" %}
+          {% include "voting/tally.html" %}
 </div>
-      {% endwith %}
+        {% endwith %}
+      {% endif %}
     {% endif %}
-  {% endif %}
 </p>
-{% else %}
+  {% else %}
 <form method=POST action="{% url "vote" %}">
-  {% csrf_token %}
-  {% if topic.token %}
+    {% csrf_token %}
+    {% if topic.token %}
   <p class="instructions">
     This vote requires a token from the mailing list where the discussion took
     place. To get a token and vote, please join the
@@ -112,17 +114,17 @@ Total number of voters: {{ topic.num_voters }}
   </p>
   <label for="token">Token:</label>
   <input type="text" class="wide" name="token" id="token"></input>
-  {% endif %}
-  {% with topic.vote_type.max_votes as max_votes %}
-    {% if max_votes > 1 and max_votes == topic.vote_type.max_winners %}
+    {% endif %}
+    {% with topic.vote_type.max_votes as max_votes %}
+      {% if max_votes > 1 and max_votes == topic.vote_type.max_winners %}
   <p>
     Please vote for up to {{ max_votes }} of the following options.  You may vote
     for fewer options, but you must vote for at least one option if you vote.
     You must submit all of your votes at the same time (i.e. check up to
     {{ max_votes }} options before submitting the form).
   </p>
-    {% endif %}
-    {% if not max_votes %}
+      {% endif %}
+      {% if not max_votes %}
   <p>
     Please rank the following options by giving each option a number, where your
     preferred option gets the lowest number and the others increasingly higher
@@ -150,39 +152,39 @@ Total number of voters: {{ topic.num_voters }}
         <li> You must submit all of your ranks at the same time.
     </ul>
   </p>
-    {% endif %}
-    {% for option in topic.options.all %}
-      {% if max_votes %}
-        {% if max_votes <= topic.vote_type.max_winners %}
-  <div class="option">
-          {% if max_votes == 1 %}
-    <input type="radio" name="option" value="{{ option.id }}">{{ option.name }}
-          {% else %}
-    <input type="checkbox" name="option" value="{{ option.id }}">{{ option.name }}
+      {% endif %}
+      {% for option in topic.options.all %}
+        {% if max_votes %}
+          {% if max_votes <= topic.vote_type.max_winners %}
+  <div>
+            {% if max_votes == 1 %}
+    <input class="me-2" type="radio" name="option" value="{{ option.id }}">{{ option.name }}
+            {% else %}
+    <input class="me-2" type="checkbox" name="option" value="{{ option.id }}">{{ option.name }}
+            {% endif %}
+            {% if option.text %}
+    <div class="option_text">{{ option.text }}</div>
+            {% endif %}
+  </div>
           {% endif %}
+        {% else %}
           {% if option.text %}
     <div class="option_text">{{ option.text }}</div>
           {% endif %}
+  <div>
+    <input class="me-2" name="option_{{ option.id }}">{{ option.name }}
   </div>
         {% endif %}
-      {% else %}
-        {% if option.text %}
-    <div class="option_text">{{ option.text }}</div>
-        {% endif %}
-  <div class="option">
-    <input name="option_{{ option.id }}">{{ option.name }}
-  </div>
-      {% endif %}
-  {% empty %}
+    {% empty %}
     <div class="important">
       ERROR!  No options have been defined for this ballot!
       Please contact the voting administrator.
     </div>
-    {% endfor %}
-  {% endwith %}
-  <input id="vote" type="submit" value="Vote"/>
+      {% endfor %}
+    {% endwith %}
+  <button class="btn btn-blue-editing"><input id="vote" type="submit" value="Vote"/></button>
 </form>
-{% endif %}
+  {% endif %}
 
 {% endblock %}
 

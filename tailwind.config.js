@@ -6,6 +6,7 @@ module.exports = {
             './templates/**/**/*.html',
             './apps/indexer/templates/indexer/*.html',
             './apps/indexer/templates/indexer/bits/*.html',
+	    './apps/voting/templates/voting/*.html',
             './apps/gcd/markdown_extension.py',],
   theme: {
   extend: {

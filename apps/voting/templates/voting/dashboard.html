@@ -1,61 +1,55 @@
-{% extends "voting/base_view.html" %}
+{% extends "oi/base_view.html" %}
 {% load static %}
 
 {% block title %} GCD :: Voting {% endblock %}
 
-{% block css %}
-{{ block.super }}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default/queues.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 <div class="queues">
-<h2>My Ballots</h2>
-{% comment %}
-TODO: We really should make it so that if you can't vote on a topic it does not
-show up as a link, and possibly appears in a separate table.  But that's a bit
-complicated so for now don't bother- you'll get an error if you try to load
-a ballot you can't vote on.
-{% endcomment %}
+  <h2>My Ballots</h2>
+  {% comment %}
+  TODO: We really should make it so that if you can't vote on a topic it does not
+  show up as a link, and possibly appears in a separate table.  But that's a bit
+  complicated so for now don't bother- you'll get an error if you try to load
+  a ballot you can't vote on.
+  {% endcomment %}
 
-<table>
-  <tr>
-    <th> Topic </th>
-    <th> Electorate </th>
-    <th> Deadline </th>
-    <th> Status </th>
-  </tr>
-{% for topic in pending_topics %}
-  <tr>
-    <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
-    <td> {{ topic.agenda }} </td>
-    <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
-    <td> awaiting your vote </td>
-  </tr>
-{% empty %}
-  <tr>
-    <td colspan="4"> There are no topics awaiting your vote. </td>
-  </tr>
-{% endfor %}
-{% for topic in voted_topics %}
-  <tr>
-    <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
-    <td> {{ topic.agenda }} </td>
-    <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
-    <td> vote received </td>
-  </tr>
-{% endfor %}
-</table>
+  <table>
+    <tr class="bg-blue-100 md:top-0">
+      <th> Topic </th>
+      <th> Electorate </th>
+      <th> Deadline </th>
+      <th> Status </th>
+    </tr>
+  {% for topic in pending_topics %}
+    <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
+      <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
+      <td> {{ topic.agenda }} </td>
+      <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+      <td> awaiting your vote </td>
+    </tr>
+  {% empty %}
+    <tr>
+      <td colspan="4"> There are no topics awaiting your vote. </td>
+    </tr>
+  {% endfor %}
+  {% for topic in voted_topics %}
+    <tr>
+      <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
+      <td> {{ topic.agenda }} </td>
+      <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
+      <td> vote received </td>
+    </tr>
+  {% endfor %}
+  </table>
 
-<h2>Agendas</h2>
-<ul>
-{% for agenda in agendas %}
-  <li> <a href="{% url "agenda" id=agenda.id %}">{{ agenda }}</a>
-{% empty %}
-  <li> There are no active agendas at this time.
-{% endfor %}
-</ul>
+  <h2>Agendas</h2>
+  <ul>
+  {% for agenda in agendas %}
+    <li> <a href="{% url "agenda" id=agenda.id %}">{{ agenda }}</a>
+  {% empty %}
+    <li> There are no active agendas at this time.
+  {% endfor %}
+  </ul>
 
 </div>
 {% endblock %}
