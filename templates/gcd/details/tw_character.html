@@ -109,6 +109,8 @@ GCD :: Character :: {{ character.name }}
   {% if request.user.is_authenticated %}
   <btn class="btn btn-blue-editing"><a href="{% url 'add_character_relation' character_id=character.id %}">
     Add Character Relation</a></btn>
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_group_membership' character_id=character.id %}">
+    Add Group Membership</a></btn>
   {% endif %}
 {% endblock %}
 

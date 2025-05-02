@@ -107,6 +107,8 @@ GCD :: Group :: {{ group.name }}
   {% if request.user.is_authenticated %}
   <btn class="btn btn-blue-editing"><a href="{% url 'add_group_relation' group_id=group.id %}">
     Add Group Relation</a></btn>
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_group_member' group_id=group.id %}">
+    Add Group Member</a></btn>
   {% endif %}
 {% endblock %}
 
