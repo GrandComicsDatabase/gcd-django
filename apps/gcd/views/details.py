@@ -2786,7 +2786,7 @@ def daily_covers(request, show_date=None, user=False):
 
     if date_after != None:
         choose_url_after = urlresolvers.reverse(
-          '%schanges_by_date' % ('my_' if user else ''),
+          '%scovers_by_date' % ('my_' if user else ''),
           kwargs={'show_date': date_after})
     else:
         choose_url_after = ""

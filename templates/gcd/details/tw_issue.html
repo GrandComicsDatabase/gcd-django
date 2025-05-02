@@ -195,7 +195,41 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
   <li><span class="font-bold">Link:</span> {{ external_link.link|urlize }}</li>
     {% endfor %}
   {% endif %}
+
+  <li>{{ issue|show_credit_tw_inline:"keywords" }}</li>
 </ul>
+
+  {% if issue.series.is_singleton %}
+<h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Series Data </h3>
+<ul class="md:columns-2 ml-1 [&_li]:break-inside-avoid-column">
+    {% with issue.series as series %}
+      {% if series.format %}
+  <li><span class="font-bold">Format:</span> {{ series.format }}</li>
+      {% endif %}
+      {% if series.color %}
+  <li><span class="font-bold">Color:</span> {{ series.color }}</li>
+      {% endif %}
+      {% if series.dimensions %}
+  <li><span class="font-bold">Dimensions:</span> {{ series.dimensions }}</li>
+      {% endif %}
+      {% if series.paper_stock %}
+  <li><span class="font-bold">Paper Stock:</span> {{ series.paper_stock }}</li>
+      {% endif %}
+      {% if series.binding %}
+  <li><span class="font-bold">Binding:</span> {{ series.binding }}</li>
+      {% endif %}
+      {% if series.publishing_format %}
+  <li><span class="font-bold">Publishing Format:</span> {{ series.publishing_format }}</li>
+      {% endif %}
+      {% if series.publication_type %}
+  <li><span class="font-bold">Publication Type:</span> {{ series.publication_type }}</li>
+      {% endif %}
+      {% if series.has_keywords %}
+  <li><span class="font-bold">Keywords:</span>  {{ series|show_keywords:'series' }}</li>
+      {% endif %}
+    {% endwith %}
+</ul>
+  {% endif %}
 
 <div class="ml-1">
   {% if issue.active_awards.count %}
