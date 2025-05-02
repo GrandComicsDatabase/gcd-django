@@ -2784,6 +2784,13 @@ def daily_covers(request, show_date=None, user=False):
     else:
         result_disclaimer = ''
 
+    if date_after != None:
+        choose_url_after = urlresolvers.reverse(
+          '%schanges_by_date' % ('my_' if user else ''),
+          kwargs={'show_date': date_after})
+    else:
+        choose_url_after = ""
+
     context = {
         'item_name': 'cover',
         'plural_suffix': 's',
@@ -2794,9 +2801,7 @@ def daily_covers(request, show_date=None, user=False):
         'choose_url_before': urlresolvers.reverse(
           '%scovers_by_date' % ('my_' if user else ''),
           kwargs={'show_date': date_before}),
-        'choose_url_after': urlresolvers.reverse(
-          '%scovers_by_date' % ('my_' if user else ''),
-          kwargs={'show_date': date_after}),
+        'choose_url_after': choose_url_after,
         'choose_date': True,
         'result_disclaimer': result_disclaimer,
         'filter_form': filter.form,
