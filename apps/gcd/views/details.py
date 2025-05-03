@@ -131,6 +131,9 @@ COVER_CHECKLIST_DISCLAIMER = 'Results for covers are shown.'
 MIGRATE_DISCLAIMER = ' Text credits are currently being migrated to '\
                      'links. Therefore not all credits in our '\
                      'database are shown here.'
+CHAR_MIGRATE_DISCLAIMER = ' Text character appearances are currently being ' \
+                          'migrated to links. Therefore not all appearances ' \
+                          ' in our database are shown here.'
 
 SORT_TABLE_TEMPLATE = 'gcd/bits/sortable_table.html'
 TW_SORT_TABLE_TEMPLATE = 'gcd/bits/tw_sortable_table.html'
@@ -3896,7 +3899,7 @@ def character_characters(request, character_id):
            default=F('character_names__storycharacter__story__issue__key_date')
            )))
     context = {
-        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'character',
         'plural_suffix': 's',
         'heading': 'appearing together with %s' % (character)
@@ -3926,7 +3929,7 @@ def character_features(request, character_id):
            default=F('story__issue__key_date')
            )))
     context = {
-        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'feature',
         'plural_suffix': 's',
         'heading': 'with an appearance of %s' % (character)
@@ -3996,7 +3999,7 @@ def character_issues(request, character_id, layer=None, universe_id=None,
         issues = Issue.objects.filter(Q(**query)).distinct()\
                               .select_related('series__publisher')
 
-    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + CHAR_MIGRATE_DISCLAIMER
     filter = filter_issues(request, issues)
     filter.filters.pop('language')
     issues = filter.qs
@@ -4196,7 +4199,7 @@ def character_series(request, character_id):
     series = series.annotate(first_appearance=Min('issue__key_date'))
 
     context = {
-        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'series',
         'plural_suffix': '',
         'heading': heading,
@@ -4250,7 +4253,8 @@ def character_creators(request, character_id, creator_names=False):
           creator_names__storycredit__credit_type__id__lt=6)
         creators = _annotate_creator_list(creators)
 
-    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER + \
+                        CHAR_MIGRATE_DISCLAIMER
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'creator',
@@ -4300,7 +4304,7 @@ def character_sequences(request, character_id):
     stories = filter.qs
 
     context = {
-        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'sequence',
         'plural_suffix': 's',
         'heading': heading,
@@ -4343,7 +4347,8 @@ def character_covers(request, character_id):
     issues = filter.qs
 
     context = {
-        'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + \
+                             CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'cover',
         'plural_suffix': 's',
         'heading': heading,

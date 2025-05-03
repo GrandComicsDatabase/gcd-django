@@ -209,7 +209,7 @@ GCD :: Group :: {{ group.name }}
       <ol class="object-page-numbered-list">
   {% for member in group.active_members %}
       <li class="break-inside-avoid-column">
-        <a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character.descriptor }}</a>
+        <a href="{% url 'show_character' character_id=member.character.id %}">{{ member.character }}</a>
         <br>
         <a href="{% url 'show_group_membership' group_membership_id=member.id %}">{{ member.display_years }} ({{ member.membership_type }}</a>)
       {% if member.notes %}
