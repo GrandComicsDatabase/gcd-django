@@ -116,8 +116,8 @@
               {% if group.1 %}
     <span class=""><i>({{ group.1 }})</i></span>
               {% endif %}
-              {% if group.notes %}
-    <span class="">({{ group.notes }})</span>
+              {% if group.0.notes %}
+    <span class="">({{ group.0.notes }})</span>
               {% endif %}
               {% if group.2 %}
                 {% with character_list=group.2 %}
