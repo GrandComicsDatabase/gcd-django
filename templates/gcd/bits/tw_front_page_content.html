@@ -1,4 +1,5 @@
 {% load display %}
+{% load i18n %}
 {% comment %}
 Center column beneath the search box.  This region is mostly built
 from various smaller templates that are managed via django-templatesadmin.
@@ -58,6 +59,23 @@ from various smaller templates that are managed via django-templatesadmin.
         </div>
       </div>
   {% endfor %}
+    </div>
+  </div>
+  <div>
+    <h3 class="label-gcd-blue">{% trans "Disclaimer" %}</h3>
+    <div class="px-1">
+      <div class="mb-2">
+        {% trans "The Grand Comics Database Project (GCD) is a volunteer project with the goal of documenting and indexing all comics for the free use of scholars, historians, researchers, and fans." %}
+      </div>
+      <div class="mb-2">
+        {% trans "The GCD acknowledges that the all-encompassing research nature of the project may result in the posting of cover scans for comics with images that some may find objectionable." %}
+      </div>
+      <div class="mb-2 font-bold">
+        {% trans "Viewer discretion is advised." %}
+      </div>
+      <div class="italic text-right">
+        {% trans "The Grand Comics Database Team" %}
+      </div>
     </div>
   </div>
   {% include front_page_lower %}
