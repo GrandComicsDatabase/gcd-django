@@ -120,11 +120,13 @@
     <span class="">({{ group.notes }})</span>
               {% endif %}
               {% if group.2 %}
-              {% with character_list=group.2 %}
+                {% with character_list=group.2 %}
     <ul class="list-disc sm:columns-2 ps-8 lg:columns-3 gap-8">
-                {% include 'gcd/bits/tw_character_list.html' %}
+                  {% include 'gcd/bits/tw_character_list.html' %}
     </ul>
-              {% endwith %}
+                {% endwith %}
+              {% else %}
+                <br>
               {% endif %}
             {% endfor %}
           {% endif %}

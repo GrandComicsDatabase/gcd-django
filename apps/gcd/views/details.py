@@ -2040,11 +2040,14 @@ def series_covers(request, series_id):
     series = get_gcd_object(Series, series_id)
     covers = Cover.objects.filter(issue__series=series, deleted=False) \
                           .select_related('issue')
-    series_status_info = '<a href="%sstatus"> Index Status</a> / ' \
-                         '<a href="%sscans">Cover Scan Status</a>' \
-                         ' (%s %s for %s %s available).' % (
+    if series.is_singleton:
+        series_status_info = ''
+    else:
+        series_status_info = '<a href="%sstatus"> Index Status</a> / ' \
+                             '<a href="%sscans">Cover Scan Status</a>' % (
                            series.get_absolute_url(),
-                           series.get_absolute_url(),
+                           series.get_absolute_url(),)
+    series_status_info += ' (%s %s for %s %s available).' % (
                            series.scan_count,
                            pluralize(series.scan_count, 'cover,covers'),
                            series.issue_count,
@@ -2814,29 +2817,6 @@ def daily_covers(request, show_date=None, user=False):
       order_by=('publisher'))
     return generic_sortable_list(request, covers, table, template,
                                  context, 50)
-
-    return paginate_response(
-      request,
-      covers,
-      'gcd/status/daily_covers.html',
-      {
-        'date': show_date,
-        'years': range(date.today().year, 2003, -1),
-        'daily': True,
-        'RANDOM_IMAGE': 2,
-        'choose_url_before': urlresolvers.reverse(
-          '%scovers_by_date' % ('my_' if user else ''),
-          kwargs={'show_date': date_before}),
-        'choose_url_after': urlresolvers.reverse(
-          '%scovers_by_date' % ('my_' if user else ''),
-          kwargs={'show_date': date_after}),
-        'other_url': urlresolvers.reverse(
-          '%scovers_by_date' % ('my_' if user is False else ''),
-          kwargs={'show_date': requested_date}),
-      },
-      per_page=COVERS_PER_GALLERY_PAGE,
-      callback_key='tags',
-      callback=get_image_tags_per_page)
 
 
 def _get_daily_revisions(model, args, model_name, change_type=None,

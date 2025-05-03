@@ -5331,6 +5331,10 @@ class StoryCharacterRevision(Revision):
             'group_universe': None,
         }
 
+    def show_notes(self):
+        from apps.gcd.models.story import character_notes
+        return character_notes(self)
+
     def _imps_for(self, field_name):
         # imps already come from StoryRevision, since is_changed is True there
         return 0

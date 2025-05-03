@@ -1203,7 +1203,7 @@ def search(request):
               urlresolvers.reverse("haystack_search") + "?q=%s" % quoted_query)
 
     if request.GET['search_type'] == "series_and_issue":
-        issue_pos = request.GET['query'].rfind(' ')
+        issue_pos = request.GET['query'].rstrip().rfind(' ')
         if issue_pos > 0:
             series = request.GET['query'][:issue_pos]
             issue = request.GET['query'][issue_pos+1:]
