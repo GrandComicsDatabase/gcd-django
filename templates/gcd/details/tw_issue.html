@@ -199,6 +199,19 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
   <li>{{ issue|show_credit_tw_inline:"keywords" }}</li>
 </ul>
 
+<div class="ml-1">
+  {% if issue.active_awards.count %}
+  <div class="field-name-label">Awards:</div>
+  <ul class="object-page-link-list columns-1">{{ issue|show_credit_bare_value:"show_awards" }}</ul>
+  {% endif %}
+
+  {% if issue.has_reprints %}
+  <dl class="contents">
+    {{ issue|show_reprints_for_issue }}
+  </dl>
+  {% endif %}
+</div>
+
   {% if issue.series.is_singleton %}
 <h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Series Data </h3>
 <ul class="md:columns-2 ml-1 [&_li]:break-inside-avoid-column">
@@ -230,20 +243,6 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
     {% endwith %}
 </ul>
   {% endif %}
-
-<div class="ml-1">
-  {% if issue.active_awards.count %}
-  <div class="field-name-label">Awards:</div>
-  <ul class="object-page-link-list columns-1">{{ issue|show_credit_bare_value:"show_awards" }}</ul>
-  {% endif %}
-
-  {% if issue.has_reprints %}
-  <dl class="contents">
-    {{ issue|show_reprints_for_issue }}
-  </dl>
-  {% endif %}
-
-</div>
 
   {% if issue.notes %}
 <h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Indexer Notes </h3>
