@@ -1,6 +1,6 @@
 {% load static %}
 <button class="block dropdown-toggle py-1 px-1 rounded {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %}">
-  <span class="pointer-events-none">
+  <span class="pointer-events-none max-lg:hidden">
     <img class="w-10" src='{% static "img/gcd/icons/"|add:ICON_SET_SYMBOLIC|add:"/avatar-default-symbolic.svg" %}'>
   </span>
 </button>

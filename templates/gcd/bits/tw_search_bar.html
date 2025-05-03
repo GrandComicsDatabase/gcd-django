@@ -32,14 +32,7 @@
     <!-- Mobile Menu Button Medium -->
     <div class="lg:hidden items-center">
       <button class="mobile-menu-button-gcd-md">
-        <span class="pointer-events-none">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-          <title>bars-3-bottom-left</title>
-          <g fill="none">
-            <path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-          </g>
-        </svg>
-        </span>
+        {% include "gcd/bits/tw_three_bars.html" %}
       </button>
       <div class="navigation-menu hidden absolute right-0 {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} text-white rounded-b-lg pb-2 z-50 w-48">
         <a class="block px-3 py-1 text-white visited:text-white {% if MYCOMICS %} hover:bg-red-900 {% else %} hover:bg-blue-700 {% endif %} hover:no-underline" href="{% url "advanced_search" %}">Advanced Query</a>
@@ -96,20 +89,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Select all dropdown toggle buttons
   const dropdownToggles = document.querySelectorAll(".dropdown-toggle, .mobile-menu-button-gcd-md")
 
-  dropdownToggles.forEach((toggle) => {
-    toggle.addEventListener("click", () => {
-      // Find the next sibling element which is the dropdown menu
-      const dropdownMenu = toggle.nextElementSibling
-
-      // Toggle the 'hidden' class to show or hide the dropdown menu
-      dropdownMenu.classList.toggle('hidden')
-
-    })
-  })
-
   // Clicking outside of an open dropdown menu closes it
   window.addEventListener("click", function (e) {
-    if (!e.target.matches(".dropdown-toggle") && !e.target.matches(".mobile-menu-button-gcd-md") ) {
+    if (!e.target.closest(".dropdown-toggle") && !e.target.closest(".mobile-menu-button-gcd-md") ) {
       document.querySelectorAll(".navigation-menu").forEach((menu) => {
         if (!menu.contains(e.target)) {
           menu.classList.add("hidden")
@@ -119,6 +101,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!menu.contains(e.target)) {
           menu.classList.add("hidden")
         }
+      })
+    }
+    else {
+      document.querySelectorAll(".navigation-menu").forEach((menu) => {
+        menu.classList.toggle("hidden")
+      })
+      document.querySelectorAll(".dropdown-menu").forEach((menu) => {
+        menu.classList.toggle("hidden")
       })
     }
   })
