@@ -143,7 +143,7 @@ def get_civilian_identity(character, appearing_characters, url=True,
     if civilian_identity:
         civilian_identity = appearing_characters.filter(
               universe=character.universe,
-              character__character__id=civilian_identity.pop())
+              character__character__id__in=civilian_identity)
         characters = ' ['
         several = False
         compare_characters = ''
@@ -198,7 +198,7 @@ def _process_single_character(character, appearing_characters,
     if civilian_identity:
         civilian_identity = appearing_characters.filter(
           universe=character.universe,
-          character__character__id=civilian_identity.pop())
+          character__character__id__in=civilian_identity)
     return (character, civilian_identity, universe)
 
 
