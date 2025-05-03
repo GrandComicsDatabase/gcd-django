@@ -293,25 +293,27 @@ Related Links
   <span class="max-md:hidden">Table of Contents</span>
   <span class="toc-bar-small md:hidden m-0 mobile-toc-button z-0">ToC</span>
 </div>
-<ol class="toc list-decimal {% if stories|length > 9 %}ps-6{% else %}ps-4{% endif %} w-56 text-sm max-md:border-2 max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0" {% if cover_story %}start='0'{% endif %}>
-  <div class="mobile-toc-button-expanded md:hidden my-1 bg-gcd font-bold px-1 h-8 md:hidden text-base sm:px-2 py-1 text-white rounded">
-    <span class="toc-bar-full">Table of Contents</span>
-  </div>
+<div class="w-60 px-1">
+  <ol class="toc list-decimal {% if stories|length > 9 %}ps-6{% else %}ps-4{% endif %} text-sm max-md:border-2 max-md:hidden max-md:absolute overflow-hidden bg-white max-md:right-0" {% if cover_story %}start='0'{% endif %}>
+    <div class="mobile-toc-button-expanded md:hidden my-1 bg-gcd font-bold px-1 h-8 md:hidden text-base sm:px-2 py-1 text-white rounded">
+      <span class="toc-bar-full">Table of Contents</span>
+    </div>
 {% if cover_story %}
-  <li class="hover:bg-stone-300">
-    <span>
-      <a name="toc_{{ cover_story.id }}" href="#{{ cover_story.id }}">{{ cover_story|show_title:1 }}</a></span><br/>
-    <span>{{ cover_story.show_feature}}</span>
-  </li>
+    <li class="hover:bg-stone-300">
+      <span>
+        <a name="toc_{{ cover_story.id }}" href="#{{ cover_story.id }}">{{ cover_story|show_title:1 }}</a></span><br/>
+      <span>{{ cover_story.show_feature}}</span>
+    </li>
 {% endif %}
 {% for story in stories %}
-  <li class="hover:bg-stone-300 odd:bg-stone-200">
-    <span>
-      <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}{% querystring 'issue_detail'='2' %}{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
-    <span>{{ story.show_feature}}</span>
-  </li>
+    <li class="hover:bg-stone-300 odd:bg-stone-200">
+      <span>
+        <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}{% querystring 'issue_detail'='2' %}{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
+      <span>{{ story.show_feature}}</span>
+    </li>
 {% endfor %}
-</ol>
+  </ol>
+</div>
 {% endblock %}
 
 {% block additional_information %}
