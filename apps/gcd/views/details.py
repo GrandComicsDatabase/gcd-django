@@ -415,7 +415,7 @@ def creator_characters(request, creator_id, country=None):
       letters=letters)
 
     context = {
-        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'result_disclaimer': MIGRATE_DISCLAIMER + CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'character',
         'plural_suffix': 's',
         'heading': 'for creator %s' % (creator)
@@ -429,7 +429,7 @@ def creator_characters(request, creator_id, country=None):
                                   attrs={'class': 'sortable_listing'},
                                   creator=creator,
                                   template_name=TW_SORT_TABLE_TEMPLATE,
-                                  order_by=('character'))
+                                  order_by=('name'))
     return generic_sortable_list(request, characters, table, template, context)
 
 
@@ -2389,7 +2389,7 @@ def series_characters(request, series_id):
            default=F('character_names__storycharacter__story__issue__key_date')
            )))
     context = {
-        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'character',
         'plural_suffix': 's',
         'heading': 'in series %s' % (series)
@@ -3523,7 +3523,7 @@ def feature_characters(request, feature_id):
            default=F('character_names__storycharacter__story__issue__key_date')
            )))
     context = {
-        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'character',
         'plural_suffix': 's',
         'heading': 'in feature %s' % (feature)
@@ -3533,7 +3533,7 @@ def feature_characters(request, feature_id):
                                   attrs={'class': 'sortable_listing'},
                                   feature=feature,
                                   template_name=TW_SORT_TABLE_TEMPLATE,
-                                  order_by=('character'))
+                                  order_by=('name'))
     return generic_sortable_list(request, characters, table, template, context)
 
 
@@ -3797,7 +3797,7 @@ def universe_characters(request, universe_id):
            default=F('character_names__storycharacter__story__issue__key_date')
            )))
     context = {
-        'result_disclaimer': MIGRATE_DISCLAIMER,
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'character',
         'plural_suffix': 's',
         'heading': 'from Universe %s' % (universe)
@@ -3806,7 +3806,7 @@ def universe_characters(request, universe_id):
     table = UniverseCharacterTable(characters,
                                    universe=universe,
                                    template_name=TW_SORT_TABLE_TEMPLATE,
-                                   order_by=('character'))
+                                   order_by=('name'))
     return generic_sortable_list(request, characters, table, template, context)
 
 
@@ -3908,7 +3908,7 @@ def character_characters(request, character_id):
     table = CharacterCharacterTable(characters,
                                     character=character,
                                     template_name=TW_SORT_TABLE_TEMPLATE,
-                                    order_by=('character'))
+                                    order_by=('name'))
     return generic_sortable_list(request, characters, table, template, context)
 
 
