@@ -92,13 +92,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // Clicking outside of an open dropdown menu closes it
   window.addEventListener("click", function (e) {
     if (!e.target.closest(".dropdown-toggle") && !e.target.closest(".mobile-menu-button-gcd-md") ) {
+      found = false // check if the click was inside the nav menu, avoid closing dropdown menu
+                    // only visual effect, not functional
       document.querySelectorAll(".navigation-menu").forEach((menu) => {
         if (!menu.contains(e.target)) {
           menu.classList.add("hidden")
         }
+        else {
+          found = true
+        }
       })
       document.querySelectorAll(".dropdown-menu").forEach((menu) => {
-        if (!menu.contains(e.target)) {
+        if (!menu.contains(e.target) && !found) {
           menu.classList.add("hidden")
         }
       })
@@ -112,6 +117,5 @@ document.addEventListener("DOMContentLoaded", () => {
       })
     }
   })
-  
 })
 </script>
