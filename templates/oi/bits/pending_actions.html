@@ -10,6 +10,9 @@
   {% else %}
     {% if changeset.state == states.REVIEWING and perms.indexer.can_approve and changeset.review_is_overdue %}
   Review is overdue
+    {% elif changeset.state == states.DISCUSSED %}
+    <btn class="btn-queue-action"><a href="{% url 'compare' id=changeset.id %}">Join Discussion
+    </btn>
     {% else %}
   No actions available
     {% endif %}
