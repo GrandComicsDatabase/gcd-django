@@ -6,7 +6,7 @@
 {% if revision.source_name == 'story' %}
 <h3>
 <a name="{{ revision.id }}"></a> <!-- for link from comments on story to work -->
-<table class="border border-gray-400 mb-1 {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
+<table class="border border-gray-400 mt-2">
 <tr class="story_edit">
     <td class="px-2">{{ revision|show_story_short }}</td>
     <td class="px-2">{{ revision|show_credit_status }}</td>
@@ -54,7 +54,7 @@
 </summary>
 {% endif %}
 
-<table class="comparison mb-2 {% if not prev_rev %}added{% else %}{% if revision.deleted %}deleted{% else %}modified{% endif %}{% endif %}">
+<table class="comparison mt-2">
   <tr class="border bg-blue-100 flex flex-col sm:table-row">
     <th> Field </th>
     {% if revision.deleted %}
@@ -88,7 +88,7 @@
     {% if revisions_before %}
       {% for revision_before in revisions_before %}
         {% for field in revision_before.field_list %}
-          {% with revision=revision_before prev_rev=revision_before.previous check_prev=True %}
+          {% with revision=revision_before prev_rev=revision_before.previous %}
             {% include 'oi/bits/compare_field.html' %}
           {% endwith %}
         {% endfor %}
@@ -101,7 +101,7 @@
         {% with changeset|get_source_revisions:field as source_revisions %}
           {% for source_revision in source_revisions %}
             {% for source_field in source_fields %}
-              {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
+              {% with field=source_field revision=source_revision prev_rev=source_revision.previous %}
                 {% include 'oi/bits/compare_field.html' %}
               {% endwith %}
             {% endfor %}
@@ -113,7 +113,7 @@
         {% with changeset|get_source_revisions:field as source_revisions %}
           {% for source_revision in source_revisions %}
             {% for source_field in source_fields %}
-              {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
+              {% with field=source_field revision=source_revision prev_rev=source_revision.previous %}
                 {% include 'oi/bits/compare_field.html' %}
               {% endwith %}
             {% endfor %}
@@ -127,7 +127,7 @@
       {% with changeset|get_source_revisions:'' as source_revisions %}
         {% for source_revision in source_revisions %}
           {% for source_field in source_fields %}
-            {% with field=source_field revision=source_revision prev_rev=source_revision.previous check_prev=True %}
+            {% with field=source_field revision=source_revision prev_rev=source_revision.previous %}
               {% include 'oi/bits/compare_field.html' %}
             {% endwith %}
           {% endfor %}
@@ -152,7 +152,7 @@
     {% if revisions_after %}
       {% for revision_after in revisions_after %}
         {% for field in revision_after.field_list %}
-          {% with revision=revision_after prev_rev=revision_after.previous check_prev=True %}
+          {% with revision=revision_after prev_rev=revision_after.previous %}
             {% include 'oi/bits/compare_field.html' %}
           {% endwith %}
         {% endfor %}
