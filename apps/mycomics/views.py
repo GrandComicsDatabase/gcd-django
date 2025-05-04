@@ -623,11 +623,13 @@ def add_single_issue_to_collection(request, issue_id):
     if not collection:
         return error_return
     collected = create_collection_item(issue, collection)
+    link = collected.get_absolute_url(collection)
+    if not settings.MYCOMICS:
+        link = 'https://my.comics.org' + link
     messages.success(
       request,
       mark_safe("Issue <a href='%s'>%s</a> was added to your <b>%s</b> "
-                "collection." % (collected.get_absolute_url(collection),
-                                 esc(issue), esc(collection.name))))
+                "collection." % (link, esc(issue), esc(collection.name))))
     request.session['collection_id'] = collection.id
     return HttpResponseRedirect(urlresolvers.reverse('show_issue',
                                 kwargs={'issue_id': issue_id}))
@@ -844,7 +846,7 @@ def add_series_issues_to_collection(request, series_id):
         messages.success(
           request,
           mark_safe("All issues added to your <a href='%s%s%s'>%s</a> "
-                    "collection." % ('' if settings.LOGIN_URL else
+                    "collection." % ('' if settings.MYCOMICS else
                                      'https://my.comics.org/',
                                      collection.get_absolute_url(), page,
                                      esc(collection.name))))
