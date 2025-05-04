@@ -62,7 +62,7 @@
       {% if not preview %}
     <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url 'edit_covers' issue_id=issue.id %}">Edit Cover{{ issue.active_covers.count|pluralize }}</a><br>
       {% endif %}
-    <a href="{{ issue.series.get_absolute_url }}covers">Cover Gallery</a>&nbsp;
+    <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Cover Gallery</a>&nbsp;
     {% else %}
       {% if preview %}
         {{ image_tag }}
@@ -270,7 +270,7 @@ Related Links
 <ul class="ps-1 max-md:hidden text-sm">
   {% if not issue.series.is_singleton %}
     {% if issue.series.has_gallery %}
-    <li> <a href="{{ issue.series.get_absolute_url }}covers">Series Cover Gallery</a>
+    <li> <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Series Cover Gallery</a>
     {% endif %}
     <li> <a href="{% url "series_details" series_id=issue.series.id %}">Series Details by Issue</a><br/>
     <li> <a href="{% url "series_timeline" series_id=issue.series.id %}">Series Monthly Timeline</a>
