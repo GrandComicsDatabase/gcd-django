@@ -21,8 +21,8 @@
       <th> Status </th>
     </tr>
   {% for topic in pending_topics %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
-      <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
+    <tr class="hover:bg-blue-50 mb-4 border border-gray-200">
+      <td> <a href="{% url 'ballot' id=topic.id %}">{{ topic }}</a> </td>
       <td> {{ topic.agenda }} </td>
       <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
       <td> awaiting your vote </td>
@@ -34,7 +34,7 @@
   {% endfor %}
   {% for topic in voted_topics %}
     <tr>
-      <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
+      <td> <a href="{% url 'ballot' id=topic.id %}">{{ topic }}</a> </td>
       <td> {{ topic.agenda }} </td>
       <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
       <td> vote received </td>
@@ -45,7 +45,7 @@
   <h2>Agendas</h2>
   <ul>
   {% for agenda in agendas %}
-    <li> <a href="{% url "agenda" id=agenda.id %}">{{ agenda }}</a>
+    <li> <a href="{% url 'agenda' id=agenda.id %}">{{ agenda }}</a>
   {% empty %}
     <li> There are no active agendas at this time.
   {% endfor %}

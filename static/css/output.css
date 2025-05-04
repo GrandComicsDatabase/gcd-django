@@ -2892,6 +2892,11 @@ select {
   border-top-width: 2px;
 }
 
+.\[\&_td\]\:px-1 td {
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
 .\[\&_td\]\:px-3 td {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
@@ -2908,6 +2913,11 @@ select {
 .\[\&_th\]\:px-1 th {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
+}
+
+.\[\&_th\]\:px-2 th {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .\[\&_th\]\:text-right th {

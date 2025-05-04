@@ -16,7 +16,7 @@
 {% for comment in comments.all %}
 <tr class="hover:bg-blue-50 [&>td]:px-1.5 border border-gray-200">
   <td> {{ comment.commenter.indexer|absolute_url }} </td>
-  <td> {{ comment.text|urlizetrunc:75|linebreaksbr }} </td>
+  <td {% if comment.text and comment.text != "Editing" %}class='changed'{% endif %}> {{ comment.text|urlizetrunc:75|linebreaksbr }} </td>
   {% if not no_links %}
   <td class="max-sm:hidden"> 
     {% if comment.revision %} 

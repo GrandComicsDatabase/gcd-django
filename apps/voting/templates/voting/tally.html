@@ -1,7 +1,7 @@
 <!-- Note- must be enclosed in a div with class="queues" for CSS -->
 <!-- TODO: refactor CSS -->
 <table>
-  <tr class="bg-blue-100 md:top-0">
+  <tr class="bg-blue-100 md:top-0 [&_th]:px-2">
     <th> Option </th>
     <th> Votes </th>
 {% if not agenda.secret_ballot %}
@@ -12,9 +12,9 @@
 {% endif %}
   </tr>
 {% for option in topic.counted_options %}
-  <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
-    <td> {{ option }} </td>
-    <td> {{ option.num_votes}} </td>
+  <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
+    <td class="align-top"> {{ option }} </td>
+    <td class="align-top"> {{ option.num_votes}} </td>
   {% if not agenda.secret_ballot %}
     {% if topic.invalid and option.votes.all.count %}
     <td> Voters hidden for invalid results. </td>

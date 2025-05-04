@@ -152,7 +152,7 @@ class AccountForm(forms.Form):
                  'otherwise a single page view.'))
 
     cache_size = forms.IntegerField(
-      initial=3, required=False, help_text='Number of objects to cache '
+      initial=3, help_text='Number of objects to cache '
       'using the remember function.',)
     variant_threshold = forms.IntegerField(
       initial=5, required=False, help_text='Number up to which '

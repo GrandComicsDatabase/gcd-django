@@ -369,7 +369,7 @@ def _do_reserve(indexer, display_obj, model_name, delete=False,
         # Deletions are submitted immediately which will set the correct state.
         new_state = states.UNRESERVED
     else:
-        comment = 'Editing'
+        comment = ''
         new_state = states.OPEN
 
     if not changeset:

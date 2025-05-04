@@ -26,7 +26,7 @@
       <th> Notes </th>
     </tr>
   {% for item in open_items %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
+    <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
       <td> Open </td>
       <td> {{ item.name }} </td>
       <td> {{ item.owner.indexer }} </td>
@@ -35,7 +35,7 @@
   {% endfor %}
 
   {% for item in pending_items %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
+    <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
       <td> Pending </td>
       <td> {{ item.name }} </td>
       <td> {{ item.owner.indexer }} </td>
@@ -52,7 +52,7 @@
       <th> Status </th>
     </tr>
   {% for topic in pending_topics %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
+    <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
       <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
       <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
       <td> awaiting your vote </td>
@@ -63,14 +63,14 @@
     </tr>
   {% endfor %}
   {% for topic in voted_topics %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
+    <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
       <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
       <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
       <td> vote received </td>
     </tr>
   {% endfor %}
   {% for topic in forbidden_topics %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
+    <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
       <td> <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a> </td>
       <td> {{ topic.deadline|date:"Y-m-d H:i T" }} </td>
       <td> you are not a voter for this agenda</td>
@@ -88,7 +88,7 @@
       <th> Voting Period </th>
     </tr>
   {% for topic in closed_topics %}
-    <tr class="hover:bg-blue-50 flex flex-col mb-4 border border-gray-200">
+    <tr class="hover:bg-blue-50 mb-4 border border-gray-200 [&_td]:px-1">
       <td class='longest_column'>
         <a href="{% url "ballot" id=topic.id %}">{{ topic }}</a>
       </td>

@@ -847,7 +847,7 @@ def add_series_issues_to_collection(request, series_id):
           request,
           mark_safe("All issues added to your <a href='%s%s%s'>%s</a> "
                     "collection." % ('' if settings.MYCOMICS else
-                                     'https://my.comics.org/',
+                                     'https://my.comics.org',
                                      collection.get_absolute_url(), page,
                                      esc(collection.name))))
         return add_issues_to_collection(
