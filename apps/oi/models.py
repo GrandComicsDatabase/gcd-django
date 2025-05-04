@@ -5035,8 +5035,11 @@ class PreviewIssue(Issue):
                 stories = list(base_issue.active_stories())
         else:
             stories = self.active_stories()
-        if self.series.is_comics_publication:
-            if (len(stories) > 0):
+
+        cover_story = None
+        if self.series.is_comics_publication or \
+           self.series.has_about_comics is True:
+            if (len(stories) > 0) and stories[0].type_id == 6:
                 cover_story = stories.pop(0)
                 if self.variant_of:
                     # can have only one sequence, the variant cover
@@ -5045,10 +5048,7 @@ class PreviewIssue(Issue):
                         cover_story = own_stories[0]
             elif self.variant_of and len(self.active_stories()):
                 cover_story = self.active_stories()[0]
-            else:
-                cover_story = None
-        else:
-            cover_story = None
+
         return cover_story, stories
 
     # we do not use ignore on preview, since target does not exist
