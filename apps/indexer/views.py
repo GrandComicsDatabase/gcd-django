@@ -274,7 +274,7 @@ def register(request):
                       seen_privacy_policy=cd['seen_privacy_policy'],
                       opt_in_email=cd['opt_in_email'],
                       issue_detail=cd['issue_detail'],
-                      cache_size=cd['cache_size'],
+                      cache_size=3,
                       variant_threshold=cd['variant_threshold'],
                       reprint_threshold=cd['reprint_threshold'],
                       user=new_user)
