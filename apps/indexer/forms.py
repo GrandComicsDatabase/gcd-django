@@ -152,13 +152,13 @@ class AccountForm(forms.Form):
                  'otherwise a single page view.'))
 
     cache_size = forms.IntegerField(
-      initial=True, required=False, help_text='Number of objects to cache '
+      initial=3, required=False, help_text='Number of objects to cache '
       'using the remember function.',)
     variant_threshold = forms.IntegerField(
-      initial=True, required=False, help_text='Number up to which '
+      initial=5, required=False, help_text='Number up to which '
       'the variant covers are shown unfolded on the issue page.')
     reprint_threshold = forms.IntegerField(
-      initial=True, required=False, help_text='Number up to which '
+      initial=6, required=False, help_text='Number up to which '
       'reprints are shown unfolded on the issue page.')
 
     def clean(self):
