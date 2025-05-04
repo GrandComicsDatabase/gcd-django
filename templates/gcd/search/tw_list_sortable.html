@@ -6,7 +6,7 @@
 {% load django_tables2 %}
 
 {% block title %}
-  GCD :: {{ heading }}
+  GCD :: {{ heading|striptags }}
 {% endblock %}
 
 {% block css_raw %}
