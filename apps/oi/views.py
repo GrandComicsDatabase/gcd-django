@@ -5493,12 +5493,18 @@ def show_approved(request):
     filter = ChangesetTypeFilter(request.GET, changes)
     changes = filter.qs
 
+    request_get = request.GET.copy()
+    request_get.pop('page', None)
+    request_get.pop('submit', None)
+    query_string = request_get.urlencode()
+
     return paginate_response(
       request,
       changes,
       'oi/queues/approved.html',
       {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'approved',
-       'filter_form': filter.form},
+       'filter_form': filter.form,
+       'query_string': query_string},
       per_page=50)
 
 
