@@ -99,6 +99,20 @@ class Cover(models.Model):
         return '%s %s cover' % (self.issue.series, self.issue.display_number)
 
 
+def calculate_row_class(**kwargs):
+    """ callables will be called with optional keyword arguments record
+        and table
+    https://django-tables2.readthedocs.io/en/stable/pages/
+            column-attributes.html?highlight=row_attrs#row-attributes
+    """
+    row_attrs = 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'
+    record = kwargs.get("record", None)
+    if record and record.marked:
+        row_attrs += ' bg-stone-300'
+
+    return row_attrs
+
+
 class CoverColumn(tables.Column):
     def value(self, value):
         for cover in value:
@@ -145,7 +159,7 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
         model = Cover
         fields = ('cover', 'issue', 'publisher', 'publication_date',
                   'on_sale_date', 'edit_cover')
-        row_attrs = {'class': 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'}
+        row_attrs = {'class': calculate_row_class}
 
     def render_cover(self, record):
         from apps.gcd.views.covers import get_image_tag
@@ -205,7 +219,7 @@ class OnSaleCoverIssueTable(CoverIssuePublisherEditTable):
         model = Cover
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'edit_cover')
-        row_attrs = {'class': 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'}
+        row_attrs = {'class': calculate_row_class}
 
     def render_issue(self, value):
         return mark_safe('<a href="%s">%s</a>' % (value.get_absolute_url(),
@@ -219,7 +233,7 @@ class CoverSeriesTable(CoverIssuePublisherEditTable):
         model = Cover
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
                   'edit_cover')
-        row_attrs = {'class': 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'}
+        row_attrs = {'class': calculate_row_class}
 
     def render_issue(self, value):
         return mark_safe('<a href="%s">%s</a>' % (value.get_absolute_url(),
