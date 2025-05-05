@@ -163,7 +163,7 @@ GCD :: Character :: {{ character.name }}
   {% for relation in character.active_relations_own %}
     {% with relation_info=relation|pre_process_relation:character %}
   <li class="break-inside-avoid-column">
-    <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0.descriptor }}</a>
+    <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
       {% if relation.notes %}
       <br><strong>Notes: </strong>{{ relation.notes }}
       {% endif %}
