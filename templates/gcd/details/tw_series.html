@@ -176,6 +176,11 @@
 <a name="cover_status"></a>
 <h3 class="my-1"> Cover Status </h3>
       {% include "gcd/bits/scan_tables.html" %}
+    {% else %}
+    <div class="changed border px-1 mt-1 rounded">
+    We don't accept cover scans on series that don't have enough comics-related content. 
+    See our <a href="https://docs.comics.org/wiki/Qualifying_and_Non_Qualifying_Publications#Non-Comics_Publications_with_some_comics_content">documentation</a> for more details.
+    </div>
     {% endif %}
   <a name="image_resources_status"></a>
 <h3 class="my-1"> Image Resources Status </h3>
