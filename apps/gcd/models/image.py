@@ -6,8 +6,10 @@ from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes.fields import GenericForeignKey
 import django.urls as urlresolvers
 
+from imagekit import ImageSpec, register
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFit, ResizeToFill
+from imagekit.utils import get_field_info
 
 from cv2 import FaceDetectorYN_create, cvtColor, resize, \
                 COLOR_BGR2RGB, COLOR_RGB2BGR, INTER_CUBIC
@@ -23,6 +25,19 @@ def convert_from_cv2_to_image(img: np.ndarray) -> pyImage:
 
 def convert_from_image_to_cv2(img: pyImage) -> np.ndarray:
     return cvtColor(np.array(img), COLOR_RGB2BGR)
+
+
+class CreatorCropToFace(ImageSpec):
+    @property
+    def processors(self):
+        model, field_name = get_field_info(self.source)
+        if model.type.id == 4:
+            return [CropToFace()]
+        else:
+            return None
+
+
+register.generator('creator:portrait_face', CreatorCropToFace)
 
 
 class CropToFace(object):
@@ -114,7 +129,7 @@ class Image(models.Model):
     icon = ImageSpecField([ResizeToFit(height=30, upscale=False),],
                           source='image_file',
                           format='JPEG', options={'quality': 90})
-    cropped_face = ImageSpecField([CropToFace(), ],
+    cropped_face = ImageSpecField(id='creator:portrait_face',
                                   source='image_file',
                                   format='JPEG',
                                   options={'quality': 90})
