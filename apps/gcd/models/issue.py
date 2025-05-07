@@ -616,9 +616,12 @@ class Issue(GcdData):
 
     def full_name(self, variant_name=True):
         if variant_name:
-            return "%s %s" % (self.series.full_name(),
-                              self.display_full_descriptor)
-        return '%s %s' % (self.series.full_name(), self.display_number)
+            number = self.display_full_descriptor
+        else:
+            number = self.display_number
+        if number:
+            number = ' ' + number
+        return '%s%s' % (self.series.full_name(), number)
 
     def full_name_with_link(self, publisher=False):
         name_link = self.series.full_name_with_link(publisher)
