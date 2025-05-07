@@ -7,12 +7,18 @@
 {% load editing %}
 {% load django_tables2 %}
 
+{% block head %}
+  {{ block.super }}
+  <meta property="og:title" content="{{ issue.full_name}}">
+  <meta name="description" property="og:description" content="Information about the comic {{ issue.short_name }}, which has a publication date of {{ issue.publication_date }} and was published by {{ issue.series.publisher }}.">
+{% endblock %}
+
 {% block css_raw %}
 <script type="text/javascript" src="{% static 'js/htmx.min.js' %}"></script>
 {% endblock %}
 
 {% block title %}
-  GCD :: Issue :: {{ issue.short_name }}
+  GCD :: Issue :: {{ issue.full_name }}
 {% endblock %}
 
 {% block header %}
