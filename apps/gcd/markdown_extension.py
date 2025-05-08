@@ -11,6 +11,26 @@ from apps.gcd.models import Issue, Story
 GCD_REFERENCE_RE = r'\[gcd_link_([^\]]+)\]\((\d+)\)'
 GCD_REFERENCE_LINK_NAME_RE = r'\[gcd_link_name_([^\]]+)\]\((\d+)\)\{([^\}]+)\}'
 
+# Regular expression for matching URLs
+URL_RE = r'(?<!\]\()(https?:\/\/[^\s\)\]\}]+)'
+
+class URLInlineProcessor(InlineProcessor):
+    """Process URLs and convert them to links."""
+    def handleMatch(self, m, data):
+        url = m.group(1)
+        el = Element('a')
+        el.set('href', url)
+        el.text = url
+        return el, m.start(0), m.end(0)
+
+
+class URLExtension(Extension):
+    """Add support for auto-converting URLs to links."""
+    def extendMarkdown(self, md):
+        md.inlinePatterns.register(
+            URLInlineProcessor(URL_RE, md),
+            'autolink_urls', 180)
+
 
 class GCDReferenceInlineProcessor(InlineProcessor):
     """Process [gcd_link_object](id) references and convert to links."""

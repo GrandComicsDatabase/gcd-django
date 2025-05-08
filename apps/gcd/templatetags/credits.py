@@ -18,7 +18,8 @@ from apps.gcd.models.support import GENRES
 from apps.gcd.models import STORY_TYPES, CREDIT_TYPES
 from apps.gcd.markdown_extension import TailwindExtension, \
                                         GCDFieldExtension, \
-                                        GCDFieldLinkNameExtension
+                                        GCDFieldLinkNameExtension, \
+                                        URLExtension
 
 
 register = template.Library()
@@ -490,7 +491,8 @@ def markdown(value):
     return mark_safe(md.markdown(value,
                                  extensions=[TailwindExtension(),
                                              GCDFieldLinkNameExtension(),
-                                             GCDFieldExtension()]))
+                                             GCDFieldExtension(),
+                                             URLExtension()]))
 
 
 def __format_keywords(keywords, join_on='; ', model_name='story', url=True):

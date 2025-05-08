@@ -96,7 +96,7 @@ GCD :: Group :: {{ group.name }}
 {% endif %}
 {% if group.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ group.notes|urlizetrunc:75|linebreaksbr }}
+{{ group.notes|markdown }}
 {% endif %}
 {% endblock %}
 
