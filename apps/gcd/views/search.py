@@ -145,16 +145,18 @@ def generic_by_name(request, name, q_obj, sort,
                 table_format = IndiciaPublisherSearchTable
             elif class_ is Series:
                 table_format = SeriesPublisherTable
-                filter = filter_series(request, things)
-                things = filter.qs
-                context['filter_form'] = filter.form
+                if things:
+                    filter = filter_series(request, things)
+                    things = filter.qs
+                    context['filter_form'] = filter.form
             elif class_ is Printer:
                 table_format = PrinterSearchTable
 
             if class_ in [Publisher, IndiciaPublisher, Printer]:
-                filter = filter_publisher(request, things)
-                things = filter.qs
-                context['filter_form'] = filter.form
+                if things:
+                    filter = filter_publisher(request, things)
+                    things = filter.qs
+                    context['filter_form'] = filter.form
 
             table = table_format(
               things,
@@ -378,8 +380,12 @@ def generic_by_name(request, name, q_obj, sort,
             order_by = 'publication_date'
         else:
             order_by = 'issue'
-        filter = filter_issues(request, things)
-        things = filter.qs
+        if things:
+            filter = filter_issues(request, things)
+            things = filter.qs
+            filter_form = filter.form
+        else:
+            filter_form = None
         table = table_format(
           things,
           template_name='gcd/bits/tw_sortable_table.html',
@@ -387,7 +393,7 @@ def generic_by_name(request, name, q_obj, sort,
         template = 'gcd/search/tw_list_sortable.html'
         context = {'item_name': item_name,
                    'plural_suffix': plural_suffix,
-                   'filter_form': filter.form,
+                   'filter_form': filter_form,
                    'search_term': name,
                    'selected': selected,
                    'heading': heading}
