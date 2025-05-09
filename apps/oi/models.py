@@ -4608,30 +4608,47 @@ class IssueRevision(Revision):
         if self.issue is None:
             return Reprint.objects.none()
         from_reprints = self.issue.from_reprints.all()
+        from_reprints_ids = from_reprints.values_list('id', flat=True)
         if self.issue.target_reprint_revisions.active_set().count() \
                 or RevisionLock.objects.filter(
-                  object_id__in=from_reprints.values_list(
-                                              'id', flat=True)).exists():
-            new_revisions = self.issue.target_reprint_revisions\
-                                .filter(changeset__id=self.changeset_id)\
+                  object_id__in=from_reprints_ids).exists():
+            # reprint revisions of the story that are currently in
+            # active changesets
+            new_revisions = self.issue.target_reprint_revisions.active_set()\
                                 .filter(target=None, target_revision=None)
+            if preview:
+                # new reprint revisions of story that are in other active
+                # changesets are not shown in preview, neither are deleted ones
+                new_revisions = new_revisions.exclude(deleted=True)\
+                                .filter(changeset__id=self.changeset_id)
+            new_revisions_ids = new_revisions.values_list('id', flat=True)
             if not preview:
-                new_revisions |= \
-                    self.issue.target_reprint_revisions.active_set()\
-                        .filter(target=None, target_revision=None)
+                # reprint revisions of story that represent current state,
+                # but which are not edited in this changeset,
+                old_revisions = self.issue.target_reprint_revisions\
+                                    .filter(next_revision=None)\
+                                    .filter(target=None, target_revision=None)\
+                                    .exclude(changeset__id=self.changeset_id)\
+                                    .exclude(changeset__state=states.DISCARDED)
+                # reprint revisions of story that are edited in
+                # other active changesets
+                next_revisions_ids = self.issue.target_reprint_revisions\
+                    .exclude(next_revision=None)\
+                    .filter(target=None, target_revision=None)\
+                    .exclude(next_revision__changeset__id=self.changeset_id)\
+                    .filter(next_revision__changeset__state__in=states.ACTIVE)\
+                    .values_list('next_revision__id', flat=True)
             else:
-                new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = from_reprints
-            if not preview:
-                old_revisions = self.old_revisions_base()\
-                                    .filter(reprint__in=existing_reprints,
-                                            next_revision=None)
-            else:
-                old_revisions = self.old_revisions_base()\
-                                    .filter(reprint__in=existing_reprints,
-                                            changeset__state=states.APPROVED,
-                                            next_revision=None)
-            return new_revisions | old_revisions
+                # revisions of story that are not currently not being edited
+                old_revisions = self.issue.target_reprint_revisions\
+                        .filter(next_revision=None,
+                                target=None, target_revision=None,
+                                changeset__state=states.APPROVED)
+                next_revisions_ids = []
+            old_revisions_ids = old_revisions.values_list('id', flat=True)
+            revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
+                set(next_revisions_ids)
+            return ReprintRevision.objects.filter(id__in=revisions_ids)
         else:
             return from_reprints
 
@@ -4645,32 +4662,47 @@ class IssueRevision(Revision):
         if self.issue is None:
             return Reprint.objects.none()
         to_reprints = self.issue.to_reprints.all()
+        to_reprints_ids = to_reprints.values_list('id', flat=True)
         if self.issue.origin_reprint_revisions.active_set().count() \
                 or RevisionLock.objects.filter(
-                  object_id__in=to_reprints.values_list(
-                                            'id', flat=True)).exists():
-            new_revisions = self.issue.origin_reprint_revisions\
-                                .filter(changeset__id=self.changeset_id)\
+                  object_id__in=to_reprints_ids).exists():
+            # reprint revisions of the story that are currently in
+            # active changesets
+            new_revisions = self.issue.origin_reprint_revisions.active_set()\
                                 .filter(origin=None, origin_revision=None)
+            if preview:
+                # new reprint revisions of story that are in other active
+                # changesets are not shown in preview, neither are deleted ones
+                new_revisions = new_revisions.exclude(deleted=True)\
+                                .filter(changeset__id=self.changeset_id)
+            new_revisions_ids = new_revisions.values_list('id', flat=True)
             if not preview:
-                new_revisions |= \
-                    self.issue.origin_reprint_revisions.active_set()\
-                        .filter(origin=None, origin_revision=None)
+                # reprint revisions of story that represent current state,
+                # but which are not edited in this changeset,
+                old_revisions = self.issue.origin_reprint_revisions\
+                        .filter(next_revision=None)\
+                        .filter(origin=None, origin_revision=None)\
+                        .exclude(changeset__id=self.changeset_id)\
+                        .exclude(changeset__state=states.DISCARDED)
+                # reprint revisions of story that are edited in
+                # other active changesets
+                next_revisions_ids = self.issue.origin_reprint_revisions\
+                    .exclude(next_revision=None)\
+                    .filter(origin=None, origin_revision=None)\
+                    .exclude(next_revision__changeset__id=self.changeset_id)\
+                    .filter(next_revision__changeset__state__in=states.ACTIVE)\
+                    .values_list('next_revision__id', flat=True)
             else:
-                new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = to_reprints
-            if not preview:
-                old_revisions = \
-                    self.old_revisions_base()\
-                        .filter(reprint__in=existing_reprints,
-                                next_revision=None)
-            else:
-                old_revisions = \
-                    self.old_revisions_base()\
-                        .filter(reprint__in=existing_reprints,
-                                changeset__state=states.APPROVED,
-                                next_revision=None)
-            return new_revisions | old_revisions
+                # revisions of story that are not currently not being edited
+                old_revisions = self.issue.origin_reprint_revisions\
+                        .filter(next_revision=None,
+                                origin=None, origin_revision=None,
+                                changeset__state=states.APPROVED)
+                next_revisions_ids = []
+            old_revisions_ids = old_revisions.values_list('id', flat=True)
+            revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
+                set(next_revisions_ids)
+            return ReprintRevision.objects.filter(id__in=revisions_ids)
         else:
             return to_reprints
 
@@ -6422,30 +6454,45 @@ class StoryRevision(Revision):
             return self.target_reprint_revisions\
                        .filter(changeset__id=self.changeset_id)
         from_reprints = self.story.from_reprints.all()
+        from_reprints_ids = from_reprints.values_list('id', flat=True)
         if self.story.target_reprint_revisions.active_set().count() \
                 or RevisionLock.objects.filter(
                   changeset=self.changeset,
-                  object_id__in=from_reprints.values_list(
-                                              'id', flat=True)).exists():
-            new_revisions = self.story.target_reprint_revisions\
+                  object_id__in=from_reprints_ids).exists():
+            # reprint revisions of the story that are currently in
+            # active changesets
+            new_revisions = self.story.target_reprint_revisions.active_set()
+            if preview:
+                # new reprint revisions of story that are in other active
+                # changesets are not shown in preview, neither are deleted ones
+                new_revisions = new_revisions.exclude(deleted=True)\
                                 .filter(changeset__id=self.changeset_id)
+
+            new_revisions_ids = new_revisions.values_list('id', flat=True)
             if not preview:
-                new_revisions |= \
-                    self.story.target_reprint_revisions.active_set()\
-                        .filter(previous_revision=None)
+                # reprint revisions of story that represent current state,
+                # but which are not edited in this changeset,
+                old_revisions = self.story.target_reprint_revisions\
+                        .filter(next_revision=None)\
+                        .exclude(changeset__id=self.changeset_id)\
+                        .exclude(changeset__state=states.DISCARDED)
+                # reprint revisions of story that are edited in
+                # other active changesets
+                next_revisions_ids = self.story.target_reprint_revisions\
+                    .exclude(next_revision=None)\
+                    .exclude(next_revision__changeset__id=self.changeset_id)\
+                    .filter(next_revision__changeset__state__in=states.ACTIVE)\
+                    .values_list('next_revision__id', flat=True)
             else:
-                new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = from_reprints
-            if not preview:
-                old_revisions = self.old_revisions_base()\
-                                    .filter(reprint__in=existing_reprints,
-                                            next_revision=None)
-            else:
-                old_revisions = self.old_revisions_base()\
-                                    .filter(reprint__in=existing_reprints,
-                                            changeset__state=states.APPROVED,
-                                            next_revision=None)
-            return new_revisions | old_revisions
+                # revisions of story that are not currently not being edited
+                old_revisions = self.story.target_reprint_revisions\
+                        .filter(next_revision=None,
+                                changeset__state=states.APPROVED)
+                next_revisions_ids = []
+            old_revisions_ids = old_revisions.values_list('id', flat=True)
+            revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
+                set(next_revisions_ids)
+            return ReprintRevision.objects.filter(id__in=revisions_ids)
         else:
             return from_reprints
 
@@ -6472,32 +6519,46 @@ class StoryRevision(Revision):
             return self.origin_reprint_revisions\
                        .filter(changeset__id=self.changeset_id)
         to_reprints = self.story.to_reprints.all()
+        to_reprints_ids = to_reprints.values_list('id', flat=True)
         if self.story.origin_reprint_revisions.active_set().count() \
                 or RevisionLock.objects.filter(
                   changeset=self.changeset,
-                  object_id__in=to_reprints.values_list(
-                                            'id', flat=True)).exists():
-            new_revisions = self.story.origin_reprint_revisions\
+                  object_id__in=to_reprints_ids).exists():
+            # reprint revisions of the story that are currently in
+            # active changesets
+            new_revisions = self.story.origin_reprint_revisions.active_set()
+            if preview:
+                # new reprint revisions of story that are in other active
+                # changesets are not shown in preview, neither are deleted ones
+                new_revisions = new_revisions.exclude(deleted=True)\
                                 .filter(changeset__id=self.changeset_id)
+
+            new_revisions_ids = new_revisions.values_list('id', flat=True)
+
             if not preview:
-                new_revisions |= \
-                    self.story.origin_reprint_revisions.active_set()\
-                        .filter(previous_revision=None)
+                # reprint revisions of story that represent current state,
+                # but which are not edited in this changeset,
+                old_revisions = self.story.origin_reprint_revisions\
+                        .filter(next_revision=None)\
+                        .exclude(changeset__id=self.changeset_id)\
+                        .exclude(changeset__state=states.DISCARDED)
+                # reprint revisions of story that are edited in
+                # other active changesets
+                next_revisions_ids = self.story.origin_reprint_revisions\
+                    .exclude(next_revision=None)\
+                    .exclude(next_revision__changeset__id=self.changeset_id)\
+                    .filter(next_revision__changeset__state__in=states.ACTIVE)\
+                    .values_list('next_revision__id', flat=True)
             else:
-                new_revisions = new_revisions.exclude(deleted=True)
-            existing_reprints = to_reprints
-            if not preview:
-                old_revisions = \
-                    self.old_revisions_base()\
-                        .filter(reprint__in=existing_reprints,
-                                next_revision=None)
-            else:
-                old_revisions = \
-                    self.old_revisions_base()\
-                        .filter(reprint__in=existing_reprints,
-                                changeset__state=states.APPROVED,
-                                next_revision=None)
-            return new_revisions | old_revisions
+                # revisions of story that are not currently not being edited
+                old_revisions = self.story.origin_reprint_revisions\
+                        .filter(next_revision=None,
+                                changeset__state=states.APPROVED)
+                next_revisions_ids = []
+            old_revisions_ids = old_revisions.values_list('id', flat=True)
+            revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
+                set(next_revisions_ids)
+            return ReprintRevision.objects.filter(id__in=revisions_ids)
         else:
             return to_reprints
 
@@ -6740,7 +6801,8 @@ class FeatureRevision(Revision):
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
     feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
-    year_first_published = models.IntegerField(db_index=True, blank=True, null=True)
+    year_first_published = models.IntegerField(db_index=True, blank=True,
+                                               null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
     keywords = models.TextField(blank=True, default='')
