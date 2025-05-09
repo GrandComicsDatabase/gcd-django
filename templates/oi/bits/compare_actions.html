@@ -22,7 +22,7 @@
 {% if changeset.state == states.PENDING %}
   {% if user != changeset.indexer %}
     {% if perms.indexer.can_approve %}
-  <button class="btn-blue-editing inline" type="submit" name="assign"></button>
+  <button class="btn-blue-editing inline" type="submit" name="assign">
       {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and not is_cover %}
    Assign and mentor
       {% else %}
