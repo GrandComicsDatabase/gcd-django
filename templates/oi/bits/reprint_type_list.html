@@ -10,71 +10,71 @@
 <form action="{% url 'reserve_reprint' reprint_id=reprint.id changeset_id=changeset.id %}" method="POST">
   {% csrf_token %}
   {% if not is_source %}
-    <button><input class="btn-blue-editing" type="submit" name="edit_target_internal" value="Change Target"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_origin" value="Change Origin"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_note_target" value="Edit Note"></button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_target_internal">Change Target</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_origin">Change Origin</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_note_target">Edit Note</button>
   {% else %}
-    <button><input class="btn-blue-editing" type="submit" name="edit_origin_internal" value="Change Origin"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_target" value="Change Target"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_note_origin" value="Edit Note"></button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_origin_internal">Change Origin</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_target">Change Target</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_note_origin">Edit Note</button>
   {% endif %}
-    <button><input class="btn-blue-editing" type="submit" name="flip_direction" value="Flip Reprint Direction"></button>
-    <button><input class="btn-blue-editing" type="submit" name="delete" value="Mark To Delete"></button>
+    <button class="btn-blue-editing inline" type="submit" name="flip_direction">Flip Reprint Direction</button>
+    <button class="btn-blue-editing inline" type="submit" name="delete">Mark To Delete</button>
   {% if create_sequence %}
-    <button><input class="btn-blue-editing" type="submit" name="matching_sequence" value="Create Corresponding Sequence"></button>
+    <button class="btn-blue-editing inline" type="submit" name="matching_sequence">Create Corresponding Sequence</button>
   {% endif %}
 </form>
 {% else %}
     {% if reprint.changeset_id == changeset.id %}
-<form action="{% url "edit_reprint" id=reprint.id %}" method="POST">
+<form action="{% url 'edit_reprint' id=reprint.id %}" method="POST">
       {% csrf_token %}
       {% if reprint.deleted %}
-    <button><input class="btn-blue-editing" type="submit" name="restore" value="Restore"></button>
+    <button class="btn-blue-editing inline" type="submit" name="restore">Restore</button>
       {% else %}
         {% if not is_source %}
-    <button><input class="btn-blue-editing" type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_target_internal" value="Change Target"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_origin" value="Change Origin"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_note_target" value="Edit Note"></button>
+    <button class="btn-blue-editing inline {% if not reprint.source %}bg-stone-100 hover:bg-stone-100 {% endif %}" type="submit" {% if not reprint.source %} disabled {% endif %} name="edit_target_internal">Change Target</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_origin">Change Origin</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_note_target">Edit Note</button>
         {% else %}
-    <button><input class="btn-blue-editing" type="submit" {% if not reprint.source %} disabled="disabled" {% endif %} name="edit_origin_internal" value="Change Origin"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_target" value="Change Target"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_note_origin" value="Edit Note"></button>
+    <button class="btn-blue-editing inline {% if not reprint.source %}bg-stone-100 hover:bg-stone-100 {% endif %}" type="submit" {% if not reprint.source %} disabled {% endif %} name="edit_origin_internal">Change Origin</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_target">Change Target</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_note_origin">Edit Note</button>
         {% endif %}
-    <button><input class="btn-blue-editing" type="submit" name="flip_direction" value="Flip Reprint Direction"></button>
+    <button class="btn-blue-editing inline" type="submit" name="flip_direction">Flip Reprint Direction</button>
         {% if reprint.source %}
-    <button><input class="btn-blue-editing" type="submit" name="delete" value="Mark To Delete"></button>
+    <button class="btn-blue-editing inline" type="submit" name="delete">Mark To Delete</button>
         {% else %}
-    <button><input class="btn-blue-editing" type="submit" name="remove" value="Remove"></button>
+    <button class="btn-blue-editing inline" type="submit" name="remove">Remove</button>
         {% endif %}
         {% if create_sequence %}
-    <button><input class="btn-blue-editing" type="submit" name="matching_sequence" value="Create Corresponding Sequence"></button>
+    <button class="btn-blue-editing inline" type="submit" name="matching_sequence">Create Corresponding Sequence</button>
         {% endif %}
       {% endif %}
 </form>
     {% else %}
       {% if reprint.changeset.state == states.APPROVED %}
-<form action="{% url "reserve_reprint" reprint_id=reprint.source.id changeset_id=changeset.id %}" method="POST">
+<form action="{% url 'reserve_reprint' reprint_id=reprint.source.id changeset_id=changeset.id %}" method="POST">
         {% csrf_token %}
         {% if not is_source %}
-    <button><input class="btn-blue-editing" type="submit" name="edit_target_internal" value="Change Target"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_origin" value="Change Origin"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_note_target" value="Edit Note"></button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_target_internal">Change Target</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_origin">Change Origin</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_note_target">Edit Note</button>
         {% else %}
-    <button><input class="btn-blue-editing" type="submit" name="edit_origin_internal" value="Change Origin"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_target" value="Change Target"></button>
-    <button><input class="btn-blue-editing" type="submit" name="edit_note_origin" value="Edit Note"></button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_origin_internal">Change Origin</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_target">Change Target</button>
+    <button class="btn-blue-editing inline" type="submit" name="edit_note_origin">Edit Note</button>
         {% endif %}
-    <button><input class="btn-blue-editing" type="submit" name="flip_direction" value="Flip Reprint Direction"></button>
-    <button><input class="btn-blue-editing" type="submit" name="delete" value="Mark To Delete"></button>
+    <button class="btn-blue-editing inline" type="submit" name="flip_direction">Flip Reprint Direction</button>
+    <button class="btn-blue-editing inline" type="submit" name="delete">Mark To Delete</button>
         {% if create_sequence %}
-    <button><input class="btn-blue-editing" type="submit" name="matching_sequence" value="Create Corresponding Sequence"></button>
+    <button class="btn-blue-editing inline" type="submit" name="matching_sequence">Create Corresponding Sequence</button>
         {% endif %}
 </form>
       {% else %}
         {% if reprint.changeset %}
-    Is reserved in a different <a href="{% url "compare" id=reprint.changeset.id %}">changeset</a>.
+    Is reserved in a different <a href="{% url 'compare' id=reprint.changeset.id %}">changeset</a>.
         {% else %}
-    Is reserved in a different <a href="{% url "compare" id=reprint.revisions.latest.changeset.id %}">changeset</a>.
+    Is reserved in a different <a href="{% url 'compare' id=reprint.revisions.latest.changeset.id %}">changeset</a>.
         {% endif %}
       {% endif %}
     {% endif %}

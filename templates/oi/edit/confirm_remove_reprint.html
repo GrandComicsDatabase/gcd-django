@@ -40,17 +40,15 @@ Do you want to remove the following reprint link ?
 
 <hr class="divider">
 <form style="display:inline;" method="POST"
-    action="{% url "remove_reprint_revision" id=reprint.id %}">
+    action="{% url 'remove_reprint_revision' id=reprint.id %}">
 {% csrf_token %}
-<button><input class="btn-blue-editing" type="submit" id="remove_{{ reprint.id }}" name="remove_{{ reprint.id }}"
-       value="Remove Reprint Link">
-</input></button>
+<button class="btn-blue-editing inline" type="submit" id="remove_{{ reprint.id }}"
+        name="remove_{{ reprint.id }}">Remove Reprint Link</button>
 </form>
 <form style="display:inline;" method="GET"
-    action="{% url "list_issue_reprints" id=reprint.changeset.issuerevisions.all.0.id %}">
-    <button><input class="btn-blue-editing" type="submit" id="remove_{{ reprint.id }}" name="remove_{{ reprint.id }}"
-       value="Cancel">
-</button></input>
+    action="{% url 'list_issue_reprints' id=reprint.changeset.issuerevisions.all.0.id %}">
+  <button class="btn-blue-editing inline" type="submit" id="remove_{{ reprint.id }}"
+    name="remove_{{ reprint.id }}">Cancel</button>
 </form>
 <hr class="divider">
 

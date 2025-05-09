@@ -78,7 +78,7 @@
           {% endif %}
           <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
         {% else %}
-          <button class="btn-blue-editing inline"><input type="submit" id="copy_story" name="copy" value="Copy Sequence"></button>
+          <button class="btn-blue-editing inline" type="submit" id="copy_story" name="copy">Copy Sequence</button>
         {% endif %}
         </div>
         {% if not issue_revision.variant_of %}
@@ -262,7 +262,7 @@ Cover is moved from {{ cover.issue }}.
   {% if changeset.issuerevisions.count == 1 and not changeset.issuerevisions.get.variant_of %}
     {% with issue_revision=changeset.issuerevisions.get %}
 <form class="border border-gray-300 w-fit pe-1 mt-2" method="GET"
-    action="{% url "copy_story_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+    action="{% url 'copy_story_revision' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
   <div class="flex items-center w-auto">
     <button class="btn-blue-editing inline"><input type="submit" id="copy_story_revision" name="copy_story_revision" value="Copy Sequence"></button>
     <div class="my-1">

@@ -6,58 +6,58 @@
   </div>
 {% if user == changeset.indexer %}
   {% if changeset.state == states.OPEN %}
-  <button>
-    <input class="btn-blue-editing" type="submit" name="submit" value="Submit changes for approval">
+  <button class="btn-blue-editing inline" type="submit" name="submit">Submit changes for Approval
   </button>
   {% endif %}
   {% if changeset.state == states.REVIEWING or changeset.state == states.OPEN %}
     {% if changeset.approver %}
-  <button><input class="btn-blue-editing" type="submit" name="discuss" value="Discuss"></button>
+  <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
     {% endif %}
   {% endif %}
   {% if changeset.state not in states.CLOSED %}
-  <button><input class="btn-blue-editing" type="submit" name="discard" value="Discard all changes"></button>
+  <button class="btn-blue-editing inline" type="submit" name="discard">Discard all changes</button>
   {% endif %}
 {% endif %}
 
 {% if changeset.state == states.PENDING %}
   {% if user != changeset.indexer %}
     {% if perms.indexer.can_approve %}
-  <button><input class="btn-blue-editing" type="submit" name="assign"
+  <button class="btn-blue-editing inline" type="submit" name="assign"></button>
       {% if changeset.indexer.indexer.is_new and not changeset.indexer.indexer.mentor and not is_cover %}
-    value="Assign and mentor"
+   Assign and mentor
       {% else %}
-    value="Assign"
+   Assign
       {% endif %}
-  ></button>
+  </button>
     {% endif %}
   {% else %}
     {% if changeset.editable and not is_cover %}
-  <button><input class="btn-blue-editing" type="submit" name="retract" value="Retract and edit further"></button>
+  <button class="btn-blue-editing inline" type="submit" name="retract">Retract and edit further</button>
     {% endif %}
   {% endif %}
 {% endif %}
 
 {% if changeset.state == states.REVIEWING or changeset.state == states.DISCUSSED %}
   {% if user == changeset.approver %}
-  <button><input class="btn-blue-editing" type="submit" name="approve" value="Approve"></button>
+  <button class="btn-blue-editing inline" type="submit" name="approve">Approve</button>
     {% if changeset.state != states.DISCUSSED %}
-  <button><input class="btn-blue-editing" type="submit" name="discuss" value="Discuss"></button>
+  <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
     {% endif %}
     {% if changeset.editable %}
-  <button><input class="btn-blue-editing" type="submit" name="disapprove" value="Send Back to Indexer"></button>
+  <button class="btn-blue-editing inline" type="submit" name="disapprove">Send Back to Indexer</button>
     {% endif %}
-  <button><input class="btn-blue-editing" type="submit" name="cancel" value="Reject Permanently"></button>
+  <button class="btn-blue-editing inline" type="submit" name="cancel">Reject Permanently</button>
   {% else %}
     {% if changeset.state == states.REVIEWING and perms.indexer.can_approve and changeset.review_is_overdue %}
-  <button><input class="btn-blue-editing" type="submit" name="assign" value="Assign"></button>
+  <button class="btn-blue-editing inline" type="submit" name="assign">Assign</button>
     {% endif %}
   {% endif %}
 {% endif %}
 {% if changeset.approver and user == changeset.approver and changeset.state not in states.CLOSED  %}
-  <button><input class="btn-blue-editing" type="submit" name="release" value="Unassign"></button>
+  <button class="btn-blue-editing inline" type="submit" name="release">Unassign</button>
 {% endif %}
 
-<button><input class="btn-blue-editing" type="submit" name="add_comment" value="Add Comment"></button>
+<button class="btn-blue-editing inline" type="submit" name="add_comment">Add Comment</button>
+<button class="btn-blue-editing inline" type="submit" name="add_comment">Add Comment</button>
 </form>
 

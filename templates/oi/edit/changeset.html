@@ -22,7 +22,7 @@
     {% if changeset.editable %}
   <form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
     {% csrf_token %}
-    <button><input class="btn-blue-editing" type="submit" name="retract" value="Retract And Edit Further" /></button>
+    <button class="btn-blue-editing inline"><input type="submit" name="retract" value="Retract And Edit Further" /></button>
     <input type="hidden" name="comments">
   </form>
     {% else %}
@@ -92,12 +92,12 @@
       </td>
     </tr>
   </table>
-  <button><input class="btn-blue-editing" type="submit" name="submit" value="Submit Changes For Approval"></button>
+  <button class="btn-blue-editing inline" type="submit" name="submit">Submit Changes For Approval</button>
       {% if changeset.approver %}
-      <button><input class="btn-blue-editing" type="submit" name="discuss" value="Discuss"></button>
+      <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
       {% endif %}
-  <button><input class="btn-blue-editing" type="submit" name="discard" value="Discard All Changes"></button>
-  <button><input class="btn-blue-editing" type="submit" name="add_comment" value="Add Comment"></button>
+  <button class="btn-blue-editing inline" type="submit" name="discard">Discard All Changes</button>
+  <button class="btn-blue-editing inline" type="submit" name="add_comment">Add Comment</button>
 </form>
         {% with changeset.comments as comments %}
           {% include 'oi/bits/comments.html' %}
