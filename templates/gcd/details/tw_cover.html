@@ -15,15 +15,15 @@
 <div>
   <div class="mt-2 flex flex-wrap gap-x-16 gap-y-4 place-content-center">
 {% for cover in cover_tag %}
-  <div class="text-center shadow-md p-2">
+  <div class="text-center shadow-md p-2 {% if cover.0.marked %} bg-stone-300 {% endif %}">
     <a href="{{ cover.0.issue.get_absolute_url }}">{{ cover.2 }}</a><br>
     <div class="max-w-[400px]"><a href="{{ cover.0.issue.get_absolute_url }}">{{ cover.0.issue.full_descriptor }}</a></div>
   </div>
 {% endfor %}
   </div>
   <div class="text-center">
-    <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url "edit_covers" issue_id=issue.id %}">Edit Covers</a>
-    <br><a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Series Covers</a>
+    <a href="{% if MYCOMICS %}https://www.comics.org{% endif %}{% url 'edit_covers' issue_id=issue.id %}">Edit Covers</a>
+    <br><a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Cover Gallery</a>
   </div>
 </div>
 {% endblock %}
