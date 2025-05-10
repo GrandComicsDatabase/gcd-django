@@ -22,11 +22,11 @@
   {% if issue_revision.editing and not issue_revision.editing == '?' %}
     <form class="sm:inline-block" action="{% url 'migrate_issue_revision' id=issue_revision.id %}" method="POST">
       {% csrf_token %}
-      <button class="btn-blue-editing"><input type="submit" value="Migrate Editing"></button>
+      <button class="btn-blue-editing"><input type="submit" value="Migrate Editing" class="text-red-600"></button>
     </form>
   {% endif %}
     <form class="sm:inline-block" method="GET"
-          action="{% url "edit_revision" model_name='issue' id=issue_revision.id %}">
+          action="{% url 'edit_revision' model_name='issue' id=issue_revision.id %}">
       <button class="btn-blue-editing"><input type="submit" id="edit_issue_{{ issue_revision.id }}"
            name="edit_issue_{{ issue_revision.id }}" value="Edit Issue Fields"></button>
     </form>
@@ -230,17 +230,17 @@ Cover is moved from {{ cover.issue }}.
         {% endif %}
         {% if story.moveable %}
         <form method="POST"
-              action="{% url "move_story_revision" id=story.id %}">
+              action="{% url 'move_story_revision' id=story.id %}">
             {% csrf_token %}
           <button class="btn-blue-editing inline"><input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
                 value="Move To Other Issue"></button>
         </form>
         {% endif %}
         {% if story.old_credits %}
-        <form method="POST" class="text-red-400"
+        <form method="POST"
               action="{% url 'migrate_story_revision' id=story.id %}">
           {% csrf_token %}
-          <button class="btn-blue-editing inline"><input type="submit" value="Migrate Credits" style="color: red"></button>
+          <button class="btn-blue-editing inline"><input type="submit" value="Migrate Credits" class="text-red-600"></button>
         </form>
         {% endif %}
       {% else %}
