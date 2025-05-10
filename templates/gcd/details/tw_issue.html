@@ -86,6 +86,9 @@
     </div>
     {% endif %}
   </div>
+    {% if issue.active_covers.0.is_wraparound %}
+  <div class="text-6xl -me-1.5">&#x298A;</div>
+    {% endif %}
     {% if cover_story %}
   <div class="ps-2 flex-1">
       {% with story=cover_story is_cover=1 %}
