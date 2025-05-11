@@ -115,6 +115,7 @@ else:
                     [path('voting/', include('apps.voting.urls'))] + \
                     [path('admin/templatesadmin/', include('templatesadmin.urls'))] + \
                     [path('admin/', admin.site.urls)] + \
+                    [path('markdownx/', include('markdownx.urls'))] + \
                     [path('projects/', include('apps.projects.urls'))]
 
 if 'django_rq' in settings.INSTALLED_APPS:

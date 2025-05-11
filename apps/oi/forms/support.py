@@ -2,7 +2,6 @@
 
 import re
 import six
-from pagedown.widgets import PagedownWidget
 
 from django import forms
 from django.conf import settings
@@ -13,6 +12,7 @@ from django.db import IntegrityError
 from django.forms.utils import pretty_name
 from django.forms.widgets import TextInput
 from django.utils.safestring import mark_safe
+from markdownx.widgets import MarkdownxWidget
 
 from apps.gcd.models import ImageType, SourceType
 from apps.gcd.templatetags.credits import format_page_count
@@ -35,6 +35,21 @@ KEYWORDS_HELP = (
     'in the content, such as <i>Phantom Zone</i>, <i>red kryptonite</i>, '
     '<i>Vietnam</i>, or <i>time travel</i>. Multiple entries are to be '
     'separated by semi-colons.')
+
+NOTES_HELP = (
+    'The notes field is for information that does not fit in other fields, '
+    'but is worth noting. For visual structure, one can use the '
+    '<a href="https://commonmark.org/help/">markdown syntax</a>. E.g. **bold**'
+    ' or *italic* for bold and italic text, respectively. Lists start with a '
+    '*, or are numbered, and can be nested by indenting with spaces. '
+    'Two spaces at the end of a line of text generate a line break in the '
+    'display. Links have the form [Link](http://a.com). '
+    'Internal GCD links to other objects in the database have the '
+    'general format [gcd_link_<i>object_name</i>](id), e.g. [gcd_link_issue](442). '
+    'The generated links show under the display name of the object, or one '
+    'uses the form [gcd_link_name_<i>object_name</i>](id){Link Title}. '
+    'For stories and issues there is also a format to show the date, e.g. '
+    '[gcd_link_story_with_date](754).' )
 
 GENERIC_ERROR_MESSAGE = (
     'Please correct the field errors.  Scroll down to see the specific error '
@@ -284,7 +299,10 @@ CREATOR_HELP_TEXTS = {
         'creator names can be added.',
     'bio':
         "A short biography (1-4 paragraphs) noting highlights of the career "
-        "of the creator, which might include a list of characters created.",
+        "of the creator, which might include a list of characters created."
+        "For visual structure, one can use the "
+        "<a href='https://commonmark.org/help/'>markdown syntax</a>."
+        "See below after notes for more information.",
     'whos_who':
         "Link to the old Who’s Who, if available.",
 }
@@ -376,8 +394,7 @@ PUBLISHER_HELP_TEXTS = {
     'url':
         'The official web site of the publisher.  Must include "http://" or '
         '"https://", for example "https://www.example.com" not '
-        '"www.example.com"',
-}
+        '"www.example.com"',}
 
 SERIES_HELP_TEXTS = {
     'name':
@@ -853,24 +870,14 @@ class BrandEmblemSelect(forms.Select):
         return option_dict
 
 
-class ModifiedPagedownWidget(PagedownWidget):
-    class Media:
-        extend = False
-        css = {
-            'all': ('css/oi/default/pagedown.css',
-                    'pagedown.css')
-        }
-        js = ('pagedown/Markdown.Converter.js',
-              'pagedown-extra/pagedown/Markdown.Converter.js',
-              'pagedown/Markdown.Sanitizer.js',
-              'pagedown/Markdown.Editor.js',
-              'pagedown-extra/Markdown.Extra.js',
-              'pagedown_init.js')
+class ModifiedPagedownWidget(MarkdownxWidget):
+    pass
 
 
 class BaseForm(forms.ModelForm):
-    notes = forms.CharField(widget=ModifiedPagedownWidget(
-      attrs={'class': 'w-full lg:w-4/5', 'rows': 7}), required=False)
+    notes = forms.CharField(widget=MarkdownxWidget(
+      attrs={'class': 'w-full lg:w-4/5', 'rows': 7}), required=False,
+      help_text=NOTES_HELP)
 
     comments = _get_comments_form_field()
 
@@ -884,5 +891,9 @@ class KeywordBaseForm(BaseForm):
 
 
 class CharacterBaseForm(KeywordBaseForm):
-    description = forms.CharField(widget=ModifiedPagedownWidget(
-      attrs={'class': 'w-full lg:w-4/5', 'rows': 7}), required=False)
+    description = forms.CharField(widget=MarkdownxWidget(
+      attrs={'class': 'w-full lg:w-4/5', 'rows': 7}), required=False,
+      help_text='A concise description, including background and premise. '
+                'For visual structure, one can use the '
+                '<a href="https://commonmark.org/help/">markdown syntax</a>. '
+                'See below after notes for more information.')

@@ -172,6 +172,7 @@ INSTALLED_APPS = (
     'crispy_forms',
     'crispy_bootstrap3',
     'pagedown.apps.PagedownConfig',
+    'markdownx',
     'rosetta',
     'django_filters',
     'drf_spectacular'
@@ -275,6 +276,15 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '0.1.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+MARKDOWNX_MARKDOWN_EXTENSIONS = [
+    'apps.gcd.markdown_extension:TailwindExtension',
+    'apps.gcd.markdown_extension:GCDFieldExtension',
+    'apps.gcd.markdown_extension:GCDFieldLinkNameExtension',
+    'apps.gcd.markdown_extension:URLExtension',
+]
+MARKDOWNX_EDITOR_RESIZABLE = False
+MARKDOWNX_UPLOAD_CONTENT_TYPES = []
 
 #################################################################################
 # Haystack and search

@@ -144,6 +144,10 @@
   .deleted {
     @apply bg-red-400;
   }
+
+  .cover-is-marked {
+    @apply bg-stone-300;
+  }
 }
 
 html {
