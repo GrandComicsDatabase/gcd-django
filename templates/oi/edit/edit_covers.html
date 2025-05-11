@@ -27,9 +27,9 @@ Edit Covers :: {{ issue }}
   {% endif %}
 
 <div>
-  <div class="flex flex-wrap gap-1">
+  <div class="flex flex-wrap gap-1 mb-2">
 {% for cover, issue, tag, pending in covers %}
-    <div class="w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col even text-center">
+    <div class="w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col even text-center {% if cover.marked %} cover-is-marked {% endif %}">
       <a href="{{ issue.get_absolute_url }}">{{ tag }}</a>
       <div class="max-w-[400px]"><a href="{{ cover.issue.get_absolute_url }}">{{ cover.issue.full_descriptor }}</a></div>
       <div class="mt-auto">Zoom:

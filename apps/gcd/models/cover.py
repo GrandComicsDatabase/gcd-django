@@ -108,7 +108,7 @@ def calculate_row_class(**kwargs):
     row_attrs = 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'
     record = kwargs.get("record", None)
     if record and record.marked:
-        row_attrs += ' bg-stone-300'
+        row_attrs += ' cover-is-marked'
 
     return row_attrs
 

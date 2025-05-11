@@ -15,7 +15,7 @@
 <div>
   <div class="mt-2 flex flex-wrap gap-x-16 gap-y-4 place-content-center">
 {% for cover in cover_tag %}
-  <div class="text-center shadow-md p-2 {% if cover.0.marked %} bg-stone-300 {% endif %}">
+  <div class="text-center shadow-md p-2 {% if cover.0.marked %} cover-is-marked {% endif %}">
     <a href="{{ cover.0.issue.get_absolute_url }}">{{ cover.2 }}</a><br>
     <div class="max-w-[400px]"><a href="{{ cover.0.issue.get_absolute_url }}">{{ cover.0.issue.full_descriptor }}</a></div>
   </div>
