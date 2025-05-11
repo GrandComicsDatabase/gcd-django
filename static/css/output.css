@@ -908,6 +908,18 @@ a:hover {
   }
 }
 
+.markdownx-preview {
+  width: 100%;
+  --tw-bg-opacity: 1;
+  background-color: rgb(231 229 228 / var(--tw-bg-opacity));
+}
+
+@media (min-width: 1024px) {
+  .markdownx-preview {
+    width: 80%;
+  }
+}
+
 .btn-blue:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(29 78 216 / var(--tw-bg-opacity));

@@ -62,6 +62,10 @@
     ;
   }
 
+  .markdownx-preview {
+    @apply bg-stone-200 w-full lg:w-4/5;
+  }
+
   .btn-blue:hover {
     @apply bg-blue-700;
   }
