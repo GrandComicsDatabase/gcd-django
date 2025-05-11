@@ -32,6 +32,7 @@ TEMPLATES = [
             # insert your TEMPLATE_DIRS here
             abspath(join(dirname(__file__), 'templates')),
             abspath(join(dirname(__file__), 'apps', 'indexer', 'templates')),
+            abspath(join(dirname(__file__), 'apps', 'select', 'templates')),
             abspath(join(dirname(__file__), 'apps', 'stats', 'templates')),
             abspath(join(dirname(__file__), 'apps', 'voting', 'templates')),
         ],

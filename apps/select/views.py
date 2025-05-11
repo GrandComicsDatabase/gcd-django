@@ -301,7 +301,7 @@ def select_object(request, select_key):
                                                    story=story,
                                                    cover=cover)
         haystack_form = FacetedSearchForm()
-        return render(request, 'oi/edit/select_object.html',
+        return render(request, 'select/select_object.html',
                       {'heading': data['heading'],
                        'select_key': select_key,
                        'cache_form': cache_form,
