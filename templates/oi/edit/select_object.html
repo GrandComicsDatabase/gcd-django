@@ -16,7 +16,7 @@ Search for {{ target }} by entering the relevant information here:
   {% if story %}
       <option value="story"> Story </option>
   {% endif %}
-  {% if issue or story %}
+  {% if issue %}
       <option value="issue"> Issue </option>
   {% endif %}
   {% if series %}
@@ -51,19 +51,19 @@ Search for {{ target }} by entering the relevant information here:
     </tr>
   </table>
   {% if story %}
-<button class="btn-blue-editing inline"><input type="submit" name="search_story" value="Search For Stories"></input></button>
+<button class="btn-blue-editing inline" type="submit" name="search_story">Search For Stories</button>
   {%endif %}
   {% if story or cover %}
-<button class="btn-blue-editing inline"><input type="submit" name="search_cover" value="Search For Covers"></input></button>
+<button class="btn-blue-editing inline" type="submit" name="search_cover">Search For Covers</button>
   {% endif %}
-  {% if issue or story %}
-<button class="btn-blue-editing inline"><input type="submit" name="search_issue" value="Search For Issues"></input></button>
+  {% if issue %}
+<button class="btn-blue-editing inline" type="submit" name="search_issue">Search For Issues</button>
   {% endif %}
   {% if series %}
-<button class="btn-blue-editing inline"><input type="submit" name="search_series" value="Search For Series"></input></button>
+<button class="btn-blue-editing inline" type="submit" name="search_series">Search For Series</button>
   {% endif %}
   {% if publisher %}
-<button class="btn-blue-editing inline"><input type="submit" name="search_publisher" value="Search For Publisher"></input></button>
+<button class="btn-blue-editing inline" type="submit" name="search_publisher">Search For Publisher</button>
   {% endif %}
 </form>
 

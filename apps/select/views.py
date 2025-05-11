@@ -175,6 +175,11 @@ def process_select_search(request, select_key):
           + '?' + request.META['QUERY_STRING'])
     cd = search_form.cleaned_data
 
+    if issue:
+        select_issue = True
+    else:
+        select_issue = False
+
     if 'search_story' in request.GET or 'search_cover' in request.GET:
         search = Story.objects.filter(
           issue__number=cd['number'],
@@ -258,6 +263,7 @@ def process_select_search(request, select_key):
       'items': search,
       'heading': heading,
       'select_key': select_key,
+      'select_issue': select_issue,
       'no_bulk_edit': True,
       'query_string': request.META['QUERY_STRING'],
       'publisher': cd['publisher'] if cd['publisher'] else '',
