@@ -219,6 +219,9 @@ class CharacterGroupBase(GcdData):
     def object_page_name(self):
         return self.descriptor(language=True, year=False)
 
+    def object_markdown_name(self):
+        return self.descriptor(language=False, disambiguation=True, year=False)
+
     def __str__(self):
         return self.descriptor(language=True, disambiguation=True)
 
