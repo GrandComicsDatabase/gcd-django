@@ -6475,7 +6475,8 @@ class StoryRevision(Revision):
                 old_revisions = self.story.target_reprint_revisions\
                         .filter(next_revision=None)\
                         .exclude(changeset__id=self.changeset_id)\
-                        .exclude(changeset__state=states.DISCARDED)
+                        .exclude(changeset__state=states.DISCARDED) \
+                        .exclude(deleted=True)
                 # reprint revisions of story that are edited in
                 # other active changesets
                 next_revisions_ids = self.story.target_reprint_revisions\
@@ -6487,7 +6488,8 @@ class StoryRevision(Revision):
                 # revisions of story that are not currently not being edited
                 old_revisions = self.story.target_reprint_revisions\
                         .filter(next_revision=None,
-                                changeset__state=states.APPROVED)
+                                changeset__state=states.APPROVED) \
+                        .exclude(deleted=True)
                 next_revisions_ids = []
             old_revisions_ids = old_revisions.values_list('id', flat=True)
             revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
@@ -6541,7 +6543,8 @@ class StoryRevision(Revision):
                 old_revisions = self.story.origin_reprint_revisions\
                         .filter(next_revision=None)\
                         .exclude(changeset__id=self.changeset_id)\
-                        .exclude(changeset__state=states.DISCARDED)
+                        .exclude(changeset__state=states.DISCARDED) \
+                        .exclude(deleted=True)
                 # reprint revisions of story that are edited in
                 # other active changesets
                 next_revisions_ids = self.story.origin_reprint_revisions\
@@ -6553,7 +6556,8 @@ class StoryRevision(Revision):
                 # revisions of story that are not currently not being edited
                 old_revisions = self.story.origin_reprint_revisions\
                         .filter(next_revision=None,
-                                changeset__state=states.APPROVED)
+                                changeset__state=states.APPROVED) \
+                        .exclude(deleted=True)
                 next_revisions_ids = []
             old_revisions_ids = old_revisions.values_list('id', flat=True)
             revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
