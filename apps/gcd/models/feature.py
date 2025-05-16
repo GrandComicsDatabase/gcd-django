@@ -255,9 +255,8 @@ class FeatureTable(tables.Table):
         return (query_set, True)
 
     def render_name(self, record):
-        name_link = '<a href="%s">%s</a> (%s)' % (record.get_absolute_url(),
-                                                  esc(record.name),
-                                                  record.language.name)
+        name_link = '<a href="%s">%s</a>' % (record.get_absolute_url(),
+                                             esc(record))
         return mark_safe(name_link)
 
     def value_name(self, value):

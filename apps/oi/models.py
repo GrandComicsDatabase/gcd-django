@@ -5715,6 +5715,8 @@ class StoryRevision(Revision):
 
     def _reset_values(self):
         # TODO: undo StoryCredit and StoryCharacter changes
+        # TODO: remove added StoryCredit, StoryCharacter
+        # and StoryGroup revisions
         if self.deleted:
             # users can edit story revisions before deleting them.
             # ensure that the final deleted revision matches the

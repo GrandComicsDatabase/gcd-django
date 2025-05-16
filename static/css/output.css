@@ -1171,6 +1171,12 @@ a:hover {
   background-color: rgb(248 113 113 / var(--tw-bg-opacity));
 }
 
+.comparison_highlight {
+  --tw-bg-opacity: 1;
+  background-color: rgb(250 204 21 / var(--tw-bg-opacity));
+  padding: 0.25rem;
+}
+
 .cover-is-marked {
   --tw-bg-opacity: 1;
   background-color: rgb(214 211 209 / var(--tw-bg-opacity));
@@ -2769,6 +2775,11 @@ select {
 .\[\&\:not\(\:hover\)\]\:text-white:not(:hover) {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
+}
+
+.\[\&\>a\]\:px-2>a {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .\[\&\>a\]\:visited\:text-link-gcd:visited>a {

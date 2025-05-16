@@ -15,10 +15,10 @@ Reviewing :: {{ revision }}
 </h1>
 
 {% if revision.is_replacement %}
-<table id="covers">
+<table class="w-full">
 <tr>
-<td class="cover_grid{% if old_cover.marked %} marked{% endif %}">
-  <h2>cover to be replaced</h2>
+<td class="w-1/2 align-top {% if old_cover.marked %} marked{% endif %}">
+  <h2 class="justify-center text-center">cover to be replaced</h2>
   <div class="justify-center text-center">
     <a class="inline-block" href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_tag }}</a>
   {% if old_cover_width %}
@@ -31,7 +31,7 @@ Reviewing :: {{ revision }}
     <a href="{{ old_cover.issue.get_absolute_url }}">{{ old_cover_front_tag }}</a>
   {% endif %}
     <div>
-      Cover <a href="{% url "compare" id=old_cover.changeset.id %}">
+      Cover <a href="{% url 'compare' id=old_cover.changeset.id %}">
       {% localize off %}
       uploaded on {{ old_cover.created }}</a> by <br>
       {% endlocalize %}
@@ -40,8 +40,8 @@ Reviewing :: {{ revision }}
   </div>
 </td>
 
-<td class="cover_grid{% if revision.marked %} marked{% endif %}">
-<h2> uploaded replacement cover </h2>
+<td class="w-1/2 align-top {% if revision.marked %} marked{% endif %}">
+<h2 class="justify-center text-center"> uploaded replacement cover </h2>
 {% else %}
   {% if revision.deleted %}
 <h2 class='important' style="text-align:center"> cover deletion </h2>
@@ -76,7 +76,7 @@ Reviewing :: {{ revision }}
   <div>
 {% if revision.deleted %}
     <div>
-      Cover <a href="{% url "compare" id=old_cover.changeset.id %}">
+      Cover <a href="{% url 'compare' id=old_cover.changeset.id %}">
       {% localize off %}
       uploaded on {{ old_cover.created }}</a> by <br>
       {% endlocalize %}
@@ -140,14 +140,14 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
   {% else %}
 <h2> current cover{{ current_covers|length|pluralize }} </h2>
   {% endif %}
-<table id="covers">
+<table>
   <tr>
   {% for cover, tag in current_covers %}
-    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
+    <td class="justify-center text-center {% if cover.marked %} marked{% endif %}">
       <a href="{{ cover.issue.get_absolute_url }}">{{ tag }}</a>
       <br><span class="cover_links">{{ cover.issue.full_descriptor }}</span><br>
        <span class="cover_links">Zoom:
-<a class="new_window" href="{{ cover.issue.get_absolute_url }}cover/4" target="_blank">Large<span>opens in new window</span></a></span> <br>
+<a class="new_window" href="{{ cover.issue.get_absolute_url }}cover/4" target="_blank">Large</a></span> <br>
    </td>
     {% if forloop.counter|divisibleby:table_width %}
   </tr>
@@ -160,11 +160,11 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 
 {% if pending_covers %}
 <h2> pending cover{{ pending_covers|length|pluralize }} </h2>
-<table id="covers">
+<table>
   <tr>
   {% for cover, tag in pending_covers %}
-    <td class="cover_grid{% if cover.marked %} marked{% endif %}">
-      <a class="inline-block" href="{% url "compare" id=cover.changeset.id %}">{{ tag }}</a>
+    <td class="justify-center text-center {% if cover.marked %} marked{% endif %}">
+      <a class="inline-block" href="{% url 'compare' id=cover.changeset.id %}">{{ tag }}</a>
       <br>
       <div class="cover_caption">
         {% localize off %}
@@ -187,7 +187,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 <h2> pending variant add{{ pending_variant_adds|length|pluralize }} </h2>
   <ul>
   {% for variant in pending_variant_adds %}
-    <li><a href="{% url "compare" id=variant.id %}">{{ variant }}</a>
+    <li><a href="{% url 'compare' id=variant.id %}">{{ variant }}</a>
   {% endfor %}
   </ul>
 </div>
@@ -198,7 +198,7 @@ Cover {% if revision.deleted %}deleted{% else %}uploaded{% endif %} on {{ revisi
 <h2> Existing variant{{ variants_without_covers|length|pluralize }} with covers </h2>
   <ul>
   {% for variant in variants_without_covers %}
-    <li><a href="{% url "show_issue" issue_id=variant.id %}">{{ variant }}</a>
+    <li><a href="{% url 'show_issue' issue_id=variant.id %}">{{ variant }}</a>
   {% endfor %}
   </ul>
 </div>

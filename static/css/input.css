@@ -149,6 +149,10 @@
     @apply bg-red-400;
   }
 
+  .comparison_highlight {
+    @apply bg-yellow-400 p-1;
+  }
+
   .cover-is-marked {
     @apply bg-stone-300;
   }
