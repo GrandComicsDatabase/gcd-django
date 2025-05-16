@@ -40,10 +40,10 @@ Reviewing :: {{ revision }}
     <h2 class="justify-center text-center"> uploaded replacement image </h2>
 {% else %}
   {% if revision.deleted %}
-<h2 class='important' style="text-align:center"> image deletion </h2>
+<h2 class="justify-center text-center"><span class='deleted px-2'>image deletion</span> </h2>
   {% else %}
     {% if double_upload %}
-    <h3 class='important' style="text-align:center">{{ double_upload }}</h3>
+    <h3 class="justify-center text-center"><span class='deleted px-2'>{{ double_upload }}</span></h3>
     {% endif %}
   {% endif %}
 {% endif %}
