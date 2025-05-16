@@ -1,4 +1,4 @@
-<form id="review" action="{% url "process" id=changeset.id %}" method="POST">
+<form id="review" action="{% url 'process' id=changeset.id %}" method="POST">
   {% csrf_token %}
   <div>
   <label for="comments">Comment:</label> <br>
@@ -57,7 +57,6 @@
   <button class="btn-blue-editing inline" type="submit" name="release">Unassign</button>
 {% endif %}
 
-<button class="btn-blue-editing inline" type="submit" name="add_comment">Add Comment</button>
 <button class="btn-blue-editing inline" type="submit" name="add_comment">Add Comment</button>
 </form>
 
