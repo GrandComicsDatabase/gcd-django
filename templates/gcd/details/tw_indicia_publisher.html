@@ -68,7 +68,7 @@
 {% if not page.has_previous %}
   {% if indicia_publisher.notes %}
   <h3 class="mt-2">Notes:</h3>
-    {{ indicia_publisher.notes|urlizetrunc:75|linebreaksbr }}
+    {{ indicia_publisher.notes|markdown }}
   {% endif %}
 {% endif %}
 {% render_table table %}
