@@ -279,6 +279,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 MARKDOWNX_MARKDOWN_EXTENSIONS = [
+    'markdown.extensions.nl2br',
     'apps.gcd.markdown_extension:TailwindExtension',
     'apps.gcd.markdown_extension:GCDFieldLinkNameExtension',
     'apps.gcd.markdown_extension:GCDFieldExtension',
