@@ -14,9 +14,9 @@
   {% comment %} this css doesn't like compressing {% endcomment %}
   {% if revision.source_name == 'issue' %}
 <link rel="stylesheet" type="text/css"
-      href="{% static "jquery/css/msdropdown/dd.css" %}"/>
+      href="{% static 'jquery/css/msdropdown/dd.css' %}"/>
   {% endif %}
-<script type="text/javascript" src="{% static "js/htmx.min.js" %}"></script>
+<script type="text/javascript" src="{% static 'js/htmx.min.js' %}"></script>
 {% endblock %}
 
 {% block view_body %}
@@ -29,7 +29,7 @@
 </h1>
 
 <div class="edit">
-  <form action="{% url "process_revision" model_name=revision.source_name id=revision.id %}" method="POST">
+  <form action="{% url 'process_revision' model_name=revision.source_name id=revision.id %}" method="POST">
   {% csrf_token %}
     <table class="editing">
   {% if revision.source_name == 'story' or revision.source_name == 'issue' %}
@@ -42,12 +42,11 @@
     {% include 'oi/bits/comments.html' %}
   {% endwith %}
 
-    <button><input class="btn-blue-editing" type="submit" name="save" value="Save And Continue Editing"></button>
-    <button><input class="btn-blue-editing" type="submit" name="save_return" value="Save And Return To Changeset"></button>
-    <button><input class="btn-blue-editing" type="submit" name="cancel_return"
-         value="Return To Changeset Without Saving"></button>
+    <button class="btn-blue-editing inline" type="submit" name="save">Save And Continue Editing</button>
+    <button class="btn-blue-editing inline" type="submit" name="save_return">Save And Return To Changeset</button>
+    <button class="btn-blue-editing inline" type="submit" name="cancel_return">Return To Changeset Without Saving</button>
   {% if revision.source_name == 'story' and revision.old_credits %}
-    <button><input class="btn-blue-editing" type="submit" name="save_migrate" value="Save And Migrate Credits"></button>
+    <button class="btn-blue-editing inline" type="submit" name="save_migrate">Save And Migrate Credits</button>
   {% endif %}
   </form>
 </div>
