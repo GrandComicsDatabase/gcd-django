@@ -35,7 +35,7 @@
 
   {% if issue_revision.variant_of or issue_revision.issue.get_prev_next_issue.0 or issue_revision.after %}
   <div class="flex justify-between border border-gray-300">
-    <div class="my-1">
+    <div>
     {% if issue_revision.issue.get_prev_next_issue.0 %}
       <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">
         <button class="btn-blue-editing inline no-underline">Compare With & Copy From Preceding Issue</button>
@@ -46,7 +46,7 @@
       </a>
     {% endif %}
     </div>
-    <div class="my-1">
+    <div>
     {% if issue_revision.variant_of %}
       <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.id %}">
         <button class="btn-blue-editing inline">Compare With & Copy From Base Issue</button>
@@ -103,8 +103,8 @@
   {% if issue_revision.source and issue_revision.story_set.count > 1 or issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
   <div class="flex justify-between border border-gray-300">
     {% if issue_revision.source and issue_revision.story_set.count > 1 %}
-    <form class="my-1" method="GET"
-          action="{% url "reorder_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
+    <form method="GET"
+          action="{% url 'reorder_stories' issue_id=issue_revision.source.id changeset_id=changeset.id %}">
       <button class="btn-blue-editing inline"><input type="submit" id="reorder_issue_{{ issue.id }}"
            name="reorder_issue_{{ issue.id }}"
            value="Reorder Issue Sequences"></button>
@@ -114,7 +114,7 @@
     {% endif %}
     {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
     <form method="GET"
-          action="{% url "add_variant_to_issue_revision" issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+          action="{% url 'add_variant_to_issue_revision' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
       <button class="btn-blue-editing"><input type="submit" id="add_variant_to_issue_revision_{{ issue_revision.id }}"
            name="add_variant_to_issue_revision_{{ issue_revision.id }}"
            value="Add Variant Issue"></button>
@@ -126,13 +126,13 @@
   {% if issue_revision.source and changeset.change_type == CTYPES.issue %}
   <div class="flex justify-between border border-gray-300">
     <form method="GET"
-          action="{% url "list_issue_reprints" id=issue_revision.id %}">
+          action="{% url 'list_issue_reprints' id=issue_revision.id %}">
       <button  class="btn-blue-editing"><input type="submit" id="list_reprints_{{ issue_revision.id }}"
            name="list_issue_reprints_{{ issue_revision.id }}" value="Edit Issue & Sequence Reprint Links"></button>
     </form>
     {% if issue_revision.can_add_reprints %}
       <form method="GET"
-            action="{% url "add_issue_reprint" issue_id=issue_revision.id changeset_id=changeset.id %}">
+            action="{% url 'add_issue_reprint' issue_id=issue_revision.id changeset_id=changeset.id %}">
         <button class="btn-blue-editing"><input type="submit" value="Add Reprint"></button>
       </form>
     {% endif %}
@@ -154,7 +154,7 @@
 <div class="mt-2">
       {{ cover.cover|cover_image_tag:'1, moved_cover' }}
 Cover is moved from {{ cover.issue }}.
-  <form action="{% url "undo_move_cover" id=changeset.id cover_id=cover.id %}" method="POST">
+  <form action="{% url 'undo_move_cover' id=changeset.id cover_id=cover.id %}" method="POST">
       {% csrf_token %}
     <button class="btn-blue-editing inline"><input type="submit" value="Undo Cover Move"></button>
   </form>
@@ -163,7 +163,7 @@ Cover is moved from {{ cover.issue }}.
   {% endif %}
   {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}
 <div class="my-2 ">
-  <form action="{% url "move_cover" id=changeset.id %}" method="GET">
+  <form action="{% url 'move_cover' id=changeset.id %}" method="GET">
     <button class="btn-blue-editing inline"><input type="submit" value="Move Covers Between Both Issues"></button>
   </form>
 </div>
@@ -281,7 +281,7 @@ Cover is moved from {{ cover.issue }}.
     {% if not changeset.storyrevisions.count %}
   <tr class="max-sm:flex max-sm:flex-col border border-gray-300">
     <form class="" method="POST" enctype="multipart/form-data"
-                  action="{% url "import_issue" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
+                  action="{% url 'import_issue' issue_id=issue_revision.source.id changeset_id=changeset.id %}">
         {% csrf_token %}
       <td>
         Select file: <input type="file" name="flatfile">
@@ -298,7 +298,7 @@ Cover is moved from {{ cover.issue }}.
   {% endif %}
   <tr class="border border-gray-300 max-sm:flex max-sm:flex-col">
     <form class="changeset" method="POST" enctype="multipart/form-data"
-         action="{% url "import_stories" issue_id=issue_revision.source.id changeset_id=changeset.id %}">
+         action="{% url 'import_stories' issue_id=issue_revision.source.id changeset_id=changeset.id %}">
     {% csrf_token %}
       <td>
         Select file: <input type="file" name="flatfile">
@@ -322,7 +322,7 @@ Cover is moved from {{ cover.issue }}.
   {% endif %}
 {% endwith %}
 <p>
-  <a href="{% url "compare" id=changeset.id %}">Compare Changes</a>
+  <a href="{% url 'compare' id=changeset.id %}">Compare Changes</a>
 {% for issue_revision in changeset.issuerevisions.all %}
   {% if not forloop.first %}&nbsp;{% endif %} | <a class="new_window" href="{% url "preview_revision" model_name='issue' id=issue_revision.id %}" target=_blank>Preview
   {% if issue_revision.variant_of %} (Variant) {% endif %}</a>
