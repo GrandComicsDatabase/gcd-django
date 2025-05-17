@@ -345,7 +345,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
                 'ghost work.',
-      label='<button hx-get="/select/creator/by_detail/" '
+      label='<button hx-get="/select/creator/by_detail/" type="button" '
             'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
             'hx-on="htmx:afterRequest: setSelectValue(event)" '
             'hx-swap="none" class="mx-0 btn-blue-editing inline">To Official'
