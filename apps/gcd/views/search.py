@@ -129,10 +129,10 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.select_related(*related)
             things = things.distinct()
 
-            if (sort == ORDER_ALPHA):
-                order_by = 'name'
-            elif (sort == ORDER_CHRONO):
+            if sort == ORDER_CHRONO:
                 order_by = 'year_began'
+            else:
+                order_by = 'name'
 
             if class_ is Publisher:
                 table_format = PublisherSearchTable
@@ -173,12 +173,13 @@ def generic_by_name(request, name, q_obj, sort,
 
         else:
             things = sqs
-            if (sort == ORDER_ALPHA):
-                things = things.order_by('sort_name',
-                                         'year')
-            elif (sort == ORDER_CHRONO):
+            if sort == ORDER_CHRONO:
                 things = things.order_by('year',
                                          'sort_name')
+            else:
+                things = things.order_by('sort_name',
+                                         'year')
+
         # query_string for the link to the advanced search
         query_val['target'] = base_name
         if class_ is Publisher:
@@ -290,20 +291,21 @@ def generic_by_name(request, name, q_obj, sort,
                 things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
-            if (sort == ORDER_ALPHA):
-                things = things.order_by(sort_name, sort_year)
-            elif (sort == ORDER_CHRONO):
+            if sort == ORDER_CHRONO:
                 things = things.order_by(sort_year, sort_name)
+            else:
+                things = things.order_by(sort_name, sort_year)
             things = things.distinct()
         else:
             sort_year = "year"
             things = sqs
-            if (sort == ORDER_ALPHA):
-                things = things.order_by('sort_name',
-                                         sort_year)
-            elif (sort == ORDER_CHRONO):
+            if sort == ORDER_CHRONO:
                 things = things.order_by(sort_year,
                                          'sort_name')
+            else:
+                things = things.order_by('sort_name',
+                                         sort_year)
+
         display_name = class_.__name__
         base_name = display_name.lower()
         item_name = display_name.lower()
@@ -331,10 +333,10 @@ def generic_by_name(request, name, q_obj, sort,
             things = class_.objects.exclude(deleted=True).filter(q_obj)
             if related:
                 things = things.select_related(*related)
-            if (sort == ORDER_ALPHA):
-                things = things.order_by(sort_name, sort_year)
-            elif (sort == ORDER_CHRONO):
+            if (sort == ORDER_CHRONO):
                 things = things.order_by(sort_year, sort_name)
+            else:
+                things = things.order_by(sort_name, sort_year)
             things = things.distinct()
         else:
             sort_name = "name"
@@ -343,12 +345,13 @@ def generic_by_name(request, name, q_obj, sort,
                 things = things.order_by('sort_name')
             else:
                 sort_year = 'year'
-                if (sort == ORDER_ALPHA):
-                    things = things.order_by(sort_name,
-                                             sort_year)
-                elif (sort == ORDER_CHRONO):
+                if sort == ORDER_CHRONO:
                     things = things.order_by(sort_year,
                                              sort_name)
+                else:
+                    things = things.order_by(sort_name,
+                                             sort_year)
+
         display_name = class_.__name__
         base_name = display_name.lower()
         item_name = display_name.lower()
@@ -506,10 +509,10 @@ def generic_by_name(request, name, q_obj, sort,
                   target=unquote_plus(credit))
 
             if not request.GET.get('sort', None):
-                if sort == ORDER_ALPHA:
-                    table.order_by = 'issue'
-                elif sort == ORDER_CHRONO:
+                if sort == ORDER_CHRONO:
                     table.order_by = 'publication_date'
+                else:
+                    table.order_by = 'issue'
 
             context = {'item_name': item_name,
                        'plural_suffix': plural_suffix,
