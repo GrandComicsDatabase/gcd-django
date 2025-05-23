@@ -21,6 +21,12 @@ GCD :: {{ user.indexer }} :: Editor Log
 {% block view_body %}
 <div class="queues">
   <h1> Editor Log </h1>
+  <form class="inline" method="get">
+  {{ filter_form}}
+    <button class="btn btn-blue ml-1 mb-1 h-8">
+      <input type="submit" name="submit" value="Filter Changes">
+    </button>
+  </form>
   {% with no_approver=True %}
     {% include "oi/bits/activity_queues.html" %}
   {% endwith %}

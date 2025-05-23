@@ -20,6 +20,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.contenttypes.models import ContentType
 
+from django_filters import FilterSet, MultipleChoiceFilter
+
 from apps.stddata.models import Country
 
 from apps.indexer.views import ViewTerminationError, render_error
@@ -5474,18 +5476,18 @@ def show_queue(request, queue_name):
     return response
 
 
+class ChangesetTypeFilter(FilterSet):
+    choices = [[v, k] for k, v in CTYPES.items() if k not in ['unknown',]]
+    change_type = MultipleChoiceFilter(choices=choices,
+                                       label='Change Type')
+
+    class Meta:
+        model = Changeset
+        fields = ['change_type',]
+
+
 @login_required
 def show_approved(request):
-    from django_filters import FilterSet, MultipleChoiceFilter
-    choices = [[v, k] for k, v in CTYPES.items() if k not in ['unknown',]]
-
-    class ChangesetTypeFilter(FilterSet):
-        change_type = MultipleChoiceFilter(choices=choices,
-                                           label='Change Type')
-
-        class Meta:
-            model = Changeset
-            fields = ['change_type',]
 
     changes = Changeset.objects.order_by('-modified')\
                        .filter(state=(states.APPROVED), indexer=request.user)
@@ -5526,12 +5528,15 @@ def show_commented(request):
                                .distinct().order_by('-last_remark')\
                                .select_related('approver__indexer',
                                                'indexer__indexer')
+    filter = ChangesetTypeFilter(request.GET, changes)
+    changes = filter.qs
 
     return paginate_response(
       request,
       changes,
       'oi/queues/commented.html',
-      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'commented'},
+      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'commented',
+       'filter_form': filter.form,},
       per_page=50)
 
 
@@ -5544,11 +5549,15 @@ def show_editor_log(request):
                                comments__new_state__in=changed_states,
                                comments__commenter=request.user)\
                        .exclude(indexer=request.user).distinct()
+    filter = ChangesetTypeFilter(request.GET, changes)
+    changes = filter.qs
+
     return paginate_response(
       request,
       changes,
       'oi/queues/editor_log.html',
-      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'editor_log'},
+      {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'editor_log',
+       'filter_form': filter.form,},
       per_page=50)
 
 

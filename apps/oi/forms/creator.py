@@ -239,6 +239,8 @@ class CreatorRevisionForm(BaseForm):
                   "variations."
                   "<li>One of the names has to be selected as the GCD "
                   "official name by selecting 'Is official name'.</li>"
+                  "<li>An existing GCD official name cannot be deleted, "
+                  "but it can be changed. The delete is a second change.</li>"
                   "<li>For each name the given and family name(s) are "
                   "recorded.</li> For alphabetical sorting we use the "
                   "sort name, which often is 'family name, given name'."
