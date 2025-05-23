@@ -402,6 +402,8 @@ $(function() {
     editingField.bind('input', function () {
         var migrate_button = $("[name='save_migrate']");
         migrate_button.removeAttr("disabled");
+        migrate_button.removeClass('btn-blue-disabled px-2 py-1');
+        migrate_button.addClass('btn-blue-editing');
     });
 
     // Add brand emblem images
