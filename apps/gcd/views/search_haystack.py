@@ -43,6 +43,8 @@ class GcdNameQuery(AutoQuery):
                                    .replace(']', '\]')\
                                    .replace('{', '\{')\
                                    .replace('}', '\}')\
+                                   .replace(':', '\:')\
+                                   .replace('!', '\!')\
                                    .replace('/', ' ')
         if ((query_string[0] == '"' and query_string[-1] == '"') or
            (query_string[0] == "'" and query_string[-1] == "'")):
