@@ -631,15 +631,16 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
     ''' generate reprint link to_issue'''
 
     if only_number:
-        link = ', <a href="%s">%s</a>' % (issue.get_absolute_url(),
-                                          esc(issue.display_number))
+        link = ', <a href="%s">%s' % (issue.get_absolute_url(),
+                                      esc(issue.display_number))
     else:
-        link = '%s %s <a href="%s">%s</a>' % \
+        link = '%s %s <a href="%s">%s' % \
           (get_country_flag(issue.series.country), from_to,
            issue.get_absolute_url(), esc(issue.full_name()))
 
     if issue.publication_date:
         link += " (" + esc(issue.publication_date) + ")"
+    link += '</a>'
     if notes:
         link = '%s [%s]' % (link, esc(notes))
     if li and not only_number:
@@ -654,26 +655,27 @@ def generate_reprint_link_sequence(story, issue, from_to, notes=None, li=True,
     if only_number:
         if story.sequence_number == 0 and \
            story.issue.variant_cover_status == 3:
-            link = ', <a href="%s#%d">%s</a>' % (
+            link = ', <a href="%s#%d">%s' % (
               issue.get_absolute_url(),
               story.id,
               esc(issue.display_full_descriptor))
         else:
-            link = ', <a href="%s#%d">%s</a>' % (issue.get_absolute_url(),
-                                                 story.id,
-                                                 esc(issue.display_number))
+            link = ', <a href="%s#%d">%s' % (issue.get_absolute_url(),
+                                             story.id,
+                                             esc(issue.display_number))
     elif story.sequence_number == 0:
-        link = '%s %s <a href="%s#%d">%s</a>' % \
+        link = '%s %s <a href="%s#%d">%s' % \
           (get_country_flag(issue.series.country), from_to,
            issue.get_absolute_url(), story.id,
            esc(issue.full_name()))
     else:
-        link = '%s %s <a href="%s#%d">%s</a>' % \
+        link = '%s %s <a href="%s#%d">%s' % \
           (get_country_flag(issue.series.country), from_to,
            issue.get_absolute_url(), story.id,
            esc(issue.full_name(variant_name=False)))
     if issue.publication_date:
         link = "%s (%s)" % (link, esc(issue.publication_date))
+    link += '</a>'
     if notes:
         link = '%s [%s]' % (link, esc(notes))
     if li and not only_number:
