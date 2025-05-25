@@ -96,16 +96,20 @@
     {% endif %}
     {% if gcd_name.given_name %}
       <strong>Given name</strong>: {{ gcd_name.given_name }}
-{% endif %}
-{% if gcd_name.family_name %}
+    {% endif %}
+    {% if gcd_name.family_name %}
       <strong>Family name</strong>: {{ gcd_name.family_name }}<br>
-{% endif %}
-  {% if creator.disambiguation %}
-      <strong>Disambiguation:</strong> {{ creator.disambiguation }}
-  {% endif %}
+    {% endif %}
     </li>
-{% endif %}
+  {% endif %}
   </ul>
+  {% if creator.disambiguation %}
+  <ul class="object-page-numbered-list list-disc">
+    <li>
+      <strong>Disambiguation:</strong> {{ creator.disambiguation }}
+    </li>
+  </ul>
+  {% endif %}
 {% if other_names %}
   <h3>Other Names:</h3>
   <ol class="object-page-numbered-list">
