@@ -137,13 +137,23 @@ class TailwindTreeProcessor(Treeprocessor):
     """Walk the root node and modify any discovered tag"""
 
     classes = {
-        "p": "pb-4 text-normal",
+        "p": "pt-4",
         "ul": "list-disc list-outside ps-8 pb-4",
         "ol": "list-decimal list-outside ps-8 pb-4",
     }
 
     def run(self, root):
+        # Keep track of which tags we've already seen
+        seen_tags = set()
+
         for node in root.iter():
+            # Only apply classes if this is not the first appearance of the tag
             tag_classes = self.classes.get(node.tag)
             if tag_classes:
+                # Skip the first occurrence of this tag type
+                if node.tag not in seen_tags:
+                    seen_tags.add(node.tag)
+                    continue
+
+                # Apply classes to subsequent occurrences
                 node.attrib["class"] = tag_classes
