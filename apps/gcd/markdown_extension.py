@@ -138,8 +138,8 @@ class TailwindTreeProcessor(Treeprocessor):
 
     classes = {
         "p": "pt-4",
-        "ul": "list-disc list-outside ps-8 pb-4",
-        "ol": "list-decimal list-outside ps-8 pb-4",
+        "ul": "list-disc list-outside ps-8",
+        "ol": "list-decimal list-outside ps-8",
     }
 
     def run(self, root):
@@ -151,7 +151,7 @@ class TailwindTreeProcessor(Treeprocessor):
             tag_classes = self.classes.get(node.tag)
             if tag_classes:
                 # Skip the first occurrence of this tag type
-                if node.tag not in seen_tags:
+                if node.tag == 'p' and node.tag not in seen_tags:
                     seen_tags.add(node.tag)
                     continue
 
