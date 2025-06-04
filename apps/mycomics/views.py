@@ -596,6 +596,12 @@ def create_collection_item(issue, collection):
     if collection.own_used:
         collected.own = collection.own_default
         collected.save()
+    if collection.location_used:
+        collected.location = collection.location_default
+        collected.save()
+    if collection.purchase_location_used:
+        collected.purchase_location = collection.purchase_location_default
+        collected.save()
     return collected
 
 

@@ -72,7 +72,6 @@ class Collector(models.Model):
     default_currency = models.ForeignKey(Currency, on_delete=models.CASCADE,
                                          related_name='+',
                                          null=True, blank=True)
-
     objects = CollectorManager()
 
     def ordered_collections(self):
@@ -113,9 +112,17 @@ class Collection(models.Model):
                                          verbose_name="show sell data")
     location_used = models.BooleanField(default=False,
                                         verbose_name="show location")
+    location_default = models.ForeignKey(
+      'Location', on_delete=models.CASCADE, related_name='+',
+      null=True, blank=True, verbose_name="default location when "
+      "adding items to this collection")
     purchase_location_used = models.BooleanField(
       default=False,
       verbose_name="show purchase location")
+    purchase_location_default = models.ForeignKey(
+      'PurchaseLocation', on_delete=models.CASCADE, related_name='+',
+      null=True, blank=True, verbose_name="default purchase location when "
+      "adding items to this collection")
     own_used = models.BooleanField(default=False,
                                    verbose_name="show own/want status")
     own_default = models.BooleanField(

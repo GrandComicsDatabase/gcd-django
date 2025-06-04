@@ -11,6 +11,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.shortcuts import render
+from django.db.models import Count
 
 from .pagination import DiggPaginator
 from .alpha_pagination import AlphaPaginator
@@ -64,7 +65,16 @@ def index(request):
                               .exclude(birth_date__month__lte='')\
                               .exclude(bio='').order_by('-birth_date__month',
                                                         '-birth_date__day',
-                                                        'sort_name')
+                                                        'sort_name')[:100]
+    creators = list(creators.values_list('id', flat=True))
+    creators = Creator.objects.filter(id__in=creators)\
+                      .annotate(issue_count=Count(
+                        'creator_names__storycredit__story__issue',
+                        distinct=True))\
+                      .filter(issue_count__gt=10)\
+                      .order_by('-birth_date__month',
+                                '-birth_date__day',
+                                'sort_name')
 
     template_vars.update({
         'stats': stats,
@@ -97,7 +107,7 @@ class ResponsePaginator(object):
                 if page_num > self.p.num_pages:
                     page_num = self.p.num_pages
                 elif page_num < 1:
-                    page_num  = 1
+                    page_num = 1
             except ValueError:
                 if 'alpha_paginator' in self.vars and \
                   request.GET['page'][:2] == 'a_':
@@ -107,13 +117,12 @@ class ResponsePaginator(object):
                         if alpha_page_num > self.alpha_paginator.num_pages:
                             alpha_page_num = self.alpha_paginator.num_pages
                         elif alpha_page_num < 1:
-                            alpha_page_num  = 1
-                        alpha_page = \
-                          self.alpha_paginator.page(alpha_page_num)
+                            alpha_page_num = 1
+                        alpha_page = self.alpha_paginator.page(alpha_page_num)
                         self.vars['pagination_type'] = 'alpha'
                         self.vars['alpha_page'] = alpha_page
                         issue_count = self.alpha_paginator.number_offset
-                        for i in range(1,alpha_page_num):
+                        for i in range(1, alpha_page_num):
                             issue_count += \
                               self.alpha_paginator.page(i).count
                         page_num = int(issue_count/self.p.per_page) + 1

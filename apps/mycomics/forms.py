@@ -30,10 +30,18 @@ class CollectionForm(ModelForm):
         widgets = {'own_default': RadioSelect(
           choices=((None, "---"),
                    (True, "I own this comic."),
-                   (False, "I want this comic."))), }
-        widgets = {'for_sale_default': RadioSelect(
+                   (False, "I want this comic."))),
+                   'for_sale_default': RadioSelect(
           choices=((True, "comic is for sale"),
                    (False, "comic is not for sale"))), }
+
+    def __init__(self, *args, **kwargs):
+        super(CollectionForm, self).__init__(*args, **kwargs)
+        instance = kwargs['instance']
+        self.fields['location_default'].queryset = \
+            instance.collector.location_set.all()
+        self.fields['purchase_location_default'].queryset = \
+            instance.collector.purchaselocation_set.all()
 
     def clean(self):
         cd = self.cleaned_data
@@ -45,6 +53,17 @@ class CollectionForm(ModelForm):
         if cd['for_sale_default'] is True and cd['for_sale_used'] is False:
             raise ValidationError('To use "Default for sale status" the '
                                   '"Show for sale status" needs to be '
+                                  'activated.')
+
+        if cd['location_default'] is not None and cd['location_used'] is False:
+            raise ValidationError('To use "Default location" the '
+                                  '"Show location" needs to be '
+                                  'activated.')
+
+        if cd['purchase_location_default'] is not None and \
+           cd['purchase_location_used'] is False:
+            raise ValidationError('To use "Default purchase location" the '
+                                  '"Show purchase location" needs to be '
                                   'activated.')
 
 
