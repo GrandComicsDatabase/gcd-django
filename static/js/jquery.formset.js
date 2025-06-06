@@ -76,8 +76,8 @@
                 }
 
                 // Check if we're under the minimum number of forms - not to display delete link at rendering
-                if (!showDeleteLinks()){
-                    row.find('a.' + delCssSelector).hide();
+                if (!showDeleteLinks() || row.closest('tr').hasClass('no_delete')){
+                    row.find('a.' + delCssSelector).replaceWith('&nbsp;');
                 }
 
                 row.find('a.' + delCssSelector).click(function() {
