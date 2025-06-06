@@ -6,7 +6,7 @@
 {% endcomment %}
 {{ formset.non_form_errors }}
 {% for form in formset.forms %}
-<tr class="{% cycle 'row1' 'row2' %} formset_row-{{ formset.prefix }}">
+<tr class="{% cycle 'row1' 'row2' %} formset_row-{{ formset.prefix }} {% if form.no_delete %}no_delete{% endif %}">
   <td colspan="2">
     <table class="editing">
         {% comment %}

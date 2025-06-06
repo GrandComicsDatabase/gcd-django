@@ -75,7 +75,7 @@
   }
 
   .btn-blue-disabled {
-    @apply font-normal bg-stone-100 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center;
+    @apply font-normal bg-stone-100 text-gray-500 block max-sm:m-1 me-1 sm:mx-1 text-sm text-center rounded;
   }
 
   .btn-queue-action {

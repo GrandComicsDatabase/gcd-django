@@ -86,7 +86,7 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
                                                     .active_set().exists()\
                 or self.instance.creator_name_detail.issuecreditrevision_set\
                                                     .active_set().exists():
-                # TODO How can the 'remove'-link not be shown in this case ?
+                self.no_delete = True
                 self.fields['name'].help_text = \
                     'Creator names with existing credits cannot be removed.'
             if self.instance.creator_name_detail.storycredit_set.filter(
@@ -96,6 +96,9 @@ class CreatorNameDetailRevisionForm(forms.ModelForm):
                   'The name of a creator name with existing credits marked as'\
                   ' "is_credited" cannot be changed, nor can the creator name'\
                   ' be removed.'
+                self.no_delete = True
+            if self.instance.creator_name_detail.is_official_name:
+                self.no_delete = True
 
     def clean(self):
         cd = self.cleaned_data

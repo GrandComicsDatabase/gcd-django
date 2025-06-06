@@ -933,6 +933,7 @@ a:hover {
 .btn-blue-disabled {
   margin-inline-end: 0.25rem;
   display: block;
+  border-radius: 0.25rem;
   --tw-bg-opacity: 1;
   background-color: rgb(245 245 244 / var(--tw-bg-opacity));
   text-align: center;
@@ -2101,10 +2102,6 @@ a:hover {
 
 .pb-2 {
   padding-bottom: 0.5rem;
-}
-
-.pb-4 {
-  padding-bottom: 1rem;
 }
 
 .pe-1 {

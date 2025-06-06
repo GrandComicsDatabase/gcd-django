@@ -80,9 +80,11 @@ class CharacterNameDetailRevisionForm(forms.ModelForm):
             if self.instance.character_name_detail.storycharacter_set\
                                                   .filter(deleted=False)\
                                                   .count():
-                # TODO How can the 'remove'-link not be shown in this case ?
+                self.no_delete = True
                 self.fields['name'].help_text = \
                     'Character names with existing credits cannot be removed.'
+            if self.instance.character_name_detail.is_official_name:
+                self.no_delete = True
 
 
 class CharacterInlineFormSet(forms.BaseInlineFormSet):
@@ -91,6 +93,10 @@ class CharacterInlineFormSet(forms.BaseInlineFormSet):
         if form.instance.character_name_detail:
             if form.instance.character_name_detail.storycharacter_set\
                             .filter(deleted=False).count():
+                form.cleaned_data['DELETE'] = False
+                return False
+        if form.instance.character_name_detail:
+            if form.instance.character_name_detail.is_official_name:
                 form.cleaned_data['DELETE'] = False
                 return False
         return super(CharacterInlineFormSet, self)._should_delete_form(form)
@@ -181,6 +187,27 @@ class GroupNameDetailRevisionForm(forms.ModelForm):
     class Meta:
         model = GroupNameDetailRevision
         fields = model._base_field_list
+        widgets = {
+            'name': forms.TextInput(attrs={'autofocus': ''}),
+            }
+
+    def __init__(self, *args, **kwargs):
+        super(GroupNameDetailRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+        self.fields['sort_name'].help_text = "In the Western culture usually "\
+                                             " 'family name, given name'."
+
+        if self.instance.group_name_detail:
+            if self.instance.group_name_detail.storygroup_set\
+                                                  .filter(deleted=False)\
+                                                  .count():
+                self.no_delete = True
+                self.fields['name'].help_text = \
+                    'Group names with existing credits cannot be removed.'
+            if self.instance.group_name_detail.is_official_name:
+                self.no_delete = True
 
 
 class GroupInlineFormSet(forms.BaseInlineFormSet):
@@ -189,6 +216,10 @@ class GroupInlineFormSet(forms.BaseInlineFormSet):
         if form.instance.group_name_detail:
             if form.instance.group_name_detail.storygroup_set\
                             .filter(deleted=False).count():
+                form.cleaned_data['DELETE'] = False
+                return False
+        if form.instance.group_name_detail:
+            if form.instance.group_name_detail.is_official_name:
                 form.cleaned_data['DELETE'] = False
                 return False
         return super(GroupInlineFormSet, self)._should_delete_form(form)
