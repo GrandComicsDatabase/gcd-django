@@ -8299,9 +8299,8 @@ class ImageRevision(Revision):
         self.save()
 
     def __str__(self):
-        if self.source is None:
-            return 'Image for %s' % str(self.object)
-        return str(self.source)
+        return '%s for %s' % (self.type.description.capitalize(),
+                              str(self.object))
 
 
 class AwardRevision(Revision):
