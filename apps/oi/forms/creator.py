@@ -144,7 +144,7 @@ class CustomInlineFormSet(forms.BaseInlineFormSet):
                     raise forms.ValidationError(
                       "Name %s is entered twice, or already exists "
                       "with/without accents or umlauts." % cd['name'])
-            if 'DELETE' in cd and not cd['DELETE']:
+            if 'name' in cd and 'DELETE' in cd and not cd['DELETE']:
                 names.append(remove_diacritics(cd['name']))
         if gcd_official_count != 1:
             raise forms.ValidationError(
