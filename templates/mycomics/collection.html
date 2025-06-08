@@ -67,9 +67,12 @@
       <div class="list-group">
         <form method="get">
             {% bootstrap_form filter.form %}
-            <input type="submit" />
+            <input style="width: 100%;" class="btn btn-primary" type="submit" />
         </form>
       </div>
+      <a href="{% url 'edit_collection_items' collection.id %}?{{ extra_query_string }}">
+        <button type="button" class="btn btn-primary">{% trans "Edit Shown Items" %}
+      </button></a>
       <h3>{% trans "Collections" %}:</h3>
       <div class="list-group">
         {% for col_item in collection_list %}

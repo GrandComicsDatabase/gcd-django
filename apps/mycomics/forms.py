@@ -4,12 +4,6 @@ from apps.mycomics.models import Collector, Collection, CollectionItem, \
                                  Location, PurchaseLocation, ConditionGrade
 
 
-# TODO: Should not be reaching into OI form internals and importing an
-#       internal (leading underscore) function.  Should move the function
-#       if we need it more broadly.
-from apps.oi.forms.support import _clean_keywords
-
-
 class CollectorForm(ModelForm):
     class Meta:
         model = Collector
@@ -116,6 +110,10 @@ class CollectionItemForm(ModelForm):
             self.fields.pop('for_sale')
         if not collections.filter(signed_used=True).exists():
             self.fields.pop('signed')
+        if not collections.filter(digital_used=True).exists():
+            self.fields.pop('is_digital')
+        if not collections.filter(rating_used=True).exists():
+            self.fields.pop('rating')
         if not collections.filter(price_paid_used=True).exists():
             self.fields.pop('price_paid')
             self.fields.pop('price_paid_currency')
@@ -126,8 +124,91 @@ class CollectionItemForm(ModelForm):
             self.fields.pop('sell_price')
             self.fields.pop('sell_price_currency')
 
-    def clean_keywords(self):
-        return _clean_keywords(self.cleaned_data)
+
+class CollectionItemsForm(ModelForm):
+    class Meta:
+        model = CollectionItem
+        exclude = ('collections', 'issue', 'acquisition_date', 'sell_date')
+        widgets = {'own': Select(choices=((None, "---"),
+                                          (True, "I own this comic."),
+                                          (False, "I want this comic."))), }
+
+    def set_initial_field_if_common(self, items, field_name):
+        values = set(items.values_list(field_name, flat=True))
+        if len(values) == 1:
+            value = values.pop()
+            if value is not None and field_name in self.fields:
+                self.fields[field_name].initial = value
+
+    def __init__(self, user, *args, **kwargs):
+        collection = kwargs['collection']
+        kwargs.pop('collection')
+        items = kwargs['items']
+        kwargs.pop('items')
+        super(CollectionItemsForm, self).__init__(*args, **kwargs)
+        self.set_initial_field_if_common(items, 'notes')
+        self.fields.pop('keywords')
+
+        if collection.condition_used is not True:
+            self.fields.pop('grade')
+        else:
+            self.fields['grade'].queryset = ConditionGrade.objects.filter(
+              scale=user.grade_system)
+            self.set_initial_field_if_common(items, 'grade')
+        if collection.location_used is not True:
+            self.fields.pop('location')
+        else:
+            self.fields['location'].queryset = \
+                        Location.objects.filter(user=user)
+            self.set_initial_field_if_common(items, 'location')
+        if collection.purchase_location_used is not True:
+            self.fields.pop('purchase_location')
+        else:
+            self.fields['purchase_location'].queryset = \
+                        PurchaseLocation.objects.filter(user=user)
+            self.set_initial_field_if_common(items, 'purchase_location')
+        if collection.own_used is not True:
+            self.fields.pop('own')
+        else:
+            self.set_initial_field_if_common(items, 'own')
+        if collection.was_read_used is not True:
+            self.fields.pop('was_read')
+        else:
+            self.set_initial_field_if_common(items, 'was_read')
+        if collection.for_sale_used is not True:
+            self.fields.pop('for_sale')
+        else:
+            self.set_initial_field_if_common(items, 'for_sale')
+        if collection.signed_used is not True:
+            self.fields.pop('signed')
+        else:
+            self.set_initial_field_if_common(items, 'signed')
+        if collection.digital_used is not True:
+            self.fields.pop('is_digital')
+        else:
+            self.set_initial_field_if_common(items, 'is_digital')
+        if collection.rating_used is not True:
+            self.fields.pop('rating')
+        else:
+            self.set_initial_field_if_common(items, 'rating')
+        if collection.price_paid_used is not True:
+            self.fields.pop('price_paid')
+            self.fields.pop('price_paid_currency')
+        else:
+            self.set_initial_field_if_common(items, 'price_paid')
+            self.set_initial_field_if_common(items, 'price_paid_currency')
+        if collection.market_value_used is not True:
+            self.fields.pop('market_value')
+            self.fields.pop('market_value_currency')
+        else:
+            self.set_initial_field_if_common(items, 'market_value')
+            self.set_initial_field_if_common(items, 'market_value_currency')
+        if collection.sell_price_used is not True:
+            self.fields.pop('sell_price')
+            self.fields.pop('sell_price_currency')
+        else:
+            self.set_initial_field_if_common(items, 'sell_price')
+            self.set_initial_field_if_common(items, 'sell_price_currency')
 
 
 class CollectionSelectForm(Form):

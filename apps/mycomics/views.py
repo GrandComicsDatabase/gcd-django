@@ -28,6 +28,7 @@ from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
 from apps.select.views import store_select_data
 
 from apps.mycomics.forms import CollectionForm, CollectionItemForm, \
+                                CollectionItemsForm, \
                                 CollectionSelectForm, CollectorForm, \
                                 LocationForm, PurchaseLocationForm
 from apps.stddata.models import Date
@@ -41,7 +42,7 @@ INDEX_TEMPLATE = 'mycomics/index.html'
 COLLECTION_TEMPLATE = 'mycomics/collection.html'
 COLLECTION_SERIES_TEMPLATE = 'mycomics/collection_series.html'
 COLLECTION_LIST_TEMPLATE = 'mycomics/collections.html'
-COLLECTION_FORM_TEMPLATE = 'mycomics/collection_form.html'
+GENERIC_FORM_TEMPLATE = 'mycomics/generic_edit_form.html'
 COLLECTION_ITEM_TEMPLATE = 'mycomics/collection_item.html'
 COLLECTION_SUBSCRIPTIONS_TEMPLATE = 'mycomics/collection_subscriptions.html'
 MESSAGE_TEMPLATE = 'mycomics/message.html'
@@ -204,7 +205,9 @@ def edit_collection(request, collection_id=None):
     else:
         form = CollectionForm(instance=collection)
 
-    return render(request, COLLECTION_FORM_TEMPLATE, {'form': form})
+    return render(request, GENERIC_FORM_TEMPLATE, {'form': form,
+                                                   'heading':
+                                                   'Editing Collection'})
 
 
 @login_required
@@ -588,6 +591,90 @@ def save_item(request, item_id, collection_id):
                                          'collection_id': collection_id}))
 
     raise Http404
+
+
+@login_required
+def edit_collection_items(request, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+    if collection.collector != request.user.collector:
+        raise PermissionDenied
+
+    collector = collection.collector
+
+    items = collection.items.all().select_related('issue__series')
+    # filter by GET parameters to access selected items
+    f = CollectionItemFilter(request.GET, queryset=items,
+                             collection=collection)
+    items = f.qs
+
+    get_copy = request.GET.copy()
+    get_copy.pop('page', None)
+    if get_copy:
+        extra_query_string = '&%s' % get_copy.urlencode()
+    else:
+        extra_query_string = ''
+
+    if request.method == 'POST':
+        edit_form = CollectionItemsForm(collector,
+                                        request.POST,
+                                        collection=collection,
+                                        items=items)
+        edit_form_valid = edit_form.is_valid()
+
+        if edit_form_valid:
+            cd = edit_form.cleaned_data
+            # set field if no value for the item
+            # or override common value for all items of field
+            for field in cd:
+                # check initial on foreign key fields specially
+                if hasattr(cd[field], 'id') and cd[field] is not None:
+                    if edit_form.fields[field].initial:
+                        if cd[field].id != edit_form.fields[field].initial:
+                            for item in items:
+                                setattr(item, field, cd[field])
+                    else:
+                        if cd[field]:
+                            for item in items:
+                                if not getattr(item, field):
+                                    setattr(item, field, cd[field])
+                # handle regular fields
+                else:
+                    if edit_form.fields[field].initial:
+                        if cd[field] != edit_form.fields[field].initial:
+                            for item in items:
+                                setattr(item, field, cd[field])
+                    else:
+                        if cd[field]:
+                            for item in items:
+                                if not getattr(item, field):
+                                    setattr(item, field, cd[field])
+            for item in items:
+                item.save()
+
+            messages.success(request, _('Items saved.'))
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'view_collection',
+              kwargs={'collection_id': collection_id}) +
+              "?page=%d%s" % (1, extra_query_string))
+        else:
+            messages.error(request, _('Some data was entered incorrectly.'))
+    else:
+        edit_form = CollectionItemsForm(collector, collection=collection,
+                                        items=items)
+
+    help_text = '<h3>This is new functionality being <b>TESTED</b>.</h3>' \
+                'You can edit the selected %d items from the collection %s. ' \
+                'You can change the values of the fields and save them. ' \
+                '</p><p>Values already set for an item will not be changed. ' \
+                '<br><b>Only</b> if all items have <b>same value</b>, then ' \
+                'there is a value pre-filled, and changing it will ' \
+                '<b>override</b> the value for all items.' % (items.count(),
+                                                              collection.name)
+
+    return render(request, GENERIC_FORM_TEMPLATE, {'form': edit_form,
+                                                   'help_text': help_text,
+                                                   'heading':
+                                                   'Editing Collection Items'})
 
 
 def create_collection_item(issue, collection):

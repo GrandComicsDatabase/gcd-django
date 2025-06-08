@@ -4,13 +4,19 @@
 
 {% block content %}
   <div class="page-header middle-header">
-    <h1>{% trans "Editing collection" %}</h1>
+    <h1>{{ heading }}</h1>
   </div>
 
-  <form action="." method="POST">
+  {% if help_text %}
+    <p>{{ help_text|safe }}</p>
+  {% endif %}
+
+  {% bootstrap_messages %}
+
+  <form action="" method="POST">
     {% csrf_token %}
     {% bootstrap_form form %}
-    <input type="submit" class="btn btn-primary" name="{% trans "Submit" %}" value="{% trans "Submit" %}">
+    <input type="submit" class="btn btn-primary" name="{% trans 'Submit' %}" value="{% trans 'Submit' %}">
   </form>
 
 {% endblock %}

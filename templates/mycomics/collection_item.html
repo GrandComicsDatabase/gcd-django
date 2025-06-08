@@ -132,8 +132,8 @@
       {% if collection.digital_used and item.is_digital %}
         {% trans "Issue is in digital form." %}<br>
       {% endif %}
-      {% if item.notes %}{{ item.notes }}<hr>{% endif %}
-      {% if item.keywords.count %}{% trans "Tags: " %}{{ item|show_keywords_comma }}<hr>{% endif %}
+      {% if item.notes %}{% trans "Notes: " %}{{ item.notes }}<br>{% endif %}
+      {% if item.keywords.count %}{% trans "Tags: " %}{{ item|show_keywords_comma }}<br>{% endif %}
       {% if collection.location_used %}
         {% trans "Location: " %}{{ item.location|default:'-' }}<br>
       {% endif %}
