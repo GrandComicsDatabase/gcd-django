@@ -211,7 +211,9 @@ def generic_by_name(request, name, q_obj, sort,
         things = things.distinct()
         if class_ == Feature:
             things = things.annotate(issue_count=Count(
-                    'story__issue', distinct=True))
+                    'story__issue',
+                    filter=Q(story__deleted=False),
+                    distinct=True))
             order_by = 'name'
             if sort == ORDER_CHRONO:
                 order_by = 'year_first_published'
@@ -231,6 +233,7 @@ def generic_by_name(request, name, q_obj, sort,
             things = things.distinct()
             things = things.annotate(issue_count=Count(
                 'character_names__storycharacter__story__issue',
+                filter=Q(character_names__storycharacter__deleted=False),
                 distinct=True))
             filter = FilterForLanguage(request.GET, things,
                                        language='language')
@@ -1051,7 +1054,7 @@ def series_search_hx(request):
 def series_by_name(request, series_name='', sort=ORDER_ALPHA,
                    template='gcd/search/series_list.html', table_inline=False):
     if settings.USE_ELASTICSEARCH and not series_name == '':
-        sqs = SearchQuerySet().filter(title_search=GcdNameQuery(series_name)) \
+        sqs = SearchQuerySet().filter(name=GcdNameQuery(series_name)) \
                               .models(Series)
         series_ids = sqs.values_list('pk', flat=True)
         things = Series.objects.filter(id__in=series_ids)
