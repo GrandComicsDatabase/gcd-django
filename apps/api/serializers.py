@@ -124,7 +124,7 @@ class SeriesSerializer(serializers.HyperlinkedModelSerializer):
 class PublisherSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Publisher
-        exclude = ['created', 'deleted', ]
+        exclude = ['created', 'deleted', 'external_link']
 
     country = serializers.SlugRelatedField(read_only=True, slug_field='code')
 
