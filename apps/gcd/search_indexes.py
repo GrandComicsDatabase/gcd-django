@@ -304,18 +304,15 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         from haystack.exceptions import SkipDocument
         if obj.type.id == STORY_TYPES['blank']:
             raise SkipDocument
-        return super(ObjectIndex, self).prepare(obj)
+        return super(StoryIndex, self).prepare(obj)
 
-    # maybe add SkipDocument to ObjectIndex prepare ?
-    # not fully sure if deleted objects are not indexed, are only later filtered
-    # maybe need for blank pages
-    # def should_update(self, instance, **kwargs):
-
-    def index_queryset(self, using=None):
-        """Used when the entire index for model is updated."""
-        return super(ObjectIndex, self).index_queryset(using).exclude(
-            type=STORY_TYPES['blank']).filter(deleted=False)
-            # type=STORY_TYPES['blank'])#.filter(deleted=False)
+    # I don't think we need this anymore, since we filter out blank
+    # stories in the above prepare method.
+    #
+    # def index_queryset(self, using=None):
+    #     """Used when the entire index for model is updated."""
+    #     return super(StoryIndex, self).index_queryset(using).exclude(
+    #       type=STORY_TYPES['blank'])
 
     def prepare_relations_weight(self, obj):
         return obj.to_all_reprints.count()
