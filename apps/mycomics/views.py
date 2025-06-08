@@ -666,10 +666,10 @@ def edit_collection_items(request, collection_id):
                 'You can edit the selected %d items from the collection %s. ' \
                 'You can change the values of the fields and save them. ' \
                 '</p><p>Values already set for an item will not be changed. ' \
-                '<br><b>Only</b> if all items have <b>same value</b>, then ' \
-                'there is a value pre-filled, and changing it will ' \
-                '<b>override</b> the value for all items.' % (items.count(),
-                                                              collection.name)
+                '<br><b>Only</b> if all items have the <b>same value</b> ' \
+                'for a field, the value of that field is pre-filled, and ' \
+                'changing it will <b>override</b> the value for all ' \
+                'selected items.' % (items.count(), collection.name)
 
     return render(request, GENERIC_FORM_TEMPLATE, {'form': edit_form,
                                                    'help_text': help_text,
