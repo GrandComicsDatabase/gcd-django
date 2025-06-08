@@ -959,6 +959,17 @@ class SeriesDetailsIssueTable(PublisherIssueTable):
                   'issue', 'title', 'indicia_publisher', 'brand', 'page_count',
                   'price', 'indicia_frequency', 'isbn', 'barcode', 'rating')
 
+    def order_key_date(self, query_set, is_descending):
+        if is_descending:
+            query_set = query_set.order_by(NullIf('key_date', Value(''))
+                                           .desc(nulls_last=True),
+                                           'sort_code')
+        else:
+            query_set = query_set.order_by(NullIf('key_date', Value(''))
+                                           .asc(nulls_last=True),
+                                           'sort_code')
+        return (query_set, True)
+
     def render_issue(self, record):
         from apps.gcd.templatetags.display import absolute_url
         return absolute_url(record, descriptor=self.value_issue(record))
