@@ -115,6 +115,10 @@ def view_collection(request, collection_id):
     publishers = []
     for i in data:
         publishers.append(i[0])
+    data = set(items.values_list('issue__series'))
+    series = []
+    for i in data:
+        series.append(i[0])
     if request.user.is_authenticated and \
        collection.collector == request.user.collector:
         locations = request.user.collector.location_set.all()
@@ -124,7 +128,7 @@ def view_collection(request, collection_id):
         purchase_locations = None
     f = CollectionItemFilter(request.GET, queryset=items,
                              collection=collection, publishers=publishers,
-                             locations=locations,
+                             series=series, locations=locations,
                              purchase_locations=purchase_locations)
     vars['filter'] = f
     paginator = ResponsePaginator(f.qs, vars=vars, per_page=DEFAULT_PER_PAGE,

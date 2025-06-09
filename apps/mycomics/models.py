@@ -301,6 +301,10 @@ class CollectionItemFilter(django_filters.FilterSet):
       field_name='issue__series__publisher',
       label='Publisher',
       queryset=Publisher.objects.all())
+    series = django_filters.ModelChoiceFilter(
+      field_name='issue__series',
+      label='Series',
+      queryset=Series.objects.all())
 
     def __init__(self, *args, **kwargs):
         collection = kwargs.pop('collection')
@@ -308,6 +312,10 @@ class CollectionItemFilter(django_filters.FilterSet):
             publishers = kwargs.pop('publishers')
         else:
             publishers = None
+        if 'series' in kwargs:
+            series = kwargs.pop('series')
+        else:
+            series = None
         if 'locations' in kwargs:
             locations = kwargs.pop('locations')
         else:
@@ -344,6 +352,9 @@ class CollectionItemFilter(django_filters.FilterSet):
         if publishers:
             qs = Publisher.objects.filter(id__in=publishers)
             self.filters['publisher'].queryset = qs
+        if series:
+            qs = Series.objects.filter(id__in=series)
+            self.filters['series'].queryset = qs
         if locations and 'location' in self.filters:
             qs = Location.objects.filter(id__in=locations)
             self.filters['location'].queryset = qs
@@ -354,6 +365,7 @@ class CollectionItemFilter(django_filters.FilterSet):
     class Meta:
         model = CollectionItem
         fields = ['publisher',
+                  'series',
                   'own',
                   'was_read',
                   'signed',
