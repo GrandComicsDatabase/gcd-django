@@ -20,7 +20,7 @@
     "pk": 3,
     "fields": {
         "description": "",
-        "type": "Family"
+        "type": "Family (type is deprecated)"
     }
 },
 {
@@ -28,7 +28,15 @@
     "pk": 4,
     "fields": {
         "description": "",
-        "type": "Given (birth)"
+        "type": "Given (birth) (type is deprecated)"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 5,
+    "fields": {
+        "description": "",
+        "type": "House Name"
     }
 },
 {
@@ -36,7 +44,7 @@
     "pk": 6,
     "fields": {
         "description": "",
-        "type": "Other Language"
+        "type": "Other Language (type is deprecated)"
     }
 },
 {
@@ -60,7 +68,7 @@
     "pk": 9,
     "fields": {
         "description": "Native Language",
-        "type": "Native Language"
+        "type": "Native Language (type is deprecated)"
     }
 },
 {
@@ -77,6 +85,30 @@
     "fields": {
         "description": "",
         "type": "Common Alternative Name"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 12,
+    "fields": {
+        "description": "",
+        "type": "Ghost Name"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 13,
+    "fields": {
+        "description": "",
+        "type": "Joint Name"
+    }
+},
+{
+    "model": "gcd.nametype",
+    "pk": 14,
+    "fields": {
+        "description": "",
+        "type": "Misspelled Name"
     }
 }
 ]

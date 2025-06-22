@@ -22,6 +22,7 @@ NAME_TYPES = {
     'studio': 8,
     'ghost': 12,
     'joint': 13,
+    'misspelled': 14,
 }
 
 
@@ -243,6 +244,10 @@ class CreatorNameDetail(GcdData):
                 display_as_name = as_name.name
             elif self.type_id == NAME_TYPES['joint']:
                 attribute = 'under joint name '
+                display_as_name = as_name.name
+            elif self.type_id == NAME_TYPES['misspelled'] and \
+                                                          credit.is_credited:
+                attribute = 'misspelled as '
                 display_as_name = as_name.name
             elif credit.is_credited and not credit.credited_as:
                 attribute = 'credited as '
