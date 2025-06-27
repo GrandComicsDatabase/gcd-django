@@ -400,6 +400,10 @@ Related Links
     {% with object=issue.series object_name='Series' object_class='series' %}
       {% include "gcd/bits/tw_status_banner.html" %}
     {% endwith %}
+    {% if perms.indexer.can_approve and issue.variant_of or perms.indexer.can_approve and issue.has_variants %}
+    <btn class="btn btn-blue-editing"><a href="{% url 'reorder_series' series_id=issue.series.id %}">
+    Reorder Issues</a></btn>
+    {% endif %}
   {% endif %}
 {% endblock editing %}
 
