@@ -1,4 +1,5 @@
 {% load display %}
+{% load credits %}
 {% load i18n %}
 {% comment %}
 Center column beneath the search box.  This region is mostly built
@@ -47,7 +48,7 @@ from various smaller templates that are managed via django-templatesadmin.
         </div>
         <div class="font-bold text-lg">{{ creator|absolute_url }}</div>
     {{ creator.display_birthday }}{% if creator.has_death_info %} - {{ creator.display_deathday }}{% endif %}<br>
-    {{ creator.bio|linebreaksbr }}
+    {{ creator.bio|markdown }}
       </div>
       <div class="clear-both"></div>
   {% endfor %}
