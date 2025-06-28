@@ -1290,6 +1290,14 @@ a:hover {
   z-index: 50;
 }
 
+.float-left {
+  float: left;
+}
+
+.clear-both {
+  clear: both;
+}
+
 .m-0 {
   margin: 0px;
 }
@@ -1588,6 +1596,10 @@ a:hover {
 
 .min-w-28 {
   min-width: 7rem;
+}
+
+.min-w-64 {
+  min-width: 16rem;
 }
 
 .min-w-\[100px\] {
@@ -2556,6 +2568,10 @@ select {
     width: 50%;
   }
 
+  .sm\:w-1\/3 {
+    width: 33.333333%;
+  }
+
   .sm\:w-24 {
     width: 6rem;
   }
@@ -2604,10 +2620,6 @@ select {
   .sm\:columns-3 {
     -moz-columns: 3;
          columns: 3;
-  }
-
-  .sm\:grid-cols-2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .sm\:grid-cols-4 {
