@@ -2678,6 +2678,10 @@ select {
     margin-inline-end: 0.25rem;
   }
 
+  .md\:me-2 {
+    margin-inline-end: 0.5rem;
+  }
+
   .md\:hidden {
     display: none;
   }
@@ -2705,6 +2709,10 @@ select {
 
   .md\:flex-col {
     flex-direction: column;
+  }
+
+  .md\:p-2 {
+    padding: 0.5rem;
   }
 
   .md\:px-2 {
@@ -2785,6 +2793,10 @@ select {
 
   .\32xl\:w-1\/2 {
     width: 50%;
+  }
+
+  .\32xl\:p-4 {
+    padding: 1rem;
   }
 }
 
