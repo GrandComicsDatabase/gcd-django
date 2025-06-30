@@ -2714,6 +2714,10 @@ select {
 }
 
 @media (min-width: 1024px) {
+  .lg\:me-2 {
+    margin-inline-end: 0.5rem;
+  }
+
   .lg\:flex {
     display: flex;
   }
@@ -2775,6 +2779,10 @@ select {
 }
 
 @media (min-width: 1536px) {
+  .\32xl\:me-4 {
+    margin-inline-end: 1rem;
+  }
+
   .\32xl\:w-1\/2 {
     width: 50%;
   }
