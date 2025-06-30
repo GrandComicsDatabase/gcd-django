@@ -77,7 +77,7 @@
 {% endblock content %}
 
 {% block editing %}
-  {% with object=brand object_class='brand' object_name='brand' %}
+  {% with object=brand object_class='brand_group' object_name='brand_group' %}
   {% include "gcd/bits/tw_status_banner.html" %}
   {% endwith %}
   {% if request.user.is_authenticated %}
