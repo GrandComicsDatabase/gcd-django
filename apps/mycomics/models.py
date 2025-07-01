@@ -304,6 +304,7 @@ class CollectionItemFilter(django_filters.FilterSet):
     signed = django_filters.ChoiceFilter(choices=YES_NO_CHOICES)
     is_digital = django_filters.ChoiceFilter(choices=YES_NO_CHOICES)
     for_sale = django_filters.ChoiceFilter(choices=YES_NO_CHOICES)
+    was_read = django_filters.ChoiceFilter(choices=YES_NO_CHOICES)
     publisher = django_filters.ModelChoiceFilter(
       field_name='issue__series__publisher',
       label='Publisher',
