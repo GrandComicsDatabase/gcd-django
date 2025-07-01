@@ -59,7 +59,7 @@ def index(request):
     day = '%0.2d' % (today).day
     month = '%0.2d' % (today).month
     creators = Creator.objects.filter(birth_date__day__lte=day,
-                                      birth_date__month__lte=month,
+                                      birth_date__month=month,
                                       deleted=False)\
                               .exclude(birth_date__day='')\
                               .exclude(birth_date__month__lte='')\
@@ -67,6 +67,16 @@ def index(request):
                                                         '-birth_date__day',
                                                         'sort_name')[:100]
     creators = list(creators.values_list('id', flat=True))
+    if len(creators) < 100:
+        creators_2 = Creator.objects.filter(birth_date__month__lt=month,
+                                            deleted=False)\
+                                    .exclude(birth_date__day='')\
+                                    .exclude(birth_date__month__lte='')\
+                                    .exclude(bio='')\
+                                    .order_by('-birth_date__month',
+                                              '-birth_date__day',
+                                              'sort_name')[:100]
+        creators.extend(list(creators_2.values_list('id', flat=True)))
     creators = Creator.objects.filter(id__in=creators)\
                       .annotate(issue_count=Count(
                         'creator_names__storycredit__story__issue',
