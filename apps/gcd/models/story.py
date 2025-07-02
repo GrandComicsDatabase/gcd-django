@@ -801,7 +801,8 @@ class Story(GcdData):
         """
         UI check for characters.
         """
-        return self.characters or self.appearing_characters.count()
+        return self.characters or self.appearing_characters.count() or \
+            self.appearing_groups.count()
 
     def has_feature(self):
         """
