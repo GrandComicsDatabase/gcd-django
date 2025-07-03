@@ -1,4 +1,4 @@
-{% extends "oi/base_view.html" %}
+{% extends "oi/queues/paginated_queue.html" %}
 
 {% load i18n %}
 {% load display %}
@@ -6,14 +6,8 @@
 
 {% block title %} GCD :: Covers Pending Review {% endblock %}
 
-{% block nav_bar %}
-  {{ block.super }}
-<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
-  <div class="flex-1 font-bold">
-    {{ page.start_index }} to {{ page.end_index }} of {{ page.paginator.count }} Covers Pending for Approval
-  </div>
-  {% include "gcd/bits/tw_pagination_bar.html" %}
-</nav>
+{% block queue_description %}
+Covers Pending for Approval
 {% endblock %}
 
 {% block view_body %}
@@ -57,14 +51,4 @@
   </div>
   {% endfor %}
 </div>
-{% endblock %}
-
-{% block bottom_nav_bar %}
-<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
-  <div class="flex-1 font-bold">
-  </div>
-  {% if page %}
-    {% include "gcd/bits/tw_pagination_bar.html" %}
-  {% endif %}
-</nav>
 {% endblock %}
