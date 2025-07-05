@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import re
-import six
 
 from django import forms
 from django.conf import settings
@@ -827,12 +826,13 @@ class ForeignKeyField(forms.IntegerField):
 
 class KeywordsWidget(forms.TextInput):
     def render(self, name, value, renderer=None, attrs=None):
-        if value is not None and not isinstance(value, six.string_types):
+        if value is not None and not isinstance(value, str):
             value = '; '.join([
                 o.tag.name for o in value.select_related("tag")])
         return super(KeywordsWidget, self).render(name, value, attrs)
 
 
+# TODO: Is this used anywhere?
 class KeywordsField(forms.CharField):
     _SPLIT_RE = re.compile(r'\s*;\s*')
     _NOT_ALLOWED = ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',']
