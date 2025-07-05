@@ -17,7 +17,7 @@ git+https://github.com/django-haystack/django-haystack.git@a7fcc250d46605e65687c
 django-imagekit<5.1
 django-markdownx<4.1
 # django-queryset-csv<1.2
-git+https://github.com/mikemanger/django-queryset-csv/tree/main
+git+https://github.com/mikemanger/django-queryset-csv@0ac0261cd499fa2b0cee04d955d2abf361192475
 django-recaptcha<4.1
 django-rosetta
 django-tables2<2.8
