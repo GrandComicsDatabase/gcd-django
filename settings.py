@@ -172,7 +172,6 @@ INSTALLED_APPS = (
     'django_recaptcha',
     'crispy_forms',
     'crispy_bootstrap3',
-    'pagedown.apps.PagedownConfig',
     'markdownx',
     'rosetta',
     'django_filters',
