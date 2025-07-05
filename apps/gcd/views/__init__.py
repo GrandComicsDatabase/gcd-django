@@ -84,10 +84,11 @@ def index(request):
                       .filter(issue_count__gt=10)\
                       .order_by('-birth_date__month',
                                 '-birth_date__day',
-                                'sort_name')
+                                'sort_name').select_related('birth_date')
+    creators_count = len(creators)
     creator_last = creators[10]
     last_listed = 10
-    for i in range(11, len(creators)):
+    for i in range(11, creators_count):
         if creators[i].birth_date.month != creator_last.birth_date.month or \
            creators[i].birth_date.day != creator_last.birth_date.day:
             last_listed = i
