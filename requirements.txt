@@ -29,6 +29,8 @@ chardet<5.3
 elasticsearch>7.0,<8.0
 numpy<2.3
 opencv-python-headless<4.12
+# need to resolve the menchache dependency and lib version, see settings.py and middleware
+python-memcached<1.63
 pymemcache<4.1
 python-stdnum<1.21
 python3-vote-core==20170329.0
