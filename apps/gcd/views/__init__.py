@@ -85,12 +85,19 @@ def index(request):
                       .order_by('-birth_date__month',
                                 '-birth_date__day',
                                 'sort_name')
+    creator_last = creators[10]
+    last_listed = 10
+    for i in range(11, len(creators)):
+        if creators[i].birth_date.month != creator_last.birth_date.month or \
+           creators[i].birth_date.day != creator_last.birth_date.day:
+            last_listed = i
+            break
 
     template_vars.update({
         'stats': stats,
         'language': language,
         'stats_for_language': stats_for_language,
-        'creators': creators[:10]
+        'creators': creators[:last_listed],
     })
     return render(request, 'gcd/tw_index.html', template_vars)
 
