@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 from apps.stddata.models import Country, Language
-from apps.gcd.models import Publisher, Series, Issue, INDEXED, Story, Cover,\
+from apps.gcd.models import Publisher, Series, Issue, INDEXED, Story, Cover, \
                             Creator
 
 
@@ -49,8 +49,8 @@ class CountStatsManager(models.Manager):
 
         self.create(name='issue indexes', language=language, country=country,
                     count=Issue.objects.filter(variant_of=None, **kwargs)
-                                       .exclude(is_indexed=INDEXED['skeleton'])
-                                       .count())
+                               .filter(is_indexed__gt=INDEXED['some_data'])
+                               .count())
 
         if 'series__language' in kwargs:
             kwargs['issue__series__language'] = kwargs['series__language']
@@ -164,8 +164,8 @@ class RecentIndexedIssueManager(models.Manager):
             self.create(issue=issue, language=None)
             count = international.count()
             if count > settings.RECENTS_COUNT:
-                for recent in international.order_by('created')\
-                                [:count - settings.RECENTS_COUNT]:
+                for recent in international.order_by('created')[
+                                            :count - settings.RECENTS_COUNT]:
                     recent.delete()
 
         local = self.filter(language=issue.series.language)
@@ -173,8 +173,8 @@ class RecentIndexedIssueManager(models.Manager):
             self.create(issue=issue, language=issue.series.language)
             count = local.count()
             if count > settings.RECENTS_COUNT:
-                for recent in local.order_by('created')\
-                                [:count - settings.RECENTS_COUNT]:
+                for recent in local.order_by('created')[
+                                    :count - settings.RECENTS_COUNT]:
                     recent.delete()
 
 

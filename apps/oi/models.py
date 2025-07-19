@@ -6674,7 +6674,7 @@ class PreviewStory(Story):
             self.has_keywords() or \
             self.has_reprints() or \
             self.feature_object.exclude(genre='').values('genre').exists() or \
-            self.feature_logo.count() or \
+            self.revision.feature_logo.count() or \
             self.active_awards().count()
 
     @property
@@ -8296,6 +8296,7 @@ class ImageRevision(Revision):
             _clear_image_cache(image.scaled_image)
             _clear_image_cache(image.thumbnail)
             _clear_image_cache(image.icon)
+            _clear_image_cache(image.cropped_face)
         self.save()
 
     def __str__(self):

@@ -542,7 +542,7 @@ class Issue(GcdData):
                 counts['variant issues'] = 1
             else:
                 counts['issues'] = 1
-                if self.is_indexed != INDEXED['skeleton']:
+                if self.is_indexed > INDEXED['some_data']:
                     counts['issue indexes'] = 1
         return counts
 
