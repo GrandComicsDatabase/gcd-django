@@ -2540,6 +2540,10 @@ select {
 }
 
 @media (min-width: 640px) {
+  .sm\:me-1 {
+    margin-inline-end: 0.25rem;
+  }
+
   .sm\:inline-block {
     display: inline-block;
   }

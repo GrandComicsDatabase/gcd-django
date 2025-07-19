@@ -38,9 +38,9 @@ from various smaller templates that are managed via django-templatesadmin.
   </div>
   <div class="flex flex-col sm:flex-row">
     <div class="flex-1">
-      <div class="label-gcd-blue text-lg mt-2 me-1 lg:me-2 2xl:me-4">GCD Comics Timeline</div>
+      <div class="label-gcd-blue text-lg mt-2 sm:me-1 lg:me-2 2xl:me-4">GCD Comics Timeline</div>
   {% for creator in creators %}
-      <div class="mb-1 lg:me-2 2xl:me-4">
+      <div class="mb-1 me-1 lg:me-2 2xl:me-4">
         <div class="min-w-[100px] w-[100px] me-1 float-left">
           <a href="{% url 'show_creator' creator.id %}">
             <img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}">
