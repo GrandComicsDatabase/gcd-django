@@ -4,6 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes import models as content_models
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.utils.safestring import mark_safe
 import django.urls as urlresolvers
 
 from imagekit import ImageSpec, register
@@ -156,7 +157,10 @@ class Image(models.Model):
                              .count() == 0
 
     def description(self):
-        return '%s for %s' % (self.type.description, str(self.object))
+        return mark_safe('%s for <a href="%s">%s</a>' % (
+          self.type.description,
+          self.object.get_absolute_url(),
+          str(self.object)))
 
     def get_absolute_url(self):
         if self.content_type == content_models.ContentType.objects\
