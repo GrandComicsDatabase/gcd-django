@@ -6036,7 +6036,8 @@ class StoryRevision(Revision):
                        and stripped not in ['various', 'typeset', 'gesetzt',
                                             'tryckstil', 'formatadas',
                                             'typographie', 'Maschinenschrift',
-                                            'composición tipográfica']:
+                                            'composición tipográfica',
+                                            'dattiloscritto']:
                         return True
         return False
 
