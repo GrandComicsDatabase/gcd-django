@@ -554,7 +554,8 @@ class Issue(GcdData):
     def _descriptor_addon(self, show_code=True):
         add_on = ''
         code_number = ''
-        if show_code and self.active_code_numbers().filter(number_type__id=1):
+        if show_code and self.active_code_numbers().filter(number_type__id=1)\
+                                                   .count() == 1:
             code_number = "(%s)" % (self.active_code_numbers()
                                     .get(number_type__id=1).number)
         if self.variant_name:
@@ -590,7 +591,7 @@ class Issue(GcdData):
     @property
     def issue_descriptor_series_status(self):
         issue_descriptor = self.issue_descriptor
-        if self.active_code_numbers().filter(number_type__id=1):
+        if self.active_code_numbers().filter(number_type__id=1).count() == 1:
             issue_descriptor += " (%s)" % (self.active_code_numbers()
                                            .get(number_type__id=1).number)
         return issue_descriptor
