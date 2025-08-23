@@ -11,7 +11,7 @@ from datetime import datetime
 
 from django.conf import settings
 from django.shortcuts import render
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from .pagination import DiggPaginator
 from .alpha_pagination import AlphaPaginator
@@ -80,6 +80,7 @@ def index(request):
     creators = Creator.objects.filter(id__in=creators)\
                       .annotate(issue_count=Count(
                         'creator_names__storycredit__story__issue',
+                        filter=Q(creator_names__storycredit__story__from_all_reprints=None),
                         distinct=True))\
                       .filter(issue_count__gt=10)\
                       .order_by('-birth_date__month',
