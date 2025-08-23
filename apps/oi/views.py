@@ -11,7 +11,7 @@ import django.urls as urlresolvers
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F, Q
 from django.utils.html import mark_safe, conditional_escape as esc
@@ -5859,13 +5859,16 @@ def cover_compare(request, changeset, revision):
     return response
 
 
-@login_required
 def image_compare(request, changeset, revision, extra_revision=None):
     '''
     Compare page for images.
     - show uploaded image
     - for replacement show former image
     '''
+    # for non-portraits, request.user should be authenticated
+    # for portraits we always show the changeset for source and attribution
+    if not request.user.is_authenticated and revision.type.id != 4:
+        return redirect(f"{settings.LOGIN_URL}?next={request.path}")
     image_tag = get_preview_generic_image_tag(revision, "uploaded image")
     kwargs = {'changeset': changeset,
               'revision': revision,

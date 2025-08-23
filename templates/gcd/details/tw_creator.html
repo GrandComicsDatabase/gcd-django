@@ -19,7 +19,7 @@
   <tr>
     <td class="align-top">
       <div class="w-[100px] sm:w-[150px] sm:min-w-[150px]">
-        <img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}">
+        <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img class="border-2 rounded-full" src="{{ creator.get_portrait_url }}">
       </div>
     </td>
     <td>
@@ -245,7 +245,7 @@
   <div class="flex flex-col sm:flex-row">
   {% if creator.portrait %}
   <div class="m-2">
-    <img src="{{ creator.portrait.scaled_image.url }}">
+    <a href="/changeset/{{ creator.portrait.approved_changesets.0.id}}/compare/"><img src="{{ creator.portrait.scaled_image.url }}"></a>
   </div>
   {% endif %}
   {% if creator.samplescan %}
