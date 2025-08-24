@@ -46,7 +46,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
             position = self.helper['editing'].slice[0].positions[0]
-            if revision.old_credits():
+            if revision and revision.old_credits():
                 disabled = ''
                 css_class = 'class="m-0 btn-blue-editing inline"'
             else:
