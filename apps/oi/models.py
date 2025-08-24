@@ -4548,6 +4548,15 @@ class IssueRevision(Revision):
             setattr(self, 'editing', old_credits)
             self.save()
 
+    def old_credits(self):
+        credit = self.editing
+        if credit:
+            for s in credit.split(";"):
+                stripped = s.strip()
+                if not stripped.startswith('?'):
+                    return True
+        return False
+
     def get_absolute_url(self):
         if self.issue is None:
             return "/issue/revision/%i/preview" % self.id

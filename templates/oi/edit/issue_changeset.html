@@ -19,7 +19,7 @@
   {% endif %}
     </div>
     <div class="sm:flex sm:items-center">
-  {% if issue_revision.editing and not issue_revision.editing|first == '?' %}
+  {% if issue_revision.old_credits %}
     <form class="sm:inline-block" action="{% url 'migrate_issue_revision' id=issue_revision.id %}" method="POST">
       {% csrf_token %}
       <button class="btn-blue-editing"><input type="submit" value="Migrate Editing" class="text-red-600"></button>

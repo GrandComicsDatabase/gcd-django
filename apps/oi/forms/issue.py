@@ -46,7 +46,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
             position = self.helper['editing'].slice[0].positions[0]
-            if revision and revision.editing not in ['', '?']:
+            if revision.old_credits():
                 disabled = ''
                 css_class = 'class="m-0 btn-blue-editing inline"'
             else:
@@ -54,7 +54,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                 css_class = 'class="btn-blue-disabled m-0 py-1 px-2 inline"'
             self.helper.layout[position].append(
               HTML('<th></th><td><input type="submit" name="save_migrate"'
-                   ' value="save and migrate editing" %s %s/></td>' % (
+                   ' value="Save And Migrate Editing" %s %s/></td>' % (
                     css_class, disabled)))
 
             issue_year = None
