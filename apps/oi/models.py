@@ -5816,7 +5816,7 @@ class StoryRevision(Revision):
             # entries in RecentIndexedIssue, check is in update_recents
             #
             # maybe can be done using changes[] on the changeset level ?
-            if issue.is_indexed:
+            if issue.is_indexed and not issue.variant_of:
                 RecentIndexedIssue.objects.update_recents(issue)
 
     def extra_forms(self, request):
