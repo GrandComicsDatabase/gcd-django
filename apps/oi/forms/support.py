@@ -707,6 +707,10 @@ def _clean_keywords(cleaned_data):
         if keywords and '' in keywords.split(';'):
             raise forms.ValidationError(
                 'An extra ";" needs to removed.')
+        for keyword in keywords.split(';'):
+            if len(keyword) >= 100:
+                raise forms.ValidationError(
+                    'A keyword cannot be longer than 100 characters.')
     return keywords
 
 
