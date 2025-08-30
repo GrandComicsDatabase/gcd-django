@@ -1,7 +1,7 @@
 Django<5.0
 mysqlclient<2.3
 Pillow<11.0
-PyICU<2.13
+PyICU<2.16
 PyYAML<6.1
 django-autocomplete-light<3.12
 diff-match-patch==20181111
