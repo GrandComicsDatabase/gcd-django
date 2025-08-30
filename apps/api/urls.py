@@ -14,11 +14,11 @@ router.register(r'publisher', views.PublisherViewSet)
 # router.register(r'indicia_publisher', views.IndiciaPublisherViewSet)
 
 urlpatterns = [
-    path('series/name/<str:name>/issue/<str:number>/year/<str:year>/',
+    path('series/name/<path:name>/issue/<path:number>/year/<str:year>/',
          views.IssuesList.as_view()),
-    path('series/name/<str:name>/issue/<str:number>/',
+    path('series/name/<path:name>/issue/<path:number>/',
          views.IssuesList.as_view()),
-    path('series/name/<str:name>/year/<str:year>/',
+    path('series/name/<path:name>/year/<str:year>/',
          views.SeriesList.as_view()),
-    path('series/name/<str:name>/', views.SeriesList.as_view()),
+    path('series/name/<path:name>/', views.SeriesList.as_view()),
 ]
