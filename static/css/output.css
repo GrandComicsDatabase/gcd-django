@@ -1341,6 +1341,11 @@ a:hover {
   margin-bottom: 0.5px;
 }
 
+.-mx-2 {
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+}
+
 .-me-1 {
   margin-inline-end: -0.25rem;
 }
