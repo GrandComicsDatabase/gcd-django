@@ -2731,11 +2731,6 @@ select {
 }
 
 @media (min-width: 1024px) {
-  .lg\:mx-2 {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-  }
-
   .lg\:me-2 {
     margin-inline-end: 0.5rem;
   }
@@ -2801,13 +2796,12 @@ select {
 }
 
 @media (min-width: 1536px) {
-  .\32xl\:mx-4 {
-    margin-left: 1rem;
-    margin-right: 1rem;
-  }
-
   .\32xl\:me-4 {
     margin-inline-end: 1rem;
+  }
+
+  .\32xl\:ms-2 {
+    margin-inline-start: 0.5rem;
   }
 
   .\32xl\:w-1\/2 {
