@@ -40,7 +40,9 @@
         {% if issue.on_sale_date_uncertain %} ? {% endif %}</div>
       {% endif %}
       </div>
+      {% if not issue.no_editing %}
       <span class="font-bold">Editing:</span> {{ issue|show_creator_credit_bare:"editing" }}
+      {% endif %}
     </div>
 
     <div class="max-sm:pt-1 max-sm:pe-1 sm:flex justify-end items-center">
