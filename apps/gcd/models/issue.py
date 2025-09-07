@@ -709,7 +709,7 @@ class IssueTable(tables.Table):
             query_set = query_set.order_by(NullIf('key_date', Value(''))
                                            .desc(nulls_last=True),
                                            'series__sort_name',
-                                           'sort_code')
+                                           '-sort_code')
         else:
             query_set = query_set.order_by(NullIf('key_date', Value(''))
                                            .asc(nulls_last=True),

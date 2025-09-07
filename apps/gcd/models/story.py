@@ -1,5 +1,7 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+from django.db.models.functions import NullIf
+from django.db.models import Value
 import django.urls as urlresolvers
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -983,18 +985,33 @@ class StoryTable(tables.Table):
         fields = ('story',)
 
     def order_publication_date(self, query_set, is_descending):
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'issue__key_date',
-                                       direction + 'issue__series__sort_name',
-                                       direction + 'issue__sort_code')
+        if is_descending:
+            query_set = query_set.order_by(NullIf('issue__key_date', Value(''))
+                                           .desc(nulls_last=True),
+                                           'issue__series__sort_name',
+                                           '-issue__sort_code')
+        else:
+            query_set = query_set.order_by(NullIf('issue__key_date', Value(''))
+                                           .asc(nulls_last=True),
+                                           'issue__series__sort_name',
+                                           'issue__sort_code')
         return (query_set, True)
 
     def order_on_sale_date(self, query_set, is_descending):
-        direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'issue__on_sale_date',
-                                       direction + 'issue__key_date',
-                                       direction + 'issue__series__sort_name',
-                                       direction + 'issue__sort_code')
+        if is_descending:
+            query_set = query_set.order_by(NullIf('issue__on_sale_date', Value(''))
+                                           .desc(nulls_last=True),
+                                           NullIf('issue__key_date', Value(''))
+                                           .desc(nulls_last=True),
+                                           'issue__series__sort_name',
+                                           '-issue__sort_code')
+        else:
+            query_set = query_set.order_by(NullIf('issue__on_sale_date', Value(''))
+                                           .asc(nulls_last=True),
+                                           NullIf('issue__key_date', Value(''))
+                                           .asc(nulls_last=True),
+                                           'issue__series__sort_name',
+                                           'issue__sort_code')
         return (query_set, True)
 
     def order_publisher(self, query_set, is_descending):
