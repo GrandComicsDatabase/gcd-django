@@ -1,0 +1,110 @@
+{% extends "gcd/tw_object_base.html" %}
+{% load i18n %}
+{% load display %}
+{% load credits %}
+{% load django_tables2 %}
+
+{% block title %}
+GCD :: Story Arc :: {{ story_arc.name }}
+{% endblock %}
+
+{% block header %}
+  {% with object=story_arc %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[150px] md:w-[200px] mt-1">
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <table class="[&_:is(th,td):where(:nth-child(1),)]:align-top [&_:is(th,td):where(:nth-child(1),)]:text-right [&_:is(th,td):where(:nth-child(1),)]:font-bold">
+{% if story_arc.disambiguation %}
+            <tr>
+              <td>Disambiguation:</td>
+              <td>{{ story_arc.disambiguation }}</td>
+            </tr>
+{% endif %}
+          </table>  
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% if story_arc.description %}
+<h3 class="mt-2">Description:</h3>
+{{ story_arc.description|markdown }}
+{% endif %}
+{% if story_arc.notes %}
+<h3 class="mt-2">Notes:</h3>
+{{ story_arc.notes|markdown }}
+{% endif %}
+{% endblock %}
+
+{% block editing %}
+  {% with object=story_arc object_class='story_arc' object_name='story_arc' %}
+    {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+  {% if request.user.is_authenticated %}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+{% if arc_stories %}
+  <ol class="object-page-numbered-list list-disc columns-1">
+  {% for story in arc_stories %}
+    {% ifchanged story.issue %}
+      {% if not forloop.first %}
+      </ol>
+      {% endif %}
+    <li>{{ story.issue.full_name_with_link }}</li>
+    <ol class="object-page-numbered-list list-disc columns-1">
+    {% endifchanged %}
+    <li>{{ story }}</li>
+  {% endfor %}
+    </ol>
+  </ol>
+{% endif %}
+{% if story_arc.active_relations_own %}
+<hr>
+<h3>Relations:</h3>
+<ol class="object-page-numbered-list list-disc">
+  {% for relation in story_arc.active_relations_own %}
+    {% with relation_info=relation|pre_process_relation:story_arc %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_story_arc' story_arc_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
+      {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+  </li>
+    {% endwith %}
+  {% endfor %}
+  </ol>
+{% endif %}
+{% endblock content %}
+
+{% block www_my_comics_cross_link %}
+  {% url "show_story_arc" story_arc_id=story_arc.id as object_url %}
+  {% with model_name='Story Arc' object_url=object_url %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block change_history %}
+  {% with model_name='story_arc' object=story_arc %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}
+
+{% block listing %}
+{% endblock listing %}

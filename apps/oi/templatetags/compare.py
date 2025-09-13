@@ -132,6 +132,18 @@ def field_value(revision, field):
             else:
                 features += absolute_url(feature, feature.logo)
         return mark_safe(features)
+    elif field == 'story_arc':
+        first = True
+        story_arcs = ''
+        for story_arc in value.all():
+            if first:
+                first = False
+            else:
+                story_arcs += '; '
+            story_arcs += '<a href="%s">%s</a>' % (
+                story_arc.get_absolute_url(),
+                esc(story_arc.name))
+        return mark_safe(story_arcs)
     elif field in ['notes', 'tracking_notes', 'publication_notes',
                    'synopsis']:
         return linebreaksbr(value)

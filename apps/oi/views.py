@@ -31,7 +31,7 @@ from apps.gcd.models import (
     Publisher, Reprint,
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
-    CreatorRelation, CreatorSchool, CreatorNameDetail,
+    CreatorRelation, CreatorSchool, CreatorNameDetail, StoryArc,
     STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
     IndiciaPrinter, CreatorSignature, Character, CharacterRelation, Group,
     GroupRelation, GroupMembership, Universe, CREDIT_TYPES)
@@ -61,7 +61,7 @@ from apps.oi.models import (
     get_issue_field_list, set_series_first_last,
     AwardRevision, ReceivedAwardRevision, IssueCreditRevision,
     StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision,
-    CreatorRevision, CreatorMembershipRevision,
+    StoryArcRevision, CreatorRevision, CreatorMembershipRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision, CreatorRelationRevision,
     FeatureRevision, FeatureLogoRevision, UniverseRevision,
@@ -133,6 +133,7 @@ REVISION_CLASSES = {
     'issue': IssueRevision,
     'story': StoryRevision,
     'biblio_entry': BiblioEntryRevision,
+    'story_arc': StoryArcRevision,
     'feature': FeatureRevision,
     'feature_logo': FeatureLogoRevision,
     'feature_relation': FeatureRelationRevision,
@@ -172,6 +173,7 @@ DISPLAY_CLASSES = {
     'issue': Issue,
     'story': Story,
     'biblio_entry': BiblioEntry,
+    'story_arc': StoryArc,
     'feature': Feature,
     'feature_logo': FeatureLogo,
     'feature_relation': FeatureRelation,
@@ -2826,6 +2828,10 @@ def add_feature_relation(request, feature_id):
     return oi_render(request, 'oi/edit/add_frame.html', context)
 
 
+def add_story_arc(request):
+    return add_generic(request, 'story_arc')
+
+
 def add_universe(request):
     return add_generic(request, 'universe')
 
@@ -5230,6 +5236,7 @@ def show_queue(request, queue_name):
     covers = changes.filter(change_type=CTYPES['cover'])\
                     .prefetch_related('coverrevisions__previous_revision',
                                       'coverrevisions__cover')
+    story_arcs = changes.filter(change_type=CTYPES['story_arc'])
     features = changes.filter(change_type=CTYPES['feature'])
     feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
     feature_relations = changes.filter(change_type=CTYPES['feature_relation'])
@@ -5338,6 +5345,11 @@ def show_queue(request, queue_name):
             'object_name': 'Feature Logos',
             'object_type': 'feature_logo',
             'changesets': feature_logos.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Story Arcs',
+            'object_type': 'story_arc',
+            'changesets': story_arcs.order_by('modified', 'id')
           },
           {
             'object_name': 'Universes',

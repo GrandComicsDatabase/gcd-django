@@ -24,7 +24,7 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
                             Character, CharacterNameDetail, Group, \
-                            GroupNameDetail, Universe, \
+                            GroupNameDetail, Universe, StoryArc, \
                             STORY_TYPES
 from apps.stddata.models import Country, Language
 from apps.gcd.templatetags.credits import get_native_language_name
@@ -647,6 +647,22 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
                 qs = qs.exclude(feature__feature_type__id=3)
 
         qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class StoryArcAutocomplete(LoginRequiredMixin,
+                           autocomplete.Select2QuerySetView):
+    def get_queryset(self, interactive=True):
+        qs = StoryArc.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+
+        if language and language != 'zxx':
+            qs = qs.filter(language__code__in=[language, 'zxx'])
+
+        qs = _filter_and_sort(qs, self.q, disambiguation=True,
+                              interactive=interactive)
 
         return qs
 

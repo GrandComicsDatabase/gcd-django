@@ -111,7 +111,7 @@ class FeatureRevisionForm(KeywordBaseForm):
             if (cd['leading_article'] and
                     cd['name'] == remove_leading_article(cd['name'])):
                 raise forms.ValidationError(
-                    'The series name is only one word, you cannot specify '
+                    'The name is only one word, you cannot specify '
                     'a leading article in this case.')
         return cd
 

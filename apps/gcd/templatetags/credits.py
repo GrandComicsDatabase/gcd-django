@@ -288,6 +288,8 @@ def __label(story, field):
         return 'Feature Logo'
     elif field == 'first_line':
         return _('First Line of Dialogue or Text')
+    elif field == 'story_arc':
+        return 'Story Arc'
     elif field == 'doi':
         return 'DOI'
     elif field == 'show_awards':
@@ -313,6 +315,8 @@ def __format_credit(story, credit, computed_value='', tailwind=False,
         credit_value = story.show_feature()
     if credit == 'characters':
         credit_value = story.show_characters(css_style=False)
+    if credit == 'story_arc':
+        credit_value = story.show_story_arc()
     if not __credit_visible(credit_value):
         return ''
 

@@ -70,6 +70,14 @@ GCD :: Add Data Objects
   </tr>
   <tr>
     <td>
+      <btn class="btn-blue-editing"><a href="{% url 'add_story_arc' %}">Add Story Arc</a></btn>
+    </td>
+    <td>
+      {% include "gcd/bits/_htmx_search.html" with target='story_arc' %}</td>
+    </td>
+  </tr>
+  <tr>
+    <td>
       <btn class="btn-blue-editing"><a href="{% url 'add_universe' %}">Add Universe</a></btn>
     </td>
     <td>

@@ -49,7 +49,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
                             Printer, IndiciaPrinter, School, Story, \
                             Character, CharacterNameDetail, Group, \
                             GroupNameDetail, Universe, Multiverse, \
-                            StoryCredit, \
+                            StoryCredit, StoryArc, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import GenericCreatorTable, \
                                     GenericCreatorNameTable, \
@@ -3354,6 +3354,48 @@ def int_stats(request, object_type, choices):
         'type': object_name,
         'form': form
       })
+
+
+def story_arc(request, story_arc_id):
+    """
+    Display the details page for a Story Arc.
+    """
+    story_arc = get_gcd_object(StoryArc, story_arc_id)
+    return show_story_arc(request, story_arc)
+
+
+def show_story_arc(request, story_arc, preview=False):
+
+    query = {'story__story_arc': story_arc,
+             'story__deleted': False,
+             'cover__isnull': False,
+             'cover__deleted': False}
+
+    cover_issues = Issue.objects.filter(Q(**query)).distinct()\
+                                .select_related('series__publisher')
+    if cover_issues:
+        selected_issue = cover_issues[randint(0, cover_issues.count()-1)]
+        image_tag = get_image_tag(cover=selected_issue.cover_set.first(),
+                                  zoom_level=ZOOM_MEDIUM,
+                                  alt_text='Random Cover from Story Arc')
+    else:
+        image_tag = ''
+        selected_issue = None
+
+    stories = Story.objects.filter(story_arc=story_arc,
+                                   deleted=False)\
+                           .order_by('issue__series__sort_name',
+                                     'issue__sort_code',
+                                     'sequence_number')\
+                           .select_related('issue__series__publisher')
+
+    context = {'story_arc': story_arc,
+               'error_subject': '%s' % story_arc,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
+               'arc_stories': stories,
+               'preview': preview}
+    return render(request, 'gcd/details/tw_story_arc.html', context)
 
 
 def feature(request, feature_id):

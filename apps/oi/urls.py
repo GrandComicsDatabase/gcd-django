@@ -209,6 +209,10 @@ urlpatterns = [
     path('story/revision/<int:story_revision_id>/select_compare/',
         oi_views.story_select_compare, name='story_select_compare'),
 
+    # Story Arc URLs
+    path('story_arc/add/',
+      oi_views.add_story_arc, name='add_story_arc'),
+
     # Feature URLs
     path('feature/add/',
       oi_views.add_feature, name='add_feature'),

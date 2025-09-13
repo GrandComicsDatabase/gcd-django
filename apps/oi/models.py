@@ -36,7 +36,7 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
     SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
     CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
-    StoryGroup, Universe, Multiverse, BiblioEntry, Reprint,
+    StoryGroup, StoryArc, Universe, Multiverse, BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
     CharacterNameDetail, Group, GroupNameDetail, GroupRelation,
@@ -99,6 +99,7 @@ CTYPES = {
     'character_relation': 34,
     'group_relation': 35,
     'universe': 36,
+    'story_arc': 37
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -109,6 +110,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['printer'],
                            CTYPES['indicia_printer'],
                            CTYPES['series'],
+                           CTYPES['story_arc'],
                            CTYPES['feature'],
                            CTYPES['feature_logo'],
                            CTYPES['feature_relation'],
@@ -362,6 +364,9 @@ class Changeset(models.Model):
             return (self.coverrevisions.all(),
                     self.issuerevisions.all(),
                     self.storyrevisions.all())
+
+        if self.change_type == CTYPES['story_arc']:
+            return (self.storyarcrevisions.all(),)
 
         if self.change_type == CTYPES['feature']:
             return (self.featurerevisions.all(),
@@ -5135,8 +5140,8 @@ class PreviewIssue(Issue):
 
 def get_story_field_list():
     return ['sequence_number', 'title', 'title_inferred', 'first_line',
-            'type', 'feature', 'feature_object', 'feature_logo', 'genre',
-            'job_number', 'page_count', 'page_count_uncertain',
+            'type', 'feature', 'feature_object', 'feature_logo', 'story_arc',
+            'genre', 'job_number', 'page_count', 'page_count_uncertain',
             'script', 'no_script', 'pencils', 'no_pencils', 'inks', 'no_inks',
             'colors', 'no_colors', 'letters', 'no_letters',
             'editing', 'no_editing', 'characters', 'universe',
@@ -5450,6 +5455,78 @@ class StoryGroupRevision(Revision):
         return 0
 
 
+class StoryArcRevision(Revision):
+    class Meta:
+        db_table = 'oi_story_arc_revision'
+        ordering = ['-created', '-id']
+
+    story_arc = models.ForeignKey(StoryArc, on_delete=models.CASCADE,
+                                  null=True, related_name='revisions')
+    name = models.CharField(max_length=255)
+    leading_article = models.BooleanField(default=False)
+    disambiguation = models.CharField(
+      max_length=255, default='', db_index=True, blank=True,
+      help_text='If needed a short phrase for the disambiguation of '
+                'story arcs with a similar or identical name.')
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    description = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
+
+    source_name = 'story_arc'
+    source_class = StoryArc
+
+    @property
+    def source(self):
+        return self.story_arc
+
+    @source.setter
+    def source(self, value):
+        self.story_arc = value
+
+    _base_field_list = ['name', 'leading_article', 'disambiguation',
+                        'language', 'description', 'notes',]
+
+    def _field_list(self):
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'leading_article': False,
+            'disambiguation': '',
+            'language': None,
+            'description': '',
+            'notes': '',
+        }
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        if fork is False:
+            self.leading_article = self.story_arc.name != self.story_arc.sort_name
+
+    def _post_assign_fields(self, changes):
+        if self.leading_article:
+            self.story_arc.sort_name = remove_leading_article(self.name)
+        else:
+            self.story_arc.sort_name = self.name
+
+    def _imps_for(self, field_name):
+        if field_name in self._field_list():
+            return 1
+        return 0
+
+    def get_absolute_url(self):
+        if self.story_arc is None:
+            return "/story_arc/revision/%i/preview" % self.id
+        return self.story_arc.get_absolute_url()
+
+    def _queue_name(self):
+        return self.__str__()
+
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.language.code.upper())
+
+
 class StoryRevision(Revision):
     class Meta:
         db_table = 'oi_story_revision'
@@ -5464,6 +5541,7 @@ class StoryRevision(Revision):
     feature = models.CharField(max_length=255, blank=True)
     feature_object = models.ManyToManyField(Feature, blank=True)
     feature_logo = models.ManyToManyField(FeatureLogo, blank=True)
+    story_arc = models.ManyToManyField(StoryArc, blank=True)
     universe = models.ManyToManyField(Universe, blank=True)
     type = models.ForeignKey(StoryType, on_delete=models.CASCADE)
     sequence_number = models.IntegerField()
@@ -6337,6 +6415,7 @@ class StoryRevision(Revision):
             'feature': '',
             'feature_object': None,
             'feature_logo': None,
+            'story_arc': None,
             'page_count': None,
             'page_count_uncertain': False,
             'script': '',
@@ -6382,7 +6461,7 @@ class StoryRevision(Revision):
         self._seen_feature = False
 
     def _imps_for(self, field_name):
-        if field_name in ('first_line', 'type', 'universe',
+        if field_name in ('first_line', 'type', 'universe', 'story_arc',
                           'characters', 'synopsis', 'job_number',
                           'reprint_notes', 'notes', 'keywords', 'issue'):
             return 1

@@ -11,6 +11,8 @@ from taggit.managers import TaggableManager
 
 import django_tables2 as tables
 
+from apps.stddata.models import Language
+
 from .gcddata import GcdData
 from .award import ReceivedAward
 from .character import CharacterNameDetail, Group, GroupNameDetail, \
@@ -24,6 +26,7 @@ STORY_TYPES = {
     'cover': 6,
     'insert': 11,
     'letters_page': 12,
+    'comic story': 19,
     'soo': 22,
     'blank': 24,
     'preview': 26,
@@ -617,6 +620,29 @@ def extend_credit_roles(credit, added_type_name):
     return credit
 
 
+class StoryArc(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        ordering = ('sort_name', 'language__name')
+        db_table = 'gcd_story_arc'
+
+    name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True)
+    disambiguation = models.CharField(max_length=255, default='',
+                                      db_index=True)
+    language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    description = models.TextField()
+    notes = models.TextField()
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+            'show_story_arc',
+            kwargs={'story_arc_id': self.id})
+
+    def __str__(self):
+        return '%s (%s)' % (self.name, self.language)
+
+
 class Story(GcdData):
     class Meta:
         app_label = 'gcd'
@@ -629,6 +655,7 @@ class Story(GcdData):
     feature = models.CharField(max_length=255)
     feature_object = models.ManyToManyField(Feature)
     feature_logo = models.ManyToManyField(FeatureLogo)
+    story_arc = models.ManyToManyField(StoryArc)
     universe = models.ManyToManyField(Universe)
     type = models.ForeignKey(StoryType, on_delete=models.CASCADE)
     sequence_number = models.IntegerField()
@@ -886,6 +913,27 @@ class Story(GcdData):
     def show_feature_logo(self):
         return self._show_feature_logo(self)
 
+    def show_story_arc(self, url=True):
+        first = True
+        story_arcs = ''
+        for story_arc in self.story_arc.all():
+            if first:
+                first = False
+            else:
+                story_arcs += '; '
+            if url:
+                story_arcs += '<a href="%s">%s</a>' % (
+                  story_arc.get_absolute_url(), esc(story_arc.name))
+            else:
+                story_arcs += '%s' % story_arc.name
+        if url:
+            return mark_safe(story_arcs)
+        else:
+            return story_arcs
+
+    def show_story_arc_as_text(self):
+        return self.show_story_arc(url=False)
+
     def show_universe(self):
         from apps.gcd.templatetags.display import absolute_url
         universes = ''
@@ -999,14 +1047,16 @@ class StoryTable(tables.Table):
 
     def order_on_sale_date(self, query_set, is_descending):
         if is_descending:
-            query_set = query_set.order_by(NullIf('issue__on_sale_date', Value(''))
+            query_set = query_set.order_by(NullIf('issue__on_sale_date',
+                                                  Value(''))
                                            .desc(nulls_last=True),
                                            NullIf('issue__key_date', Value(''))
                                            .desc(nulls_last=True),
                                            'issue__series__sort_name',
                                            '-issue__sort_code')
         else:
-            query_set = query_set.order_by(NullIf('issue__on_sale_date', Value(''))
+            query_set = query_set.order_by(NullIf('issue__on_sale_date',
+                                                  Value(''))
                                            .asc(nulls_last=True),
                                            NullIf('issue__key_date', Value(''))
                                            .asc(nulls_last=True),

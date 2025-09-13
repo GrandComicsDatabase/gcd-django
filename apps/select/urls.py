@@ -56,6 +56,11 @@ urlpatterns = [
         name='feature_logo_autocomplete',
     ),
     path(
+        'autocomplete/story_arc/',
+        select_views.StoryArcAutocomplete.as_view(),
+        name='story_arc_autocomplete',
+    ),
+    path(
         'autocomplete/character/',
         select_views.CharacterAutocomplete.as_view(),
         name='character_autocomplete',

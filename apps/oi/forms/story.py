@@ -14,16 +14,17 @@ from crispy_forms.bootstrap import (
     Tab,
     TabHolder,
 )
+from markdownx.widgets import MarkdownxWidget
 
 from apps.oi.models import (
-    get_reprint_field_list, get_story_field_list,
-    BiblioEntryRevision, ReprintRevision, StoryRevision,
+    get_reprint_field_list, get_story_field_list, remove_leading_article,
+    BiblioEntryRevision, ReprintRevision, StoryRevision, StoryArcRevision,
     StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision)
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
                             Feature, FeatureLogo, CharacterNameDetail, \
-                            GroupNameDetail, CharacterRole, \
+                            GroupNameDetail, CharacterRole, StoryArc, \
                             Universe, STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
@@ -32,7 +33,7 @@ from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 from .custom_layout_object import Formset
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
-    GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP, KEYWORDS_HELP,
+    GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP, KEYWORDS_HELP, BaseForm,
     SEQUENCE_HELP_LINKS, BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
     BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
@@ -765,6 +766,17 @@ class StoryRevisionForm(KeywordBaseForm):
                 'feature logos will be added automatically.'
       )
 
+    story_arc = forms.ModelMultipleChoiceField(
+      queryset=StoryArc.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+                          url='story_arc_autocomplete',
+                          forward=['language_code', 'type'],
+                          attrs={'class': 'w-full lg:w-4/5'}),
+      required=False,
+      help_text='Only story arcs for the series language can be selected. Enter '
+                '"&lt;space&gt;[&lt;text&gt;" to search the disambiguation.'
+     )
+
     no_creator_help = forms.CharField(
       widget=HiddenInputWithHelp,
       required=False,
@@ -802,8 +814,8 @@ class StoryRevisionForm(KeywordBaseForm):
                   ' <i>Group members</i>, again '
                   'without additional details about the appearance,</li>'
                   '<li>each character (with its groups) separately, where '
-                  'additional details about the appearance can be entered.</li>'
-                  '<li>the old text field for characters,</li></ul>'
+                  'additional details about the appearance can be entered.'
+                  '</li><li>the old text field for characters,</li></ul>'
                   'For a selected superhero the linked civilian identity will '
                   'be added automatically. In the later character display both'
                   ' are shown together as <i>Superhero [Civilian Name]</i>, '
@@ -1061,6 +1073,10 @@ class StoryRevisionForm(KeywordBaseForm):
             raise forms.ValidationError(
                 ['The sequence type cannot have a feature.'])
 
+        if cd['story_arc'] and cd['type'].id != STORY_TYPES['comic story']:
+            raise forms.ValidationError(
+                ['The sequence type cannot have a story arc.'])
+
         if cd['genre'] and cd['type'].id in NO_GENRE_TYPES:
             raise forms.ValidationError(
                 ['The sequence type cannot have a genre.'])
@@ -1208,3 +1224,34 @@ class BiblioRevisionForm(forms.ModelForm):
             if cd['page_ended'] < cd['page_began']:
                 raise forms.ValidationError(
                   ["Page ended must be larger than Page began."])
+
+
+def get_story_arc_revision_form(revision=None, user=None):
+    class RuntimeStoryArcRevisionForm(StoryArcRevisionForm):
+        pass
+
+    return RuntimeStoryArcRevisionForm
+
+
+class StoryArcRevisionForm(BaseForm):
+    class Meta:
+        model = StoryArcRevision
+        fields = model._base_field_list
+
+    description = forms.CharField(widget=MarkdownxWidget(
+      attrs={'class': 'w-full lg:w-4/5', 'rows': 7}), required=False,
+      help_text='A concise description. '
+                'For visual structure, one can use the '
+                '<a href="https://commonmark.org/help/">markdown syntax</a>. '
+                'See below after notes for more information.')
+
+    def clean(self):
+        cd = self.cleaned_data
+        if 'name' in cd:
+            cd['name'] = cd['name'].strip()
+            if (cd['leading_article'] and
+                    cd['name'] == remove_leading_article(cd['name'])):
+                raise forms.ValidationError(
+                    'The name is only one word, you cannot specify '
+                    'a leading article in this case.')
+        return cd

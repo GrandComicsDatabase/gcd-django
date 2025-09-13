@@ -373,6 +373,9 @@ urlpatterns = [
     path('story/<int:story_id>/modal/',
       gcd_views.details.show_story_modal, name='show_story_modal'),
 
+    path('story_arc/<int:story_arc_id>/',
+      gcd_views.details.story_arc, name='show_story_arc'),
+
     # Feature
     path('feature/<int:feature_id>/issues/',
       gcd_views.details.feature_issues, name='feature_issues'),
