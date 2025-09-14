@@ -172,6 +172,10 @@
                 <a href="{{ result.object.issue.get_absolute_url }}">
               {{ result.object.issue.full_name }}</a> {{ result.object.issue.publication_date|str_encl:'(' }})</td>
       {% endif %}
+      {% if result.model_name == 'story_arc' %}
+                <td class="pe-2">[STORY ARC]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
+      {% endif %}
       {% if result.model_name == 'feature' %}
                 <td class="pe-2">[FEATURE]</td>
                 <td><a href="{{ result.object.get_absolute_url }}">{{ result.object }}</a></td>
