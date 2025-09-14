@@ -67,10 +67,10 @@ GCD :: Story Arc :: {{ story_arc.name }}
       {% if not forloop.first %}
       </ol>
       {% endif %}
-    <li>{{ story.issue.full_name_with_link }}</li>
+    <li>{{ story.issue.full_name_with_link }} ({{ story.issue.publication_date }})</li>
     <ol class="object-page-numbered-list list-disc columns-1">
     {% endifchanged %}
-    <li>{{ story }}</li>
+    <li><a href="{{ story.get_absolute_url }}">{{ story }}</a></li>
   {% endfor %}
     </ol>
   </ol>

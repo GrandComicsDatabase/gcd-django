@@ -3384,7 +3384,8 @@ def show_story_arc(request, story_arc, preview=False):
 
     stories = Story.objects.filter(story_arc=story_arc,
                                    deleted=False)\
-                           .order_by('issue__series__sort_name',
+                           .order_by('issue__key_date',
+                                     'issue__series__sort_name',
                                      'issue__sort_code',
                                      'sequence_number')\
                            .select_related('issue__series__publisher')
