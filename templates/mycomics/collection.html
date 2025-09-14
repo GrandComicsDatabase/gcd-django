@@ -39,7 +39,7 @@
 {% block content %}
   {% bootstrap_messages %}
   <div class="page-header middle-header">
-    <h1>{% trans "Collection details" %}: {{ collection.name }}
+    <h1>{% trans "Collection Details" %}: {{ collection.name }}
     {% if request.user.collector == collection.collector %}
       <div class="btn-group pull-right">
         <a href="{% url "view_collection_series" collection.id %}">

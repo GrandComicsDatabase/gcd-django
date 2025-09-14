@@ -7,7 +7,7 @@ import django_filters
 
 from model_utils import Choices
 
-from apps.gcd.models import Issue, Series, Publisher
+from apps.gcd.models import Issue, Series, Publisher, Story
 from apps.stddata.models import Currency, Date, Language
 from taggit.managers import TaggableManager
 
@@ -275,6 +275,56 @@ class CollectionItem(models.Model):
                                     'collection_id': collection.id})
 
 
+class ReadingOrder(models.Model):
+    """Class for keeping info about particular reading orders together with
+    configuration of item fields used in each reading order."""
+    class Meta:
+        ordering = ['name']
+
+    collector = models.ForeignKey(Collector, on_delete=models.CASCADE,
+                                  related_name='reading_orders')
+
+    name = models.CharField(blank=False, max_length=255, db_index=True)
+    description = models.TextField(blank=True)
+
+    public = models.BooleanField(
+      default=False,
+      verbose_name="reading order is public and can be viewed by all")
+
+    was_read_used = models.BooleanField(default=False,
+                                        verbose_name="show read status")
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse('view_reading_order',
+                                    kwargs={'reading_order_id': self.id})
+
+    def __str__(self):
+        return str(self.name)
+
+
+class ReadingOrderItem(models.Model):
+    """Class for keeping record of particular item in a reading order."""
+
+    class Meta:
+        db_table = 'mycomics_reading_order_item'
+        ordering = ['sequence_number', ]
+
+    reading_order = models.ForeignKey(
+      ReadingOrder, related_name="items", on_delete=models.CASCADE)
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE)
+    story = models.ForeignKey(Story, on_delete=models.CASCADE, null=True,
+                              blank=True)
+    sequence_number = models.IntegerField()
+
+    was_read = models.BooleanField(default=None, null=True)
+
+    def get_absolute_url(self, reading_order):
+        return urlresolvers.reverse('view_reading_order_item',
+                                    kwargs={'item_id': self.id,
+                                            'reading_order_id':
+                                            reading_order.id})
+
+
 OWN_CHOICES = (
     (True, 'I own'),
     (False, 'I want'),
@@ -284,6 +334,7 @@ YES_NO_CHOICES = (
     (True, 'Yes'),
     (False, 'No'),
 )
+
 
 class CollectionItemFilter(django_filters.FilterSet):
     price_paid = django_filters.RangeFilter()

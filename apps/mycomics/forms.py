@@ -1,7 +1,9 @@
 from django.forms import ModelForm, Form, ChoiceField, Select, RadioSelect, \
                          ValidationError
 from apps.mycomics.models import Collector, Collection, CollectionItem, \
-                                 Location, PurchaseLocation, ConditionGrade
+                                 Location, PurchaseLocation, ConditionGrade, \
+                                 ReadingOrder, ReadingOrderItem
+from apps.gcd.models.story import STORY_TYPES
 
 
 class CollectorForm(ModelForm):
@@ -222,3 +224,23 @@ class CollectionSelectForm(Form):
             choices[:] = [choice for choice in choices
                           if choice[1] not in excluded_collections]
         self.fields['collection'].choices = choices
+
+
+class ReadingOrderForm(ModelForm):
+    class Meta:
+        model = ReadingOrder
+        exclude = ('collector',)
+
+
+class ReadingOrderItemForm(ModelForm):
+    class Meta:
+        model = ReadingOrderItem
+        exclude = ('reading_order', 'issue',)
+
+    def __init__(self, *args, **kwargs):
+        super(ReadingOrderItemForm, self).__init__(*args, **kwargs)
+        issue = kwargs['instance'].issue
+        choices = [(story.id, story)
+                   for story in issue.active_stories().filter(
+                     type__id=STORY_TYPES['comic story'])]
+        self.fields['story'].choices = [(None, "---")] + choices

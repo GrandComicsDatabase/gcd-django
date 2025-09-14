@@ -1,0 +1,114 @@
+{% extends "mycomics/user_base.html" %}
+{% load i18n %}
+{% load collecting %}
+{% load bootstrap3 %}
+{% load credits %}
+
+{% block modals %}
+  {{ block.super }}
+  {% if request.user.collector == reading_order.collector %}
+  <div id="edit-item" class="modal fade" tabindex="-1" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="{% url 'save_reading_order_item' item.id reading_order.id %}" method="POST">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
+            <h4 class="modal-title">{% trans "Editing item in collection" %}</h4>
+          </div>
+          <div class="modal-body">
+              {% csrf_token %}
+              {% bootstrap_form item_form %}
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <input type="submit" class="btn btn-primary" name="submit" value="{% trans "Submit" %}">
+          </div>
+        </form>
+      </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+  </div><!-- /.modal -->
+  <form action="url_placeholder" method="POST" id="remove_item_form_id">
+    {% csrf_token %}
+  </form>
+  <script>
+    function remove_issue(delete_url) {
+        var item = document.getElementById('remove-item');
+        var issue_name = item.dataset.issue;
+        var reading_order_name = item.dataset.reading_order;
+        BootstrapDialog.confirm({
+            title: '<h4 class="modal-title">{% trans "Remove issue from reading order " %}'+reading_order_name+'</h4>',
+            message: '{% trans "Do you want to remove the issue <b>" %}'+issue_name+'</b> ?',
+            closable: true,
+            btnCancelLabel: '{% trans "Cancel" %}',
+            btnOKLabel: '{% trans "Confirm" %}',
+            btnOKClass: 'btn-primary',
+            callback: function(result) {
+                if(result) {
+                    $("#remove_item_form_id").attr("action", delete_url);
+                    $("#remove_item_form_id").submit();
+                };
+            }
+            });
+        }
+  </script>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  {% bootstrap_messages %}
+  <div class="page-header middle-header">
+    <h1>{{ item.issue.full_name_with_link }}
+    {% if item_after %}
+    <a href="{% url 'view_reading_order_item' item_id=item_after.id reading_order_id=reading_order.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-right"></span></button></a>
+    {% endif %}
+    {% if item_before %}
+    <a href="{% url 'view_reading_order_item' item_id=item_before.id reading_order_id=reading_order.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-left"></span></button></a>
+    {% endif %}
+    </h1>
+    <h4>In: <a href="{% url "view_reading_order" reading_order.id %}?page={{ page }}">{{ reading_order.name }}</a>
+    {% if request.user.collector == reading_order.collector %}
+      {% if other_reading_orders %}
+        {% trans "Also in:" %}
+        {% for other_reading_order in other_reading_orders %}
+          {% if not forloop.first %}/{% endif %}
+          <a href="{% url "view_item" item_id=item.id reading_order_id=other_reading_order.id %}">{{ other_reading_order.name }}</a>
+        {% endfor %}
+      {% endif %}
+      <button type="button" class="btn btn-primary pull-right"
+              data-toggle="modal" href="#edit-item">{% trans "Edit" %}
+      </button>
+      <button type="button" class="btn btn-primary pull-right" onclick="remove_issue('{% url 'delete_reading_order_item' item.id reading_order.id %}');"
+              id="remove-item" data-toggle="modal" data-issue="{{ item.issue.full_name }}" data-reading_order="{{ reading_order.name }}">{% trans "Delete from reading order" %}
+      </button>
+    {% else %} / {{ collection.collector.user.indexer }}
+    {% endif %}
+    </h4>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4">
+      <a href="{{ item.issue.get_absolute_url }}">
+        <div class="thumbnail">
+          {{ item.issue|show_cover_tag_medium }}
+        </div>
+      </a>
+    </div>
+    <div class="col-md-8">
+      {% if item.story %}
+      <h4>{% trans "Story:" %} {{ item.story.title }}</h4>
+      {% endif %}
+      {% if reading_order.was_read_used %}
+        {% trans "Was read: " %}{{ item.was_read|yesno }}<br>
+      {% endif %}
+    </div>
+  </div>
+
+<script type="text/javascript">
+$(document).ready(function() {
+
+  if(window.location.href.indexOf('#edit-item') != -1) {
+    $('#edit-item').modal('show');
+  }
+});
+</script>
+{% endblock %}

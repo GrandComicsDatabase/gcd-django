@@ -30,11 +30,13 @@ from apps.select.views import store_select_data
 from apps.mycomics.forms import CollectionForm, CollectionItemForm, \
                                 CollectionItemsForm, \
                                 CollectionSelectForm, CollectorForm, \
-                                LocationForm, PurchaseLocationForm
+                                LocationForm, PurchaseLocationForm, \
+                                ReadingOrderForm, ReadingOrderItemForm
 from apps.stddata.models import Date
 from apps.stddata.forms import DateForm
 from apps.mycomics.models import Collection, CollectionItem, Subscription, \
                                  Location, PurchaseLocation, \
+                                 ReadingOrder, ReadingOrderItem, \
                                  CollectionItemFilter
 from django.utils.translation import gettext as _
 
@@ -45,6 +47,9 @@ COLLECTION_LIST_TEMPLATE = 'mycomics/collections.html'
 GENERIC_FORM_TEMPLATE = 'mycomics/generic_edit_form.html'
 COLLECTION_ITEM_TEMPLATE = 'mycomics/collection_item.html'
 COLLECTION_SUBSCRIPTIONS_TEMPLATE = 'mycomics/collection_subscriptions.html'
+READING_ORDER_TEMPLATE = 'mycomics/reading_order.html'
+READING_ORDER_LIST_TEMPLATE = 'mycomics/reading_orders.html'
+READING_ORDER_ITEM_TEMPLATE = 'mycomics/reading_order_item.html'
 MESSAGE_TEMPLATE = 'mycomics/message.html'
 SETTINGS_TEMPLATE = 'mycomics/settings.html'
 DEFAULT_PER_PAGE = 25
@@ -96,16 +101,18 @@ def view_collection(request, collection_id):
     items = collection.items.all().select_related('issue__series')
     base_url = urlresolvers.reverse('view_collection',
                                     kwargs={'collection_id': collection_id})
-    needed_covers_url = urlresolvers.reverse("process_advanced_search") + \
-                        "?target=issue&method=iexact&logic=False" \
-                        "&cover_needed=on&in_collection=%s" \
-                        "&in_selected_collection=on" \
-                        "&order1=series&order2=date" % collection_id
-    unindexed_issues_url = urlresolvers.reverse("process_advanced_search") + \
-                           "?target=issue&method=iexact&logic=False" \
-                           "&is_indexed=False&in_collection=%s" \
-                           "&in_selected_collection=on" \
-                           "&order1=series&order2=date" % collection_id
+    needed_covers_url = urlresolvers.reverse(
+        "process_advanced_search") + \
+        "?target=issue&method=iexact&logic=False" \
+        "&cover_needed=on&in_collection=%s" \
+        "&in_selected_collection=on" \
+        "&order1=series&order2=date" % collection_id
+    unindexed_issues_url = urlresolvers.reverse(
+        "process_advanced_search") + \
+        "?target=issue&method=iexact&logic=False" \
+        "&is_indexed=False&in_collection=%s" \
+        "&in_selected_collection=on" \
+        "&order1=series&order2=date" % collection_id
     vars = {'collection': collection,
             'collection_list': collection_list,
             'base_url': base_url,
@@ -164,16 +171,18 @@ def view_collection_series(request, collection_id):
     series_list = Series.objects.filter(id__in=series_ids)
     base_url = urlresolvers.reverse('view_collection_series',
                                     kwargs={'collection_id': collection_id})
-    needed_covers_url = urlresolvers.reverse("process_advanced_search") + \
-                        "?target=issue&method=iexact&logic=False" \
-                        "&cover_needed=on&in_collection=%s" \
-                        "&in_selected_collection=on" \
-                        "&order1=series&order2=date" % collection_id
-    unindexed_issues_url = urlresolvers.reverse("process_advanced_search") + \
-                           "?target=issue&method=iexact&logic=False" \
-                           "&is_indexed=False&in_collection=%s" \
-                           "&in_selected_collection=on" \
-                           "&order1=series&order2=date" % collection_id
+    needed_covers_url = urlresolvers.reverse(
+        "process_advanced_search") + \
+        "?target=issue&method=iexact&logic=False" \
+        "&cover_needed=on&in_collection=%s" \
+        "&in_selected_collection=on" \
+        "&order1=series&order2=date" % collection_id
+    unindexed_issues_url = urlresolvers.reverse(
+        "process_advanced_search") + \
+        "?target=issue&method=iexact&logic=False" \
+        "&is_indexed=False&in_collection=%s" \
+        "&in_selected_collection=on" \
+        "&order1=series&order2=date" % collection_id
     vars = {'collection': collection,
             'collection_list': collection_list,
             'base_url': base_url,
@@ -1094,6 +1103,232 @@ def mycomics_search(request):
                'allowed_selects': allowed_selects}
     return PaginatedFacetedSearchView(searchqueryset=sqs)(request,
                                                           context=context)
+
+
+@login_required
+def reading_orders_list(request):
+    reading_order_list = request.user.collector.reading_orders.order_by('name')
+    vars = {'reading_order_list': reading_order_list}
+
+    return render(request, READING_ORDER_LIST_TEMPLATE, vars)
+
+
+@login_required
+def edit_reading_order(request, reading_order_id=None):
+    """
+    View for editing and adding of reading orders. First request comes as GET,
+    which results in displaying page with form. Second request with POST saves
+    this form.
+    """
+    if reading_order_id:
+        reading_order = get_object_or_404(ReadingOrder, id=reading_order_id,
+                                          collector=request.user.collector)
+    else:
+        reading_order = ReadingOrder(collector=request.user.collector)
+
+    if request.method == 'POST':
+        form = ReadingOrderForm(request.POST, instance=reading_order)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _('Reading order saved.'))
+            return HttpResponseRedirect(
+                urlresolvers.reverse('reading_orders_list'))
+
+    else:
+        form = ReadingOrderForm(instance=reading_order)
+
+    return render(request, GENERIC_FORM_TEMPLATE, {'form': form,
+                                                   'heading':
+                                                   'Editing Reading Order'})
+
+
+@login_required
+def delete_reading_order(request, reading_order_id):
+    reading_order = get_object_or_404(ReadingOrder, id=reading_order_id,
+                                      collector=request.user.collector)
+    reading_order.delete()
+    # delete also deletes items due to delete cascade
+    messages.success(
+      request,
+      mark_safe(_('Reading Order <b>%s</b> deleted.'
+                  % esc(reading_order.name))))
+    return HttpResponseRedirect(urlresolvers.reverse('reading_orders_list'))
+
+
+def view_reading_order(request, reading_order_id):
+    reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
+    if request.user.is_authenticated and \
+       reading_order.collector == request.user.collector:
+        reading_order_list = request.user.collector.reading_orders.all()
+    elif reading_order.public is True:
+        reading_order_list = ReadingOrder.objects.none()
+    elif not request.user.is_authenticated:
+        return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+    else:
+        raise PermissionDenied
+
+    items = reading_order.items.all().select_related('issue__series')
+    base_url = urlresolvers.reverse('view_reading_order',
+                                    kwargs={'reading_order_id':
+                                            reading_order_id})
+    vars = {'reading_order': reading_order,
+            'reading_order_list': reading_order_list,
+            'base_url': base_url}
+    paginator = ResponsePaginator(items, vars=vars, per_page=DEFAULT_PER_PAGE,
+                                  alpha=True)
+    paginator.paginate(request)
+    get_copy = request.GET.copy()
+    get_copy.pop('page', None)
+    if get_copy:
+        extra_query_string = '&%s' % get_copy.urlencode()
+    else:
+        extra_query_string = ''
+    vars['extra_query_string'] = extra_query_string
+
+    return render(request, READING_ORDER_TEMPLATE, vars)
+
+
+def get_reading_order_for_owner(request, reading_order_id):
+    reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
+    if reading_order.collector.user != request.user:
+        return None, render_error(
+          request, 'Only the owner of a reading order can add issues to it.',
+          redirect=False)
+    return reading_order, None
+
+
+def get_reading_order_item_for_collector(item_id, collector):
+    item = get_object_or_404(ReadingOrderItem, id=item_id)
+    # checking if this user can see this item
+    if item.reading_order.collector != collector:
+        raise PermissionDenied
+    return item
+
+
+def check_item_is_in_reading_order(request, item, reading_order):
+    if item not in reading_order.items.all():
+        raise ErrorWithMessage("This item doesn't belong to given "
+                               "reading order.")
+
+
+@login_required
+def add_single_issue_to_reading_order(request, issue_id):
+    if not request.POST:
+        raise ErrorWithMessage("No reading order was selected.")
+    issue = get_object_or_404(Issue, id=issue_id)
+    reading_order, error_return = get_reading_order_for_owner(
+      request, reading_order_id=int(request.POST['reading_order_id']))
+    if not reading_order:
+        return error_return
+    if reading_order.items.exists():
+        sequence_number = reading_order.items.last().sequence_number + 1
+    else:
+        sequence_number = 1
+    ro_item = ReadingOrderItem.objects.create(issue=issue,
+                                              reading_order=reading_order,
+                                              sequence_number=sequence_number)
+    link = ro_item.get_absolute_url(reading_order)
+    if not settings.MYCOMICS:
+        link = 'https://my.comics.org' + link
+    messages.success(
+      request,
+      mark_safe("Issue <a href='%s'>%s</a> was added to your <b>%s</b> "
+                "reading order." % (link, esc(issue),
+                                    esc(reading_order.name))))
+    request.session['reading_order_id'] = reading_order.id
+    return HttpResponseRedirect(urlresolvers.reverse('show_issue',
+                                kwargs={'issue_id': issue_id}))
+
+
+def view_reading_order_item(request, item_id, reading_order_id):
+    reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
+    collector = reading_order.collector
+    if request.user.is_authenticated and \
+       collector == request.user.collector:
+        item = get_reading_order_item_for_collector(item_id,
+                                                    request.user.collector)
+    elif reading_order.public is True:
+        item = get_reading_order_item_for_collector(item_id,
+                                                    collector)
+    elif not request.user.is_authenticated:
+        return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+    else:
+        raise PermissionDenied
+
+    check_item_is_in_reading_order(request, item, reading_order)
+
+    item_before = reading_order.items.filter(
+      sequence_number__lt=item.sequence_number).last()
+
+    item_after = reading_order.items.filter(
+      sequence_number__gt=item.sequence_number).first()
+
+    item_form = ReadingOrderItemForm(instance=item)
+
+    if request.user.is_authenticated and \
+       collector == request.user.collector:
+        other_reading_orders = item.reading_order.collector\
+                                   .reading_orders.exclude(id=reading_order.id)
+    else:
+        other_reading_orders = None
+
+    return render(request, READING_ORDER_ITEM_TEMPLATE,
+                  {'item': item,
+                   'item_form': item_form,
+                   'item_before': item_before,
+                   'item_after': item_after,
+                   'page': 1,
+                   'reading_order': reading_order,
+                   'other_reading_orders': other_reading_orders, })
+
+
+@login_required
+def save_reading_order_item(request, item_id, reading_order_id):
+    if request.method == 'POST':
+        reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
+        item = get_reading_order_item_for_collector(item_id,
+                                                    request.user.collector)
+        item_form = ReadingOrderItemForm(request.POST, instance=item)
+        item_form_valid = item_form.is_valid()
+
+        if not item_form_valid:
+            messages.error(request, _('Some data was entered incorrectly.'))
+            return render(request, READING_ORDER_ITEM_TEMPLATE,
+                          {'item': item, 'item_form': item_form,
+                           'reading_order': reading_order})
+        item = item_form.save(commit=False)
+        item.save()
+        messages.success(request, _('Item saved.'))
+
+        return HttpResponseRedirect(
+            urlresolvers.reverse('view_reading_order_item',
+                                 kwargs={'item_id': item_id,
+                                         'reading_order_id':
+                                         reading_order_id}))
+
+    raise Http404
+
+
+@login_required
+def delete_reading_order_item(request, item_id, reading_order_id):
+    if request.method != 'POST':
+        raise ErrorWithMessage("This page may only be accessed through the "
+                               "proper form.")
+
+    reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
+    item = get_reading_order_item_for_collector(item_id,
+                                                request.user.collector)
+
+    check_item_is_in_reading_order(request, item, reading_order)
+
+    item.delete()
+    messages.success(
+      request,
+      mark_safe(_("Item <b>%s</b> removed from %s" % (
+                  esc(item.issue.full_name()),
+                  esc(reading_order)))))
+    return HttpResponseRedirect(urlresolvers.reverse('view_reading_order',
+                                kwargs={'reading_order_id': reading_order.id}))
 
 
 @login_required

@@ -49,10 +49,21 @@ Tracked in {{ issue.collectionitem_set.count }} collections.
 <form method="POST" action="{% url 'my_issue' issue_id=issue.id %}">
     {% csrf_token %}
 <div>
-  <button class="w-full"><input class="m-0 mb-0.5 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="Add This Issue To"></button>
+  <button class="w-full"><input class="m-0 mb-0.5 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="Add This Issue To Collection"></button>
   <select class="ms-1" name="collection_id">
     {% for col_item in request.user.collector.ordered_collections %}
     <option value="{{ col_item.id }}" {% if request.session.collection_id == col_item.id %}selected{% endif %}>{{ col_item.name }}
+    {% endfor %}
+  </select>
+</div>
+</form>
+<form method="POST" action="{% url 'add_to_reading_order' issue_id=issue.id %}">
+    {% csrf_token %}
+<div>
+  <button class="w-full"><input class="m-0 mb-0.5 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="Add This Issue To Reading Order"></button>
+  <select class="ms-1" name="reading_order_id">
+    {% for ro_item in request.user.collector.reading_orders.all %}
+    <option value="{{ ro_item.id }}" {% if request.session.reading_order_id == ro_item.id %}selected{% endif %}>{{ ro_item.name }}
     {% endfor %}
   </select>
 </div>
