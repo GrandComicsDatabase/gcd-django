@@ -35,7 +35,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, \
                             CreatorArtInfluence, CreatorNonComicWork, \
                             CreatorNameDetail, SeriesPublicationType, \
                             Award, ReceivedAward, Character, Group, Universe, \
-                            Printer
+                            Printer, StoryArc
 from apps.gcd.models.character import CharacterSearchTable
 from apps.gcd.models.cover import CoverIssuePublisherEditTable
 from apps.gcd.models.creator import CreatorSearchTable
@@ -187,7 +187,7 @@ def generic_by_name(request, name, q_obj, sort,
         else:
             query_val[base_name] = name
 
-    elif class_ in [Award, ]:
+    elif class_ in [Award, StoryArc]:
         if sqs is None:
             things = class_.objects.exclude(deleted=True).filter(q_obj)
             things = things.order_by("name")
@@ -898,6 +898,34 @@ def feature_by_name(request, feature_name='', sort=ORDER_ALPHA,
         q_obj = Q(name__icontains=feature_name)
         return generic_by_name(request, feature_name, q_obj, sort, Feature,
                                table_inline=table_inline)
+
+
+def story_arc_search_hx(request):
+    if request.method == 'GET':
+        return render(request, 'gcd/bits/active_search.html',
+                      {'object_name': 'Story Arcs',
+                       'object_type': 'story_arc'})
+    story_arc_name = request.POST['search']
+    return story_arc_by_name(request, story_arc_name,
+                             template='gcd/search/generic_named_base_list.html')
+
+
+def story_arc_by_name(request, story_arc_name='', sort=ORDER_ALPHA,
+                      template='gcd/search/generic_include_list.html'):
+    include_template = 'gcd/search/generic_named_base_list.html'
+    # if settings.USE_ELASTICSEARCH and not story_arc_name == '':
+    #     sqs = SearchQuerySet().filter(name=GcdNameQuery(story_arc_name)) \
+    #                           .models(StoryArc)
+    #     story_arc_ids = sqs.values_list('pk', flat=True)
+    #     things = StoryArc.objects.filter(id__in=story_arc_ids)
+    #     return generic_by_name(request, story_arc_name, None, sort, StoryArc,
+    #                            template=template, things=things,
+    #                            include_template=include_template)
+    # else:
+    q_obj = Q(name__icontains=story_arc_name)
+    return generic_by_name(request, story_arc_name, q_obj, sort, StoryArc,
+                            template,
+                            include_template=include_template)
 
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):

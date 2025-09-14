@@ -375,6 +375,8 @@ urlpatterns = [
 
     path('story_arc/<int:story_arc_id>/',
       gcd_views.details.story_arc, name='show_story_arc'),
+    path('story_arc/search/',
+         gcd_views.search.story_arc_search_hx, name='story_arc_search_hx'),
 
     # Feature
     path('feature/<int:feature_id>/issues/',
