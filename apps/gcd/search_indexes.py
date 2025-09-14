@@ -4,7 +4,7 @@ from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
     CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature, Printer,\
-    Character, Group, Universe
+    Character, Group, Universe, StoryArc
 
 from apps.oi.models import on_sale_date_fields
 
@@ -347,6 +347,25 @@ class FeatureIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_relations_weight(self, obj):
         return obj.to_related_feature.filter(from_feature=obj).count()
+
+
+class StoryArcIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/story_arc_text.txt')
+    name = indexes.CharField(model_attr="name")
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
+    language = indexes.CharField(model_attr='language__code',
+                                 faceted=True, indexed=False)
+
+    def get_model(self):
+        return StoryArc
+
+    def prepare_facet_model_name(self, obj):
+        return "story_arc"
 
 
 class UniverseIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):

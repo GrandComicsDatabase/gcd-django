@@ -634,6 +634,12 @@ class StoryArc(GcdData):
     description = models.TextField()
     notes = models.TextField()
 
+    def name_with_disambiguation(self):
+        extra = ''
+        if self.disambiguation:
+            extra = ' [%s]' % self.disambiguation
+        return str('%s%s' % (self.name, extra))
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
             'show_story_arc',
