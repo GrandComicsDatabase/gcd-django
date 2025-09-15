@@ -1215,6 +1215,8 @@ def check_item_is_in_reading_order(request, item, reading_order):
 def add_single_issue_to_reading_order(request, issue_id):
     if not request.POST:
         raise ErrorWithMessage("No reading order was selected.")
+    if not 'reading_order_id' in request.POST:
+        raise ErrorWithMessage("No reading order was selected.")
     issue = get_object_or_404(Issue, id=issue_id)
     reading_order, error_return = get_reading_order_for_owner(
       request, reading_order_id=int(request.POST['reading_order_id']))
