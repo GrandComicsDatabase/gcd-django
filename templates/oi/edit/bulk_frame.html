@@ -1,5 +1,6 @@
 {% extends "oi/base_view.html" %}
 {% load static %}
+{% load display %}
 
 {% block title %}
 Changing {{ object_name }}
@@ -19,7 +20,13 @@ Changing {{ object_name }}
 {% if nr_items != nr_items_unreserved %}
   <span class="instructions important">
     <br>Only {{ nr_items_unreserved }} of these issues are currently unreserved and will be part of this bulk change.
-  </span>
+  </span><br>
+  The following {{ items_reserved.count }} issues are currently reserved by other indexers and will not be part of the change:
+  <ul class="list-disc ps-4">
+  {% for issue in items_reserved %}
+    <li>{{ issue|absolute_url }}</li>
+  {% endfor %}
+  </ul>
 {% endif %}
   <p>Note that only fields which are currently the same for all issues can be changed.</p>
 </div>

@@ -1627,10 +1627,13 @@ def edit_issues_in_bulk(request):
     ids = list(items.values_list('id', flat=True))
     items = Issue.objects.filter(id__in=ids)
     nr_items = items.count()
-    nr_items_reserved = RevisionLock.objects.filter(
+    items_reserved = RevisionLock.objects.filter(
       object_id__in=ids,
-      content_type=ContentType.objects.get_for_model(items[0])).count()
+      content_type=ContentType.objects.get_for_model(items[0]))
+    nr_items_reserved = items_reserved.count()
     nr_items_unreserved = nr_items - nr_items_reserved
+    items_reserved_ids = items_reserved.values_list('object_id', flat=True)
+    items_reserved = Issue.objects.filter(id__in=items_reserved_ids)
     if nr_items_unreserved == 0:
         if nr_items == 0:  # shouldn't really happen
             return HttpResponseRedirect(urlresolvers.reverse(
@@ -1724,7 +1727,7 @@ def edit_issues_in_bulk(request):
         form = _clean_bulk_issue_change_form(form_class(initial=initial),
                                              remove_fields, items)
         return _display_bulk_issue_change_form(
-          request, form, nr_items, nr_items_unreserved,
+          request, form, nr_items, nr_items_unreserved, items_reserved,
           request.GET.urlencode(), target, method, logic, used_search_terms)
 
     form = form_class(request.POST)
@@ -1733,7 +1736,7 @@ def edit_issues_in_bulk(request):
         form = _clean_bulk_issue_change_form(form, remove_fields, items,
                                              number_of_issues=False)
         return _display_bulk_issue_change_form(
-          request, form, nr_items, nr_items_unreserved,
+          request, form, nr_items, nr_items_unreserved, items_reserved,
           request.GET.urlencode(), target, method, logic, used_search_terms)
 
     changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -1787,6 +1790,7 @@ def edit_issues_in_bulk(request):
 
 def _display_bulk_issue_change_form(request, form,
                                     nr_items, nr_items_unreserved,
+                                    items_reserved,
                                     search_option,
                                     target, method, logic, used_search_terms):
     url_name = 'edit_issues_in_bulk'
@@ -1800,6 +1804,7 @@ def _display_bulk_issue_change_form(request, form,
         'form': form,
         'nr_items': nr_items,
         'nr_items_unreserved': nr_items_unreserved,
+        'items_reserved': items_reserved,
         'target': target,
         'method': method,
         'logic': logic,
