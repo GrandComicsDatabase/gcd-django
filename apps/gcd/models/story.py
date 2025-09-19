@@ -21,6 +21,7 @@ from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo
 from .support_tables import render_publisher
 
+# TODO rename STORY_TYPES to SEQUENCE_TYPES
 STORY_TYPES = {
     'ad': 2,
     'cover': 6,
@@ -646,7 +647,10 @@ class StoryArc(GcdData):
             kwargs={'story_arc_id': self.id})
 
     def __str__(self):
-        return '%s (%s)' % (self.name, self.language)
+        extra = ''
+        if self.disambiguation:
+            extra = ' [%s]' % self.disambiguation
+        return '%s%s (%s)' % (self.name, extra, self.language)
 
 
 class Story(GcdData):
