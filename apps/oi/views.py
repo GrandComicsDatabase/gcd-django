@@ -1857,10 +1857,11 @@ def edit_issues_in_bulk(request):
                               new_state=changeset.state)
 
     cd = form.cleaned_data
-    cd_credits = []
-    for form in credits_formset:
-        if form.is_valid():
-            cd_credits.append(form.cleaned_data)
+    if credits_formset:
+        cd_credits = []
+        for form in credits_formset:
+            if form.is_valid():
+                cd_credits.append(form.cleaned_data)
     for issue in items:
         revision_lock = _get_revision_lock(issue, changeset)
         if revision_lock:
@@ -1873,40 +1874,41 @@ def edit_issues_in_bulk(request):
                     setattr(revision, field, cd[field])
             revision.save()
 
-            existing_credits = issue.credits.filter(deleted=False)
-            for cd_credit in cd_credits:
-                if existing_credits.filter(
-                   creator__creator__id=cd_credit['creator'].creator_id)\
-                   .exists():
-                    credit = existing_credits.filter(
-                      creator__creator__id=cd_credit['creator'].creator_id)\
-                                                               .first()
-                    revision_lock = _get_revision_lock(credit, changeset)
-                    if not revision_lock:
-                        raise ValueError('could not lock credit')
-                    credit_revision = IssueCreditRevision.clone(
-                      credit, issue_revision=revision, changeset=changeset)
-                else:
-                    credit_revision = IssueCreditRevision(
-                      issue_revision=revision, changeset=changeset,
-                      creator=cd_credit['creator'],
-                      credit_type=cd_credit['credit_type'])
-                for field in data_fields:
-                    if field in ['creator_id', 'credit_type_id']:
-                        setattr(credit_revision, field,
-                                cd_credit[field[:-3]].id)
+            if credits_formset:
+                existing_credits = issue.credits.filter(deleted=False)
+                for cd_credit in cd_credits:
+                    if existing_credits.filter(
+                       creator__creator__id=cd_credit['creator'].creator_id)\
+                       .exists():
+                        credit = existing_credits.filter(
+                          creator__creator__id=cd_credit['creator'].creator_id
+                          ).first()
+                        revision_lock = _get_revision_lock(credit, changeset)
+                        if not revision_lock:
+                            raise ValueError('could not lock credit')
+                        credit_revision = IssueCreditRevision.clone(
+                          credit, issue_revision=revision, changeset=changeset)
                     else:
-                        setattr(credit_revision, field, cd_credit[field])
-                credit_revision.save()
-            for credit in issue.active_credits:
-                if not is_locked(credit):
-                    revision_lock = _get_revision_lock(credit, changeset)
-                    if not revision_lock:
-                        raise ValueError('could not lock credit')
-                    credit_revision = IssueCreditRevision.clone(
-                      credit, issue_revision=revision, changeset=changeset)
-                    credit_revision.deleted = True
+                        credit_revision = IssueCreditRevision(
+                          issue_revision=revision, changeset=changeset,
+                          creator=cd_credit['creator'],
+                          credit_type=cd_credit['credit_type'])
+                    for field in data_fields:
+                        if field in ['creator_id', 'credit_type_id']:
+                            setattr(credit_revision, field,
+                                    cd_credit[field[:-3]].id)
+                        else:
+                            setattr(credit_revision, field, cd_credit[field])
                     credit_revision.save()
+                for credit in issue.active_credits:
+                    if not is_locked(credit):
+                        revision_lock = _get_revision_lock(credit, changeset)
+                        if not revision_lock:
+                            raise ValueError('could not lock credit')
+                        credit_revision = IssueCreditRevision.clone(
+                          credit, issue_revision=revision, changeset=changeset)
+                        credit_revision.deleted = True
+                        credit_revision.save()
     # safety check, did happen that issues got reserved in-between
     if not changeset.issuerevisions.exists():
         return render_error(
