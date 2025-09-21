@@ -632,6 +632,8 @@ class StoryArc(GcdData):
     disambiguation = models.CharField(max_length=255, default='',
                                       db_index=True)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    year_first_published  = models.IntegerField(db_index=True, null=True)
+    year_first_published_uncertain = models.BooleanField(default=False)
     description = models.TextField()
     notes = models.TextField()
 
@@ -645,6 +647,9 @@ class StoryArc(GcdData):
         return urlresolvers.reverse(
             'show_story_arc',
             kwargs={'story_arc_id': self.id})
+
+    def object_page_name(self):
+        return str('%s (%s)' % (self.name, self.language.name))
 
     def __str__(self):
         extra = ''

@@ -5469,6 +5469,9 @@ class StoryArcRevision(Revision):
       help_text='If needed a short phrase for the disambiguation of '
                 'story arcs with a similar or identical name.')
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
+    year_first_published = models.IntegerField(db_index=True, blank=True,
+                                               null=True)
+    year_first_published_uncertain = models.BooleanField(default=False)
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
 
@@ -5484,7 +5487,9 @@ class StoryArcRevision(Revision):
         self.story_arc = value
 
     _base_field_list = ['name', 'leading_article', 'disambiguation',
-                        'language', 'description', 'notes',]
+                        'language', 'year_first_published',
+                        'year_first_published_uncertain',
+                        'description', 'notes',]
 
     def _field_list(self):
         return self._base_field_list
@@ -5495,6 +5500,8 @@ class StoryArcRevision(Revision):
             'leading_article': False,
             'disambiguation': '',
             'language': None,
+            'year_first_published': None,
+            'year_first_published_uncertain': False,
             'description': '',
             'notes': '',
         }
@@ -5510,8 +5517,17 @@ class StoryArcRevision(Revision):
         else:
             self.story_arc.sort_name = self.name
 
+
+    def _start_imp_sum(self):
+        self._seen_year_first_published = False
+
     def _imps_for(self, field_name):
-        if field_name in self._field_list():
+        if field_name in ('year_first_published',
+                          'year_first_published_uncertain'):
+            if not self._seen_year_first_published:
+                self._seen_year_first_published = True
+                return 1
+        elif field_name in self._field_list():
             return 1
         return 0
 

@@ -212,6 +212,8 @@ class PaginatedFacetedSearchView(FacetedSearchView):
                   ('facet_model_name_exact:character'
                    in self.form.selected_facets) or \
                   ('facet_model_name_exact:feature'
+                   in self.form.selected_facets) or \
+                  ('facet_model_name_exact:story_arc'
                    in self.form.selected_facets):
                     if 'alpha' in self.sort:
                         self.results = self.results.order_by(

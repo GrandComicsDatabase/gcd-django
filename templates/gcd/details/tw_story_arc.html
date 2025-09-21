@@ -35,6 +35,12 @@ GCD :: Story Arc :: {{ story_arc.name }}
               <td>{{ story_arc.disambiguation }}</td>
             </tr>
 {% endif %}
+{% if story_arc.year_first_published %}
+            <tr>
+              <td class="sm:w-36">First Published in:</td>
+              <td>{{ story_arc.display_year_first_published }}</td>
+            </tr>
+{% endif %}
           </table>  
         </div>
       </div> 

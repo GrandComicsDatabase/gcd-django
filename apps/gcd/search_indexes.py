@@ -360,6 +360,13 @@ class StoryArcIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     sort_name = indexes.CharField(model_attr="sort_name", indexed=False)
     language = indexes.CharField(model_attr='language__code',
                                  faceted=True, indexed=False)
+    year = indexes.IntegerField()
+
+    def prepare_year(self, obj):
+        if obj.year_first_published:
+            return obj.year_first_published
+        else:
+            return 9999
 
     def get_model(self):
         return StoryArc

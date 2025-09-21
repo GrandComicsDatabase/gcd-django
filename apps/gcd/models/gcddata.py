@@ -99,6 +99,14 @@ class GcdData(GcdBase):
         self.deleted = True
         self.save()
 
+    def display_year_first_published(self):
+        if not self.year_first_published:
+            return '?'
+        else:
+            return '%d%s' % (self.year_first_published,
+                             '?' if self.year_first_published_uncertain
+                             else '')
+
     def object_markdown_name(self):
         return self.object_page_name()
 

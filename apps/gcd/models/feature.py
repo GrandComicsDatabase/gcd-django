@@ -84,13 +84,6 @@ class Feature(GcdData):
             return other_translations.exclude(to_feature=self)
         return None
 
-    def display_year_first_published(self):
-        if not self.year_first_published:
-            return '?'
-        else:
-            return '%d%s' % (self.year_first_published,
-                             '?' if self.year_first_published_uncertain else '')
-
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_feature',
