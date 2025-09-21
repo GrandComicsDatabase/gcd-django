@@ -358,7 +358,8 @@ class Changeset(models.Model):
                         self.publishercodenumberrevisions.all())
             else:
                 return (self.issuerevisions.all().select_related('issue',
-                                                                 'series'),)
+                                                                 'series'),
+                        self.issuecreditrevisions.all(),)
 
         if self.change_type == CTYPES['cover']:
             return (self.coverrevisions.all(),
@@ -4150,8 +4151,7 @@ class IssueRevision(Revision):
     def compare_changes(self, compare_revision=None):
         super(IssueRevision, self).compare_changes(
           compare_revision=compare_revision)
-        if not self.deleted and not self.changed['editing'] \
-           and not self.changeset.change_type == CTYPES['issue_bulk']:
+        if not self.deleted and not self.changed['editing']:
             credits = self.issue_credit_revisions.filter(
                            credit_type__id=6)
             if not compare_revision:

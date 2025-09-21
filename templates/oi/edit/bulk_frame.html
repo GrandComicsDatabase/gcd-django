@@ -1,6 +1,7 @@
 {% extends "oi/base_view.html" %}
 {% load static %}
 {% load display %}
+{% load crispy_forms_tags %}
 
 {% block title %}
 Changing {{ object_name }}
@@ -13,6 +14,8 @@ Changing {{ object_name }}
 {% endblock %}
 
 {% block view_body %}
+{% include "oi/bits/jquery.html" %}
+
 <h1>Changing Issues</h1>
 {% include "gcd/bits/search_terms.html" %}
 <div class="left">
@@ -35,7 +38,11 @@ Changing {{ object_name }}
     <form action="{{ object_url }}" method="POST">
       {% csrf_token %}
       <table class="editing">
-{{ form.as_table }}
+  {% if form.helper %}
+    {% crispy form %}
+  {% else %}
+    {{ form.as_table }}
+  {% endif %}
       </table>
       <button><input class="btn-blue-editing" type="submit" name="add" value="{{ action_label}} {{ object_name }}"></button>
 {% if object_name == "Story" %}
@@ -49,5 +56,6 @@ Changing {{ object_name }}
 {% endblock %}
 
 {% block footer %}
+  {{ credits_formset.media }}
   {% include 'oi/bits/revision_form_utils.html' %}
 {% endblock %}

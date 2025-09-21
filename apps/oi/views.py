@@ -7,6 +7,7 @@ import glob
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
+from django.forms import HiddenInput
 import django.urls as urlresolvers
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
@@ -14,6 +15,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F, Q
+from django.db.models.fields import Field
 from django.utils.html import mark_safe, conditional_escape as esc
 
 from django.contrib.auth.models import User
@@ -28,7 +30,7 @@ from apps.indexer.views import ViewTerminationError, render_error
 
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
-    Publisher, Reprint,
+    Publisher, Reprint, IssueCredit,
     Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
     CreatorRelation, CreatorSchool, CreatorNameDetail, StoryArc,
@@ -1595,12 +1597,47 @@ def process_revision(request, id, model_name):
 def _clean_bulk_issue_change_form(form, remove_fields, items,
                                   number_of_issues=True):
     for i in remove_fields:
-        form.fields.pop(i)
+        form.fields.get(i).widget = HiddenInput()
     return form
 
 
 @permission_required('indexer.can_reserve')
 def edit_issues_in_bulk(request):
+    """
+    Handles the bulk editing of multiple issues found via advanced search.
+
+    This view allows an indexer to apply the same change to multiple issues
+    at once. The process is as follows:
+    1.  The view is initiated from an advanced search result for issues.
+    2.  It fetches all issues matching the search criteria.
+    3.  It checks which of these issues are not currently reserved (locked) by
+        other users. If all are reserved, an error is shown.
+    4.  It analyzes the fields of the unreserved issues. A field is only
+        made available for editing if all selected issues share the exact same
+        initial value for that field. Fields with differing values across the
+        set of issues are not displayed on the form. Certain fields that are
+        inherently unique per issue (e.g., 'number', 'isbn', 'key_date') are
+        always excluded from bulk editing.
+    5.  A similar analysis is performed for credits.
+        If all issues have an identical set of credits, a formset is provided
+        to edit them. Otherwise, credit editing is disabled.
+    6.  On a GET request, it displays a form containing only the editable
+        fields, pre-populated with their common values.
+    7.  On a POST request, it validates the submitted form data. If valid, it
+        creates a new Changeset, reserves each unreserved issue and generates
+        an IssueRevision, applying the submitted changes. It also handles the
+        creation and modification of credit revisions if applicable.
+
+    Returns:
+        HttpResponse:
+        - Renders the bulk edit form on a GET request.
+        - Redirects to the advanced search page if the request is invalid,
+          canceled, or if no issues can be edited.
+        - Renders an error page if a critical error occurs (e.g., user has
+          reached their change limit, all issues are reserved).
+        - Redirects to the submit page upon successful creation of the
+          bulk change revisions.
+    """
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
@@ -1718,6 +1755,52 @@ def edit_issues_in_bulk(request):
             if len(values_list) > 1:
                 remove_fields.append(i)
 
+    # creator_id is first field in processing, exclude and add back later
+    excluded_names = ['id', 'issue_id', 'deleted', 'modified', 'created',
+                      'creator_id']
+    data_fields = {
+        f.get_attname(): f
+        for f in IssueCredit._meta.get_fields()
+        if isinstance(f, Field) and f.get_attname() not in excluded_names
+    }
+    editing_credits = items.filter(credits__deleted=False).exists()
+    if editing_credits and request.method != 'POST':
+        reference_issue = items[0]
+        editing_credits = reference_issue.credits.filter(deleted=False)
+        issue_count = 1
+        for issue in items[1:]:
+            if issue.credits.filter(deleted=False).count() == editing_credits\
+                                                              .count():
+                count = 0
+                for credit in issue.credits.filter(deleted=False):
+                    query = Q(**{'%s' % ('creator_id'): getattr(credit,
+                                                                'creator_id')})
+                    for field in data_fields:
+                        query &= Q(**{'%s' % (field): getattr(credit, field)})
+                    if editing_credits.filter(query).exists():
+                        count += 1
+                    else:
+                        break
+                if count != editing_credits.count():
+                    break
+                else:
+                    issue_count += 1
+            else:
+                break
+        if issue_count == len(items):
+            credits_formset = get_issue_revision_form_set_extra(
+                extra=editing_credits.count()+1)(
+                  initial=editing_credits.values(
+                          *editing_credits[0].revisions.first()._field_list()))
+        else:
+            credits_formset = None
+    elif 'editing' not in remove_fields:
+        credits_formset = IssueRevisionFormSet(request.POST or None)
+    else:
+        credits_formset = None
+    data_fields = list(data_fields)
+    data_fields.append('creator_id')
+
     for i in fields:
         if i not in remove_fields:
             values_list = list(set(items.values_list(i, flat=True)))
@@ -1727,16 +1810,18 @@ def edit_issues_in_bulk(request):
         form = _clean_bulk_issue_change_form(form_class(initial=initial),
                                              remove_fields, items)
         return _display_bulk_issue_change_form(
-          request, form, nr_items, nr_items_unreserved, items_reserved,
+          request, form, credits_formset, nr_items, nr_items_unreserved,
+          items_reserved,
           request.GET.urlencode(), target, method, logic, used_search_terms)
 
     form = form_class(request.POST)
-
-    if not form.is_valid():
+    if not form.is_valid() or (credits_formset and
+                               not credits_formset.is_valid()):
         form = _clean_bulk_issue_change_form(form, remove_fields, items,
                                              number_of_issues=False)
         return _display_bulk_issue_change_form(
-          request, form, nr_items, nr_items_unreserved, items_reserved,
+          request, form, credits_formset, nr_items, nr_items_unreserved,
+          items_reserved,
           request.GET.urlencode(), target, method, logic, used_search_terms)
 
     changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -1766,6 +1851,10 @@ def edit_issues_in_bulk(request):
                               new_state=changeset.state)
 
     cd = form.cleaned_data
+    cd_credits = []
+    for form in credits_formset:
+        if form.is_valid():
+            cd_credits.append(form.cleaned_data)
     for issue in items:
         revision_lock = _get_revision_lock(issue, changeset)
         if revision_lock:
@@ -1778,6 +1867,40 @@ def edit_issues_in_bulk(request):
                     setattr(revision, field, cd[field])
             revision.save()
 
+            existing_credits = issue.credits.filter(deleted=False)
+            for cd_credit in cd_credits:
+                if existing_credits.filter(
+                   creator__creator__id=cd_credit['creator'].creator_id)\
+                   .exists():
+                    credit = existing_credits.filter(
+                      creator__creator__id=cd_credit['creator'].creator_id)\
+                                                               .first()
+                    revision_lock = _get_revision_lock(credit, changeset)
+                    if not revision_lock:
+                        raise ValueError('could not lock credit')
+                    credit_revision = IssueCreditRevision.clone(
+                      credit, issue_revision=revision, changeset=changeset)
+                else:
+                    credit_revision = IssueCreditRevision(
+                      issue_revision=revision, changeset=changeset,
+                      creator=cd_credit['creator'],
+                      credit_type=cd_credit['credit_type'])
+                for field in data_fields:
+                    if field in ['creator_id', 'credit_type_id']:
+                        setattr(credit_revision, field,
+                                cd_credit[field[:-3]].id)
+                    else:
+                        setattr(credit_revision, field, cd_credit[field])
+                credit_revision.save()
+            for credit in issue.active_credits:
+                if not is_locked(credit):
+                    revision_lock = _get_revision_lock(credit, changeset)
+                    if not revision_lock:
+                        raise ValueError('could not lock credit')
+                    credit_revision = IssueCreditRevision.clone(
+                      credit, issue_revision=revision, changeset=changeset)
+                    credit_revision.deleted = True
+                    credit_revision.save()
     # safety check, did happen that issues got reserved in-between
     if not changeset.issuerevisions.exists():
         return render_error(
@@ -1788,7 +1911,7 @@ def edit_issues_in_bulk(request):
     return submit(request, changeset.id)
 
 
-def _display_bulk_issue_change_form(request, form,
+def _display_bulk_issue_change_form(request, form, credits_formset,
                                     nr_items, nr_items_unreserved,
                                     items_reserved,
                                     search_option,
@@ -1802,6 +1925,7 @@ def _display_bulk_issue_change_form(request, form,
         'object_url': url,
         'action_label': 'Submit bulk change',
         'form': form,
+        'credits_formset': credits_formset,
         'nr_items': nr_items,
         'nr_items_unreserved': nr_items_unreserved,
         'items_reserved': items_reserved,
@@ -5553,7 +5677,7 @@ def show_commented(request):
       changes,
       'oi/queues/commented.html',
       {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'commented',
-       'filter_form': filter.form,},
+       'filter_form': filter.form, },
       per_page=50)
 
 
@@ -5574,7 +5698,7 @@ def show_editor_log(request):
       changes,
       'oi/queues/editor_log.html',
       {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'editor_log',
-       'filter_form': filter.form,},
+       'filter_form': filter.form, },
       per_page=50)
 
 
@@ -5646,9 +5770,6 @@ def compare(request, id):
 
     prev_rev = revision.previous()
     post_rev = revision.posterior()
-    if changeset.change_type == CTYPES['issue_bulk']:
-        # set temporary change_type to prevent display of linked edits
-        prev_rev.changeset.change_type = CTYPES['issue_bulk']
     field_list = revision.field_list()
     sourced_fields = None
     group_sourced_fields = None

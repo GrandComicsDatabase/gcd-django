@@ -61,12 +61,9 @@ def field_value(revision, field):
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
         value = esc(value)
         if type(revision).__name__ == 'IssueRevision':
-            if revision.changeset.change_type != CTYPES['issue_bulk']:
-                credits = revision.issue_credit_revisions.filter(
-                  credit_type__id=CREDIT_TYPES[field],
-                  deleted=False)
-            else:
-                credits = IssueCreditRevision.objects.none()
+            credits = revision.issue_credit_revisions.filter(
+                credit_type__id=CREDIT_TYPES[field],
+                deleted=False)
         else:
             credits = revision.story_credit_revisions.filter(
                                credit_type__id=CREDIT_TYPES[field],

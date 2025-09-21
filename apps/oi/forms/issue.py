@@ -790,6 +790,25 @@ class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
 
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.form_tag = False
+        fields = list(self.fields)
+
+        credit_start = fields.index('editing')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields[:credit_start]]
+        field_list.append(Formset('credits_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[credit_start:]])
+        self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = ISSUE_HELP_LINKS
+
 
 class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
 
