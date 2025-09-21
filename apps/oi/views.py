@@ -31,11 +31,13 @@ from apps.indexer.views import ViewTerminationError, render_error
 from apps.gcd.models import (
     Brand, BrandGroup, BrandUse, Cover, Image, IndiciaPublisher, Issue,
     Publisher, Reprint, IssueCredit,
-    Series, SeriesBond, Story, StoryType, Award, ReceivedAward, Creator,
+    Series, SeriesBond, Award, ReceivedAward, Creator,
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
-    CreatorRelation, CreatorSchool, CreatorNameDetail, StoryArc,
-    STORY_TYPES, BiblioEntry, Feature, FeatureLogo, FeatureRelation, Printer,
-    IndiciaPrinter, CreatorSignature, Character, CharacterRelation, Group,
+    CreatorRelation, CreatorSchool, CreatorNameDetail,
+    Story, StoryType, StoryArc, StoryArcRelation, STORY_TYPES, BiblioEntry,
+    Feature, FeatureLogo, FeatureRelation,
+    Printer, IndiciaPrinter,
+    CreatorSignature, Character, CharacterRelation, Group,
     GroupRelation, GroupMembership, Universe, CREDIT_TYPES)
 from apps.gcd.views import paginate_response
 # need this for preview-call
@@ -63,7 +65,8 @@ from apps.oi.models import (
     get_issue_field_list, set_series_first_last,
     AwardRevision, ReceivedAwardRevision, IssueCreditRevision,
     StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision,
-    StoryArcRevision, CreatorRevision, CreatorMembershipRevision,
+    StoryArcRevision, StoryArcRelationRevision, CreatorRevision,
+    CreatorMembershipRevision,
     CreatorArtInfluenceRevision, CreatorNonComicWorkRevision,
     CreatorSchoolRevision, CreatorDegreeRevision, CreatorRelationRevision,
     FeatureRevision, FeatureLogoRevision, UniverseRevision,
@@ -95,6 +98,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            StoryRevisionFormSet,
                            StoryCharacterRevisionFormSet,
                            StoryGroupRevisionFormSet,
+                           get_story_arc_relation_revision_form,
                            get_feature_logo_revision_form,
                            get_feature_relation_revision_form,
                            get_date_revision_form,
@@ -136,6 +140,7 @@ REVISION_CLASSES = {
     'story': StoryRevision,
     'biblio_entry': BiblioEntryRevision,
     'story_arc': StoryArcRevision,
+    'story_arc_relation': StoryArcRelationRevision,
     'feature': FeatureRevision,
     'feature_logo': FeatureLogoRevision,
     'feature_relation': FeatureRelationRevision,
@@ -176,6 +181,7 @@ DISPLAY_CLASSES = {
     'story': Story,
     'biblio_entry': BiblioEntry,
     'story_arc': StoryArc,
+    'story_arc_relation': StoryArcRelation,
     'feature': Feature,
     'feature_logo': FeatureLogo,
     'feature_relation': FeatureRelation,
@@ -2961,6 +2967,48 @@ def add_story_arc(request):
     return add_generic(request, 'story_arc')
 
 
+@permission_required('indexer.can_reserve')
+def add_story_arc_relation(request, story_arc_id):
+    if not request.user.indexer.can_reserve_another():
+        return render_error(request, REACHED_CHANGE_LIMIT)
+
+    story_arc = get_object_or_404(StoryArc, id=story_arc_id, deleted=False)
+
+    if story_arc.pending_deletion():
+        return render_error(request, 'Cannot add Relation for '
+                                     'story arc "%s" since the record is '
+                                     'pending deletion.' % story_arc)
+
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+                'show_story_arc', kwargs={'story_arc_id': story_arc_id}))
+
+    initial = {}
+    initial['from_story_arc'] = story_arc
+    relation_form = get_story_arc_relation_revision_form(
+      user=request.user)(request.POST or None, initial=initial)
+
+    if relation_form.is_valid():
+        changeset = Changeset(indexer=request.user, state=states.OPEN,
+                              change_type=CTYPES['story_arc_relation'])
+        changeset.save()
+
+        revision = relation_form.save(commit=False)
+        revision.save_added_revision(changeset=changeset, story_arc=story_arc)
+        revision.save()
+
+        return submit(request, changeset.id)
+
+    context = {'form': relation_form,
+               'object_name': 'Relation with Story Arc',
+               'object_url': urlresolvers.reverse('add_story_arc_relation',
+                                                  kwargs={'story_arc_id':
+                                                          story_arc_id}),
+               'action_label': 'Submit new',
+               'settings': settings}
+    return oi_render(request, 'oi/edit/add_frame.html', context)
+
+
 def add_universe(request):
     return add_generic(request, 'universe')
 
@@ -5366,6 +5414,8 @@ def show_queue(request, queue_name):
                     .prefetch_related('coverrevisions__previous_revision',
                                       'coverrevisions__cover')
     story_arcs = changes.filter(change_type=CTYPES['story_arc'])
+    story_arc_relations = changes.filter(
+      change_type=CTYPES['story_arc_relation'])
     features = changes.filter(change_type=CTYPES['feature'])
     feature_logos = changes.filter(change_type=CTYPES['feature_logo'])
     feature_relations = changes.filter(change_type=CTYPES['feature_relation'])
@@ -5581,6 +5631,11 @@ def show_queue(request, queue_name):
             'object_name': 'Feature Relations',
             'object_type': 'feature_relation',
             'changesets': feature_relations.order_by('modified', 'id')
+          },
+          {
+            'object_name': 'Story Arc Relations',
+            'object_type': 'story_arc_relation',
+            'changesets': story_arc_relations.order_by('modified', 'id')
           },
           {
             'object_name': 'Character Relations',

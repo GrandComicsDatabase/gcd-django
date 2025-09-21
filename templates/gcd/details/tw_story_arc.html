@@ -62,6 +62,8 @@ GCD :: Story Arc :: {{ story_arc.name }}
     {% include "gcd/bits/tw_status_banner.html" %}
   {% endwith %}
   {% if request.user.is_authenticated %}
+  <btn class="btn btn-blue-editing"><a href="{% url 'add_story_arc_relation' story_arc_id=story_arc.id %}">
+    Add Story Arc Relation</a></btn>
   {% endif %}
 {% endblock %}
 
@@ -81,21 +83,35 @@ GCD :: Story Arc :: {{ story_arc.name }}
     </ol>
   </ol>
 {% endif %}
-{% if story_arc.active_relations_own %}
+{% if story_arc.to_related_story_arc.all %}
 <hr>
-<h3>Relations:</h3>
+<h2>Sub Arc:</h2>
 <ol class="object-page-numbered-list list-disc">
-  {% for relation in story_arc.active_relations_own %}
-    {% with relation_info=relation|pre_process_relation:story_arc %}
+  {% for relation in story_arc.to_related_story_arc.all %}
   <li class="break-inside-avoid-column">
-    <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_story_arc' story_arc_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
+    <a href="{% url 'show_story_arc' story_arc_id=relation.to_story_arc.id %}">{{ relation.to_story_arc.object_page_name }}</a>
+    <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">(story arc relation)</a>
       {% if relation.notes %}
       <br><strong>Notes: </strong>{{ relation.notes }}
       {% endif %}
   </li>
-    {% endwith %}
   {% endfor %}
-  </ol>
+</ol>
+{% endif %}
+{% if story_arc.from_related_story_arc.all %}
+<hr>
+<h2>Main Arc:</h2>
+<ol class="object-page-numbered-list list-disc">
+  {% for relation in story_arc.from_related_story_arc.all %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_story_arc' story_arc_id=relation.from_story_arc.id %}">{{ relation.from_story_arc.object_page_name }}</a>
+    <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">(story arc relation)</a>
+      {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+  </li>
+  {% endfor %}
+</ol>
 {% endif %}
 {% endblock content %}
 

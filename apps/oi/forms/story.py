@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 from django import forms
 from django.conf import settings
 from django.forms.models import inlineformset_factory
@@ -19,13 +18,15 @@ from markdownx.widgets import MarkdownxWidget
 from apps.oi.models import (
     get_reprint_field_list, get_story_field_list, remove_leading_article,
     BiblioEntryRevision, ReprintRevision, StoryRevision, StoryArcRevision,
-    StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision)
+    StoryArcRelationRevision, StoryCreditRevision, StoryCharacterRevision,
+    StoryGroupRevision)
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
                             Feature, FeatureLogo, CharacterNameDetail, \
                             GroupNameDetail, CharacterRole, StoryArc, \
-                            Universe, STORY_TYPES, NON_OPTIONAL_TYPES, \
+                            StoryArcRelationType, Universe, \
+                            STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
 from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
@@ -33,8 +34,9 @@ from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 from .custom_layout_object import Formset
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
-    GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP, KEYWORDS_HELP, BaseForm,
-    SEQUENCE_HELP_LINKS, BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
+    combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
+    KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS,
+    BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
     BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
 
 
@@ -773,8 +775,9 @@ class StoryRevisionForm(KeywordBaseForm):
                           forward=['language_code', 'type'],
                           attrs={'class': 'w-full lg:w-4/5'}),
       required=False,
-      help_text='Only story arcs for the series language can be selected. Enter '
-                '"&lt;space&gt;[&lt;text&gt;" to search the disambiguation.'
+      help_text='Only story arcs for the series language can be selected. '
+                'Enter "&lt;space&gt;[&lt;text&gt;" to search the '
+                'disambiguation.'
      )
 
     no_creator_help = forms.CharField(
@@ -1254,4 +1257,56 @@ class StoryArcRevisionForm(BaseForm):
                 raise forms.ValidationError(
                     'The name is only one word, you cannot specify '
                     'a leading article in this case.')
+        return cd
+
+
+def get_story_arc_relation_revision_form(revision=None, user=None):
+    class RuntimeStoryArcRelationRevisionForm(StoryArcRelationRevisionForm):
+        choices = list(StoryArcRelationType.objects.values_list('id',
+                                                                'description'))
+        additional_choices = StoryArcRelationType.objects.values_list(
+                             'id', 'reverse_description')
+        choices = combine_reverse_relations(choices, additional_choices)
+        relation_type = forms.ChoiceField(choices=choices)
+
+        def as_table(self):
+            # if not user or user.indexer.show_wiki_links:
+            #     _set_help_labels(self, CREATOR_RELATION_HELP_LINKS)
+            return super(RuntimeStoryArcRelationRevisionForm, self).as_table()
+
+    return RuntimeStoryArcRelationRevisionForm
+
+
+class StoryArcRelationRevisionForm(forms.ModelForm):
+    class Meta:
+        model = StoryArcRelationRevision
+        fields = model._base_field_list
+        # help_texts = STORY_ARC_RELATION_HELP_TEXTS
+        labels = {'from_story_arc': 'Story Arc A', 'relation_type': 'Relation',
+                  'to_story_arc': 'Story Arc B'}
+
+    from_story_arc = forms.ModelChoiceField(
+        queryset=StoryArc.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='story_arc_autocomplete',
+                                         attrs={'style': 'min-width: 45em'})
+    )
+
+    to_story_arc = forms.ModelChoiceField(
+        queryset=StoryArc.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2(url='story_arc_autocomplete',
+                                         attrs={'style': 'min-width: 45em'})
+    )
+
+    comments = _get_comments_form_field()
+
+    def clean(self):
+        cd = self.cleaned_data
+        type = int(cd['relation_type'])
+        if type < 0:
+            stash = cd['from_story_arc']
+            cd['from_story_arc'] = cd['to_story_arc']
+            cd['to_story_arc'] = stash
+            cd['relation_type'] = StoryArcRelationType.objects.get(id=-type)
+        else:
+            cd['relation_type'] = StoryArcRelationType.objects.get(id=type)
         return cd

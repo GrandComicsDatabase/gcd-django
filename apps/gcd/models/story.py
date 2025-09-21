@@ -13,7 +13,7 @@ import django_tables2 as tables
 
 from apps.stddata.models import Language
 
-from .gcddata import GcdData
+from .gcddata import GcdData, GcdLink
 from .award import ReceivedAward
 from .character import CharacterNameDetail, Group, GroupNameDetail, \
                        Universe, Multiverse
@@ -621,6 +621,21 @@ def extend_credit_roles(credit, added_type_name):
     return credit
 
 
+class StoryArcRelationType(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_story_arc_relation_type'
+
+    # technical name, not to be changed
+    name = models.CharField(max_length=255, db_index=True)
+    # short description, e.g. shown in selection boxes
+    description = models.CharField(max_length=255)
+    reverse_description = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
 class StoryArc(GcdData):
     class Meta:
         app_label = 'gcd'
@@ -632,7 +647,7 @@ class StoryArc(GcdData):
     disambiguation = models.CharField(max_length=255, default='',
                                       db_index=True)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
-    year_first_published  = models.IntegerField(db_index=True, null=True)
+    year_first_published = models.IntegerField(db_index=True, null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     description = models.TextField()
     notes = models.TextField()
@@ -656,6 +671,40 @@ class StoryArc(GcdData):
         if self.disambiguation:
             extra = ' [%s]' % self.disambiguation
         return '%s%s (%s)' % (self.name, extra, self.language)
+
+
+class StoryArcRelation(GcdLink):
+    """
+    Relations between story arcs.
+    """
+
+    class Meta:
+        db_table = 'gcd_story_arc_relation'
+        app_label = 'gcd'
+        ordering = ('to_story_arc', 'relation_type', 'from_story_arc')
+        verbose_name_plural = 'Story Arc Relations'
+
+    to_story_arc = models.ForeignKey(StoryArc, on_delete=models.CASCADE,
+                                     related_name='from_related_story_arc')
+    from_story_arc = models.ForeignKey(StoryArc, on_delete=models.CASCADE,
+                                       related_name='to_related_story_arc')
+    relation_type = models.ForeignKey(StoryArcRelationType,
+                                      on_delete=models.CASCADE,
+                                      related_name='relation_type')
+    notes = models.TextField()
+
+    def object_page_name(self):
+        return mark_safe('<a href="%s">%s</a> - <a href="%s">%s</a>' % (
+          self.from_story_arc.get_absolute_url(),
+          self.from_story_arc.name,
+          self.to_story_arc.get_absolute_url(),
+          self.to_story_arc.name))
+
+    def __str__(self):
+        return '%s >Relation< %s :: %s' % (str(self.from_story_arc),
+                                           str(self.to_story_arc),
+                                           str(self.relation_type)
+                                           )
 
 
 class Story(GcdData):

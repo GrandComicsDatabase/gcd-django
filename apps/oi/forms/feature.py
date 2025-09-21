@@ -251,7 +251,7 @@ class FeatureRelationRevisionForm(forms.ModelForm):
         fields = model._base_field_list
         # help_texts = FEATURE_RELATION_HELP_TEXTS
         labels = {'from_feature': 'Feature A', 'relation_type': 'Relation',
-                  'to_creator': 'Feature B'}
+                  'to_feature': 'Feature B'}
 
     from_feature = forms.ModelChoiceField(
         queryset=Feature.objects.filter(deleted=False),

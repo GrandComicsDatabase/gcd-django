@@ -49,7 +49,7 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
                             Printer, IndiciaPrinter, School, Story, \
                             Character, CharacterNameDetail, Group, \
                             GroupNameDetail, Universe, Multiverse, \
-                            StoryCredit, StoryArc, \
+                            StoryCredit, StoryArc, StoryArcRelation, \
                             CharacterRelation, GroupRelation, GroupMembership
 from apps.gcd.models.creator import GenericCreatorTable, \
                                     GenericCreatorNameTable, \
@@ -3397,6 +3397,19 @@ def show_story_arc(request, story_arc, preview=False):
                'arc_stories': stories,
                'preview': preview}
     return render(request, 'gcd/details/tw_story_arc.html', context)
+
+
+def story_arc_relation(request, story_arc_relation_id):
+    story_arc_relation = get_object_or_404(StoryArcRelation,
+                                           id=story_arc_relation_id)
+    return show_story_arc_relation(request, story_arc_relation)
+
+
+def show_story_arc_relation(request, story_arc_relation, preview=False):
+    vars = {'story_arc_relation': story_arc_relation,
+            'error_subject': story_arc_relation,
+            'preview': preview}
+    return render(request, 'gcd/details/tw_story_arc_relation.html', vars)
 
 
 def feature(request, feature_id):

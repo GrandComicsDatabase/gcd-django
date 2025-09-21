@@ -212,6 +212,8 @@ urlpatterns = [
     # Story Arc URLs
     path('story_arc/add/',
       oi_views.add_story_arc, name='add_story_arc'),
+    path('story_arc/<int:story_arc_id>/relation/add/',
+      oi_views.add_story_arc_relation, name='add_story_arc_relation'),
 
     # Feature URLs
     path('feature/add/',

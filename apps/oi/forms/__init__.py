@@ -27,6 +27,7 @@ from .issue import (    # noqa
     PublisherCodeNumberFormSet)
 from .story import (get_story_revision_form, get_biblio_revision_form,
                     get_reprint_revision_form, get_story_arc_revision_form,
+                    get_story_arc_relation_revision_form,
                     StoryRevisionFormSet,
                     StoryCharacterRevisionFormSet, StoryGroupRevisionFormSet)
 from .feature import (get_feature_revision_form,
@@ -119,6 +120,9 @@ def get_revision_form(revision=None, model_name=None, **kwargs):
 
     if model_name == 'story_arc':
         return get_story_arc_revision_form(revision, **kwargs)
+
+    if model_name == 'story_arc_relation':
+        return get_story_arc_relation_revision_form(revision, **kwargs)
 
     if model_name == 'feature':
         return get_feature_revision_form(revision, **kwargs)

@@ -1,0 +1,53 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% block title %}
+GCD :: Story Arc Relation :: {{ story_arc_relation.from_relation }} - {{ story_arc_relation.to_relation }}
+{% endblock %}
+
+{% block header %}
+  {% with object=story_arc_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="flex">
+        <div>
+          <ul>
+            <li><span class="font-bold">Story Arc:</span>
+              <a href="{{ story_arc_relation.from_story_arc.get_absolute_url }}">{{ story_arc_relation.from_story_arc.object_page_name }}</a>
+            </li>
+            <li><span class="font-bold">Relation:</span>
+              {{ story_arc_relation.relation_type }}</li>
+            <li><span class="font-bold">Story Arc:</span>
+              <a href="{{ story_arc_relation.to_story_arc.get_absolute_url }}">{{ story_arc_relation.to_story_arc.object_page_name }}</a>
+            </li>
+  {% if story_arc_relation.notes %}
+            <li><span class="font-bold">Notes:</span>
+            {{ story_arc_relation.notes|urlizetrunc:75|linebreaksbr }}</li>
+  {% endif %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=story_arc_relation object_class='story_arc_relation' object_name='story_arc_relation' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+  {% with model_name='story_arc_relation' object=story_arc_relation %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock change_history %}

@@ -36,7 +36,8 @@ from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
     SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
     CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
-    StoryGroup, StoryArc, Universe, Multiverse, BiblioEntry, Reprint,
+    StoryGroup, StoryArc, StoryArcRelation, Universe, Multiverse,
+    BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
     CharacterNameDetail, Group, GroupNameDetail, GroupRelation,
@@ -99,7 +100,8 @@ CTYPES = {
     'character_relation': 34,
     'group_relation': 35,
     'universe': 36,
-    'story_arc': 37
+    'story_arc': 37,
+    'story_arc_relation': 38
 }
 
 CTYPES_INLINE = frozenset((CTYPES['publisher'],
@@ -111,6 +113,7 @@ CTYPES_INLINE = frozenset((CTYPES['publisher'],
                            CTYPES['indicia_printer'],
                            CTYPES['series'],
                            CTYPES['story_arc'],
+                           CTYPES['story_arc_relation'],
                            CTYPES['feature'],
                            CTYPES['feature_logo'],
                            CTYPES['feature_relation'],
@@ -368,6 +371,9 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['story_arc']:
             return (self.storyarcrevisions.all(),)
+
+        if self.change_type == CTYPES['story_arc_relation']:
+            return (self.storyarcrelationrevisions.all(),)
 
         if self.change_type == CTYPES['feature']:
             return (self.featurerevisions.all(),
@@ -5509,14 +5515,14 @@ class StoryArcRevision(Revision):
     def _pre_initial_save(self, fork=False, fork_source=None,
                           exclude=frozenset(), **kwargs):
         if fork is False:
-            self.leading_article = self.story_arc.name != self.story_arc.sort_name
+            value = self.story_arc.name != self.story_arc.sort_name
+            self.leading_article = value
 
     def _post_assign_fields(self, changes):
         if self.leading_article:
             self.story_arc.sort_name = remove_leading_article(self.name)
         else:
             self.story_arc.sort_name = self.name
-
 
     def _start_imp_sum(self):
         self._seen_year_first_published = False
@@ -5541,6 +5547,80 @@ class StoryArcRevision(Revision):
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.language.code.upper())
+
+
+class StoryArcRelationRevision(Revision):
+    """
+    Relations between story arcs.
+    """
+
+    class Meta:
+        db_table = 'oi_story_arc_relation_revision'
+        ordering = ('to_story_arc', 'relation_type', 'from_story_arc')
+        verbose_name_plural = 'Story Arc Relation Revisions'
+
+    story_arc_relation = models.ForeignKey('gcd.StoryArcRelation',
+                                           on_delete=models.CASCADE,
+                                           null=True,
+                                           related_name='revisions')
+
+    to_story_arc = models.ForeignKey('gcd.StoryArc',
+                                     on_delete=models.CASCADE,
+                                     related_name='to_story_arc_revisions')
+    relation_type = models.ForeignKey('gcd.StoryArcRelationType',
+                                      on_delete=models.CASCADE,
+                                      related_name='revisions')
+    from_story_arc = models.ForeignKey('gcd.StoryArc',
+                                       on_delete=models.CASCADE,
+                                       related_name='from_story_arc_revisions')
+    notes = models.TextField(blank=True)
+
+    _base_field_list = ['from_story_arc', 'relation_type', 'to_story_arc',
+                        'notes']
+
+    def _field_list(self):
+        field_list = self._base_field_list
+        return field_list
+
+    def _get_blank_values(self):
+        return {
+            'from_story_arc': None,
+            'to_story_arc': None,
+            'relation_type': None,
+            'notes': ''
+        }
+
+    source_name = 'story_arc_relation'
+    source_class = StoryArcRelation
+
+    @property
+    def source(self):
+        return self.story_arc_relation
+
+    @source.setter
+    def source(self, value):
+        self.story_arc_relation = value
+
+    def _get_source(self):
+        return self.story_arc_relation
+
+    def _get_source_name(self):
+        return 'story_arc_relation'
+
+    def _imps_for(self, field_name):
+        return 1
+
+    def _pre_delete(self, changes):
+        for revision in self.source.revisions.all():
+            setattr(revision, 'story_arc_relation_id', None)
+            revision.save()
+        self.story_arc_relation_id = None
+
+    def __str__(self):
+        return '%s >%s< %s' % (str(self.from_story_arc),
+                               str(self.relation_type),
+                               str(self.to_story_arc)
+                               )
 
 
 class StoryRevision(Revision):
