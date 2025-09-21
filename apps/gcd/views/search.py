@@ -906,8 +906,9 @@ def story_arc_search_hx(request):
                       {'object_name': 'Story Arcs',
                        'object_type': 'story_arc'})
     story_arc_name = request.POST['search']
-    return story_arc_by_name(request, story_arc_name,
-                             template='gcd/search/generic_named_base_list.html')
+    return story_arc_by_name(
+      request, story_arc_name,
+      template='gcd/search/generic_named_base_list.html')
 
 
 def story_arc_by_name(request, story_arc_name='', sort=ORDER_ALPHA,
@@ -924,8 +925,8 @@ def story_arc_by_name(request, story_arc_name='', sort=ORDER_ALPHA,
     # else:
     q_obj = Q(name__icontains=story_arc_name)
     return generic_by_name(request, story_arc_name, q_obj, sort, StoryArc,
-                            template,
-                            include_template=include_template)
+                           template,
+                           include_template=include_template)
 
 
 def writer_by_name(request, writer, sort=ORDER_ALPHA):
@@ -2342,20 +2343,29 @@ def search_stories(data, op):
             credits__deleted=False,
             credits__credit_type__id=CREDIT_TYPES['editing'])
             .values_list('id', flat=True))
+        # if linked credits only is selected and if there is no issue matching,
+        # the search should return no match.
+        if not issues and data['credit_is_linked'] is None:
+            issues = [-1]  # force no match
         if issues:
             if target == 'sequence':  # no prefix in this case
-                text_credits_q_objs.append(Q(**{'issue__editing__%s' % op:
-                                           data['issue_editing']}))
-
                 linked_credits_q_objs.append((Q(**{'issue__id__in': issues})))
             else:  # cut off 'story__'
-                text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7],
-                                                                   op):
-                                           data['issue_editing']}))
                 linked_credits_q_objs.append((Q(**{'%sid__in' % (prefix[:-7]):
                                                 issues})))
 
+        if target == 'sequence':  # no prefix in this case
+            text_credits_q_objs.append(Q(**{'issue__editing__%s' % op:
+                                       data['issue_editing']}))
+        else:  # cut off 'story__'
+            text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix[:-7],
+                                                               op):
+                                       data['issue_editing']}))
+
     text_credits_q_objs.extend(q_objs)
+    # None, "linked credits only"
+    # True, "both linked and text credits"
+    # False, "text credits only"
     if data['logic'] is True:  # OR credits
         if data['credit_is_linked'] is None:
             linked_credits_q_objs.extend(q_objs)
