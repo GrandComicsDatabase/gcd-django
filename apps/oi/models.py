@@ -4158,6 +4158,9 @@ class IssueRevision(Revision):
         super(IssueRevision, self).compare_changes(
           compare_revision=compare_revision)
         if not self.deleted and not self.changed['editing']:
+            if self.changeset.change_type == CTYPES['issue_bulk']:
+                if not self.changeset.issuecreditrevisions.exists():
+                    return
             credits = self.issue_credit_revisions.filter(
                            credit_type__id=6)
             if not compare_revision:
