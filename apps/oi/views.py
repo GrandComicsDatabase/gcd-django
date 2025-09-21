@@ -1770,7 +1770,7 @@ def edit_issues_in_bulk(request):
         if isinstance(f, Field) and f.get_attname() not in excluded_names
     }
     editing_credits = items.filter(credits__deleted=False).exists()
-    if editing_credits and request.method != 'POST':
+    if editing_credits:
         reference_issue = items[0]
         editing_credits = reference_issue.credits.filter(deleted=False)
         issue_count = 1
@@ -1794,10 +1794,13 @@ def edit_issues_in_bulk(request):
             else:
                 break
         if issue_count == len(items):
-            credits_formset = get_issue_revision_form_set_extra(
-                extra=editing_credits.count()+1)(
-                  initial=editing_credits.values(
-                          *editing_credits[0].revisions.first()._field_list()))
+            if request.method != 'POST':
+                credits_formset = get_issue_revision_form_set_extra(
+                    extra=editing_credits.count()+1)(
+                      initial=editing_credits.values(
+                              *editing_credits[0].revisions.first()._field_list()))
+            else:
+                credits_formset = IssueRevisionFormSet(request.POST or None)
         else:
             credits_formset = None
     elif 'editing' not in remove_fields:
