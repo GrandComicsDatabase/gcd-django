@@ -923,9 +923,10 @@ class Story(GcdData):
             ignore = AD_TYPES
         else:
             ignore = []
-        return (self.from_all_reprints.count() +
-                self.to_all_reprints.exclude(target__type__id__in=ignore)
-                                    .count())
+        to_count = self.to_all_reprints.exclude(target__type__id__in=ignore)\
+                       .values_list('target_issue_id', flat=True)
+        to_count = len(set(to_count))
+        return (self.from_all_reprints.count() + to_count)
 
     def has_data(self):
         """
