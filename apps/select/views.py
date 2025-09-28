@@ -591,7 +591,7 @@ class FeatureAutocomplete(LoginRequiredMixin,
         language = self.forwarded.get('language_code', None)
         type = self.forwarded.get('type', None)
 
-        if language and language != 'zxx':
+        if language and language not in ['zxx', 'und']:
             qs = qs.filter(language__code__in=[language, 'zxx'])
 
         if type:
@@ -632,7 +632,7 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
         language = self.forwarded.get('language_code', None)
         type = self.forwarded.get('type', None)
 
-        if language and language != 'zxx':
+        if language and language not in ['zxx', 'und']:
             qs = qs.filter(feature__language__code__in=[language, 'zxx'])
 
         if type:
@@ -658,7 +658,7 @@ class StoryArcAutocomplete(LoginRequiredMixin,
 
         language = self.forwarded.get('language_code', None)
 
-        if language and language != 'zxx':
+        if language and language not in ['zxx', 'und']:
             qs = qs.filter(language__code__in=[language, 'zxx'])
 
         qs = _filter_and_sort(qs, self.q, disambiguation=True,
@@ -697,7 +697,7 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
         language = self.forwarded.get('language_code', None)
         group_name = self.forwarded.get('group_name', None)
 
-        if language and language != 'zxx':
+        if language and language not in ['zxx', 'und']:
             qs = qs.filter(character__language__code__in=[language, 'zxx'])
 
         if group_name:
@@ -743,7 +743,7 @@ class GroupNameAutocomplete(LoginRequiredMixin,
         language = self.forwarded.get('language_code', None)
         character_name = self.forwarded.get('character_name', None)
 
-        if language and language != 'zxx':
+        if language and language not in ['zxx', 'und']:
             qs = qs.filter(group__language__code__in=[language, 'zxx'])
 
         if character_name:
