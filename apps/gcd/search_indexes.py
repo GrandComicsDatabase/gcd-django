@@ -4,7 +4,7 @@ from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
     Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
     CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature, Printer,\
-    Character, Group, Universe, StoryArc
+    IndiciaPrinter, Character, Group, Universe, StoryArc
 
 from apps.oi.models import on_sale_date_fields
 
@@ -576,6 +576,26 @@ class PrinterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_facet_model_name(self, obj):
         return "printer"
+
+
+class IndiciaPrinterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/publisher_text.txt')
+    name = indexes.CharField(model_attr="name")
+    facet_model_name = indexes.CharField(faceted=True)
+
+    sort_name = indexes.CharField(model_attr='name', indexed=False)
+    year = indexes.IntegerField()
+    country = indexes.CharField(model_attr='country__name', faceted=True,
+                                indexed=False)
+
+    def get_model(self):
+        return IndiciaPrinter
+
+    def prepare_facet_model_name(self, obj):
+        return "indicia printer"
 
 
 class AwardIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
