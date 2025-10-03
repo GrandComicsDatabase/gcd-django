@@ -5723,8 +5723,14 @@ class StoryRevision(Revision):
             revision.title_inferred = False
             revision.first_line = ''
             credits = credits.exclude(credit_type_id=CREDIT_TYPES['letters'])
-            revision.feature_object.clear()
             revision.feature_logo.clear()
+            for feature_object in revision.feature_object.all():
+                translations = feature_object.translations().filter(
+                  to_feature__language=revision.issue.series.language)
+                if translations.count() == 1:
+                    revision.feature_object.add(translations.get().to_feature)
+                revision.feature_object.remove(feature_object)
+
         if not copy_characters:
             revision.characters = ''
         revision.save()
@@ -6358,6 +6364,17 @@ class StoryRevision(Revision):
         if feature_object.count() == 1:
             self.feature_object.add(feature_object.get())
             return True
+        if feature_object.count() == 0:
+            self.forwarded = {'type': self.type_id}
+            feature_object = FeatureAutocomplete.get_queryset(
+              self, interactive=False)
+            if feature_object.count() == 1:
+                feature_other_language = feature_object.get()
+                translations = feature_other_language.translations().filter(
+                  to_feature__language=series.language)
+                if translations.count() == 1:
+                    self.feature_object.add(translations.get().to_feature)
+                    return True
         return False
 
     def migrate_feature(self):

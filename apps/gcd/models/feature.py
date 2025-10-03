@@ -84,6 +84,9 @@ class Feature(GcdData):
             return other_translations.exclude(to_feature=self)
         return None
 
+    def translations(self):
+        return self.to_related_feature.filter(relation_type__id=1)
+
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_feature',
