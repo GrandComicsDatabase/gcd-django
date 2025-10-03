@@ -1,4 +1,4 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 
 {% load static %}
 
@@ -6,20 +6,12 @@
   GCD :: {{ heading }}
 {% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href='{% static "css/gcd/default.css" %}'/>
-      <link rel="stylesheet" type="text/css"
-      href='{% static "css/gcd/default/listing.css" %}'>
+{% block nav_bar %}
+  {{ block.super }}
+  {% include "gcd/search/tw_list_header.html" %}
 {% endblock %}
 
 {% block view_body %}
-
-  {% with 'top' as position %}
-  {% with 'bottom' as link_direction %}
-    {% include "gcd/search/list_header.html" %}
-  {% endwith %}
-  {% endwith %}
 
   {% if select_key and not multiple_selects %}
 <div class='left'>
@@ -43,20 +35,13 @@
 <div class="left">
   {% block list_contents %}{% endblock %}
 </div>
-<div class="right">
-  {% if ADVERTISING and not BETA and USE_TEMPLATESADMIN %}
-    {% include "managed_content/gcd/ads/ad_skyscraper.html" %}
-  {% endif %}
-</div>
 
   {% if used_search_terms %}
     {% include "gcd/bits/search_terms.html" %}
   {% endif %}
 
-  {% with 'bottom' as position %}
-  {% with 'top' as link_direction %}
-    {% include "gcd/search/list_header.html" %}
-  {% endwith %}
-  {% endwith %}
+{% endblock %}
 
+{% block bottom_nav_bar %}
+  {% include "gcd/search/tw_list_header.html" %}
 {% endblock %}
