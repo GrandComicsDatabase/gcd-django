@@ -394,9 +394,9 @@ def diff_list(prev_rev, revision, field):
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
-                 'synopsis', 'title', 'first_line',
+                 'synopsis', 'title', 'first_line', 'keywords',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
-                 'publishing_format', 'format', 'name',
+                 'publishing_format', 'format', 'name', 'sort_name',
                  'price', 'indicia_frequency', 'variant_name',
                  'source_description', 'gcd_official_name', 'bio']:
         diff = diff_match_patch().diff_main(getattr(prev_rev, field),
