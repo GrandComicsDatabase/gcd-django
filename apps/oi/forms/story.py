@@ -14,6 +14,7 @@ from crispy_forms.bootstrap import (
     TabHolder,
 )
 from markdownx.widgets import MarkdownxWidget
+from taggit.models import Tag
 
 from apps.oi.models import (
     get_reprint_field_list, get_story_field_list, remove_leading_article,
@@ -619,6 +620,7 @@ class StoryRevisionForm(KeywordBaseForm):
         fields.insert(fields.index('characters'), 'group_members_death')
         fields.insert(fields.index('characters'), 'group_members_notes')
         fields.insert(fields.index('characters'), 'one_character_help')
+        fields.insert(fields.index('keywords') + 1, 'keyword_objects')
         widgets = {
             'feature': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
@@ -778,6 +780,16 @@ class StoryRevisionForm(KeywordBaseForm):
       help_text='Only story arcs for the series language can be selected. '
                 'Enter "&lt;space&gt;[&lt;text&gt;" to search the '
                 'disambiguation.'
+     )
+
+    keyword_objects = forms.ModelMultipleChoiceField(
+      queryset=Tag.objects.all(),
+      widget=autocomplete.ModelSelect2Multiple(
+                          url='keyword_autocomplete',
+                          attrs={'class': 'w-full lg:w-4/5'}),
+      required=False,
+      label='Keywords',
+      help_text='Select existing keywords that apply to this story.'
      )
 
     no_creator_help = forms.CharField(
@@ -1016,6 +1028,16 @@ class StoryRevisionForm(KeywordBaseForm):
     def clean_keywords(self):
         return _clean_keywords(self.cleaned_data)
 
+    def clean_keyword_objects(self):
+        for keyword in self.cleaned_data['keyword_objects']:
+            for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',', '\n',
+                      '’']:
+                if c in keyword.name:
+                    raise forms.ValidationError(
+                      'The following characters are not allowed in a keyword: '
+                      '< > { } : / \\ | @ , ’')
+        return self.cleaned_data['keyword_objects']
+
     def clean_genre(self):
         genre = self.cleaned_data['genre']
         if len(genre) > 10:
@@ -1134,6 +1156,12 @@ class StoryRevisionForm(KeywordBaseForm):
                                          .count():
                     raise forms.ValidationError(
                       ['Incorrect feature logo for this sequence.'])
+
+        if cd['keyword_objects']:
+            for keyword in cd['keyword_objects']:
+                if cd['keywords']:
+                    cd['keywords'] += '; '
+                cd['keywords'] += keyword.name
 
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:

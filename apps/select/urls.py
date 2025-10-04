@@ -91,6 +91,12 @@ urlpatterns = [
         name='indicia_printer_autocomplete',
     ),
     path(
+        'autocomplete/keyword/',
+        select_views.KeywordAutocomplete.as_view(create_field='name',
+                                                 validate_create=True),
+        name='keyword_autocomplete',
+    ),
+    path(
         'autocomplete/school/',
         select_views.SchoolAutocomplete.as_view(),
         name='school_autocomplete',

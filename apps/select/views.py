@@ -19,6 +19,7 @@ from django_filters import FilterSet, ModelChoiceFilter, \
                            ModelMultipleChoiceFilter
 
 from dal import autocomplete
+from taggit.models import Tag
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
@@ -773,6 +774,40 @@ class UniverseAutocomplete(LoginRequiredMixin,
                        Q(**{'designation__icontains': query}))
 
         return qs
+
+
+class KeywordAutocomplete(LoginRequiredMixin,
+                          autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Tag.objects.all()
+        qs = qs.filter(Q(**{'name__icontains': self.q})).order_by('name')
+
+        return qs
+
+    def has_add_permission(self, request):
+        """Return True if the user has the permission to add a model.
+           We allow any member to add a keyword.
+        """
+        auth = request.user.is_authenticated
+
+        if not auth:
+            return False
+
+        if request.user.has_perm('gcd.can_vote'):
+            return True
+
+        return False
+
+    def validate(self, text):
+        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',', '\n',
+                  '’']:
+            if c in text:
+                raise forms.ValidationError({
+                  'name': 'The following characters are not allowed in a '
+                  'keyword: < > { } : / \\ | @ , ’'},
+                  code="invalid",
+                )
+        return super(KeywordAutocomplete, self).validate(text)
 
 
 class IndiciaPrinterAutocomplete(LoginRequiredMixin,

@@ -696,14 +696,14 @@ def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
     if keywords is not None:
         not_allowed = False
-        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',', '\n']:
+        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',', '\n', '’']:
             if c in keywords:
                 not_allowed = True
                 break
         if not_allowed:
             raise forms.ValidationError(
                 'The following characters are not allowed in a keyword: '
-                '"< > { } : / \\ | @ ,". Also a linebreak is not allowed.')
+                '< > { } : / \\ | @ , ’ Also a linebreak is not allowed.')
         if keywords and '' in keywords.split(';'):
             raise forms.ValidationError(
                 'An extra ";" needs to removed.')
