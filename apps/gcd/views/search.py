@@ -1142,11 +1142,10 @@ def issue_by_isbn_hx(request):
                          template='gcd/search/issue_base_list.html')
 
 
-def issue_by_isbn(request, isbn, sort=ORDER_ALPHA,
-                  template='gcd/search/issue_list.html'):
+def issue_by_isbn(request, isbn, sort=ORDER_ALPHA):
     q_obj = compute_isbn_qobj(isbn, '', 'icontains')
     return generic_by_name(request, isbn, q_obj, sort, class_=Issue,
-                           template=template, credit="isbn")
+                           credit="isbn")
 
 
 def issue_by_isbn_name(request, isbn, sort=ORDER_ALPHA):
@@ -1168,11 +1167,9 @@ def issue_by_barcode_hx(request):
                             template='gcd/search/issue_base_list.html')
 
 
-def issue_by_barcode(request, barcode, sort=ORDER_ALPHA,
-                     template='gcd/search/issue_list.html'):
+def issue_by_barcode(request, barcode, sort=ORDER_ALPHA):
     q_obj = Q(barcode__icontains=barcode)
     return generic_by_name(request, barcode, q_obj, sort, class_=Issue,
-                           template=template,
                            credit="barcode")
 
 
