@@ -189,8 +189,12 @@ def generic_by_name(request, name, q_obj, sort,
 
     elif class_ in [Award, StoryArc]:
         if sqs is None:
-            things = class_.objects.exclude(deleted=True).filter(q_obj)
-            things = things.order_by("name")
+            if things is None:
+                things = class_.objects.exclude(deleted=True).filter(q_obj)
+            if class_ == Award:
+                things = things.order_by("name")
+            else:
+                things = things.order_by("sort_name")
             things = things.distinct()
         else:
             things = sqs
