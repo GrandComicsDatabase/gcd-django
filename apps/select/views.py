@@ -229,7 +229,7 @@ def process_select_search(request, select_key):
         else:
             heading = '%s (%s, ? series) #%s' % (cd['series'], publisher,
                                                  cd['number'])
-        heading = 'Issue search for: ' + heading
+        heading = 'matching search for: ' + heading
         template = 'gcd/search/issue_list.html'
         base_name = 'issue'
         plural_suffix = 's'

@@ -5,55 +5,61 @@
 {% load credits %}
 
 {% block list_contents %}
-<table class="sortable_listing">
-  <tr style="vertical-align:top">
-    {% if select_key %}
-    <th> Selection </th>
-    {% endif %}
-    <th colspan="2"> Publisher </th>
-    <th> Title </th>
-    <th> Year </th>
-    <th style="text-align: center"> #&nbsp;Issues </th>
-    <th> Covers </th>
-    <th> Published </th> 
-  </tr>
-{% for series in items %}
-  {% with series|object_filter as series %}
-  <tr>
-    {% if select_key %}
-    <td>
-      <form action="{% url "select_object" select_key=select_key %}" method="POST">
-      {% csrf_token %}
-        <input type="submit" name="search_select" value="Select this series"></input>
-        <input type="hidden" name="object_choice" value="series_{{ series.id }}"></input>
-      </form>
-    </td>
-    {% endif %}
-    <td class="listing_country" style="padding-right: 0px;"> <img {{ series.country|show_country_info }}>
-    <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
-    <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> {{ series.publication_type|short_pub_type }}</td>
-    <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} </td>
-    <td style="text-align: right"> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
-    <td style="text-align: right">
-    {% if not series.issue_count or not series.is_comics_publication %}
-      No Covers
-    {% else %}
-      {% if not series.scan_needed_count %}
-      <a href="{% url "series_covers" series_id=series.id %}">Gallery</a>
+<table>
+  <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
+    <tr style="vertical-align:top">
+  {% if select_key %}
+      <th> Selection </th>
+  {% endif %}
+      <th colspan="2"> Publisher </th>
+      <th> Title </th>
+      <th> Year </th>
+      <th style="text-align: center"> #&nbsp;Issues </th>
+      <th> Covers </th>
+      <th> Published </th> 
+    </tr>
+  </thead>
+  <tbody class="sortable_listing">
+  {% for series in items %}
+    {% with series|object_filter as series %}
+    <tr>
+      {% if select_key %}
+      <td>
+        <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+        {% csrf_token %}
+          <button class="btn-blue-editing" type="submit" name="search_select" style="white-space: nowrap;">
+          Select This Series
+          </button>
+          <input type="hidden" name="object_choice" value="series_{{ series.id }}">
+        </form>
+      </td>
+      {% endif %}
+      <td class="listing_country" style="padding-right: 0px;"> <img {{ series.country|show_country_info }}>
+      <td class="listing_publisher"> <a href="{{ series.publisher.get_absolute_url }}">{{ series.publisher.name }}</a></td>
+      <td> <a href="{{ series.get_absolute_url }}">{{ series.name }}</a> {{ series.publication_type|short_pub_type }}</td>
+      <td> {{ series.year_began }}{% if series.year_began_uncertain %}?{% endif %} </td>
+      <td style="text-align: right"> {{ series.issue_count }} issue{{ series.issue_count|pluralize }} ({{ series.issue_indexed_count }}&nbsp;indexed)</td>
+      <td style="text-align: right">
+      {% if not series.issue_count or not series.is_comics_publication %}
+        No Covers
       {% else %}
-        {% if series.has_gallery %}
-      <a href="{% url "series_covers" series_id=series.id %}">Have
-      {{ series.scan_count}}</a>
-      (<a href="{% url "series_scan_table" series_id=series.id %}">Need&nbsp;{{ series.scan_needed_count }}</a>)
+        {% if not series.scan_needed_count %}
+        <a href="{% url "series_covers" series_id=series.id %}">Gallery</a>
         {% else %}
-      <a href="{% url "series_scan_table" series_id=series.id %}">Add</a>
+          {% if series.has_gallery %}
+        <a href="{% url "series_covers" series_id=series.id %}">Have
+        {{ series.scan_count}}</a>
+        (<a href="{% url "series_scan_table" series_id=series.id %}">Need&nbsp;{{ series.scan_needed_count }}</a>)
+          {% else %}
+        <a href="{% url "series_scan_table" series_id=series.id %}">Add</a>
+          {% endif %}
         {% endif %}
       {% endif %}
-    {% endif %}
-    </td>
-    <td style="text-align: right"> {{ series.display_publication_dates }} </td>
-  </tr>
+      </td>
+      <td style="text-align: right"> {{ series.display_publication_dates }} </td>
+    </tr>
   {% endwith %}
 {% endfor %}
+  </tbody>
 </table>
 {% endblock %}

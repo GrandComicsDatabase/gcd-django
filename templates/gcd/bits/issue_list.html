@@ -33,42 +33,48 @@ the selected issues to your
   Note that you can use click and shift-click to select ranges.
   <div style="clear: both;"></div>
 {% endif %}
-<table class="listing">
-  <tr>
-    {% if select_key %}
-    <th class="select_heading"><span>Selection</span>
-      <a href="#" id="select_all" title="use click followed by shift click to select ranges" class="hidden"><button type="button">Select all</button></a>
-      <a href="#" id="select_none" title="use click followed by shift click to select ranges" class="hidden"><button type="button">Select none</button></a>
-    </th>
-    {% endif %}
-    <th colspan="2"> Publisher </th>
-    <th> Issue </th>
-    <th> Date </th>
-  </tr>
-{% for issue in items %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' %}">
-    {% if select_key %}
-    <td>
-      {% if multiple_selects %}
-      <input type="checkbox" name="object_choice" value="issue_{{ issue.id }}" {% if all_pre_selected %}checked{% endif %}>
-      {% else %}
-      <form action="{% url "select_object" select_key=select_key %}" method="POST">
-        {% csrf_token %}
-      <input type="submit" name="search_select" value="Select this issue">
-      <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
-      </form>
+<table>
+  <thead class="bg-blue-100 {% if not table.not_sticky %}md:sticky{% endif %} md:top-0">
+    <tr>
+      {% if select_key %}
+      <th class="select_heading"><span>Selection</span>
+        <a href="#" id="select_all" title="use click followed by shift click to select ranges" class="hidden"><button type="button">Select all</button></a>
+        <a href="#" id="select_none" title="use click followed by shift click to select ranges" class="hidden"><button type="button">Select none</button></a>
+      </th>
       {% endif %}
-    </td>
+      <th colspan="2"> Publisher </th>
+      <th> Issue </th>
+      <th> Date </th>
+    </tr>
+  </thead>
+  <tbody class="sortable_listing">
+{% for issue in items %}
+    <tr>
+    {% if select_key %}
+      <td>
+      {% if multiple_selects %}
+        <input type="checkbox" name="object_choice" value="issue_{{ issue.id }}" {% if all_pre_selected %}checked{% endif %}>
+      {% else %}
+        <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+        {% csrf_token %}
+          <button class="btn-blue-editing" type="submit" name="search_select" style="white-space: nowrap;">
+        Select This Issue
+          </button>
+          <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
+        </form>
+      {% endif %}
+      </td>
     {% endif %}
     {% if confirm_selection %}
-    <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
+      <input type="hidden" name="object_choice" value="issue_{{ issue.id }}">
     {% endif %}
-    <td class="listing_country"> <img {{ issue.series.country|show_country_info }}>
-    <td class="listing_publisher"> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
-    <td> {{ issue|show_issue }} </td>
-    <td> {{ issue.publication_date|default:"" }} </td>
-  </tr>
+      <td> <img {{ issue.series.country|show_country_info }}>
+      <td> <a href="{{ issue.series.publisher.get_absolute_url }}">{{ issue.series.publisher.name }}</a></td>
+      <td> {{ issue|show_issue }} </td>
+      <td> {{ issue.publication_date|default:"" }} </td>
+    </tr>
 {% endfor %}
+  </tbody>
 </table>
 {% if select_key and multiple_selects %}
 </form>
