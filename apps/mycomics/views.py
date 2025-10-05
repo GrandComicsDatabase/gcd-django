@@ -799,7 +799,7 @@ def select_issues_from_preselection(request, issues, cancel,
                'plural_suffix': 's',
                'no_bulk_edit': True,
                'all_pre_selected': True,
-               'heading': 'Issues found that can be selected for import.',
+               'heading': 'found that can be selected for import.',
                'not_found': not_found
                }
     return paginate_response(request, issues,

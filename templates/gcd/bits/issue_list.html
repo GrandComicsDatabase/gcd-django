@@ -13,7 +13,9 @@ With select_key the user can select one (or more with multiple_selects) issues.
 <form method="POST" class="before_listing">
   {% csrf_token %}
 <div>
-  <input type="submit" name="confirm_selection" value="Add">
+  <button class="btn-blue-editing inline" type="submit" name="confirm_selection">
+  Add
+  </button>
 the selected issues to your 
 <select name="collection_id">
   {% for col_item in collection_list %}
@@ -24,9 +26,11 @@ the selected issues to your
 {% endif %}
 
 {% if select_key and multiple_selects %}
-<form action="{% url "process_multiple_selects" select_key=select_key %}" method="POST" class="before_listing">
+<form action="{% url 'process_multiple_selects' select_key=select_key %}" method="POST" class="before_listing">
   {% csrf_token %}
-  <input type="submit" name="search_select" value="Select issues"> Note that you can use click and shift-click to select ranges.
+  <button class="btn-blue-editing inline" type="submit" name="search_select">
+  Select issues</button>
+  Note that you can use click and shift-click to select ranges.
   <div style="clear: both;"></div>
 {% endif %}
 <table class="listing">
