@@ -30,7 +30,7 @@
   {% include "gcd/bits/hs_sort_bar.html" %}
   </div>
   <div class="flex-1"><!-- Search Box -->
-    <form class="mt-2" action="{% url 'haystack_search' %}" method="get">
+    <form class="mt-2" action="." method="get">
       <div class="flex rounded-lg border border-gray-500 overflow-hidden max-w-md mx-auto">
         <span class="max-sm:hidden flex">
   {% include "gcd/bits/hs_search_for.html" %}
@@ -120,9 +120,11 @@
   <div class="flex-1 ">
     <div class="left">
   {% if select_key and multiple_selects %}
-  <form action="{% url "process_multiple_selects" select_key=select_key %}" method="POST">
+  <form action="{% url 'process_multiple_selects'  select_key=select_key %}" method="POST">
     {% csrf_token %}
-    <input type="submit" name="search_select" value="Submit">
+    <button class="btn-blue-editing inline" type="submit" name="search_select">
+      Select
+    </button>
       <div style="clear: both;"></div>
   {% endif %}
       <table class="border">
@@ -144,10 +146,12 @@
         {% if multiple_selects %}
                 <input type="checkbox" name="object_choice" value="{{ result.model_name }}_{{ result.object.id }}">
         {% else %}
-                <form action="{% url "select_object" select_key=select_key %}" method="POST">
+                <form action="{% url 'select_object' select_key=select_key %}" method="POST">
           {% csrf_token %}
-                <input type="submit" name="search_select" value="Select this {{ result.model_name }}">
-                <input type="hidden" name="object_choice" value="{{ result.model_name }}_{{ result.object.id }}">
+                  <button class="btn-blue-editing" type="submit" name="search_select" style="white-space: nowrap;">
+                    Select This {{ result.model_name|capfirst }}
+                  </button>
+                  <input type="hidden" name="object_choice" value="{{ result.model_name }}_{{ result.object.id }}">
                 </form>
         {% endif %}
       {% endif %}
@@ -254,7 +258,9 @@
 </div>
     {% if select_key and multiple_selects %}
 <div style="clear: both;"></div>
-  <input type="submit" name="search_select" value="Submit">
+  <button class="btn-blue-editing inline" type="submit" name="search_select">
+      Select
+  </button>
 </form>
     {% endif %}
 <div style="clear: both;"></div>
