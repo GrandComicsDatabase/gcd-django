@@ -252,7 +252,7 @@ def process_select_search(request, select_key):
     elif 'search_publisher' in request.GET:
         search = Publisher.objects.filter(deleted=False,
                                           name__icontains=cd['publisher'])
-        heading = 'Publisher search for: ' + cd['publisher']
+        heading = 'matching search for: ' + cd['publisher']
         template = 'gcd/search/publisher_list.html'
         base_name = 'publisher'
         plural_suffix = 's'
