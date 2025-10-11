@@ -5730,6 +5730,12 @@ class StoryRevision(Revision):
                 if translations.count() == 1:
                     revision.feature_object.add(translations.get().to_feature)
                 revision.feature_object.remove(feature_object)
+            for story_arc in revision.story_arc.all():
+                # translations = story_arc.get_translations_in_language(
+                #   revision.issue.series.language)
+                # if translations.count() == 1:
+                #     revision.story_arc.add(translations.get())
+                revision.story_arc.remove(story_arc)
 
         if not copy_characters:
             revision.characters = ''
