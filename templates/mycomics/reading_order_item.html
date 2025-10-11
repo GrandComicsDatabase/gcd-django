@@ -65,13 +65,13 @@
     <a href="{% url 'view_reading_order_item' item_id=item_before.id reading_order_id=reading_order.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-left"></span></button></a>
     {% endif %}
     </h1>
-    <h4>In: <a href="{% url "view_reading_order" reading_order.id %}?page={{ page }}">{{ reading_order.name }}</a>
+    <h4>In: <a href="{% url 'view_reading_order' reading_order.id %}?page={{ page }}">{{ reading_order.name }}</a>
     {% if request.user.collector == reading_order.collector %}
       {% if other_reading_orders %}
         {% trans "Also in:" %}
         {% for other_reading_order in other_reading_orders %}
           {% if not forloop.first %}/{% endif %}
-          <a href="{% url "view_item" item_id=item.id reading_order_id=other_reading_order.id %}">{{ other_reading_order.name }}</a>
+          <a href="{% url 'view_reading_order_item' item_id=item.id reading_order_id=other_reading_order.id %}">{{ other_reading_order.name }}</a>
         {% endfor %}
       {% endif %}
       <button type="button" class="btn btn-primary pull-right"
