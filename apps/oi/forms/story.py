@@ -706,12 +706,12 @@ class StoryRevisionForm(KeywordBaseForm):
         else:
             self.helper.layout = Layout(TabHolder(
               Tab('Sequence Details',
-                  *(f for f in field_list[:credits_start-6]),
+                  *(f for f in field_list[:credits_start-5]),
                   *(f for f in field_list[characters_end:-2]),
                   template='oi/bits/tab.html',
                   ),
               Tab('Creator Credits',
-                  *(f for f in field_list[credits_start-5:credits_end+7]),
+                  *(f for f in field_list[credits_start-4:credits_end+7]),
                   template='oi/bits/tab.html',
                   ),
               Tab('Characters',
