@@ -645,6 +645,9 @@ class StoryRevisionForm(KeywordBaseForm):
                                       template='oi/bits/uni_field.html'))
                       for field in fields[:genres]]
         field_list.append(HTML(
+            '<tr class="mb-2"><th>Genre from Feature:</th>'
+            '<td><div id="feature-genres"></div></td></tr>'))
+        field_list.append(HTML(
           '<tr class="mb-2"><th>Selected Genre:</th>'
           '<td id="selected-genres"></td></tr>'))
 

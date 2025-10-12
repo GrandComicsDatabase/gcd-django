@@ -405,6 +405,8 @@ urlpatterns = [
       gcd_views.details.feature_sequences, name='feature_sequences'),
     path('feature/<int:feature_id>/covers/',
       gcd_views.details.feature_covers, name='feature_covers'),
+    path('feature/<int:feature_id>/genres/',
+      gcd_views.details.feature_genres, name='feature_genres'),
     path('feature/<int:feature_id>/',
       gcd_views.details.feature, name='show_feature'),
     path('feature/name/<path:feature_name>/sort/<str:sort>/',

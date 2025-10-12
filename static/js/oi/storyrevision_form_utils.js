@@ -91,3 +91,41 @@ $(document).on('change', 'input[type=checkbox]', function () {
 })
 
 $('input[type=checkbox]').change()
+
+$(document).ready(function() {
+    const featureSelect = document.getElementById('id_feature_object');
+    const genresContainer = document.getElementById('feature-genres');
+
+    // Use jQuery to listen for select2 change event as the page already uses it
+    $(featureSelect).on('change', function(e) {
+      // Clear previous results
+      genresContainer.innerHTML = '';
+      const selectedOptions = $(this).select2('data');
+
+      selectedOptions.forEach(option => {
+        if (option.id) {
+          const featureId = option.id;
+          const url = `/feature/${featureId}/genres/`;
+
+          // Use htmx to make the request and update the genresContainer
+          // Create a temporary element to make an htmx request
+          const tempDiv = document.createElement('div');
+          tempDiv.setAttribute('hx-get', url);
+          tempDiv.setAttribute('hx-trigger', 'load');
+          tempDiv.setAttribute('hx-swap', 'outerHTML');
+
+          // Append to the container and process it with htmx
+          if (genresContainer.innerHTML !== '') {
+            genresContainer.appendChild(document.createTextNode(' - '));
+          }
+          genresContainer.appendChild(tempDiv);
+          htmx.process(tempDiv);
+        }
+      });
+    });
+    // Trigger the change event on load to fetch genres for pre-selected features.
+    // We need to wait a bit for select2 to initialize.
+    setTimeout(function() {
+        $(featureSelect).trigger('change');
+    }, 100);
+});

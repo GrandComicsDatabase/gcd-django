@@ -3456,6 +3456,13 @@ def show_feature(request, feature, preview=False):
                                  'gcd/details/tw_feature.html', context)
 
 
+def feature_genres(request, feature_id):
+    feature = get_gcd_object(Feature, feature_id)
+    genres = feature.genre
+    return HttpResponse(genres,
+                        content_type='text/plain')
+
+
 def feature_sequences(request, feature_id, country=None):
     feature = get_gcd_object(Feature, feature_id)
     stories = Story.objects.filter(feature_object=feature,
