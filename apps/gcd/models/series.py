@@ -173,7 +173,7 @@ class Series(GcdData):
         return self.active_issues().exclude(variant_of=None)
 
     def active_indexed_issues(self):
-        return self.active_issues().exclude(is_indexed=INDEXED['skeleton'])
+        return self.active_issues().filter(is_indexed__gt=INDEXED['some_data'])
 
     def set_first_last_issues(self):
         issues = self.active_issues().order_by('sort_code')
@@ -334,7 +334,7 @@ class Series(GcdData):
     @cached_property
     def issue_indexed_count(self):
         return self.active_base_issues()\
-                   .exclude(is_indexed=INDEXED['skeleton']).count()
+                   .filter(is_indexed__gt=INDEXED['some_data']).count()
 
     @cached_property
     def issues_to_migrate(self):
