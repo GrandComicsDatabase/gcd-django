@@ -339,7 +339,8 @@ class Series(GcdData):
     @cached_property
     def issues_to_migrate(self):
         stories = Story.objects.exclude(Q(script='')
-                                        | Q(script__startswith='?'),
+                                        | Q(script__startswith='?')
+                                        | Q(script__startswith='various'),
                                         Q(pencils='')
                                         | Q(pencils__startswith='?')
                                         | Q(pencils__startswith='various'),
