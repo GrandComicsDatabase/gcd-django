@@ -457,6 +457,13 @@ class Group(CharacterGroupBase):
               deleted=False)
         return Group.objects.none()
 
+    def translated_from(self):
+        try:
+            relation = self.from_related_group.get(relation_type__id=1)
+        except self.from_related_group.model.DoesNotExist:
+            return None
+        return relation.from_group
+
     def official_name(self):
         return self.active_names().get(is_official_name=True)
 

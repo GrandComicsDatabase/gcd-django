@@ -5359,6 +5359,11 @@ class StoryCharacterRevision(Revision):
                     new_character.group_name.remove(group_name)
                     translations = group_name.group.translations(
                         language)
+                    if translations.count() == 0 and \
+                       group_name.group.translated_from():
+                        translations = group_name.group\
+                                                 .translated_from()\
+                                                 .translations(language)
                     if translations.count() == 1:
                         new_character.group_name.add(
                             translations.get().official_name())
@@ -5785,6 +5790,13 @@ class StoryRevision(Revision):
                 else:
                     translations = group.group_name.group.translations(
                       issue_revision.series.language)
+                    if translations.count() == 0 and \
+                       group.group_name.group.translated_from():
+                        translations = group.group_name.group\
+                                            .translated_from()\
+                                            .translations(issue_revision
+                                                          .series.language)
+
                     if translations.count() == 1:
                         group.group_name = translations.get().official_name()
                         StoryGroupRevision.clone(
