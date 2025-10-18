@@ -58,7 +58,7 @@ class Feature(GcdData):
     genre = models.CharField(max_length=255)
     language = models.ForeignKey(Language, on_delete=models.CASCADE)
     feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
-    year_first_published  = models.IntegerField(db_index=True, null=True)
+    year_first_published = models.IntegerField(db_index=True, null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
     external_link = models.ManyToManyField(ExternalLink)
@@ -75,6 +75,13 @@ class Feature(GcdData):
 
     def active_stories(self):
         return self.story_set.filter(deleted=False)
+
+    def translated_from(self):
+        try:
+            relation = self.from_related_feature.get(relation_type__id=1)
+        except self.from_related_feature.model.DoesNotExist:
+            return None
+        return relation.from_feature
 
     def other_translations(self):
         if self.from_related_feature.filter(relation_type__id=1).count() == 1:

@@ -269,6 +269,13 @@ class Character(CharacterGroupBase):
                                                 flat=True).distinct())
         return Universe.objects.filter(id__in=universes)
 
+    def translated_from(self):
+        try:
+            relation = self.from_related_character.get(relation_type__id=1)
+        except self.from_related_character.model.DoesNotExist:
+            return None
+        return relation.from_character
+
     # what is with translation over character records ?
     # German . English - French, copying from first to last ?
     def translations(self, language):

@@ -5340,14 +5340,18 @@ class StoryCharacterRevision(Revision):
         language = story_revision.issue.series.language
         translations = character.character.character.translations(
             language)
+        if translations.count() == 0 and \
+           character.character.character.translated_from():
+            translations = character.character.character.translated_from()\
+                                              .translations(language)
         if translations.count() == 1:
             character.character = translations.get()\
-                                                .official_name()
+                                              .official_name()
             new_character = StoryCharacterRevision.clone(
-                character,
-                story_revision.changeset,
-                fork=True,
-                story_revision=story_revision)
+              character,
+              story_revision.changeset,
+              fork=True,
+              story_revision=story_revision)
             for group in new_character.group.all():
                 new_character.group.remove(group)
             if new_character.group_name.exists():
@@ -5729,6 +5733,14 @@ class StoryRevision(Revision):
                   to_feature__language=revision.issue.series.language)
                 if translations.count() == 1:
                     revision.feature_object.add(translations.get().to_feature)
+                elif (translations.count() == 0 and
+                      feature_object.translated_from() is not None):
+                    other_translations = feature_object.translated_from()\
+                                                       .translations().filter(
+                      to_feature__language=revision.issue.series.language)
+                    if other_translations.count() == 1:
+                        revision.feature_object.add(
+                          other_translations.get().to_feature)
                 revision.feature_object.remove(feature_object)
             for story_arc in revision.story_arc.all():
                 # translations = story_arc.get_translations_in_language(
