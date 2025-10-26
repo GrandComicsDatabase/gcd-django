@@ -1798,7 +1798,8 @@ def edit_issues_in_bulk(request):
                 credits_formset = get_issue_revision_form_set_extra(
                     extra=editing_credits.count()+1)(
                       initial=editing_credits.values(
-                              *editing_credits[0].revisions.first()._field_list()))
+                              *editing_credits[0].revisions.first()
+                                                 ._field_list()))
             else:
                 credits_formset = IssueRevisionFormSet(request.POST or None)
         else:
@@ -2834,6 +2835,43 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
 def add_generic(request, model_name,
                 object_url='', object_name=None,
                 initial={}, cancel='', save_kwargs={}):
+    """
+    Add a new object through the Online Indexer interface.
+
+    This view handles the creation of new objects that do not have extra
+    forms (such as publishers, features, etc.) through a revision/changeset
+    workflow.
+
+    It requires the user to have the 'indexer.can_reserve' permission and
+    checks if the user can reserve another item.
+
+    Args:
+        request (HttpRequest): The HTTP request object.
+        model_name (str): The name of the model being added (e.g.,
+                          'publisher', 'feature').
+        object_url (str, optional): The URL to redirect to for the form.
+            Defaults to ''.
+        object_name (str, optional): Display name for the object type.
+            Defaults to None.
+        initial (dict, optional): Initial data for the form. Defaults to {}.
+        cancel (str, optional): URL to redirect to on cancel. Defaults to ''.
+        save_kwargs (dict, optional): Additional keyword arguments to pass to
+            the save_added_revision method. Defaults to {}.
+
+    Returns:
+        HttpResponse:
+            - If user has reached change limit: error page
+            - If form is cancelled: redirect to cancel URL or add page
+            - If form is valid: redirect to submit page for the created
+              changeset
+            - If form is invalid or GET request: renders the add form template
+
+    Notes:
+        - Creates a new Changeset with OPEN state when form is valid
+        - Uses get_revision_form to dynamically get the appropriate form
+          class
+        - Object name and URL are auto-generated if not provided
+    """
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
@@ -3460,6 +3498,50 @@ def story_select_compare(request, story_revision_id):
 @permission_required('indexer.can_reserve')
 def compare_stories_copy(request, story_revision_id, story_id=None,
                          other_revision_id=None):
+    """
+    Compare and copy story revision fields from another story or story
+    revision.
+
+    This view allows an indexer to compare their current story revision with
+    either:
+    - An approved story (via story_id)
+    - Another story revision (via other_revision_id)
+
+    The indexer can then selectively copy fields from the comparison source
+    to their revision.
+
+    Args:
+        request: The HTTP request object
+        story_revision_id: ID of the current story revision being edited
+        story_id: Optional ID of an approved story to compare against
+        other_revision_id: Optional ID of another story revision to compare
+                           against
+
+    Returns:
+        - GET: Renders comparison page with fields that can be copied
+        - POST with 'cancel': Redirects to changeset edit page
+        - POST with field selections: Copies selected fields and redirects to
+          revision edit page
+
+    Raises:
+        Http404: If the story revision, story, or other revision is not found
+
+    Permission Required:
+        indexer.can_reserve
+
+    Notes:
+        - Only the changeset indexer can access this page
+        - Handles copying of:
+            - Single-value fields
+            - Multi-value (m2m) fields
+            - Keywords (with special handling)
+            - Story credits (with optional qualifier copying)
+            - Characters and groups (with language-aware handling)
+        - When copying characters/groups between different languages, attempts
+          to find appropriate translations
+        - Removes existing credits/characters/groups that weren't in the
+          source when copying
+    """
     revision = get_object_or_404(StoryRevision, id=story_revision_id)
     if request.user != revision.changeset.indexer:
         return render_error(
