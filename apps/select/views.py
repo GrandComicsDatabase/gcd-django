@@ -25,7 +25,7 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
                             Character, CharacterNameDetail, Group, \
-                            GroupNameDetail, Universe, StoryArc, \
+                            GroupNameDetail, Universe, StoryArc, Brand, \
                             STORY_TYPES
 from apps.stddata.models import Country, Language
 from apps.gcd.templatetags.credits import get_native_language_name
@@ -808,6 +808,44 @@ class KeywordAutocomplete(LoginRequiredMixin,
                   code="invalid",
                 )
         return super(KeywordAutocomplete, self).validate(text)
+
+
+class BrandEmblemAutocomplete(LoginRequiredMixin,
+                                 autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Brand.objects.filter(deleted=False)
+
+        publisher_id = self.forwarded.get('publisher_id', None)
+        year_began = self.forwarded.get('year_began', 10000)
+        year_ended = self.forwarded.get('year_ended', 1)
+
+        if publisher_id:
+            qs = qs.filter(in_use__publisher__id=publisher_id).distinct()
+        started_before = Q(in_use__year_began__lte=year_began,
+                           in_use__publisher__id=publisher_id)
+        no_start = Q(in_use__year_began=None,
+                     in_use__publisher__id=publisher_id)
+        not_ended_before = (Q(in_use__year_ended__gte=year_ended,
+                              in_use__publisher__id=publisher_id) |
+                            Q(in_use__year_ended=None,
+                              in_use__publisher__id=publisher_id))
+
+        qs = qs.filter((started_before & not_ended_before) |
+                       (no_start & not_ended_before))
+
+        qs = _filter_and_sort(qs, self.q)
+        return qs
+
+    def get_result_label(self, brand_emblem):
+        if brand_emblem.emblem:
+            return format_html(
+              '%s <img src="%s">' % (brand_emblem.name,
+                                     brand_emblem.emblem.icon.url))
+        else:
+            if brand_emblem.generic:
+                return format_html('%s [generic]' % brand_emblem.name)
+            else:
+                return format_html('%s' % brand_emblem.name)
 
 
 class IndiciaPrinterAutocomplete(LoginRequiredMixin,

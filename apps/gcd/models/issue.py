@@ -173,7 +173,9 @@ class Issue(GcdData):
     indicia_publisher = models.ForeignKey(IndiciaPublisher,
                                           on_delete=models.CASCADE, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
-    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True)
+    brand_emblem = models.ManyToManyField(Brand)
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True,
+                              related_name='issues_deprecated')
     no_brand = models.BooleanField(default=False, db_index=True)
     indicia_printer = models.ManyToManyField(IndiciaPrinter)
     no_indicia_printer = models.BooleanField(default=False)

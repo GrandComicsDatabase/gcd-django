@@ -3771,7 +3771,7 @@ class SeriesBondRevision(Revision):
 def get_issue_field_list():
     return ['number', 'title', 'no_title', 'volume',
             'no_volume', 'volume_not_printed', 'display_volume_with_number',
-            'indicia_publisher', 'indicia_pub_not_printed',
+            'indicia_publisher', 'indicia_pub_not_printed', 'brand_emblem',
             'brand', 'no_brand', 'publication_date', 'year_on_sale',
             'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
             'key_date', 'indicia_frequency', 'no_indicia_frequency', 'price',
@@ -4023,9 +4023,11 @@ class IssueRevision(Revision):
       IndiciaPublisher, on_delete=models.CASCADE, null=True, blank=True,
       default=None, related_name='issue_revisions')
     indicia_pub_not_printed = models.BooleanField(default=False)
+    brand_emblem = models.ManyToManyField(Brand, blank=True,
+                                          related_name='issue_revisions')
     brand = models.ForeignKey(
       Brand, on_delete=models.CASCADE, null=True, default=None, blank=True,
-      related_name='issue_revisions')
+      related_name='issue_revisions_deprecated')
     no_brand = models.BooleanField(default=False)
     indicia_printer = models.ManyToManyField(IndiciaPrinter, blank=True,
                                              related_name='issue_revisions')

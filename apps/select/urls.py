@@ -86,6 +86,11 @@ urlpatterns = [
         name='universe_autocomplete',
     ),
     path(
+        'autocomplete/brand_emblem/',
+        select_views.BrandEmblemAutocomplete.as_view(),
+        name='brand_emblem_autocomplete',
+    ),
+    path(
         'autocomplete/indicia_printer/',
         select_views.IndiciaPrinterAutocomplete.as_view(),
         name='indicia_printer_autocomplete',

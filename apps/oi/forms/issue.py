@@ -119,6 +119,34 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
         turned_off_list = ''
 
+        publisher_id = forms.CharField(widget=forms.HiddenInput,
+                                       initial=series.publisher.id)
+        issue_year = None
+        if revision and revision.key_date:
+            issue_year = int(revision.key_date[:4])
+        elif revision and revision.year_on_sale and \
+                int(log10(revision.year_on_sale)) + 1 == 4:
+            issue_year = revision.year_on_sale
+        if issue_year:
+            year_began = issue_year
+            year_ended = issue_year
+        else:
+            if series.year_began:
+                year_began = series.year_began
+            else:
+                year_began = None
+            if series.year_ended:
+                year_ended = series.year_ended
+            else:
+                year_ended = None
+        if year_began:
+            year_began = forms.CharField(widget=forms.HiddenInput,
+                                         required=False,
+                                         initial=year_began)
+        if year_ended:
+            year_ended = forms.CharField(widget=forms.HiddenInput,
+                                         required=False,
+                                         initial=year_ended)
         if not series.has_issue_title:
             no_title = forms.BooleanField(widget=forms.HiddenInput,
                                           required=False)
@@ -594,6 +622,17 @@ class IssueRevisionForm(KeywordBaseForm):
                            for field in fields[-4:]])
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = ISSUE_HELP_LINKS
+
+    brand_emblem = forms.ModelMultipleChoiceField(
+        queryset=Brand.objects.all(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url='brand_emblem_autocomplete',
+            forward=['publisher_id', 'year_began', 'year_ended'],
+            attrs={'data-html': True,
+                   'class': 'w-full lg:w-4/5',
+                   'data-placeholder': 'select a brand emblem'}),
+        required=False,
+    )
 
     indicia_printer = forms.ModelMultipleChoiceField(
         queryset=IndiciaPrinter.objects.all(),
