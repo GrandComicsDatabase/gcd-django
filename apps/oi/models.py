@@ -4894,6 +4894,7 @@ class IssueRevision(Revision):
         self._seen_indicia_publisher = False
         self._seen_indicia_frequency = False
         self._seen_indicia_printer = False
+        self._seen_brand_emblem = False
         self._seen_brand = False
         self._seen_page_count = False
         self._seen_editing = False
@@ -4929,6 +4930,10 @@ class IssueRevision(Revision):
             return 1
         if not self._seen_brand and field_name in ('brand', 'no_brand'):
             self._seen_brand = True
+            return 1
+        if not self._seen_brand_emblem and field_name in ('brand_emblem',
+                                                          'no_brand'):
+            self._seen_brand_emblem = True
             return 1
         if not self._seen_page_count and \
            field_name in ('page_count', 'page_count_uncertain'):
