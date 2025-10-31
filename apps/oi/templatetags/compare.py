@@ -123,6 +123,26 @@ def field_value(revision, field):
             if settings.FAKE_IMAGES:
                 return absolute_url(value)
             else:
+                return mark_safe('<img class="inline"src="' +
+                                 value.emblem.icon.url + '"> '
+                                 + absolute_url(value))
+        return absolute_url(value)
+    elif field == 'brand_emblem':
+        brand_emblems = ''
+        for brand_emblem in value.all():
+            if settings.FAKE_IMAGES:
+                brand_emblems += absolute_url(brand_emblem) + '; '
+            else:
+                brand_emblems += mark_safe('<img class="inline" src="' +
+                                           brand_emblem.emblem.icon.url + '"> '
+                                           + absolute_url(brand_emblem)) + '; '
+        if brand_emblems:
+            brand_emblems = brand_emblems[:-2]
+        return mark_safe(brand_emblems)
+        if value and value.emblem:
+            if settings.FAKE_IMAGES:
+                return absolute_url(value)
+            else:
                 return mark_safe('<img src="' + value.emblem.icon.url + '"> '
                                  + absolute_url(value))
         return absolute_url(value)
