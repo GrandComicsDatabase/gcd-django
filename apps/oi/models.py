@@ -4868,6 +4868,7 @@ class IssueRevision(Revision):
             'series': None,
             'indicia_publisher': None,
             'indicia_pub_not_printed': False,
+            'brand_emblem': None,
             'brand': None,
             'no_brand': False,
             'page_count': None,

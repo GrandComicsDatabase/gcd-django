@@ -41,10 +41,10 @@
             <li><span class="font-bold">Number of Issues:</span>
               {{ issues_count }}</li>
             <li><span class="font-bold">Publisher's Brand Emblem:</span>
-              {% if brand.emblem %}
-              <img src="{{ brand.emblem.scaled_image.url }}">
+              {% if brand_use.emblem.emblem %}
+              <img src="{{ brand_use.emblem.emblem.scaled_image.url }}">
               {% endif %}
-              {% if brand.generic %}
+              {% if brand_use.emblem.generic %}
               generic
               {% endif %}
             </li>
