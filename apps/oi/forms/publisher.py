@@ -4,11 +4,12 @@
 from collections import OrderedDict
 
 from django import forms
-from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.forms.widgets import HiddenInput
 
+from dal import autocomplete
+
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field, HTML
+from crispy_forms.layout import Layout, Field
 from .custom_layout_object import Formset, BaseField
 
 from .support import (
@@ -214,7 +215,8 @@ def get_brand_revision_form(user=None, revision=None,
             queryset = (queryset | revision.group.all()).distinct()
     elif brand_group:
         initial = [brand_group.id]
-        queryset = BrandGroup.objects.filter(id=brand_group.id)
+        queryset = BrandGroup.objects.filter(parent=brand_group.parent,
+                                             deleted=False)
     elif publisher:
         queryset = BrandGroup.objects.filter(parent=publisher.id,
                                              deleted=False)
@@ -225,14 +227,6 @@ def get_brand_revision_form(user=None, revision=None,
         def __init__(self, *args, **kw):
             super(RuntimeBrandRevisionForm, self).__init__(*args, **kw)
             if revision:
-                # brand_group_other_publisher_id is last field,
-                # move it after group
-                ordering = list(self.fields)
-                ordering.insert(ordering.index('group') + 1,
-                                ordering.pop())
-                new_fields = OrderedDict([(f,
-                                           self.fields[f]) for f in ordering])
-                self.fields = new_fields
                 if revision.image_revision or (revision.source and
                                                revision.source.emblem):
                     self.fields['brand_emblem_image'].help_text = \
@@ -248,14 +242,7 @@ def get_brand_revision_form(user=None, revision=None,
                        'px-1 inline-block'}),
             queryset=queryset,
             initial=initial)
-        # TODO currently a second group can only added for existing brands
         if revision and revision.source:
-            brand_group_other_publisher_id = forms.IntegerField(
-                required=False,
-                label="Add Brand Group",
-                help_text="One can add a brand group from a different "
-                          "publisher by id. If an id is entered the submit "
-                          "will return for confirmation.")
             if revision.source.generic:
                 brand_emblem_image = forms.ImageField(widget=HiddenInput,
                                                       required=False)
@@ -276,7 +263,7 @@ def get_brand_revision_form(user=None, revision=None,
             return instance
 
         def clean(self):
-            cd = self.cleaned_data
+            cd = super(RuntimeBrandRevisionForm, self).clean()
 
             if cd['generic'] and cd['brand_emblem_image']:
                 raise forms.ValidationError(
@@ -306,8 +293,11 @@ class BrandRevisionForm(KeywordBaseForm):
         super(BrandRevisionForm, self).__init__(*args, **kwargs)
         ordering = list(self.fields)
         ordering.insert(2, 'brand_emblem_image')
+        ordering.insert(ordering.index('group') + 1,
+                        'brand_groups_other_publisher')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
+        self.fields['group'].label = 'Brand Groups'
 
     name = forms.CharField(
         widget=forms.TextInput(attrs={'autofocus': ''}),
@@ -336,6 +326,18 @@ class BrandRevisionForm(KeywordBaseForm):
                   'brand emblem was used, or if you are not certain whether '
                   'it is still in use.')
 
+    brand_groups_other_publisher = forms.ModelMultipleChoiceField(
+        queryset=BrandGroup.objects.all(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url='brand_group_autocomplete',
+            attrs={'data-html': True,
+                   'class': 'w-full lg:w-4/5',
+                   'data-placeholder': 'if applicable, select a brand group '
+                                       'from other publishers'}),
+        required=False,
+        label='Brand Groups from other Publishers',
+    )
+
     url = forms.URLField(
         required=False,
         help_text='The official web site of the brand.  Leave blank if the '
@@ -349,6 +351,7 @@ class BrandRevisionForm(KeywordBaseForm):
     )
 
     brand_emblem_image = forms.ImageField(widget=forms.FileInput,
+                                          label='Brand Emblem Image',
                                           required=False)
 
     def save(self, commit=True):
@@ -368,27 +371,8 @@ class BrandRevisionForm(KeywordBaseForm):
             cd['name'] = cd['name'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
-        # this checks if we are adding a new brand or not
-        if 'brand_group_other_publisher_id' in cd:
-            if cd['brand_group_other_publisher_id']:
-                brand_group = BrandGroup.objects.filter(
-                    id=cd['brand_group_other_publisher_id'], deleted=False)
-                if brand_group:
-                    brand_group = brand_group[0]
-                    # need to add directly to revision, otherwise validation
-                    # fails
-                    self.instance.group.add(brand_group)
-                    # self.data is immutable, need copy
-                    data = self.data.copy()
-                    data['brand_group_other_publisher_id'] = None
-                    self.data = data
-                    raise forms.ValidationError(
-                        "Please confirm selection of brand group '%s'." %
-                        brand_group)
-                else:
-                    raise forms.ValidationError(
-                        "A brand group with id %d does not exist." %
-                        cd['brand_group_other_publisher_id'])
+        if 'brand_groups_other_publisher' in cd:
+            cd['group'] = cd['group'].union(cd['brand_groups_other_publisher'])
         if cd['year_began'] and cd['year_overall_began']:
             if cd['year_began'] < cd['year_overall_began']:
                 raise forms.ValidationError(

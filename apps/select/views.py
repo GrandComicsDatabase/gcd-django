@@ -26,7 +26,7 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
                             Character, CharacterNameDetail, Group, \
                             GroupNameDetail, Universe, StoryArc, Brand, \
-                            STORY_TYPES
+                            BrandGroup, STORY_TYPES
 from apps.stddata.models import Country, Language
 from apps.gcd.templatetags.credits import get_native_language_name
 from apps.gcd.views import paginate_response
@@ -810,8 +810,19 @@ class KeywordAutocomplete(LoginRequiredMixin,
         return super(KeywordAutocomplete, self).validate(text)
 
 
+class BrandGroupAutocomplete(LoginRequiredMixin,
+                             autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = BrandGroup.objects.filter(deleted=False)
+        qs = _filter_and_sort(qs, self.q)
+        return qs
+
+    def get_result_label(self, brand_group):
+        return "%s @ %s" % (brand_group, brand_group.parent)
+
+
 class BrandEmblemAutocomplete(LoginRequiredMixin,
-                                 autocomplete.Select2QuerySetView):
+                              autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Brand.objects.filter(deleted=False)
 
