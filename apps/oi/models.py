@@ -4028,6 +4028,8 @@ class IssueRevision(Revision):
     brand = models.ForeignKey(
       Brand, on_delete=models.CASCADE, null=True, default=None, blank=True,
       related_name='issue_revisions_deprecated')
+    # TODO when removing brand_emblem, remove msdropdown from revision_form_utils.html
+    # and remove apps/oi/templates/forms/widgets/select_brand.html
     no_brand = models.BooleanField(default=False)
     indicia_printer = models.ManyToManyField(IndiciaPrinter, blank=True,
                                              related_name='issue_revisions')

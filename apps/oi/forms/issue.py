@@ -725,6 +725,17 @@ def get_bulk_issue_revision_form(series, method, user=None):
                     widget=forms.HiddenInput, required=False)
                 no_rating = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
+            if not series.has_indicia_printer:
+                indicia_printer = forms.CharField(
+                    widget=forms.HiddenInput, required=False)
+                no_indicia_printer = forms.BooleanField(
+                    widget=forms.HiddenInput, required=False)
+        publisher_id = forms.CharField(widget=forms.HiddenInput,
+                                       initial=series.publisher.id)
+        if series.year_began:
+            year_began = forms.CharField(widget=forms.HiddenInput,
+                                         required=False,
+                                         initial=series.year_began)
 
         after = forms.ModelChoiceField(
             required=False,
@@ -753,6 +764,28 @@ class BulkIssueRevisionForm(forms.ModelForm):
         min_value=1,
         widget=forms.TextInput(attrs={'autofocus': ''}))
 
+    brand_emblem = forms.ModelMultipleChoiceField(
+        queryset=Brand.objects.all(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url='brand_emblem_autocomplete',
+            forward=['publisher_id', 'year_began',],
+            attrs={'data-html': True,
+                   'class': 'w-full lg:w-4/5',
+                   'data-placeholder': 'select a brand emblem'}),
+        required=False,
+    )
+
+    indicia_printer = forms.ModelMultipleChoiceField(
+        queryset=IndiciaPrinter.objects.all(),
+        widget=autocomplete.ModelSelect2Multiple(
+            url='indicia_printer_autocomplete',
+            attrs={'class': 'w-full lg:w-4/5',
+                   'data-placeholder': 'select an indicia printer'}),
+        required=False,
+        help_text='The exact printer listed in the indicia or colophon, '
+                  'if any.'
+    )
+
     comments = _get_comments_form_field()
 
     class Meta:
@@ -764,17 +797,26 @@ class BulkIssueRevisionForm(forms.ModelForm):
                                                         'w-full lg:w-4/5'}),
             'editing': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'page_count': PageCountInput,
-            'brand': BrandEmblemSelect
+            'brand': BrandEmblemSelect,
+            'publication_date': forms.TextInput(attrs={'class':
+                                                       'w-full lg:w-4/5'}),
+            'key_date': forms.TextInput(attrs={'class': 'key_date'}),
+            'price': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'rating': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
         }
         labels = ISSUE_LABELS
         help_texts = ISSUE_HELP_TEXTS
 
     def _shared_key_order(self):
-        return ['indicia_publisher', 'indicia_pub_not_printed', 'brand',
-                'no_brand', 'indicia_frequency', 'no_indicia_frequency',
+        return ['indicia_publisher', 'indicia_pub_not_printed',
+                'brand_emblem', 'brand', 'no_brand',
+                'indicia_frequency', 'no_indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
-                'editing', 'no_editing', 'no_isbn', 'no_barcode', 'rating',
-                'no_rating', 'comments']
+                'editing', 'no_editing',
+                'indicia_printer', 'no_indicia_printer',
+                'no_isbn', 'no_barcode',
+                'rating', 'no_rating', 'comments',
+                'publisher_id', 'year_began']
 
     def clean(self):
         cd = self.cleaned_data
@@ -786,6 +828,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
         cd['price'] = cd['price'].strip()
         cd['editing'] = cd['editing'].strip()
         cd['comments'] = cd['comments'].strip()
+
+        # TODO use the same code to clean edits and adds
         if 'volume' in cd:
             cd['volume'] = cd['volume'].strip()
 
@@ -809,6 +853,11 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 ['Indicica Frequency field and No Indicia Frequency checkbox '
                  'cannot both be filled in.'])
 
+        if cd['no_indicia_printer'] and cd['indicia_printer']:
+            raise forms.ValidationError(
+                'You cannot specify an indicia printer and check '
+                '"no indicia printer" at the same time.')
+
         if 'rating' in cd:
             cd['rating'] = cd['rating'].strip()
 
@@ -826,6 +875,8 @@ class BulkEditIssueRevisionForm(BulkIssueRevisionForm):
         ordering = ['no_title', 'volume', 'display_volume_with_number',
                     'no_volume', 'volume_not_printed']
         ordering.extend(self._shared_key_order())
+        ordering.insert(ordering.index('price'), 'publication_date')
+        ordering.insert(ordering.index('price'), 'key_date')
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
 

@@ -7,7 +7,7 @@ import glob
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
-from django.forms import HiddenInput
+from django.forms import HiddenInput, MultipleHiddenInput
 import django.urls as urlresolvers
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
@@ -1604,6 +1604,8 @@ def _clean_bulk_issue_change_form(form, remove_fields, items,
                                   number_of_issues=True):
     for i in remove_fields:
         form.fields.get(i).widget = HiddenInput()
+        if i in ['brand_emblem', 'indicia_printer']:
+            form.fields.get(i).widget = MultipleHiddenInput()
     return form
 
 
@@ -1687,29 +1689,60 @@ def edit_issues_in_bulk(request):
               'All issues fulfilling the search criteria for the bulk change'
               ' are currently reserved.')
 
+    remove_fields = []  # field to take out of the form
+
     series_list = list(set(items.values_list('series', flat=True)))
     ignore_publisher = False
     if len(series_list) == 1:
         series = Series.objects.get(id=series_list[0])
+        series_list = []
     else:
         if len(items) > 100:  # shouldn't happen, just in case
             raise ValueError(
               'not more than 100 issues if more than one series')
-        series = Series.objects.exclude(deleted=True)\
-                               .filter(id__in=series_list)
         publisher_list = Publisher.objects.exclude(deleted=True) \
-                                  .filter(series__in=series).distinct()
-        series = series[0]
+                                  .filter(series__in=series_list).distinct()
+        series_list = Series.objects.exclude(deleted=True)\
+                                    .filter(id__in=series_list)
+        series = series_list[0]
         if len(publisher_list) > 1:
             ignore_publisher = True
+
+    if not series.has_barcode or \
+       any(series.has_barcode != s.has_barcode for s in series_list):
+        remove_fields.append('no_barcode')
+    if not series.has_indicia_frequency or \
+       any(series.has_indicia_frequency != s.has_indicia_frequency
+            for s in series_list):
+        remove_fields.append('no_indicia_frequency')
+        remove_fields.append('indicia_frequency')
+    if not series.has_indicia_printer or \
+       any(series.has_indicia_printer != s.has_indicia_printer
+           for s in series_list):
+        remove_fields.append('no_indicia_printer')
+        remove_fields.append('indicia_printer')
+    if not series.has_isbn or \
+       any(series.has_isbn != s.has_isbn for s in series_list):
+        remove_fields.append('no_isbn')
+    if not series.has_issue_title or \
+       any(series.has_issue_title != s.has_issue_title for s in series_list):
+        remove_fields.append('no_title')
+    if not series.has_rating or \
+       any(series.has_rating != s.has_rating for s in series_list):
+        remove_fields.append('no_rating')
+        remove_fields.append('rating')
+    if not series.has_volume or \
+       any(series.has_volume != s.has_volume for s in series_list):
+        remove_fields.append('no_volume')
+        remove_fields.append('volume')
+        remove_fields.append('volume_not_printed')
+        remove_fields.append('display_volume_with_number')
 
     form_class = get_bulk_issue_revision_form(series, 'bulk_edit',
                                               user=request.user)
 
     fields = get_issue_field_list()
     fields.remove('number')
-    fields.remove('publication_date')
-    fields.remove('key_date')
     fields.remove('year_on_sale')
     fields.remove('month_on_sale')
     fields.remove('day_on_sale')
@@ -1719,23 +1752,26 @@ def edit_issues_in_bulk(request):
     fields.remove('barcode')
     fields.remove('title')
     fields.remove('keywords')
-    fields.remove('indicia_printer')
-    fields.remove('no_indicia_printer')
-
     # look at values for the issue fields
     # if only one it gives the initial value
     # if several, the field is not editable
     initial = {}  # init value is the common value for all issues
-    remove_fields = []  # field to take out of the form
+    empty_not_allowed = ['publication_date', 'key_date', ]
+
+    # there are several publishers, ignore publisher related fields
     if ignore_publisher:
         remove_fields.append('brand')
+        remove_fields.append('brand_emblem')
         remove_fields.append('no_brand')
         remove_fields.append('indicia_publisher')
         remove_fields.append('indicia_pub_not_printed')
+
     for i in fields:
         if i not in remove_fields:
             values_list = list(set(items.values_list(i, flat=True)))
-            if len(values_list) > 1:
+            if len(values_list) > 1 or (len(values_list) == 1 and
+                                        i in empty_not_allowed and
+                                        values_list[0] in [None, '']):
                 remove_fields.append(i)
                 # some fields belong together, both are either in or out
                 if i in ['volume', 'brand', 'editing', 'indicia_frequency',
@@ -1754,6 +1790,10 @@ def edit_issues_in_bulk(request):
                     remove_fields.append('page_count_uncertain')
                 elif i == 'page_count_uncertain':
                     remove_fields.append('page_count')
+                elif i == 'publication_date':
+                    remove_fields.append('key_date')
+                elif i == 'key_date':
+                    remove_fields.append('publication_date')
 
     for i in ['no_barcode', 'no_isbn']:
         if i not in remove_fields:
@@ -1874,6 +1914,9 @@ def edit_issues_in_bulk(request):
                 if field in ['brand', 'indicia_publisher'] and \
                    cd[field] is not None:
                     setattr(revision, field + '_id', cd[field].id)
+                elif field in ['brand_emblem', 'indicia_printer'] and \
+                     cd[field] is not None:
+                    getattr(revision, field).set(cd[field].all())
                 else:
                     setattr(revision, field, cd[field])
             revision.save()
@@ -2612,7 +2655,8 @@ def add_issues(request, series_id, method=None):
     new_issues[0].after = form.cleaned_data['after']
     for revision in new_issues:
         revision.save_added_revision(changeset=changeset, series=series)
-
+        revision.brand_emblem.set(form.cleaned_data['brand_emblem'].all())
+        revision.indicia_printer.set(form.cleaned_data['indicia_printer'].all())
     return submit(request, changeset.id)
 
 
@@ -5935,8 +5979,6 @@ def compare(request, id):
           changeset.change_type == CTYPES['issue_add'] and \
           changeset.issuerevisions.count() > 1:
             field_list.remove('number')
-            field_list.remove('publication_date')
-            field_list.remove('key_date')
             field_list.remove('notes')
             field_list.remove('year_on_sale')
             field_list.remove('month_on_sale')
@@ -5948,6 +5990,8 @@ def compare(request, id):
                 field_list.remove('barcode')
             else:
                 field_list.remove('after')
+                field_list.remove('publication_date')
+                field_list.remove('key_date')
     elif changeset.change_type == CTYPES['creator']:
         sourced_fields = _get_creator_sourced_fields()
         sourced_fields['birth_date'] = 'birth_date'

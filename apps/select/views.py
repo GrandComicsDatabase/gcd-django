@@ -827,31 +827,36 @@ class BrandEmblemAutocomplete(LoginRequiredMixin,
         qs = Brand.objects.filter(deleted=False)
 
         publisher_id = self.forwarded.get('publisher_id', None)
-        year_began = self.forwarded.get('year_began', 10000)
-        year_ended = self.forwarded.get('year_ended', 1)
+        year_began = self.forwarded.get('year_began', 1)
+        year_ended = self.forwarded.get('year_ended', 10000)
 
+        # filter by publisher and year range
         if publisher_id:
             qs = qs.filter(in_use__publisher__id=publisher_id).distinct()
-        started_before = Q(in_use__year_began__lte=year_began,
-                           in_use__publisher__id=publisher_id)
-        no_start = Q(in_use__year_began=None,
-                     in_use__publisher__id=publisher_id)
-        not_ended_before = (Q(in_use__year_ended__gte=year_ended,
-                              in_use__publisher__id=publisher_id) |
-                            Q(in_use__year_ended=None,
-                              in_use__publisher__id=publisher_id))
-
-        qs = qs.filter((started_before & not_ended_before) |
-                       (no_start & not_ended_before))
-
+            if year_began == year_ended:
+                started_before = Q(in_use__year_began__lte=year_began,
+                                   in_use__publisher__id=publisher_id)
+                no_start = Q(in_use__year_began=None,
+                             in_use__publisher__id=publisher_id)
+                not_ended_before = (Q(in_use__year_ended__gte=year_ended,
+                                    in_use__publisher__id=publisher_id) |
+                                    Q(in_use__year_ended=None,
+                                    in_use__publisher__id=publisher_id))
+                qs = qs.filter((started_before & not_ended_before) |
+                               (no_start & not_ended_before))
+            else:
+                if year_began:
+                    qs = qs.exclude(year_ended__lt=year_began)
+                if year_ended:
+                    qs = qs.exclude(year_began__gt=year_ended)
         qs = _filter_and_sort(qs, self.q)
         return qs
 
     def get_result_label(self, brand_emblem):
-        if brand_emblem.emblem:
+        if brand_emblem.emblem and not settings.FAKE_IMAGES:
             return format_html(
-              '%s <img src="%s">' % (brand_emblem.name,
-                                     brand_emblem.emblem.icon.url))
+              '<img class="inline" src="%s"> %s' % (
+                brand_emblem.emblem.icon.url, brand_emblem.name))
         else:
             if brand_emblem.generic:
                 return format_html('%s [generic]' % brand_emblem.name)
