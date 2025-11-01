@@ -152,7 +152,7 @@
   {% else %}
     {% if user.is_authenticated and not brand.generic %}
   <a class="hover:no-underline" href="{% url 'upload_image' model_name='brand' id=brand.id image_type='BrandScan' %}">
-    <btn>Add Publisher's Brand Image</btn>
+    <btn class="btn btn-blue-editing">Add Publisher's Brand Image</btn>
   </a>
     {% endif %}
   {% endif %}
