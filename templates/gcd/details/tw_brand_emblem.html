@@ -89,6 +89,7 @@
     <th> Began </th>
     <th> Ended </th>
     <th> Notes </th>
+    <th> Issues </th>
     {% if user.is_authenticated %}
     <th> Action </th>
     {% endif %}
@@ -99,6 +100,7 @@
     <td> {{ use.year_began|default:"" }} </td>
     <td> {{ use.year_ended|default:"" }} </td>
     <td> {{ use.notes }} </td>
+    <td class="px-2 sm:text-right text-left"> <a href="{{ use.get_absolute_url }}">{{ use.issue_count }}</a> </td>
       {% if user.is_authenticated and not MYCOMICS %}
     <td>
         {% if use|is_locked %}

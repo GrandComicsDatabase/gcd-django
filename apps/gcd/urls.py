@@ -129,6 +129,9 @@ urlpatterns = [
     path('brand_emblem/name/',
          gcd_views.search.brand_by_name, name='brand_by_name'),
 
+    path('brand_use/<int:brand_use_id>/',
+         gcd_views.details.show_brand_use, name='show_brand_use'),
+
     path('indicia_publisher/<int:indicia_publisher_id>/',
          gcd_views.details.indicia_publisher, name='show_indicia_publisher'),
     path('indicia_publisher/name/<path:ind_pub_name>/sort/<str:sort>/',

@@ -1,0 +1,84 @@
+{% extends "gcd/tw_object_base.html" %}
+
+{% load static %}
+{% load i18n %}
+{% load credits %}
+{% load editing %}
+{% load display %}
+{% load django_tables2 %}
+
+{% block title %}
+  GCD :: Publisher's Brand Emblem Usage :: {{ brand_use.emblem }}
+{% endblock %}
+
+{% block header %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ brand_use.emblem|absolute_url }} at {{ brand_use.publisher|absolute_url }}
+  </div>
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+</nav>
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[100px] sm:w-[200px] mt-1">
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          {% with object=brand_use function="Published Between" %}
+            {% include "gcd/bits/publisher_years.html" %}
+          {% endwith %}
+          <ul>
+            <li><span class="font-bold">Number of Issues:</span>
+              {{ issues_count }}</li>
+            <li><span class="font-bold">Publisher's Brand Emblem:</span>
+              {% if brand.emblem %}
+              <img src="{{ brand.emblem.scaled_image.url }}">
+              {% endif %}
+              {% if brand.generic %}
+              generic
+              {% endif %}
+            </li>
+          {% if brand_use.notes %}
+            <li><span class="font-bold">Notes:</span>
+              {{ brand_use.notes }}
+            </li>
+          {% endif %}
+          </ul>
+        </div>
+      </div> 
+    </td>
+  </tr> 
+</table>
+{% endblock %}
+
+{% block content %}
+{% render_table table %}
+{% endblock content %}
+
+{% block editing %}
+  {% with object=brand_use object_class='brand_use' object_name='brand_use' %}
+  {% include "gcd/bits/tw_status_banner.html" %}
+  {% endwith %}
+{% endblock editing %}
+
+{% block change_history %}
+{% endblock change_history %}
+
+{% block bottom_nav_bar %}
+<nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
+  <div class="flex-1 font-bold text-2xl self-start">
+    {{ brand.object_page_name }}
+  </div>
+  {% include "gcd/bits/tw_pagination_bar.html" %}
+</nav>
+{% endblock bottom_nav_bar %}

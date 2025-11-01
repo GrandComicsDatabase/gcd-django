@@ -11,6 +11,7 @@ from random import randint
 
 from django.db.models import F, Q, Min, Count, Sum, Case, When, Value, \
                              OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.conf import settings
 import django.urls as urlresolvers
 from django.shortcuts import get_object_or_404, \
@@ -39,7 +40,8 @@ from apps.stddata.models import Country, Language
 from apps.stats.models import CountStats
 
 from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
-                            IndiciaPublisher, Brand, BrandGroup, Cover, \
+                            IndiciaPublisher, Brand, BrandGroup, BrandUse, \
+                            Cover, \
                             SeriesBond, Award, Creator, CreatorMembership, \
                             ReceivedAward, CreatorDegree, \
                             CreatorArtInfluence, CreatorRelation, \
@@ -1687,9 +1689,6 @@ def show_brand_group(request, brand_group, preview=False):
       template_name=TW_SORT_TABLE_TEMPLATE,
       order_by=('name'))
     brand_emblems_table.no_export = True
-    RequestConfig(request,
-                  paginate={"paginator_class": LazyPaginator}).configure(
-                    brand_emblems_table)
 
     context = {'brand': brand_group,
                'brand_emblems_table': brand_emblems_table,
@@ -1737,11 +1736,18 @@ def show_brand(request, brand, preview=False):
                                          template_name=TW_SORT_TABLE_TEMPLATE,
                                          order_by=('name'))
     groups_table.no_export = True
-    RequestConfig(request,
-                  paginate={"paginator_class": LazyPaginator}).configure(
-                    groups_table)
 
     uses = brand.in_use.all()
+    uses = brand.in_use.all().annotate(issue_count=Count(
+      'emblem__issue',
+      filter=Q(emblem__issue__deleted=False,
+               emblem__issue__series__publisher=F('publisher'),
+               emblem__issue__key_date__gte=Coalesce(
+                 F('year_began'), 0),
+               emblem__issue__key_date__lte=Coalesce(
+                 F('year_ended'), 9999)))).order_by('publisher__name',
+                                                    'year_began')
+
     context = {'brand': brand,
                'groups_table': groups_table,
                'uses': uses,
@@ -1762,6 +1768,52 @@ def show_brand(request, brand, preview=False):
           order_by=('issue'))
     return generic_sortable_list(request, brand_issues, table,
                                  'gcd/details/tw_brand_emblem.html', context)
+
+
+def show_brand_use(request, brand_use_id):
+    """
+    Display the details page for a Brand Usage.
+    """
+    brand_use = get_gcd_object(BrandUse, brand_use_id)
+
+    brand_issues = brand_use.emblem.active_issues().filter(Q(
+                                series__publisher=brand_use.publisher,
+                                key_date__gte=Coalesce(
+                                  brand_use.year_began, 0),
+                                key_date__lte=Coalesce(
+                                  brand_use.year_ended, 9999))).order_by(
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'indicia_publisher')
+    issues_with_cover = brand_issues.filter(cover__isnull=False)
+
+    image_tag = ''
+    selected_issue = None
+    if issues_with_cover.count() > 0:
+        issue_count = issues_with_cover.count()
+        selected_issue = issues_with_cover[randint(0, issue_count-1)]
+        selected_cover = selected_issue.cover_set.first()
+        image_tag = get_image_tag(cover=selected_cover,
+                                  zoom_level=ZOOM_MEDIUM,
+                                  alt_text='Random Cover from %s' % brand_use)
+
+    context = {'brand_use': brand_use,
+               'error_subject': '%s' % brand,
+               'image_tag': image_tag,
+               'image_issue': selected_issue,
+               'issues_count': brand_issues.count()
+               }
+    context['list_grid'] = True
+    if 'display' not in request.GET or request.GET['display'] == 'list':
+        table = BrandEmblemIssueTable(brand_issues,
+                                      template_name=TW_SORT_TABLE_TEMPLATE,
+                                      order_by=('issue'))
+    else:
+        table = BrandEmblemIssueCoverTable(
+          brand_issues,
+          template_name=TW_SORT_GRID_TEMPLATE,
+          order_by=('issue'))
+    return generic_sortable_list(request, brand_issues, table,
+                                 'gcd/details/tw_brand_use.html', context)
 
 
 def imprint(request, imprint_id):
@@ -1835,8 +1887,11 @@ def publisher_brand_uses(request, publisher_id):
 
     brand_uses = brand_uses.annotate(issue_count=Count(
       'emblem__issue', filter=Q(emblem__issue__deleted=False,
-                                emblem__issue__key_date__gte=F('year_began'),
-                                emblem__issue__key_date__lte=F('year_ended'))))
+                                emblem__issue__series__publisher=publisher,
+                                emblem__issue__key_date__gte=Coalesce(
+                                  F('year_began'), 0),
+                                emblem__issue__key_date__lte=Coalesce(
+                                  F('year_ended'), 9999))))
 
     context = {'item_name': "publisher's brand emblem",
                'plural_suffix': 's',
@@ -2048,8 +2103,8 @@ def series_covers(request, series_id):
     else:
         series_status_info = '<a href="%sstatus"> Index Status</a> / ' \
                              '<a href="%sscans">Cover Scan Status</a>' % (
-                           series.get_absolute_url(),
-                           series.get_absolute_url(),)
+                              series.get_absolute_url(),
+                              series.get_absolute_url(),)
     series_status_info += ' (%s %s for %s %s available).' % (
                            series.scan_count,
                            pluralize(series.scan_count, 'cover,covers'),

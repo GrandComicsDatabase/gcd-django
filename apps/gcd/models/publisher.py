@@ -362,8 +362,8 @@ class BrandUse(GcdLink):
           .filter(issue__series__publisher=self.publisher)
 
     def get_absolute_url(self):
-        return urlresolvers.reverse('show_brand',
-                                    kwargs={'brand_id': self.emblem.id})
+        return urlresolvers.reverse('show_brand_use',
+                                    kwargs={'brand_use_id': self.id})
 
     def __str__(self):
         return 'emblem %s was used from %s to %s by %s.' % (
@@ -659,6 +659,10 @@ class BrandEmblemPublisherTable(BrandEmblemSearchTable):
                                        'year_began',)
         return (query_set, True)
 
+    def render_issue_count(self, value, record):
+        return mark_safe('<a href="%s">%d</a>' %
+                         (record.get_absolute_url(), value))
+
     def render_group(self, value, record):
         return_value = ''
         for group in value.all():
@@ -670,6 +674,10 @@ class BrandEmblemPublisherTable(BrandEmblemSearchTable):
                 return_value += '; '
         return_value = return_value[:-2]
         return mark_safe(return_value)
+
+    def render_name(self, value, record):
+        return mark_safe('<a href="%s">%s</a>' %
+                         (record.emblem.get_absolute_url(), value))
 
 
 class BrandEmblemGroupTable(BrandEmblemSearchTable):
