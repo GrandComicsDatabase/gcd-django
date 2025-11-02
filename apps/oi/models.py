@@ -1726,16 +1726,31 @@ class Revision(models.Model):
         # the 'parent' database fields to 'publisher'.
         name = 'publisher' if attrs[-1] == 'parent' else attrs[-1]
 
-        old_rp = relpath.RelPath(self.source_class, *attrs)
-        new_rp = relpath.RelPath(type(self), *attrs)
+        if attrs == ('brand_emblem', 'group'):
+            # Handle the special case of brand_emblem and group.
+            # If we have more m2m-related objects that need stats
+            # updating, we may need a more general mechanism.
+            old_value = []
+            for brand_emblem in old.brand_emblem.all():
+                old_value.extend(brand_emblem.group.all())
+            new_value = []
+            for brand_emblem in new.brand_emblem.all():
+                new_value.extend(brand_emblem.group.all())
+            multi_valued = True
+            boolean_valued = False
+        else:
+            old_rp = relpath.RelPath(self.source_class, *attrs)
+            new_rp = relpath.RelPath(type(self), *attrs)
 
-        old_value = old_rp.get_value(old, empty=self.added)
-        new_value = new_rp.get_value(new, empty=self.deleted)
+            old_value = old_rp.get_value(old, empty=self.added)
+            new_value = new_rp.get_value(new, empty=self.deleted)
+            multi_valued = old_rp.multi_valued
+            boolean_valued = old_rp.boolean_valued
 
         changed = '%s changed' % name
         if self.added or self.deleted:
             changes[changed] = True
-        elif old_rp.multi_valued:
+        elif multi_valued:
             # Different QuerySet objects are never equal, even if they
             # express the same queries and have the same evaluation state.
             # So use sets for determining changes.
@@ -1743,7 +1758,7 @@ class Revision(models.Model):
         else:
             changes[changed] = old_value != new_value
 
-        if old_rp.boolean_valued:
+        if boolean_valued:
             # We only care about the direction of change for booleans.
             # At this time, it is sufficient to treat None for a NullBoolean
             # as False.  This can produce a "changed" (False to or from None)
@@ -1833,7 +1848,14 @@ class Revision(models.Model):
         old_value = changes['old %s' % parent]
         new_value = changes['new %s' % parent]
 
-        multi = relpath.RelPath(type(self), *parent_tuple).multi_valued
+        if parent_tuple == ('brand_emblem', 'group'):
+            # Handle the special case of brand_emblem and group.
+            # If we have more m2m-related objects that need stats
+            # updating, we may need a more general mechanism.
+            multi = True
+        else:
+            multi = relpath.RelPath(type(self), *parent_tuple).multi_valued
+
         if changed:
             if old_value:
                 if multi:
@@ -4155,6 +4177,8 @@ class IssueRevision(Revision):
             ('indicia_publisher',),
             ('brand',),
             ('brand', 'group'),
+            ('brand_emblem',),
+            ('brand_emblem', 'group'),
             ('indicia_printer',),
         })
 

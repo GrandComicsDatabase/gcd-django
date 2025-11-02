@@ -44,7 +44,13 @@ class RelPath(object):
             if i != last_i and (field.many_to_many or field.one_to_many):
                 # Supporting internal multi-valued fields would get us into
                 # weird set-of-sets (and set-of-set-of-sets, etc.) situations
-                # that we don't currently need anyway.
+                # that we only have for brand_emblem and group so far.
+                #
+                # That case is handled specially in oi.models in the
+                # _check_major_change and _adjust_parent_counts methods.
+                # We can revisit this if we find other use cases. It is only
+                # needed for updating counts on related objects, i.e. get_value,
+                # not for changing the values with set_value.
                 raise ValueError("Many-valued relations cannot appear before "
                                  "the end of the path")
 
