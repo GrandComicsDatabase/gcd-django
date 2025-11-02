@@ -280,10 +280,39 @@ def _handle_date_picker(request, url_reverse,
 
 
 def _get_random_cover_image(request, object, object_filter, object_name):
+    """
+    Retrieve a random cover image for a given object.
+
+    This function selects a random cover image associated with the specified
+    object (such as a series or publisher) and generates an image tag for
+    display. The random selection only occurs on the first page of results.
+
+    Args:
+        request: The HTTP request object containing GET parameters.
+        object: The database object (e.g., Series, Publisher) to filter
+                covers by.
+        object_filter: String specifying the filter field name to use when
+                       querying covers (e.g., 'series', 'publisher').
+        object_name: Human-readable name of the object type for use in alt
+                     text.
+
+    Returns:
+        tuple: A tuple containing:
+            - image_tag (str): HTML image tag for the selected cover, or
+                               empty string if no cover is found or not on
+                               first page.
+            - selected_issue (Issue or None): The Issue object associated
+                                              with the selected cover, or
+                                              None if no cover was selected.
+
+    Note:
+        - Random cover selection occurs when page parameter is None or '1'
+        - Uses ZOOM_MEDIUM zoom level for the generated image tag
+    """
     page = request.GET.get('page', None)
     image_tag = ''
     selected_issue = None
-    if not page or page[-1] == '1':
+    if not page or page == '1':
         pks = Cover.objects.filter(
           **{'issue__%s' % object_filter: object},
           deleted=False).values_list('pk', flat=True)
