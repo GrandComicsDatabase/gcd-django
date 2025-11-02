@@ -38,9 +38,9 @@
           {% with object=brand function="Publishing" %}
             {% include "gcd/bits/publisher_years.html" %}
           {% endwith %}
-          <ul class="md:columns-2">
+          <ul>
             <li><span class="font-bold">Number of Issues:</span>
-              {{ brand.issue_count }}</li>
+              {{ brand.issue_count }} (not counting variants)</li>
           </ul>
         </div>
       </div> 

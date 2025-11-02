@@ -38,7 +38,7 @@
           {% endwith %}
           <ul>
             <li><span class="font-bold">Number of Issues:</span>
-              {{ brand.issue_count }}</li>
+              {{ brand.issue_count }} (not counting variants)</li>
             <li><span class="font-bold">Publisher's Brand Emblem:</span>
               {% if brand.emblem %}
               <img src="{{ brand.emblem.scaled_image.url }}">

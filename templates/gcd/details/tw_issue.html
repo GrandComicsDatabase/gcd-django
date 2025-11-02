@@ -157,11 +157,14 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
 <ul class="md:columns-2 ml-1 [&_li]:break-inside-avoid-column">
   {% if not issue.no_brand %}
 <li><span class="font-bold">Publisher's Brand:</span>
-    {% if issue.brand.emblem %}
-      {{ issue.brand|absolute_url:issue.brand.emblem|default:"?" }}</li>
-    {% else %}
-      {{ issue.brand|absolute_url|default:"?" }}
-    {% endif %}
+    {% for brand_emblem in issue.brand_emblem.all %}
+      {% if not forloop.first %}; {% endif %}
+      {% if brand_emblem.emblem %}
+        {{ brand_emblem|absolute_url:brand_emblem.emblem|default:"?" }}
+      {% else %}
+        {{ brand_emblem|absolute_url|default:"?" }}
+      {% endif %}
+    {% endfor %}
 </li>
   {% endif %}
 
