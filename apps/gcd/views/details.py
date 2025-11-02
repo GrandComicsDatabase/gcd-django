@@ -287,13 +287,14 @@ def _get_random_cover_image(request, object, object_filter, object_name):
         pks = Cover.objects.filter(
           **{'issue__%s' % object_filter: object},
           deleted=False).values_list('pk', flat=True)
-        random_pk = choice(pks)
-        selected_cover = Cover.objects.get(pk=random_pk)
-        selected_issue = selected_cover.issue
-        image_tag = get_image_tag(cover=selected_cover,
-                                  zoom_level=ZOOM_MEDIUM,
-                                  alt_text='Random Cover from %s'
-                                           % object_name)
+        if pks:
+            random_pk = choice(pks)
+            selected_cover = Cover.objects.get(pk=random_pk)
+            selected_issue = selected_cover.issue
+            image_tag = get_image_tag(cover=selected_cover,
+                                    zoom_level=ZOOM_MEDIUM,
+                                    alt_text='Random Cover from %s'
+                                            % object_name)
     return image_tag, selected_issue
 
 
