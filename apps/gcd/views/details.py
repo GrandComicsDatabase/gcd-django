@@ -7,7 +7,7 @@ from urllib.parse import urlencode, quote
 from datetime import date, datetime, time, timedelta
 from calendar import monthrange
 from operator import attrgetter
-from random import randint
+from random import randint, choice
 
 from django.db.models import F, Q, Min, Count, Sum, Case, When, Value, \
                              OuterRef, Subquery
@@ -284,17 +284,16 @@ def _get_random_cover_image(request, object, object_filter, object_name):
     image_tag = ''
     selected_issue = None
     if not page or page[-1] == '1':
-        covers = Cover.objects.filter(
+        pks = Cover.objects.filter(
           **{'issue__%s' % object_filter: object},
-          deleted=False)
-
-        if covers.count() > 0:
-            selected_cover = covers[randint(0, covers.count()-1)]
-            selected_issue = selected_cover.issue
-            image_tag = get_image_tag(cover=selected_cover,
-                                      zoom_level=ZOOM_MEDIUM,
-                                      alt_text='Random Cover from %s'
-                                               % object_name)
+          deleted=False).values_list('pk', flat=True)
+        random_pk = choice(pks)
+        selected_cover = Cover.objects.get(pk=random_pk)
+        selected_issue = selected_cover.issue
+        image_tag = get_image_tag(cover=selected_cover,
+                                  zoom_level=ZOOM_MEDIUM,
+                                  alt_text='Random Cover from %s'
+                                           % object_name)
     return image_tag, selected_issue
 
 
