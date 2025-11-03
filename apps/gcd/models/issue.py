@@ -823,26 +823,27 @@ class BarcodePublisherIssueTable(IssuePublisherTable):
 
 
 class IndiciaPublisherIssueTable(IssueTable):
-    brand = tables.Column(accessor='brand',
-                          verbose_name="Publisher's Brand")
+    brand_emblem = tables.Column(accessor='brand_emblem',
+                          verbose_name="Publisher's Brand Emblem")
 
     class Meta:
         model = Issue
-        fields = ('issue', 'publication_date', 'on_sale_date', 'brand')
+        fields = ('issue', 'publication_date', 'on_sale_date', 'brand_emblem')
 
-    def order_brand(self, query_set, is_descending):
+    def order_brand_emblem(self, query_set, is_descending):
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'brand__name',
+        query_set = query_set.order_by(direction + 'brand_emblem__name',
                                        direction + 'series__sort_name',
                                        direction + 'sort_code')
         return (query_set, True)
 
-    def render_brand(self, value):
+    def render_brand_emblem(self, value):
         from apps.gcd.templatetags.display import absolute_url
-        return absolute_url(value)
+        return mark_safe('; '.join(absolute_url(brand_emblem)
+                                   for brand_emblem in value.all()))
 
-    def value_brand(self, value):
-        return str(value)
+    def value_brand_emblem(self, value):
+        return '; '.join(str(brand_emblem) for brand_emblem in value.all())
 
 
 class IndiciaPublisherIssueCoverTable(IndiciaPublisherIssueTable,
