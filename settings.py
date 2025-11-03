@@ -152,6 +152,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_mysql',
     'django_tables2',
     'apps.indexer',
     'apps.gcd',

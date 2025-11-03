@@ -14,6 +14,8 @@ import django.urls as urlresolvers
 
 import django_tables2 as tables
 
+from django_mysql.models import GroupConcat
+
 from taggit.managers import TaggableManager
 
 from .gcddata import GcdData
@@ -824,17 +826,23 @@ class BarcodePublisherIssueTable(IssuePublisherTable):
 
 class IndiciaPublisherIssueTable(IssueTable):
     brand_emblem = tables.Column(accessor='brand_emblem',
-                          verbose_name="Publisher's Brand Emblem")
+                                 verbose_name="Publisher's Brand Emblem")
 
     class Meta:
         model = Issue
         fields = ('issue', 'publication_date', 'on_sale_date', 'brand_emblem')
 
     def order_brand_emblem(self, query_set, is_descending):
+        direction = 'desc' if is_descending else 'asc'
+        query_set = query_set.annotate(
+            sorted_brand_emblem_name=GroupConcat('brand_emblem__name',
+                                                 separator='; ',
+                                                 ordering=direction))
         direction = '-' if is_descending else ''
-        query_set = query_set.order_by(direction + 'brand_emblem__name',
-                                       direction + 'series__sort_name',
-                                       direction + 'sort_code')
+        query_set = query_set.order_by(
+                direction + 'sorted_brand_emblem_name',
+                direction + 'series__sort_name',
+                direction + 'sort_code')
         return (query_set, True)
 
     def render_brand_emblem(self, value):
