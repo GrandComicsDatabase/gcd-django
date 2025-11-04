@@ -909,7 +909,8 @@ def show_reprints_for_issue(issue):
     if reprint != '':
         label = _('Parts of this issue are reprinted') + ': '
 
-        return mark_safe(label + '<ul class="object-page-link-list columns-1">'
+        return mark_safe(label + '<ul class="object-page-link-list columns-1'
+                         ' [&_ul]:columns-1 [&_ul]:object-page-link-list">'
                          + reprint + '</ul>')
     else:
         return ""
