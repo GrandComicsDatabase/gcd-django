@@ -46,7 +46,7 @@ ON_SALE_DATE = 13
 ISSUE_TITLE = 14
 ISSUE_KEYWORDS = 16
 
-ISSUE_FIELDS = ['number', 'volume', 'indicia_publisher', 'brand',
+ISSUE_FIELDS = ['number', 'volume', 'indicia_publisher', 'brand_emblem',
                 'publication_date', 'key_date', 'indicia_frequency', 'price',
                 'page_count', 'editing', 'isbn', 'notes', 'barcode',
                 'on_sale_date', 'title']
@@ -389,7 +389,7 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
             if failure:
                 return brand
             else:
-                issue_revision.brand = brand
+                issue_revision.brand_emblem.set([brand,] if brand else [])
 
             issue_revision.publication_date = \
               issue_fields[PUBLICATION_DATE].strip()
@@ -528,8 +528,16 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
         writer = csv.writer(response)
     export_data = []
     for field_name in ISSUE_FIELDS:
-        if field_name == 'brand' and not issue.brand and not issue.no_brand:
-            export_data.append('')
+        if field_name == 'brand_emblem':
+            if not issue.brand_emblem and not issue.no_brand:
+                export_data.append('')
+            else:
+                brands = issue.brand_emblem.all()
+                brand_names = ''
+                for brand in brands:
+                    brand_names += brand.name + '; '
+                brand_names = brand_names[:-2]
+                export_data.append(brand_names)
         elif field_name == 'indicia_publisher' and not \
           issue.indicia_publisher and not issue.indicia_pub_not_printed:
             export_data.append('')

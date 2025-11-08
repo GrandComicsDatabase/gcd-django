@@ -101,7 +101,8 @@ class Publisher(BasePublisher):
         return self.active_brand_groups()
 
     def active_brand_emblems(self):
-        return Brand.objects.filter(in_use__publisher=self, deleted=False)
+        return Brand.objects.filter(in_use__publisher=self, deleted=False)\
+                            .distinct()
 
     def active_indicia_publishers(self):
         return self.indiciapublisher_set.exclude(deleted=True)

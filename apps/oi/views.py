@@ -2295,8 +2295,10 @@ def init_added_variant(form_class, initial, issue, revision=False):
     for key in list(initial):
         if key.startswith('_'):
             initial.pop(key)
-    if issue.brand:
-        initial['brand'] = issue.brand.id
+    if issue.brand_emblem:
+        initial['brand_emblem'] = issue.brand_emblem.all()
+    if issue.indicia_printer:
+        initial['indicia_printer'] = issue.indicia_printer.all()
     if issue.indicia_publisher:
         initial['indicia_publisher'] = issue.indicia_publisher.id
     initial['variant_name'] = ''
@@ -2347,8 +2349,6 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     if request.method != 'POST':
         if variant_of:
             initial = dict(variant_of.__dict__)
-            if variant_of.series.has_indicia_printer:
-                initial['indicia_printer'] = variant_of.active_printers()
             form = init_added_variant(form_class, initial, variant_of)
             credits = variant_of.active_credits.exclude(deleted=True)
             if credits:
@@ -2439,8 +2439,6 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
 
     if request.method != 'POST':
         initial = dict(issue_revision.__dict__)
-        if issue_revision.series.has_indicia_printer:
-            initial['indicia_printer'] = issue_revision.indicia_printer.all()
         form = init_added_variant(form_class, initial, issue_revision,
                                   revision=True)
         credits = issue_revision.issue_credit_revisions.exclude(deleted=True)
@@ -4809,13 +4807,12 @@ def move_series(request, series_revision_id, publisher_id):
                           series_revision.changeset)
                 for issue_revision in series_revision.changeset.issuerevisions\
                                                      .all():
-                    if issue_revision.brand:
+                    for brand in issue_revision.brand_emblem.all():
                         new_brand = publisher.active_brand_emblems()\
-                          .filter(name=issue_revision.brand.name)
+                                             .filter(name=brand.name)
                         if new_brand.count() == 1:
-                            issue_revision.brand = new_brand[0]
-                        else:
-                            issue_revision.brand = None
+                            issue_revision.brand_emblem.add(new_brand[0])
+                        issue_revision.brand_emblem.remove(brand)
                     if issue_revision.indicia_publisher:
                         new_indicia_publisher = publisher\
                           .active_indicia_publishers()\
@@ -4881,13 +4878,12 @@ def move_issue(request, issue_revision_id, series_id):
     else:
         if 'cancel' not in request.POST:
             if issue_revision.series.publisher != series.publisher:
-                if issue_revision.brand:
+                for brand in issue_revision.brand_emblem.all():
                     new_brand = series.publisher.active_brand_emblems()\
-                        .filter(name=issue_revision.brand.name)
+                                                .filter(name=brand.name)
                     if new_brand.count() == 1:
-                        issue_revision.brand = new_brand[0]
-                    else:
-                        issue_revision.brand = None
+                        issue_revision.brand_emblem.add(new_brand[0])
+                    issue_revision.brand_emblem.remove(brand)
                 if issue_revision.indicia_publisher:
                     new_indicia_publisher = series.publisher\
                                                   .active_indicia_publishers()\
