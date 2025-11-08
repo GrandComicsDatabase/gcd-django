@@ -2416,9 +2416,9 @@ def compute_prefix(target, current):
         if target == 'publisher':
             return 'brandgroup__brand__'
         if target == 'issue':
-            return 'brand__'
+            return 'brand_emblem__'
         if target in ('series', 'sequence', 'feature', 'cover', 'issue_cover'):
-            return 'issue__brand__'
+            return 'issue__brand_emblem__'
     elif current == 'indicia_publisher':
         if target in ('brand_group', 'brand_emblem'):
             raise SearchError('Cannot search for Publisher Brands by '
