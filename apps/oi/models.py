@@ -3794,7 +3794,7 @@ def get_issue_field_list():
     return ['number', 'title', 'no_title', 'volume',
             'no_volume', 'volume_not_printed', 'display_volume_with_number',
             'indicia_publisher', 'indicia_pub_not_printed', 'brand_emblem',
-            'brand', 'no_brand', 'publication_date', 'year_on_sale',
+            'no_brand', 'publication_date', 'year_on_sale',
             'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
             'key_date', 'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
@@ -4175,8 +4175,6 @@ class IssueRevision(Revision):
             ('series',),
             ('series', 'publisher'),
             ('indicia_publisher',),
-            ('brand',),
-            ('brand', 'group'),
             ('brand_emblem',),
             ('brand_emblem', 'group'),
             ('indicia_printer',),
@@ -4895,7 +4893,6 @@ class IssueRevision(Revision):
             'indicia_publisher': None,
             'indicia_pub_not_printed': False,
             'brand_emblem': None,
-            'brand': None,
             'no_brand': False,
             'page_count': None,
             'page_count_uncertain': False,
@@ -4922,7 +4919,6 @@ class IssueRevision(Revision):
         self._seen_indicia_frequency = False
         self._seen_indicia_printer = False
         self._seen_brand_emblem = False
-        self._seen_brand = False
         self._seen_page_count = False
         self._seen_editing = False
         self._seen_isbn = False
@@ -4954,9 +4950,6 @@ class IssueRevision(Revision):
         if not self._seen_indicia_printer and \
            field_name in ('indicia_printer', 'no_indicia_printer'):
             self._seen_indicia_printer = True
-            return 1
-        if not self._seen_brand and field_name in ('brand', 'no_brand'):
-            self._seen_brand = True
             return 1
         if not self._seen_brand_emblem and field_name in ('brand_emblem',
                                                           'no_brand'):

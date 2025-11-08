@@ -480,7 +480,7 @@ ISSUE_LABELS = {
     'no_isbn': 'No ISBN',
     'rating': "Publisher's age guidelines",
     'no_rating': "No publisher's age guidelines",
-    'brand': "Publisher's brand emblem",
+    'brand_emblem': "Publisher's brand emblem",
     'no_brand': "No publisher's brand emblem",
 }
 
@@ -575,7 +575,7 @@ ISSUE_HELP_TEXTS = {
     'indicia_pub_not_printed':
         "Check this box if no publisher name is listed "
         "in the indicia or colophon.",
-    'brand':
+    'brand_emblem':
         "The publisher's logo or tagline on the cover of the comic, "
         "if any. If no matching brand emblem exists, it either "
         " needs to be added to the database, or information for the "
@@ -583,7 +583,6 @@ ISSUE_HELP_TEXTS = {
     'no_brand':
         "Some comics do not have any identifiable brand marks. Check "
         "this box if there is no publisher's logo or tagline.",
-
     'isbn':
         'The ISBN as printed on the item. Do not use this field for '
         'numbering systems other than ISBN. If both ISBN 10 and '

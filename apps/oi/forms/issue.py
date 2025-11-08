@@ -41,8 +41,6 @@ def get_issue_revision_form(publisher, series=None, revision=None,
 
         def __init__(self, *args, **kwargs):
             super(RuntimeIssueRevisionForm, self).__init__(*args, **kwargs)
-            self.fields['brand'].queryset = \
-                series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
             position = self.helper['editing'].slice[0].positions[0]
@@ -64,21 +62,6 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     int(log10(revision.year_on_sale)) + 1 == 4:
                 issue_year = revision.year_on_sale
             if issue_year:
-                started_before = Q(in_use__year_began__lte=issue_year,
-                                   in_use__publisher=series.publisher)
-                no_start = Q(in_use__year_began=None,
-                             in_use__publisher=series.publisher)
-                not_ended_before = (Q(in_use__year_ended__gte=issue_year,
-                                      in_use__publisher=series.publisher) |
-                                    Q(in_use__year_ended=None,
-                                      in_use__publisher=series.publisher))
-
-                brands = self.fields['brand'].queryset \
-                             .filter(in_use__publisher=series.publisher) \
-                             .filter((started_before & not_ended_before) |
-                                     (no_start & not_ended_before))
-
-                self.fields['brand'].queryset = brands.distinct()
                 self.fields['indicia_publisher'].queryset = \
                     self.fields['indicia_publisher'].queryset\
                     .exclude(year_ended__lt=issue_year)
@@ -87,25 +70,14 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     .exclude(year_began__gt=issue_year)
             else:
                 if series.year_began:
-                    self.fields['brand'].queryset = \
-                        self.fields['brand'].queryset \
-                            .exclude(year_ended__lt=series.year_began)
                     self.fields['indicia_publisher'].queryset = \
                         self.fields['indicia_publisher'].queryset \
                             .exclude(year_ended__lt=series.year_began)
                 if series.year_ended:
-                    self.fields['brand'].queryset = \
-                        self.fields['brand'].queryset \
-                            .exclude(year_began__gt=series.year_ended)
                     self.fields['indicia_publisher'].queryset = \
                         self.fields['indicia_publisher'].queryset \
                             .exclude(year_began__gt=series.year_ended)
             if revision:
-                if revision.brand and \
-                        revision.brand not in self.fields['brand'].queryset:
-                    self.fields['brand'].queryset = (
-                        self.fields['brand'].queryset |
-                        Brand.objects.filter(id=revision.brand.id).distinct())
                 if revision.indicia_publisher and \
                         revision.indicia_publisher not in \
                         self.fields['indicia_publisher'].queryset:
@@ -307,10 +279,10 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                         ['%s field and No %s checkbox cannot both be filled'
                          ' in.' % ("Editing", "Editing")])
 
-            if cd['no_brand'] and cd['brand'] is not None:
+            if cd['no_brand'] and cd['brand_emblem'] is not None:
                 raise forms.ValidationError(
-                    'You cannot specify a brand and check "no brand" at the '
-                    'same time.')
+                    'You cannot specify a brand emblem and check '
+                    '"no brand emblem" at the same time.')
 
             if cd['no_indicia_frequency'] and cd['indicia_frequency']:
                 raise forms.ValidationError(
@@ -593,7 +565,6 @@ class IssueRevisionForm(KeywordBaseForm):
             'barcode': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'rating': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'page_count': PageCountInput,
-            'brand': BrandEmblemSelect,
         }
         labels = ISSUE_LABELS
         help_texts = ISSUE_HELP_TEXTS
@@ -625,6 +596,8 @@ class IssueRevisionForm(KeywordBaseForm):
 
     brand_emblem = forms.ModelMultipleChoiceField(
         queryset=Brand.objects.all(),
+        label=ISSUE_LABELS['brand_emblem'],
+        help_text=ISSUE_HELP_TEXTS['brand_emblem'],
         widget=autocomplete.ModelSelect2Multiple(
             url='brand_emblem_autocomplete',
             forward=['publisher_id', 'year_began', 'year_ended'],
@@ -692,8 +665,6 @@ def get_bulk_issue_revision_form(series, method, user=None):
 
         def __init__(self, *args, **kwargs):
             super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
-            self.fields['brand'].queryset = \
-                series.publisher.active_brand_emblems_no_pending()
             self.fields['indicia_publisher'].queryset = \
                 series.publisher.active_indicia_publishers_no_pending()
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
@@ -766,6 +737,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
 
     brand_emblem = forms.ModelMultipleChoiceField(
         queryset=Brand.objects.all(),
+        label=ISSUE_LABELS['brand_emblem'],
+        help_text=ISSUE_HELP_TEXTS['brand_emblem'],
         widget=autocomplete.ModelSelect2Multiple(
             url='brand_emblem_autocomplete',
             forward=['publisher_id', 'year_began',],
@@ -797,7 +770,6 @@ class BulkIssueRevisionForm(forms.ModelForm):
                                                         'w-full lg:w-4/5'}),
             'editing': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'page_count': PageCountInput,
-            'brand': BrandEmblemSelect,
             'publication_date': forms.TextInput(attrs={'class':
                                                        'w-full lg:w-4/5'}),
             'key_date': forms.TextInput(attrs={'class': 'key_date'}),
@@ -809,7 +781,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
 
     def _shared_key_order(self):
         return ['indicia_publisher', 'indicia_pub_not_printed',
-                'brand_emblem', 'brand', 'no_brand',
+                'brand_emblem', 'no_brand',
                 'indicia_frequency', 'no_indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
                 'editing', 'no_editing',
@@ -843,9 +815,10 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 'You cannot specify an editing credit and '
                 'check "no editing" at the same time')
 
-        if cd['no_brand'] and cd['brand'] is not None:
+        if cd['no_brand'] and cd['brand_emblem'] is not None:
             raise forms.ValidationError(
-                ['Brand field and No Brand checkbox cannot both be filled in.']
+                ['Brand Emblem field and No Brand Emblem checkbox cannot '
+                 'both be filled in.']
             )
 
         if cd['no_indicia_frequency'] and cd['indicia_frequency']:
