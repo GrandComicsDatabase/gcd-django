@@ -1760,7 +1760,6 @@ def edit_issues_in_bulk(request):
 
     # there are several publishers, ignore publisher related fields
     if ignore_publisher:
-        remove_fields.append('brand')
         remove_fields.append('brand_emblem')
         remove_fields.append('no_brand')
         remove_fields.append('indicia_publisher')
