@@ -859,7 +859,7 @@ class IndiciaPublisherIssueCoverTable(IndiciaPublisherIssueTable,
     class Meta:
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
-                  'brand')
+                  'brand_emblem')
         row_attrs = {'class': 'w-[150px] md:w-[200px] shadow-md p-[2px]'}
 
 
@@ -927,7 +927,7 @@ class BrandGroupIssueCoverTable(BrandGroupIssueTable, IssueCoverTable):
     class Meta:
         model = Issue
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
-                  'brand', 'indicia_publisher')
+                  'brand_emblem', 'indicia_publisher')
         row_attrs = {'class': 'w-[150px] md:w-[200px] shadow-md p-[2px]'}
 
 
@@ -944,7 +944,7 @@ class PublisherIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
 class PublisherIssueCoverTable(PublisherIssueTable, IssueCoverTable):
     class Meta:
         fields = ('cover', 'issue', 'publication_date', 'on_sale_date',
-                  'brand', 'indicia_publisher')
+                  'brand_emblem', 'indicia_publisher')
         row_attrs = {'class': 'w-[150px] md:w-[200px] shadow-md p-[2px]'}
 
 
@@ -968,8 +968,9 @@ class SeriesDetailsIssueTable(PublisherIssueTable):
     class Meta:
         model = Issue
         fields = ('key_date', 'publication_date', 'on_sale_date', 'volume',
-                  'issue', 'title', 'indicia_publisher', 'brand', 'page_count',
-                  'price', 'indicia_frequency', 'isbn', 'barcode', 'rating')
+                  'issue', 'title', 'indicia_publisher', 'brand_emblem',
+                  'page_count', 'price', 'indicia_frequency', 'isbn',
+                  'barcode', 'rating')
 
     def order_key_date(self, query_set, is_descending):
         if is_descending:
