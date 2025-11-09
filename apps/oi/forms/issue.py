@@ -279,7 +279,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                         ['%s field and No %s checkbox cannot both be filled'
                          ' in.' % ("Editing", "Editing")])
 
-            if cd['no_brand'] and cd['brand_emblem'] is not None:
+            if cd['no_brand'] and cd['brand_emblem'].exists():
                 raise forms.ValidationError(
                     'You cannot specify a brand emblem and check '
                     '"no brand emblem" at the same time.')
