@@ -1731,7 +1731,7 @@ class Revision(models.Model):
             # If we have more m2m-related objects that need stats
             # updating, we may need a more general mechanism.
             old_value = []
-            for brand_emblem in old.brand_emblem.all():
+            for brand_emblem in old.brand_emblem.all() if old else []:
                 old_value.extend(brand_emblem.group.all())
             new_value = []
             for brand_emblem in new.brand_emblem.all():
