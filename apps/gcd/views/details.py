@@ -1758,7 +1758,7 @@ def show_brand(request, brand, preview=False):
                                                          'indicia_publisher')
     image_tag, selected_issue = _get_random_cover_image(request,
                                                         brand,
-                                                        'brand',
+                                                        'brand_emblem',
                                                         'Brand Emblem')
 
     groups_table = BrandGroupEmblemTable(brand.group.all(),
