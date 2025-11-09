@@ -2652,8 +2652,11 @@ def add_issues(request, series_id, method=None):
     new_issues[0].after = form.cleaned_data['after']
     for revision in new_issues:
         revision.save_added_revision(changeset=changeset, series=series)
-        revision.brand_emblem.set(form.cleaned_data['brand_emblem'].all())
-        revision.indicia_printer.set(form.cleaned_data['indicia_printer'].all())
+        if form.cleaned_data['brand_emblem']:
+            revision.brand_emblem.set(form.cleaned_data['brand_emblem'].all())
+        if form.cleaned_data['indicia_printer']:
+            revision.indicia_printer.set(form.cleaned_data['indicia_printer']
+                                             .all())
     return submit(request, changeset.id)
 
 
