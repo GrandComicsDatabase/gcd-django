@@ -885,7 +885,10 @@ class BrandEmblemIssueTable(IssueTable):
                                                   show_indicia_pub
         from apps.gcd.templatetags.credits import get_country_flag
         return_val = show_indicia_pub(record)
-        if record.series.publisher_id not in record.brand.group_parents():
+        # TODO is this the right check?
+        brand_groups = record.brand_emblem.all()\
+                             .values_list('group__parent', flat=True)
+        if record.series.publisher_id not in brand_groups:
             return_val += " (%s%s)" % (get_country_flag(record.series.publisher
                                                                      .country),
                                        absolute_url(record.series.publisher))
