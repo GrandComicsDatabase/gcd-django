@@ -255,7 +255,7 @@ class BrandGroup(BasePublisher):
     def active_issues(self):
         from apps.gcd.models.issue import Issue
         emblems_id = list(self.active_emblems().values_list('id', flat=True))
-        return Issue.objects.filter(brand__in=emblems_id,
+        return Issue.objects.filter(brand_emblem__in=emblems_id,
                                     deleted=False)
 
     def stat_counts(self):
