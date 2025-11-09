@@ -2250,7 +2250,7 @@ def series_details(request, series_id, by_date=False):
                       series.active_issues().filter(no_volume=False)
                                             .exclude(volume='').exists())
     brand_present = (series.active_issues().filter(no_brand=False)
-                           .exclude(brand__isnull=True).exists())
+                           .exclude(brand_emblem__isnull=True).exists())
     frequency_present = (series.has_indicia_frequency and
                          series.active_issues()
                                .filter(no_indicia_frequency=False)
@@ -2275,7 +2275,7 @@ def series_details(request, series_id, by_date=False):
         if not volume_present:
             exclude_columns.append('volume')
         if not brand_present:
-            exclude_columns.append('brand')
+            exclude_columns.append('brand_emblem')
         if not frequency_present:
             exclude_columns.append('indicia_frequency')
         if not isbn_present:
