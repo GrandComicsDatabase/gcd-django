@@ -307,6 +307,7 @@ class Brand(BasePublisher):
 
     def has_dependents(self):
         return bool(self.issue_count or
+                    self.active_issues().exists() or
                     self.use_revisions.active_set().exists() or
                     self.issue_revisions.active_set().exists())
 
