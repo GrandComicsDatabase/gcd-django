@@ -1705,11 +1705,11 @@ def brand_group(request, brand_group_id):
 
 def show_brand_group(request, brand_group, preview=False):
     brand_issues = brand_group.active_issues().order_by(
-      'series__sort_name', 'sort_code').prefetch_related('series', 'brand',
+      'series__sort_name', 'sort_code').prefetch_related('series', 'brand_emblem',
                                                          'indicia_publisher')
     image_tag, selected_issue = _get_random_cover_image(request,
                                                         brand_group,
-                                                        'brand__group',
+                                                        'brand_emblem__group',
                                                         'Brand')
 
     brand_emblems = brand_group.active_emblems()

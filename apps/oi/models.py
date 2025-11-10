@@ -5078,6 +5078,10 @@ class PreviewIssue(Issue):
         return Cover.objects.none()
 
     @property
+    def brand_emblem(self):
+        return self.revision.brand_emblem.all()
+
+    @property
     def credits(self):
         return self.revision.issue_credit_revisions.exclude(deleted=True)
 
