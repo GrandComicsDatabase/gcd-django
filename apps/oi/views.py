@@ -1777,10 +1777,16 @@ def edit_issues_in_bulk(request):
                          'rating']:
                     if 'no_' + i not in remove_fields:
                         remove_fields.append('no_' + i)
-                elif i in ['no_volume', 'no_brand', 'no_editing',
+                elif i in ['no_volume', 'no_editing',
                            'no_indicia_frequency', 'no_rating']:
                     if i[3:] not in remove_fields:
                         remove_fields.append(i[3:])
+                elif i == 'no_brand':
+                    if 'brand_emblem' not in remove_fields:
+                        remove_fields.append('brand_emblem')
+                elif i == 'brand_emblem':
+                    if 'no_brand' not in remove_fields:
+                        remove_fields.append('no_brand')
                 elif i == 'indicia_publisher':
                     remove_fields.append('indicia_pub_not_printed')
                 elif i == 'indicia_pub_not_printed':
