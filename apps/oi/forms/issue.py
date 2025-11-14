@@ -28,6 +28,62 @@ from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType, \
                             CreatorNameDetail, IndiciaPrinter
 
 
+def _common_clean(cd):
+    if cd['volume'] != "" and cd['no_volume']:
+        raise forms.ValidationError(
+            'You cannot specify a volume and check "no volume" at '
+            'the same time')
+
+    if cd['no_editing']:
+        nr_credit_forms = self.data[
+            'issue_credit_revisions-TOTAL_FORMS']
+        seq_type_found = False
+        for i in range(int(nr_credit_forms)):
+            delete_i = 'issue_credit_revisions-%d-DELETE' % i
+            form_deleted = False
+            if delete_i in self.data:
+                if self.data[delete_i]:
+                    form_deleted = True
+            if not form_deleted:
+                credit_type = \
+                    self.data['issue_credit_revisions-%d-credit_type'
+                                % i]
+                if credit_type == '6' and self.data[
+                    'issue_credit_revisions-%d-creator' % i]:
+                    seq_type_found = True
+                elif credit_type != '6':
+                    raise forms.ValidationError(
+                        ['Unsupported credit type.'])
+
+        # no_editing is present, no need to check here again
+        if cd['editing'] != "" or seq_type_found:
+            raise forms.ValidationError(
+                ['%s field and No %s checkbox cannot both be filled'
+                    ' in.' % ("Editing", "Editing")])
+
+    if cd['no_brand'] and cd['brand_emblem'].exists():
+        raise forms.ValidationError(
+            'You cannot specify a brand emblem and check '
+            '"no brand emblem" at the same time.')
+
+    if cd['no_indicia_frequency'] and cd['indicia_frequency']:
+        raise forms.ValidationError(
+            'You cannot specify an indicia frequency and check '
+            '"no indicia frequency" at the same time.')
+
+    if cd['no_indicia_printer'] and cd['indicia_printer']:
+        raise forms.ValidationError(
+            'You cannot specify an indicia printer and check '
+            '"no indicia printer" at the same time.')
+
+    if cd['no_rating'] and cd['rating']:
+        raise forms.ValidationError(
+            "You cannot specify a publisher's age guideline and check "
+            " no publisher's age guideline at the same time.")
+
+    return cd
+
+
 def get_issue_revision_form(publisher, series=None, revision=None,
                             variant_of=None, user=None, edit_with_base=False):
     if series is None and revision is not None:
@@ -231,6 +287,10 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             cd['notes'] = cd['notes'].strip()
             cd['comments'] = cd['comments'].strip()
             cd['isbn'] = cd['isbn'].strip()
+            cd['rating'] = cd['rating'].strip()
+
+            cd = _common_clean(cd)
+
             if 'variant_name' in cd:
                 cd['variant_name'] = cd['variant_name'].strip()
 
@@ -242,57 +302,10 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                         'changing the variant cover status please first mark '
                         'it for delete or remove it.')
 
-            if cd['volume'] != "" and cd['no_volume']:
-                raise forms.ValidationError(
-                    'You cannot specify a volume and check "no volume" at '
-                    'the same time')
-
             if cd['no_title'] and cd['title']:
                 raise forms.ValidationError(
                     'You cannot specify a title and check "no title" at the '
                     'same time.')
-
-            if cd['no_editing']:
-                nr_credit_forms = self.data[
-                  'issue_credit_revisions-TOTAL_FORMS']
-                seq_type_found = False
-                for i in range(int(nr_credit_forms)):
-                    delete_i = 'issue_credit_revisions-%d-DELETE' % i
-                    form_deleted = False
-                    if delete_i in self.data:
-                        if self.data[delete_i]:
-                            form_deleted = True
-                    if not form_deleted:
-                        credit_type = \
-                            self.data['issue_credit_revisions-%d-credit_type'
-                                      % i]
-                        if credit_type == '6' and self.data[
-                          'issue_credit_revisions-%d-creator' % i]:
-                            seq_type_found = True
-                        elif credit_type != '6':
-                            raise forms.ValidationError(
-                              ['Unsupported credit type.'])
-
-                # no_editing is present, no need to check here again
-                if cd['editing'] != "" or seq_type_found:
-                    raise forms.ValidationError(
-                        ['%s field and No %s checkbox cannot both be filled'
-                         ' in.' % ("Editing", "Editing")])
-
-            if cd['no_brand'] and cd['brand_emblem'].exists():
-                raise forms.ValidationError(
-                    'You cannot specify a brand emblem and check '
-                    '"no brand emblem" at the same time.')
-
-            if cd['no_indicia_frequency'] and cd['indicia_frequency']:
-                raise forms.ValidationError(
-                    'You cannot specify an indicia frequency and check '
-                    '"no indicia frequency" at the same time.')
-
-            if cd['no_indicia_printer'] and cd['indicia_printer']:
-                raise forms.ValidationError(
-                    'You cannot specify an indicia printer and check '
-                    '"no indicia printer" at the same time.')
 
             if cd['no_isbn'] and cd['isbn']:
                 raise forms.ValidationError(
@@ -333,11 +346,6 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             if cd['barcode']:
                 cd['barcode'] = cd['barcode'].replace('-', '').replace(' ', '')
                 cd['barcode'] = cd['barcode'].replace(';', '; ')
-
-            if cd['no_rating'] and cd['rating']:
-                raise forms.ValidationError(
-                    "You cannot specify a publisher's age guideline and check "
-                    " no publisher's age guideline at the same time.")
 
             return cd
 
@@ -800,44 +808,10 @@ class BulkIssueRevisionForm(forms.ModelForm):
         cd['price'] = cd['price'].strip()
         cd['editing'] = cd['editing'].strip()
         cd['comments'] = cd['comments'].strip()
+        cd['volume'] = cd['volume'].strip()
+        cd['rating'] = cd['rating'].strip()
 
-        # TODO use the same code to clean edits and adds
-        if 'volume' in cd:
-            cd['volume'] = cd['volume'].strip()
-
-            if cd['volume'] != "" and cd['no_volume']:
-                raise forms.ValidationError(
-                    'You cannot specify a volume and '
-                    'check "no volume" at the same time')
-
-        if cd['editing'] != "" and cd['no_editing']:
-            raise forms.ValidationError(
-                'You cannot specify an editing credit and '
-                'check "no editing" at the same time')
-
-        if cd['no_brand'] and cd['brand_emblem'] is not None:
-            raise forms.ValidationError(
-                ['Brand Emblem field and No Brand Emblem checkbox cannot '
-                 'both be filled in.']
-            )
-
-        if cd['no_indicia_frequency'] and cd['indicia_frequency']:
-            raise forms.ValidationError(
-                ['Indicica Frequency field and No Indicia Frequency checkbox '
-                 'cannot both be filled in.'])
-
-        if cd['no_indicia_printer'] and cd['indicia_printer']:
-            raise forms.ValidationError(
-                'You cannot specify an indicia printer and check '
-                '"no indicia printer" at the same time.')
-
-        if 'rating' in cd:
-            cd['rating'] = cd['rating'].strip()
-
-            if cd['rating'] != "" and cd['no_rating']:
-                raise forms.ValidationError(
-                    'You cannot specify a rating and '
-                    'check "no rating" at the same time')
+        cd = _common_clean(cd)
 
         return cd
 

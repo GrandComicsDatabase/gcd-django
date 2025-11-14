@@ -272,7 +272,8 @@ class Series(GcdData):
         return {
             'no_brand': self.active_issues().filter(no_brand=True).count(),
             'unknown': self.active_issues().filter(no_brand=False,
-                                                   brand__isnull=True).count(),
+                                                   brand_emblem__isnull=True)
+                                           .count(),
         }
 
     def ordered_indicia_publishers(self):
