@@ -957,7 +957,6 @@ class SeriesDetailsIssueTable(PublisherIssueTable):
 
     def __init__(self, *args, **kwargs):
         exclude_columns = kwargs.pop('exclude_columns')
-        self.base_columns['issue'].verbose_name = 'Number'
         super().__init__(*args, **kwargs)
         for column in exclude_columns:
             self.columns.hide(column)
