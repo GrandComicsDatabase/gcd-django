@@ -951,13 +951,13 @@ class PublisherIssueCoverTable(PublisherIssueTable, IssueCoverTable):
 class SeriesDetailsIssueTable(PublisherIssueTable):
     indicia_frequency = tables.Column(verbose_name='Frequency')
     isbn = tables.Column(verbose_name='ISBN')
-    issue = tables.Column(verbose_name='Number')
     key_date = tables.Column(verbose_name='Key Date')
     page_count = tables.Column(verbose_name='Pages')
     rating = tables.Column(verbose_name="Publisher's Age Guidelines")
 
     def __init__(self, *args, **kwargs):
         exclude_columns = kwargs.pop('exclude_columns')
+        self.base_columns['issue'].verbose_name = 'Number'
         super().__init__(*args, **kwargs)
         for column in exclude_columns:
             self.columns.hide(column)
