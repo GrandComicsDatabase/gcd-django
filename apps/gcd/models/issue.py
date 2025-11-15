@@ -909,7 +909,7 @@ class BrandEmblemIssueCoverTable(BrandEmblemIssueTable, IssueCoverTable):
 class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
     def __init__(self, *args, **kwargs):
         self.brand = kwargs.pop('brand')
-        super(BrandEmblemIssueTable, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def render_indicia_publisher(self, record):
         from apps.gcd.templatetags.display import absolute_url, \
@@ -921,9 +921,6 @@ class BrandGroupIssueTable(IndiciaPublisherIssueTable, BrandEmblemIssueTable):
                                                                      .country),
                                        absolute_url(record.series.publisher))
         return mark_safe(return_val)
-
-    def value_indicia_publisher(self, value):
-        return str(value)
 
 
 class BrandGroupIssueCoverTable(BrandGroupIssueTable, IssueCoverTable):
@@ -952,21 +949,19 @@ class PublisherIssueCoverTable(PublisherIssueTable, IssueCoverTable):
 
 
 class SeriesDetailsIssueTable(PublisherIssueTable):
+    indicia_frequency = tables.Column(verbose_name='Frequency')
+    isbn = tables.Column(verbose_name='ISBN')
+    issue = tables.Column(verbose_name='Number')
+    key_date = tables.Column(verbose_name='Key Date')
+    page_count = tables.Column(verbose_name='Pages')
+    rating = tables.Column(verbose_name="Publisher's Age Guidelines")
+
     def __init__(self, *args, **kwargs):
-        self.base_columns['indicia_frequency'].verbose_name = 'Frequency'
-        self.base_columns['isbn'].verbose_name = 'ISBN'
-        self.base_columns['issue'].verbose_name = 'Number'
-        self.base_columns['key_date'].verbose_name = 'Key Date'
-        self.base_columns['page_count'].verbose_name = 'Pages'
-        self.base_columns['rating'].verbose_name = "Publisher's Age Guidelines"
         exclude_columns = kwargs.pop('exclude_columns')
-        # not sure about the following, in the dev environment it is needed
-        for column in self.base_columns:
-            self.base_columns[column].visible = True
+        super().__init__(*args, **kwargs)
         for column in exclude_columns:
-            self.base_columns[column].visible = False
-            self.base_columns[column].exclude_from_export = True
-        super(PublisherIssueTable, self).__init__(*args, **kwargs)
+            self.columns.hide(column)
+            self.columns[column].exclude_from_export = True
 
     class Meta:
         model = Issue
