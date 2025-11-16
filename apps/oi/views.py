@@ -1815,7 +1815,8 @@ def edit_issues_in_bulk(request):
         if isinstance(f, Field) and f.get_attname() not in excluded_names
     }
     editing_credits = items.filter(credits__deleted=False).exists()
-    if editing_credits:
+    if editing_credits and 'editing' not in remove_fields and 'no_editing' \
+       not in remove_fields:
         reference_issue = items[0]
         editing_credits = reference_issue.credits.filter(deleted=False)
         issue_count = 1
@@ -1849,7 +1850,9 @@ def edit_issues_in_bulk(request):
                 credits_formset = IssueRevisionFormSet(request.POST or None)
         else:
             credits_formset = None
-    elif 'editing' not in remove_fields:
+            if 'no_editing' not in remove_fields:
+                remove_fields.append('no_editing')
+    elif 'editing' not in remove_fields and 'no_editing' not in remove_fields:
         credits_formset = IssueRevisionFormSet(request.POST or None)
     else:
         credits_formset = None
@@ -1920,7 +1923,7 @@ def edit_issues_in_bulk(request):
                    cd[field] is not None:
                     setattr(revision, field + '_id', cd[field].id)
                 elif field in ['brand_emblem', 'indicia_printer'] and \
-                     cd[field] is not None:
+                        cd[field] is not None:
                     getattr(revision, field).set(cd[field].all())
                 else:
                     setattr(revision, field, cd[field])

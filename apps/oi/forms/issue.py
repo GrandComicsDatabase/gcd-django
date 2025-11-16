@@ -5,7 +5,6 @@ from collections import OrderedDict
 from math import log10
 
 from django import forms
-from django.db.models import Q
 from django.forms.widgets import HiddenInput
 from django.forms.models import inlineformset_factory
 
@@ -20,7 +19,7 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
-                      HiddenInputWithHelp, PageCountInput, BrandEmblemSelect)
+                      HiddenInputWithHelp, PageCountInput)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
                            PublisherCodeNumberRevision, get_issue_field_list
@@ -28,32 +27,33 @@ from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType, \
                             CreatorNameDetail, IndiciaPrinter
 
 
-def _common_clean(cd):
+def _common_clean(cd, data):
     if cd['volume'] != "" and cd['no_volume']:
         raise forms.ValidationError(
             'You cannot specify a volume and check "no volume" at '
             'the same time')
 
     if cd['no_editing']:
-        nr_credit_forms = self.data[
-            'issue_credit_revisions-TOTAL_FORMS']
-        seq_type_found = False
-        for i in range(int(nr_credit_forms)):
-            delete_i = 'issue_credit_revisions-%d-DELETE' % i
-            form_deleted = False
-            if delete_i in self.data:
-                if self.data[delete_i]:
-                    form_deleted = True
-            if not form_deleted:
-                credit_type = \
-                    self.data['issue_credit_revisions-%d-credit_type'
-                                % i]
-                if credit_type == '6' and self.data[
-                    'issue_credit_revisions-%d-creator' % i]:
-                    seq_type_found = True
-                elif credit_type != '6':
-                    raise forms.ValidationError(
-                        ['Unsupported credit type.'])
+        if 'issue_credit_revisions-TOTAL_FORMS' in data:
+            nr_credit_forms = data['issue_credit_revisions-TOTAL_FORMS']
+            seq_type_found = False
+            for i in range(int(nr_credit_forms)):
+                delete_i = 'issue_credit_revisions-%d-DELETE' % i
+                form_deleted = False
+                if delete_i in data:
+                    if data[delete_i]:
+                        form_deleted = True
+                if not form_deleted:
+                    credit_type = \
+                        data['issue_credit_revisions-%d-credit_type' % i]
+                    if credit_type == '6' and data[
+                      'issue_credit_revisions-%d-creator' % i]:
+                        seq_type_found = True
+                    elif credit_type != '6':
+                        raise forms.ValidationError(
+                            ['Unsupported credit type.'])
+        else:
+            seq_type_found = False
 
         # no_editing is present, no need to check here again
         if cd['editing'] != "" or seq_type_found:
@@ -289,7 +289,7 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             cd['isbn'] = cd['isbn'].strip()
             cd['rating'] = cd['rating'].strip()
 
-            cd = _common_clean(cd)
+            cd = _common_clean(cd, self.data)
 
             if 'variant_name' in cd:
                 cd['variant_name'] = cd['variant_name'].strip()
@@ -811,7 +811,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
         cd['volume'] = cd['volume'].strip()
         cd['rating'] = cd['rating'].strip()
 
-        cd = _common_clean(cd)
+        cd = _common_clean(cd, self.data)
 
         return cd
 
