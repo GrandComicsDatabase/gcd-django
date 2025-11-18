@@ -5864,12 +5864,17 @@ def show_commented(request):
     filter = ChangesetTypeFilter(request.GET, changes)
     changes = filter.qs
 
+    request_get = request.GET.copy()
+    request_get.pop('page', None)
+    request_get.pop('submit', None)
+    query_string = request_get.urlencode()
+
     return paginate_response(
       request,
       changes,
       'oi/queues/commented.html',
       {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'commented',
-       'filter_form': filter.form, },
+       'filter_form': filter.form, 'query_string': query_string},
       per_page=50)
 
 
@@ -5885,12 +5890,18 @@ def show_editor_log(request):
     filter = ChangesetTypeFilter(request.GET, changes)
     changes = filter.qs
 
+    # TODO: check again with django 5
+    request_get = request.GET.copy()
+    request_get.pop('page', None)
+    request_get.pop('submit', None)
+    query_string = request_get.urlencode()
+
     return paginate_response(
       request,
       changes,
       'oi/queues/editor_log.html',
       {'CTYPES': CTYPES, 'EDITING': True, 'queue_name': 'editor_log',
-       'filter_form': filter.form, },
+       'filter_form': filter.form, 'query_string': query_string},
       per_page=50)
 
 
