@@ -3475,8 +3475,10 @@ def show_story_arc(request, story_arc, preview=False):
                                      'sequence_number')\
                            .select_related('issue__series__publisher')
 
-    reprinted_stories = stories.exclude(from_all_reprints=None)
-    stories = stories.filter(from_all_reprints=None)
+    reprinted_stories = stories.exclude(from_all_reprints=None).filter(
+      from_all_reprints__origin_issue__series__language=story_arc.language)
+    story_ids = reprinted_stories.values_list('id', flat=True)
+    stories = stories.exclude(id__in=story_ids)
 
     context = {'story_arc': story_arc,
                'error_subject': '%s' % story_arc,
