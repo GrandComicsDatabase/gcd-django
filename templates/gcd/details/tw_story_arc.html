@@ -113,6 +113,23 @@ GCD :: Story Arc :: {{ story_arc.name }}
   {% endfor %}
 </ol>
 {% endif %}
+{% if arc_stories_reprinted %}
+  <hr>
+  <h2>Reprints:</h2>
+  <ol class="object-page-numbered-list list-disc columns-1">
+  {% for story in arc_stories_reprinted %}
+    {% ifchanged story.issue %}
+      {% if not forloop.first %}
+      </ol>
+      {% endif %}
+    <li>{{ story.issue.full_name_with_link }} ({{ story.issue.publication_date }})</li>
+    <ol class="object-page-numbered-list list-disc columns-1">
+    {% endifchanged %}
+    <li><a href="{{ story.get_absolute_url }}">{{ story }}</a></li>
+  {% endfor %}
+    </ol>
+  </ol>
+{% endif %}
 {% endblock content %}
 
 {% block www_my_comics_cross_link %}
