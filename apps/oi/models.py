@@ -6901,6 +6901,10 @@ class PreviewStory(Story):
         return self.revision.feature_object.exclude(deleted=True)
 
     @property
+    def story_arc(self):
+        return self.revision.story_arc.all()
+
+    @property
     def credits(self):
         return self.revision.story_credit_revisions.exclude(deleted=True)
 

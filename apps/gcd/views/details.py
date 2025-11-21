@@ -321,9 +321,9 @@ def _get_random_cover_image(request, object, object_filter, object_name):
             selected_cover = Cover.objects.get(pk=random_pk)
             selected_issue = selected_cover.issue
             image_tag = get_image_tag(cover=selected_cover,
-                                    zoom_level=ZOOM_MEDIUM,
-                                    alt_text='Random Cover from %s'
-                                            % object_name)
+                                      zoom_level=ZOOM_MEDIUM,
+                                      alt_text='Random Cover from %s'
+                                               % object_name)
     return image_tag, selected_issue
 
 
@@ -3475,11 +3475,15 @@ def show_story_arc(request, story_arc, preview=False):
                                      'sequence_number')\
                            .select_related('issue__series__publisher')
 
+    reprinted_stories = stories.exclude(from_all_reprints=None)
+    stories = stories.filter(from_all_reprints=None)
+
     context = {'story_arc': story_arc,
                'error_subject': '%s' % story_arc,
                'image_tag': image_tag,
                'image_issue': selected_issue,
                'arc_stories': stories,
+               'arc_stories_reprinted': reprinted_stories,
                'preview': preview}
     return render(request, 'gcd/details/tw_story_arc.html', context)
 
@@ -4495,7 +4499,7 @@ def character_covers(request, character_id):
     issues = filter.qs
 
     context = {
-        'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + \
+        'result_disclaimer': COVER_CHECKLIST_DISCLAIMER +
                              CHAR_MIGRATE_DISCLAIMER,
         'item_name': 'cover',
         'plural_suffix': 's',
@@ -4863,16 +4867,14 @@ def group_series(request, group_id):
 
     if universe_id:
         series = Series.objects.filter(
-          issue__story__appearing_groups__group_name__group=
-          filter_group,
+          issue__story__appearing_groups__group_name__group=filter_group,
           issue__story__appearing_groups__universe_id=universe_id,
           issue__story__appearing_groups__deleted=False,
           issue__story__type__id__in=CORE_TYPES,
           deleted=False).distinct().select_related('publisher')
     else:
         series = Series.objects.filter(
-          issue__story__appearing_groups__group_name__group=
-          filter_group,
+          issue__story__appearing_groups__group_name__group=filter_group,
           issue__story__appearing_groups__deleted=False,
           issue__story__type__id__in=CORE_TYPES,
           deleted=False).distinct().select_related('publisher')
