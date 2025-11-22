@@ -2646,6 +2646,7 @@ def change_history(request, model_name, id):
     """
     from apps.oi.views import DISPLAY_CLASSES, REVISION_CLASSES
     if model_name not in ['publisher', 'brand_group', 'brand',
+                          'indicia_printer', 'printer', 'story_arc',
                           'indicia_publisher', 'series', 'issue', 'cover',
                           'image', 'series_bond', 'award', 'creator_degree',
                           'creator', 'creator_membership', 'received_award',

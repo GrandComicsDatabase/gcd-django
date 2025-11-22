@@ -20,6 +20,7 @@ from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
 from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup, \
                             Series, Issue, Cover, Image, \
                             Feature, FeatureLogo, \
+                            StoryArc, Printer, IndiciaPrinter, \
                             Character, Group, CharacterRelation, \
                             GroupRelation, GroupMembership, Universe, \
                             INDEXED, SeriesBond, BOND_TRACKING, \
@@ -344,6 +345,14 @@ def changed_fields(changeset, object):
     elif object_class is IndiciaPublisher:
         revision = changeset.indiciapublisherrevisions.all()\
                             .get(indicia_publisher=object.id)
+    elif object_class is Printer:
+        revision = changeset.printerrevisions.all()\
+                            .get(printer=object.id)
+    elif object_class is IndiciaPrinter:
+        revision = changeset.indiciaprinterrevisions.all()\
+                            .get(indicia_printer=object.id)
+    elif object_class is StoryArc:
+        revision = changeset.storyarcrevisions.get(story_arc=object.id)
     elif object_class is Feature:
         revision = changeset.featurerevisions.get(feature=object.id)
     elif object_class is FeatureLogo:
