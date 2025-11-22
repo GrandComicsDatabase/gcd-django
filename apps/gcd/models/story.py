@@ -663,6 +663,16 @@ class StoryArc(GcdData):
             'show_story_arc',
             kwargs={'story_arc_id': self.id})
 
+    def related_main_arcs(self):
+        return self.from_related_story_arc.filter(relation_type__id=1)
+
+    def related_sub_arcs(self):
+        return self.to_related_story_arc.filter(relation_type__id=1)
+
+    def translations(self):
+        return self.from_related_story_arc.filter(relation_type__id=2) | \
+               self.to_related_story_arc.filter(relation_type__id=2)
+
     def object_page_name(self):
         return str('%s (%s)' % (self.name, self.language.name))
 
@@ -692,6 +702,14 @@ class StoryArcRelation(GcdLink):
                                       on_delete=models.CASCADE,
                                       related_name='relation_type')
     notes = models.TextField()
+
+    def pre_process_relation(self, story_arc):
+        if self.from_story_arc == story_arc:
+            return [self.to_story_arc,
+                    self.relation_type.description[3:]]
+        if self.to_story_arc == story_arc:
+            return [self.from_story_arc,
+                    self.relation_type.reverse_description[3:]]
 
     def object_page_name(self):
         return mark_safe('<a href="%s">%s</a> - <a href="%s">%s</a>' % (

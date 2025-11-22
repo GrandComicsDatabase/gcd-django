@@ -83,11 +83,11 @@ GCD :: Story Arc :: {{ story_arc.name }}
     </ol>
   </ol>
 {% endif %}
-{% if story_arc.to_related_story_arc.all %}
+{% if story_arc.related_sub_arcs %}
 <hr>
 <h2>Sub Arc:</h2>
 <ol class="object-page-numbered-list list-disc">
-  {% for relation in story_arc.to_related_story_arc.all %}
+  {% for relation in story_arc.related_sub_arcs %}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_story_arc' story_arc_id=relation.to_story_arc.id %}">{{ relation.to_story_arc.object_page_name }}</a>
     <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">(story arc relation)</a>
@@ -98,11 +98,11 @@ GCD :: Story Arc :: {{ story_arc.name }}
   {% endfor %}
 </ol>
 {% endif %}
-{% if story_arc.from_related_story_arc.all %}
+{% if story_arc.related_main_arcs %}
 <hr>
 <h2>Main Arc:</h2>
 <ol class="object-page-numbered-list list-disc">
-  {% for relation in story_arc.from_related_story_arc.all %}
+  {% for relation in story_arc.related_main_arcs %}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_story_arc' story_arc_id=relation.from_story_arc.id %}">{{ relation.from_story_arc.object_page_name }}</a>
     <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">(story arc relation)</a>
@@ -110,6 +110,23 @@ GCD :: Story Arc :: {{ story_arc.name }}
       <br><strong>Notes: </strong>{{ relation.notes }}
       {% endif %}
   </li>
+  {% endfor %}
+</ol>
+{% endif %}
+{% if story_arc.translations %}
+<hr>
+<h2>Translations:</h2>
+<ol class="object-page-numbered-list list-disc">
+  {% for relation in story_arc.translations %}
+    {% with relation_info=relation|pre_process_relation:story_arc %}
+  <li class="break-inside-avoid-column">
+    <a href="{% url 'show_story_arc' story_arc_id=relation_info.0.id %}">{{ relation_info.0.object_page_name }}</a>
+    <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">({{ relation_info.1 }})</a>
+      {% if relation.notes %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% endif %}
+  </li>
+    {% endwith %}
   {% endfor %}
 </ol>
 {% endif %}

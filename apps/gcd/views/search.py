@@ -89,7 +89,10 @@ def generic_by_name(request, name, q_obj, sort,
     base_name = 'unknown'
     plural_suffix = 's'
     query_val = {'method': 'icontains', 'logic': True}
-    heading = "matching your query for '%s'" % (name,)
+    if name:
+        heading = "matching your query for '%s'" % (name,)
+    else:
+        heading = ""
     display_name = class_.__name__
     base_name = display_name.lower()
     item_name = display_name.lower()
@@ -199,6 +202,8 @@ def generic_by_name(request, name, q_obj, sort,
         else:
             things = sqs
             things = things.order_by('sort_name')
+        if class_ is StoryArc:
+            item_name = 'story arc'
         selected = base_name
 
     elif class_ in [Creator, Character, Group, Feature]:

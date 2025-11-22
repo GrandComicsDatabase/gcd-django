@@ -11,7 +11,7 @@
   {% for object in items %}
     {% with object|object_filter as object %}
     <tr>
-      <td> <a href="{{ object.get_absolute_url }}">{{ object.name }}</a></td>
+      <td> <a href="{{ object.get_absolute_url }}">{{ object.object_page_name }}</a></td>
     </tr>
     {% endwith %}
   {% endfor %}
