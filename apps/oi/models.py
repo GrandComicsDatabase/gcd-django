@@ -5765,18 +5765,31 @@ class StoryRevision(Revision):
             credits = credits.exclude(credit_type_id=CREDIT_TYPES['letters'])
             revision.feature_logo.clear()
             for feature_object in revision.feature_object.all():
+                # TODO this works for now, but make consistent with
+                # StoryCharacterRevision.copied_translation and
+                # extend to StoryArcs
+                # in particular, use .translations(language)
                 translations = feature_object.translations().filter(
                   to_feature__language=revision.issue.series.language)
                 if translations.count() == 1:
+                    # revision is a translation from original
                     revision.feature_object.add(translations.get().to_feature)
                 elif (translations.count() == 0 and
                       feature_object.translated_from() is not None):
-                    other_translations = feature_object.translated_from()\
-                                                       .translations().filter(
-                      to_feature__language=revision.issue.series.language)
-                    if other_translations.count() == 1:
-                        revision.feature_object.add(
-                          other_translations.get().to_feature)
+                    translated_from = feature_object.translated_from()
+                    if translated_from.language == \
+                       revision.issue.series.language:
+                        # revision is the source of a translation
+                        revision.feature_object.add(translated_from)
+                    else:
+                        other_translations = feature_object.translated_from()\
+                                                           .translations()\
+                                                           .filter(
+                          to_feature__language=revision.issue.series.language)
+                        if other_translations.count() == 1:
+                            # revision is a translation from another language
+                            revision.feature_object.add(
+                              other_translations.get().to_feature)
                 revision.feature_object.remove(feature_object)
             for story_arc in revision.story_arc.all():
                 # translations = story_arc.get_translations_in_language(
