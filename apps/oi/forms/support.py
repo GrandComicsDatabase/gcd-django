@@ -43,11 +43,12 @@ NOTES_HELP = (
     '*, or are numbered, and can be nested by indenting with spaces. '
     'Links have the form [Link](http://a.com). '
     'Internal GCD links to other objects in the database have the '
-    'general format [gcd_link_<i>object_name</i>](id), e.g. [gcd_link_issue](442). '
+    'general format [gcd_link_<i>object_name</i>](id), '
+    'e.g. [gcd_link_issue](442). '
     'The generated links show under the display name of the object, or one '
     'uses the form [gcd_link_name_<i>object_name</i>](id){Link Title}. '
     'For stories and issues there is also a format to show the date, e.g. '
-    '[gcd_link_story_with_date](754).' )
+    '[gcd_link_story_with_date](754).')
 
 GENERIC_ERROR_MESSAGE = (
     'Please correct the field errors.  Scroll down to see the specific error '
@@ -392,7 +393,7 @@ PUBLISHER_HELP_TEXTS = {
     'url':
         'The official web site of the publisher.  Must include "http://" or '
         '"https://", for example "https://www.example.com" not '
-        '"www.example.com"',}
+        '"www.example.com"', }
 
 SERIES_HELP_TEXTS = {
     'name':
@@ -695,7 +696,8 @@ def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
     if keywords is not None:
         not_allowed = False
-        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',', '\n', '’']:
+        for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',', '\n',
+                  '’']:
             if c in keywords:
                 not_allowed = True
                 break
@@ -767,7 +769,7 @@ def _save_runtime_embedded_image_revision(instance, revision, image):
     content_type = ContentType.objects.get_for_model(instance)
     instance.image_revision.content_type = content_type
 
-    if revision.source:
+    if revision.source and image:
         img_lock = _get_revision_lock(image,
                                       changeset=revision.changeset)
         if img_lock is None:
