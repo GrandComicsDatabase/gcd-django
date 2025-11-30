@@ -3748,7 +3748,7 @@ def feature_covers(request, feature_id):
     feature = get_gcd_object(Feature, feature_id)
     issues = Issue.objects.filter(story__feature_object=feature,
                                   story__type__id=6,
-                                  story__credits__deleted=False).distinct()\
+                                  story__deleted=False).distinct()\
                           .select_related('series__publisher')
 
     heading = 'with feature %s' % feature
