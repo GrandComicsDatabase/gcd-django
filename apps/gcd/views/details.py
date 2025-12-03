@@ -1716,7 +1716,8 @@ def show_brand_group(request, brand_group, preview=False):
     brand_emblems_table = BrandEmblemGroupTable(
       brand_emblems,
       template_name=TW_SORT_TABLE_TEMPLATE,
-      order_by=('name'))
+      order_by=('name'),
+      orderable=False)
     brand_emblems_table.no_export = True
 
     context = {'brand': brand_group,
