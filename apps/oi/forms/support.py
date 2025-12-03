@@ -609,11 +609,12 @@ VARIANT_NAME_HELP_TEXT = (
     'the name of the artist if different from the base issue.')
 
 VARIANT_COVER_STATUS_HELP_TEXT = (
-    'Select among <i>variant with cover artwork different to base</i> '
-    '(Artwork Difference), <i>variant with different cover image scan, but '
-    'cover artwork identical to base</i> (Only Scan Difference), and '
-    '<i>variant with both cover artwork and cover image scan identical to '
-    'base</i> (No Difference)')
+    'Select among <i>variant with both cover artwork and cover image scan '
+    'identical to base</i> (No Difference), '
+    '<i>variant with different cover image scan, but cover artwork identical '
+    'to base</i> (Only Scan Difference), and '
+    '<i>variant with cover artwork different to base</i> '
+    '(Artwork Difference).')
 
 BIBLIOGRAPHIC_ENTRY_HELP_TEXT = {
     'page_began': 'Enter the first and if existing last page.',
