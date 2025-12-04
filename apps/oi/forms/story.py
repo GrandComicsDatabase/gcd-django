@@ -929,7 +929,9 @@ class StoryRevisionForm(KeywordBaseForm):
                   'sequence. This is common when there is an editor for the '
                   'whole issue.<br><br>'
                   'If a creator cannot be found in the creator box, '
-                  'the corresponding credit field can also be used.')
+                  'the corresponding credit field can also be used. '
+                  '<br>Creator and credit type are required fields '
+                  'for each individual credit.')
 
     characters = forms.CharField(
         widget=forms.Textarea(attrs={'class': 'w-full lg:w-4/5',

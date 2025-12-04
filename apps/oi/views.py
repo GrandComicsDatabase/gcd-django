@@ -2386,7 +2386,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     if variant_of and edit_with_base:
         kwargs = {'request': request,
                   'variant_of': variant_of,
-                  'issuerevision': form.save(commit=False)}
+                  'form': form}
         if variant_cover:
             return reserve(request, variant_cover.id, 'cover',
                            callback=add_variant_issuerevision,
@@ -2488,8 +2488,10 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
       kwargs={'id': changeset_id}))
 
 
-def add_variant_issuerevision(changeset, revision, variant_of, issuerevision,
+def add_variant_issuerevision(changeset, revision, variant_of, form,
                               request):
+    issuerevision = form.save(commit=False)
+
     if changeset.change_type == CTYPES['cover']:
         # via create variant for cover
         issue = revision.issue
@@ -2506,6 +2508,7 @@ def add_variant_issuerevision(changeset, revision, variant_of, issuerevision,
     issuerevision.save_added_revision(changeset=changeset,
                                       series=variant_of.series,
                                       variant_of=variant_of)
+    form.save_m2m()
     credits_formset = IssueRevisionFormSet(request.POST or None)
     if variant_of.series.has_publisher_code_number:
         code_number_formset = PublisherCodeNumberFormSet(request.POST or None)
