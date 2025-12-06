@@ -438,9 +438,9 @@ def edit_two_issues(request, issue_id):
             'heading': mark_safe('<h2>Select issue to edit with %s</h2>'
                                  % esc(issue.full_name())),
             'target': 'an issue',
-            'return': confirm_two_edits,
-            'cancel': HttpResponseRedirect(urlresolvers.reverse('show_issue',
-                                           kwargs={'issue_id': issue_id}))}
+            'return': 'confirm_two_edits',
+            'cancel': urlresolvers.reverse('show_issue',
+                                           kwargs={'issue_id': issue_id})}
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse(
       'select_object', kwargs={'select_key': select_key}))
@@ -2176,9 +2176,9 @@ def add_brand_use(request, brand_id, publisher_id=None):
                 'target': 'a publisher',
                 'brand_id': brand_id,
                 'publisher': True,
-                'return': process_add_brand_use,
-                'cancel': HttpResponseRedirect(urlresolvers.reverse(
-                  'show_brand', kwargs={'brand_id': brand_id}))}
+                'return': 'process_add_brand_use',
+                'cancel': urlresolvers.reverse('show_brand',
+                                               kwargs={'brand_id': brand_id})}
         select_key = store_select_data(request, None, data)
         return HttpResponseRedirect(urlresolvers.reverse(
           'select_object', kwargs={'select_key': select_key}))
@@ -3859,10 +3859,10 @@ def edit_series_bond(request, id):
             'heading': mark_safe('<h2>Select %s of the bond %s</h2>' %
                                  (which_side, series_bond_revision)),
             'target': 'a series or issue',
-            'return': save_selected_series_bond,
+            'return': 'save_selected_series_bond',
             'which_side': which_side,
-            'cancel': HttpResponseRedirect(urlresolvers.reverse(
-              'edit', kwargs={'id': series_bond_revision.changeset.id}))}
+            'cancel': urlresolvers.reverse('edit', kwargs={'id':
+                                           series_bond_revision.changeset.id})}
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse(
       'select_object', kwargs={'select_key': select_key}))
@@ -3897,9 +3897,9 @@ def add_series_bond(request, series_id):
             'issue': True,
             'heading': mark_safe('<h2>Select other side of the bond</h2>'),
             'target': 'a series or issue',
-            'return': save_added_series_bond,
-            'cancel': HttpResponseRedirect(urlresolvers.reverse(
-              'show_series', kwargs={'series_id': series.id}))}
+            'return': 'save_added_series_bond',
+            'cancel': urlresolvers.reverse('show_series',
+                                           kwargs={'series_id': series.id})}
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse(
       'select_object', kwargs={'select_key': select_key}))
@@ -4224,7 +4224,6 @@ def edit_reprint(request, id, which_side=None):
                           'changeset': changeset,
                           'which_side': which_side
                          })
-
     else:
         raise NotImplementedError
 
@@ -4237,7 +4236,7 @@ def edit_reprint(request, id, which_side=None):
            'which_side': which_side[:6]})
 
     initial = {'series': select_issue.series.name,
-               'publisher': select_issue.series.publisher,
+               'publisher': select_issue.series.publisher.name,
                'year': select_issue.series.year_began,
                'number': select_issue.number,
                'sequence_number': sequence_number}
@@ -4268,10 +4267,10 @@ def edit_reprint(request, id, which_side=None):
             'initial': initial,
             'heading': mark_safe('<h2>%s</h2>' % heading),
             'target': 'a story or issue',
-            'return': confirm_reprint,
+            'return': 'confirm_reprint',
             'which_side': which_side,
-            'cancel': HttpResponseRedirect(urlresolvers.reverse(
-              'edit', kwargs={'id': changeset.id}))}
+            'cancel': urlresolvers.reverse('edit',
+                                           kwargs={'id': changeset.id})}
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse(
       'select_object', kwargs={'select_key': select_key}))
@@ -4307,9 +4306,9 @@ def add_reprint(request, changeset_id,
             'initial': initial,
             'heading': mark_safe('<h2>%s</h2>' % heading),
             'target': 'a story or issue',
-            'return': confirm_reprint,
-            'cancel': HttpResponseRedirect(urlresolvers.reverse(
-              'edit', kwargs={'id': changeset_id}))}
+            'return': 'confirm_reprint',
+            'cancel': urlresolvers.reverse('edit',
+                                           kwargs={'id': changeset_id})}
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse(
       'select_object', kwargs={'select_key': select_key}))
@@ -4405,10 +4404,10 @@ def copy_sequence(request, issue_revision_id, story_id=None,
                 'initial': {},
                 'heading': mark_safe('<h2>%s</h2>' % heading),
                 'target': 'a story',
-                'return': _selected_copy_sequence,
+                'return': '_selected_copy_sequence',
                 'sequence_number': sequence_number,
-                'cancel': HttpResponseRedirect(urlresolvers.reverse(
-                  'edit', kwargs={'id': issue_revision.changeset_id}))}
+                'cancel': urlresolvers.reverse('edit', kwargs={
+                            'id': issue_revision.changeset_id})}
         select_key = store_select_data(request, None, data)
         return HttpResponseRedirect(urlresolvers.reverse('select_object',
                                     kwargs={'select_key': select_key}))
@@ -6536,10 +6535,9 @@ def select_award_recipient(request, award_id):
             'series': True,
             'heading': mark_safe('<h2>%s</h2>' % heading),
             'target': 'a story, issue, or series',
-            'return': process_award_recipient,
-            'cancel': HttpResponseRedirect(
-              urlresolvers.reverse('show_award',
-                                   kwargs={'award_id': award_id}))}
+            'return': 'process_award_recipient',
+            'cancel': urlresolvers.reverse('show_award',
+                                           kwargs={'award_id': award_id})}
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse('select_object',
                                 kwargs={'select_key': select_key}))

@@ -58,19 +58,15 @@ TEMPLATES = [
     },
 ]
 
-# We would prefer to remove the last 5 (to only use the django default),
-# but would need to update/migrate the existing stored passwords first.
+# We have old SHA1 passwords stored, but last logins are from 2018.
+# If a user with such a password logs in after all these years, not sure if
+# PBKDF2SHA1PasswordHasher can validate that correctly, or if it fails.
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
     'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.BCryptPasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.MD5PasswordHasher',
-    'django.contrib.auth.hashers.UnsaltedSHA1PasswordHasher',
-    'django.contrib.auth.hashers.UnsaltedMD5PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher'
 ]
 
 # absolute path to the directory that holds media.
@@ -225,7 +221,7 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 # session. Since we are using chached-db sessions, and not cookie-based, the
 # potential secutiry risk for cookie-based session with PickleSerializer does
 # not arise.
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
 # Corresponds to the django_site database table. As far
 # as I know, we won't be using this for the GCD.

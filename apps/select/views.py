@@ -120,7 +120,10 @@ def process_multiple_selects(request, select_key):
             selections[object_type].append(int(object_id))
     data['selections'] = selections
     store_select_data(request, select_key, data)
-    return data['return'](request, data)
+    # all return functions for multiple selects are in mycomics.views.py
+    import apps.mycomics.views  # here to avoid circular imports
+    return_function = getattr(apps.mycomics.views, data['return'])
+    return return_function(request, data)
 
 
 @permission_required('indexer.can_reserve')
@@ -317,7 +320,7 @@ def select_object(request, select_key):
                        })
 
     if 'cancel' in request.POST:
-        return data['cancel']
+        return HttpResponseRedirect(data['cancel'])
     elif 'select_object' in request.POST:
         try:
             choice = request.POST['object_choice']
@@ -352,7 +355,10 @@ def select_object(request, select_key):
                                 redirect=False)
     else:
         raise ValueError
-    return data['return'](request, data, object_type, selected_id)
+    # right now all return functions for single selects are in oi.views.py
+    import apps.oi.views  # here to avoid circular imports
+    return_function = getattr(apps.oi.views, data['return'])
+    return return_function(request, data, object_type, selected_id)
 
 
 def get_cached_issues(request):

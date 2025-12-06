@@ -80,7 +80,7 @@ def collections_list(request):
     def_have = request.user.collector.default_have_collection
     def_want = request.user.collector.default_want_collection
     collection_list = request.user.collector.collections.exclude(
-        id=def_have.id).exclude(id=def_want.id).order_by('name')
+      id=def_have.id).exclude(id=def_want.id).order_by('name')
     vars = {'collection_list': collection_list}
 
     return render(request, COLLECTION_LIST_TEMPLATE, vars)
@@ -714,7 +714,7 @@ def add_issues_to_collection(request, collection_id, issues, redirect,
     for issue in issues:
         collected = create_collection_item(issue, collection)
         if post_process_selection:
-            post_process_selection(collected)
+            globals()[post_process_selection](collected)
     request.session['collection_id'] = collection_id
     return HttpResponseRedirect(redirect)
 
@@ -760,8 +760,11 @@ def add_selected_issues_to_collection(request, data):
                                kwargs={'collection_id': collection_id}),
           post_process_selection=post_process_selection)
     else:
-        if 'collection_list' in data:
-            collection_list = data['collection_list']
+        if 'collection_id_list' in data:
+            collection_id_list = data['collection_id_list']
+            collection_list = Collection.objects.filter(
+              id__in=collection_id_list,
+              collector=request.user.collector)
         else:
             collection_list = request.user.collector.ordered_collections()
         context = {
@@ -780,18 +783,18 @@ def add_selected_issues_to_collection(request, data):
 @login_required
 def select_issues_from_preselection(request, issues, cancel,
                                     post_process_selection=None,
-                                    collection_list=None,
+                                    collection_id_list=None,
                                     not_found=None):
     if not issues.exists():
         raise ErrorWithMessage("No issues to select from.")
     data = {'issue': True,
             'allowed_selects': ['issue', ],
-            'return': add_selected_issues_to_collection,
+            'return': 'add_selected_issues_to_collection',
             'cancel': cancel}
     if post_process_selection:
         data['post_process_selection'] = post_process_selection
-    if collection_list:
-        data['collection_list'] = collection_list
+    if collection_id_list:
+        data['collection_id_list'] = collection_id_list
     select_key = store_select_data(request, None, data)
     context = {'select_key': select_key,
                'multiple_selects': True,
@@ -813,7 +816,7 @@ def select_from_on_sale_weekly(request, year=None, week=None):
         return issues_on_sale
     data = {'issue': True,
             'allowed_selects': ['issue'],
-            'return': add_selected_issues_to_collection}
+            'return': 'add_selected_issues_to_collection'}
     select_key = store_select_data(request, None, data)
     context.update({'select_key': select_key,
                     'multiple_selects': True,
@@ -928,8 +931,7 @@ def import_items(request):
         issues = issues.distinct()
         tmpfile.close()
         os.remove(tmpfile_name)
-        cancel = HttpResponseRedirect(urlresolvers
-                                      .reverse('collections_list'))
+        cancel = urlresolvers.reverse('collections_list')
         return select_issues_from_preselection(request, issues, cancel,
                                                not_found=not_found)
 
@@ -984,13 +986,13 @@ def add_series_issues_to_collection(request, series_id):
                 issues = series.active_issues()
             elif request.GET['which_issues'] == 'variant_issues':
                 issues = series.active_issues().exclude(variant_of=None)
-        return_url = HttpResponseRedirect(urlresolvers.reverse('show_series',
-                                          kwargs={'series_id': series_id}))
+        return_url = urlresolvers.reverse('show_series',
+                                          kwargs={'series_id': series_id})
         if issues:
             return select_issues_from_preselection(request, issues, return_url)
         else:
             messages.warning(request, 'no corresponding issues found')
-            return return_url
+            return HttpResponseRedirect(return_url)
 
 
 def post_process_subscription(item):
@@ -1028,17 +1030,16 @@ def subscribed_into_collection(request, collection_id):
           .filter(created__gte=subscription.last_pulled)\
           .exclude(collectionitem__collections=collection)
         issues |= new_issues
-    return_url = HttpResponseRedirect(
-      urlresolvers.reverse('subscriptions_collection',
-                           kwargs={'collection_id': collection_id}))
+    return_url = urlresolvers.reverse('subscriptions_collection',
+                                      kwargs={'collection_id': collection_id})
     if issues:
         return select_issues_from_preselection(
           request, issues, return_url,
-          post_process_selection=post_process_subscription,
-          collection_list=[collection])
+          post_process_selection='post_process_subscription',
+          collection_id_list=[collection.id])
     else:
         messages.warning(request, 'No new issues for subscribed series found.')
-        return return_url
+        return HttpResponseRedirect(return_url)
 
 
 @login_required
@@ -1094,9 +1095,8 @@ def mycomics_search(request):
     data = {'issue': True,
             'story': True,
             'allowed_selects': allowed_selects,
-            'return': add_selected_issues_to_collection,
-            'cancel': HttpResponseRedirect(urlresolvers
-                                           .reverse('collections_list'))}
+            'return': 'add_selected_issues_to_collection',
+            'cancel': urlresolvers.reverse('collections_list')}
     select_key = store_select_data(request, None, data)
     context = {'select_key': select_key,
                'multiple_selects': True,
@@ -1215,7 +1215,7 @@ def check_item_is_in_reading_order(request, item, reading_order):
 def add_single_issue_to_reading_order(request, issue_id):
     if not request.POST:
         raise ErrorWithMessage("No reading order was selected.")
-    if not 'reading_order_id' in request.POST:
+    if 'reading_order_id' not in request.POST:
         raise ErrorWithMessage("No reading order was selected.")
     issue = get_object_or_404(Issue, id=issue_id)
     reading_order, error_return = get_reading_order_for_owner(
