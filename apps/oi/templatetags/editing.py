@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -160,13 +160,13 @@ def header_link(changeset):
 
 def check_for_modified(changeset, clearing_weeks):
     # at least another week to go
-    if datetime.today() - changeset.created < \
+    if datetime.now(timezone.utc) - changeset.created < \
        timedelta(weeks=clearing_weeks-1):
         changeset.expires = changeset.created + \
           timedelta(weeks=clearing_weeks)
         return False
     # at max three weeks extensions
-    if datetime.today() - changeset.created > \
+    if datetime.now(timezone.utc) - changeset.created > \
        timedelta(weeks=clearing_weeks+2):
         changeset.expires = changeset.created + \
           timedelta(weeks=clearing_weeks+3)
@@ -192,8 +192,8 @@ def is_overdue(changeset):
                                  CTYPES['series']]:
         changeset.expires = changeset.created + \
           timedelta(days=settings.RESERVE_NON_ISSUE_DAYS)
-        if datetime.today() - changeset.created > \
-                timedelta(days=settings.RESERVE_NON_ISSUE_DAYS/2):
+        if datetime.now(timezone.utc) - changeset.created > \
+            timedelta(days=settings.RESERVE_NON_ISSUE_DAYS/2):
             return mark_safe("class='text-red-700'")
     # TODO these likely should be treated as above
     elif changeset.change_type not in [CTYPES['issue'],
@@ -201,7 +201,7 @@ def is_overdue(changeset):
                                        CTYPES['variant_add']]:
         changeset.expires = changeset.created + \
           timedelta(weeks=settings.RESERVE_ISSUE_WEEKS)
-        if datetime.today() - changeset.created > \
+        if datetime.now(timezone.utc) - changeset.created > \
                 timedelta(weeks=settings.RESERVE_ISSUE_WEEKS-1):
             return mark_safe("class='text-red-700'")
     elif changeset.issuerevisions.earliest('created').issue and \
