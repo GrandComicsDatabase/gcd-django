@@ -51,7 +51,8 @@ from apps.gcd.models.gcddata import GcdData, GcdLink
 
 from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.story import show_feature, show_feature_as_text, \
-                                  show_characters, show_title
+                                  show_characters, show_title, \
+                                  _get_civilian_identity
 from apps.gcd.models.image import CropToFace
 from apps.indexer.views import ErrorWithMessage
 
@@ -5405,8 +5406,10 @@ class StoryCharacterRevision(Revision):
         return None
 
     def __str__(self):
-        return "%s: %s" % (self.story_revision, self.character)
-
+        if hasattr(self, 'character'):
+            return "%s: %s" % (self.story_revision, self.character)
+        else:
+            return "%s: None" % (self.story_revision,)
     ######################################
     # TODO old methods, t.b.c
 
@@ -6084,10 +6087,43 @@ class StoryRevision(Revision):
           request.POST or None,
           instance=self,
           queryset=self.story_credit_revisions.filter(deleted=False))
+
+        story_characters = self.story_character_revisions.filter(deleted=False)
+        character_list = []
+        for character in story_characters:
+            alias_identity = set(
+              character.character.character.from_related_character
+                       .filter(relation_type__id=2)
+                       .values_list('from_character', flat=True))\
+                       .intersection(story_characters.filter(
+                          universe=character.universe).values_list(
+                          'character__character', flat=True))
+            if alias_identity:
+                continue
+            civilian_identity = _get_civilian_identity(character,
+                                                       story_characters)
+            if civilian_identity:
+                civilian_identity = story_characters.filter(
+                  universe=character.universe,
+                  character__character__id__in=civilian_identity)
+            character_list.append([character, civilian_identity])
+        order = 0
+        # Create a dict to store order by character id
+        order_map = {}
+        for character in character_list:
+            order_map[character[0].id] = order
+            order += 1
+            if character[1]:
+                for ci in character[1]:
+                    order_map[ci.id] = order
+                    order += 1
+        story_characters.order_map = order_map
+
         characters_formset = StoryCharacterRevisionFormSet(
           request.POST or None,
           instance=self,
-          queryset=self.story_character_revisions.filter(deleted=False))
+          queryset=story_characters)
+
         groups_formset = StoryGroupRevisionFormSet(
           request.POST or None,
           instance=self,
