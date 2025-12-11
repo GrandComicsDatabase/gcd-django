@@ -262,9 +262,9 @@ class PaginatedFacetedSearchView(FacetedSearchView):
             self.filter_form['type'].label = 'Sequence'
             self.filter_form['dates'].label = 'Year'
             filter_fields.append('dates')
-        for field in filter_fields:
-            if field in request.GET:
-                self.selected.append(self.filter_form[field].label)
+            for field in filter_fields:
+                if field in request.GET:
+                    self.selected.append(self.filter_form[field].label)
 
         get_copy = request.GET.copy()
         get_copy.pop('page', None)
