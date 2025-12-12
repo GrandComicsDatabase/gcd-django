@@ -710,7 +710,7 @@ def _clean_keywords(cleaned_data):
             if len(keyword) >= 100:
                 raise forms.ValidationError(
                     'A keyword cannot be longer than 100 characters.')
-            if keyword.strip() == '':
+            if keyword and keyword.strip() == '':
                 raise forms.ValidationError(
                   'An extra ";" needs to removed.')
     return keywords
