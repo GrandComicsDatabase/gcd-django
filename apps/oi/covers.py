@@ -68,7 +68,8 @@ def get_preview_generic_image_tag(revision, alt_text):
 def get_preview_image_tag(revision, alt_text, zoom_level, request=None):
     if revision is None:
         return mark_safe('<img class="no_cover" src="' + settings.STATIC_URL +
-                         'img/nocover.gif" alt="No image yet" class="cover_img"/>')
+                         'img/nocover.gif" alt="No image yet"'
+                         ' class="cover_img"/>')
 
     img_class = 'cover_img'
     if zoom_level == ZOOM_SMALL:
@@ -353,6 +354,8 @@ def process_edited_gatefold_cover(request):
     if cd['cover_id']:
         cover = get_object_or_404(Cover, id=cd['cover_id'])
         issue = cover.issue
+        # TODO combine with code in handle_uploaded_cover
+        #
         # check if there is a pending change for the cover
         revision_lock = _get_revision_lock(cover)
         if not revision_lock:
@@ -368,13 +371,20 @@ def process_edited_gatefold_cover(request):
                                  cover=cover, file_source=cd['source'],
                                  marked=cd['marked'],
                                  is_replacement=True)
+        revision.previous_revision = cover.revisions.get(
+                                           next_revision=None,
+                                           changeset__state=states.APPROVED,
+                                           committed=True)
+
     # no cover_id, therefore upload a cover to an issue (first or variant)
     else:
         changeset.save()
         issue = get_object_or_404(Issue, id=cd['issue_id'])
         cover = None
-        revision = CoverRevision(changeset=changeset, issue=issue,
-            file_source=cd['source'], marked=cd['marked'])
+        revision = CoverRevision(changeset=changeset,
+                                 issue=issue,
+                                 file_source=cd['source'],
+                                 marked=cd['marked'])
     revision.save()
 
     scan_name = str(revision.id) + os.path.splitext(tmp_name)[1]
@@ -556,7 +566,7 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
     # <revision_id>_<date>_<time>.<ext>
     scan_name = str(revision.id) + os.path.splitext(scan.name)[1]
     upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
-                   changeset.created.strftime('%B_%Y').lower()
+                 changeset.created.strftime('%B_%Y').lower()
     destination_name = os.path.join(upload_dir, scan_name)
     try:  # essentially only needed at beginning of the month
         check_cover_dir(upload_dir)
@@ -606,7 +616,7 @@ def handle_uploaded_cover(request, cover, issue, variant=False,
         info_text = 'Error: File \"' + scan.name + \
                     '" is not a valid picture.'
         return _display_cover_upload_form(request, form, cover, issue,
-            info_text=info_text, variant=variant)
+                                          info_text=info_text, variant=variant)
 
     # all done, we can save the state
     return finish_cover_revision(request, revision, form.cleaned_data)
@@ -621,7 +631,7 @@ def finish_cover_revision(request, revision, cd):
     revision.changeset.submit(cd['comments'])
 
     return HttpResponseRedirect(urlresolvers.reverse('upload_cover_complete',
-        kwargs={'revision_id': revision.id}))
+                                kwargs={'revision_id': revision.id}))
 
 
 @login_required
@@ -801,7 +811,8 @@ def _display_cover_upload_form(request, form, cover, issue, info_text='',
     for active_cover in active_covers:
         active_covers_tags.append([active_cover,
                                    get_preview_image_tag(active_cover,
-                                     "pending cover", ZOOM_MEDIUM)])
+                                                         "pending cover",
+                                                         ZOOM_MEDIUM)])
     kwargs['form'] = form
     kwargs['info'] = info_text
     kwargs['cover'] = cover
