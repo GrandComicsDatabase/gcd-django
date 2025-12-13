@@ -4892,6 +4892,7 @@ class IssueRevision(Revision):
             'no_indicia_frequency': False,
             'indicia_printer': None,
             'indicia_printer_not_printed': False,
+            'indicia_printer_sourced_by': '',
             'series': None,
             'indicia_publisher': None,
             'indicia_pub_not_printed': False,
