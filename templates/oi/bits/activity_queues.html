@@ -1,6 +1,7 @@
 {% load static %}
 {% load display %}
 {% load humanize %}
+{% load l10n %}
 
 <table class="border border-gray-200">
   <tr class="bg-blue-100 [&>th]:px-1.5">
@@ -17,6 +18,7 @@
     {% else %}
     <th> Last Comment </th>
     {% endif %}
+    <th></th>
   </tr>
 
 {% for changeset in items %}
@@ -49,11 +51,15 @@
     {% if not no_approver %}
     <td>{{ changeset.approver.indexer|absolute_url }}</td>
     {% endif %}
+    {% localize off %}
     {% if no_approver or no_indexer %}
     <td>{{ changeset.modified|naturaltime }}</td>
+    <td>{{ changeset.modified }}</td>
     {% else %}
     <td>{{ changeset.last_remark|naturaltime }}</td>
+    <td>{{ changeset.last_remark }}</td>
     {% endif %}
+    {% endlocalize %}
 </tr>
 {% endfor %}
 </table>

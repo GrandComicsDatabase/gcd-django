@@ -515,8 +515,22 @@ class StoryCharacterRevisionForm(forms.ModelForm):
               ['Cannot select a group universe without a group.'])
 
 
+class BaseStoryCharacterRevisionFormSet(forms.models.BaseInlineFormSet):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        queryset = kwargs.get('queryset')
+        if queryset:
+            order_map = queryset.order_map
+            for form in self.forms:
+                form.order = order_map.get(form.instance.id, 99999)
+            if self.queryset:
+                self.forms.sort(key=lambda form: form.order)
+
+
 StoryCharacterRevisionFormSet = inlineformset_factory(
-    StoryRevision, StoryCharacterRevision, form=StoryCharacterRevisionForm,
+    StoryRevision, StoryCharacterRevision,
+    form=StoryCharacterRevisionForm,
+    formset=BaseStoryCharacterRevisionFormSet,
     can_delete=True, extra=1)
 
 
