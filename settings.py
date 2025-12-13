@@ -252,6 +252,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # 3rd-party app settings
 #################################################################################
 
+TAGGIT_STRIP_UNICODE_WHEN_SLUGIFYING = True
+
 # COMPRESS_FILTERS = {'css': ['compressor.filters.css_default.CssAbsoluteFilter',
 #                             'compressor.filters.cssmin.rCSSMinFilter'],
 #                     'js': ['compressor.filters.jsmin.rJSMinFilter']}

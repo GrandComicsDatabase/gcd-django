@@ -38,6 +38,7 @@ python-graph-core<1.9
 requests<2.33
 simplejson<3.21
 tablib<3.10
+unidecode
 # is used by python-graph-core, which has a successor python-graph, which just was released, check
 setuptools
 
