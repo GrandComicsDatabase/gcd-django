@@ -3798,7 +3798,8 @@ def get_issue_field_list():
             'month_on_sale', 'day_on_sale', 'on_sale_date_uncertain',
             'key_date', 'indicia_frequency', 'no_indicia_frequency', 'price',
             'page_count', 'page_count_uncertain', 'editing', 'no_editing',
-            'indicia_printer', 'no_indicia_printer',
+            'indicia_printer', 'indicia_printer_not_printed',
+            'indicia_printer_sourced_by',
             'isbn', 'no_isbn', 'barcode', 'no_barcode', 'rating', 'no_rating',
             'notes', 'keywords']
 
@@ -4055,7 +4056,8 @@ class IssueRevision(Revision):
     no_brand = models.BooleanField(default=False)
     indicia_printer = models.ManyToManyField(IndiciaPrinter, blank=True,
                                              related_name='issue_revisions')
-    no_indicia_printer = models.BooleanField(default=False)
+    indicia_printer_not_printed = models.BooleanField(default=False)
+    indicia_printer_sourced_by = models.CharField(max_length=255, blank=True)
 
     isbn = models.CharField(max_length=32, blank=True, default='')
     no_isbn = models.BooleanField(default=False)
@@ -4163,7 +4165,7 @@ class IssueRevision(Revision):
             'indicia_frequency': has_ind_freq,
             'no_indicia_frequency': has_ind_freq,
             'indicia_printer': has_ind_print,
-            'no_indicia_printer': has_ind_print,
+            'indicia_printer_not_printed': has_ind_print,
         }
 
     @classmethod
@@ -4844,7 +4846,7 @@ class IssueRevision(Revision):
         if not self.series.has_indicia_printer and \
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('indicia_printer')
-            fields.remove('no_indicia_printer')
+            fields.remove('indicia_printer_not_printed')
         if not self.series.has_isbn and \
            self.changeset.change_type != CTYPES['issue_bulk']:
             fields.remove('isbn')
@@ -4888,7 +4890,7 @@ class IssueRevision(Revision):
             'indicia_frequency': '',
             'no_indicia_frequency': False,
             'indicia_printer': None,
-            'no_indicia_printer': False,
+            'indicia_printer_not_printed': False,
             'series': None,
             'indicia_publisher': None,
             'indicia_pub_not_printed': False,
@@ -4948,7 +4950,7 @@ class IssueRevision(Revision):
             self._seen_indicia_frequency = True
             return 1
         if not self._seen_indicia_printer and \
-           field_name in ('indicia_printer', 'no_indicia_printer'):
+           field_name in ('indicia_printer', 'indicia_printer_not_printed'):
             self._seen_indicia_printer = True
             return 1
         if not self._seen_brand_emblem and field_name in ('brand_emblem',

@@ -180,7 +180,9 @@ class Issue(GcdData):
                               related_name='issues_deprecated')
     no_brand = models.BooleanField(default=False, db_index=True)
     indicia_printer = models.ManyToManyField(IndiciaPrinter)
-    no_indicia_printer = models.BooleanField(default=False)
+    indicia_printer_not_printed = models.BooleanField(default=False)
+    indicia_printer_sourced_by = models.CharField(max_length=255)
+
     image_resources = GenericRelation(Image)
 
     awards = GenericRelation(ReceivedAward)
@@ -345,6 +347,9 @@ class Issue(GcdData):
                 printers += '; '
             printers += '<a href="%s">%s</a>' % (printer.get_absolute_url(),
                                                  esc(printer.name))
+        if self.indicia_printer_not_printed:
+            printers += ' [not printed on item]'
+
         return mark_safe(printers)
 
     def has_keywords(self):

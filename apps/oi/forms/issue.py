@@ -71,10 +71,17 @@ def _common_clean(cd, data):
             'You cannot specify an indicia frequency and check '
             '"no indicia frequency" at the same time.')
 
-    if cd['no_indicia_printer'] and cd['indicia_printer']:
+    if cd['indicia_printer_not_printed'] and cd['indicia_printer'] and not \
+       cd['indicia_printer_sourced_by']:
         raise forms.ValidationError(
-            'You cannot specify an indicia printer and check '
-            '"no indicia printer" at the same time.')
+            'When you specify that the indicia printer data is not printed, '
+            'you need to enter a source for the information.')
+
+    if cd['indicia_printer_not_printed'] and not cd['indicia_printer'] and \
+       cd['indicia_printer_sourced_by']:
+        raise forms.ValidationError(
+            'You cannot specify that no indicia printer data is present '
+            'and give a source for the indicia printer at the same time.')
 
     if cd['no_rating'] and cd['rating']:
         raise forms.ValidationError(
@@ -199,8 +206,10 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             turned_off_list += 'indicia_frequency, '
 
         if not series.has_indicia_printer:
-            no_indicia_printer = forms.BooleanField(widget=forms.HiddenInput,
-                                                    required=False)
+            indicia_printer_not_printed = forms.BooleanField(
+              widget=forms.HiddenInput, required=False)
+            indicia_printer_sourced_by = forms.CharField(widget=HiddenInput,
+                                                         required=False)
             indicia_printer = forms.ModelMultipleChoiceField(
               widget=forms.MultipleHiddenInput,
               queryset=IndiciaPrinter.objects.all(),
@@ -567,6 +576,8 @@ class IssueRevisionForm(KeywordBaseForm):
             'key_date': forms.TextInput(attrs={'class': 'key_date'}),
             'indicia_frequency': forms.TextInput(attrs={'class':
                                                         'w-full lg:w-4/5'}),
+            'indicia_printer_sourced_by': forms.TextInput(attrs={'class':
+                                                          'w-full lg:w-4/5'}),
             'price': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'editing': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'isbn': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
@@ -707,7 +718,7 @@ def get_bulk_issue_revision_form(series, method, user=None):
             if not series.has_indicia_printer:
                 indicia_printer = forms.CharField(
                     widget=forms.HiddenInput, required=False)
-                no_indicia_printer = forms.BooleanField(
+                indicia_printer_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
         publisher_id = forms.CharField(widget=forms.HiddenInput,
                                        initial=series.publisher.id)
@@ -793,7 +804,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 'indicia_frequency', 'no_indicia_frequency',
                 'price', 'page_count', 'page_count_uncertain',
                 'editing', 'no_editing',
-                'indicia_printer', 'no_indicia_printer',
+                'indicia_printer', 'indicia_printer_not_printed',
                 'no_isbn', 'no_barcode',
                 'rating', 'no_rating', 'comments',
                 'publisher_id', 'year_began']

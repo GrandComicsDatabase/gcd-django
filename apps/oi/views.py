@@ -1719,8 +1719,9 @@ def edit_issues_in_bulk(request):
     if not series.has_indicia_printer or \
        any(series.has_indicia_printer != s.has_indicia_printer
            for s in series_list):
-        remove_fields.append('no_indicia_printer')
+        remove_fields.append('indicia_printer_not_printed')
         remove_fields.append('indicia_printer')
+        remove_fields.append('indicia_printer_sourced_by')
     if not series.has_isbn or \
        any(series.has_isbn != s.has_isbn for s in series_list):
         remove_fields.append('no_isbn')
@@ -1791,6 +1792,10 @@ def edit_issues_in_bulk(request):
                     remove_fields.append('indicia_pub_not_printed')
                 elif i == 'indicia_pub_not_printed':
                     remove_fields.append('indicia_publisher')
+                elif i == 'indicia_printer':
+                    remove_fields.append('indicia_printer_not_printed')
+                elif i == 'indicia_printer_not_printed':
+                    remove_fields.append('indicia_printer')
                 elif i == 'page_count':
                     remove_fields.append('page_count_uncertain')
                 elif i == 'page_count_uncertain':
