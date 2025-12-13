@@ -5,7 +5,6 @@
 {% load credits %}
 {% load display %}
 {% load editing %}
-{% load django_tables2 %}
 
 {% block head %}
   {{ block.super }}
@@ -46,14 +45,14 @@
     </div>
 
     <div class="max-sm:pt-1 max-sm:pe-1 sm:flex justify-end items-center">
-      <a href="{% querystring 'display'='list' %}"
+      <a href="{% querystring display='list' %}"
         class="sm:pe-1
         {% if not request.GET.display or 'list' == request.GET.display %}pointer-events-none{% endif %}
         "><svg class="
         {% if not request.GET.display or 'list' == request.GET.display %}fill-slate-400{% endif %}
         border border-gray-400 px-1 py-1 h-9" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><g><path d="m 9 3 h 6 v 2 h -6 z m 0 0"/><path d="m 9 7 h 6 v 2 h -6 z m 0 0"/><path d="m 9 11 h 6 v 2 h -6 z m 0 0"/><path d="m 1 3 h 6 v 2 h -6 z m 0 0"/><path d="m 1 7 h 6 v 2 h -6 z m 0 0"/><path d="m 1 11 h 6 v 2 h -6 z m 0 0"/></g></svg>
       </a>
-      <a href="{% querystring 'display'='grid' %}"
+      <a href="{% querystring display='grid' %}"
         class="sm:pe-1
         {% if 'grid' == request.GET.display %}pointer-events-none{% endif %}
         ">
@@ -333,7 +332,7 @@ Related Links
 {% for story in stories %}
     <li class="hover:bg-stone-300 odd:bg-stone-200">
       <span>
-        <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}{% querystring 'issue_detail'='2' %}{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
+        <a name="toc_{{ story.id }}" href="{% if story.type in request.user.indexer.no_show_sequences.all %}{% querystring issue_detail='2' %}{% endif %}#{{ story.id }}">{{ story|show_title:1 }}</a></span><br/>
       <span>{{ story.show_feature}}</span>
     </li>
 {% endfor %}
