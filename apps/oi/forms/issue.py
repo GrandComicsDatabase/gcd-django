@@ -794,6 +794,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
             'key_date': forms.TextInput(attrs={'class': 'key_date'}),
             'price': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'rating': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
+            'indicia_printer_sourced_by': forms.TextInput(attrs={'class':
+                                                          'w-full lg:w-4/5'}),
         }
         labels = ISSUE_LABELS
         help_texts = ISSUE_HELP_TEXTS
@@ -805,6 +807,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 'price', 'page_count', 'page_count_uncertain',
                 'editing', 'no_editing',
                 'indicia_printer', 'indicia_printer_not_printed',
+                'indicia_printer_sourced_by',
                 'no_isbn', 'no_barcode',
                 'rating', 'no_rating', 'comments',
                 'publisher_id', 'year_began']
