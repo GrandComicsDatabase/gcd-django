@@ -35,6 +35,8 @@ accessed by a user called `gcdonline` with no password. If you set your
 database up differently, look for settings that start with `DATABASE`. Override
 them appropriately.
 
+A good starting point for a `settings_local.py` can be found in our [docker setup](https://github.com/GrandComicsDatabase/gcd-django-docker).
+
 ## 2. Creating your test database
 
 Create your database and set up whatever permissions you want.  Django
