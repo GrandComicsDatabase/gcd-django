@@ -87,13 +87,14 @@ def index(request):
                                 '-birth_date__day',
                                 'sort_name').select_related('birth_date')
     creators_count = len(creators)
-    creator_last = creators[9]
     end_listed = 10
-    for i in range(end_listed, creators_count):
-        if creators[i].birth_date.month != creator_last.birth_date.month or \
-           creators[i].birth_date.day != creator_last.birth_date.day:
-            end_listed = i
-            break
+    if creators_count > 9:
+        creator_last = creators[9]
+        for i in range(end_listed, creators_count):
+            if creators[i].birth_date.month != creator_last.birth_date.month or \
+            creators[i].birth_date.day != creator_last.birth_date.day:
+                end_listed = i
+                break
 
     template_vars.update({
         'stats': stats,
