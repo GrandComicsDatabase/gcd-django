@@ -43,7 +43,7 @@ def migrate_prev_rev(apps, schema_editor):
         m = apps.get_model("oi", model)
         # iterator avoids larger memory use, TODO check for need & speed
         for r in m.objects.order_by('created', 'id') \
-                          .prefetch_related('changeset').iterator():
+                          .prefetch_related('changeset').iterator(chunk_size=10000):
             # Two models already have previous_revision set.
             if (model not in ('SeriesBondRevision', 'ReprintRevision') and
                     r.changeset.state != states.DISCARDED):
