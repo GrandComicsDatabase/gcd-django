@@ -33,24 +33,34 @@ form.  They only need to be in the correct order.
       method="POST"
       action="{% url "reorder_stories" issue_id=issue.source.id changeset_id=changeset.id %}">
 {% csrf_token %}
-<table >
-  <tr class="bg-blue-100">
-    <th class="sequence_number_col"> Sequence Number </th>
-    <th> Story </th>
-  </tr>
+<table id="reorder_stories">
+  <thead>
+    <tr class="bg-blue-100">
+      <th class="sequence_number_col"> Sequence Number </th>
+      <th> Story </th>
+    </tr>
+  </thead>
+  <tbody>
 {% for story in issue.active_stories.all %}
-  <tr class="[&>td]:pe-1">
-    <td class="text-right"> <input type="text" class="w-16"
-                id="sequence_number_{{ story.id }}"
-                name="sequence_number_{{ story.id }}"
-                class="sequence_number"
-                value="{{ story.sequence_number }}">
-    </td>
-    <td> {{ story|show_story_short:1 }} </td>
-  </tr>
+    <tr class="[&>td]:pe-1 hover:bg-blue-50 cursor-move">
+      <td class="text-right"> <input type="text" class="w-16 sequence_number"
+                  id="sequence_number_{{ story.id }}"
+                  name="sequence_number_{{ story.id }}"
+                  value="{{ story.sequence_number }}">
+      </td>
+      <td> {{ story|show_story_short:1 }} </td>
+    </tr>
 {% endfor %}
+  </tbody>
 </table>
 <button class="btn-blue-editing inline"><input type="submit" name="commit" value="Reorder"></button>
 <button class="btn-blue-editing inline"><input type="submit" name="cancel" value="Cancel"></button>
 </form>
+
+<script type='text/javascript' src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script type='text/javascript' src='{% static "js/oi/ordering.js" %}'></script>
+<script>
+const tbody = document.querySelector('#reorder_stories tbody');
+initializeSortableReorder(tbody, 'sequence_number');
+</script>
 {% endblock %}

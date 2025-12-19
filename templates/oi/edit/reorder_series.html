@@ -56,35 +56,46 @@ numbers with no punctuation.  So an issue "-1" is OK (but will sort between
 
 <form method="POST" action="{% url "reorder_series" series_id=series.id %}">
 {% csrf_token %}
-<table>
-  <tr class="bg-blue-100">
-    <th> Sort Code </th>
-    <th> Issue </th>
-    <th> Publication Date </th>
-    <th> Key Date </th>
-  </tr>
+<table id="reorder_issues">
+  <thead>
+    <tr class="bg-blue-100">
+      <th> Sort Code </th>
+      <th> Issue </th>
+      <th> Publication Date </th>
+      <th> Key Date </th>
+    </tr>
+  </thead>
+  <tbody>
 {% for issue, new_sort_code in issue_list %}
-  <tr class="[&>td]:pe-1">
-    <td> <input type="text" class="w-24"
-                id="sort_code_{{ issue.id }}"
-                name="sort_code_{{ issue.id }}"
+    <tr class="[&>td]:pe-1 hover:bg-blue-50 cursor-move">
+      <td> <input type="text" class="w-24 sort_code"
+                  id="sort_code_{{ issue.id }}"
+                  name="sort_code_{{ issue.id }}"
   {% if new_sort_code %}
-                value="{{ new_sort_code }}"
+                  value="{{ new_sort_code }}"
   {% else %}
     {% if new_sort_code == 0 %}
-                value="{{ new_sort_code }}"
+                  value="{{ new_sort_code }}"
     {% else %}
-                value="{{ issue.sort_code }}"
+                  value="{{ issue.sort_code }}"
     {% endif %}
   {% endif %}
-         > </td>
-    <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a> </td>
-    <td> {{ issue.publication_date }} </td>
-    <td> {{ issue.key_date }} </td>
-  </tr>
+          > </td>
+      <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a> </td>
+      <td> {{ issue.publication_date }} </td>
+      <td> {{ issue.key_date }} </td>
+    </tr>
 {% endfor %}
+  </tbody>
 </table>
 <button><input class="btn-blue-editing" type="submit" name="preview" value="Preview Custom Reordering"></button>
 <button><input class="btn-blue-editing" type="submit" name="commit" value="Commit To Database"></button>
 </form>
+
+<script type='text/javascript' src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script type='text/javascript' src='{% static "js/oi/ordering.js" %}'></script>
+<script>
+const tbody = document.querySelector('#reorder_issues tbody');
+initializeSortableReorder(tbody, 'sort_code');
+</script>
 {% endblock %}
