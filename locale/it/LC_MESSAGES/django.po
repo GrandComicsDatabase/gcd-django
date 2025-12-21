@@ -1,5 +1,7 @@
+# Italian translations for the GCD website.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
+# Simone Nardi <prof.simone.nardi@gmail.it>, 2025
 #
 #, fuzzy
 msgid ""
@@ -14,120 +16,140 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+#: apps/gcd/templatetags/credits.py:72
+msgid "Job Number:"
+msgstr ""
+
+#: apps/gcd/templatetags/credits.py:77
+msgid "Reprinted:"
+msgstr ""
+
+#: apps/gcd/templatetags/credits.py:192
+#, fuzzy
+msgid "page"
+msgid_plural "pages"
+msgstr[0] "pagina"
+msgstr[1] "pagine"
+
+#: apps/gcd/templatetags/migration/reprints.py:547
+#: apps/gcd/templatetags/migration/reprints.py:665
+msgid "Reprints"
+msgstr ""
+
 #: templates/gcd/index.html:61 templates/gcd/bits/front_page_login.html:18
 msgid "Login"
-msgstr ""
+msgstr "Accedi"
 
 #: templates/gcd/index.html:69
 msgid "Disclaimer"
-msgstr ""
+msgstr "Avviso"
 
 #: templates/gcd/index.html:73
 msgid ""
 "The Grand Comics Database Project (GCD) is a volunteer project with the goal "
 "of documenting and indexing all comics for the free use of scholars, "
 "historians, researchers, and fans."
-msgstr ""
+msgstr "Il Grand Comics Database (GCD) è un progetto volunteer-based di catalogazione e indicizzazione dei fumetti, destinato all’uso libero da parte di studiosi, storici, ricercatori e appassionati."
 
 #: templates/gcd/index.html:76
 msgid ""
 "The GCD acknowledges that the all-encompassing research nature of the "
 "project may result in the posting of cover scans for comics with images that "
 "some may find objectionable."
-msgstr ""
+msgstr "Il GCD riconosce che la natura di ricerca onnicomprensiva del progetto può comportare la pubblicazione di scansioni di copertine di fumetti contenenti immagini che alcuni potrebbero ritenere discutibili o offensive."
 
 #: templates/gcd/index.html:79
 msgid "Viewer discretion is advised."
-msgstr ""
+msgstr "Si consiglia la visione a un pubblico adulto e consapevole."
 
 #: templates/gcd/index.html:82
 msgid "The Grand Comics Database Team"
-msgstr ""
+msgstr "Il Team del Grand Comics Database"
 
 #: templates/gcd/index.html:103
 msgid "Useful Links"
-msgstr ""
+msgstr "Link utili"
 
 #: templates/gcd/index.html:107
 msgid "Today's covers"
-msgstr ""
+msgstr "Copertine di oggi"
 
 #: templates/gcd/index.html:111
 msgid "Today's changes"
-msgstr ""
+msgstr "Modifiche di oggi"
 
 #: templates/gcd/index.html:112
 msgid "Covers to replace"
-msgstr ""
+msgstr "Copertine da sostituire"
 
 #: templates/gcd/index.html:113
 msgid "International statistics"
-msgstr ""
+msgstr "Statistiche internazionali"
 
 #: templates/gcd/index.html:117
 msgid "Last Updated Language Issues"
-msgstr ""
+msgstr "Aggiornamenti più recenti per lingua"
 
 #: templates/gcd/index.html:125
 msgid "Statistics for Language Comics"
-msgstr ""
+msgstr "Statistiche per lingua"
 
 #: templates/gcd/index.html:136
 msgid "Last Updated Issues"
-msgstr ""
+msgstr "Aggiornamenti più recenti"
 
 #: templates/gcd/index.html:144
 msgid "Statistics"
-msgstr ""
+msgstr "Statistiche"
 
 #: templates/gcd/bits/front_page_login.html:5
 msgid "You are logged in as "
-msgstr ""
+msgstr "Sei autenticato come"
 
 #: templates/gcd/bits/front_page_login.html:6
 msgid "Editing"
-msgstr ""
+msgstr "Modifica"
 
 #: templates/gcd/bits/front_page_login.html:6
 msgid "Profile"
-msgstr ""
+msgstr "Profilo"
 
 #: templates/gcd/bits/front_page_login.html:9
 msgid "Logout"
-msgstr ""
+msgstr "Esci"
 
 #: templates/gcd/bits/front_page_login.html:14
 msgid "username"
-msgstr ""
+msgstr "nome utente"
 
 #: templates/gcd/bits/front_page_login.html:16
 msgid "password"
-msgstr ""
+msgstr "password"
 
 #: templates/gcd/bits/front_page_login.html:22
 msgid "Forgot password?"
-msgstr ""
+msgstr "Password dimenticata?"
 
 #: templates/gcd/bits/front_page_login.html:25
 msgid "Register"
-msgstr ""
+msgstr "Registrati"
 
 #: templates/gcd/bits/front_page_menu.html:15
 msgid "Contact Us"
-msgstr ""
+msgstr "Contattaci"
 
 #: templates/gcd/bits/front_page_search_box.html:5
 #: templates/gcd/bits/front_page_search_box.html:11
 msgid "Search"
-msgstr ""
+msgstr "Cerca"
 
 #: templates/gcd/bits/front_page_search_box.html:9
 msgid "Sort by"
-msgstr ""
+msgstr "Ordina per"
 
 #: templates/gcd/bits/front_page_search_box.html:12
 msgid "Advanced&nbsp;Query"
-msgstr ""
+msgstr "Ricerca&nbsp;avanzata"
 
 #: templates/gcd/bits/legalese.html:3
 #, python-format
@@ -138,15 +160,20 @@ msgid ""
 "product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
 "   target=\"_blank\">let us know</a> (opens new window).\n"
 msgstr ""
+"\n"
+"Se ritieni che uno qualsiasi di questi dati sia errato, ti invitiamo a\n"
+"<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"   target=\"_blank\">segnalarcelo</a> (si apre in una nuova finestra).\n"
+
 
 #: templates/gcd/bits/legalese.html:11
 msgid "Cover thumbnails are used for identification purposes only."
-msgstr ""
+msgstr "Le miniature delle copertine sono utilizzate esclusivamente a scopo identificativo."
 
 #: templates/gcd/bits/legalese.html:12
-msgid ""
-"All rights to cover images reserved by the respective copyright holders."
-msgstr ""
+msgid "All rights to cover images reserved by the respective copyright holders."
+msgstr "Tutti i diritti sulle immagini di copertina sono riservati ai rispettivi titolari del copyright."
 
 #: templates/gcd/bits/legalese.html:17
 #, python-format
@@ -159,46 +186,56 @@ msgid ""
 "is not necessarily limited to our database schema and data distribution "
 "format.\n"
 msgstr ""
+"\n"
+"Tutte le parti di <a href=\"http://www.comics.org/\" rel=\"cc:attributionURL"
+"\">%(site_name)s</a> soggette a copyright sono distribuite con licenza "
+"<a rel=\"license\" href=\"http://creativecommons.org/licenses/by/3.0/"
+"\">Creative Commons Attribution 3.0 Unported</a>. Ciò include, ma non è "
+"limitato a, lo schema del database e il formato di distribuzione dei dati.\n"
 
 #: templates/gcd/bits/legalese.html:22
 msgid ""
 "The GCD Web Site code is licensed under the <a href=\"http://www.gnu.org/"
 "licenses/gpl.html\">GNU General Public License</a>"
 msgstr ""
-""
+"The GCD Web Site code is licensed under the <a href=\"http://www.gnu.org/"
+"licenses/gpl.html\">GNU General Public License</a>"
+msgstr ""
+"Il codice del sito web GCD è distribuito sotto licenza <a href=\"http://www.gnu.org/"
+"licenses/gpl.html\">GNU General Public License</a>"
 
 msgid "publishers"
-msgstr ""
+msgstr "editori"
 
 msgid "creators"
-msgstr ""
+msgstr "autori"
 
 msgid "brands"
-msgstr ""
+msgstr "marchi"
 
 msgid "indicia publishers"
-msgstr ""
+msgstr "editori dell’indicia"
 
 msgid "series"
-msgstr ""
+msgstr "serie"
 
 msgid "issues"
-msgstr ""
+msgstr "albi"
 
 msgid "issue indexes"
-msgstr ""
+msgstr "indici degli albi"
 
 msgid "covers"
-msgstr ""
+msgstr "copertine"
 
 msgid "stories"
-msgstr ""
+msgstr "storie"
 
 #: templates/gcd/index.html:136
 msgid "On-sale this week"
-msgstr ""
+msgstr "In vendita questa settimana"
 
 #: templates/gcd/index.html:137
 msgid "On-sale this month"
-msgstr ""
+msgstr "In vendita questo mese"
 
