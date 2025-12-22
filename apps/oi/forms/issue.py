@@ -28,10 +28,9 @@ from apps.gcd.models import Issue, Brand, IndiciaPublisher, CreditType, \
 
 
 def _common_clean(cd, data):
-    if cd['volume'] != "" and cd['no_volume']:
+    if 'volume' in cd and cd['volume'] != "" and cd['no_volume']:
         raise forms.ValidationError(
-            'You cannot specify a volume and check "no volume" at '
-            'the same time')
+          'You cannot specify a volume and check "no volume" at the same time')
 
     if cd['no_editing']:
         if 'issue_credit_revisions-TOTAL_FORMS' in data:
@@ -808,7 +807,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
         cd['price'] = cd['price'].strip()
         cd['editing'] = cd['editing'].strip()
         cd['comments'] = cd['comments'].strip()
-        cd['volume'] = cd['volume'].strip()
+        if 'volume' in cd:
+            cd['volume'] = cd['volume'].strip()
         cd['rating'] = cd['rating'].strip()
 
         cd = _common_clean(cd, self.data)
