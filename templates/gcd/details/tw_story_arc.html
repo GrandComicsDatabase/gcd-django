@@ -176,7 +176,7 @@ GCD :: Story Arc :: {{ story_arc.name }}
 <form method="POST" action="{% url 'add_story_arc_to_reading_order' story_arc_id=story_arc.id %}">
     {% csrf_token %}
   <div>
-    <button class="w-full"><input class="m-0 mb-0.5 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="Add This Story Arc To Reading Order"></button>
+    <button class="w-full"><input class="m-0 mb-0.5 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="Add Story Arc To Reading List"></button>
     <select class="ms-1" name="reading_order_id">
     {% for ro_item in request.user.collector.reading_orders.all %}
       <option value="{{ ro_item.id }}" {% if request.session.reading_order_id == ro_item.id %}selected{% endif %}>{{ ro_item.name }}
