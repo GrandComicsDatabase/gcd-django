@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='issuerevision',
             name='indicia_printer_sourced_by',
-            field=models.CharField(default='', max_length=255),
+            field=models.CharField(blank=True, max_length=255),
             preserve_default=False,
         ),
     ]
