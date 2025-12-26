@@ -82,7 +82,8 @@ class AccountForm(forms.Form):
                  'key for some systems).'))
 
     no_show_sequences = forms.ModelMultipleChoiceField(
-      queryset=StoryType.objects.exclude(id__in=DEPRECATED_TYPES).order_by('name'),
+      queryset=StoryType.objects.exclude(id__in=DEPRECATED_TYPES)
+                        .order_by('name'),
       required=False,
       widget=forms.SelectMultiple(attrs={'size': '6'}),
       help_text=('Select sequence types that initially should not be shown in'
@@ -161,6 +162,22 @@ class AccountForm(forms.Form):
       initial=6, required=False, help_text='Number up to which '
       'reprints are shown unfolded on the issue page.')
 
+    items_per_page = forms.IntegerField(
+      initial=-1, required=False, help_text='Number of items '
+      'shown per page, where -1 means default.'
+      ' Currently only used on the my.comics.org pages. ')
+
+    def clean_items_per_page(self):
+        items_per_page = self.cleaned_data['items_per_page']
+        if items_per_page < -1 or items_per_page == 0:
+            raise forms.ValidationError(
+              ['Items per page must be -1 (for default) or a positive '
+               'integer.'])
+        if items_per_page > 500:
+            raise forms.ValidationError(
+              ['Items per page must not be greater than 500.'])
+        return items_per_page
+
     def clean(self):
         cd = self.cleaned_data
 
@@ -182,9 +199,9 @@ class AccountForm(forms.Form):
                 if date.today() > (user.indexer.registration_expires +
                                    timedelta(1)):
                     legacy_reservations = Reservation.objects.filter(
-                        indexer=user.indexer)
-                    index_credits = IndexCredit.objects.filter(indexer=
-                                                               user.indexer)
+                      indexer=user.indexer)
+                    index_credits = IndexCredit.objects.filter(
+                      indexer=user.indexer)
                     if legacy_reservations.count() == 0 and \
                        index_credits.count() == 0:
                         user.delete()

@@ -16,6 +16,7 @@
   <li> Size of data cache: {{ profile_user.indexer.cache_size }} </li>
   <li> Summary view of variants for more than: {{ profile_user.indexer.variant_threshold }} </li>
   <li> Summary view of reprints for more than: {{ profile_user.indexer.reprint_threshold }}</li>
+  <li> Items per page: {% if profile_user.indexer.items_per_page > 0 %}{{ profile_user.indexer.items_per_page }}{% else %}Default{% endif %}</li>
 {% endif %}
   <li> Country: <img class="inline" src="{{ STATIC_URL }}img/gcd/flags/{{ profile_user.indexer.country.code|lower }}.png" alt="{{ country }}" class="embedded_flag">
        {{ profile_user.indexer.country }} <br>

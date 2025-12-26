@@ -76,6 +76,7 @@ class Indexer(models.Model):
     show_wiki_links = models.BooleanField(db_index=True, default=True)
     use_tabs = models.BooleanField(db_index=True, default=True)
     cache_size = models.IntegerField(default=3)
+    items_per_page = models.IntegerField(default=-1)
 
     def can_reserve_another(self):
         from apps.oi.models import CTYPES

@@ -277,6 +277,7 @@ def register(request):
                       cache_size=3,
                       variant_threshold=cd['variant_threshold'],
                       reprint_threshold=cd['reprint_threshold'],
+                      items_per_page=cd['items_per_page'],
                       user=new_user)
     indexer.save()
 
@@ -547,6 +548,7 @@ def profile(request, user_id=None, edit=False):
               'cache_size': profile_user.indexer.cache_size,
               'variant_threshold': profile_user.indexer.variant_threshold,
               'reprint_threshold': profile_user.indexer.reprint_threshold,
+              'items_per_page': profile_user.indexer.items_per_page,
             })
             context['form'] = form
         else:
@@ -618,6 +620,7 @@ def update_profile(request, user_id=None):
     indexer.cache_size = form.cleaned_data['cache_size']
     indexer.variant_threshold = form.cleaned_data['variant_threshold']
     indexer.reprint_threshold = form.cleaned_data['reprint_threshold']
+    indexer.items_per_page = form.cleaned_data['items_per_page']
     indexer.save()
 
     return HttpResponseRedirect(

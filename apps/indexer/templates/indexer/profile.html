@@ -16,7 +16,7 @@
 {% endif %}
 
 <h1>{{ profile_user.indexer }}</h1>
-{% if user != profile_user %}
+{% if user != profile_user and not form %}
 <h3><a href="{% url "django_contact_form" user_id=profile_user.id %}"><img class="inline" alt="email" src="{% static 'img/gcd/social/email_32.png' %}" height="22" width="22"> Send E-Mail</a></h3>
 {% endif %}
 {% if user == profile_user.indexer.mentor and profile_user.indexer.is_new %}
@@ -67,6 +67,7 @@
       {{ form.cache_size|show_form_as_row }}
       {{ form.variant_threshold|show_form_as_row }}
       {{ form.reprint_threshold|show_form_as_row }}
+      {{ form.items_per_page|show_form_as_row }}
     </table>
   </fieldset>
   <fieldset class="border-2 border-gray-400 p-1 mb-2">
