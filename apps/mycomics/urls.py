@@ -3,6 +3,7 @@ from django.urls import path, re_path
 from django.conf import settings
 from apps.indexer import views as account_views
 from apps.mycomics import views as mycomics_views
+from django.views.generic import base as bv
 
 if settings.MYCOMICS:
 
@@ -66,29 +67,36 @@ if settings.MYCOMICS:
         re_path(r'^subscription/unsubscribe/(?:(?P<subscription_id>\d+)?)$',
         mycomics_views.unsubscribe_series, name='unsubscribe'),
 
-        path('reading_order/list/',
+        path('reading_list/list/',
             mycomics_views.reading_orders_list,
             name='reading_orders_list'),
-        path('reading_order/add/',
+        path('reading_list/add/',
             mycomics_views.edit_reading_order,
             name='add_reading_order'),
-        re_path(r'^reading_order/delete/(?:(?P<reading_order_id>\d+)?)$',
+        re_path(r'^reading_list/delete/(?:(?P<reading_order_id>\d+)?)$',
             mycomics_views.delete_reading_order,
             name='delete_reading_order'),
-        path('reading_order/edit/<int:reading_order_id>/',
-            mycomics_views.edit_reading_order,
-            name='edit_reading_order'),
-        re_path(r'^reading_order/(?P<reading_order_id>\d+)/',
+        path('reading_list/<int:reading_order_id>/',
             mycomics_views.view_reading_order,
             name='view_reading_order'),
-        path('issue/<int:issue_id>/add_to_reading_order/',
+        path('reading_list/edit/<int:reading_order_id>/',
+            mycomics_views.edit_reading_order,
+            name='edit_reading_order'),
+        path('reading_list/copy/<int:reading_order_id>/',
+            mycomics_views.copy_reading_order,
+            name='copy_reading_order'),
+        path('issue/<int:issue_id>/add_to_reading_list/',
             mycomics_views.add_single_issue_to_reading_order, name='add_to_reading_order'),
-        path('reading_order_item/<int:item_id>/reading_order/<int:reading_order_id>/view/',
+        path('story_arc/<int:story_arc_id>/add_story_arc_to_reading_list/',
+            mycomics_views.add_story_arc_to_reading_order, name='add_story_arc_to_reading_order'),
+        path('reading_list_item/<int:item_id>/reading_list/<int:reading_order_id>/view/',
             mycomics_views.view_reading_order_item, name='view_reading_order_item'),
-        path('reading_order_item/<int:item_id>/reading_order/<int:reading_order_id>/delete/',
+        path('reading_list_item/<int:item_id>/reading_list/<int:reading_order_id>/delete/',
             mycomics_views.delete_reading_order_item, name='delete_reading_order_item'),
-        path('reading_order_item/<int:item_id>/reading_order/<int:reading_order_id>/save/',
+        path('reading_list_item/<int:item_id>/reading_list/<int:reading_order_id>/save/',
             mycomics_views.save_reading_order_item, name='save_reading_order_item'),
+        path('reading_list_item/<int:item_id>/reading_list/<int:reading_order_id>/edit/',
+            mycomics_views.save_reading_order_item, name='edit_reading_order_item'),
 
         path('mycomics_search/',
         mycomics_views.mycomics_search, name='mycomics_search'),
@@ -112,6 +120,10 @@ if settings.MYCOMICS:
             name='delete_purchase_location'),
 
         path('import_items/', mycomics_views.import_items, name='import_items'),
+        path(
+        'help/',
+        bv.TemplateView.as_view(template_name='mycomics/tw_help.html'),
+        name='mycomics_help'),
     ]
 
 else:
@@ -132,8 +144,13 @@ else:
         path('collection/subscriptions/<int:collection_id>/',
             mycomics_views.subscriptions_collection,
             name='subscriptions_collection'),
+        re_path(r'^reading_order/(?P<reading_order_id>\d+)/',
+            mycomics_views.view_reading_order,
+            name='view_reading_order'),
         path('issue/<int:issue_id>/add_to_reading_order/',
             mycomics_views.add_single_issue_to_reading_order, name='add_to_reading_order'),
         path('reading_order_item/<int:item_id>/reading_order/<int:reading_order_id>/view/',
             mycomics_views.view_reading_order_item, name='view_reading_order_item'),
+        path('story_arc/<int:story_arc_id>/add_story_arc_to_reading_order/',
+            mycomics_views.add_story_arc_to_reading_order, name='add_story_arc_to_reading_order'),
     ]

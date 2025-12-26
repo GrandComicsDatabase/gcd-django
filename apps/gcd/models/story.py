@@ -676,6 +676,22 @@ class StoryArc(GcdData):
     def object_page_name(self):
         return str('%s (%s)' % (self.name, self.language.name))
 
+    def stories(self):
+        stories = Story.objects.filter(story_arc=self,
+                                       deleted=False)\
+                               .order_by('issue__key_date',
+                                         'issue__on_sale_date',
+                                         'issue__series__sort_name',
+                                         'issue__sort_code',
+                                         'sequence_number')\
+                               .select_related('issue__series__publisher')
+
+        reprinted_stories = stories.exclude(from_all_reprints=None).filter(
+          from_all_reprints__origin_issue__series__language=self.language)
+        story_ids = reprinted_stories.values_list('id', flat=True)
+        stories = stories.exclude(id__in=story_ids)
+        return stories, reprinted_stories
+
     def __str__(self):
         extra = ''
         if self.disambiguation:

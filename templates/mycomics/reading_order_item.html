@@ -71,7 +71,7 @@
         {% trans "Also in:" %}
         {% for other_reading_order in other_reading_orders %}
           {% if not forloop.first %}/{% endif %}
-          <a href="{% url 'view_reading_order_item' item_id=item.id reading_order_id=other_reading_order.id %}">{{ other_reading_order.name }}</a>
+          <a href="{% url 'view_reading_order_item' item_id=other_reading_order.id reading_order_id=other_reading_order.reading_order.id %}">{{ other_reading_order.reading_order.name }}</a>
         {% endfor %}
       {% endif %}
       <button type="button" class="btn btn-primary pull-right"

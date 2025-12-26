@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 import django.urls as urlresolvers
@@ -289,14 +290,19 @@ class ReadingOrder(models.Model):
 
     public = models.BooleanField(
       default=False,
-      verbose_name="reading order is public and can be viewed by all")
+      verbose_name="reading list is public",
+      help_text="If checked, other users will be able to view "
+                "this reading list.")
 
     was_read_used = models.BooleanField(default=False,
                                         verbose_name="show read status")
 
     def get_absolute_url(self):
-        return urlresolvers.reverse('view_reading_order',
+        link = urlresolvers.reverse('view_reading_order',
                                     kwargs={'reading_order_id': self.id})
+        if not settings.MYCOMICS:
+            link = 'https://my.comics.org' + link
+        return link
 
     def __str__(self):
         return str(self.name)

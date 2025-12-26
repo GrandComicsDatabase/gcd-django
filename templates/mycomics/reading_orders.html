@@ -10,8 +10,8 @@
   <script>
     function remove_reading_order(selected_reading_order_id, reading_order_name, items_count) {
         BootstrapDialog.confirm({
-            title: '<h4 class="modal-title">{% trans "Remove Reading Order" %}</h4>',
-            message: '{% trans "Do you want to remove the reading order <b>" %}'+reading_order_name+'</b> ? The '+items_count+' items will be removed.',
+            title: '<h4 class="modal-title">{% trans "Remove Reading List" %}</h4>',
+            message: '{% trans "Do you want to remove the reading list <b>" %}'+reading_order_name+'</b> ? The '+items_count+' items will be removed.',
             closable: true,
             btnCancelLabel: '{% trans "Cancel" %}',
             btnOKLabel: '{% trans "Confirm" %}',
@@ -29,10 +29,10 @@
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
-          <h4 class="modal-title">{% trans "Remove Reading Order" %}</h4>
+          <h4 class="modal-title">{% trans "Remove Reading List" %}</h4>
         </div>
         <div class="modal-body">
-          <p>{% trans "Do you want to remove this reading order?" %}</p>
+          <p>{% trans "Do you want to remove this reading list?" %}</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
@@ -46,7 +46,7 @@
 {% block content %}
   {% bootstrap_messages %}
   <div class="page-header middle-header">
-    <h1>{% trans "Reading Orders" %}
+    <h1>{% trans "Reading Lists" %}
       <a href="{% url 'add_reading_order' %}">
         <button type="button" class="btn btn-primary pull-right">{% trans "Add New" %}
       </button></a>

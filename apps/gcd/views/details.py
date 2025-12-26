@@ -3468,19 +3468,7 @@ def show_story_arc(request, story_arc, preview=False):
         image_tag = ''
         selected_issue = None
 
-    stories = Story.objects.filter(story_arc=story_arc,
-                                   deleted=False)\
-                           .order_by('issue__key_date',
-                                     'issue__on_sale_date',
-                                     'issue__series__sort_name',
-                                     'issue__sort_code',
-                                     'sequence_number')\
-                           .select_related('issue__series__publisher')
-
-    reprinted_stories = stories.exclude(from_all_reprints=None).filter(
-      from_all_reprints__origin_issue__series__language=story_arc.language)
-    story_ids = reprinted_stories.values_list('id', flat=True)
-    stories = stories.exclude(id__in=story_ids)
+    stories, reprinted_stories = story_arc.stories()
 
     context = {'story_arc': story_arc,
                'error_subject': '%s' % story_arc,

@@ -8,35 +8,7 @@
             <h4 class="modal-title">{% trans "Help for " %} my.comics.org</h4>
           </div>
           <div class="modal-body">
-            <ul>
-              <li>Comics are organized in collections. Initally two collections exist, but more can be created using the "Add new"-button on the main page.</li>
-              <li>To add comics to a collection search inside the database using the regular search options or the <a href="{% url "advanced_search" %}">advanced search</a>. You can select and add comics from search results, from the series page, and from the issue pages. </li>
-              <li>Ongoing series can be <a href="{% url "subscriptions_collection" request.user.collector.default_have_collection.id|default:1 %}">subscribed</a> to a collection. You can pull issues added to the database since the last time you did such a pull.</li>
-              <li>You can add a comic several times to a collection, e.g. if you have several copies, or if you want a second copy.</li>
-              <li>A collection has several settings which control what additional information can be stored about a comic in that collection. You can store the following information
-              <ul>
-                <li>condition, where several grade systems are available</li>
-                <li>date of acquistion or sale</li>
-                <li>is owned vs. is wanted</li>
-                <li>location of storage or purchase</li>
-                <li>was read, is for sale, or is signed</li>
-                <li>purchase price, market value, or sell price.</li>
-		<li>is in digital form</li>
-		<li>quality rating from 1 (poor) to 5 (excellent)</li>
-              </ul>
-              </li>
-              <li>Items in the default have collection will get the 'own' status per default, and all items in the default want collection will have the 'want' status. For other collections these will not be set automatically, but the defaults can be changed accordingly.</li>
-              <li>One can import existing collection data in two ways
-              <ul>
-                <li>a list of issue numbers per series, one number per line
-                <li>a cvs-file where each line consists of series name, issue number, publisher name (optional), language code (optional)
-              </ul>
-              <li>You can download the information of each collection as a csv-file, use the download button <span class="glyphicon glyphicon-download"></span>.</li>
-              <li>If a collection is set as public, indicated by <span class="glyphicon glyphicon-eye-open"></span>, others can view that collection under the same URL you use, i.e. my.comics.org/collection/&lt;number&gt;/.
-            </ul>
-            <p>
-            Discussion about functionality and bug reports takes mainly place on the <a href="http://groups.google.com/group/gcd-main">gcd-main</a> mailing list, via our <a href="https://www.facebook.com/GrandComicsDatabase/">facebook page and group</a>, or send us an <a href="mailto:contact@comics.org">e-mail</a>.
-            </p>
+            {% include "mycomics/bits/help_text.html" %}
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-primary" data-dismiss="modal">{% trans "Close" %}</button>

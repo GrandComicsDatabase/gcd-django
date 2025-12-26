@@ -149,14 +149,53 @@ GCD :: Story Arc :: {{ story_arc.name }}
 {% endif %}
 {% endblock content %}
 
-{% block www_my_comics_cross_link %}
-  {% url "show_story_arc" story_arc_id=story_arc.id as object_url %}
-  {% with model_name='Story Arc' object_url=object_url %}
-    {{ block.super }}
-  {% endwith %}
-{% endblock %}
-
 {% block change_history %}
+  {% if MYCOMICS %}
+<details class="[&_svg]:open:rotate-90" open="">
+  {% else %}
+<details class="[&_svg]:open:rotate-90">
+  {% endif %}
+<summary class="list-none">
+  <div class="bg-my-comics text-white mt-1 font-bold px-2 py-1 text-center rounded">
+    <svg class="inline rotate-0 transform text-blue-700 transition-all duration-300" fill="none" height="20" width="20" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+      <polyline points="6 3 12 9 6 15"></polyline>
+    </svg>
+  my.comics.org
+  </div>
+</summary>
+<div class="mx-1">
+  {% if messages %}
+  <ul class="bg-red-100 rounded px-1 mt-1">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+  {% if request.user.is_authenticated %}
+<form method="POST" action="{% url 'add_story_arc_to_reading_order' story_arc_id=story_arc.id %}">
+    {% csrf_token %}
+  <div>
+    <button class="w-full"><input class="m-0 mb-0.5 w-full btn btn-blue-editing" type="submit" name="confirm_selection" value="Add This Story Arc To Reading Order"></button>
+    <select class="ms-1" name="reading_order_id">
+    {% for ro_item in request.user.collector.reading_orders.all %}
+      <option value="{{ ro_item.id }}" {% if request.session.reading_order_id == ro_item.id %}selected{% endif %}>{{ ro_item.name }}
+    {% endfor %}
+    </select>
+  </div>
+</form>
+  {% endif %}
+  {% url "show_story_arc" story_arc_id=story_arc.id as object_url %}
+  {% if MYCOMICS %}
+<div class="bg-gcd mt-1 font-bold px-2 py-1 text-center rounded">
+<a class="text-white visited:text-white" href="https://www.comics.org{{ object_url }}">Story Arc at www.comics.org</a>
+</div>
+  {% else %}
+<div class="bg-my-comics mt-1 font-bold px-2 py-1 text-center rounded">
+<a class="text-white visited:text-white" href="https://my.comics.org{{ object_url }}">Story Arc at my.comics.org</a>
+</div>
+  {% endif %}
+</details>
   {% with model_name='story_arc' object=story_arc %}
     {{ block.super }}
   {% endwith %}

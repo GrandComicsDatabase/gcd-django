@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-
-
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
@@ -26,6 +24,8 @@ from .creator import CreatorNameDetail
 from .award import ReceivedAward
 from .datasource import ExternalLink
 from .support_tables import render_publisher, DailyChangesTable
+
+from apps.gcd.svg_icons import delete_icon_in_button, edit_icon_in_button
 
 INDEXED = {
     'skeleton': 0,
@@ -770,6 +770,85 @@ class IssueCoverTable(IssueTable):
                                       can_have_cover=issue.can_have_cover())
 
         return mark_safe(cover_tag)
+
+
+class ReadingOrderItemCoverTable(IssueCoverTable):
+    issue = tables.Column(orderable=False)
+    cover = tables.Column(accessor='issue__active_covers', orderable=False)
+    story = tables.Column(orderable=False)
+    publication_date = tables.Column(accessor='issue__key_date',
+                                     verbose_name='Publication Date',
+                                     orderable=False)
+    on_sale_date = tables.Column(accessor='issue__on_sale_date',
+                                 verbose_name='On-sale', orderable=False)
+    was_read = tables.Column(verbose_name='Read', orderable=False)
+    edit_item = tables.Column(accessor='id',
+                              attrs={"div": {"class": "mt-auto"}},
+                              orderable=False)
+
+    def __init__(self, *args, **kwargs):
+        self.csrf_token = kwargs.pop('csrf_token')
+        self.reading_order = kwargs.pop('reading_order')
+        super().__init__(*args, **kwargs)
+        if not self.reading_order.was_read_used or not self.csrf_token:
+            self.columns.hide('was_read')
+        if self.reading_order.items.filter(story__isnull=False).count() == 0:
+            self.columns.hide('story')
+
+    class Meta:
+        fields = ('cover', 'issue', 'story', 'publication_date',
+                  'on_sale_date')
+        row_attrs = {'class': 'w-[154px] md:w-[204px] shadow-md p-[2px] '
+                              'flex flex-col'}
+
+    def render_cover(self, record):
+        record = record.issue
+        return super().render_cover(record)
+
+    def render_edit_item(self, record):
+        if self.csrf_token:
+            delete_link = urlresolvers.reverse(
+              "delete_reading_order_item",
+              kwargs={'item_id': record.id,
+                      'reading_order_id': self.reading_order.id})
+            edit_link = urlresolvers.reverse(
+              "edit_reading_order_item",
+              kwargs={'item_id': record.id,
+                      'reading_order_id': self.reading_order.id})
+            confirm_text = "Remove <b>%s</b> from Reading List <b>%s</b> ??" %\
+                           (esc(record.issue.full_name()),
+                            esc(self.reading_order.name))
+            return mark_safe('<btn class="btn-blue-editing inline-block w-24">'
+                             '<a href="%s">%s Edit</a></btn>'
+                             % (mark_safe(edit_link), edit_icon_in_button)) + \
+                mark_safe('<btn class="btn-blue-editing inline-block w-24" '
+                          'hx-headers=\'{"X-CSRFToken": "%s"}\' '
+                          'hx-post="%s" '
+                          'hx-confirm="%s">%s Remove</btn>'
+                          % (self.csrf_token, mark_safe(delete_link),
+                             mark_safe(confirm_text), delete_icon_in_button))
+        else:
+            return ''
+
+    def render_story(self, record):
+        from apps.gcd.templatetags.display import esc
+        story = record.story
+        if story:
+            return mark_safe('<a href="%s">%s, %sp</a>' % (
+              story.get_absolute_url(),
+              esc(story.show_title()),
+              esc(story.show_page_count())))
+        else:
+            return None
+
+    def render_was_read(self, record):
+        # check if user tracks read status and is reasing list user
+        if self.reading_order.was_read_used and self.csrf_token:
+            if record.was_read:
+                return 'was read'
+            else:
+                return 'was not read'
+        return ''
 
 
 class IssuePublisherTable(IssueTable):

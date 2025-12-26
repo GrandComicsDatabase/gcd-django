@@ -1,0 +1,10 @@
+{% extends "gcd/tw_base_view.html" %}
+
+{% block nav_bar %}
+  {{ block.super }}
+  {% with 'top' as position %}
+    {% with 'bottom' as link_direction %}
+      {% include "mycomics/bits/tw_mycomics_bar.html" %}
+    {% endwith %}
+  {% endwith %}
+{% endblock %}

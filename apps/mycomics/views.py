@@ -8,19 +8,24 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 import django.urls as urlresolvers
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.core.exceptions import PermissionDenied
 from django.conf import settings
+from django.middleware import csrf
 from django.utils.html import conditional_escape as esc
 from django.utils.html import mark_safe
+
+from django_tables2 import RequestConfig
+from django_tables2.paginators import LazyPaginator
 
 from djqscsv import render_to_csv_response
 import csv
 
 from apps.indexer.views import render_error, ErrorWithMessage
-from apps.gcd.models import Issue, Series
+from apps.gcd.models import Issue, Series, StoryArc
+from apps.gcd.models.issue import ReadingOrderItemCoverTable
 from apps.gcd.views import ResponsePaginator, paginate_response
-from apps.gcd.views.details import do_on_sale_weekly
+from apps.gcd.views.details import do_on_sale_weekly, TW_SORT_GRID_TEMPLATE
 from apps.gcd.templatetags.credits import show_keywords_comma
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
     GcdSearchQuerySet
@@ -45,9 +50,10 @@ COLLECTION_TEMPLATE = 'mycomics/collection.html'
 COLLECTION_SERIES_TEMPLATE = 'mycomics/collection_series.html'
 COLLECTION_LIST_TEMPLATE = 'mycomics/collections.html'
 GENERIC_FORM_TEMPLATE = 'mycomics/generic_edit_form.html'
+TW_GENERIC_FORM_TEMPLATE = 'mycomics/tw_generic_edit_form.html'
 COLLECTION_ITEM_TEMPLATE = 'mycomics/collection_item.html'
 COLLECTION_SUBSCRIPTIONS_TEMPLATE = 'mycomics/collection_subscriptions.html'
-READING_ORDER_TEMPLATE = 'mycomics/reading_order.html'
+READING_ORDER_TEMPLATE = 'mycomics/tw_reading_order.html'
 READING_ORDER_LIST_TEMPLATE = 'mycomics/reading_orders.html'
 READING_ORDER_ITEM_TEMPLATE = 'mycomics/reading_order_item.html'
 MESSAGE_TEMPLATE = 'mycomics/message.html'
@@ -59,6 +65,13 @@ EXPORT_OWN_VALUES = {
     True: 'I own',
     False: 'I want',
 }
+
+
+def get_default_per_page(request):
+    if request.user.is_authenticated and \
+      request.user.indexer.items_per_page > 0:
+        return request.user.indexer.items_per_page
+    return DEFAULT_PER_PAGE
 
 
 def index(request):
@@ -138,7 +151,8 @@ def view_collection(request, collection_id):
                              series=series, locations=locations,
                              purchase_locations=purchase_locations)
     vars['filter'] = f
-    paginator = ResponsePaginator(f.qs, vars=vars, per_page=DEFAULT_PER_PAGE,
+    paginator = ResponsePaginator(f.qs, vars=vars,
+                                  per_page=get_default_per_page(request),
                                   alpha=True)
     paginator.paginate(request)
     get_copy = request.GET.copy()
@@ -189,7 +203,8 @@ def view_collection_series(request, collection_id):
             'needed_covers_url': needed_covers_url,
             'unindexed_issues_url': unindexed_issues_url}
     paginator = ResponsePaginator(series_list, vars=vars,
-                                  per_page=DEFAULT_PER_PAGE, alpha=True)
+                                  per_page=get_default_per_page(request),
+                                  alpha=True)
     paginator.paginate(request)
     return render(request, COLLECTION_SERIES_TEMPLATE, vars)
 
@@ -377,7 +392,9 @@ def delete_item(request, item_id, collection_id):
 
     return HttpResponseRedirect(urlresolvers.reverse('view_collection',
                                 kwargs={'collection_id': collection_id}) +
-                                "?page=%d" % (position / DEFAULT_PER_PAGE + 1))
+                                "?page=%d" % (position /
+                                              get_default_per_page(request)
+                                              + 1))
 
 
 @login_required
@@ -508,7 +525,7 @@ def view_item(request, item_id, collection_id):
                  id__gte=item.id).reverse()
 
     if item_before:
-        page = int(item_before.count() / DEFAULT_PER_PAGE + 1)
+        page = int(item_before.count() / get_default_per_page(request) + 1)
         item_before = item_before[0]
     else:
         page = 1
@@ -948,7 +965,8 @@ def add_series_issues_to_collection(request, series_id):
           issue__series__sort_name__lt=series.sort_name).reverse()
 
         if item_before:
-            page = "?page=%d" % (item_before.count() / DEFAULT_PER_PAGE + 1)
+            page = "?page=%d" % (item_before.count() /
+                                 get_default_per_page(request) + 1)
         else:
             page = ""
         messages.success(
@@ -1128,18 +1146,29 @@ def edit_reading_order(request, reading_order_id=None):
 
     if request.method == 'POST':
         form = ReadingOrderForm(request.POST, instance=reading_order)
-        if form.is_valid():
+        if form.is_valid() and 'cancel' not in request.POST:
             form.save()
             messages.success(request, _('Reading order saved.'))
-            return HttpResponseRedirect(
-                urlresolvers.reverse('reading_orders_list'))
+            from apps.oi.views import _process_reorder_form, _reorder_children
+            item_order = _process_reorder_form(request, None,
+                                               'sequence_number',
+                                               'item', ReadingOrderItem)
+            _reorder_children(request, None, item_order,
+                              'sequence_number', None,
+                              commit=True, unique=False)
 
+        if form.is_valid() or 'cancel' in request.POST:
+            return HttpResponseRedirect(
+              urlresolvers.reverse('view_reading_order',
+                                   kwargs={'reading_order_id':
+                                           reading_order.id}))
     else:
         form = ReadingOrderForm(instance=reading_order)
 
-    return render(request, GENERIC_FORM_TEMPLATE, {'form': form,
-                                                   'heading':
-                                                   'Editing Reading Order'})
+    return render(request, TW_GENERIC_FORM_TEMPLATE,
+                  {'form': form,
+                   'reading_order': reading_order,
+                   'heading': 'Editing Reading List: %s' % reading_order.name})
 
 
 @login_required
@@ -1159,12 +1188,8 @@ def view_reading_order(request, reading_order_id):
     reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
     if request.user.is_authenticated and \
        reading_order.collector == request.user.collector:
-        reading_order_list = request.user.collector.reading_orders.all()
-    elif reading_order.public is True:
-        reading_order_list = ReadingOrder.objects.none()
-    elif not request.user.is_authenticated:
-        return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
-    else:
+        pass
+    elif reading_order.public is not True:
         raise PermissionDenied
 
     items = reading_order.items.all().select_related('issue__series')
@@ -1172,18 +1197,26 @@ def view_reading_order(request, reading_order_id):
                                     kwargs={'reading_order_id':
                                             reading_order_id})
     vars = {'reading_order': reading_order,
-            'reading_order_list': reading_order_list,
             'base_url': base_url}
-    paginator = ResponsePaginator(items, vars=vars, per_page=DEFAULT_PER_PAGE,
-                                  alpha=True)
-    paginator.paginate(request)
-    get_copy = request.GET.copy()
-    get_copy.pop('page', None)
-    if get_copy:
-        extra_query_string = '&%s' % get_copy.urlencode()
+    if request.user.is_authenticated and \
+       request.user.collector == reading_order.collector:
+        csrf_token = csrf.get_token(request)
     else:
-        extra_query_string = ''
-    vars['extra_query_string'] = extra_query_string
+        csrf_token = None
+
+    table = ReadingOrderItemCoverTable(
+      items,
+      template_name=TW_SORT_GRID_TEMPLATE,
+      reading_order=reading_order,
+      csrf_token=csrf_token)
+    vars['table'] = table
+    paginator = ResponsePaginator(items,
+                                  per_page=get_default_per_page(request),
+                                  vars=vars)
+    page_number = paginator.paginate(request).number
+    RequestConfig(request, paginate={"paginator_class": LazyPaginator,
+                                     'per_page': get_default_per_page(request),
+                                     'page': page_number}).configure(table)
 
     return render(request, READING_ORDER_TEMPLATE, vars)
 
@@ -1212,6 +1245,73 @@ def check_item_is_in_reading_order(request, item, reading_order):
 
 
 @login_required
+def copy_reading_order(request, reading_order_id):
+    reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
+    if not reading_order.items.exists():
+        raise ErrorWithMessage("No items in this reading order.")
+    new_reading_order = ReadingOrder.objects.create(
+      name="Copy of %s" % reading_order.name,
+      collector=request.user.collector,
+      public=False)
+    sequence_number = 1
+    for item in reading_order.items.all():
+        ReadingOrderItem.objects.create(issue=item.issue,
+                                        story=item.story,
+                                        reading_order=new_reading_order,
+                                        sequence_number=sequence_number)
+        sequence_number += 1
+    link = reading_order.get_absolute_url()
+    link_new = new_reading_order.get_absolute_url()
+    if not settings.MYCOMICS:
+        link = 'https://my.comics.org' + link
+        link_new = 'https://my.comics.org' + link_new
+    messages.success(
+      request,
+      mark_safe("Copy of Reading List <a href='%s'>%s</a> was added as "
+                "<a href='%s'>%s</a> "
+                "reading order." % (link, esc(reading_order),
+                                    link_new, esc(new_reading_order.name))))
+    request.session['reading_order_id'] = new_reading_order.id
+    return HttpResponseRedirect(urlresolvers.reverse('view_reading_order',
+                                kwargs={'reading_order_id': new_reading_order.id}))
+
+
+@login_required
+def add_story_arc_to_reading_order(request, story_arc_id):
+    story_arc = get_object_or_404(StoryArc, id=story_arc_id)
+    stories, _ = story_arc.stories()
+    if not stories.count():
+        raise ErrorWithMessage("No stories in this story arc.")
+    reading_order, error_return = get_reading_order_for_owner(
+      request, reading_order_id=int(request.POST['reading_order_id']))
+    if not reading_order:
+        return error_return
+    if reading_order.items.exists():
+        sequence_number = reading_order.items.last().sequence_number + 1
+    else:
+        sequence_number = 1
+    for story in stories:
+        ReadingOrderItem.objects.create(issue=story.issue,
+                                        story=story,
+                                        reading_order=reading_order,
+                                        sequence_number=sequence_number)
+        sequence_number += 1
+    link = story_arc.get_absolute_url()
+    if not settings.MYCOMICS:
+        link = 'https://my.comics.org' + link
+    messages.success(
+      request,
+      mark_safe("Story Arc <a href='%s'>%s</a> was added to your "
+                "<a href='%s'>%s</a> "
+                "reading order." % (link, esc(story_arc),
+                                    reading_order.get_absolute_url(),
+                                    esc(reading_order.name))))
+    request.session['reading_order_id'] = reading_order.id
+    return HttpResponseRedirect(urlresolvers.reverse('show_story_arc',
+                                kwargs={'story_arc_id': story_arc_id}))
+
+
+@login_required
 def add_single_issue_to_reading_order(request, issue_id):
     if not request.POST:
         raise ErrorWithMessage("No reading order was selected.")
@@ -1234,8 +1334,10 @@ def add_single_issue_to_reading_order(request, issue_id):
         link = 'https://my.comics.org' + link
     messages.success(
       request,
-      mark_safe("Issue <a href='%s'>%s</a> was added to your <b>%s</b> "
+      mark_safe("Issue <a href='%s'>%s</a> was added to your "
+                "<a href='%s'>%s</a> "
                 "reading order." % (link, esc(issue),
+                                    reading_order.get_absolute_url(),
                                     esc(reading_order.name))))
     request.session['reading_order_id'] = reading_order.id
     return HttpResponseRedirect(urlresolvers.reverse('show_issue',
@@ -1269,8 +1371,9 @@ def view_reading_order_item(request, item_id, reading_order_id):
 
     if request.user.is_authenticated and \
        collector == request.user.collector:
-        other_reading_orders = item.reading_order.collector\
-                                   .reading_orders.exclude(id=reading_order.id)
+        other_reading_orders = item.issue.readingorderitem_set\
+                                   .filter(reading_order__collector=collector)\
+                                   .exclude(reading_order__id=reading_order.id)
     else:
         other_reading_orders = None
 
@@ -1286,11 +1389,21 @@ def view_reading_order_item(request, item_id, reading_order_id):
 
 @login_required
 def save_reading_order_item(request, item_id, reading_order_id):
-    if request.method == 'POST':
-        reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
+    reading_order = get_object_or_404(ReadingOrder, id=reading_order_id)
+    collector = reading_order.collector
+    if request.user.is_authenticated and \
+       collector == request.user.collector:
         item = get_reading_order_item_for_collector(item_id,
                                                     request.user.collector)
-        item_form = ReadingOrderItemForm(request.POST, instance=item)
+    else:
+        raise PermissionDenied
+    item = get_reading_order_item_for_collector(item_id,
+                                                request.user.collector)
+
+    check_item_is_in_reading_order(request, item, reading_order)
+
+    item_form = ReadingOrderItemForm(request.POST or None, instance=item)
+    if request.method == 'POST':
         item_form_valid = item_form.is_valid()
 
         if not item_form_valid:
@@ -1300,15 +1413,18 @@ def save_reading_order_item(request, item_id, reading_order_id):
                            'reading_order': reading_order})
         item = item_form.save(commit=False)
         item.save()
-        messages.success(request, _('Item saved.'))
+        messages.success(request, _('Item %s saved.' %
+                                    esc(item.issue.full_name())))
 
         return HttpResponseRedirect(
-            urlresolvers.reverse('view_reading_order_item',
-                                 kwargs={'item_id': item_id,
-                                         'reading_order_id':
+            urlresolvers.reverse('view_reading_order',
+                                 kwargs={'reading_order_id':
                                          reading_order_id}))
-
-    raise Http404
+    else:
+        return render(request, TW_GENERIC_FORM_TEMPLATE,
+                      {'form': item_form,
+                       'heading': 'Editing Reading List Item: %s' %
+                                  item.issue.full_name()})
 
 
 @login_required
@@ -1326,11 +1442,13 @@ def delete_reading_order_item(request, item_id, reading_order_id):
     item.delete()
     messages.success(
       request,
-      mark_safe(_("Item <b>%s</b> removed from %s" % (
+      mark_safe(_("Item <b>%s</b> removed from Reading List %s" % (
                   esc(item.issue.full_name()),
                   esc(reading_order)))))
-    return HttpResponseRedirect(urlresolvers.reverse('view_reading_order',
-                                kwargs={'reading_order_id': reading_order.id}))
+    response = HttpResponse(urlresolvers.reverse('view_reading_order',
+                            kwargs={'reading_order_id': reading_order.id}))
+    response['HX-Refresh'] = 'true'
+    return response
 
 
 @login_required

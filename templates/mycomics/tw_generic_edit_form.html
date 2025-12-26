@@ -1,0 +1,50 @@
+{% extends "mycomics/tw_base_view.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block view_body %}
+<div class="page-header middle-header">
+  <h1>{{ heading }}</h1>
+</div>
+
+  {% if help_text %}
+    <p>{{ help_text|safe }}</p>
+  {% endif %}
+
+<form action="" method="POST">
+  {% csrf_token %}
+  <table class="editing">
+  {{ form.as_table }}
+  </table>
+  {% if reading_order.id %}
+  <table id="reorder_reading_list">
+    <thead>
+      <tr class="bg-blue-100">
+        <th class="sequence_number_col"> Sequence Number </th>
+        <th> Issue / Story </th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in reading_order.items.all %}
+      <tr class="[&>td]:pe-1 hover:bg-blue-50 cursor-move">
+        <td class="text-right"> <input type="text" class="w-16 sequence_number"
+                    id="sequence_number_{{ item.id }}"
+                    name="sequence_number_{{ item.id }}"
+                    value="{{ item.sequence_number }}">
+        </td>
+        <td> {{ item.issue }} {% if item.story %} / {{ item.story.show_title }} {% endif %} </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+  <input class="btn-blue-editing inline" type="submit" name="cancel" value="{% trans 'Cancel' %}">
+  <input class="btn-blue-editing inline" type="submit" name="submit" value="{% trans 'Submit' %}">
+</form>
+<script type='text/javascript' src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script type='text/javascript' src='{% static "js/oi/ordering.js" %}'></script>
+<script>
+const tbody = document.querySelector('#reorder_reading_list tbody');
+initializeSortableReorder(tbody, 'sequence_number');
+</script>
+{% endblock %}
