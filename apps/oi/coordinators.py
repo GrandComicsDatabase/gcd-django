@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.conf import settings
 import django.urls as urlresolvers
 from django.shortcuts import render
 from django.contrib.auth.decorators import permission_required
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from apps.oi import states
@@ -14,9 +15,9 @@ SCRIPT_DEBUG = False
 
 def issue_untouched(c, clearing_date):
     modified = issue_revision_modified(c)
-    if modified > datetime.today() - timedelta(weeks=1):
+    if modified > timezone.now() - timedelta(weeks=1):
         # at max three weeks extensions
-        if c.created > datetime.today() - timedelta(weeks=clearing_date + 3):
+        if c.created > timezone.now() - timedelta(weeks=clearing_date + 3):
             return False
     return True
 
@@ -33,9 +34,9 @@ def issue_revision_modified(changeset):
 
 @permission_required('oi.change_ongoingreservation')
 def clear_reservations_three_weeks(request=None):
-    clearing_date = datetime.today() - \
+    clearing_date = timezone.now() - \
                     timedelta(weeks=settings.RESERVE_ISSUE_WEEKS)
-    final_clearing_date = datetime.today() - \
+    final_clearing_date = timezone.now() - \
                           timedelta(weeks=settings.RESERVE_ISSUE_INITIAL_WEEKS)
     changes = Changeset.objects.filter(created__lt=clearing_date,
                                        state=states.OPEN)
@@ -63,7 +64,7 @@ def clear_reservations_three_weeks(request=None):
 
 @permission_required('oi.change_ongoingreservation')
 def clear_reservations_one_week(request=None):
-    clearing_date = datetime.today() - \
+    clearing_date = timezone.now() - \
                     timedelta(days=settings.RESERVE_NON_ISSUE_DAYS)
     changes = Changeset.objects.filter(created__lt=clearing_date,
       state=states.OPEN).filter(change_type__in=[CTYPES['publisher'],

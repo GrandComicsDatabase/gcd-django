@@ -6,7 +6,7 @@ import calendar
 import os
 import glob
 from stdnum import isbn
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django import forms
 from django.conf import settings
@@ -17,6 +17,7 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey, \
                                                GenericRelation
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 from django.core.validators import RegexValidator, URLValidator
@@ -909,7 +910,7 @@ class Changeset(models.Model):
         self.save()
 
     def review_is_overdue(self):
-        if datetime.today() - timedelta(weeks=1) > self.modified:
+        if timezone.now() - timedelta(weeks=1) > self.modified:
             return True
         else:
             return False
