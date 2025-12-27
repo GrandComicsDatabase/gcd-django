@@ -10,10 +10,10 @@ from apps.oi.models import on_sale_date_fields
 
 
 class ObjectIndex(object):
-    def index_queryset(self, using=None):
-        """ Used when populating the queryset with db models """
-        """Used when the entire index for model is updated."""
-        return self.get_model().objects.filter(deleted=False)
+    # def index_queryset(self, using=None):
+    #     """ Used when populating the queryset with db models """
+    #     """Used when the entire index for model is updated."""
+    #     return self.get_model().objects.filter(deleted=False)
 
     def get_updated_field(self):
         return "modified"
@@ -41,9 +41,9 @@ class ObjectIndex(object):
     # use prepare with check on deleted, remove_object and raise SkipDocument ?
     def should_update(self, instance, **kwargs):
         """Overide to check if we need to remove an object from the index."""
-        if instance.deleted:
+        if instance.object.deleted:
             self.remove_object(instance, **kwargs)
-        return not instance.deleted
+        return not instance.object.deleted
 
 
 class IssueIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
@@ -483,11 +483,16 @@ class PublisherIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     publisher = indexes.CharField(model_attr='name',
                                   faceted=True, indexed=False)
 
+    relations_weight = indexes.FloatField()
+
     def get_model(self):
         return Publisher
 
     def prepare_facet_model_name(self, obj):
         return "publisher"
+
+    def prepare_relations_weight(self, obj):
+        return float(obj.issue_count)/100.
 
 
 class IndiciaPublisherIndex(ObjectIndex, indexes.SearchIndex,
