@@ -164,7 +164,7 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
         {{ brand_emblem|absolute_url|default:"?" }}
       {% endif %}
     {% endfor %}
-    {% if not issue.brand_emblem.exist %}
+    {% if not issue.brand_emblem.exists %}
       ?
     {% endif %}
 </li>
