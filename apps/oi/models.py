@@ -3544,8 +3544,9 @@ class SeriesRevision(Revision):
                 reservation.delete()
 
         if changes['to is_comics_publication']:
-            # TODO: But don't we count covers for some non-comics?
-            self.series.has_gallery = bool(self.series.scan_count)
+            if not self.added:
+                # TODO: But don't we count covers for some non-comics?
+                self.series.has_gallery = bool(self.series.scan_count)
 
     def _handle_dependents(self, changes):
         # Handle adding the singleton issue last, to avoid double-counting
