@@ -1,0 +1,9 @@
+{% if user.is_authenticated %}
+<div class="bg-red-200 pe-1 sm:pe-2">
+  <ul class="flex flex-wrap [&_a]:px-4 [&_a]:py-1 [&_a]:block [&_a]:hover:no-underline [&>li]:font-bold [&_a]:text-black">
+    <li><a class="hover:bg-red-400 {% if request.path == '/help/' %}bg-red-400{% endif %}" href="{% url 'mycomics_help' %}">Help</a> </li>
+    <li><a class="hover:bg-red-400 {% if request.path == '/collection/list/' %}bg-red-400{% endif %}" href="{% url 'collections_list' %}">Collections</a> </li>
+    <li><a class="hover:bg-red-400 {% if request.path == '/reading_list/list/' %}bg-red-400{% endif %}" href="{% url 'reading_orders_list' %}">Reading Lists</a> </li>
+  </ul>
+</div>
+{% endif %}
