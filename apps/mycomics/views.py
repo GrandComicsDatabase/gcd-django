@@ -1119,8 +1119,9 @@ def mycomics_search(request):
     context = {'select_key': select_key,
                'multiple_selects': True,
                'allowed_selects': allowed_selects}
-    return PaginatedFacetedSearchView(searchqueryset=sqs)(request,
-                                                          context=context)
+    return PaginatedFacetedSearchView(searchqueryset=sqs,
+                                      template='search/tw_search.html')(
+                                        request, context=context)
 
 
 @login_required
