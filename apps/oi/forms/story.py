@@ -351,7 +351,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
                 'ghost work.',
       label='<button hx-get="/select/creator/by_detail/" type="button" '
             'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
-            'hx-on="htmx:afterRequest: setSelectValue(event)" '
+            'hx-on:htmx:after-request="setSelectValue(event)" '
             'hx-swap="none" class="mx-0 btn-blue-editing inline">To Official'
             '</button> Creator'
     )
