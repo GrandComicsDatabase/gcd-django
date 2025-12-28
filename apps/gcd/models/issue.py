@@ -768,6 +768,8 @@ class IssueCoverTable(IssueTable):
             cover_tag = get_image_tag(cover=None, zoom_level=2,
                                       alt_text=alt_text,
                                       can_have_cover=issue.can_have_cover())
+            cover_tag = '<a href="%s">%s</a>' % (issue.get_absolute_url(),
+                                                 cover_tag)
 
         return mark_safe(cover_tag)
 
@@ -842,7 +844,7 @@ class ReadingOrderItemCoverTable(IssueCoverTable):
             return None
 
     def render_was_read(self, record):
-        # check if user tracks read status and is reasing list user
+        # check if user tracks read status and is reading list user
         if self.reading_order.was_read_used and self.csrf_token:
             if record.was_read:
                 return 'was read'
