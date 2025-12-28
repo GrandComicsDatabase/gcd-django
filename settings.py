@@ -456,7 +456,7 @@ ANON_USER_NAME = 'anon'
 # These were primarily used for migrating change history and filling in blanks.
 OLD_SITE_CREATION_DATE = datetime.date(2002, 11, 13)
 NEW_SITE_CREATION_DATE = datetime.date(2009, 12, 1)
-NEW_SITE_COVER_CREATION_DATE = datetime.datetime(2009,10,2,14,0,0)
+NEW_SITE_COVER_CREATION_DATE = datetime.datetime(2009,10,2,14,0,0).astimezone()
 
 ###
 # Voting app settings

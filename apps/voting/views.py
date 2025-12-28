@@ -1,7 +1,6 @@
 import hashlib
 from random import random
 import os.path
-from datetime import datetime
 from py3votecore.schulze_method import SchulzeMethod
 from py3votecore.condorcet import CondorcetHelper
 
@@ -11,6 +10,7 @@ import django.urls as urlresolvers
 from django.core.mail import send_mail
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
+from django.utils import timezone
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 
@@ -86,7 +86,7 @@ def _classify_topics(topics, user):
 
 
 def dashboard(request):
-    topics = Topic.objects.filter(deadline__gte=datetime.now(), open=True,
+    topics = Topic.objects.filter(deadline__gte=timezone.now(), open=True,
                                   result_calculated=False)
 
     # We ignore the forbidden topics on the dashboard and only show relevant
@@ -274,7 +274,7 @@ def topic(request, id):
                   {'topic': topic,
                    'voted': topic.has_vote_from(request.user),
                    'votes': votes,
-                   'closed': topic.deadline < datetime.now() or
+                   'closed': topic.deadline < timezone.now() or
                       topic.result_calculated,
                    'settings': settings})
 
@@ -421,7 +421,7 @@ def agenda(request, id):
     # never approved (much less completed) still have open=False.  This
     # translates the conditions into what you would expect for open or closed
     # ballots.
-    past_due = Q(deadline__lte=datetime.now())
+    past_due = Q(deadline__lte=timezone.now())
     open = agenda.topics.exclude(past_due | Q(open=False))\
                         .filter(result_calculated=False)
     closed = agenda.topics.filter((past_due & Q(open=True)) |
