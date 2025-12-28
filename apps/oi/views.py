@@ -3854,7 +3854,7 @@ def edit_series_bond(request, id):
     else:
         raise NotImplementedError
     initial = {'series': series.name,
-               'publisher': series.publisher,
+               'publisher': series.publisher.name,
                'year': series.year_began,
                'number': number}
     data = {'series_bond_revision_id': id,
