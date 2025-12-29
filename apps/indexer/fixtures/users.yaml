@@ -5,7 +5,7 @@
     first_name: Ad
     last_name: Min
     email: sysadmin@comics.org
-    password: 'sha1$37d9d$794435e466c5112fc72cde488d5a262faca6086d' # admin
+    password: 'pbkdf2_sha256$1000000$ExPWc8edCPyID4PGy7TYJu$6hz1DG5fZ7s2Q6RdukwnK1QfqNlAck9RBpCeN3p20JE=' # admin
     is_active: True
     is_staff: True
     is_superuser: True
@@ -61,7 +61,7 @@
     first_name: Ed
     last_name: Tor
     email: nobody@comics.org
-    password: 'sha1$66b61$8dafc5b8b3470a1e6f849f2c380a4b0959447508' # editme
+    password: 'pbkdf2_sha256$1000000$ifd8KXKZ2OTqF5f8XSSaIW$7mo35xV43kzhr/dB/LvPaX+IGHLH0JmvCe3nsdrNgMM=' # editme
     is_active: True
     is_staff: False
     is_superuser: False
@@ -117,7 +117,7 @@
     first_name: Dexter
     last_name: Indexer
     email: test@comics.org
-    password: 'sha1$1acd5$9cbf7fb2a284cb56e1484752aec2ff151976341e' # test
+    password: 'pbkdf2_sha256$1000000$G4kPmJ7OO5jrCNsIHwVQLz$BPwDGgyi0HP7UbuK/WAxUElkix7vABYbQMVfkZoMyjI=' # test
     is_active: True
     is_staff: False
     is_superuser: False
