@@ -82,6 +82,10 @@ def _common_clean(cd, data):
             'You cannot specify that no indicia printer data is present '
             'and give a source for the indicia printer at the same time.')
 
+    if cd['indicia_printer_sourced_by'] and not \
+       cd['indicia_printer_not_printed']:
+        cd['indicia_printer_sourced_by'] = ''
+
     if cd['no_rating'] and cd['rating']:
         raise forms.ValidationError(
             "You cannot specify a publisher's age guideline and check "
@@ -520,6 +524,10 @@ class IssueCreditRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Name entered as "credited as" is identical to creator name.']
             )
+
+        if cd['sourced_by'] and not cd['is_sourced']:
+            cd['sourced_by'] = ""
+
         return cd
 
 

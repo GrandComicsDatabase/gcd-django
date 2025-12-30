@@ -402,6 +402,9 @@ class StoryCreditRevisionForm(forms.ModelForm):
                    'creator.']
                 )
 
+        if cd['sourced_by'] and not cd['is_sourced']:
+            cd['sourced_by'] = ""
+
 
 class StoryFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
