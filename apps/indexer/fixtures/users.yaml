@@ -32,6 +32,8 @@
     user: 1
     grade_system: 1
     default_language: 25 # English
+    default_have_collection: 1
+    default_want_collection: 101
 
 - model: mycomics.collection
   pk: 1
@@ -88,6 +90,8 @@
     user: 2
     grade_system: 1
     default_language: 25 # English
+    default_have_collection: 2
+    default_want_collection: 102
 
 - model: mycomics.collection
   pk: 2
@@ -144,6 +148,8 @@
     user: 3
     grade_system: 1
     default_language: 25 # English
+    default_have_collection: 3
+    default_want_collection: 103
 
 - model: mycomics.collection
   pk: 3
@@ -200,6 +206,8 @@
     user: 4
     grade_system: 1
     default_language: 25 # English
+    default_have_collection: 4
+    default_want_collection: 104
 
 - model: mycomics.collection
   pk: 4
