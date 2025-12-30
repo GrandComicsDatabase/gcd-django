@@ -433,6 +433,14 @@ $(document).on('change', 'input[type=checkbox]', function () {
             inputRow.hide()
         }
     }
+    else if (id == 'id_indicia_printer_not_printed') {
+        var inputRow = $('#id_indicia_printer_sourced_by').parent().parent();
+        if ($(this).is(':checked')) {
+            inputRow.show()
+        } else {
+            inputRow.hide()
+        }
+    }
 })
 
 $('input[type=checkbox]').change()
