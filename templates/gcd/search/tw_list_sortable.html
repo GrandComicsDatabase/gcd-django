@@ -56,7 +56,7 @@ Should be changed so that we have consistent display. Currently only the search 
 </form>
 {% endif %}
 {% if filter_form %}
-<form method="GET" class="results-filter max-sm:hidden flex">
+<form method="GET" class="results-filter max-sm:hidden flex flex-wrap">
   {% if request.GET.sort %}
   <input type="hidden" name="sort" value="{{ request.GET.sort }}">
   {% endif %}

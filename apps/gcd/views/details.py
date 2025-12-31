@@ -3880,6 +3880,7 @@ def universe_sequences(request, universe_id):
                    .distinct().select_related('issue__series__publisher')
 
     filter = filter_sequences(request, stories)
+    filter.form.fields.pop('universe', None)
     stories = filter.qs
 
     context = {
