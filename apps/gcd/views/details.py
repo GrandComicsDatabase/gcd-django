@@ -470,7 +470,10 @@ def creator_creators(request, creator_id):
     creator = get_gcd_object(Creator, creator_id)
     names = _get_creator_names_for_checklist(creator)
 
+    story_types = process_story_type_filter_from_request(request)
+
     stories = Story.objects.filter(credits__creator__in=names,
+                                   type__id__in=story_types,
                                    credits__credit_type__id__lt=6,
                                    credits__deleted=False).distinct()
     filter = filter_sequences(request, stories)
@@ -479,7 +482,6 @@ def creator_creators(request, creator_id):
 
     creators = Creator.objects.filter(
       creator_names__storycredit__story__id__in=stories_ids,
-      creator_names__storycredit__story__type__id__in=CORE_TYPES,
       creator_names__storycredit__deleted=False,
       creator_names__storycredit__credit_type__id__lt=6).exclude(id=creator.id)
     creators = creators.annotate(
