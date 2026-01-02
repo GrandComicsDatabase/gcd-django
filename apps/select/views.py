@@ -26,7 +26,8 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Feature, FeatureLogo, IndiciaPrinter, School, \
                             Character, CharacterNameDetail, Group, \
                             GroupNameDetail, Universe, StoryArc, Brand, \
-                            BrandGroup, STORY_TYPES
+                            BrandGroup, \
+                            STORY_TYPES, DEPRECATED_TYPES, CORE_TYPES
 from apps.stddata.models import Country, Language
 from apps.gcd.templatetags.credits import get_native_language_name
 from apps.gcd.views import paginate_response
@@ -884,6 +885,16 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
 # filtering of objects in lists
 ##############################################################################
 
+def process_story_type_filter_from_request(request):
+    if story_types := request.GET.getlist('story_type'):
+        pass
+    else:
+        story_types = [str(t) for t in CORE_TYPES]
+    request.GET = request.GET.copy()
+    request.GET.setlist('story_type', story_types)
+    return story_types
+
+
 class CommonFilter(FilterSet):
     def __init__(self, *args, **kwargs):
         country = kwargs.pop('country', None)
@@ -959,6 +970,10 @@ class IssueFilter(CommonFilter):
     publisher = ModelMultipleChoiceFilter(field_name='series__publisher',
                                           label='Publisher',
                                           queryset=Publisher.objects.all())
+    story_type = ModelMultipleChoiceFilter(
+      field_name='story__type',
+      label='Story Type',
+      queryset=StoryType.objects.exclude(id__in=DEPRECATED_TYPES))
     collection = ModelMultipleChoiceFilter(
       field_name='collectionitem__collections',
       label='In Collection',
@@ -974,12 +989,15 @@ class IssueFilter(CommonFilter):
             collections = kwargs.pop('collections')
         else:
             collections = None
+        story_type_filter = kwargs.pop('story_type_filter', None)
         super(IssueFilter, self).__init__(*args, **kwargs)
         if collections:
             qs = Collection.objects.filter(id__in=collections)
             self.form['collection'].field.queryset = qs
         else:
             self.form.fields.pop('collection')
+        if not story_type_filter:
+            self.form.fields.pop('story_type')
 
 
 class CoverFilter(CommonFilter):
@@ -1058,7 +1076,7 @@ def filter_series(request, series):
     return filter
 
 
-def filter_issues(request, issues):
+def filter_issues(request, issues, story_type_filter=False):
     if settings.MYCOMICS and request.user.is_authenticated:
         collections = request.user.collector.collections.all()\
                              .order_by('name').values_list('id', flat=True)
@@ -1069,7 +1087,8 @@ def filter_issues(request, issues):
                          country='series__country',
                          language='series__language',
                          publisher='series__publisher',
-                         collections=collections
+                         collections=collections,
+                         story_type_filter=story_type_filter
                          )
     return filter
 

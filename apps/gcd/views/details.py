@@ -112,7 +112,8 @@ from apps.oi.models import IssueRevision, SeriesRevision, PublisherRevision, \
                            CTYPES
 from apps.select.views import KeywordUsedFilter, filter_series, \
                               filter_issues, filter_covers, filter_sequences, \
-                              FilterForLanguage
+                              FilterForLanguage, \
+                              process_story_type_filter_from_request
 
 KEY_DATE_REGEXP = \
   re.compile(r'^(?P<year>\d{4})\-(?P<month>\d{2})\-(?P<day>\d{2})$')
@@ -731,6 +732,8 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     creator_names = _get_creator_names_for_checklist(creator)
     filter = None
 
+    story_types = process_story_type_filter_from_request(request)
+
     if edits:
         issues = Issue.objects.filter(credits__creator__in=creator_names,
                                       credits__deleted=False)\
@@ -738,7 +741,7 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     else:
         issues = Issue.objects.filter(
           story__credits__creator__in=creator_names,
-          story__type__id__in=CORE_TYPES,
+          story__type__id__in=story_types,
           story__credits__deleted=False,
           story__credits__credit_type__id__lt=6)\
           .distinct().select_related('series__publisher')
@@ -769,48 +772,37 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
               story__credits__creator__creator=creator,
               story__appearing_characters__character__character=character,
               story__appearing_characters__universe_id=universe_id,
-              story__type__id__in=CORE_TYPES,
+              story__type__id__in=story_types,
               story__appearing_characters__deleted=False).distinct()
         else:
             issues = issues.filter(
               story__credits__creator__creator=creator,
               story__appearing_characters__character__character=character,
-              story__type__id__in=CORE_TYPES,
+              story__type__id__in=story_types,
               story__appearing_characters__deleted=False).distinct()
         heading = 'for creator %s for character %s' % (creator,
                                                        character)
-        filter = filter_issues(request, issues)
-        filter.filters.pop('language')
-        issues = filter.qs
     elif group_id:
         group = get_gcd_object(Group, group_id)
         issues = issues.filter(
           story__credits__creator__creator=creator,
           story__appearing_characters__group_name__group=group,
-          story__type__id__in=CORE_TYPES,
+          story__type__id__in=story_types,
           story__appearing_characters__deleted=False).distinct()
         heading = 'for creator %s for group %s' % (creator,
                                                    group)
-        filter = filter_issues(request, issues)
-        filter.filters.pop('language')
-        issues = filter.qs
     elif feature_id:
         feature = get_gcd_object(Feature, feature_id)
         issues = issues.filter(story__credits__creator__creator=creator,
-                               story__type__id__in=CORE_TYPES,
+                               story__type__id__in=story_types,
                                story__credits__credit_type__id__lt=6,
                                story__feature_object=feature,
                                story__credits__deleted=False,
                                story__deleted=False).distinct()
-        filter = filter_issues(request, issues)
-        filter.filters.pop('language')
-        issues = filter.qs
         heading = 'for creator %s on feature %s' % (creator,
                                                     feature)
     elif edits:
         heading = 'edited by creator %s' % (creator)
-        filter = filter_issues(request, issues)
-        issues = filter.qs
     elif co_creator_id:
         co_creator = get_gcd_object(Creator, co_creator_id)
         stories = Story.objects.filter(credits__creator__creator=creator,
@@ -819,19 +811,20 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                                .filter(credits__creator__creator=co_creator,
                                        credits__credit_type__id__lt=6,
                                        credits__deleted=False)\
-                               .filter(type__id__in=CORE_TYPES,
+                               .filter(type__id__in=story_types,
                                        deleted=False)
         issue_list = stories.values_list('issue', flat=True)
         issues = Issue.objects.filter(id__in=issue_list,
                                       deleted=False).distinct()
-        filter = filter_issues(request, issues)
-        issues = filter.qs
         heading = 'for creator %s with creator %s' % (creator,
                                                       co_creator)
     else:
         heading = 'for creator %s' % (creator)
+    if edits:
         filter = filter_issues(request, issues)
-        issues = filter.qs
+    else:
+        filter = filter_issues(request, issues, story_type_filter=True)
+    issues = filter.qs
     context = {
         'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
         'item_name': 'issue',
@@ -1705,7 +1698,8 @@ def brand_group(request, brand_group_id):
 
 def show_brand_group(request, brand_group, preview=False):
     brand_issues = brand_group.active_issues().order_by(
-      'series__sort_name', 'sort_code').prefetch_related('series', 'brand_emblem',
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'brand_emblem',
                                                          'indicia_publisher')
     image_tag, selected_issue = _get_random_cover_image(request,
                                                         brand_group,
@@ -2876,7 +2870,7 @@ def daily_covers(request, show_date=None, user=False):
     else:
         result_disclaimer = ''
 
-    if date_after != None:
+    if date_after is not None:
         choose_url_after = urlresolvers.reverse(
           '%scovers_by_date' % ('my_' if user else ''),
           kwargs={'show_date': date_after})
@@ -3091,7 +3085,7 @@ def daily_changes(request, show_date=None, user=False):
     if soo_issues:
         images.append((soo_issues, 'image/', 'Statement of ownership',
                        'issue'))
-    if date_after != None:
+    if date_after is not None:
         choose_url_after = urlresolvers.reverse(
           '%schanges_by_date' % ('my_' if user else ''),
           kwargs={'show_date': date_after})
@@ -3575,6 +3569,8 @@ def feature_issues(request, feature_id, to_be_migrated=False):
     feature = get_gcd_object(Feature, feature_id)
     heading = 'for feature %s' % (feature)
 
+    story_types = process_story_type_filter_from_request(request)
+
     if to_be_migrated:
         name = feature.name
         issues = Issue.objects.filter(story__feature__icontains=name,
@@ -3584,7 +3580,7 @@ def feature_issues(request, feature_id, to_be_migrated=False):
         heading = 'to be migrated for feature %s' % (feature)
     elif feature.feature_type.id == 1:
         issues = Issue.objects.filter(story__feature_object=feature,
-                                      story__type__id__in=CORE_TYPES,
+                                      story__type__id__in=story_types,
                                       story__deleted=False).distinct()\
                               .select_related('series__publisher')
         result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -3594,7 +3590,7 @@ def feature_issues(request, feature_id, to_be_migrated=False):
                               .select_related('series__publisher')
         result_disclaimer = MIGRATE_DISCLAIMER
 
-    filter = filter_issues(request, issues)
+    filter = filter_issues(request, issues, story_type_filter=True)
     filter.filters.pop('language')
     issues = filter.qs
 
@@ -4100,10 +4096,12 @@ def character_issues(request, character_id, layer=None, universe_id=None,
     else:
         filter_character = character
 
+    story_types = process_story_type_filter_from_request(request)
+
     query = {'story__appearing_characters__character__character':
              filter_character,
              'story__appearing_characters__deleted': False,
-             'story__type__id__in': CORE_TYPES,
+             'story__type__id__in': story_types,
              'story__deleted': False}
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
@@ -4115,7 +4113,7 @@ def character_issues(request, character_id, layer=None, universe_id=None,
             story__appearing_characters__character__character_id__in=list(
               characters),
             story__appearing_characters__deleted=False,
-            story__type__id__in=CORE_TYPES,
+            story__type__id__in=story_types,
             story__deleted=False).distinct()\
                                  .select_related('series__publisher')
     elif layer == 1 and character.active_generalisations().exists():
@@ -4125,7 +4123,7 @@ def character_issues(request, character_id, layer=None, universe_id=None,
             story__appearing_characters__character__character_id__in=list(
               characters),
             story__appearing_characters__deleted=False,
-            story__type__id__in=CORE_TYPES,
+            story__type__id__in=story_types,
             story__deleted=False).distinct()\
                                  .select_related('series__publisher')
     else:
@@ -4144,7 +4142,7 @@ def character_issues(request, character_id, layer=None, universe_id=None,
                               .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + CHAR_MIGRATE_DISCLAIMER
-    filter = filter_issues(request, issues)
+    filter = filter_issues(request, issues, story_type_filter=True)
     filter.filters.pop('language')
     issues = filter.qs
 
@@ -4172,10 +4170,12 @@ def character_issues_character(request, character_id, character_with_id):
             filter_character = character.active_generalisations()\
                                         .get().from_character
 
+    story_types = process_story_type_filter_from_request(request)
+
     query = {'appearing_characters__character__character':
              filter_character,
              'appearing_characters__deleted': False,
-             'type__id__in': CORE_TYPES,
+             'type__id__in': story_types,
              'deleted': False}
     if universe_id:
         query['appearing_characters__universe_id'] = universe_id
@@ -4191,13 +4191,13 @@ def character_issues_character(request, character_id, character_with_id):
     query_with = {'story__appearing_characters__character__character':
                   filter_character_with,
                   'story__appearing_characters__deleted': False,
-                  'story__type__id__in': CORE_TYPES,
+                  'story__type__id__in': story_types,
                   'story__deleted': False,
                   'story__id__in': stories}
 
     issues = Issue.objects.filter(Q(**query_with)).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues)
+    filter = filter_issues(request, issues, story_type_filter=True)
     filter.filters.pop('language')
     issues = filter.qs
 
@@ -4227,10 +4227,12 @@ def character_issues_feature(request, character_id, feature_id):
             filter_character = character.active_generalisations()\
                                         .get().from_character
 
+    story_types = process_story_type_filter_from_request(request)
+
     query = {'story__appearing_characters__character__character':
              filter_character,
              'story__appearing_characters__deleted': False,
-             'story__type__id__in': CORE_TYPES,
+             'story__type__id__in': story_types,
              'story__feature_object__id': feature_id,
              'story__deleted': False}
 
@@ -4239,7 +4241,7 @@ def character_issues_feature(request, character_id, feature_id):
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues)
+    filter = filter_issues(request, issues, story_type_filter=True)
     filter.filters.pop('language')
     issues = filter.qs
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
@@ -4542,10 +4544,12 @@ def character_name_issues(request, character_name_id, universe_id=None):
     else:
         filter_character_name = character_name
 
+    story_types = process_story_type_filter_from_request(request)
+
     issues = Issue.objects.filter(
       story__appearing_characters__character=filter_character_name,
       story__appearing_characters__deleted=False,
-      story__type__id__in=CORE_TYPES,
+      story__type__id__in=story_types,
       story__deleted=False).distinct().select_related('series__publisher')
     if universe_id:
         if universe_id == '-1':
@@ -4553,7 +4557,7 @@ def character_name_issues(request, character_name_id, universe_id=None):
               story__appearing_characters__character=filter_character_name,
               story__appearing_characters__universe_id__isnull=True,
               story__appearing_characters__deleted=False,
-              story__type__id__in=CORE_TYPES,
+              story__type__id__in=story_types,
               story__deleted=False).distinct()\
                      .select_related('series__publisher')
         else:
@@ -4561,12 +4565,12 @@ def character_name_issues(request, character_name_id, universe_id=None):
               story__appearing_characters__character=filter_character_name,
               story__appearing_characters__universe_id=universe_id,
               story__appearing_characters__deleted=False,
-              story__type__id__in=CORE_TYPES,
+              story__type__id__in=story_types,
               story__deleted=False).distinct()\
                      .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
-    filter = filter_issues(request, issues)
+    filter = filter_issues(request, issues, story_type_filter=True)
     filter.filters.pop('language')
     issues = filter.qs
 
@@ -4689,9 +4693,11 @@ def group_features(request, group_id):
 def group_issues(request, group_id, universe_id=None, story_universe_id=None):
     group = get_gcd_object(Group, group_id)
 
+    story_types = process_story_type_filter_from_request(request)
+
     query = {'story__appearing_groups__group_name__group': group,
              'story__appearing_groups__deleted': False,
-             'story__type__id__in': CORE_TYPES,
+             'story__type__id__in': story_types,
              'story__deleted': False}
 
     if universe_id:
@@ -4710,11 +4716,15 @@ def group_issues(request, group_id, universe_id=None, story_universe_id=None):
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
+    filter = filter_issues(request, issues, story_type_filter=True)
+    issues = filter.qs
+
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'for group %s' % (group)
+        'heading': 'for group %s' % (group),
+        'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = _table_issues_list_or_grid(request, issues, context)
@@ -4764,10 +4774,12 @@ def group_issues_feature(request, group_id, feature_id):
             filter_group = group.active_generalisations()\
                                 .get().from_group
 
+    story_types = process_story_type_filter_from_request(request)
+
     query = {'story__appearing_groups__group_name__group':
              filter_group,
              'story__appearing_groups__deleted': False,
-             'story__type__id__in': CORE_TYPES,
+             'story__type__id__in': story_types,
              'story__feature_object__id': feature_id,
              'story__deleted': False}
 
@@ -4776,7 +4788,7 @@ def group_issues_feature(request, group_id, feature_id):
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues)
+    filter = filter_issues(request, issues, story_type_filter=True)
     filter.filters.pop('language')
     issues = filter.qs
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
