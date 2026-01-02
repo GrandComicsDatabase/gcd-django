@@ -1,5 +1,5 @@
   {% if story.has_credits %}
-<table class="[&_:is(th,td):where(:nth-child(1),)]:text-right">
+<table class="[&_:is(th,td):where(:nth-child(1),)]:text-right [&_tr]:border-none">
   <tbody>
     {% with story=story credit_type="script" %}
     {% include "gcd/bits/tw_single_credit.html" %}

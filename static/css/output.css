@@ -2101,6 +2101,11 @@ a:hover {
   background-color: rgb(254 202 202 / var(--tw-bg-opacity));
 }
 
+.bg-red-300 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 165 165 / var(--tw-bg-opacity));
+}
+
 .bg-red-400 {
   --tw-bg-opacity: 1;
   background-color: rgb(248 113 113 / var(--tw-bg-opacity));
@@ -2129,11 +2134,6 @@ a:hover {
 .bg-yellow-400 {
   --tw-bg-opacity: 1;
   background-color: rgb(250 204 21 / var(--tw-bg-opacity));
-}
-
-.bg-red-300 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(252 165 165 / var(--tw-bg-opacity));
 }
 
 .fill-black {
@@ -2619,6 +2619,16 @@ select {
   background-color: rgb(209 213 219 / var(--tw-bg-opacity));
 }
 
+.hover\:bg-red-100:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 226 226 / var(--tw-bg-opacity));
+}
+
+.hover\:bg-red-300:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(252 165 165 / var(--tw-bg-opacity));
+}
+
 .hover\:bg-red-400:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(248 113 113 / var(--tw-bg-opacity));
@@ -2647,16 +2657,6 @@ select {
 .hover\:bg-stone-400:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(168 162 158 / var(--tw-bg-opacity));
-}
-
-.hover\:bg-red-100:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(254 226 226 / var(--tw-bg-opacity));
-}
-
-.hover\:bg-red-300:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(252 165 165 / var(--tw-bg-opacity));
 }
 
 .hover\:underline:hover {
@@ -3205,14 +3205,14 @@ select {
   padding-right: 0.5rem;
 }
 
-.\[\&_a\]\:py-1 a {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-}
-
 .\[\&_a\]\:px-4 a {
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+.\[\&_a\]\:py-1 a {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
 }
 
 .\[\&_a\]\:text-black a {
@@ -3310,6 +3310,10 @@ select {
 
 .\[\&_tr\]\:border tr {
   border-width: 1px;
+}
+
+.\[\&_tr\]\:border-none tr {
+  border-style: none;
 }
 
 .\[\&_tr\]\:border-gray-400 tr {
