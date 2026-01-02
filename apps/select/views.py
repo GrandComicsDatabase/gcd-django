@@ -1032,6 +1032,10 @@ class SequenceFilter(CommonFilter):
       label='Publisher',
       required=False,
       queryset=Publisher.objects.all())
+    story_type = ModelMultipleChoiceFilter(
+      field_name='type',
+      label='Story Type',
+      queryset=StoryType.objects.exclude(id__in=DEPRECATED_TYPES))
 
     class Meta:
         model = Issue
