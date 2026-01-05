@@ -44,6 +44,10 @@
       <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">
         <button class="btn-blue-editing inline">Compare With & Copy From Preceding Issue</button>
       </a>
+    {% elif issue_revision.variant_of and issue_revision.variant_of.get_prev_next_issue.0 %}
+      <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.get_prev_next_issue.0.id %}">
+        <button class="btn-blue-editing inline">Compare With & Copy From Preceding Issue</button>
+      </a>
     {% endif %}
     </div>
     <div>
