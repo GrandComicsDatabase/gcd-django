@@ -3764,8 +3764,13 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                     existing_groups = existing_groups.exclude(
                       id=new_group.id)
             else:
-                translations = group.group.translations(
-                  revision.issue.series.language)
+                language = revision.issue.series.language
+
+                translations = group.group_name.group.translations(language)
+                if translations.count() == 0 and \
+                   group.group_name.group.translated_from():
+                    translations = group.group_name.group.translated_from()\
+                                                   .translations(language)
                 if translations.count() == 1:
                     group.group_name = translations.get().official_name()
                     new_group = StoryGroupRevision.clone(
