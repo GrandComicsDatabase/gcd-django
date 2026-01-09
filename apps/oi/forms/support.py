@@ -695,7 +695,7 @@ def _get_comments_form_field():
 
 def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
-    if keywords is not None:
+    if keywords is not None and keywords != '':
         not_allowed = False
         for c in ['<', '>', '{', '}', ':', '/', '\\', '|', '@', ',', '\n',
                   '’']:
@@ -710,7 +710,7 @@ def _clean_keywords(cleaned_data):
             if len(keyword) >= 100:
                 raise forms.ValidationError(
                     'A keyword cannot be longer than 100 characters.')
-            if keyword and keyword.strip() == '':
+            if keyword.strip() == '':
                 raise forms.ValidationError(
                   'An extra ";" needs to removed.')
     return keywords
