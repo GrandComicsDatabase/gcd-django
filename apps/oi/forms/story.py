@@ -589,7 +589,7 @@ StoryGroupRevisionFormSet = inlineformset_factory(
     can_delete=True, extra=1)
 
 
-# check with crispy 2.0, why here and in custom_layout ?
+# TODO check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
     def render(self, form, context, renderer=None,
                template_pack=None):
@@ -647,6 +647,37 @@ class StoryRevisionForm(KeywordBaseForm):
         }
 
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the StoryRevisionForm with custom layout and field
+        organization.
+
+        This form constructor creates a complex layout with multiple sections
+        for story revision, including sequence details, creator credits, and
+        character information. The layout can be organized either as a single
+        form or with tabs based on user preferences.
+
+        Args:
+            *args: Variable length argument list passed to parent form.
+            **kwargs: Arbitrary keyword arguments. Must include:
+                user: The user object with indexer preferences (use_tabs flag).
+
+        The form includes:
+            - sequence details section with genre information
+            - creator credits section with formset support
+            - characters section with universe assignment and formsets
+            - dynamic HTML elements for genre display
+            - dynamic HTML elements for character universe management
+            - conditional buttons for character appearance order
+            - tab-based or linear layout based on user preferences
+            - custom field templates and Bootstrap horizontal form styling
+
+        Layout Organization:
+            - If use_tabs is False: All fields are displayed linearly
+            - If use_tabs is True: Fields are organized into three tabs:
+            1. Sequence Details: Main story information and remaining fields
+            2. Creator Credits: Creator formset and related fields
+            3. Characters: Character formsets, groups, and universe management
+        """
         user = kwargs.pop('user')
         super(StoryRevisionForm, self).__init__(*args, **kwargs)
         self.helper = FormHelper()
@@ -669,9 +700,6 @@ class StoryRevisionForm(KeywordBaseForm):
           '<td id="selected-genres"></td></tr>'))
 
         credits_start = fields.index('creator_help')
-        # field_list = [BaseField(Field(field,
-        #                               template='oi/bits/uni_field.html'))
-        #               for field in fields[:credits_start-7]]
         field_list.extend([BaseField(Field(field,
                                      template='oi/bits/uni_field.html'))
                            for field in fields[genres:credits_start-7]])
@@ -713,11 +741,40 @@ class StoryRevisionForm(KeywordBaseForm):
         field_list.append(Field(fields[characters_start],
                                 template='oi/bits/uni_field.html'))
         field_list.append(Formset('groups_formset'))
+        has_appearance_order = False
+        has_importance_order = False
+        if 'instance' in kwargs and kwargs['instance'] and \
+           kwargs['instance'].id:
+            if kwargs['instance'].character_orders.filter(type__id=1):
+                has_appearance_order = True
+            if kwargs['instance'].character_orders.filter(type__id=2):
+                has_importance_order = True
+        character_order_html = '<th></th><td>'
+        if has_appearance_order:
+            character_order_html += '<input type="submit" ' \
+              'name="edit_appearance_order"' \
+              ' value="Save And Edit Appearance Order" ' \
+              'class="m-0 btn-blue-editing inline"/>'
+        else:
+            character_order_html += '<input type="submit" ' \
+              'name="create_appearance_order"' \
+              ' value="Save And Create Appearance Order" ' \
+              'class="m-0 btn-blue-editing inline"/>'
+        if has_importance_order:
+            character_order_html += '<input type="submit" ' \
+              'name="edit_importance_order"' \
+              ' value="Save And Edit Importance Order" ' \
+              'class="m-0 btn-blue-editing inline"/>'
+        else:
+            character_order_html += '<input type="submit" ' \
+              'name="create_importance_order"' \
+              ' value="Save And Create Importance Order" ' \
+              'class="m-0 btn-blue-editing inline"/>'
+        field_list.append(HTML(character_order_html + '</td>'))
         characters_end = len(field_list)
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
                            for field in fields[characters_start+1:]])
-        # characters_end += 1
         if not user.indexer.use_tabs:
             self.helper.layout = Layout(*(f for f in field_list))
         else:

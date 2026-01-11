@@ -14,6 +14,7 @@ from .issue import Issue, IssueCredit, CodeNumberType, PublisherCodeNumber, \
 from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
                    StoryCharacter, CharacterRole, StoryGroup, StoryArc, \
                    StoryArcRelationType, StoryArcRelation, \
+                   CharacterOrderType, CharacterOrder, \
                    STORY_TYPES, OLD_TYPES, NON_OPTIONAL_TYPES, CREDIT_TYPES, \
                    DEPRECATED_TYPES, CORE_TYPES, AD_TYPES
 from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,

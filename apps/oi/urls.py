@@ -208,6 +208,15 @@ urlpatterns = [
         oi_views.compare_stories_copy, name='compare_revisions_copy'),
     path('story/revision/<int:story_revision_id>/select_compare/',
         oi_views.story_select_compare, name='story_select_compare'),
+    path('story/revision/<int:story_revision_id>/create_character_order_revision/type/<int:type_id>/',
+        oi_views.create_character_order_revision,
+        name='create_character_order_revision'),
+    path('story/revision/<int:story_revision_id>/edit_character_order_revision/type/<int:type_id>/',
+        oi_views.edit_character_order_revision,
+        name='edit_character_order_revision'),
+    path('character_order/revision/<int:character_order_id>/reorder/',
+        oi_views.reorder_characters,
+        name='reorder_characters'),
 
     # Story Arc URLs
     path('story_arc/add/',

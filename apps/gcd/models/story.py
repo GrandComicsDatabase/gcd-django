@@ -555,6 +555,45 @@ class StoryCharacter(GcdData):
         return "%s: %s" % (self.story, self.character)
 
 
+class CharacterOrderType(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_character_order_type'
+
+    name = models.CharField(max_length=255, db_index=True, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class CharacterOrder(GcdLink):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_character_order'
+
+    characters = models.ManyToManyField(StoryCharacter,
+                                        through='CharacterThroughOrder')
+    story = models.ForeignKey('Story', on_delete=models.CASCADE,
+                              related_name='character_orders')
+    type = models.ForeignKey(CharacterOrderType,
+                             on_delete=models.CASCADE)
+
+    def __str__(self):
+        return "%s: (order: %d)" % (self.story, self.type)
+
+
+class CharacterThroughOrder(models.Model):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_character_through_order'
+
+    order = models.ForeignKey(CharacterOrder,
+                                 on_delete=models.CASCADE)
+    story_character = models.ForeignKey(StoryCharacter,
+                                        on_delete=models.CASCADE)
+    order_code = models.IntegerField(default=0, db_index=True)
+
+
 class StoryGroup(GcdData):
     class Meta:
         app_label = 'gcd'

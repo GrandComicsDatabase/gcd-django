@@ -38,6 +38,7 @@ from apps.gcd.models import (
     SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
     CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
     StoryGroup, StoryArc, StoryArcRelation, Universe, Multiverse,
+    CharacterOrderType, CharacterOrder,
     BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
@@ -5447,6 +5448,65 @@ class StoryCharacterRevision(Revision):
         return 0
 
 
+class CharacterOrderRevision(Revision):
+    class Meta:
+        app_label = 'oi'
+        db_table = 'oi_character_order_revision'
+
+    character_order = models.ForeignKey(CharacterOrder, null=True,
+                                        on_delete=models.CASCADE,
+                                        related_name='revisions')
+    characters = models.ManyToManyField(
+      StoryCharacterRevision, through='CharacterThroughOrderRevision')
+    story = models.ForeignKey('StoryRevision', on_delete=models.CASCADE,
+                              related_name='character_orders')
+    type = models.ForeignKey(CharacterOrderType,
+                             on_delete=models.CASCADE)
+
+    @property
+    def ordered_characters(self):
+        return self.characters.order_by(
+          'characterthroughorderrevision__order_code')
+
+    def story_characters(self):
+        # get existing characters in their order
+        order = 0
+        character_order_list = []
+        for character in self.ordered_characters:
+            character_order_list.append((character, order))
+            order += 1
+        character_order_list.append((None, order))
+        order += 1
+        # get all characters appearing in the story
+        # user order by id, which could reflect creation order
+        story_characters = self.story.appearing_characters.order_by('id')
+        # process characters to have civilians after their aliases
+        character_list = _order_civilian_after_alias(story_characters)
+        for character in character_list:
+            if not self.characters.filter(id=character[0].id).exists():
+                character_order_list.append((character[0], order))
+                order += 1
+                # we do not add civilians if their alias is present, so
+                # we ignore character[1] here
+        return character_order_list
+
+    def __str__(self):
+        return "%s: (order: %s)" % (self.story, self.type)
+
+
+class CharacterThroughOrderRevision(models.Model):
+    class Meta:
+        app_label = 'oi'
+        db_table = 'oi_character_through_order'
+        ordering = ['order_code']
+
+    order = models.ForeignKey(CharacterOrderRevision,
+                              on_delete=models.CASCADE)
+    story_character = models.ForeignKey(StoryCharacterRevision,
+                                        on_delete=models.CASCADE)
+    order_code = models.IntegerField(default=0, db_index=True)
+
+
 class StoryGroupRevision(Revision):
     class Meta:
         db_table = 'oi_story_group_revision'
@@ -5672,6 +5732,28 @@ class StoryArcRelationRevision(Revision):
                                str(self.relation_type),
                                str(self.to_story_arc)
                                )
+
+
+def _order_civilian_after_alias(story_characters):
+    character_list = []
+    for character in story_characters:
+        alias_identity = set(
+            character.character.character.from_related_character
+                     .filter(relation_type__id=2)
+                     .values_list('from_character', flat=True))\
+                     .intersection(story_characters.filter(
+                                   universe=character.universe).values_list(
+                                   'character__character', flat=True))
+        if alias_identity:
+            continue
+        civilian_identity = _get_civilian_identity(character,
+                                                   story_characters)
+        if civilian_identity:
+            civilian_identity = story_characters.filter(
+                universe=character.universe,
+                character__character__id__in=civilian_identity)
+        character_list.append([character, civilian_identity])
+    return character_list
 
 
 class StoryRevision(Revision):
@@ -6094,24 +6176,7 @@ class StoryRevision(Revision):
           queryset=self.story_credit_revisions.filter(deleted=False))
 
         story_characters = self.story_character_revisions.filter(deleted=False)
-        character_list = []
-        for character in story_characters:
-            alias_identity = set(
-              character.character.character.from_related_character
-                       .filter(relation_type__id=2)
-                       .values_list('from_character', flat=True))\
-                       .intersection(story_characters.filter(
-                          universe=character.universe).values_list(
-                          'character__character', flat=True))
-            if alias_identity:
-                continue
-            civilian_identity = _get_civilian_identity(character,
-                                                       story_characters)
-            if civilian_identity:
-                civilian_identity = story_characters.filter(
-                  universe=character.universe,
-                  character__character__id__in=civilian_identity)
-            character_list.append([character, civilian_identity])
+        character_list = _order_civilian_after_alias(story_characters)
         order = 0
         # Create a dict to store order by character id
         order_map = {}

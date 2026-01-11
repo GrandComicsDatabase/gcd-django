@@ -1,0 +1,79 @@
+{% extends "oi/base_view.html" %}
+
+{% load static %}
+{% load credits %}
+{% load display %}
+
+{% block title %}
+{{ Story }} Character Order
+{% endblock %}
+
+{% block view_body %}
+<h1> {{ story }} Character Order </h1>
+
+<h3> Reordering Characters </h3>
+<p>
+You can reorder the characters in a story by clicking and moving one sequence (or more) to the correct position.
+</p>
+<p>
+You can also reorder the characters in a story by changing one or more order codes.
+Since the numbers in this form do not need to be whole numbers, you can move one
+and shift others up or down with a minimal number of changes.  For instance:
+</p>
+<ul class="list-disc list-outside ps-4">
+  <li> You may use negative numbers
+  <li> You may use decimal numbers using a decimal point (i.e. 2.5, -10.125, etc.)
+  <li> You may *NOT* use commas (our apologies to folks who would prefer to write
+       the above as 2,5; -10,125; etc.)
+</ul>
+<p>
+The actual order codes that get saved to the database will be whole numbers
+calculated by the system, so do not worry about what exact numbers are used in this
+form.  They only need to be in the correct order.
+</p>
+
+<form
+      method="POST"
+      action="{% url 'reorder_characters' character_order_id=character_order.id %}">
+{% csrf_token %}
+<table id="reorder_characters">
+  <thead>
+    <tr class="bg-blue-100">
+      <th class="order_code_col"> Order Code </th>
+      <th> Character </th>
+    </tr>
+  </thead>
+  <tbody>
+{% for character in character_order.story_characters %}
+    <tr class="[&>td]:pe-1 hover:bg-blue-50 cursor-move">
+      {% if not character.0 %}
+      <td class="text-right"> <input type="text" class="w-16 order_code"
+                  id="order_code_boundary"
+                  name="order_code_boundary"
+                  value="{{ character.1 }}">
+      </td>
+      <td> <b>--- characters below will be ordered alphabetically ---</b></td>
+      {% else %}
+      <td class="text-right"> <input type="text" class="w-16 order_code"
+                  id="order_code_{{ character.0.id }}"
+                  name="order_code_{{ character.0.id }}"
+                  value="{{ character.1 }}">
+      </td>
+      <td> {{ character.0.character }} </td>
+      {% endif %}
+    </tr>
+{% endfor %}
+  </tbody>
+</table>
+<button class="btn-blue-editing inline"><input type="submit" name="commit" value="Reorder And Further Edit Sequence"></button>
+<button class="btn-blue-editing inline"><input type="submit" name="commit_and_changeset" value="Reorder"></button>
+<button class="btn-blue-editing inline"><input type="submit" name="cancel" value="Cancel"></button>
+</form>
+
+<script type='text/javascript' src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script type='text/javascript' src='{% static "js/oi/ordering.js" %}'></script>
+<script>
+const tbody = document.querySelector('#reorder_characters tbody');
+initializeSortableReorder(tbody, 'order_code');
+</script>
+{% endblock %}

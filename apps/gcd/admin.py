@@ -4,7 +4,7 @@ from .models import (MembershipType, NameType, NonComicWorkRole, CreditType,
                      NonComicWorkType, RelationType, School, SeriesBondType,
                      SourceType, FeatureType, FeatureRelationType, StoryType,
                      Degree, CodeNumberType, CharacterRelationType,
-                     StoryArcRelationType,
+                     CharacterOrderType, StoryArcRelationType,
                      GroupRelationType, Multiverse, CharacterRole, ExternalSite)
 
 
@@ -29,6 +29,7 @@ admin.site.register(CharacterRole)
 admin.site.register(SeriesBondType, SeriesBondTypeAdmin)
 admin.site.register(NameType)
 admin.site.register(SourceType)
+admin.site.register(CharacterOrderType)
 admin.site.register(CreditType)
 admin.site.register(CodeNumberType)
 admin.site.register(FeatureType)
