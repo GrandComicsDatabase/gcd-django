@@ -1048,7 +1048,7 @@ class SequenceFilter(CommonFilter):
       queryset=StoryType.objects.exclude(id__in=DEPRECATED_TYPES))
     universe = ModelMultipleChoiceFilter(
       field_name='universe',
-      label='Universe',
+      label='Story Universe',
       required=False,
       queryset=Universe.objects.all())
 
