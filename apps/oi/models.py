@@ -1251,8 +1251,8 @@ class Revision(models.Model):
 
     # Child classes must set these properly.  Unlike source, they cannot be
     # instance properties because they are needed during revision construction.
-    # H.TODO source_name = NotImplemented
-    source_class = NotImplemented
+    # H.TODO source_name = NotImplementedError
+    source_class = NotImplementedError
     # H.TODO no separate _get_source
 
     @property
