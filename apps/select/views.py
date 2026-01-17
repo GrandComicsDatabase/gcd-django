@@ -704,6 +704,7 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
 
         language = self.forwarded.get('language_code', None)
         group_name = self.forwarded.get('group_name', None)
+        current_character_id = self.forwarded.get('current_character_id', None)
 
         if language and language not in ['zxx', 'und']:
             qs = qs.filter(character__language__code__in=[language, 'zxx'])
@@ -711,6 +712,12 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
         if group_name:
             qs = qs.filter(
               character__memberships__group__group_names=group_name).distinct()
+
+        if current_character_id:
+            character = Character.objects.get(
+              character_names__id=current_character_id)
+            qs = qs.filter(character__id=character.id)
+
         qs = _filter_and_sort(qs, self.q, parent_disambiguation='character',
                               chrono_sort='character__year_first_published')
 
@@ -1039,7 +1046,7 @@ class SequenceFilter(CommonFilter):
 
     class Meta:
         model = Issue
-        fields = ['country', 'language', 'publisher']
+        fields = ['country', 'language', 'publisher', 'story_type']
 
 
 class KeywordUsedFilter(FilterSet):

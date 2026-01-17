@@ -458,6 +458,16 @@ class StoryCharacterRevisionForm(forms.ModelForm):
                instance.is_flashback or instance.is_origin or \
                instance.is_death or instance.notes:
                 self.fields['additional_information'].initial = True
+            if instance.characterorderrevision_set.exists():
+                self.no_delete = True
+                self.fields['character'].help_text = \
+                    'Characters that are part of a character order cannot be ' \
+                    'removed.'
+                if self.instance and self.instance.character:
+                    self.fields['character'].widget.forward = [
+                        forward.Const(self.instance.character.id,
+                                      'current_character_id')
+                    ]
 
     character = forms.ModelChoiceField(
       queryset=CharacterNameDetail.objects.all(),
