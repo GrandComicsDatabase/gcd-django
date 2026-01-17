@@ -169,6 +169,8 @@ class AccountForm(forms.Form):
 
     def clean_items_per_page(self):
         items_per_page = self.cleaned_data['items_per_page']
+        if items_per_page is None:
+            return -1
         if items_per_page < -1 or items_per_page == 0:
             raise forms.ValidationError(
               ['Items per page must be -1 (for default) or a positive '
