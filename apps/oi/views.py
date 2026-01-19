@@ -2742,6 +2742,7 @@ def add_issues(request, series_id, method=None):
 
     form_class = get_bulk_issue_revision_form(series=series, method=method,
                                               user=request.user)
+    credits_formset = IssueRevisionFormSet(request.POST or None)
 
     if request.method != 'POST':
         reversed_issues = series.active_issues().order_by('-sort_code')
@@ -2749,7 +2750,8 @@ def add_issues(request, series_id, method=None):
         if reversed_issues.count():
             initial['after'] = reversed_issues[0].id
         form = form_class(initial=initial)
-        return _display_bulk_issue_form(request, series, form, method)
+        return _display_bulk_issue_form(request, series, form, 
+                                       credits_formset, method)
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -2757,8 +2759,9 @@ def add_issues(request, series_id, method=None):
           kwargs={'series_id': series_id}))
 
     form = form_class(request.POST)
-    if not form.is_valid():
-        return _display_bulk_issue_form(request, series, form, method)
+    if not form.is_valid() or not credits_formset.is_valid():
+        return _display_bulk_issue_form(request, series, form,
+                                       credits_formset, method)
 
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['issue_add'])
@@ -2778,6 +2781,15 @@ def add_issues(request, series_id, method=None):
     # "after" for the rest of the issues gets set when they are all
     # committed to display.
     new_issues[0].after = form.cleaned_data['after']
+    
+    # Process editor credits from the formset - these will be cloned to all issues
+    credit_revisions_data = []
+    for credit_form in credits_formset:
+        if credit_form.cleaned_data and not credit_form.cleaned_data.get('DELETE', False):
+            # Skip empty forms
+            if 'creator' in credit_form.cleaned_data and credit_form.cleaned_data['creator']:
+                credit_revisions_data.append(credit_form.cleaned_data)
+    
     for revision in new_issues:
         revision.save_added_revision(changeset=changeset, series=series)
         if form.cleaned_data['brand_emblem']:
@@ -2785,6 +2797,21 @@ def add_issues(request, series_id, method=None):
         if form.cleaned_data['indicia_printer']:
             revision.indicia_printer.set(form.cleaned_data['indicia_printer']
                                              .all())
+        # Clone editor credits to each issue
+        for credit_data in credit_revisions_data:
+            credit = IssueCreditRevision(
+                issue_revision=revision,
+                creator=credit_data['creator'],
+                credit_type=credit_data['credit_type'],
+                is_credited=credit_data.get('is_credited', False),
+                credited_as=credit_data.get('credited_as', ''),
+                uncertain=credit_data.get('uncertain', False),
+                credit_name=credit_data.get('credit_name', ''),
+                is_sourced=credit_data.get('is_sourced', False),
+                sourced_by=credit_data.get('sourced_by', ''),
+                changeset=changeset
+            )
+            credit.save()
     return submit(request, changeset.id)
 
 
@@ -2897,10 +2924,13 @@ def _build_issue(form, revision_sort_code, number,
       no_editing=cd['no_editing'],
       no_isbn=cd['no_isbn'],
       no_barcode=cd['no_barcode'],
+      rating=cd['rating'],
+      no_rating=cd['no_rating'],
       revision_sort_code=revision_sort_code)
 
 
-def _display_bulk_issue_form(request, series, form, method=None):
+def _display_bulk_issue_form(request, series, form, credits_formset, 
+                            method=None):
     kwargs = {
         'series_id': series.id,
     }
@@ -2918,6 +2948,7 @@ def _display_bulk_issue_form(request, series, form, method=None):
         'extra_adding_info': extra_adding_info,
         'action_label': 'Submit new',
         'form': form,
+        'credits_formset': credits_formset,
       })
 
 

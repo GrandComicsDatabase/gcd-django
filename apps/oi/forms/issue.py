@@ -819,6 +819,26 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 'rating', 'no_rating', 'comments',
                 'publisher_id', 'year_began']
 
+    def _init_creator_editors(self):
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.form_class = 'form-horizontal'
+        self.helper.label_class = 'col-md-3 create-label'
+        self.helper.field_class = 'col-md-9'
+        self.helper.form_tag = False
+        fields = list(self.fields)
+
+        credit_start = fields.index('editing')
+        field_list = [BaseField(Field(field,
+                                      template='oi/bits/uni_field.html'))
+                      for field in fields[:credit_start]]
+        field_list.append(Formset('credits_formset'))
+        field_list.extend([BaseField(Field(field,
+                                           template='oi/bits/uni_field.html'))
+                           for field in fields[credit_start:]])
+        self.helper.layout = Layout(*(f for f in field_list))
+        self.helper.doc_links = ISSUE_HELP_LINKS
+
     def clean(self):
         cd = self.cleaned_data
 
@@ -878,6 +898,7 @@ class WholeNumberIssueRevisionForm(BulkIssueRevisionForm):
         ordering.extend(self._shared_key_order())
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
+        self._init_creator_editors()
 
     def clean(self):
         cd = super(WholeNumberIssueRevisionForm, self).clean()
@@ -914,6 +935,7 @@ class PerVolumeIssueRevisionForm(BulkIssueRevisionForm):
         ordering.extend(self._shared_key_order())
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
+        self._init_creator_editors()
 
     def clean(self):
         cd = super(PerVolumeIssueRevisionForm, self).clean()
@@ -987,6 +1009,7 @@ class PerYearIssueRevisionForm(BulkIssueRevisionForm):
         ordering.extend(self._shared_key_order())
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
+        self._init_creator_editors()
 
     def clean(self):
         cd = super(PerYearIssueRevisionForm, self).clean()
@@ -1052,6 +1075,7 @@ class PerYearVolumeIssueRevisionForm(PerYearIssueRevisionForm):
         ordering.extend(self._shared_key_order())
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
+        self._init_creator_editors()
 
     def clean(self):
         cd = super(PerYearIssueRevisionForm, self).clean()
