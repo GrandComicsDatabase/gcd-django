@@ -352,6 +352,11 @@ class Issue(GcdData):
 
         return mark_safe(printers)
 
+    def show_brand_emblems(self):
+        from apps.gcd.templatetags.display import absolute_url
+        return mark_safe('; '.join(absolute_url(brand)
+                                   for brand in self.brand_emblem.all()))
+
     def has_keywords(self):
         if self.series.is_singleton:
             return self.keywords.exists() or self.series.has_keywords()

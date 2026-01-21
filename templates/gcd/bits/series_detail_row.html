@@ -31,7 +31,7 @@
     {% if issue.no_brand %}
   <td>&nbsp;</td>
     {% else %}
-  <td> {{ issue.brand|absolute_url|default:"?" }} </td>
+  <td> {{ issue.show_brand_emblems|default:"?" }} </td>
     {% endif %}
   {% endif %}
   <td> {{ issue|show_page_count }} </td>
