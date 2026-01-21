@@ -904,6 +904,7 @@ class CommonFilter(FilterSet):
         country = kwargs.pop('country', None)
         language = kwargs.pop('language', None)
         publisher = kwargs.pop('publisher', None)
+        universe = kwargs.pop('universe', None)
         super(CommonFilter, self).__init__(*args, **kwargs)
         needed_values = []
         if country:
@@ -935,6 +936,15 @@ class CommonFilter(FilterSet):
         if publishers:
             qs = Publisher.objects.filter(id__in=publishers)
             self.form['publisher'].field.queryset = qs
+        if universe:
+            universes = set(self.qs.values_list(universe, flat=True))
+            universes.discard(None) # Remove None before checking if set is empty
+            if universes:
+                qs = Universe.objects.filter(id__in=universes).select_related('verse')
+                self.form['universe'].field.queryset = qs
+            else:
+                # No universes in the data, hide the filter completely
+                self.form.fields.pop('universe')
 
 
 class FilterForLanguage(CommonFilter):
@@ -1040,10 +1050,15 @@ class SequenceFilter(CommonFilter):
       field_name='type',
       label='Story Type',
       queryset=StoryType.objects.exclude(id__in=DEPRECATED_TYPES))
+    universe = ModelMultipleChoiceFilter(
+      field_name='universe',
+      label='Story Universe',
+      required=False,
+      queryset=Universe.objects.all())
 
     class Meta:
         model = Issue
-        fields = ['country', 'language', 'publisher']
+        fields = ['country', 'language', 'publisher', 'universe']
 
 
 class KeywordUsedFilter(FilterSet):
@@ -1115,7 +1130,8 @@ def filter_sequences(request, sequences):
                             queryset=sequences,
                             country='issue__series__country',
                             language='issue__series__language',
-                            publisher='issue__series__publisher')
+                            publisher='issue__series__publisher',
+                            universe='universe')
     return filter
 
 
