@@ -2750,8 +2750,8 @@ def add_issues(request, series_id, method=None):
         if reversed_issues.count():
             initial['after'] = reversed_issues[0].id
         form = form_class(initial=initial)
-        return _display_bulk_issue_form(request, series, form, 
-                                       credits_formset, method)
+        return _display_bulk_issue_form(request, series, form,
+                                        credits_formset, method)
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -2761,7 +2761,7 @@ def add_issues(request, series_id, method=None):
     form = form_class(request.POST)
     if not form.is_valid() or not credits_formset.is_valid():
         return _display_bulk_issue_form(request, series, form,
-                                       credits_formset, method)
+                                        credits_formset, method)
 
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['issue_add'])
@@ -2781,15 +2781,18 @@ def add_issues(request, series_id, method=None):
     # "after" for the rest of the issues gets set when they are all
     # committed to display.
     new_issues[0].after = form.cleaned_data['after']
-    
-    # Process editor credits from the formset - these will be cloned to all issues
+
+    # Process editor credits from the formset - these will be cloned
+    # to all issues
     credit_revisions_data = []
     for credit_form in credits_formset:
-        if credit_form.cleaned_data and not credit_form.cleaned_data.get('DELETE', False):
+        if (credit_form.cleaned_data and
+                not credit_form.cleaned_data.get('DELETE', False)):
             # Skip empty forms
-            if 'creator' in credit_form.cleaned_data and credit_form.cleaned_data['creator']:
+            if ('creator' in credit_form.cleaned_data and
+                    credit_form.cleaned_data['creator']):
                 credit_revisions_data.append(credit_form.cleaned_data)
-    
+
     for revision in new_issues:
         revision.save_added_revision(changeset=changeset, series=series)
         if form.cleaned_data['brand_emblem']:
@@ -2929,8 +2932,8 @@ def _build_issue(form, revision_sort_code, number,
       revision_sort_code=revision_sort_code)
 
 
-def _display_bulk_issue_form(request, series, form, credits_formset, 
-                            method=None):
+def _display_bulk_issue_form(request, series, form, credits_formset,
+                             method=None):
     kwargs = {
         'series_id': series.id,
     }
