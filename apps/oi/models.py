@@ -343,7 +343,8 @@ class Changeset(models.Model):
                     self.coverrevisions.all(),
                     self.reprintrevisions.all(),
                     self.publishercodenumberrevisions.all(),
-                    self.externallinkrevisions.all())
+                    self.externallinkrevisions.all(),
+                    self.characterorderrevisions.all(),)
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
             if self.issuerevisions.all().count() == 1 and \
@@ -357,7 +358,8 @@ class Changeset(models.Model):
                         self.coverrevisions.all(),
                         self.reprintrevisions.all(),
                         self.publishercodenumberrevisions.all(),
-                        self.externallinkrevisions.all())
+                        self.externallinkrevisions.all(),
+                        self.characterorderrevisions.all(),)
             elif self.issuerevisions.all().count() == 1:
                 return (self.issuerevisions.all(),
                         self.issuecreditrevisions.all(),
@@ -2111,7 +2113,6 @@ class Revision(models.Model):
         for multi in self._get_multi_value_fields():
             old_rp = relpath.RelPath(type(self), multi)
             new_rp = relpath.RelPath(type(self.source), multi)
-
             new_rp.set_value(self.source, old_rp.get_value(self))
 
         self._post_save_object(changes)
@@ -4425,6 +4426,17 @@ class IssueRevision(Revision):
                 if delete:
                     credit_revision.deleted = story_revision.deleted
                     credit_revision.save()
+            for character_order in story.character_orders.all():
+                order_lock = _get_revision_lock(character_order,
+                                                changeset=self.changeset)
+                if order_lock is None:
+                    raise IntegrityError("needed Order lock not possible")
+                order_revision = CharacterOrderRevision.clone(
+                  character_order, self.changeset,
+                  story_revision=story_revision)
+                if delete:
+                    order_revision.deleted = story_revision.deleted
+                    order_revision.save()
             for character in story.active_characters:
                 character_lock = _get_revision_lock(character,
                                                     changeset=self.changeset)
@@ -4435,6 +4447,14 @@ class IssueRevision(Revision):
                 if delete:
                     character_revision.deleted = story_revision.deleted
                     character_revision.save()
+                for order in character.characterorder_set.all():
+                    order_code = character\
+                      .characterthroughorder_set.get(order=order).order_code
+                    order_revision = order.revisions.get(
+                      changeset=self.changeset)
+                    order_revision.character_revisions.add(
+                      character_revision,
+                      through_defaults={'order_code': order_code})
             for group in story.active_groups:
                 group_lock = _get_revision_lock(group,
                                                 changeset=self.changeset)
@@ -5456,16 +5476,58 @@ class CharacterOrderRevision(Revision):
     character_order = models.ForeignKey(CharacterOrder, null=True,
                                         on_delete=models.CASCADE,
                                         related_name='revisions')
-    characters = models.ManyToManyField(
+    character_revisions = models.ManyToManyField(
       StoryCharacterRevision, through='CharacterThroughOrderRevision')
-    story = models.ForeignKey('StoryRevision', on_delete=models.CASCADE,
-                              related_name='character_orders')
+    story_revision = models.ForeignKey(
+      'StoryRevision', on_delete=models.CASCADE,
+      related_name='character_order_revisions')
     type = models.ForeignKey(CharacterOrderType,
                              on_delete=models.CASCADE)
 
+    source_name = 'character_order'
+    source_class = CharacterOrder
+
+    @property
+    def source(self):
+        return self.character_order
+
+    @source.setter
+    def source(self, value):
+        self.character_order = value
+
+    def _pre_save_object(self, changes):
+        self.character_order.story = self.story_revision.story
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        self.story_revision = kwargs['story_revision']
+
+    def _post_save_object(self, changes):
+        characters = self.character_order.characters.all()
+        character_revisions = self.character_revisions.all()
+        for character in characters:
+            if not character_revisions.filter(
+              character__id=character.id,
+              universe=character.universe).count():
+                self.character_order.characters.remove(character)
+            else:
+                character.order_code = character_revisions.get(
+                  character__id=character.id,
+                  universe=character.universe).order_code
+                character.save()
+        for character_revision in character_revisions:
+            if not characters.filter(
+              id=character_revision.character.id,
+              universe=character_revision.universe).exists():
+                order_code = character_revision\
+                  .characterthroughorderrevision_set.get(order=self).order_code
+                self.character_order.characters.add(
+                  character_revision.story_character,
+                  through_defaults={'order_code': order_code})
+
     @property
     def ordered_characters(self):
-        return self.characters.order_by(
+        return self.character_revisions.order_by(
           'characterthroughorderrevision__order_code')
 
     def story_characters(self):
@@ -5479,19 +5541,33 @@ class CharacterOrderRevision(Revision):
         order += 1
         # get all characters appearing in the story
         # user order by id, which could reflect creation order
-        story_characters = self.story.appearing_characters.order_by('id')
+        story_characters = self.story_revision.appearing_characters\
+                               .order_by('id')
         # process characters to have civilians after their aliases
         character_list = _order_civilian_after_alias(story_characters)
         for character in character_list:
-            if not self.characters.filter(id=character[0].id).exists():
+            character_id = character[0].id
+            # add characters to the list if not already present in the order
+            if not self.character_revisions.filter(id=character_id).exists():
                 character_order_list.append((character[0], order))
                 order += 1
                 # we do not add civilians if their alias is present, so
                 # we ignore character[1] here
         return character_order_list
 
+    def _get_blank_values(self):
+        return {
+            'story_revision': None,
+            'type': None,
+        }
+
+    def process_ordered_appearing_characters(self):
+        from apps.gcd.models.story import process_ordered_appearing_characters
+        self.story = self.story_revision
+        return process_ordered_appearing_characters(self)
+
     def __str__(self):
-        return "%s: (order: %s)" % (self.story, self.type)
+        return "%s: (order: %s)" % (self.story_revision, self.type)
 
 
 class CharacterThroughOrderRevision(models.Model):
@@ -7038,6 +7114,10 @@ class PreviewStory(Story):
     @property
     def active_groups(self):
         return self.revision.story_group_revisions.exclude(deleted=True)
+
+    @property
+    def character_orders(self):
+        return self.revision.character_order_revisions.exclude(deleted=True)
 
     def has_credits(self):
         """

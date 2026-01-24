@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ('changeset', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='%(class)ss', to='oi.changeset')),
                 ('character_order', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='revisions', to='gcd.characterorder')),
                 ('previous_revision', models.OneToOneField(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='next_revision', to='oi.characterorderrevision')),
-                ('story', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='character_orders', to='oi.storyrevision')),
+                ('story_revision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='character_order_revisions', to='oi.storyrevision')),
                 ('type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='gcd.characterordertype')),
             ],
             options={
@@ -40,11 +40,12 @@ class Migration(migrations.Migration):
             ],
             options={
                 'db_table': 'oi_character_through_order',
+                'ordering': ['order_code'],
             },
         ),
         migrations.AddField(
             model_name='characterorderrevision',
-            name='characters',
+            name='character_revisions',
             field=models.ManyToManyField(through='oi.CharacterThroughOrderRevision', to='oi.storycharacterrevision'),
         ),
     ]

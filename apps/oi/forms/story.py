@@ -461,7 +461,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
             if instance.characterorderrevision_set.exists():
                 self.no_delete = True
                 self.fields['character'].help_text = \
-                    'Characters that are part of a character order cannot be ' \
+                    'Characters that are part of a character order cannot be '\
                     'removed.'
                 if self.instance and self.instance.character:
                     self.fields['character'].widget.forward = [
@@ -755,9 +755,9 @@ class StoryRevisionForm(KeywordBaseForm):
         has_importance_order = False
         if 'instance' in kwargs and kwargs['instance'] and \
            kwargs['instance'].id:
-            if kwargs['instance'].character_orders.filter(type__id=1):
+            if kwargs['instance'].character_order_revisions.filter(type__id=1):
                 has_appearance_order = True
-            if kwargs['instance'].character_orders.filter(type__id=2):
+            if kwargs['instance'].character_order_revisions.filter(type__id=2):
                 has_importance_order = True
         character_order_html = '<th></th><td>'
         if has_appearance_order:

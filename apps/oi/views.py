@@ -562,7 +562,8 @@ def submit(request, id):
     if comment_text == '' and changeset.approver is None and \
        changeset.comments.count() == 1:
         changeset.calculate_imps()
-        if changeset.imps == 0:
+        if changeset.imps == 0 and not \
+           changeset.characterorderrevisions.exists():
             return oi_render(
               request, 'indexer/error.html',
               {'error_text': mark_safe('A submission needs to consists of at '
@@ -3831,15 +3832,15 @@ def edit_character_order_revision(request, story_revision_id, type_id):
         return render_error(
           request, 'Only the reservation holder may edit character orders.')
     type = get_object_or_404(CharacterOrderType, id=type_id)
-    if not story_revision.character_orders.filter(type=type).exists():
+    if not story_revision.character_order_revisions.filter(type=type).exists():
         return render_error(
           request,
           'A character order of type "%s" does not exist for story "%s".'
           % (type.name, story_revision))
     return HttpResponseRedirect(urlresolvers.reverse(
       'reorder_characters',
-      kwargs={'character_order_id': story_revision.character_orders.get(
-        type=type).id}))
+      kwargs={'character_order_id':
+              story_revision.character_order_revisions.get(type=type).id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -3850,13 +3851,13 @@ def create_character_order_revision(request, story_revision_id, type_id):
         return render_error(
           request, 'Only the reservation holder may create character orders.')
     type = get_object_or_404(CharacterOrderType, id=type_id)
-    if story_revision.character_orders.filter(type=type).exists():
+    if story_revision.character_order_revisions.filter(type=type).exists():
         return render_error(
           request,
           'A character order of type "%s" already exists for story "%s".'
           % (type.name, story_revision))
     order_revision = CharacterOrderRevision(
-      story=story_revision,
+      story_revision=story_revision,
       type=type,
       changeset=changeset)
     order_revision.save()
@@ -5494,8 +5495,9 @@ def reorder_characters(request, character_order_id):
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
-          'edit_revision', kwargs={'id': character_order_revision.story.id,
-                                   'model_name': 'story'}))
+          'edit_revision',
+          kwargs={'id': character_order_revision.story_revision.id,
+                  'model_name': 'story'}))
 
     try:
         order_code_boundary = request.POST['order_code_boundary']
@@ -5506,7 +5508,8 @@ def reorder_characters(request, character_order_id):
                 if value and float(value) >= float(order_code_boundary):
                     request_post.pop(key)
                     character_id = int(key.split('_')[-1])
-                    revision_characters = character_order_revision.characters
+                    revision_characters = character_order_revision\
+                        .character_revisions
                     if revision_characters.filter(id=character_id).exists():
                         revision_characters.remove(character_id)
         request.POST = request_post
@@ -5515,7 +5518,7 @@ def reorder_characters(request, character_order_id):
                                            'character', StoryCharacterRevision)
         order = 0
         for character in characters:
-            revision_characters = character_order_revision.characters
+            revision_characters = character_order_revision.character_revisions
             if not revision_characters.filter(id=character.id).exists():
                 revision_characters.add(character,
                                         through_defaults={'order_code': order})
@@ -5531,8 +5534,9 @@ def reorder_characters(request, character_order_id):
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit', kwargs={'id': changeset.id}))
         return HttpResponseRedirect(urlresolvers.reverse(
-          'edit_revision', kwargs={'id': character_order_revision.story.id,
-                                   'model_name': 'story'}))
+          'edit_revision',
+          kwargs={'id': character_order_revision.story_revision.id,
+                  'model_name': 'story'}))
 
     except ViewTerminationError as vte:
         return vte.response

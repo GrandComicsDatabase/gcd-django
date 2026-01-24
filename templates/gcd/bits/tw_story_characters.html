@@ -1,0 +1,31 @@
+        {% with group_list=characters.0 character_list=characters.1 %}
+          {% if group_list %}
+            {% for group in group_list %}
+    <a href="{{ group.0.group_name.group.get_absolute_url }}"><b>{{ group.0.group_name.name }}</b></a>
+              {% if group.1 %}
+    <span class=""><i>({{ group.1 }})</i></span>
+              {% endif %}
+              {% if group.0.notes %}
+    <span class="">({{ group.0.notes }})</span>
+              {% endif %}
+              {% if group.2 %}
+                {% with character_list=group.2 %}
+    <ul class="list-disc sm:columns-2 ps-8 lg:columns-3 gap-8">
+                  {% include 'gcd/bits/tw_character_list.html' %}
+    </ul>
+                {% endwith %}
+              {% else %}
+                <br>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {% if character_list %}
+            {% if character_list|length > 1 %}
+    <ul class="list-disc sm:columns-2 lg:columns-3 ps-4 gap-8">
+            {% else %}
+    <ul class="list-disc ps-4 gap-8">
+            {% endif %}
+            {% include 'gcd/bits/tw_character_list.html' %}
+    </ul>
+          {% endif %}
+        {% endwith %}

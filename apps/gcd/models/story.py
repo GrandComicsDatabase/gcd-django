@@ -209,6 +209,10 @@ def _process_single_character(character, appearing_characters,
 
 
 def process_appearing_characters(story):
+    """
+    Return a properly formatted list of characters appearing in the story.
+    Ordering is by groups first, then by character sort name.
+    """
     all_appearing_characters = story.active_characters
     in_group = all_appearing_characters.exclude(group_name=None)
     groups = story.active_groups
@@ -248,8 +252,94 @@ def process_appearing_characters(story):
     return (group_list, character_list)
 
 
+def process_ordered_appearing_characters(character_order):
+    """
+    Return a properly formatted list of characters appearing in the story.
+    The order ist defined by the given CharacterOrder, followed by any other
+    appearing characters not included in the order, ordered by sort name.
+    """
+    story = character_order.story
+    all_appearing_characters = story.active_characters
+    in_group = all_appearing_characters.exclude(group_name=None)
+    if hasattr(character_order, 'character_revisions'):
+        field = 'character_revisions'
+    else:
+        field = 'characters'
+    through_model = character_order._meta.get_field(field).remote_field.through
+    in_character_order = all_appearing_characters.filter(
+      **{f'{through_model.__name__.lower()}__order': character_order}
+    ).distinct()
+    groups = story.active_groups
+
+    reference_universe_id = _get_reference_universe(story)
+
+    group_list = []
+    processed_appearances_ids = []
+    for group in groups:
+        group_universe = None
+        if reference_universe_id and group.universe:
+            if group.universe_id != reference_universe_id:
+                group_universe = group.universe
+        character_list = []
+        ordered_character_list = []
+        for member in in_group.filter(group_name=group.group_name_id,
+                                      group_universe=group.universe_id):
+            if member in in_character_order:
+                ordered_character_list.append((
+                  getattr(character_order,
+                          f'{through_model.__name__.lower()}_set').get(
+                    order=character_order,
+                    story_character=member).order_code, member))
+            else:
+                character_list.append(_process_single_character(
+                  member, all_appearing_characters, reference_universe_id))
+            processed_appearances_ids.append(member.id)
+        ordered_character_list.sort(key=lambda x: x[0])
+        cnt = 0
+        for _, member in ordered_character_list:
+            character_list.insert(cnt, _process_single_character(
+              member, all_appearing_characters, reference_universe_id))
+            cnt += 1
+        group_list.append((group, group_universe, character_list))
+    appearing_characters = all_appearing_characters.exclude(
+      id__in=processed_appearances_ids)
+
+    character_list = []
+    ordered_character_list = []
+    for character in appearing_characters:
+        alias_identity = set(
+          character.character.character.from_related_character
+                   .filter(relation_type__id=2).values_list('from_character',
+                                                            flat=True))\
+                   .intersection(all_appearing_characters.filter(
+                      universe=character.universe).values_list(
+                      'character__character', flat=True))
+        if alias_identity:
+            continue
+        if character in in_character_order:
+            ordered_character_list.append((
+              getattr(character_order,
+                      f'{through_model.__name__.lower()}_set').get(
+                order=character_order,
+                story_character=character).order_code, character))
+        else:
+            character_list.append(_process_single_character(
+              character, all_appearing_characters, reference_universe_id))
+    ordered_character_list.sort(key=lambda x: x[0])
+    cnt = 0
+    for _, character in ordered_character_list:
+        character_list.insert(cnt, _process_single_character(
+          character, all_appearing_characters, reference_universe_id))
+        cnt += 1
+    return (group_list, character_list)
+
+
 def show_characters(story, url=True, css_style=True, compare=False,
                     bare_value=False):
+    '''
+    Return a properly formatted list of characters appearing in the story.
+    Old version kept for reference, not used anymore.
+    '''
     first = True
     characters = ''
     disambiguation = ''
@@ -578,8 +668,11 @@ class CharacterOrder(GcdLink):
     type = models.ForeignKey(CharacterOrderType,
                              on_delete=models.CASCADE)
 
+    def process_ordered_appearing_characters(self):
+        return process_ordered_appearing_characters(self)
+
     def __str__(self):
-        return "%s: (order: %d)" % (self.story, self.type)
+        return "%s: (order: %s)" % (self.story, self.type)
 
 
 class CharacterThroughOrder(models.Model):
@@ -588,7 +681,7 @@ class CharacterThroughOrder(models.Model):
         db_table = 'gcd_character_through_order'
 
     order = models.ForeignKey(CharacterOrder,
-                                 on_delete=models.CASCADE)
+                              on_delete=models.CASCADE)
     story_character = models.ForeignKey(StoryCharacter,
                                         on_delete=models.CASCADE)
     order_code = models.IntegerField(default=0, db_index=True)
