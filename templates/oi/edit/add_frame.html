@@ -25,7 +25,7 @@ Adding {{ object_name }}
 <form action="{{ object_url }}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
   <table class="editing">
-  {% if object_name in 'Character Creator Feature Group Issue Story' or object_name == 'Variant Issue' %}
+  {% if object_name in 'Character Creator Feature Group Issue Issues Story' or object_name == 'Variant Issue' %}
     {% crispy form %}
   {% else %}
     {{ form.as_table }}
@@ -45,7 +45,7 @@ Adding {{ object_name }}
 {% endblock %}
 
 {% block footer %}
-  {% if object_name in 'Feature Issues Story' or 'Variant Issue' in object_name %}
+  {% if object_name in 'Feature Issue Issues Story' or 'Variant Issue' in object_name %}
     {% include 'oi/bits/revision_form_utils.html' %}
   {% endif %}
 {% endblock %}
