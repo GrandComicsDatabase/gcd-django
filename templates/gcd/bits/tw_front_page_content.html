@@ -8,9 +8,7 @@ from various smaller templates that are managed via django-templatesadmin.
 
 <div id="front_page_content_inner">
 {% if USE_TEMPLATESADMIN %}
-  <h2>{% include front_page_title %}</h2>
 {% else %}
-  <h2>Welcome to the Grand Comics Database</h2>
   {% include "gcd/bits/managed_content_dev_notice.html" %}
 {% endif %}
 
@@ -29,11 +27,15 @@ from various smaller templates that are managed via django-templatesadmin.
 {% if USE_TEMPLATESADMIN %}
   <div class="me-1 shadow-md p-1 md:p-2 2xl:p-4 md:me-2 2xl:me-4 bg-blue-50">
   <p class="sm:hidden font-bold">Welcome to the Grand Comics Database!</p>
-  <p class="max-sm:hidden"> The <b>Grand Comics Database (GCD)</b> is a nonprofit, internet-based organization of international volunteers
+  <p class="max-sm:hidden">
+  {% url 'haystack_search' as search_url %}
+  {% blocktrans %}
+    The <b>Grand Comics Database (GCD)</b> is a nonprofit, internet-based organization of international volunteers
     dedicated to building an open database covering all printed comics throughout the world.</p>
-  <p> Give <a class="link-no-visited font-bold" href="{% url 'haystack_search' %}">our search</a> a try, use <a class="link-no-visited font-bold" href="https://my.comics.org/">my.comics.org</a> to track and manage
+  <p> Give <a class="link-no-visited font-bold" href="{{ search_url }}">our search</a> a try, use <a class="link-no-visited font-bold" href="https://my.comics.org/">my.comics.org</a> to track and manage
     your comic collection, or look how
     you can <a class="link-no-visited font-bold" href="#how_to_contribute">contribute</a>.
+  {% endblocktrans %}
   </p>
   </div>
   <div class="flex flex-col sm:flex-row">

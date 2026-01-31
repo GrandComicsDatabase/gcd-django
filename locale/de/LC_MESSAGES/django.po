@@ -1,39 +1,149 @@
 # German translations for the GCD website.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Jochen Garcke <gcdmail@garcke.de>, 2008.
+# Jochen G. <gcdmail@garcke.de>, 2008.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-05-08 00:12+0200\n"
+"POT-Creation-Date: 2026-01-31 12:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Last-Translator: Jochen G. <gcdmail@garcke.de>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: apps/gcd/templatetags/credits.py:72
-msgid "Job Number:"
-msgstr ""
-
-#: apps/gcd/templatetags/credits.py:77
-msgid "Reprinted:"
-msgstr ""
-
-#: apps/gcd/templatetags/credits.py:192
+#: apps/gcd/models/story.py:1194 apps/gcd/templatetags/credits.py:611
 #, fuzzy
 msgid "page"
 msgid_plural "pages"
 msgstr[0] "Seiten"
 msgstr[1] "Seiten"
 
-#: apps/gcd/templatetags/migration/reprints.py:547
-#: apps/gcd/templatetags/migration/reprints.py:665
+#: apps/gcd/templatetags/credits.py:286
+msgid "Job Number"
+msgstr ""
+
+#: apps/gcd/templatetags/credits.py:290
+msgid "First Line of Dialogue or Text"
+msgstr ""
+
+#: apps/gcd/templatetags/credits.py:298
+msgid "Reprinted"
+msgstr ""
+
+#: apps/gcd/templatetags/credits.py:884
 msgid "Reprints"
+msgstr ""
+
+#: apps/gcd/templatetags/credits.py:910
+msgid "Parts of this issue are reprinted"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_complete.html:5
+#: apps/indexer/templates/indexer/password_reset_complete.html:9
+msgid "Password reset complete"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_complete.html:11
+msgid "Your password has been set.  You may go ahead and log in now."
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_complete.html:13
+#: templates/mycomics/tw_user_base.html:62 templates/mycomics/user_base.html:62
+msgid "Log In"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_confirm.html:5
+#: apps/indexer/templates/indexer/password_reset_form.html:5
+#: apps/indexer/templates/indexer/password_reset_form.html:9
+msgid "Password reset"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_confirm.html:11
+msgid "Enter new password"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_confirm.html:13
+msgid ""
+"Please enter your new password twice so we can verify you typed it in "
+"correctly."
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_confirm.html:18
+msgid "New password:"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_confirm.html:20
+msgid "Confirm password:"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_confirm.html:21
+msgid "Change my password"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_confirm.html:26
+msgid "Password reset unsuccessful"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_confirm.html:28
+msgid ""
+"The password reset link was invalid, possibly because it has already been "
+"used.  Please request a new password reset."
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_done.html:5
+msgid "Password reset successful"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_done.html:9
+msgid "Password reset sent"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_done.html:11
+msgid ""
+"We've e-mailed you instructions for setting your password to the e-mail "
+"address you submitted. You should receive it shortly."
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_email.html:3
+msgid "You're receiving this e-mail because you requested a password reset"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_email.html:4
+#, python-format
+msgid "for your user account at %(site_name)s"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_email.html:6
+msgid "Please go to the following page and choose a new password:"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_email.html:10
+msgid "Thanks for using our site!"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_email.html:12
+#, python-format
+msgid "The %(site_name)s team"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_form.html:11
+msgid ""
+"Forgotten your password? Enter your e-mail address below, and we'll e-mail "
+"instructions for setting a new one."
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_form.html:16
+msgid "E-mail address:"
+msgstr ""
+
+#: apps/indexer/templates/indexer/password_reset_form.html:16
+msgid "Reset my password"
 msgstr ""
 
 # msgstr "Übersetzung"
@@ -51,15 +161,487 @@ msgstr ""
 msgid "plot"
 msgstr ""
 
-#: templates/gcd/index.html:61 templates/gcd/bits/front_page_login.html:18
+#: apps/mycomics/views.py:229
+msgid "Collection saved."
+msgstr ""
+
+#: apps/mycomics/views.py:251
+#, python-format
+msgid "Collection <b>%s</b> deleted."
+msgstr ""
+
+#: apps/mycomics/views.py:378
+#, python-format
+msgid "Item <b>%s</b> removed from %s"
+msgstr ""
+
+#: apps/mycomics/views.py:418
+msgid "Item moved between collections"
+msgstr ""
+
+#: apps/mycomics/views.py:425
+#, python-format
+msgid ""
+"Item status for own/want differed from default of new collection <b>%s</b> "
+"and was changed."
+msgstr ""
+
+#: apps/mycomics/views.py:435 apps/mycomics/views.py:457
+#, python-format
+msgid ""
+"Item status is set to for sale due to default of new collection <b>%s</b>."
+msgstr ""
+
+#: apps/mycomics/views.py:444
+msgid "Item copied between collections"
+msgstr ""
+
+#: apps/mycomics/views.py:448
+msgid "Own/want default for new collection differs from item status."
+msgstr ""
+
+#: apps/mycomics/views.py:462 apps/mycomics/views.py:464
+msgid "Item unchanged"
+msgstr ""
+
+#: apps/mycomics/views.py:503 apps/mycomics/views.py:601
+msgid "Sell date"
+msgstr ""
+
+#: apps/mycomics/views.py:507 apps/mycomics/views.py:604
+msgid "Acquisition date"
+msgstr ""
+
+#: apps/mycomics/views.py:598
+msgid "Item saved."
+msgstr ""
+
+#: apps/mycomics/views.py:605
+msgid "Date was entered in wrong format."
+msgstr ""
+
+#: apps/mycomics/views.py:612 apps/mycomics/views.py:690
+#: apps/mycomics/views.py:1411
+msgid "Some data was entered incorrectly."
+msgstr ""
+
+#: apps/mycomics/views.py:684
+msgid "Items saved."
+msgstr ""
+
+#: apps/mycomics/views.py:869
+msgid "More than 500 lines. Please split the import file into smaller chunks."
+msgstr ""
+
+#: apps/mycomics/views.py:1075
+#, python-format
+msgid "%s is already subscribed for the collection %s."
+msgstr ""
+
+#: apps/mycomics/views.py:1083
+#, python-format
+msgid "Series %s is now subscribed for the collection %s."
+msgstr ""
+
+#: apps/mycomics/views.py:1087
+msgid "Selected series is not ongoing."
+msgstr ""
+
+#: apps/mycomics/views.py:1152
+msgid "Reading order saved."
+msgstr ""
+
+#: apps/mycomics/views.py:1183
+#, python-format
+msgid "Reading Order <b>%s</b> deleted."
+msgstr ""
+
+#: apps/mycomics/views.py:1417
+#, python-format
+msgid "Item %s saved."
+msgstr ""
+
+#: apps/mycomics/views.py:1446
+#, python-format
+msgid "Item <b>%s</b> removed from Reading List %s"
+msgstr ""
+
+#: apps/mycomics/views.py:1466
+msgid "Settings saved."
+msgstr ""
+
+#: apps/mycomics/views.py:1497
+msgid "Location saved."
+msgstr ""
+
+#: apps/mycomics/views.py:1500
+msgid "Entered data was incorrect."
+msgstr ""
+
+#: apps/mycomics/views.py:1519
+msgid "Location deleted."
+msgstr ""
+
+#: apps/stddata/forms.py:35
+msgid "Date given in a wrong format"
+msgstr ""
+
+#: apps/stddata/forms.py:68
+msgid "Month is not between 1 and 12."
+msgstr ""
+
+#: apps/stddata/forms.py:81
+msgid "Day is not between 1 and 31."
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:6
+msgid "day before"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:8
+msgid "year before"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:10
+#: templates/gcd/bits/choose_month.html:4
+msgid "month before"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:27
+msgid "January"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:28
+msgid "February"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:29
+msgid "March"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:30
+msgid "April"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:31
+msgid "May"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:32
+msgid "June"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:33
+msgid "July"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:34
+msgid "August"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:35
+msgid "September"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:36
+msgid "October"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:37
+msgid "November"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:38
+msgid "December"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:43
+#: templates/gcd/bits/choose_month.html:10
+#: templates/gcd/bits/choose_week.html:13
+#: templates/gcd/bits/pagination_bar.html:64
+#: templates/gcd/bits/series_issue_header.html:76
+#: templates/gcd/bits/tw_pagination_bar.html:81
+#: templates/gcd/bits/tw_series_navigation.html:24
+msgid "Go"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:48
+msgid "day after"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:50
+msgid "year after"
+msgstr ""
+
+#: templates/gcd/bits/choose_date.html:52
+#: templates/gcd/bits/choose_month.html:12
+msgid "month after"
+msgstr ""
+
+#: templates/gcd/bits/choose_week.html:5
+msgid "week before"
+msgstr ""
+
+#: templates/gcd/bits/choose_week.html:17
+msgid "week after"
+msgstr ""
+
+#: templates/gcd/bits/front_page_login.html:6
+msgid "You are logged in as "
+msgstr "Du bist angemeldet als "
+
+#: templates/gcd/bits/front_page_login.html:7
+msgid "Editing"
+msgstr "Editieren"
+
+#: templates/gcd/bits/front_page_login.html:8
+msgid "Profile"
+msgstr "Profil"
+
+#: templates/gcd/bits/front_page_login.html:11
+msgid "Admin"
+msgstr ""
+
+#: templates/gcd/bits/front_page_login.html:15
+msgid "Logout"
+msgstr "Abmelden"
+
+#: templates/gcd/bits/front_page_login.html:21 templates/mycomics/index.html:49
+msgid "email"
+msgstr ""
+
+#: templates/gcd/bits/front_page_login.html:23 templates/mycomics/index.html:50
+msgid "password"
+msgstr ""
+
+#: templates/gcd/bits/front_page_login.html:25 templates/gcd/index.html:109
+#: templates/mycomics/index.html:51
 msgid "Login"
 msgstr "Anmelden"
 
-#: templates/gcd/index.html:69
+#: templates/gcd/bits/front_page_login.html:29 templates/mycomics/index.html:60
+msgid "Forgot password?"
+msgstr "Passwort vergessen?"
+
+#: templates/gcd/bits/front_page_login.html:32 templates/mycomics/index.html:61
+msgid "Register"
+msgstr "Registrieren"
+
+#: templates/gcd/bits/front_page_menu.html:8 templates/gcd/tw_index.html:23
+msgid "About the GCD"
+msgstr "Über die GCD"
+
+#: templates/gcd/bits/front_page_menu.html:11 templates/gcd/tw_index.html:27
+msgid "How to Help"
+msgstr "Wie mitmachen"
+
+#: templates/gcd/bits/front_page_menu.html:13
+msgid "Documentation Wiki"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:16
+msgid "Mailing Lists"
+msgstr ""
+
+#: templates/gcd/bits/front_page_menu.html:17 templates/gcd/tw_index.html:24
+msgid "Contact Us"
+msgstr "Kontakt"
+
+#: templates/gcd/bits/front_page_menu.html:19
+msgid "Donate"
+msgstr ""
+
+#: templates/gcd/bits/front_page_search_box.html:6
+#: templates/gcd/bits/front_page_search_box.html:19
+msgid "Search"
+msgstr "Suchen"
+
+#: templates/gcd/bits/front_page_search_box.html:17
+msgid "Sort by"
+msgstr "Sortieren nach"
+
+#: templates/gcd/bits/front_page_search_box.html:20
+#, fuzzy
+#| msgid "Advanced&nbsp;Search"
+msgid "Advanced&nbsp;Query"
+msgstr "Erweiterte&nbsp;Suche"
+
+#: templates/gcd/bits/issue_data.html:8
+#: templates/gcd/bits/tw_issue_data.html:28
+msgid "Volume"
+msgstr ""
+
+#: templates/gcd/bits/issue_data.html:11
+#: templates/gcd/bits/tw_issue_data.html:31 templates/inducks/issue.html:20
+msgid "Price"
+msgstr "Preis"
+
+#: templates/gcd/bits/issue_data.html:13
+#: templates/gcd/bits/tw_issue_data.html:33 templates/inducks/issue.html:21
+#: templates/inducks/issue.html:30
+msgid "Pages"
+msgstr "Seiten"
+
+#: templates/gcd/bits/issue_data.html:16
+#: templates/gcd/bits/tw_issue_data.html:36
+msgid "Indicia Frequency"
+msgstr ""
+
+#: templates/gcd/bits/issue_data.html:20
+#: templates/gcd/bits/tw_issue_data.html:40
+msgid "On-sale Date"
+msgstr ""
+
+#: templates/gcd/bits/issue_data.html:25
+#: templates/gcd/bits/tw_issue_data.html:45
+msgid "Publisher's Age Guidelines"
+msgstr ""
+
+#: templates/gcd/bits/issue_data.html:29
+#: templates/gcd/bits/tw_issue_data.html:49
+msgid "Indicia&nbsp;/&nbsp;Colophon Publisher"
+msgstr ""
+
+#: templates/gcd/bits/issue_data.html:32
+#: templates/gcd/bits/tw_issue_data.html:52
+#, fuzzy
+#| msgid "publishers"
+msgid "Publisher's Brand"
+msgstr "Verlagsgruppen"
+
+#: templates/gcd/bits/legalese.html:7
+msgid "contact us"
+msgstr "Kontakt"
+
+#: templates/gcd/bits/legalese.html:10
+msgid "donate"
+msgstr "Spenden"
+
+#: templates/gcd/bits/legalese.html:14
+#, python-format
+msgid ""
+"\n"
+"    If you believe any of this data to be incorrect, please\n"
+"      <a class=\"new_window\" href=\"https://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"         target=\"_blank\">let us know</a>.\n"
+"    "
+msgstr ""
+"\n"
+"Falls du der Meinung bist, dass einige der Daten falsch sind, \n"
+"<a class=\"new_window\" href=\"https://errors.comics.org/enter_bug.cgi?"
+"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
+"   target=\"_blank\">lass uns das bitte wissen</a>.\n"
+"    "
+
+#: templates/gcd/bits/legalese.html:23
+msgid "Cover thumbnails are used for identification purposes only."
+msgstr "Titelbilder werden zur Identifikation der Comics genutzt."
+
+#: templates/gcd/bits/legalese.html:24
+msgid ""
+"All rights to cover images reserved by the respective copyright holders."
+msgstr "Alle Rechte der Titelbilder bei den jeweiligen Rechteinhabern."
+
+#: templates/gcd/bits/legalese.html:30
+#, python-format
+msgid ""
+"\n"
+"All portions of <a href=\"http://www.comics.org/\" "
+"rel=\"cc:attributionURL\">the %(site_name)s</a>&trade;, except where noted "
+"otherwise, are\n"
+"copyrighted by the GCD and are licensed under a <a rel=\"license\" "
+"href=\"https://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons "
+"Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)</a>. This "
+"includes but is not necessarily limited to our database schema and data "
+"distribution format.\n"
+"    "
+msgstr ""
+"\n"
+"Alle Teile <a href=\"http://www.comics.org/\" rel=\"cc:attributionURL\">der "
+"%(site_name)s</a>&trade;, sofern nicht anders angegeben, unterliegen dem "
+"Urheberrecht der GCD und stehen unter einer <a rel=\"license\" href=\"http://"
+"creativecommons.org/licenses/by-sa/4.0/deed.de\">Creative Commons "
+"Namensnennung-Share Alike 4.0 International Lizenz</a>.  Dies betrifft "
+"insbesondere, aber nicht nur, unser Datenbankschema und unser "
+"Datendistributionsformat.\n"
+"    "
+
+#: templates/gcd/bits/legalese.html:38
+#, python-format
+msgid "The GCD <a href=\"%(privacy_url)s\">Privacy Policy</a>."
+msgstr "Die <a href=\"%(privacy_url)s\">Datenschutzrichtlinie</a> der GCD."
+
+#: templates/gcd/bits/legalese.html:41
+msgid ""
+"The <a href=\"https://github.com/GrandComicsDatabase/gcd-django\">GCD Web "
+"Site code</a> is licensed under the <a href=\"http://www.gnu.org/licenses/"
+"gpl.html\">GNU General Public License</a>."
+msgstr ""
+"Der Code der <a href=\"https://github.com/GrandComicsDatabase/gcd-"
+"django\">GCD Webseite</a> steht unter der <a href=\"http://www.gnu.org/"
+"licenses/gpl.html\">GNU General Public Lizenz</a>."
+
+#: templates/gcd/bits/series_issue_header.html:57
+#: templates/gcd/bits/series_issue_header.html:59
+#: templates/gcd/bits/tw_series_navigation.html:6
+#: templates/gcd/bits/tw_series_navigation.html:8
+msgid "Previous Issue"
+msgstr "Vorherige Ausgabe"
+
+#: templates/gcd/bits/series_issue_header.html:81
+#: templates/gcd/bits/series_issue_header.html:83
+#: templates/gcd/bits/tw_series_navigation.html:28
+#: templates/gcd/bits/tw_series_navigation.html:30
+msgid "Next Issue"
+msgstr "Nächste Ausgabe"
+
+#: templates/gcd/bits/single_story_credits.html:18
+#, python-format
+msgid ""
+"\n"
+"      page%(suffix)s\n"
+"    "
+msgstr ""
+
+#: templates/gcd/bits/tw_front_page_content.html:32
+#, python-format
+msgid ""
+"\n"
+"    The <b>Grand Comics Database (GCD)</b> is a nonprofit, internet-based "
+"organization of international volunteers\n"
+"    dedicated to building an open database covering all printed comics "
+"throughout the world.</p>\n"
+"  <p> Give <a class=\"link-no-visited font-bold\" "
+"href=\"%(search_url)s\">our search</a> a try, use <a class=\"link-no-visited "
+"font-bold\" href=\"https://my.comics.org/\">my.comics.org</a> to track and "
+"manage\n"
+"    your comic collection, or look how\n"
+"    you can <a class=\"link-no-visited font-bold\" "
+"href=\"#how_to_contribute\">contribute</a>.\n"
+"  "
+msgstr ""
+"\n"
+"Die <b>Grand Comics Database (GCD)</b> ist eine gemeinnützige, internetbasierte "
+"Organisation internationaler Freiwilliger, die sich dem Aufbau einer offenen "
+"Datenbank widmet, die alle gedruckten Comics weltweit umfasst.</p>"
+"<p>Probiere <a class=\"link-no-visited font-bold\" "
+"href=\"%(search_url)s\">unsere Suchfunktion</a> aus, nutze <a class=\"link-no-visited "
+"font-bold\" href=\"https://my.comics.org/\">my.comics.org</a> um deine "
+" Comicsammlung zu verwalten, oder schaue, wie Du selbst einen <a class=\"link-no-visited font-bold\" "
+"href=\"#how_to_contribute\">Beitrag</a> leisten kannst. </p>"
+"<p>Die restlichen Seiten der GCD sind auf Englisch verfügbar, Einträge "
+"zu deutschsprachigen Comics sind aber meist auf Deutsch. "
+"Es gibt mehrere deutschsprachige Mitwirkende bei der GCD und einen "
+"<a class=\"link-no-visited font-bold\" "
+"href=\"http://groups.google.de/group/gcd-deutschland/\">deutschsprachigen Email-Verteiler</a>."
+"  "
+
+#: templates/gcd/bits/tw_front_page_content.html:66 templates/gcd/index.html:59
 msgid "Disclaimer"
 msgstr "Hinweis"
 
-#: templates/gcd/index.html:73
+#: templates/gcd/bits/tw_front_page_content.html:69 templates/gcd/index.html:63
 msgid ""
 "The Grand Comics Database Project (GCD) is a volunteer project with the goal "
 "of documenting and indexing all comics for the free use of scholars, "
@@ -70,7 +652,7 @@ msgstr ""
 "Informationen zur freien Verfügung, insbesondere durch Wissenschaftler, "
 "Historiker und Fans, bereit zu stellen."
 
-#: templates/gcd/index.html:76
+#: templates/gcd/bits/tw_front_page_content.html:72 templates/gcd/index.html:66
 msgid ""
 "The GCD acknowledges that the all-encompassing research nature of the "
 "project may result in the posting of cover scans for comics with images that "
@@ -80,355 +662,46 @@ msgstr ""
 "Forschungsarbeit möglicherweise Titelbilder dargestellt werden, die manch "
 "einer verwerflich findet. "
 
-#: templates/gcd/index.html:79
+#: templates/gcd/bits/tw_front_page_content.html:75 templates/gcd/index.html:69
 msgid "Viewer discretion is advised."
 msgstr "Bitte entscheide nach eigenem Ermessen."
 
-#: templates/gcd/index.html:82
+#: templates/gcd/bits/tw_front_page_content.html:78 templates/gcd/index.html:72
 msgid "The Grand Comics Database Team"
 msgstr "Das Grand Comics Database Team"
 
-#: templates/gcd/index.html:103
-msgid "Useful Links"
-msgstr "Nützliche Links"
-
-#: templates/gcd/index.html:107
-msgid "Today's covers"
-msgstr "Titelbilder von heute"
-
-#: templates/gcd/index.html:111
-msgid "Today's changes"
-msgstr "Änderungen von heute"
-
-#: templates/gcd/index.html:112
-msgid "Covers to replace"
-msgstr "Titelbilder zu ersetzen"
-
-#: templates/gcd/index.html:113
-msgid "International statistics"
-msgstr "Internationale Statistiken"
-
-#: templates/gcd/index.html:136
-msgid "by Language"
-msgstr "je Sprache"
-
-#: templates/gcd/index.html:137
-msgid "by Country"
-msgstr "je Land"
-
-#: templates/gcd/index.html:117
-msgid "Last Updated Language Issues"
-msgstr "Zuletzt geänderte deutsche Comics"
-
-#: templates/gcd/index.html:125
-msgid "Statistics for Language Comics"
-msgstr "Statistiken zu deutschen Comics"
-
-#: templates/gcd/index.html:136
-msgid "Last Updated Issues"
-msgstr "Zuletzt geänderte Comics"
-
-#: templates/gcd/index.html:144
-msgid "Statistics"
-msgstr "Statistiken"
-
-#: templates/gcd/accounts/password_reset_complete.html:4
-#: templates/gcd/accounts/password_reset_complete.html:13
-msgid "Password reset complete"
+#: templates/gcd/details/brand.html:97
+msgid "Replace Publisher's Brand Image"
 msgstr ""
 
-#: templates/gcd/accounts/password_reset_complete.html:15
-msgid "Your password has been set.  You may go ahead and log in now."
+#: templates/gcd/details/brand.html:101
+msgid "Delete Publisher's Brand Image"
 msgstr ""
 
-#: templates/gcd/accounts/password_reset_complete.html:17
-msgid "Log in"
+#: templates/gcd/details/brand.html:109
+msgid "Add Publisher's Brand Image"
 msgstr ""
 
-#: templates/gcd/accounts/password_reset_confirm.html:4
-#: templates/gcd/accounts/password_reset_form.html:4
-#: templates/gcd/accounts/password_reset_form.html:13
-msgid "Password reset"
+#: templates/gcd/details/feature_logo.html:63
+#: templates/gcd/details/tw_feature_logo.html:68
+msgid "Replace Feature Logo Scan"
 msgstr ""
 
-#: templates/gcd/accounts/password_reset_confirm.html:15
-msgid "Enter new password"
+#: templates/gcd/details/feature_logo.html:67
+#: templates/gcd/details/tw_feature_logo.html:72
+msgid "Delete Feature Logo Scan"
 msgstr ""
 
-#: templates/gcd/accounts/password_reset_confirm.html:17
-msgid ""
-"Please enter your new password twice so we can verify you typed it in "
-"correctly."
+#: templates/gcd/details/feature_logo.html:75
+#: templates/gcd/details/tw_feature_logo.html:80
+msgid "Add Feature Logo Scan"
 msgstr ""
 
-#: templates/gcd/accounts/password_reset_confirm.html:21
-msgid "New password:"
+#: templates/gcd/details/issue.html:204
+msgid "Edit with another issue"
 msgstr ""
 
-#: templates/gcd/accounts/password_reset_confirm.html:23
-msgid "Confirm password:"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_confirm.html:24
-msgid "Change my password"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_confirm.html:29
-msgid "Password reset unsuccessful"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_confirm.html:31
-msgid ""
-"The password reset link was invalid, possibly because it has already been "
-"used.  Please request a new password reset."
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_done.html:4
-#: templates/gcd/accounts/password_reset_done.html:13
-msgid "Password reset successful"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_done.html:15
-msgid ""
-"We've e-mailed you instructions for setting your password to the e-mail "
-"address you submitted. You should be receiving it shortly."
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_email.html:2
-msgid "You're receiving this e-mail because you requested a password reset"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_email.html:3
-#, python-format
-msgid "for your user account at %(site_name)s"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_email.html:5
-msgid "Please go to the following page and choose a new password:"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_email.html:9
-msgid "Thanks for using our site!"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_email.html:11
-#, python-format
-msgid "The %(site_name)s team"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_form.html:15
-msgid ""
-"Forgotten your password? Enter your e-mail address below, and we'll e-mail "
-"instructions for setting a new one."
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_form.html:19
-msgid "E-mail address:"
-msgstr ""
-
-#: templates/gcd/accounts/password_reset_form.html:19
-msgid "Reset my password"
-msgstr ""
-
-#: templates/gcd/bits/front_page_login.html:5
-msgid "You are logged in as "
-msgstr "Du bist angemeldet als "
-
-#: templates/gcd/bits/front_page_login.html:6
-msgid "Editing"
-msgstr "Editieren"
-
-#: templates/gcd/bits/front_page_login.html:6
-msgid "Profile"
-msgstr "Profil"
-
-#: templates/gcd/bits/front_page_login.html:9
-msgid "Logout"
-msgstr "Abmelden"
-
-#: templates/gcd/bits/front_page_login.html:14
-msgid "username"
-msgstr "Name"
-
-#: templates/gcd/bits/front_page_login.html:16
-msgid "password"
-msgstr ""
-
-#: templates/gcd/bits/front_page_login.html:22
-msgid "Forgot password?"
-msgstr "Passwort vergessen?"
-
-#: templates/gcd/bits/front_page_login.html:25
-msgid "Register"
-msgstr "Registrieren"
-
-#: templates/gcd/bits/front_page_menu.html:7
-msgid "About the GCD"
-msgstr ""
-
-#: templates/gcd/bits/front_page_menu.html:9
-msgid "GCD Charter"
-msgstr ""
-
-#: templates/gcd/bits/front_page_menu.html:10
-msgid "Documentation Wiki"
-msgstr ""
-
-#: templates/gcd/bits/front_page_menu.html:11
-msgid "Become an Indexer"
-msgstr ""
-
-#: templates/gcd/bits/front_page_menu.html:12
-msgid "About Donations"
-msgstr ""
-
-#: templates/gcd/bits/front_page_menu.html:13
-msgid "Report an Error"
-msgstr ""
-
-#: templates/gcd/bits/front_page_menu.html:14
-msgid "Mailing Lists"
-msgstr ""
-
-#: templates/gcd/bits/front_page_menu.html:15
-msgid "contact@comics.org"
-msgstr "gcd-contact-de@comics.org"
-
-#: templates/gcd/bits/front_page_menu.html:15
-msgid "Contact Us"
-msgstr "Kontakt"
-
-#: templates/gcd/bits/front_page_search_box.html:5
-#: templates/gcd/bits/front_page_search_box.html:11
-msgid "Search"
-msgstr "Suchen"
-
-#: templates/gcd/bits/front_page_search_box.html:9
-msgid "Sort by"
-msgstr "Sortieren nach"
-
-#: templates/gcd/bits/front_page_search_box.html:12
-msgid "Advanced&nbsp;Search"
-msgstr "Erweiterte&nbsp;Suche"
-
-#: templates/gcd/bits/legalese.html:3
-#, python-format
-msgid ""
-"\n"
-"If you believe any of this data to be incorrect, please\n"
-"<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
-"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
-"   target=\"_blank\">let us know</a> (opens new window).\n"
-msgstr ""
-"\n"
-"Falls du der Meinung bist einige der Daten sind falsch, \n"
-"<a class=\"new_window\" href=\"http://errors.comics.org/enter_bug.cgi?"
-"product=GCD&amp;bug_file_loc=%(uri)s&amp;short_desc=%(error_sub)s\"\n"
-"   target=\"_blank\">lass uns das bitte wissen</a> (öffnet ein neues "
-"Fenster).\n"
-
-#: templates/gcd/bits/legalese.html:11
-msgid "Cover thumbnails are used for identification purposes only."
-msgstr "Titelbilder werden zur Identifikation der Comics genutzt."
-
-#: templates/gcd/bits/legalese.html:12
-msgid ""
-"All rights to cover images reserved by the respective copyright holders."
-msgstr "Alle Rechte der Titelbilder bei den jeweiligen Rechteinhabern."
-
-#: templates/gcd/bits/legalese.html:17
-#, python-format
-msgid ""
-"\n"
-"All portions of <a href=\"http://www.comics.org/\" rel=\"cc:attributionURL"
-"\">the %(site_name)s</a> that are subject to copyright are licensed under a "
-"<a rel=\"license\" href=\"http://creativecommons.org/licenses/by/3.0/"
-"\">Creative Commons Attribution 3.0 Unported License</a>.  This includes but "
-"is not necessarily limited to our database schema and data distribution "
-"format.\n"
-msgstr ""
-"\n"
-"Alle Teile <a href=\"http://www.comics.org/\" rel=\"cc:attributionURL\">der %"
-"(site_name)s</a> die unter Copyright fallen sind lizensiert unter der <a rel="
-"\"license\" href=\"http://creativecommons.org/licenses/by/3.0/deed.de"
-"\">Creative Commons Namensnennung 3.0 Unported Lizenz</a>.  Dies betrifft "
-"insbesondere, aber nicht nur, unser Datenbankschema und das "
-"Datendistributionsformat.\n"
-
-#: templates/gcd/bits/legalese.html:22
-msgid ""
-"The GCD Web Site code is licensed under the <a href=\"http://www.gnu.org/"
-"licenses/gpl.html\">GNU General Public License</a>"
-msgstr ""
-"Der Code der GCD Webseite steht unter der <a href=\"http://www.gnu.org/"
-"licenses/gpl.html\">GNU General Public Lizenz</a>."
-
-#: templates/gcd/bits/pagination_bar.html:7
-#: templates/gcd/bits/pagination_bar.html:9
-#: templates/gcd/bits/pagination_bar.html:12
-#: templates/gcd/bits/pagination_bar.html:41
-msgid "Previous"
-msgstr "zurück"
-
-#: templates/gcd/bits/pagination_bar.html:33
-#: templates/gcd/bits/pagination_bar.html:35
-#: templates/gcd/bits/pagination_bar.html:38
-#: templates/gcd/bits/pagination_bar.html:41
-msgid "Next"
-msgstr "vor"
-
-#: templates/gcd/bits/pagination_bar.html:46
-#: templates/gcd/bits/series_issue_header.html:66
-#: templates/gcd/status/daily_covers.html:48
-msgid "Go"
-msgstr ""
-
-#: templates/gcd/bits/series_issue_header.html:52
-msgid "Previous Issue"
-msgstr "Vorherige Ausgabe"
-
-#: templates/gcd/bits/series_issue_header.html:70
-msgid "Next Issue"
-msgstr "Nächste Ausgabe"
-
-#: templates/gcd/details/issue.html:55
-msgid "Volume"
-msgstr ""
-
-#: templates/gcd/details/issue.html:58 templates/inducks/issue.html:20
-msgid "Price"
-msgstr "Preis"
-
-#: templates/gcd/details/issue.html:60 templates/inducks/issue.html:21
-#: templates/inducks/issue.html.py:30
-msgid "Pages"
-msgstr "Seiten"
-
-#: templates/gcd/details/issue.html:63
-msgid "Indicia frequency"
-msgstr ""
-
-#: templates/gcd/details/issue.html:69
-msgid "Indicia Publisher"
-msgstr ""
-
-#: templates/gcd/details/issue.html:72
-msgid "Brand"
-msgstr ""
-
-#: templates/gcd/details/issue.html:113
-msgid "This issue was most recently modified by:"
-msgstr ""
-
-#: templates/gcd/details/issue.html:121
-msgid "Issues in this series have been indexed by:"
-msgstr "Diese Serie wurde erfasst von:"
-
-#: templates/gcd/details/series.html:150
-msgid "Indexed by:"
-msgstr "Erfasst von:"
-
-#: templates/gcd/details/single_story.html:25
+#: templates/gcd/details/single_story.html:34
 #, python-format
 msgid ""
 "\n"
@@ -436,103 +709,29 @@ msgid ""
 "          "
 msgstr ""
 
-#: templates/gcd/status/covers_to_replace.html:17
-msgid "Covers marked for replacement"
+#: templates/gcd/details/tw_issue.html:374
+msgid "Edit With Another Issue"
 msgstr ""
 
-#: templates/gcd/status/daily_covers.html:17
-msgid "Covers for "
+#: templates/gcd/details/tw_single_story.html:41
+#, python-format
+msgid ""
+"\n"
+"    page%(suffix)s\n"
+"  "
 msgstr ""
 
-#: templates/gcd/status/daily_covers.html:20
-msgid "Day before"
-msgstr ""
+#: templates/gcd/index.html:130
+msgid "Useful Links"
+msgstr "Nützliche Links"
 
-#: templates/gcd/status/daily_covers.html:34
-msgid "January"
-msgstr ""
+#: templates/gcd/index.html:134
+msgid "Today's covers"
+msgstr "Titelbilder von heute"
 
-#: templates/gcd/status/daily_covers.html:35
-msgid "Februrary"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:36
-msgid "March"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:37
-msgid "April"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:38
-msgid "May"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:39
-msgid "June"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:40
-msgid "July"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:41
-msgid "August"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:42
-msgid "September"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:43
-msgid "October"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:44
-msgid "November"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:45
-msgid "December"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:51
-msgid "Day after"
-msgstr ""
-
-#: templates/gcd/status/daily_covers.html:58
-msgid " covers posted"
-msgstr ""
-
-msgid "publishers"
-msgstr "Verlagsgruppen"
-
-msgid "creators"
-msgstr ""
-
-msgid "brands"
-msgstr "Verlagslogo"
-
-msgid "indicia publishers"
-msgstr "Verlage"
-
-msgid "series"
-msgstr "Serien"
-
-msgid "issues"
-msgstr "Comics"
-
-msgid "variant issues"
-msgstr "Variantausgaben"
-
-msgid "issue indexes"
-msgstr "Comics erfasst"
-
-msgid "covers"
-msgstr "Titelbilder"
-
-msgid "stories"
-msgstr "Geschichten"
+#: templates/gcd/index.html:135
+msgid "Today's changes"
+msgstr "Änderungen von heute"
 
 #: templates/gcd/index.html:136
 msgid "On-sale this week"
@@ -541,6 +740,554 @@ msgstr ""
 #: templates/gcd/index.html:137
 msgid "On-sale this month"
 msgstr ""
+
+#: templates/gcd/index.html:138
+msgid "International statistics"
+msgstr "Internationale Statistiken"
+
+#: templates/gcd/index.html:140 templates/gcd/tw_index.html:120
+msgid "by Language"
+msgstr "je Sprache"
+
+#: templates/gcd/index.html:141 templates/gcd/tw_index.html:121
+msgid "by Country"
+msgstr "je Land"
+
+#: templates/gcd/index.html:167 templates/gcd/tw_index.html:82
+msgid "Last Updated Language Issues"
+msgstr "Zuletzt geänderte deutsche Comics"
+
+#: templates/gcd/index.html:177 templates/gcd/tw_index.html:90
+msgid "Statistics for Language Comics"
+msgstr "Statistiken zu deutschen Comics"
+
+#: templates/gcd/index.html:188 templates/gcd/tw_index.html:101
+msgid "Last Updated Issues"
+msgstr "Zuletzt geänderte Comics"
+
+#: templates/gcd/index.html:198 templates/gcd/tw_index.html:109
+msgid "Statistics"
+msgstr "Statistiken"
+
+#: templates/gcd/status/covers_to_replace.html:18
+msgid "Covers marked for replacement"
+msgstr ""
+
+#: templates/gcd/status/daily_changes.html:15
+#: templates/gcd/status/daily_changes.html:229
+msgid "Changes for "
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:18
+#: templates/gcd/status/daily_covers.html:44
+msgid "Covers for "
+msgstr ""
+
+#: templates/gcd/status/daily_covers.html:25
+#: templates/gcd/status/daily_covers.html:50
+msgid " covers posted"
+msgstr ""
+
+#: templates/gcd/tw_index.html:25
+msgid "How to Search"
+msgstr "Wie suchen"
+
+#: templates/gcd/tw_index.html:28
+msgid "Today's Covers"
+msgstr "Titelbilder von heute"
+
+#: templates/gcd/tw_index.html:29
+msgid "Today's Changes"
+msgstr "Änderungen von heute"
+
+#: templates/gcd/tw_index.html:30
+msgid "On-sale Weekly"
+msgstr "Diese Woche erschienen"
+
+#: templates/gcd/tw_index.html:31
+msgid "On-sale Monthly"
+msgstr "Diesen Monat erschienen"
+
+#: templates/gcd/tw_index.html:117
+msgid "International Statistics"
+msgstr "Internationale Statistiken"
+
+#: templates/mycomics/bits/help.html:7 templates/mycomics/bits/help.html:14
+#: templates/mycomics/collection_item.html:15
+#: templates/mycomics/collection_item.html:66
+#: templates/mycomics/collections.html:31
+#: templates/mycomics/collections.html:49
+#: templates/mycomics/reading_order_item.html:15
+#: templates/mycomics/reading_orders.html:31
+#: templates/mycomics/settings.html:14 templates/mycomics/settings.html:32
+#: templates/mycomics/settings.html:50 templates/mycomics/settings.html:70
+msgid "Close"
+msgstr ""
+
+#: templates/mycomics/bits/help.html:8
+msgid "Help for "
+msgstr ""
+
+#: templates/mycomics/bits/indexing_links.html:6
+msgid "Search Inside Collection"
+msgstr ""
+
+#: templates/mycomics/bits/indexing_links.html:9
+#, fuzzy
+#| msgid "Last Updated Issues"
+msgid "Unindexed Issues"
+msgstr "Zuletzt geänderte Comics"
+
+#: templates/mycomics/bits/indexing_links.html:12
+msgid "Needed Covers"
+msgstr ""
+
+#: templates/mycomics/bits/series_control.html:19
+msgid "Subscribe"
+msgstr ""
+
+#: templates/mycomics/bits/series_control.html:31
+#: templates/mycomics/bits/tw_series_control.html:42
+msgid "subscribed for"
+msgstr ""
+
+#: templates/mycomics/bits/tw_series_control.html:30
+msgid "Subscribe Series For"
+msgstr ""
+
+#: templates/mycomics/collection.html:21
+#: templates/mycomics/collection_item.html:45
+msgid "Remove issue from collection "
+msgstr ""
+
+#: templates/mycomics/collection.html:22
+#: templates/mycomics/collection_item.html:46
+#: templates/mycomics/reading_order.html:22
+#: templates/mycomics/reading_order_item.html:40
+msgid "Do you want to remove the issue <b>"
+msgstr ""
+
+#: templates/mycomics/collection.html:24
+#: templates/mycomics/collection_item.html:29
+#: templates/mycomics/collection_item.html:48
+#: templates/mycomics/collection_item.html:74
+#: templates/mycomics/collection_subscriptions.html:15
+#: templates/mycomics/collection_subscriptions.html:32
+#: templates/mycomics/collections.html:16
+#: templates/mycomics/collections.html:38
+#: templates/mycomics/collections.html:77
+#: templates/mycomics/reading_order.html:24
+#: templates/mycomics/reading_order_item.html:23
+#: templates/mycomics/reading_order_item.html:42
+#: templates/mycomics/reading_orders.html:16
+#: templates/mycomics/reading_orders.html:38
+#: templates/mycomics/settings.html:22 templates/mycomics/settings.html:40
+#: templates/mycomics/settings.html:60 templates/mycomics/settings.html:80
+#: templates/mycomics/tw_generic_edit_form.html:41
+msgid "Cancel"
+msgstr ""
+
+#: templates/mycomics/collection.html:25
+#: templates/mycomics/collection_item.html:49
+#: templates/mycomics/collection_subscriptions.html:16
+#: templates/mycomics/collection_subscriptions.html:38
+#: templates/mycomics/collections.html:17
+#: templates/mycomics/collections.html:39
+#: templates/mycomics/reading_order.html:25
+#: templates/mycomics/reading_order_item.html:43
+#: templates/mycomics/reading_orders.html:17
+#: templates/mycomics/reading_orders.html:39
+#: templates/mycomics/settings.html:23 templates/mycomics/settings.html:41
+#: templates/mycomics/settings.html:61 templates/mycomics/settings.html:81
+msgid "Confirm"
+msgstr ""
+
+#: templates/mycomics/collection.html:42
+msgid "Collection Details"
+msgstr ""
+
+#: templates/mycomics/collection.html:46
+#, fuzzy
+#| msgid "series"
+msgid "Series"
+msgstr "Serien"
+
+#: templates/mycomics/collection.html:53
+#: templates/mycomics/collection_series.html:20
+#: templates/mycomics/collection_subscriptions.html:54
+msgid "Subscriptions"
+msgstr ""
+
+#: templates/mycomics/collection.html:56
+#: templates/mycomics/collection_item.html:107
+#: templates/mycomics/collection_series.html:23
+#: templates/mycomics/reading_order.html:46
+#: templates/mycomics/reading_order_item.html:78
+#: templates/mycomics/settings.html:145 templates/mycomics/settings.html:168
+#, fuzzy
+#| msgid "Editing"
+msgid "Edit"
+msgstr "Editieren"
+
+#: templates/mycomics/collection.html:66
+msgid "Filters"
+msgstr ""
+
+#: templates/mycomics/collection.html:74
+msgid "Edit Shown Items"
+msgstr ""
+
+#: templates/mycomics/collection.html:76
+#: templates/mycomics/collection_series.html:33
+#: templates/mycomics/collection_subscriptions.html:67
+#: templates/mycomics/tw_user_base.html:35 templates/mycomics/user_base.html:35
+msgid "Collections"
+msgstr ""
+
+#: templates/mycomics/collection_item.html:16
+#: templates/mycomics/reading_order_item.html:16
+msgid "Editing item in collection"
+msgstr ""
+
+#: templates/mycomics/collection_item.html:30
+#: templates/mycomics/generic_edit_form.html:19
+#: templates/mycomics/reading_order_item.html:24
+#: templates/mycomics/settings.html:128
+#: templates/mycomics/tw_generic_edit_form.html:42
+msgid "Submit"
+msgstr ""
+
+#: templates/mycomics/collection_item.html:75
+msgid "Copy"
+msgstr ""
+
+#: templates/mycomics/collection_item.html:76
+msgid "Move"
+msgstr ""
+
+#: templates/mycomics/collection_item.html:100
+#: templates/mycomics/reading_order_item.html:71
+msgid "Also in:"
+msgstr ""
+
+#: templates/mycomics/collection_item.html:110
+msgid "Delete from collection"
+msgstr ""
+
+#: templates/mycomics/collection_item.html:113
+msgid "To other collection"
+msgstr ""
+
+#: templates/mycomics/collection_item.html:133
+msgid "Issue is in digital form."
+msgstr ""
+
+#: templates/mycomics/collection_item.html:135
+msgid "Notes: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:136
+msgid "Tags: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:138
+msgid "Location: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:141
+msgid "Purchase location: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:144
+msgid "Grade: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:147
+#: templates/mycomics/reading_order_item.html:101
+msgid "Was read: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:150
+msgid "For sale: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:153
+msgid "Signed: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:156
+msgid "Price paid: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:159
+msgid "Market value: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:162
+msgid "Sell price: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:165
+msgid "Acquisition date: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:168
+msgid "Sell date: "
+msgstr ""
+
+#: templates/mycomics/collection_item.html:171
+msgid "My rating: "
+msgstr ""
+
+#: templates/mycomics/collection_series.html:9
+msgid "Collection details"
+msgstr ""
+
+#: templates/mycomics/collection_series.html:13
+#, fuzzy
+#| msgid "issues"
+msgid "Issues"
+msgstr "Comics"
+
+#: templates/mycomics/collection_subscriptions.html:12
+#: templates/mycomics/collection_subscriptions.html:29
+msgid "Unsubscribe series in collection "
+msgstr ""
+
+#: templates/mycomics/collection_subscriptions.html:13
+#: templates/mycomics/collection_subscriptions.html:30
+msgid "Do you want to unsubscribe from the series <b>"
+msgstr ""
+
+#: templates/mycomics/collection_subscriptions.html:58
+msgid "Pull"
+msgstr ""
+
+#: templates/mycomics/collections.html:13
+#: templates/mycomics/collections.html:32
+msgid "Remove Collection"
+msgstr ""
+
+#: templates/mycomics/collections.html:14
+msgid "Do you want to remove the collection <b>"
+msgstr ""
+
+#: templates/mycomics/collections.html:35
+msgid "Do you want to remove this collection?"
+msgstr ""
+
+#: templates/mycomics/collections.html:50
+msgid "Import Issues Into A Collection"
+msgstr ""
+
+#: templates/mycomics/collections.html:53
+msgid "Select file:"
+msgstr ""
+
+#: templates/mycomics/collections.html:57
+msgid ""
+"\n"
+"              <p>On the following page you get a list of candidate issues "
+"based on the uploaded file.\n"
+"              From that, mark those issues which you want to import into a "
+"collection, e.g. for\n"
+"              variants you likely will only want to add one. After clicking "
+"'Select issues' you\n"
+"              can choose a collection and confirm the import.</p>\n"
+"\n"
+"              <p>For computational reasons, do not import more than 500 "
+"lines per file.\n"
+"              Larger files need to be split beforehand.</p>\n"
+"\n"
+"              <p>One can import a csv-file, where each line has tab-"
+"separated entries for an issue.\n"
+"              First entry is the series name, second entry the issue "
+"number.\n"
+"              Optionally a third entry for the publisher name, and a fourth "
+"entry for the language code.</p>\n"
+"\n"
+"              <p>One can also try to import an exported file from "
+"comicbookdb.com that will be identified by a first line starting with "
+"\"Title,Issue Number,Issue Name\".\n"
+"              The series name, issue number, publisher name, and the year "
+"the series began will be determined from the exported lists.\n"
+"              Note that publisher names might need a search-and-replace "
+"before an import, some publishers (e.g. DC, Image) are handled by the code.\n"
+"              Some series names need a search-and-replace in the to be "
+"imported file, Annuals do as well as.</p>\n"
+"            "
+msgstr ""
+
+#: templates/mycomics/collections.html:78
+msgid "Import No Variants"
+msgstr ""
+
+#: templates/mycomics/collections.html:79
+#: templates/mycomics/collections.html:92
+msgid "Import"
+msgstr ""
+
+#: templates/mycomics/collections.html:90
+msgid "Collections List"
+msgstr ""
+
+#: templates/mycomics/collections.html:95
+#: templates/mycomics/reading_orders.html:51
+msgid "Add New"
+msgstr ""
+
+#: templates/mycomics/index.html:30 templates/mycomics/tw_user_base.html:37
+#: templates/mycomics/user_base.html:37
+msgid "Help"
+msgstr ""
+
+#: templates/mycomics/index.html:44
+msgid "Your username and password didn't match. Please try again."
+msgstr ""
+
+#: templates/mycomics/reading_order.html:21
+#: templates/mycomics/reading_order_item.html:39
+msgid "Remove issue from reading order "
+msgstr ""
+
+#: templates/mycomics/reading_order.html:42
+msgid "Reading Order"
+msgstr ""
+
+#: templates/mycomics/reading_order_item.html:81
+msgid "Delete from reading order"
+msgstr ""
+
+#: templates/mycomics/reading_order_item.html:98
+msgid "Story:"
+msgstr ""
+
+#: templates/mycomics/reading_orders.html:13
+#: templates/mycomics/reading_orders.html:32
+msgid "Remove Reading List"
+msgstr ""
+
+#: templates/mycomics/reading_orders.html:14
+msgid "Do you want to remove the reading list <b>"
+msgstr ""
+
+#: templates/mycomics/reading_orders.html:35
+msgid "Do you want to remove this reading list?"
+msgstr ""
+
+#: templates/mycomics/reading_orders.html:49
+#: templates/mycomics/user_base.html:36
+msgid "Reading Lists"
+msgstr ""
+
+#: templates/mycomics/settings.html:15 templates/mycomics/settings.html:33
+msgid "Remove Location"
+msgstr ""
+
+#: templates/mycomics/settings.html:18
+msgid "Do you want to remove this location?"
+msgstr ""
+
+#: templates/mycomics/settings.html:19 templates/mycomics/settings.html:37
+msgid "This location is selected for some of your items."
+msgstr ""
+
+#: templates/mycomics/settings.html:36
+msgid "Do you want to remove this purchase location?"
+msgstr ""
+
+#: templates/mycomics/settings.html:51
+#, fuzzy
+#| msgid "Editing"
+msgid "Edit Location"
+msgstr "Editieren"
+
+#: templates/mycomics/settings.html:71
+msgid "Edit Purchase Location"
+msgstr ""
+
+#: templates/mycomics/settings.html:120
+msgid "Settings"
+msgstr ""
+
+#: templates/mycomics/settings.html:132
+msgid "Locations"
+msgstr ""
+
+#: templates/mycomics/settings.html:135 templates/mycomics/settings.html:158
+msgid "Add"
+msgstr ""
+
+#: templates/mycomics/settings.html:149 templates/mycomics/settings.html:172
+msgid "Delete"
+msgstr ""
+
+#: templates/mycomics/settings.html:155
+msgid "Purchase Locations"
+msgstr ""
+
+#: templates/mycomics/tw_reading_order.html:37
+msgid "Edit Reading List"
+msgstr ""
+
+#: templates/mycomics/tw_reading_order.html:45
+msgid "Copy Reading List"
+msgstr ""
+
+#: templates/mycomics/tw_user_base.html:9 templates/mycomics/user_base.html:9
+msgid "News for "
+msgstr ""
+
+#: templates/mycomics/tw_user_base.html:36
+msgid "Reading Orders"
+msgstr ""
+
+#: templates/mycomics/tw_user_base.html:38 templates/mycomics/user_base.html:38
+msgid "News"
+msgstr ""
+
+#: templates/mycomics/tw_user_base.html:56 templates/mycomics/user_base.html:56
+msgid "Log Out"
+msgstr ""
+
+#~ msgid "Covers to replace"
+#~ msgstr "Titelbilder zu ersetzen"
+
+#~ msgid "username"
+#~ msgstr "Name"
+
+#~ msgid "contact@comics.org"
+#~ msgstr "gcd-contact-de@comics.org"
+
+#~ msgid "Previous"
+#~ msgstr "zurück"
+
+#~ msgid "Next"
+#~ msgstr "vor"
+
+#~ msgid "Issues in this series have been indexed by:"
+#~ msgstr "Diese Serie wurde erfasst von:"
+
+#~ msgid "Indexed by:"
+#~ msgstr "Erfasst von:"
+
+#~ msgid "brands"
+#~ msgstr "Verlagslogo"
+
+#~ msgid "indicia publishers"
+#~ msgstr "Verlage"
+
+#~ msgid "variant issues"
+#~ msgstr "Variantausgaben"
+
+#~ msgid "issue indexes"
+#~ msgstr "Comics erfasst"
+
+#~ msgid "covers"
+#~ msgstr "Titelbilder"
+
+#~ msgid "stories"
+#~ msgstr "Geschichten"
 
 #~ msgid "German"
 #~ msgstr "Deutsch"
