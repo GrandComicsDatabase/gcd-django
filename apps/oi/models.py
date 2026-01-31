@@ -415,6 +415,9 @@ class Changeset(models.Model):
                     self.issuecreditrevisions.all(),
                     self.storyrevisions.all(),
                     self.storycreditrevisions.all(),
+                    self.storycharacterrevisions.all(),
+                    self.storygrouprevisions.all(),
+                    self.publishercodenumberrevisions.all(),
                     self.externallinkrevisions.all())
 
         if self.change_type == CTYPES['series_bond']:
