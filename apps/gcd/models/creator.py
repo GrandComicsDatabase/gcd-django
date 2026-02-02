@@ -1169,7 +1169,24 @@ class CreatorPortraitTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         self.resolve_name = kwargs.pop('resolve_name')
         setattr(self, self.resolve_name, kwargs.pop('object'))
+        self.universe_id = kwargs.pop('universe_id', None)
         super(CreatorPortraitTable, self).__init__(*args, **kwargs)
+
+    def render_issue_count(self, record):
+        # Use character_origin_universe URL if universe_id is present
+        if self.resolve_name == 'character' and self.universe_id is not None:
+            url = urlresolvers.reverse(
+                'character_origin_universe_creator_issues',
+                kwargs={'creator_id': record.id,
+                        'character_id': getattr(self, 'character').id,
+                        'universe_id': self.universe_id})
+        else:
+            url = urlresolvers.reverse(
+                '%s_creator_issues' % self.resolve_name,
+                kwargs={'creator_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url, record.issue_count))
 
     class Meta:
         model = Creator
@@ -1232,7 +1249,25 @@ class GenericCreatorTable(CreatorTable):
     def __init__(self, *args, **kwargs):
         self.resolve_name = kwargs.pop('resolve_name')
         setattr(self, self.resolve_name, kwargs.pop('object'))
+        self.universe_id = kwargs.pop('universe_id', None)
         super(CreatorTable, self).__init__(*args, **kwargs)
+
+    def render_issue_count(self, record):
+        # Use character_origin_universe URL if universe_id is present
+        if self.resolve_name == 'character' and \
+           self.universe_id is not None:
+            url = urlresolvers.reverse(
+                'character_origin_universe_creator_issues',
+                kwargs={'creator_id': record.id,
+                        'character_id': getattr(self, 'character').id,
+                        'universe_id': self.universe_id})
+        else:
+            url = urlresolvers.reverse(
+                '%s_creator_issues' % self.resolve_name,
+                kwargs={'creator_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url, record.issue_count))
 
     class Meta:
         model = Creator
@@ -1243,7 +1278,24 @@ class GenericCreatorNameTable(CreatorNameTable):
     def __init__(self, *args, **kwargs):
         self.resolve_name = kwargs.pop('resolve_name')
         setattr(self, self.resolve_name, kwargs.pop('object'))
+        self.universe_id = kwargs.pop('universe_id', None)
         super(CreatorNameTable, self).__init__(*args, **kwargs)
+
+    def render_issue_count(self, record):
+        # Use character_origin_universe URL if universe_id is present
+        if self.resolve_name == 'character' and self.universe_id is not None:
+            url = urlresolvers.reverse(
+                'character_origin_universe_creator_name_issues',
+                kwargs={'creator_name_id': record.id,
+                        'character_id': getattr(self, 'character').id,
+                        'universe_id': self.universe_id})
+        else:
+            url = urlresolvers.reverse(
+                '%s_creator_name_issues' % self.resolve_name,
+                kwargs={'creator_name_id': record.id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id})
+        return mark_safe('<a href="%s">%s</a>' % (url, record.issue_count))
 
     class Meta:
         model = CreatorNameDetail

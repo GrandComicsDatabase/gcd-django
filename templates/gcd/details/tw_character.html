@@ -64,7 +64,7 @@ GCD :: Character :: {{ character.name }}
       {% if character.active_generalisations and not character.universe %}
             <li class="break-inside-avoid-column"><a href='{% url "character_issues_up" character_id=character.id %}'>Issue List, including generalisations</a></li>
       {% endif %}
-                <li><a href='{% url "character_covers" character_id=character.id %}'>Cover List</a></li>
+            <li><a href='{% url "character_covers" character_id=character.id %}'>Cover List</a></li>
             <li><a href='{% url "character_series" character_id=character.id %}'>Series List</a></li>
             <li><a href='{% url "character_features" character_id=character.id %}'>Feature List</a></li>
             <li><a href='{% url "character_characters" character_id=character.id %}'>Characters Appeared With</a></li>
@@ -117,19 +117,19 @@ GCD :: Character :: {{ character.name }}
 {% block content %}
 {% if character.active_universe_origins %}
 <hr>
-<h3>Appearances With a Character Origin Universe:</h3>
+<h3>Overviews of Character Origin Universe:</h3>
 <table>
   <tr>
     <td class="px-2 align-top">&bull;</td>
     <td>
-      <a href='{% url "character_issues_per_universe" character_id=character.id universe_id=-1 %}'>without a universe</a>
+      <a href='{% url "character_origin_universe" character_id=character.id universe_id=-1 %}'>without a universe</a>
     </td>
   </tr>
   {% for universe in character.active_universe_origins %}
   <tr>
     <td class="px-2 align-top">&bull;</td>
     <td class="pr-4 align-top">
-      <a href='{% url "character_issues_per_universe" character_id=character.id universe_id=universe.id %}'>{{ universe }}</a>
+      <a href='{% url "character_origin_universe" character_id=character.id universe_id=universe.id %}'>{{ universe }}</a>
     </td>
     <td>{{ character|character_for_universe:universe.id }}</td>
   </tr>
