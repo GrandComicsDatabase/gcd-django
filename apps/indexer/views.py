@@ -400,7 +400,7 @@ Mentor this indexer: %s
 
         send_mail(from_email=settings.EMAIL_NEW_ACCOUNTS_FROM,
                   recipient_list=[indexer.user.email],
-                  subject='GCD successfull registration',
+                  subject='GCD successful registration',
                   message=get_template('indexer/welcome_mail.html').render(),
                   fail_silently=(not settings.BETA))
 
