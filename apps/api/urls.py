@@ -18,7 +18,7 @@ urlpatterns = [
          views.IssuesList.as_view()),
     path('series/name/<path:name>/issue/<path:number>/',
          views.IssuesList.as_view()),
-    path('series/name/<path:name>/year/<str:year>/',
+    path('series/name/<path:name>/year/<int:year>/',
          views.SeriesList.as_view()),
     path('series/name/<path:name>/', views.SeriesList.as_view()),
 ]
