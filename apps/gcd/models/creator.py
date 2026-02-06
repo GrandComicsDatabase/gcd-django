@@ -246,7 +246,7 @@ class CreatorNameDetail(GcdData):
                 attribute = 'under joint name '
                 display_as_name = as_name.name
             elif self.type_id == NAME_TYPES['misspelled'] and \
-                                                          credit.is_credited:
+                    credit.is_credited:
                 attribute = 'misspelled as '
                 display_as_name = as_name.name
             elif credit.is_credited and not credit.credited_as:

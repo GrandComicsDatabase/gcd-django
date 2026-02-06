@@ -768,14 +768,8 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
                                                        publisher)
     elif character_id:
         character = get_gcd_object(Character, character_id)
-        filter_character = character
-        link_universe_id = universe_id
-
-        if universe_id is None and character.universe and \
-                character.active_generalisations():
-            universe_id = character.universe.id
-            filter_character = character.active_generalisations()\
-                .get().from_character
+        filter_character, universe_id, link_universe_id = \
+            _resolve_character_universe(character, universe_id)
 
         query = {
             'story__credits__creator__creator': creator,
@@ -785,22 +779,12 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
             'story__type__id__in': story_types
         }
 
-        if universe_id:
-            if universe_id == '-1':
-                universe_name = WITHOUT_UNIVERSE_NAME
-                query['story__appearing_characters__universe_id__isnull'] \
-                    = True
-            else:
-                universe_obj = get_gcd_object(Universe, universe_id)
-                universe_name = universe_obj.universe_name()
-                query['story__appearing_characters__universe_id'] = \
-                    universe_id
-
-        if link_universe_id:
-            heading = 'for creator %s for character %s with origin %s' % (
-                creator, character, universe_name)
-        else:
-            heading = 'for creator %s for character %s' % (creator, character)
+        heading = _build_universe_filter_and_heading(
+            universe_id, link_universe_id, query,
+            'story__appearing_characters__',
+            'for creator %s for character %s with origin %s',
+            'for creator %s for character %s',
+            (creator, character))
 
         issues = issues.filter(**query).distinct()
     elif group_id:
@@ -907,6 +891,65 @@ def _table_creators_list_or_grid(request, creators, context, resolve_name,
             order_by=('creator'),
             universe_id=universe_id)
     return table
+
+
+def _resolve_character_universe(character, universe_id):
+    """
+    Helper to resolve filter_character and universe_id with character
+    generalisations.
+
+    Returns tuple: (filter_character, universe_id, link_universe_id)
+    where link_universe_id is the original universe_id passed in.
+    """
+    filter_character = character
+    link_universe_id = universe_id
+
+    if universe_id is None and character.universe and \
+            character.active_generalisations():
+        universe_id = character.universe.id
+        filter_character = character.active_generalisations().get()\
+                                    .from_character
+
+    return filter_character, universe_id, link_universe_id
+
+
+def _build_universe_filter_and_heading(universe_id, link_universe_id, query,
+                                       universe_key_prefix,
+                                       heading_with_fmt, heading_without_fmt,
+                                       fmt_args):
+    """
+    Helper to add universe filtering to query dict and build heading string.
+
+    Args:
+        universe_id: The resolved universe ID (may be '-1' for without)
+        link_universe_id: The original universe ID from URL
+        query: Dict to mutate in-place with universe filter
+        universe_key_prefix: Query prefix (e.g., 'story__app_characters__')
+        heading_with_fmt: Format string for heading when universe is specified
+        heading_without_fmt: Format string for heading when no origin universe
+        fmt_args: Tuple of arguments for format string (character, etc.)
+
+    Returns:
+        heading: The formatted heading string
+    """
+    universe_name = None
+
+    if universe_id:
+        if universe_id == '-1':
+            universe_name = WITHOUT_UNIVERSE_NAME
+            query[universe_key_prefix + 'universe_id__isnull'] = True
+        else:
+            universe_obj = get_gcd_object(Universe, universe_id)
+            universe_name = universe_obj.universe_name()
+            query[universe_key_prefix + 'universe_id'] = universe_id
+
+    if link_universe_id:
+        # Add universe_name to the format args tuple
+        heading = heading_with_fmt % (fmt_args + (universe_name,))
+    else:
+        heading = heading_without_fmt % fmt_args
+
+    return heading
 
 
 def cover_checklist_by_id(request, creator_id, series_id=None,
@@ -1039,14 +1082,8 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
                           .select_related('series__publisher')
     if character_id:
         character = get_gcd_object(Character, character_id)
-        filter_character = character
-        link_universe_id = universe_id
-
-        if universe_id is None and character.universe and \
-                character.active_generalisations():
-            universe_id = character.universe.id
-            filter_character = character.active_generalisations()\
-                .get().from_character
+        filter_character, universe_id, link_universe_id = \
+            _resolve_character_universe(character, universe_id)
 
         query = {
             'story__credits__creator': creator,
@@ -1056,22 +1093,12 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
             'story__type__id__in': CORE_TYPES
         }
 
-        if universe_id:
-            if universe_id == '-1':
-                universe_name = WITHOUT_UNIVERSE_NAME
-                query['story__appearing_characters__universe_id__isnull'] \
-                    = True
-            else:
-                universe_obj = get_gcd_object(Universe, universe_id)
-                universe_name = universe_obj.universe_name()
-                query['story__appearing_characters__universe_id'] = \
-                    universe_id
-
-        if link_universe_id:
-            heading_addon = 'with character %s with origin %s' % (
-                character, universe_name)
-        else:
-            heading_addon = 'with character %s' % (character)
+        heading_addon = _build_universe_filter_and_heading(
+            universe_id, link_universe_id, query,
+            'story__appearing_characters__',
+            'with character %s with origin %s',
+            'with character %s',
+            (character,))
 
         issues = issues.filter(**query).distinct()
     if group_id:
@@ -4051,14 +4078,8 @@ def show_character(request, character, preview=False):
 
 def character_characters(request, character_id, universe_id=None):
     character = get_gcd_object(Character, character_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations().get()\
-                                    .from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     query = {'character_names__storycharacter__story__'
              'appearing_characters__character__character':
@@ -4067,20 +4088,12 @@ def character_characters(request, character_id, universe_id=None):
              'character_names__storycharacter__story__type__id__in':
              CORE_TYPES}
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['character_names__storycharacter__story__'
-                  'appearing_characters__universe_id'] = universe_id
-
-    if link_universe_id:
-        heading = 'appearing together with %s with origin %s' % (
-            character, universe_name)
-    else:
-        heading = 'appearing together with %s' % (character)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'character_names__storycharacter__story__appearing_characters__',
+        'appearing together with %s with origin %s',
+        'appearing together with %s',
+        (character,))
     characters = Character.objects.filter(Q(**query))\
                           .exclude(id=filter_character.id).distinct()
 
@@ -4109,14 +4122,8 @@ def character_characters(request, character_id, universe_id=None):
 
 def character_features(request, character_id, universe_id=None):
     character = get_gcd_object(Character, character_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations().get()\
-            .from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     query = {
         'story__appearing_characters__character__character':
@@ -4126,22 +4133,12 @@ def character_features(request, character_id, universe_id=None):
         'deleted': False
     }
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['story__appearing_characters__universe_id__isnull'] \
-                = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['story__appearing_characters__universe_id'] = \
-                universe_id
-
-    if link_universe_id:
-        heading = 'with an appearance of %s with origin %s' % (
-            character, universe_name)
-    else:
-        heading = 'with an appearance of %s' % (character)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'story__appearing_characters__',
+        'with an appearance of %s with origin %s',
+        'with an appearance of %s',
+        (character,))
 
     features = Feature.objects.filter(**query).distinct()
 
@@ -4171,14 +4168,8 @@ def character_features(request, character_id, universe_id=None):
 def character_issues(request, character_id, layer=None, universe_id=None,
                      story_universe_id=None):
     character = get_gcd_object(Character, character_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations().get()\
-                                    .from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     story_types = process_story_type_filter_from_request(request)
 
@@ -4191,6 +4182,7 @@ def character_issues(request, character_id, layer=None, universe_id=None,
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
     story_universe_heading = ''
+    universe_name = None
     if layer == -1 and character.active_specifications().exists():
         characters = character.active_specifications()\
                               .values_list('to_character_id', flat=True)
@@ -4266,12 +4258,13 @@ def character_origin_universe(request, character_id, universe_id):
     """
     character = get_gcd_object(Character, character_id)
 
-    cover_query = {'story__appearing_characters__character__character': character,
-             'story__appearing_characters__deleted': False,
-             'story__type__id': 6,
-             'story__deleted': False,
-             'cover__isnull': False,
-             'cover__deleted': False}
+    cover_query = {
+        'story__appearing_characters__character__character': character,
+        'story__appearing_characters__deleted': False,
+        'story__type__id': 6,
+        'story__deleted': False,
+        'cover__isnull': False,
+        'cover__deleted': False}
 
     if universe_id == '-1':
         cover_query['story__appearing_characters__universe_id__isnull'] = True
@@ -4316,14 +4309,8 @@ def character_issues_character(request, character_id, character_with_id,
                                universe_id=None):
     character = get_gcd_object(Character, character_id)
     character_with = get_gcd_object(Character, character_with_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations()\
-            .get().from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     story_types = process_story_type_filter_from_request(request)
 
@@ -4333,20 +4320,12 @@ def character_issues_character(request, character_id, character_with_id,
              'type__id__in': story_types,
              'deleted': False}
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['appearing_characters__universe_id__isnull'] = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['appearing_characters__universe_id'] = universe_id
-
-    if link_universe_id:
-        heading = 'for %s with origin %s with %s' % (
-            character, universe_name, character_with)
-    else:
-        heading = 'for %s with %s' % (character, character_with)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'appearing_characters__',
+        'for %s with origin %s with %s',
+        'for %s with %s',
+        (character, character_with))
 
     stories = Story.objects.filter(Q(**query))
 
@@ -4387,14 +4366,8 @@ def character_issues_feature(request, character_id, feature_id,
                              universe_id=None):
     character = get_gcd_object(Character, character_id)
     feature = get_gcd_object(Feature, feature_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations()\
-            .get().from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     story_types = process_story_type_filter_from_request(request)
 
@@ -4407,22 +4380,12 @@ def character_issues_feature(request, character_id, feature_id,
         'story__deleted': False
     }
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['story__appearing_characters__universe_id__isnull'] \
-                = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['story__appearing_characters__universe_id'] = \
-                universe_id
-
-    if link_universe_id:
-        heading = 'for %s with origin %s in %s' % (
-            character, universe_name, feature)
-    else:
-        heading = 'for %s in %s' % (character, feature)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'story__appearing_characters__',
+        'for %s with origin %s in %s',
+        'for %s in %s',
+        (character, feature))
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
@@ -4447,14 +4410,8 @@ def character_issues_series(request, character_id, series_id,
                             universe_id=None):
     character = get_gcd_object(Character, character_id)
     series = get_gcd_object(Series, series_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations()\
-            .get().from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     query = {'story__appearing_characters__character__character':
              filter_character,
@@ -4463,20 +4420,12 @@ def character_issues_series(request, character_id, series_id,
              'series__id': series_id,
              'story__deleted': False}
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['story__appearing_characters__universe_id__isnull'] = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['story__appearing_characters__universe_id'] = universe_id
-
-    if link_universe_id:
-        heading = 'for character %s with origin %s in %s' % (
-            character, universe_name, series)
-    else:
-        heading = 'for character %s in %s' % (character, series)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'story__appearing_characters__',
+        'for character %s with origin %s in %s',
+        'for character %s in %s',
+        (character, series))
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
@@ -4510,14 +4459,8 @@ def character_issues_series(request, character_id, series_id,
 
 def character_series(request, character_id, universe_id=None):
     character = get_gcd_object(Character, character_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations()\
-            .get().from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     query = {
         'issue__story__appearing_characters__character__character':
@@ -4527,22 +4470,12 @@ def character_series(request, character_id, universe_id=None):
         'deleted': False
     }
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['issue__story__appearing_characters__universe_id'
-                  '__isnull'] = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['issue__story__appearing_characters__universe_id'] = \
-                universe_id
-
-    if link_universe_id:
-        heading = 'with character %s with origin %s' % (
-            character, universe_name)
-    else:
-        heading = 'with character %s' % (character)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'issue__story__appearing_characters__',
+        'with character %s with origin %s',
+        'with character %s',
+        (character,))
 
     series = Series.objects.filter(**query).distinct()\
         .select_related('publisher')
@@ -4572,14 +4505,8 @@ def character_series(request, character_id, universe_id=None):
 def character_creators(request, character_id, creator_names=False,
                        universe_id=None):
     character = get_gcd_object(Character, character_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations().get()\
-            .from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     query = {
         'appearing_characters__character__character': filter_character,
@@ -4587,21 +4514,12 @@ def character_creators(request, character_id, creator_names=False,
         'type__id__in': CORE_TYPES
     }
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['appearing_characters__universe_id__isnull'] = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['appearing_characters__universe_id'] = \
-                universe_id
-
-    if link_universe_id:
-        heading = 'working on character %s with origin %s' % (
-            character, universe_name)
-    else:
-        heading = 'working on character %s' % (character)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'appearing_characters__',
+        'working on character %s with origin %s',
+        'working on character %s',
+        (character,))
 
     stories = Story.objects.filter(**query).distinct()
     filter = filter_sequences(request, stories)
@@ -4654,33 +4572,19 @@ def character_creators(request, character_id, creator_names=False,
 
 def character_sequences(request, character_id, universe_id=None):
     character = get_gcd_object(Character, character_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations().get()\
-            .from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     query = {'appearing_characters__character__character': filter_character,
              'appearing_characters__deleted': False,
              'deleted': False}
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['appearing_characters__universe_id__isnull'] = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['appearing_characters__universe_id'] = universe_id
-
-    if link_universe_id:
-        heading = 'with character %s with origin %s' % (
-            character, universe_name)
-    else:
-        heading = 'for character %s' % (character)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'appearing_characters__',
+        'with character %s with origin %s',
+        'for character %s',
+        (character,))
 
     stories = Story.objects.filter(**query).distinct()\
                            .select_related('issue__series__publisher')
@@ -4706,14 +4610,8 @@ def character_sequences(request, character_id, universe_id=None):
 
 def character_covers(request, character_id, universe_id=None):
     character = get_gcd_object(Character, character_id)
-    filter_character = character
-    link_universe_id = universe_id
-
-    if universe_id is None and character.universe and \
-            character.active_generalisations():
-        universe_id = character.universe.id
-        filter_character = character.active_generalisations().get()\
-            .from_character
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
 
     query = {
         'story__appearing_characters__character__character':
@@ -4723,20 +4621,12 @@ def character_covers(request, character_id, universe_id=None):
         'story__deleted': False
     }
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['story__appearing_characters__universe_id__isnull'] = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['story__appearing_characters__universe_id'] = universe_id
-
-    if link_universe_id:
-        heading = 'with character %s with origin %s' % (
-            character, universe_name)
-    else:
-        heading = 'with character %s' % character
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'story__appearing_characters__',
+        'with character %s with origin %s',
+        'with character %s',
+        (character,))
 
     issues = Issue.objects.filter(**query).distinct()\
                           .select_related('series__publisher')
