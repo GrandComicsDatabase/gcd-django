@@ -4471,8 +4471,6 @@ def character_issues_series(request, character_id, series_id,
             universe_obj = get_gcd_object(Universe, universe_id)
             universe_name = universe_obj.universe_name()
             query['story__appearing_characters__universe_id'] = universe_id
-        heading = 'for character %s with origin %s in %s' % (
-            character, universe_name, series)
 
     if link_universe_id:
         heading = 'for character %s with origin %s in %s' % (

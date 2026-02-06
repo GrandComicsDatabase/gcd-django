@@ -275,8 +275,8 @@ class Character(CharacterGroupBase):
           appearing_characters__character__character=self,
           appearing_characters__universe_id=origin_universe,
           deleted=False)
-        universes = set(appearances.values_list('universe',
-                                                flat=True).distinct())
+        universes = appearances.values_list('universe',
+                                            flat=True).distinct()
         return Universe.objects.filter(id__in=universes)
 
     def translated_from(self):
