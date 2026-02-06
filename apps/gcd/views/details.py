@@ -4697,21 +4697,12 @@ def character_name_issues(request, character_name_id, universe_id=None):
         'story__deleted': False
     }
 
-    if universe_id:
-        if universe_id == '-1':
-            universe_name = WITHOUT_UNIVERSE_NAME
-            query['story__appearing_characters__universe_id__isnull'] = True
-        else:
-            universe_obj = get_gcd_object(Universe, universe_id)
-            universe_name = universe_obj.universe_name()
-            query['story__appearing_characters__universe_id'] = universe_id
-
-    if link_universe_id:
-        heading = 'for name %s of character %s with origin %s' % (
-            character_name, character, universe_name)
-    else:
-        heading = 'for name %s of character %s' % (character_name,
-                                                   character)
+    heading = _build_universe_filter_and_heading(
+        universe_id, link_universe_id, query,
+        'story__appearing_characters__',
+        'for name %s of character %s with origin %s',
+        'for name %s of character %s',
+        (character_name, character))
 
     issues = Issue.objects.filter(**query).distinct()\
                           .select_related('series__publisher')
