@@ -4,24 +4,24 @@
 <div>
   <div class="flex">
     <div class="px-2">
-      <a href="{% url 'contact_form' %} ">contact us</a>
+      <a href="{% url 'contact_form' %} ">{% trans "contact us" %}</a>
     </div>
     <div class="px-2">
-      <a href="{% url "donate" %}">donate</a>
+      <a href="{% url 'donate' %}">{% trans "donate" %}</a>
     </div>
   {% if error_link %}
     <div class="px-2">
     {% blocktrans with request.build_absolute_uri as uri and error_subject|urlencode as error_sub %}
     If you believe any of this data to be incorrect, please
-      <a class="new_window" href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ uri }}&amp;short_desc={{ error_sub }}"
+      <a class="new_window" href="https://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ uri }}&amp;short_desc={{ error_sub }}"
          target="_blank">let us know</a>.
     {% endblocktrans %}
     </div>
   {% endif %}
   </div>
   <div class="footer_item">
-    {% trans 'Cover thumbnails are used for identification purposes only.' %}
-    {% trans 'All rights to cover images reserved by the respective copyright holders.' %}
+    {% trans "Cover thumbnails are used for identification purposes only." %}
+    {% trans "All rights to cover images reserved by the respective copyright holders." %}
   </div>
   <div class="flex">
     <a rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">
@@ -34,7 +34,10 @@ copyrighted by the GCD and are licensed under a <a rel="license" href="https://c
     </div>
   </div>
   <div class="no_visited footer_item">
-    The GCD <a href="{% url 'privacy' %}">{% trans 'Privacy Policy' %}</a>.
-    {% trans 'The <a href="https://github.com/GrandComicsDatabase/gcd-django">GCD Web Site code</a> is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>' %}.
+    {% url 'privacy' as privacy_url %}
+    {% blocktrans trimmed %}
+    The GCD <a href="{{ privacy_url }}">Privacy Policy</a>.
+    {% endblocktrans %}
+    {% trans 'The <a href="https://github.com/GrandComicsDatabase/gcd-django">GCD Web Site code</a> is licensed under the <a href="http://www.gnu.org/licenses/gpl.html">GNU General Public License</a>.' %}
   </div>
 </div>

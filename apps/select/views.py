@@ -355,7 +355,9 @@ def select_object(request, select_key):
                                 'Please use the back button to return.',
                                 redirect=False)
     else:
-        raise ValueError
+        raise render_error(request,
+                           'Data for processing the selection is incomplete.',
+                           redirect=False)
     # right now all return functions for single selects are in oi.views.py
     import apps.oi.views  # here to avoid circular imports
     return_function = getattr(apps.oi.views, data['return'])
@@ -893,10 +895,14 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
 ##############################################################################
 
 def process_story_type_filter_from_request(request):
-    if story_types := request.GET.getlist('story_type'):
-        pass
-    else:
-        story_types = [str(t) for t in CORE_TYPES]
+    story_types = [str(t) for t in CORE_TYPES]
+    if story_types_val := request.GET.getlist('story_type'):
+        try:
+            for t in story_types_val:
+                int(t)
+            story_types = story_types_val
+        except ValueError:
+            pass
     request.GET = request.GET.copy()
     request.GET.setlist('story_type', story_types)
     return story_types

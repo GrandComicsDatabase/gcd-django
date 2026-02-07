@@ -2351,6 +2351,40 @@ def init_added_variant(form_class, initial, issue, revision=False):
 @permission_required('indexer.can_reserve')
 def add_issue(request, series_id, sort_after=None, variant_of=None,
               variant_cover=None, edit_with_base=False):
+    """
+    Add a new issue to a series with optional variant handling.
+    This view handles the creation of new issues, including base issues and
+    variant issues. It manages the complete workflow from form display through
+    validation to changeset creation.
+
+    Args:
+        series_id: The ID of the series to which the issue will be added
+        sort_after: Optional; issue after which this issue should be sorted
+        variant_of: Optional; base issue if this is a variant issue
+        variant_cover: Optional; cover associated with the variant
+        edit_with_base: Boolean flag indicating if editing alongside base issue
+
+    Returns:
+        HttpResponse: On GET requests or invalid forms, displays the issue
+                        addition form. On successful POST with variant_of and
+                        edit_with_base, redirects to reserve the base issue or
+                        cover. On successful POST for base issues, redirects to
+                        either issue comparison (if copying from predecessor)
+                        or submission. Returns error page if user has reached
+                        change limit or series is deleted.
+
+    Raises:
+        Http404: If the series with the given series_id does not exist.
+
+    Notes:
+        - Checks if user can reserve another change before proceeding.
+        - Handles cancellation by redirecting to appropriate pages.
+        - Validates series is not deleted or pending deletion.
+        - Creates formsets for credits, publisher codes, and external links.
+        - For variants, initializes form with base issue data.
+        - Creates changeset and issue revision on successful form submission.
+    """
+
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
@@ -2452,6 +2486,35 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
 
 
 def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
+    """
+    Add a variant issue to an existing issue revision within a changeset.
+    This view allows the changeset owner to add a variant of an issue to their
+    existing issue revision. The variant inherits initial data from the base
+    issue revision and can be customized with its own credits, publisher codes,
+    and external links.
+
+    Args:
+        changeset_id: The ID of the changeset to add the variant to.
+        issue_revision_id: The ID of the base issue revision that the variant
+            will be associated with.
+
+    Returns:
+        HttpResponse: On GET, displays the add variant form with formsets for
+            credits, publisher codes, and external links.
+        HttpResponseRedirect: On successful POST, redirects to the changeset
+            edit page. On cancel, redirects to the changeset edit page.
+        HttpResponse: On validation error, redisplays the form with errors.
+
+    Raises:
+        Http404: If the changeset does not exist.
+
+    Notes:
+        - Variants cannot be added to changesets of type 'variant_add' or
+          'two_issues'.
+        - The changeset type is updated to 'variant_add' upon successful
+          variant creation.
+    """
+
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
         return render_error(
@@ -2519,6 +2582,32 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
 
 def add_variant_issuerevision(changeset, revision, variant_of, form,
                               request):
+    """
+    Add a variant issue revision to a changeset.
+
+    This function creates a new variant issue revision and associates it with
+    the provided changeset. If the changeset is for a cover, it first reserves
+    the original issue. The function then processes the form data, saves the
+    issue revision, and handles related formsets for credits, publisher code
+    numbers, and external links.
+
+    Args:
+        changeset: The changeset object to which the variant will be added.
+        revision: The revision object (used when converting from cover).
+        variant_of: The issue object that this variant is based on.
+        form: The form containing the variant issue data.
+        request: The HTTP request object containing POST data for formsets.
+    Returns:
+        bool: True if the variant was successfully added, False if the
+                reservation failed (when processing a cover changeset).
+    Side Effects:
+        - Modifies the changeset's change_type to CTYPES['variant_add'].
+        - Creates and saves an issue revision for the variant.
+        - May create an issue reservation if the changeset is for a cover.
+        - Processes and saves related formsets (credits, code numbers,
+            external links).
+    """
+
     issuerevision = form.save(commit=False)
 
     if changeset.change_type == CTYPES['cover']:
@@ -2554,6 +2643,28 @@ def add_variant_issuerevision(changeset, revision, variant_of, form,
 
 @permission_required('indexer.can_reserve')
 def add_variant_issue(request, issue_id, cover_id=None, edit_with_base=False):
+    """
+    Add a variant issue based on an existing issue.
+
+    This view handles the creation of a variant issue by delegating to the
+    add_issue function with variant-specific parameters. It validates that if
+    a cover is provided, it corresponds to the selected issue.
+
+    Args:
+        issue_id: The ID of the base issue that this variant is based on.
+        cover_id: Optional ID of a cover image to associate with the variant
+                  issue. If provided, cover must be from the base issue.
+        edit_with_base: Boolean flag indicating whether to edit the variant
+                        in a changeset with the base issue. Defaults to False.
+
+    Returns:
+        HttpResponse: Either redirects to the add_issue view with appropriate
+                      variant parameters, or returns an error response if the
+                      cover doesn't correspond to the issue.
+
+    Raises:
+        Http404: If the issue or cover with the given ID does not exist.
+    """
     if cover_id:
         cover = get_object_or_404(Cover, id=cover_id)
         if cover.issue.id != int(issue_id):
@@ -2655,6 +2766,7 @@ def add_issues(request, series_id, method=None):
 
     form_class = get_bulk_issue_revision_form(series=series, method=method,
                                               user=request.user)
+    credits_formset = IssueRevisionFormSet(request.POST or None)
 
     if request.method != 'POST':
         reversed_issues = series.active_issues().order_by('-sort_code')
@@ -2662,7 +2774,8 @@ def add_issues(request, series_id, method=None):
         if reversed_issues.count():
             initial['after'] = reversed_issues[0].id
         form = form_class(initial=initial)
-        return _display_bulk_issue_form(request, series, form, method)
+        return _display_bulk_issue_form(request, series, form,
+                                        credits_formset, method)
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(urlresolvers.reverse(
@@ -2670,8 +2783,9 @@ def add_issues(request, series_id, method=None):
           kwargs={'series_id': series_id}))
 
     form = form_class(request.POST)
-    if not form.is_valid():
-        return _display_bulk_issue_form(request, series, form, method)
+    if not form.is_valid() or not credits_formset.is_valid():
+        return _display_bulk_issue_form(request, series, form,
+                                        credits_formset, method)
 
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['issue_add'])
@@ -2691,6 +2805,18 @@ def add_issues(request, series_id, method=None):
     # "after" for the rest of the issues gets set when they are all
     # committed to display.
     new_issues[0].after = form.cleaned_data['after']
+
+    # Process editor credits from the formset - these will be cloned
+    # to all issues
+    credit_revisions_data = []
+    for credit_form in credits_formset:
+        if (credit_form.cleaned_data and
+                not credit_form.cleaned_data.get('DELETE', False)):
+            # Skip empty forms
+            if ('creator' in credit_form.cleaned_data and
+                    credit_form.cleaned_data['creator']):
+                credit_revisions_data.append(credit_form.cleaned_data)
+
     for revision in new_issues:
         revision.save_added_revision(changeset=changeset, series=series)
         if form.cleaned_data['brand_emblem']:
@@ -2698,6 +2824,21 @@ def add_issues(request, series_id, method=None):
         if form.cleaned_data['indicia_printer']:
             revision.indicia_printer.set(form.cleaned_data['indicia_printer']
                                              .all())
+        # Clone editor credits to each issue
+        for credit_data in credit_revisions_data:
+            credit = IssueCreditRevision(
+                issue_revision=revision,
+                creator=credit_data['creator'],
+                credit_type=credit_data['credit_type'],
+                is_credited=credit_data.get('is_credited', False),
+                credited_as=credit_data.get('credited_as', ''),
+                uncertain=credit_data.get('uncertain', False),
+                credit_name=credit_data.get('credit_name', ''),
+                is_sourced=credit_data.get('is_sourced', False),
+                sourced_by=credit_data.get('sourced_by', ''),
+                changeset=changeset
+            )
+            credit.save()
     return submit(request, changeset.id)
 
 
@@ -2810,10 +2951,13 @@ def _build_issue(form, revision_sort_code, number,
       no_editing=cd['no_editing'],
       no_isbn=cd['no_isbn'],
       no_barcode=cd['no_barcode'],
+      rating=cd['rating'],
+      no_rating=cd['no_rating'],
       revision_sort_code=revision_sort_code)
 
 
-def _display_bulk_issue_form(request, series, form, method=None):
+def _display_bulk_issue_form(request, series, form, credits_formset,
+                             method=None):
     kwargs = {
         'series_id': series.id,
     }
@@ -2831,6 +2975,7 @@ def _display_bulk_issue_form(request, series, form, method=None):
         'extra_adding_info': extra_adding_info,
         'action_label': 'Submit new',
         'form': form,
+        'credits_formset': credits_formset,
       })
 
 

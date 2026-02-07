@@ -418,6 +418,9 @@ class Changeset(models.Model):
                     self.issuecreditrevisions.all(),
                     self.storyrevisions.all(),
                     self.storycreditrevisions.all(),
+                    self.storycharacterrevisions.all(),
+                    self.storygrouprevisions.all(),
+                    self.publishercodenumberrevisions.all(),
                     self.externallinkrevisions.all())
 
         if self.change_type == CTYPES['series_bond']:
@@ -3962,7 +3965,8 @@ def _removed_related_objects(removed_objects, source_type):
 
 def _process_formset(self, formset, revision_type=None, generic=False):
     for form in formset:
-        if form.is_valid() and form.cleaned_data:
+        if form.is_valid() and form.cleaned_data \
+           and form not in formset.deleted_forms:
             cd = form.cleaned_data
             if 'id' in cd and cd['id']:
                 form.save()
@@ -6294,8 +6298,10 @@ class StoryRevision(Revision):
 
     def process_extra_forms(self, extra_forms):
         credits_formset = extra_forms['credits_formset']
+        # TODO use _process_formset, but need to handle additional logic
         for credit_form in credits_formset:
-            if credit_form.is_valid() and credit_form.cleaned_data:
+            if credit_form.is_valid() and credit_form.cleaned_data \
+               and credit_form not in credits_formset.deleted_forms:
                 cd = credit_form.cleaned_data
                 if 'id' in cd and cd['id']:
                     credit_revision = credit_form.save()
@@ -6340,17 +6346,12 @@ class StoryRevision(Revision):
                 raise ValueError
         removed_credits = credits_formset.deleted_forms
         if removed_credits:
-            for removed_credit in removed_credits:
-                cd = removed_credit.cleaned_data
-                if 'id' in cd and cd['id']:
-                    if removed_credit.cleaned_data['id'].story_credit:
-                        removed_credit.cleaned_data['id'].deleted = True
-                        removed_credit.cleaned_data['id'].save()
-                    else:
-                        removed_credit.cleaned_data['id'].delete()
+            _removed_related_objects(removed_credits, 'story_credit')
         characters_formset = extra_forms['characters_formset']
+        # TODO use _process_formset, but need to handle additional logic
         for character_form in characters_formset:
-            if character_form.is_valid() and character_form.cleaned_data:
+            if character_form.is_valid() and character_form.cleaned_data \
+               and character_form not in characters_formset.deleted_forms:
                 cd = character_form.cleaned_data
                 if 'id' in cd and cd['id']:
                     character_revision = character_form.save()
@@ -6371,36 +6372,12 @@ class StoryRevision(Revision):
                 raise ValueError
         removed_characters = characters_formset.deleted_forms
         if removed_characters:
-            for removed_character in removed_characters:
-                if removed_character.cleaned_data['id']:
-                    if removed_character.cleaned_data['id'].story_character:
-                        removed_character.cleaned_data['id'].deleted = True
-                        removed_character.cleaned_data['id'].save()
-                    else:
-                        removed_character.cleaned_data['id'].delete()
+            _removed_related_objects(removed_characters, 'story_character')
         groups_formset = extra_forms['groups_formset']
-        for group_form in groups_formset:
-            if group_form.is_valid() and group_form.cleaned_data:
-                cd = group_form.cleaned_data
-                if 'id' in cd and cd['id']:
-                    group_revision = group_form.save()
-                else:
-                    group_revision = group_form.save(commit=False)
-                    group_revision.save_added_revision(
-                      changeset=self.changeset, story_revision=self)
-                    group_form.save_m2m()
-            elif (not group_form.is_valid() and
-                  group_form not in groups_formset.deleted_forms):
-                raise ValueError
+        _process_formset(self, groups_formset, revision_type='story_revision')
         removed_groups = groups_formset.deleted_forms
         if removed_groups:
-            for removed_group in removed_groups:
-                if removed_group.cleaned_data['id']:
-                    if removed_group.cleaned_data['id'].story_group:
-                        removed_group.cleaned_data['id'].deleted = True
-                        removed_group.cleaned_data['id'].save()
-                    else:
-                        removed_group.cleaned_data['id'].delete()
+            _removed_related_objects(removed_groups, 'story_group')
 
     def post_form_save(self):
         if self.feature_logo.count():
@@ -7755,9 +7732,12 @@ class CharacterRevision(CharacterGroupRevisionBase):
 
     def process_extra_forms(self, extra_forms):
         character_names_formset = extra_forms['character_names_formset']
+        # TODO use _process_formset, but needs to handle official name update
+        removed_names = character_names_formset.deleted_forms
         for character_name_form in character_names_formset:
             if character_name_form.is_valid() and \
-               character_name_form.cleaned_data:
+               character_name_form.cleaned_data and \
+               character_name_form not in removed_names:
                 cd = character_name_form.cleaned_data
                 if 'id' in cd and cd['id']:
                     character_revision = character_name_form.save()
@@ -7774,14 +7754,8 @@ class CharacterRevision(CharacterGroupRevisionBase):
             ):
                 raise ValueError
 
-        removed_names = character_names_formset.deleted_forms
-        for removed_name in removed_names:
-            if removed_name.cleaned_data['id']:
-                if removed_name.cleaned_data['id'].character_name_detail:
-                    removed_name.cleaned_data['id'].deleted = True
-                    removed_name.cleaned_data['id'].save()
-                else:
-                    removed_name.cleaned_data['id'].delete()
+        if removed_names:
+            _removed_related_objects(removed_names, 'character_name_detail')
 
         self._process_external_link_formset(extra_forms)
 
@@ -8020,9 +7994,11 @@ class GroupRevision(CharacterGroupRevisionBase):
 
     def process_extra_forms(self, extra_forms):
         group_names_formset = extra_forms['group_names_formset']
+        # TODO use _process_formset, but needs to handle official name update
         for group_name_form in group_names_formset:
             if group_name_form.is_valid() and \
-               group_name_form.cleaned_data:
+               group_name_form.cleaned_data and \
+               group_name_form not in group_names_formset.deleted_forms:
                 cd = group_name_form.cleaned_data
                 if 'id' in cd and cd['id']:
                     group_revision = group_name_form.save()
@@ -8040,13 +8016,8 @@ class GroupRevision(CharacterGroupRevisionBase):
                 raise ValueError
 
         removed_names = group_names_formset.deleted_forms
-        for removed_name in removed_names:
-            if removed_name.cleaned_data['id']:
-                if removed_name.cleaned_data['id'].group_name_detail:
-                    removed_name.cleaned_data['id'].deleted = True
-                    removed_name.cleaned_data['id'].save()
-                else:
-                    removed_name.cleaned_data['id'].delete()
+        if removed_names:
+            _removed_related_objects(removed_names, 'group_name_detail')
 
     def _pre_save_object(self, changes):
         name = self.changeset.groupnamedetailrevisions\
@@ -9303,8 +9274,11 @@ class CreatorRevision(Revision):
 
     def process_extra_forms(self, extra_forms):
         creator_names_formset = extra_forms['creator_names_formset']
+        # TODO use _process_formset, but needs to handle official name update
+        removed_names = creator_names_formset.deleted_forms
         for creator_name_form in creator_names_formset:
-            if creator_name_form.is_valid() and creator_name_form.cleaned_data:
+            if creator_name_form.is_valid() and creator_name_form.cleaned_data\
+               and creator_name_form not in removed_names:
                 cd = creator_name_form.cleaned_data
                 if 'id' in cd and cd['id']:
                     creator_revision = creator_name_form.save()
@@ -9320,14 +9294,8 @@ class CreatorRevision(Revision):
             ):
                 raise ValueError
 
-        removed_names = creator_names_formset.deleted_forms
-        for removed_name in removed_names:
-            if removed_name.cleaned_data['id']:
-                if removed_name.cleaned_data['id'].creator_name_detail:
-                    removed_name.cleaned_data['id'].deleted = True
-                    removed_name.cleaned_data['id'].save()
-                else:
-                    removed_name.cleaned_data['id'].delete()
+        if removed_names:
+            _removed_related_objects(removed_names, 'creator_name_detail')
 
         birth_date_form = extra_forms['birth_date_form']
         death_date_form = extra_forms['death_date_form']
