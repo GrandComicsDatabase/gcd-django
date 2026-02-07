@@ -12,12 +12,7 @@ GCD :: Character Universe :: {{ character.name }} - {{ universe_name }}
 </h1>
 {% endblock %}
 
-{% block change_history %}
-{% endblock %}
-
-{% block view_body %}
-<div>
-{% block content %}
+{% block content_left %}
 <table>
   <tr>
     <td class="align-top">
@@ -90,6 +85,14 @@ GCD :: Character Universe :: {{ character.name }} - {{ universe_name }}
   {% endfor %}
 </table>
 {% endif %}
-{% endblock content %}
-</div>
-{% endblock view_body %}
+{% endblock content_left %}
+
+{% block www_my_comics_cross_link %}
+  {% url "character_origin_universe" character_id=character.id universe_id=universe_id as object_url %}
+  {% with model_name='Character' object_url=object_url %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block change_history %}
+{% endblock change_history %}
