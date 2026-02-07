@@ -4333,7 +4333,7 @@ def character_issues_character(request, character_id, character_with_id,
     if character_with.universe:
         if character_with.active_generalisations():
             filter_character_with = character_with.active_generalisations()\
-                .get().from_character
+                                                  .get().from_character
 
     query_with = {'story__appearing_characters__character__character':
                   filter_character_with,
@@ -5494,10 +5494,9 @@ def credit_type_history(request, story_id, credit_type):
         raise ValueError
 
     story = get_object_or_404(Story, id=story_id)
-    storyrevisions = (story.revisions
-                      .filter(changeset__state=states.APPROVED)
-                      .order_by('modified', 'id')
-                      .select_related('changeset__indexer'))
+    storyrevisions = story.revisions.filter(changeset__state=states.APPROVED)\
+                                    .order_by('modified', 'id')\
+                                    .select_related('changeset__indexer')
     old = getattr(storyrevisions[0], credit_type)
     old_rev = storyrevisions[0]
     changes = []
@@ -5506,8 +5505,7 @@ def credit_type_history(request, story_id, credit_type):
         changed = old.strip() != new.strip()
         if not changed:
             credits = storyrev.story_credit_revisions.filter(
-                credit_type__name=credit_type
-            )
+                              credit_type__name=credit_type)
             if credits:
                 for credit in credits:
                     credit.compare_changes()

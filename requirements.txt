@@ -47,7 +47,7 @@ djangorestframework
 djangorestframework-yaml
 
 # These packages are used in development and testing.
-flake8
+flake8==6.1.0
 mock
 pytest
 pytest-django
