@@ -5435,6 +5435,10 @@ class StoryCharacterRevision(Revision):
             return new_character
         return None
 
+    def show_character_notes(self):
+        from apps.gcd.models.story import character_notes
+        return character_notes(self)
+
     def __str__(self):
         if hasattr(self, 'character'):
             return "%s: %s" % (self.story_revision, self.character)

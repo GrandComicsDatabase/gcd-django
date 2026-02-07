@@ -59,7 +59,14 @@ form.  They only need to be in the correct order.
                   name="order_code_{{ character.0.id }}"
                   value="{{ character.1 }}">
       </td>
-      <td> {{ character.0.character }} </td>
+      <td>
+        {{ character.0.character.character.object_markdown_name }} -
+        {{ character.0.character.name }}
+        {{ character.0.show_character_notes }}
+        {% if character.0.universe %}
+          - {{ character.0.universe }}
+        {% endif %}
+      </td>
       {% endif %}
     </tr>
 {% endfor %}
