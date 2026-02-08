@@ -605,6 +605,20 @@ thanks,
     if comment_text:
         send_comment_observer(request, changeset, comment_text)
 
+    # If there are only CharacterOrderRevisions, and no actual changes,
+    # we can skip the reviewing and commit.
+    if changeset.imps == 0 and changeset.characterorderrevisions.exists():
+        is_changed = False
+        for c in changeset.revisions:
+            c.compare_changes()
+            if c.is_changed and type(c) is not CharacterOrderRevision:
+                is_changed = True
+                break
+        if not is_changed:
+            changeset.approver = User.objects.get(username='anon')
+            changeset.state = states.REVIEWING
+            changeset.approve()
+
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
 
