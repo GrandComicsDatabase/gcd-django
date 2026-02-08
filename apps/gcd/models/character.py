@@ -806,7 +806,7 @@ class UniverseCharacterTable(CharacterSearchTable):
 
     def render_issue_count(self, record):
         url = urlresolvers.reverse(
-                'character_issues_per_universe',
+                'character_origin_universe_issues',
                 kwargs={'universe_id': self.universe.id,
                         'character_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
