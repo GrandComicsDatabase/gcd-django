@@ -494,6 +494,7 @@ def show_cover_letterer_credit(story):
 def markdown(value):
     return mark_safe(md.markdown(value,
                                  extensions=['nl2br',
+                                             'md_in_html',
                                              TailwindExtension(),
                                              GCDFieldLinkNameExtension(),
                                              GCDFieldExtension(),
