@@ -1,0 +1,98 @@
+{% extends "gcd/tw_object_base.html" %}
+{% load i18n %}
+{% load display %}
+
+{% block title %}
+GCD :: Character Universe :: {{ character.name }} - {{ universe_name }}
+{% endblock %}
+
+{% block header %}
+<h1 class="bg-blue-100 px-1 lg:px-2">
+    {{ character.name }} with origin {{ universe_name }}
+</h1>
+{% endblock %}
+
+{% block content_left %}
+<table>
+  <tr>
+    <td class="align-top">
+      <div class="w-[150px] md:w-[200px] mt-1">
+{% if image_issue %}
+        <a href="{{ image_issue.get_absolute_url }}cover/4/">{{ image_tag }}</a>
+        <a href="{{ image_issue.get_absolute_url }}">{{ image_issue.full_name }}<br>
+        {{ image_issue.publication_date }}<br>
+        </a>
+{% endif %}
+      </div>
+    </td>
+    <td class="align-top">
+      <div class="flex ps-1">
+        <div>
+          <table class="[&_:is(th,td):where(:nth-child(1),)]:align-top [&_:is(th,td):where(:nth-child(1),)]:text-right [&_:is(th,td):where(:nth-child(1),)]:font-bold">
+{% if character.disambiguation %}
+            <tr>
+              <td>Disambiguation:</td>
+              <td>{{ character.disambiguation }}</td>
+            </tr>
+{% endif %}
+          </table>
+          <ul class="object-page-link-list">
+            <li><a href='{% url "character_origin_universe_creators" character_id=character.id universe_id=universe_id %}'>Creator List</a></li>
+            <li><a href='{% url "character_origin_universe_creator_names" character_id=character.id universe_id=universe_id %}'>Creator Name List</a></li>
+            <li><a href='{% url "character_origin_universe_issues" character_id=character.id universe_id=universe_id %}'>Issue List</a></li>
+            <li><a href='{% url "character_origin_universe_covers" character_id=character.id universe_id=universe_id %}'>Cover List</a></li>
+            <li><a href='{% url "character_origin_universe_series" character_id=character.id universe_id=universe_id %}'>Series List</a></li>
+            <li><a href='{% url "character_origin_universe_features" character_id=character.id universe_id=universe_id %}'>Feature List</a></li>
+            <li><a href='{% url "character_origin_universe_characters" character_id=character.id universe_id=universe_id %}'>Characters Appeared With</a></li>
+            <li><a href='{% url "character_origin_universe_sequences" character_id=character.id universe_id=universe_id %}'>Sequences List</a></li>
+          </ul>
+          <h3>Name:</h3>
+          <ol class="ps-4">
+            <a href='{% url "character_name_origin_universe_issues" character_name_id=character.official_name.id universe_id=universe_id %}'>{{ character.official_name.name }}</a>
+          </ol>
+          {% if additional_names %}
+            <h3>Additional Names:</h3>
+            <ol class="ps-6 object-page-numbered-list">
+            {% for name in additional_names %}
+              <li class="break-inside-avoid-column">
+                <a href='{% url "character_name_origin_universe_issues" character_name_id=name.id universe_id=universe_id %}'>{{ name.name }}</a>
+              </li>
+            {% endfor %}
+            </ol>
+          {% endif %}
+        </div>
+      </div>
+    </td>
+  </tr>
+</table>
+{% if active_universe_appearances %}
+<hr>
+<h3>Appearances With a Story Universe:</h3>
+<table >
+  <tr>
+    <td class="px-2">&bull;</td>
+    <td>
+      <a href='{% url "character_origin_universe_story_issues_per_universe" character_id=character.id universe_id=universe_id story_universe_id=-1 %}'>without a universe</a>
+    </td>
+  </tr>
+  {% for universe in active_universe_appearances %}
+  <tr>
+    <td class="px-2 align-top">&bull;</td>
+    <td>
+      <a href='{% url "character_origin_universe_story_issues_per_universe" character_id=character.id universe_id=universe_id story_universe_id=universe.id %}'>{{ universe }}</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock content_left %}
+
+{% block www_my_comics_cross_link %}
+  {% url "character_origin_universe" character_id=character.id universe_id=universe_id as object_url %}
+  {% with model_name='Character' object_url=object_url %}
+    {{ block.super }}
+  {% endwith %}
+{% endblock %}
+
+{% block change_history %}
+{% endblock change_history %}
