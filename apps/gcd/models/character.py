@@ -269,6 +269,16 @@ class Character(CharacterGroupBase):
                                                 flat=True).distinct())
         return Universe.objects.filter(id__in=universes)
 
+    def active_universe_appearances_with_origin(self, origin_universe):
+        from .story import Story
+        appearances = Story.objects.filter(
+          appearing_characters__character__character=self,
+          appearing_characters__universe_id=origin_universe,
+          deleted=False)
+        universes = appearances.values_list('universe',
+                                            flat=True).distinct()
+        return Universe.objects.filter(id__in=universes)
+
     def translated_from(self):
         try:
             relation = self.from_related_character.get(relation_type__id=1)
@@ -796,7 +806,7 @@ class UniverseCharacterTable(CharacterSearchTable):
 
     def render_issue_count(self, record):
         url = urlresolvers.reverse(
-                'character_issues_per_universe',
+                'character_origin_universe_issues',
                 kwargs={'universe_id': self.universe.id,
                         'character_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
@@ -810,13 +820,21 @@ class CharacterCharacterTable(UniverseCharacterTable):
 
     def __init__(self, *args, **kwargs):
         self.character = kwargs.pop('character')
+        self.universe_id = kwargs.pop('universe_id', None)
         super(UniverseCharacterTable, self).__init__(*args, **kwargs)
 
     def render_issue_count(self, record):
-        url = urlresolvers.reverse(
-                'character_issues_character',
-                kwargs={'character_id': self.character.id,
-                        'character_with_id': record.id})
+        if self.universe_id is not None:
+            url = urlresolvers.reverse(
+                    'character_origin_universe_issues_per_character',
+                    kwargs={'character_id': self.character.id,
+                            'character_with_id': record.id,
+                            'universe_id': self.universe_id})
+        else:
+            url = urlresolvers.reverse(
+                    'character_issues_character',
+                    kwargs={'character_id': self.character.id,
+                            'character_with_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
 

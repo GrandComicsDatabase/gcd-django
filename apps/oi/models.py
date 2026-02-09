@@ -6202,11 +6202,15 @@ class StoryRevision(Revision):
             if fork is True:
                 source_story = fork_source
             # copy single value fields which are specific to biblio_entry
-            for field in biblio_revision._get_single_value_fields().keys() - \
-                         biblio_revision.storyrevision_ptr\
-                                        ._get_single_value_fields().keys():
-                setattr(biblio_revision, field,
-                        getattr(source_story.biblioentry, field))
+            keys = biblio_revision._get_single_value_fields().keys()
+            subtract_keys = biblio_revision.storyrevision_ptr\
+                                           ._get_single_value_fields().keys()
+            for field in keys - subtract_keys:
+                if hasattr(source_story, "biblioentry"):
+                    value = getattr(source_story.biblioentry, field)
+                else:
+                    value = getattr(source_story.biblioentryrevision, field)
+                setattr(biblio_revision, field, value)
             biblio_revision.save()
 
     def _handle_dependents(self, changes):

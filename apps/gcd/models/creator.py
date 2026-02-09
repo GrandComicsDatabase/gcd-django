@@ -1142,12 +1142,28 @@ class CreatorSearchTable(CreatorBaseTable):
 class CreatorTable(CreatorBaseTable):
     role = tables.Column(accessor='script', orderable=False)
 
+    def __init__(self, *args, **kwargs):
+        self.resolve_name = kwargs.pop('resolve_name', None)
+        obj = kwargs.pop('object', None)
+        if self.resolve_name and obj:
+            setattr(self, self.resolve_name, obj)
+        self.universe_id = kwargs.pop('universe_id', None)
+        super().__init__(*args, **kwargs)
+
     def render_issue_count(self, record):
-        url = urlresolvers.reverse(
-                '%s_creator_issues' % self.resolve_name,
+        # Use character_origin_universe URL if universe_id is present
+        if self.resolve_name == 'character' and self.universe_id is not None:
+            url = urlresolvers.reverse(
+                'character_origin_universe_creator_issues',
                 kwargs={'creator_id': record.id,
-                        '%s_id' % self.resolve_name:
-                        getattr(self, self.resolve_name).id})
+                        'character_id': getattr(self, 'character').id,
+                        'universe_id': self.universe_id})
+        else:
+            url = urlresolvers.reverse(
+                    '%s_creator_issues' % self.resolve_name,
+                    kwargs={'creator_id': record.id,
+                            '%s_id' % self.resolve_name:
+                            getattr(self, self.resolve_name).id})
         return mark_safe('<a href="%s">%s</a>' % (url, record.issue_count))
 
     def render_role(self, record):
@@ -1166,11 +1182,6 @@ class CreatorTable(CreatorBaseTable):
 
 
 class CreatorPortraitTable(CreatorTable):
-    def __init__(self, *args, **kwargs):
-        self.resolve_name = kwargs.pop('resolve_name')
-        setattr(self, self.resolve_name, kwargs.pop('object'))
-        super(CreatorPortraitTable, self).__init__(*args, **kwargs)
-
     class Meta:
         model = Creator
         fields = ('creator', 'first_credit', 'issue_count', 'role')
@@ -1199,8 +1210,9 @@ class CreatorNameTable(CreatorTable):
     detail_name = tables.Column(accessor='name', verbose_name='Used Name')
 
     def __init__(self, *args, **kwargs):
-        super(CreatorTable, self).__init__(*args, **kwargs)
-        self.resolve_name = 'creator_name'
+        super().__init__(*args, **kwargs)
+        if not self.resolve_name:
+            self.resolve_name = 'creator_name'
 
     def order_creator(self, query_set, is_descending):
         direction = '-' if is_descending else ''
@@ -1213,11 +1225,19 @@ class CreatorNameTable(CreatorTable):
         return (query_set, True)
 
     def render_issue_count(self, record):
-        url = urlresolvers.reverse(
-                '%s_creator_name_issues' % self.resolve_name,
+        # Use character_origin_universe URL if universe_id is present
+        if self.resolve_name == 'character' and self.universe_id is not None:
+            url = urlresolvers.reverse(
+                'character_origin_universe_creator_name_issues',
                 kwargs={'creator_name_id': record.id,
-                        '%s_id' % self.resolve_name:
-                        getattr(self, self.resolve_name).id})
+                        'character_id': getattr(self, 'character').id,
+                        'universe_id': self.universe_id})
+        else:
+            url = urlresolvers.reverse(
+                    '%s_creator_name_issues' % self.resolve_name,
+                    kwargs={'creator_name_id': record.id,
+                            '%s_id' % self.resolve_name:
+                            getattr(self, self.resolve_name).id})
         return mark_safe('<a href="%s">%s</a>' % (url, record.issue_count))
 
     def render_creator(self, record):
@@ -1229,22 +1249,12 @@ class CreatorNameTable(CreatorTable):
 
 
 class GenericCreatorTable(CreatorTable):
-    def __init__(self, *args, **kwargs):
-        self.resolve_name = kwargs.pop('resolve_name')
-        setattr(self, self.resolve_name, kwargs.pop('object'))
-        super(CreatorTable, self).__init__(*args, **kwargs)
-
     class Meta:
         model = Creator
         fields = ('creator', 'first_credit', 'issue_count', 'role')
 
 
 class GenericCreatorNameTable(CreatorNameTable):
-    def __init__(self, *args, **kwargs):
-        self.resolve_name = kwargs.pop('resolve_name')
-        setattr(self, self.resolve_name, kwargs.pop('object'))
-        super(CreatorNameTable, self).__init__(*args, **kwargs)
-
     class Meta:
         model = CreatorNameDetail
         fields = ('creator', 'detail_name', 'first_credit', 'issue_count',
