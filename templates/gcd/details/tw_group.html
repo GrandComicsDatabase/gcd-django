@@ -63,7 +63,6 @@ GCD :: Group :: {{ group.name }}
             <li><a href='{% url "group_features" group_id=group.id %}'>Feature List</a></li>
             <li><a href='{% url "group_sequences" group_id=group.id %}'>Sequences List</a></li>
           </ul>
-      external links
       {% if group.external_link.count %}
           <ul class="list-disc md:columns-2 list-outside ps-4">
         {% for external_link in group.external_link.all %}
@@ -115,19 +114,19 @@ GCD :: Group :: {{ group.name }}
 {% block content %}
 {% if group.active_universe_origins %}
 <hr>
-<h3>Appearances With a Group Origin Universe:</h3>
+<h3>Overviews of Group Origin Universe:</h3>
 <table>
   <tr>
     <td class="px-2">&bull;</td>
     <td>
-      <a href='{% url "group_issues_per_universe" group_id=group.id universe_id=-1 %}'>without a universe</a>
+      <a href='{% url "group_origin_universe" group_id=group.id universe_id=-1 %}'>without a universe</a>
     </td>
   </tr>
   {% for universe in group.active_universe_origins %}
   <tr>
     <td class="px-2">&bull;</td>
     <td class="pr-4">
-      <a href='{% url "group_issues_per_universe" group_id=group.id universe_id=universe.id %}'>{{ universe }}</a>
+      <a href='{% url "group_origin_universe" group_id=group.id universe_id=universe.id %}'>{{ universe }}</a>
     </td>
     <td>{{ group|group_for_universe:universe.id }}</td>
   </tr>

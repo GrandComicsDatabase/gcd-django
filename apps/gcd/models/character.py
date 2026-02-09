@@ -422,10 +422,10 @@ class Group(CharacterGroupBase):
         return self.active_relations().exclude(relation_type_id=1)
 
     def active_specifications(self):
-        return self.to_related_group.filter(relation_type_id=6)
+        return self.to_related_group.filter(relation_type_id=5)
 
     def active_generalisations(self):
-        return self.from_related_group.filter(relation_type_id=6)
+        return self.from_related_group.filter(relation_type_id=5)
 
     def active_translations(self):
         return self.active_relations().filter(relation_type_id=1)
@@ -443,12 +443,30 @@ class Group(CharacterGroupBase):
 
     def active_universe_appearances(self):
         from .story import Story
-        appearances = Story.objects.filter(
-          appearing_groups__group_name__group=self,
-          appearing_groups__deleted=False,
-          deleted=False)
+        if self.universe and self.active_generalisations().exists():
+            group = self.active_generalisations().get().from_group
+            appearances = Story.objects.filter(
+              appearing_groups__group_name__group=group,
+              appearing_groups__universe=self.universe,
+              appearing_groups__deleted=False,
+              deleted=False)
+        else:
+            appearances = Story.objects.filter(
+              appearing_groups__group_name__group=self,
+              appearing_groups__deleted=False,
+              deleted=False)
         universes = set(appearances.values_list('universe',
                                                 flat=True).distinct())
+        return Universe.objects.filter(id__in=universes)
+
+    def active_universe_appearances_with_origin(self, origin_universe):
+        from .story import Story
+        appearances = Story.objects.filter(
+          appearing_groups__group_name__group=self,
+          appearing_groups__universe_id=origin_universe,
+          deleted=False)
+        universes = appearances.values_list('universe',
+                                            flat=True).distinct()
         return Universe.objects.filter(id__in=universes)
 
     # what is with translation over character records ?
@@ -809,6 +827,38 @@ class UniverseCharacterTable(CharacterSearchTable):
                 'character_origin_universe_issues',
                 kwargs={'universe_id': self.universe.id,
                         'character_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
+
+
+class UniverseGroupTable(CharacterSearchTable):
+    first_appearance = tables.Column(verbose_name='First Appearance')
+
+    class Meta:
+        model = Group
+        fields = ('name', 'year_first_published', 'first_appearance')
+
+    def __init__(self, *args, **kwargs):
+        self.universe = kwargs.pop('universe')
+        kwargs['group'] = True
+        super(UniverseGroupTable, self).__init__(*args, **kwargs)
+
+    def order_first_appearance(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'first_appearance',
+                                       'sort_name',
+                                       '-issue_count',
+                                       'language__code')
+        return (query_set, True)
+
+    def render_first_appearance(self, value):
+        return value
+
+    def render_issue_count(self, record):
+        url = urlresolvers.reverse(
+          'group_origin_universe_issues',
+          kwargs={'universe_id': self.universe.id,
+                  'group_id': record.id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
 

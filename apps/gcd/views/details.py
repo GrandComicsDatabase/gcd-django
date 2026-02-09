@@ -59,6 +59,7 @@ from apps.gcd.models.creator import GenericCreatorTable, \
                                     NAME_TYPES
 from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       UniverseCharacterTable, \
+                                      UniverseGroupTable, \
                                       SeriesCharacterTable, \
                                       FeatureCharacterTable, \
                                       CharacterCharacterTable, \
@@ -789,13 +790,24 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
         issues = issues.filter(**query).distinct()
     elif group_id:
         group = get_gcd_object(Group, group_id)
-        issues = issues.filter(
-          story__credits__creator__creator=creator,
-          story__appearing_characters__group_name__group=group,
-          story__type__id__in=story_types,
-          story__appearing_characters__deleted=False).distinct()
-        heading = 'for creator %s for group %s' % (creator,
-                                                   group)
+        filter_group, universe_id, link_universe_id = \
+            _resolve_group_universe(group, universe_id)
+
+        query = {
+            'story__credits__creator__creator': creator,
+            'story__appearing_groups__group_name__group': filter_group,
+            'story__appearing_groups__deleted': False,
+            'story__type__id__in': story_types
+        }
+
+        heading = _build_universe_filter_and_heading(
+          universe_id, link_universe_id, query,
+          'story__appearing_groups__',
+          'for creator %s for group %s with origin %s',
+          'for creator %s for group %s',
+          (creator, group))
+
+        issues = issues.filter(**query).distinct()
     elif feature_id:
         feature = get_gcd_object(Feature, feature_id)
         issues = issues.filter(story__credits__creator__creator=creator,
@@ -911,6 +923,26 @@ def _resolve_character_universe(character, universe_id):
                                     .from_character
 
     return filter_character, universe_id, link_universe_id
+
+
+def _resolve_group_universe(group, universe_id):
+    """
+    Helper to resolve filter_group and universe_id with group
+    generalisations.
+
+    Returns tuple: (filter_group, universe_id, link_universe_id)
+    where link_universe_id is the original universe_id passed in.
+    """
+    filter_group = group
+    link_universe_id = universe_id
+
+    if universe_id is None and group.universe and \
+            group.active_generalisations():
+        universe_id = group.universe.id
+        filter_group = group.active_generalisations().get()\
+                            .from_group
+
+    return filter_group, universe_id, link_universe_id
 
 
 def _build_universe_filter_and_heading(universe_id, link_universe_id, query,
@@ -1103,12 +1135,24 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
         issues = issues.filter(**query).distinct()
     if group_id:
         group = get_gcd_object(Group, group_id)
-        issues = issues.filter(
-          story__credits__creator=creator,
-          story__type__id__in=CORE_TYPES,
-          story__appearing_characters__group_name__group=group,
-          story__appearing_characters__deleted=False)
-        heading_addon = 'with group %s' % (group)
+        filter_group, universe_id, link_universe_id = \
+            _resolve_group_universe(group, universe_id)
+
+        query = {
+            'story__credits__creator': creator,
+            'story__appearing_groups__group_name__group': filter_group,
+            'story__appearing_groups__deleted': False,
+            'story__type__id__in': CORE_TYPES
+        }
+
+        heading_addon = _build_universe_filter_and_heading(
+          universe_id, link_universe_id, query,
+          'story__appearing_groups__',
+          'with group %s with origin %s',
+          'with group %s',
+          (group,))
+
+        issues = issues.filter(**query)
     if feature_id:
         feature = get_gcd_object(Feature, feature_id)
         issues = issues.filter(story__credits__creator=creator,
@@ -4021,6 +4065,36 @@ def universe_characters(request, universe_id):
     return generic_sortable_list(request, characters, table, template, context)
 
 
+def universe_groups(request, universe_id):
+    universe = get_gcd_object(Universe, universe_id)
+    groups = Group.objects.filter(
+      group_names__storygroup__universe=universe,
+      group_names__storygroup__story__type__id__in=CORE_TYPES,
+      group_names__storygroup__deleted=False,
+      deleted=False).distinct()
+
+    groups = groups.annotate(issue_count=Count(
+      'group_names__storygroup__story__issue', distinct=True))
+    groups = groups.annotate(first_appearance=Min(
+      Case(When(group_names__storygroup__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('group_names__storygroup__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
+        'item_name': 'group',
+        'plural_suffix': 's',
+        'heading': 'from Universe %s' % (universe)
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = UniverseGroupTable(groups,
+                               universe=universe,
+                               template_name=TW_SORT_TABLE_TEMPLATE,
+                               order_by=('name'))
+    return generic_sortable_list(request, groups, table, template, context)
+
+
 def character(request, character_id):
     """
     Display the details page for a Character.
@@ -4323,7 +4397,7 @@ def character_issues_character(request, character_id, character_with_id,
     heading = _build_universe_filter_and_heading(
       universe_id, link_universe_id, query,
       'appearing_characters__',
-      'for %s with origin %s with %s',
+      'for %s with %s with origin %s',
       'for %s with %s',
       (character, character_with))
 
@@ -4383,7 +4457,7 @@ def character_issues_feature(request, character_id, feature_id,
     heading = _build_universe_filter_and_heading(
       universe_id, link_universe_id, query,
       'story__appearing_characters__',
-      'for %s with origin %s in %s',
+      'for %s in %s with origin %s',
       'for %s in %s',
       (character, feature))
 
@@ -4423,7 +4497,7 @@ def character_issues_series(request, character_id, series_id,
     heading = _build_universe_filter_and_heading(
       universe_id, link_universe_id, query,
       'story__appearing_characters__',
-      'for character %s with origin %s in %s',
+      'for character %s in %s with origin %s',
       'for character %s in %s',
       (character, series))
 
@@ -4793,13 +4867,80 @@ def show_group(request, group, preview=False):
     return render(request, 'gcd/details/tw_group.html', context)
 
 
-def group_features(request, group_id):
+def group_origin_universe(request, group_id, universe_id):
+    """
+    Display the Group Universe Origin Page showing links to various
+    filtered views for a group when originating from a specific universe.
+    """
     group = get_gcd_object(Group, group_id)
-    features = Feature.objects.filter(
-      story__appearing_groups__group_name__group=group,
-      story__type__id__in=CORE_TYPES,
-      story__deleted=False,
-      deleted=False).distinct()
+
+    cover_query = {
+        'story__appearing_groups__group_name__group': group,
+        'story__appearing_groups__deleted': False,
+        'story__type__id': 6,
+        'story__deleted': False,
+        'cover__isnull': False,
+        'cover__deleted': False}
+
+    if universe_id == '-1':
+        cover_query['story__appearing_groups__universe_id__isnull'] = True
+        universe = None
+        universe_name = WITHOUT_UNIVERSE_NAME.title()
+    else:
+        universe = get_gcd_object(Universe, universe_id)
+        universe_name = universe.universe_name()
+        cover_query['story__appearing_groups__universe_id'] = universe_id
+
+    issues = Issue.objects.filter(Q(**cover_query)).distinct()\
+                          .select_related('series__publisher')
+
+    if issues:
+        selected_issue = issues[randint(0, issues.count()-1)]
+        image_tag = get_image_tag(
+          cover=selected_issue.cover_set.first(),
+          zoom_level=ZOOM_MEDIUM,
+          alt_text='Random Cover from Group with origin Universe')
+    else:
+        image_tag = ''
+        selected_issue = None
+
+    context = {
+        'group': group,
+        'additional_names': group.active_names()
+                                 .filter(is_official_name=False),
+        'universe': universe,
+        'universe_id': universe_id,
+        'universe_name': universe_name,
+        'image_tag': image_tag,
+        'image_issue': selected_issue,
+        'active_universe_appearances':
+            group.active_universe_appearances_with_origin(universe),
+        'error_subject': '%s - %s' % (group, universe_name)
+    }
+    return render(request, 'gcd/details/tw_group_origin_universe.html',
+                  context)
+
+
+def group_features(request, group_id, universe_id=None):
+    group = get_gcd_object(Group, group_id)
+    filter_group, universe_id, link_universe_id = \
+        _resolve_group_universe(group, universe_id)
+
+    query = {
+        'story__appearing_groups__group_name__group': filter_group,
+        'story__type__id__in': CORE_TYPES,
+        'story__deleted': False,
+        'deleted': False
+    }
+
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'story__appearing_groups__',
+      'with an appearance of %s with origin %s',
+      'with an appearance of %s',
+      (group,))
+
+    features = Feature.objects.filter(**query).distinct()
 
     features = features.annotate(issue_count=Count(
       'story__issue', distinct=True))
@@ -4813,11 +4954,12 @@ def group_features(request, group_id):
         'result_disclaimer': MIGRATE_DISCLAIMER,
         'item_name': 'feature',
         'plural_suffix': 's',
-        'heading': 'with an appearance of %s' % (group)
+        'heading': heading
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = GroupFeatureTable(features,
                               group=group,
+                              universe_id=link_universe_id,
                               template_name=TW_SORT_TABLE_TEMPLATE,
                               order_by=('name'))
     return generic_sortable_list(request, features, table, template, context)
@@ -4826,23 +4968,37 @@ def group_features(request, group_id):
 def group_issues(request, group_id, universe_id=None, story_universe_id=None):
     group = get_gcd_object(Group, group_id)
 
+    filter_group, universe_id, link_universe_id = \
+        _resolve_group_universe(group, universe_id)
+
     story_types = process_story_type_filter_from_request(request)
 
-    query = {'story__appearing_groups__group_name__group': group,
+    query = {'story__appearing_groups__group_name__group': filter_group,
              'story__appearing_groups__deleted': False,
              'story__type__id__in': story_types,
              'story__deleted': False}
 
+    story_universe_heading = ''
+    universe_name = None
     if universe_id:
         if universe_id == '-1':
+            universe_name = WITHOUT_UNIVERSE_NAME
             query['story__appearing_groups__universe_id__isnull'] = \
                 True
         else:
+            universe_obj = get_gcd_object(Universe, universe_id)
+            universe_name = universe_obj.universe_name()
             query['story__appearing_groups__universe_id'] = universe_id
     if story_universe_id:
         if story_universe_id == '-1':
+            story_universe_heading = (
+              ' appearing %s' % WITHOUT_UNIVERSE_NAME)
             query['story__universe__isnull'] = True
         else:
+            story_universe_obj = get_gcd_object(Universe, story_universe_id)
+            story_universe_name = story_universe_obj.universe_name()
+            story_universe_heading = (
+              ' appearing in %s' % story_universe_name)
             query['story__universe__in'] = [story_universe_id,]
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
@@ -4852,11 +5008,17 @@ def group_issues(request, group_id, universe_id=None, story_universe_id=None):
     filter = filter_issues(request, issues, story_type_filter=True)
     issues = filter.qs
 
+    if link_universe_id:
+        heading = 'for group %s with origin %s%s' % (
+          group, universe_name, story_universe_heading)
+    else:
+        heading = 'for group %s%s' % (group, story_universe_heading)
+
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'for group %s' % (group),
+        'heading': heading,
         'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'
@@ -4867,45 +5029,84 @@ def group_issues(request, group_id, universe_id=None, story_universe_id=None):
 def group_name_issues(request, group_name_id, universe_id=None):
     group_name = get_gcd_object(GroupNameDetail, group_name_id)
     group = group_name.group
+    link_universe_id = universe_id
 
-    query = {'story__appearing_groups__group_name': group_name,
-             'story__appearing_groups__deleted': False,
-             'story__type__id__in': CORE_TYPES,
-             'story__deleted': False}
-
-    if universe_id:
-        if universe_id == '-1':
-            query['story__appearing_groups__universe_id__isnull'] = \
-                True
+    # look for name at generalization
+    if not universe_id and group.universe:
+        universe_id = group.universe.id
+        if group.active_generalisations().filter(
+           from_group__group_names__name=group_name.name):
+            filter_group = group.active_generalisations().get()\
+                                                .from_group
+            try:
+                filter_group_name = \
+                  filter_group.group_names.get(
+                    name=group_name.name,
+                    deleted=False)
+            except GroupNameDetail.MultipleObjectsReturned:
+                # This can happen due to diacritics, so we try to find the
+                # exact match.
+                found = False
+                for name in filter_group.group_names\
+                                        .filter(name=group_name.name,
+                                                deleted=False):
+                    if name.name == group_name.name:
+                        filter_group_name = name
+                        found = True
+                        break
+                if not found:
+                    # more a GroupNameDetail.DoesNotExist exception here ?
+                    raise
         else:
-            query['story__appearing_groups__universe_id'] = universe_id
-    issues = Issue.objects.filter(Q(**query)).distinct()\
+            return render(request, 'indexer/error.html',
+                          {'error_text':
+                           'Name does not exist at group generalization.'})
+    else:
+        filter_group_name = group_name
+
+    story_types = process_story_type_filter_from_request(request)
+
+    query = {
+        'story__appearing_groups__group_name': filter_group_name,
+        'story__appearing_groups__deleted': False,
+        'story__type__id__in': story_types,
+        'story__deleted': False
+    }
+
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'story__appearing_groups__',
+      'for name %s of group %s with origin %s',
+      'for name %s of group %s',
+      (group_name, group))
+    issues = Issue.objects.filter(**query).distinct()\
                           .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    filter = filter_issues(request, issues, story_type_filter=True)
+    filter.filters.pop('language')
+    issues = filter.qs
 
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'for name %s of group %s' % (group_name, group)
+        'heading': heading,
+        'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = _table_issues_list_or_grid(request, issues, context)
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=TW_SORT_TABLE_TEMPLATE,
+                       order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 
-def group_issues_feature(request, group_id, feature_id):
+def group_issues_feature(request, group_id, feature_id, universe_id=None):
     group = get_gcd_object(Group, group_id)
     feature = get_gcd_object(Feature, feature_id)
-
-    filter_group = group
-    universe_id = None
-    if group.universe:
-        if group.active_generalisations():
-            universe_id = group.universe.id
-            filter_group = group.active_generalisations()\
-                                .get().from_group
+    filter_group, universe_id, link_universe_id = \
+        _resolve_group_universe(group, universe_id)
 
     story_types = process_story_type_filter_from_request(request)
 
@@ -4916,8 +5117,12 @@ def group_issues_feature(request, group_id, feature_id):
              'story__feature_object__id': feature_id,
              'story__deleted': False}
 
-    if universe_id:
-        query['story__appearing_groups__universe_id'] = universe_id
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'story__appearing_groups__',
+      'for %s in %s with origin %s',
+      'for %s in %s',
+      (group, feature))
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
@@ -4930,7 +5135,7 @@ def group_issues_feature(request, group_id, feature_id):
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'for %s in  %s' % (group, feature),
+        'heading': heading,
         'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'
@@ -4938,17 +5143,11 @@ def group_issues_feature(request, group_id, feature_id):
     return generic_sortable_list(request, issues, table, template, context)
 
 
-def group_issues_series(request, group_id, series_id):
+def group_issues_series(request, group_id, series_id, universe_id=None):
     group = get_gcd_object(Group, group_id)
     series = get_gcd_object(Series, series_id)
-
-    filter_group = group
-    universe_id = None
-    if group.universe:
-        if group.active_generalisations():
-            universe_id = group.universe.id
-            filter_group = group.active_generalisations()\
-                                .get().from_group
+    filter_group, universe_id, link_universe_id = \
+        _resolve_group_universe(group, universe_id)
 
     query = {'story__appearing_groups__group_name__group':
              filter_group,
@@ -4957,8 +5156,12 @@ def group_issues_series(request, group_id, series_id):
              'series__id': series_id,
              'story__deleted': False}
 
-    if universe_id:
-        query['story__appearing_groups__universe_id'] = universe_id
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'story__appearing_groups__',
+      'for group %s in %s with origin %s',
+      'for group %s in %s',
+      (group, series))
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
@@ -4969,7 +5172,7 @@ def group_issues_series(request, group_id, series_id):
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
-        'heading': 'for group %s in %s' % (group, series),
+        'heading': heading,
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = IssueTable(issues,
@@ -4990,31 +5193,27 @@ def group_issues_series(request, group_id, series_id):
     return generic_sortable_list(request, issues, table, template, context)
 
 
-def group_series(request, group_id):
+def group_series(request, group_id, universe_id=None):
     group = get_gcd_object(Group, group_id)
-    universe_id = None
-    heading = 'with group %s' % (group)
-    filter_group = group
+    filter_group, universe_id, link_universe_id = \
+        _resolve_group_universe(group, universe_id)
 
-    if group.universe:
-        if group.active_generalisations():
-            universe_id = group.universe.id
-            filter_group = group.active_generalisations()\
-                                .get().from_group
+    query = {
+        'issue__story__appearing_groups__group_name__group': filter_group,
+        'issue__story__appearing_groups__deleted': False,
+        'issue__story__type__id__in': CORE_TYPES,
+        'deleted': False
+    }
 
-    if universe_id:
-        series = Series.objects.filter(
-          issue__story__appearing_groups__group_name__group=filter_group,
-          issue__story__appearing_groups__universe_id=universe_id,
-          issue__story__appearing_groups__deleted=False,
-          issue__story__type__id__in=CORE_TYPES,
-          deleted=False).distinct().select_related('publisher')
-    else:
-        series = Series.objects.filter(
-          issue__story__appearing_groups__group_name__group=filter_group,
-          issue__story__appearing_groups__deleted=False,
-          issue__story__type__id__in=CORE_TYPES,
-          deleted=False).distinct().select_related('publisher')
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'issue__story__appearing_groups__',
+      'with group %s with origin %s',
+      'with group %s',
+      (group,))
+
+    series = Series.objects.filter(**query).distinct()\
+        .select_related('publisher')
     filter = filter_series(request, series)
     filter.filters.pop('language')
     series = filter.qs
@@ -5032,38 +5231,55 @@ def group_series(request, group_id):
     template = 'gcd/search/tw_list_sortable.html'
     table = GroupSeriesTable(series,
                              group=group,
+                             universe_id=link_universe_id,
                              template_name=TW_SORT_TABLE_TEMPLATE,
                              order_by=('year'))
     return generic_sortable_list(request, series, table, template, context)
 
 
-def group_creators(request, group_id, creator_names=False):
+def group_creators(request, group_id, creator_names=False, universe_id=None):
     group = get_gcd_object(Group, group_id)
+    filter_group, universe_id, link_universe_id = \
+        _resolve_group_universe(group, universe_id)
+
+    query = {
+        'appearing_groups__group_name__group': filter_group,
+        'appearing_groups__deleted': False,
+        'type__id__in': CORE_TYPES
+    }
+
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'appearing_groups__',
+      'Creators working on group %s with origin %s',
+      'Creators working on group %s',
+      (group,))
+
+    stories = Story.objects.filter(**query).distinct()
+    stories_ids = stories.values_list('id', flat=True)
 
     if creator_names:
-        creators = CreatorNameDetail.objects.all()
-        creators = creators.filter(
-          storycredit__story__appearing_groups__group_name__group=group,
-          storycredit__story__appearing_groups__deleted=False,
+        creators = CreatorNameDetail.objects.filter(
+          storycredit__story__id__in=stories_ids,
           storycredit__story__type__id__in=CORE_TYPES,
-          storycredit__deleted=False).distinct()
-        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+          storycredit__deleted=False,
+          storycredit__credit_type__id__lt=6)
         creators = _annotate_creator_name_detail_list(creators)
     else:
-        creators = Creator.objects.all()
-        creators = creators.filter(
-          creator_names__storycredit__story__appearing_groups__group_name__group=group,  # noqa: E501
-          creator_names__storycredit__story__appearing_groups__deleted=False,
+        creators = Creator.objects.filter(
+          creator_names__storycredit__story__id__in=stories_ids,
           creator_names__storycredit__story__type__id__in=CORE_TYPES,
-          creator_names__storycredit__deleted=False).distinct()
-        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+          creator_names__storycredit__deleted=False,
+          creator_names__storycredit__credit_type__id__lt=6)
         creators = _annotate_creator_list(creators)
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'creator',
         'plural_suffix': 's',
-        'heading': 'Creators Working on Group %s' % (group)
+        'heading': heading
     }
     template = 'gcd/search/tw_list_sortable.html'
     if creator_names:
@@ -5072,26 +5288,43 @@ def group_creators(request, group_id, creator_names=False):
                                         object=group,
                                         resolve_name='group',
                                         template_name=TW_SORT_TABLE_TEMPLATE,
-                                        order_by=('name'))
+                                        order_by=('name'),
+                                        universe_id=link_universe_id)
     else:
         table = GenericCreatorTable(creators,
                                     attrs={'class': 'sortable_listing'},
                                     object=group,
                                     resolve_name='group',
                                     template_name=TW_SORT_TABLE_TEMPLATE,
-                                    order_by=('name'))
+                                    order_by=('name'),
+                                    universe_id=link_universe_id)
     return generic_sortable_list(request, creators, table, template, context)
 
 
-def group_sequences(request, group_id, country=None):
+def group_sequences(request, group_id, country=None, universe_id=None):
     group = get_gcd_object(Group, group_id)
-    stories = Story.objects.filter(
-      appearing_groups__group_name__group=group,
-      appearing_groups__deleted=False,
-      deleted=False).distinct().select_related('issue__series__publisher')
+
+    filter_group, universe_id, link_universe_id = \
+        _resolve_group_universe(group, universe_id)
+
+    query = {'appearing_groups__group_name__group': filter_group,
+             'appearing_groups__deleted': False,
+             'deleted': False}
+
     if country:
         country = get_object_or_404(Country, code=country)
-        stories = stories.filter(issue__series__country=country)
+        query['issue__series__country'] = country
+
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'appearing_groups__',
+      'Sequences for Group %s with origin %s',
+      'Sequences for Group %s',
+      (group,))
+
+    stories = Story.objects.filter(**query).distinct()\
+                   .select_related('issue__series__publisher')
+
     heading = 'Sequences for Group %s' % (group)
 
     context = {
@@ -5107,29 +5340,29 @@ def group_sequences(request, group_id, country=None):
     return generic_sortable_list(request, stories, table, template, context)
 
 
-def group_covers(request, group_id):
+def group_covers(request, group_id, universe_id=None):
     group = get_gcd_object(Group, group_id)
-    universe_id = None
+
+    filter_group, universe_id, link_universe_id = \
+        _resolve_group_universe(group, universe_id)
+
     heading = 'with group %s' % group
 
-    if group.universe:
-        if group.active_generalisations():
-            universe_id = group.universe.id
-            group = group.active_generalisations().get().from_group
+    query = {
+        'story__appearing_groups__group_name__group': filter_group,
+        'story__appearing_groups__deleted': False,
+        'story__type__id': 6,
+        'story__deleted': False
+    }
 
-    if universe_id:
-        issues = Issue.objects.filter(
-          story__appearing_groups__group_name__group=group,
-          story__appearing_groups__universe_id=universe_id,
-          story__appearing_groups__deleted=False,
-          story__type__id=6,
-          story__deleted=False).distinct().select_related('series__publisher')
-    else:
-        issues = Issue.objects.filter(
-          story__appearing_groups__group_name__group=group,
-          story__appearing_groups__deleted=False,
-          story__type__id=6,
-          story__deleted=False).distinct().select_related('series__publisher')
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'story__appearing_groups__',
+      'with group %s with origin %s',
+      'with group %s',
+      (group,))
+    issues = Issue.objects.filter(**query).distinct()\
+                          .select_related('series__publisher')
 
     filter = filter_issues(request, issues)
     filter.filters.pop('language')
