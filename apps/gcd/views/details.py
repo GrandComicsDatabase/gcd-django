@@ -1152,7 +1152,7 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
           'with group %s',
           (group,))
 
-        issues = issues.filter(**query)
+        issues = issues.filter(**query).distinct()
     if feature_id:
         feature = get_gcd_object(Feature, feature_id)
         issues = issues.filter(story__credits__creator=creator,
@@ -4352,8 +4352,9 @@ def character_origin_universe(request, character_id, universe_id):
     issues = Issue.objects.filter(Q(**cover_query)).distinct()\
                           .select_related('series__publisher')
 
-    if issues:
-        selected_issue = issues[randint(0, issues.count()-1)]
+    issues_count = issues.count()
+    if issues_count:
+        selected_issue = issues[randint(0, issues_count - 1)]
         image_tag = get_image_tag(
           cover=selected_issue.cover_set.first(),
           zoom_level=ZOOM_MEDIUM,
@@ -4894,8 +4895,9 @@ def group_origin_universe(request, group_id, universe_id):
     issues = Issue.objects.filter(Q(**cover_query)).distinct()\
                           .select_related('series__publisher')
 
-    if issues:
-        selected_issue = issues[randint(0, issues.count()-1)]
+    issues_count = issues.count()
+    if issues_count:
+        selected_issue = issues[randint(0, issues_count - 1)]
         image_tag = get_image_tag(
           cover=selected_issue.cover_set.first(),
           zoom_level=ZOOM_MEDIUM,
@@ -5251,8 +5253,8 @@ def group_creators(request, group_id, creator_names=False, universe_id=None):
     heading = _build_universe_filter_and_heading(
       universe_id, link_universe_id, query,
       'appearing_groups__',
-      'Creators working on group %s with origin %s',
-      'Creators working on group %s',
+      'working on group %s with origin %s',
+      'working on group %s',
       (group,))
 
     stories = Story.objects.filter(**query).distinct()
@@ -5318,14 +5320,12 @@ def group_sequences(request, group_id, country=None, universe_id=None):
     heading = _build_universe_filter_and_heading(
       universe_id, link_universe_id, query,
       'appearing_groups__',
-      'Sequences for Group %s with origin %s',
-      'Sequences for Group %s',
+      'for Group %s with origin %s',
+      'for Group %s',
       (group,))
 
     stories = Story.objects.filter(**query).distinct()\
                    .select_related('issue__series__publisher')
-
-    heading = 'Sequences for Group %s' % (group)
 
     context = {
         'result_disclaimer': MIGRATE_DISCLAIMER,

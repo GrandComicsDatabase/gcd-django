@@ -260,10 +260,12 @@ class Character(CharacterGroupBase):
             appearances = Story.objects.filter(
               appearing_characters__character__character=character,
               appearing_characters__universe=self.universe,
+              appearing_characters__deleted = False,
               deleted=False)
         else:
             appearances = Story.objects.filter(
               appearing_characters__character__character=self,
+              appearing_characters__deleted = False,
               deleted=False)
         universes = set(appearances.values_list('universe',
                                                 flat=True).distinct())
@@ -464,6 +466,7 @@ class Group(CharacterGroupBase):
         appearances = Story.objects.filter(
           appearing_groups__group_name__group=self,
           appearing_groups__universe_id=origin_universe,
+          appearing_groups__deleted=False,
           deleted=False)
         universes = appearances.values_list('universe',
                                             flat=True).distinct()
