@@ -601,18 +601,20 @@ class CharacterSeriesTable(SeriesPublisherTable):
         return value[:4]
 
     def render_appearances_count(self, record):
-        if self.resolve_name == 'character' and self.universe_id is not None:
+        if (self.resolve_name in ('character', 'group') and
+                self.universe_id is not None):
             url = urlresolvers.reverse(
-                    'character_origin_universe_issues_per_series',
-                    kwargs={'series_id': record.id,
-                            'character_id': self.character.id,
-                            'universe_id': self.universe_id})
+              '%s_origin_universe_issues_per_series' % self.resolve_name,
+              kwargs={'series_id': record.id,
+                      '%s_id' % self.resolve_name:
+                      getattr(self, self.resolve_name).id,
+                      'universe_id': self.universe_id})
         else:
             url = urlresolvers.reverse(
-                    '%s_issues_per_series' % self.resolve_name,
-                    kwargs={'series_id': record.id,
-                            '%s_id' % self.resolve_name:
-                            getattr(self, self.resolve_name).id})
+              '%s_issues_per_series' % self.resolve_name,
+              kwargs={'series_id': record.id,
+                      '%s_id' % self.resolve_name:
+                      getattr(self, self.resolve_name).id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.appearances_count))
 
@@ -623,6 +625,7 @@ class CharacterSeriesTable(SeriesPublisherTable):
 class GroupSeriesTable(CharacterSeriesTable):
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group')
+        self.universe_id = kwargs.pop('universe_id', None)
         self.resolve_name = 'group'
         super(SeriesTable, self).__init__(*args, **kwargs)
 

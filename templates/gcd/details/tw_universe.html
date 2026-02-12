@@ -45,6 +45,7 @@ GCD :: Universe :: {{ universe.name }}
 <hr>
 <ul class="object-page-link-list">
   <li><a href='{% url "universe_characters" universe_id=universe.id %}'>Characters from this universe</a></li>
+  <li><a href='{% url "universe_groups" universe_id=universe.id %}'>Groups from this universe</a></li>
   <li><a href='{% url "universe_issues" universe_id=universe.id %}'>Issues in this universe</a></li>
   <li><a href='{% url "universe_sequences" universe_id=universe.id %}'>Sequences in this universe</a></li>
 </ul>
