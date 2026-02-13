@@ -526,7 +526,8 @@ def import_issues_to_series(request, series_id):
                 issue = Issue.objects.filter(series=series, number=number,
                                              variant_of__isnull=True)
                 if issue.count() == 1:
-                    parsed_data['variant_of'] = issue[0]
+                    issue = issue[0]
+                    parsed_data['variant_of'] = issue
                 else:
                     error_text = 'Could not find base issue for variant %s ' \
                                  'with number %s in series %s.' % (
@@ -536,10 +537,18 @@ def import_issues_to_series(request, series_id):
                                                 error_text)
                 variant = True
                 variant_cover_status = parsed_data['variant_cover_status']
+                current_variants = issue.variant_set.order_by('-sort_code')
+                if current_variants:
+                    add_after = current_variants[0]
+                else:
+                    add_after = issue
+            else:
+                add_after = series.last_issue
             brand_emblem = parsed_data.pop('brand_emblem')
             indicia_printer = parsed_data.pop('indicia_printer')
             issue_revision = IssueRevision(
-              changeset=changeset, series=series, **parsed_data)
+              changeset=changeset, series=series,
+              after=add_after, **parsed_data)
             issue_revision.save()
             if brand_emblem:
                 issue_revision.brand_emblem.set(brand_emblem)
