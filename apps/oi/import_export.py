@@ -16,16 +16,17 @@ from django.shortcuts import get_object_or_404
 from apps.indexer.views import render_error
 from apps.gcd.templatetags.credits import show_creator_credit
 from apps.gcd.views.details import KEY_DATE_REGEXP
-from apps.gcd.models import StoryType, Issue
+from apps.gcd.models import StoryType, Issue, Series, IndiciaPrinter, \
+                            VARIANT_COVER_STATUS, VCS_Codes
 from apps.gcd.models.support import GENRES
 from apps.oi.models import (
     Changeset, StoryRevision, IssueRevision, PreviewIssue, get_keywords,
-    on_sale_date_as_string)
-
+    on_sale_date_as_string, CTYPES)
+from apps.oi import states
 MIN_ISSUE_FIELDS = 10
-# MAX_ISSUE_FIELDS is set to 16 to allow import of export issue lines, but
-# the final reprint notes are ignored on import
-MAX_ISSUE_FIELDS = 17
+# MAX_ISSUE_FIELDS is set to 19 to allow import of exported issue lines, but
+# the reprint notes are ignored on import.
+MAX_ISSUE_FIELDS = 19
 MIN_SEQUENCE_FIELDS = 10
 MAX_SEQUENCE_FIELDS = 18
 
@@ -44,12 +45,16 @@ ISSUE_NOTES = 11
 BARCODE = 12
 ON_SALE_DATE = 13
 ISSUE_TITLE = 14
-ISSUE_KEYWORDS = 16
+INDICIA_PRINTER = 15
+AGE_GUIDELINES = 16
+ISSUE_KEYWORDS = 18
+VARIANT_NAME = 19
+VARIANT_STATUS = 20
 
 ISSUE_FIELDS = ['number', 'volume', 'indicia_publisher', 'brand_emblem',
                 'publication_date', 'key_date', 'indicia_frequency', 'price',
                 'page_count', 'editing', 'isbn', 'notes', 'barcode',
-                'on_sale_date', 'title']
+                'on_sale_date', 'title', 'indicia_printer', 'rating',]
 
 TITLE = 0
 TYPE = 1
@@ -76,21 +81,34 @@ SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
                    'synopsis', 'notes', 'keywords', 'first_line']
 
 
-def _handle_import_error(request, changeset, error_text):
+def _handle_import_error(request, return_url, error_text):
     response = render_error(
         request,
         '%s Back to the <a href="%s">editing page</a>.' %
-        (error_text, urlresolvers.reverse('edit',
-                                          kwargs={'id': changeset.id})),
+        (error_text, return_url),
         is_safe=True)
     # there might be a temporary file attached
     if hasattr(request, "tmpfile"):
         request.tmpfile.close()
         os.remove(request.tmpfile_name)
-    return response, True
+    return response
 
 
-def _process_file(request, changeset, is_issue, use_csv=False):
+def _convert_upload_to_file(request, request_file):
+    # we need a real file to be able to use pythons Universal Newline Support
+    tmpfile_handle, tmpfile_name = tempfile.mkstemp(".import")
+    for chunk in request_file.chunks():
+        os.write(tmpfile_handle, chunk)
+    os.close(tmpfile_handle)
+    tmpfile = open(tmpfile_name, 'rb')
+    request.tmpfile = tmpfile
+    request.tmpfile_name = tmpfile_name
+    encoding = chardet.detect(tmpfile.read())['encoding']
+    tmpfile = open(tmpfile_name, encoding=encoding)
+    return tmpfile
+
+
+def _process_file(request, changeset_url, is_issue, use_csv=False):
     '''
     checks the file useable encodings and correct lengths
     returns two values
@@ -101,17 +119,7 @@ def _process_file(request, changeset, is_issue, use_csv=False):
       - error message
       - True for having failed
     '''
-    # we need a real file to be able to use pythons Universal Newline Support
-    tmpfile_handle, tmpfile_name = tempfile.mkstemp(".import")
-    for chunk in request.FILES['flatfile'].chunks():
-        os.write(tmpfile_handle, chunk)
-    os.close(tmpfile_handle)
-    tmpfile = open(tmpfile_name, 'rb')
-    request.tmpfile = tmpfile
-    request.tmpfile_name = tmpfile_name
-    encoding = chardet.detect(tmpfile.read())['encoding']
-    tmpfile = open(tmpfile_name, encoding=encoding)
-
+    tmpfile = _convert_upload_to_file(request, request.FILES['flatfile'])
     if use_csv:
         upload = csv.reader(tmpfile)
     else:
@@ -136,7 +144,8 @@ def _process_file(request, changeset, is_issue, use_csv=False):
                              'least %d and not more than %d.' \
                   % (split_line, line_length, MIN_ISSUE_FIELDS,
                      MAX_ISSUE_FIELDS)
-                return _handle_import_error(request, changeset, error_text)
+                return _handle_import_error(request, changeset_url,
+                                            error_text), True
             if line_length < MAX_ISSUE_FIELDS:
                 for i in range(MAX_ISSUE_FIELDS - line_length):
                     split_line.append('')
@@ -145,7 +154,8 @@ def _process_file(request, changeset, is_issue, use_csv=False):
             # we had an empty line just before
             if empty_line:
                 error_text = 'The file includes an empty line.'
-                return _handle_import_error(request, changeset, error_text)
+                return _handle_import_error(request, changeset_url,
+                                            error_text), True
             # we have an empty line now, OK if it is the last line
             if len(split_line) == 1:
                 empty_line = True
@@ -159,14 +169,15 @@ def _process_file(request, changeset, is_issue, use_csv=False):
                              'at least %d and not more than %d.' \
                   % (split_line, line_length, MIN_SEQUENCE_FIELDS,
                      MAX_SEQUENCE_FIELDS)
-                return _handle_import_error(request, changeset, error_text)
+                return _handle_import_error(request, changeset_url,
+                                            error_text), True
             if line_length < MAX_SEQUENCE_FIELDS:
                 for i in range(MAX_SEQUENCE_FIELDS - line_length):
                     split_line.append('')
 
             # check here for story_type, otherwise sequences up to an error
             # will be be added
-            response, failure = _find_story_type(request, changeset,
+            response, failure = _find_story_type(request, changeset_url,
                                                  split_line)
             if failure:
                 return response, True
@@ -174,7 +185,7 @@ def _process_file(request, changeset, is_issue, use_csv=False):
         lines.append(split_line)
 
     tmpfile.close()
-    os.remove(tmpfile_name)
+    os.remove(request.tmpfile_name)
     del request.tmpfile
     del request.tmpfile_name
     return lines, False
@@ -213,7 +224,7 @@ def _parse_volume(volume):
     return volume, no_volume
 
 
-def _find_story_type(request, changeset, split_line):
+def _find_story_type(request, changeset_url, split_line):
     '''
     make sure that we have a valid StoryType
     returns two values
@@ -231,10 +242,10 @@ def _find_story_type(request, changeset, split_line):
     except StoryType.DoesNotExist:
         error_text = 'Story type "%s" in line %s does not exist.' \
             % (esc(split_line[TYPE]), esc(split_line))
-        return _handle_import_error(request, changeset, error_text)
+        return _handle_import_error(request, changeset_url, error_text), True
 
 
-def _import_sequences(request, issue_id, changeset, lines, running_number):
+def _import_sequences(request, issue, changeset, lines, running_number):
     """
     Processing of story lines happens here.
     lines is a list of lists.
@@ -311,7 +322,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
           reprint_notes=reprint_notes,
           notes=notes,
           keywords=keywords,
-          issue=Issue.objects.get(id=issue_id)
+          issue=issue
           )
         story_revision.save()
         running_number += 1
@@ -320,7 +331,7 @@ def _import_sequences(request, issue_id, changeset, lines, running_number):
                                                              changeset.id}))
 
 
-def _find_publisher_object(request, changeset, name, publisher_objects,
+def _find_publisher_object(request, changeset_url, name, publisher_objects,
                            object_type, publisher):
     if not name:
         return None, False
@@ -329,9 +340,216 @@ def _find_publisher_object(request, changeset, name, publisher_objects,
     if publisher_objects.count() == 1:
         return publisher_objects[0], False
     else:
-        error_text = '%s "%s" does not exist for publisher %s.' % \
-          (object_type, esc(name), esc(publisher))
-        return _handle_import_error(request, changeset, error_text)
+        if publisher:
+            publisher_string = ' for publisher %s' % esc(publisher)
+        else:
+            publisher_string = ''
+        if publisher_objects.count() > 1:
+            error_text = '%s "%s" is not unique%s.' % \
+                         (object_type, esc(name), publisher_string)
+        else:
+            error_text = '%s "%s" does not exist%s.' % \
+                         (object_type, esc(name), publisher_string)
+        return _handle_import_error(request, changeset_url, error_text), True
+
+
+def _parse_issue_line(request, issue_fields, series, changeset_url):
+    parsed_data = {}
+    parsed_data['number'] = issue_fields[NUMBER].strip()
+    parsed_data['volume'], parsed_data['no_volume'] = _parse_volume(
+      issue_fields[VOLUME].strip())
+
+    indicia_publisher_name, parsed_data['indicia_pub_not_printed'] = \
+        _check_for_none(issue_fields[INDICIA_PUBLISHER])
+    parsed_data['indicia_publisher'], failure = _find_publisher_object(
+      request, changeset_url, indicia_publisher_name,
+      series.publisher.active_indicia_publishers(),
+      "Indicia publisher", series.publisher)
+    if failure:
+        return parsed_data['indicia_publisher'], True
+
+    brand_name, parsed_data['no_brand'] = _check_for_none(issue_fields[BRAND])
+    brand_array = []
+    for brand_emblem in brand_name.split(';'):
+        parsed_data['brand_emblem'], failure = _find_publisher_object(
+          request, changeset_url, brand_emblem.strip(),
+          series.publisher.active_brand_emblems(),
+          "Brand", series.publisher)
+        if failure:
+            return parsed_data['brand_emblem'], True
+        brand_array.append(parsed_data['brand_emblem'])
+    if brand_array:
+        parsed_data['brand_emblem'] = brand_array
+    else:
+        parsed_data['brand_emblem'] = None
+    parsed_data['publication_date'] = issue_fields[PUBLICATION_DATE].strip()
+    parsed_data['key_date'] = issue_fields[KEY_DATE].strip()\
+                                                    .replace('.', '-')
+    if parsed_data['key_date'] and not re.search(KEY_DATE_REGEXP,
+                                                 parsed_data['key_date']):
+        return render_error(
+          request,
+          "key_date '%s' is invalid." % parsed_data['key_date']), True
+
+    parsed_data['indicia_frequency'], parsed_data['no_indicia_frequency'] = \
+        _check_for_none(issue_fields[INDICIA_FREQUENCY])
+    parsed_data['price'] = issue_fields[PRICE].strip()
+    parsed_data['page_count'], parsed_data['page_count_uncertain'] = \
+        _check_page_count(issue_fields[ISSUE_PAGE_COUNT])
+    parsed_data['editing'], parsed_data['no_editing'] = \
+        _check_for_none(issue_fields[ISSUE_EDITING])
+    parsed_data['isbn'], parsed_data['no_isbn'] = \
+        _check_for_none(issue_fields[ISBN])
+    parsed_data['barcode'], parsed_data['no_barcode'] = \
+        _check_for_none(issue_fields[BARCODE])
+    on_sale_date = issue_fields[ON_SALE_DATE].strip()
+    if on_sale_date:
+        if on_sale_date[-1] == '?':
+            parsed_data['on_sale_date_uncertain'] = True
+            on_sale_date = on_sale_date[:-1].strip()
+        else:
+            parsed_data['on_sale_date_uncertain'] = False
+        try:
+            # try full date first, then partial dates
+            month = True
+            day = False
+            if len(on_sale_date.split('-')) == 3:
+                sale_date = datetime.strptime(on_sale_date, '%Y-%m-%d')
+                day = True
+            elif len(on_sale_date.split('-')) == 2:
+                sale_date = datetime.strptime(on_sale_date + '-01', '%Y-%m-%d')
+            elif len(on_sale_date.split('-')) == 1:
+                sale_date = datetime.strptime(on_sale_date + '-01-01',
+                                              '%Y-%m-%d')
+                month = False
+            else:
+                raise ValueError("Invalid date format")
+            parsed_data['year_on_sale'] = sale_date.year
+            if month:
+                parsed_data['month_on_sale'] = sale_date.month
+            if day:
+                parsed_data['day_on_sale'] = sale_date.day
+        except ValueError:
+            return render_error(request,
+                                "on-sale_date '%s' is invalid." %
+                                on_sale_date), True
+    parsed_data['notes'] = issue_fields[ISSUE_NOTES].strip()
+    if series.has_issue_title:
+        parsed_data['title'], parsed_data['no_title'] = \
+          _check_for_none(issue_fields[ISSUE_TITLE])
+    printer_name, parsed_data['indicia_printer_not_printed'] = \
+        _check_for_none(issue_fields[INDICIA_PRINTER])
+    printer_array = []
+    for printer in printer_name.split(';'):
+        parsed_data['indicia_printer'], failure = _find_publisher_object(
+          request, changeset_url, printer.strip(),
+          IndiciaPrinter.objects.filter(deleted=False),
+          "Indicia Printer", None)
+        if failure:
+            return parsed_data['indicia_printer'], True
+        printer_array.append(parsed_data['indicia_printer'])
+    if printer_array:
+        parsed_data['indicia_printer'] = printer_array
+    else:
+        parsed_data['indicia_printer'] = None
+    parsed_data['rating'], parsed_data['no_rating'] = \
+        _check_for_none(issue_fields[AGE_GUIDELINES])
+    parsed_data['keywords'] = issue_fields[ISSUE_KEYWORDS].strip()
+    if len(issue_fields) > VARIANT_NAME:
+        parsed_data['variant_name'] = issue_fields[VARIANT_NAME].strip()
+        parsed_data['variant_cover_status'] = \
+            issue_fields[VARIANT_STATUS].strip().upper().replace(' ', '_')
+        if parsed_data['variant_cover_status'] not in VCS_Codes._member_names_:
+            return render_error(request,
+                                "variant_cover_status '%s' is invalid." %
+                                parsed_data['variant_cover_status']), True
+        parsed_data['variant_cover_status'] = VCS_Codes[parsed_data[
+                                              'variant_cover_status']]
+    return parsed_data, False
+
+
+@permission_required('indexer.can_reserve')
+def import_issues_to_series(request, series_id):
+    series = get_object_or_404(Series, id=series_id)
+    series_url = urlresolvers.reverse('add_issues',
+                                      kwargs={'series_id': series.id})
+    if request.method == 'POST' and 'file' in request.FILES:
+        tmpfile = _convert_upload_to_file(request, request.FILES['file'])
+        upload = csv.reader(tmpfile)
+        lines = []
+        for split_line in upload:
+            # check number of fields
+            line_length = len(split_line)
+            if line_length not in list(range(MIN_ISSUE_FIELDS,
+                                             MAX_ISSUE_FIELDS+3)):
+                error_text = 'issue line %s has %d fields, it must have at '\
+                             'least %d and not more than %d.' \
+                  % (split_line, line_length, MIN_ISSUE_FIELDS,
+                     MAX_ISSUE_FIELDS)
+                return _handle_import_error(request, series_url, error_text)
+            if line_length > MAX_ISSUE_FIELDS and \
+               line_length < MAX_ISSUE_FIELDS + 2:
+                error_text = 'issue line %s has %d fields, but for variants ' \
+                             'it must have %d fields.' \
+                  % (split_line, line_length, MAX_ISSUE_FIELDS+2)
+                return _handle_import_error(request, series_url, error_text)
+            if line_length < MAX_ISSUE_FIELDS:
+                for i in range(MAX_ISSUE_FIELDS - line_length):
+                    split_line.append('')
+            lines.append(split_line)
+        variant = False
+        # initialize to avoid flake warning
+        variant_cover_status = -1
+        changeset = None
+        for line in lines:
+            if variant:
+                if line[TYPE].strip().lower() == 'cover':
+                    if variant_cover_status != VCS_Codes['ARTWORK_DIFFERENCE']:
+                        error_text = 'variant is of cover status %s, ' \
+                          'but cover sequence exists in line %s.' % (
+                            VARIANT_COVER_STATUS[variant_cover_status], line)
+                        return _handle_import_error(request, series_url,
+                                                    error_text)
+                    _import_sequences(request, None, changeset, [line], 0)
+                    variant = False
+                    continue
+            parsed_data, failure = _parse_issue_line(request, line, series,
+                                                     series_url)
+            if failure:
+                return parsed_data
+            changeset = Changeset(indexer=request.user, state=states.OPEN,
+                                  change_type=CTYPES['issue_add'])
+            changeset.save()
+            # check for variant add
+            if parsed_data.get('variant_name'):
+                number = parsed_data['number']
+                issue = Issue.objects.filter(series=series, number=number,
+                                             variant_of__isnull=True)
+                if issue.count() == 1:
+                    parsed_data['variant_of'] = issue[0]
+                else:
+                    error_text = 'Could not find base issue for variant %s ' \
+                                 'with number %s in series %s.' % (
+                                   parsed_data['variant_name'], number,
+                                   series)
+                    return _handle_import_error(request, series_url,
+                                                error_text)
+                variant = True
+                variant_cover_status = parsed_data['variant_cover_status']
+            brand_emblem = parsed_data.pop('brand_emblem')
+            indicia_printer = parsed_data.pop('indicia_printer')
+            issue_revision = IssueRevision(
+              changeset=changeset, series=series, **parsed_data)
+            issue_revision.save()
+            if brand_emblem:
+                issue_revision.brand_emblem.set(brand_emblem)
+            if indicia_printer:
+                issue_revision.indicia_printer.set(indicia_printer)
+
+        return HttpResponseRedirect(urlresolvers.reverse('editing'))
+    else:
+        return HttpResponseRedirect(
+          urlresolvers.reverse('series_details', kwargs={'id': series.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -345,99 +563,56 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
         # Process add form if this is a POST.
         if request.method == 'POST' and 'flatfile' in request.FILES:
             issue_revision = changeset.issuerevisions.get(issue=issue_id)
+            changeset_url = urlresolvers.reverse('edit',
+                                                 kwargs={'id': changeset.id})
             if StoryRevision.objects.filter(changeset=changeset).count():
                 return render_error(
                   request,
                   'There are already sequences present for %s in this'
                   ' changeset. Back to the <a href="%s">editing page</a>.'
-                  % (esc(issue_revision), urlresolvers.reverse('edit',
-                     kwargs={'id': changeset.id})),
+                  % (esc(issue_revision), changeset_url),
                   is_safe=True)
             if 'csv' in request.POST:
                 use_csv = True
             else:
                 use_csv = False
-            lines, failure = _process_file(request, changeset,
+            lines, failure = _process_file(request, changeset_url,
                                            is_issue=True, use_csv=use_csv)
             if failure:
                 return lines
 
             # parse the issue line
             issue_fields = lines.pop(0)
-            issue_revision.number = issue_fields[NUMBER].strip()
-            issue_revision.volume, issue_revision.no_volume = _parse_volume(
-              issue_fields[VOLUME].strip())
-
-            indicia_publisher_name, issue_revision.indicia_pub_not_printed = \
-              _check_for_none(issue_fields[INDICIA_PUBLISHER])
-            indicia_publisher, failure = _find_publisher_object(
-              request,
-              changeset, indicia_publisher_name,
-              issue_revision.issue.series.publisher.active_indicia_publishers(),
-              "Indicia publisher", issue_revision.issue.series.publisher)
+            parsed_data, failure = _parse_issue_line(
+              request, issue_fields,
+              issue_revision.issue.series, changeset_url)
             if failure:
-                return indicia_publisher
-            else:
-                issue_revision.indicia_publisher = indicia_publisher
-
-            brand_name, issue_revision.no_brand = _check_for_none(
-              issue_fields[BRAND])
-            brand, failure = _find_publisher_object(
-              request, changeset, brand_name,
-              issue_revision.issue.series.publisher.active_brand_emblems(),
-              "Brand", issue_revision.issue.series.publisher)
-            if failure:
-                return brand
-            else:
-                issue_revision.brand_emblem.set([brand,] if brand else [])
-
-            issue_revision.publication_date = \
-              issue_fields[PUBLICATION_DATE].strip()
-            issue_revision.key_date = issue_fields[KEY_DATE].strip()\
-                                                            .replace('.', '-')
-            if issue_revision.key_date and not re.search(
-              KEY_DATE_REGEXP, issue_revision.key_date):
-                return render_error(
-                  request,
-                  "key_date '%s' is invalid." % issue_revision.key_date)
-
-            issue_revision.indicia_frequency, \
-              issue_revision.no_indicia_frequency = \
-              _check_for_none(issue_fields[INDICIA_FREQUENCY])
-            issue_revision.price = issue_fields[PRICE].strip()
-            issue_revision.page_count, issue_revision.page_count_uncertain = \
-              _check_page_count(issue_fields[ISSUE_PAGE_COUNT])
-            issue_revision.editing, issue_revision.no_editing = \
-              _check_for_none(issue_fields[ISSUE_EDITING])
-            issue_revision.isbn, issue_revision.no_isbn = _check_for_none(
-              issue_fields[ISBN])
-            issue_revision.barcode, issue_revision.no_barcode = \
-              _check_for_none(issue_fields[BARCODE])
-            on_sale_date = issue_fields[ON_SALE_DATE].strip()
-            if on_sale_date:
-                if on_sale_date[-1] == '?':
-                    issue_revision.on_sale_date_uncertain = True
-                    on_sale_date = on_sale_date[:-1].strip()
+                return parsed_data
+            for field, value in parsed_data.items():
+                if field in ['indicia_publisher', 'brand_emblem',
+                             'indicia_printer']:
+                    # these are foreign keys, set them differently
+                    continue
+                setattr(issue_revision, field, value)
+            if 'indicia_publisher' in parsed_data:
+                issue_revision.indicia_publisher = \
+                  parsed_data['indicia_publisher']
+            if 'brand_emblem' in parsed_data:
+                if parsed_data['brand_emblem']:
+                    issue_revision.brand_emblem.set(
+                      parsed_data['brand_emblem'])
                 else:
-                    issue_revision.on_sale_date_uncertain = False
-                try:
-                    # only full dates can be imported
-                    sale_date = datetime.strptime(on_sale_date, '%Y-%m-%d')
-                    issue_revision.year_on_sale = sale_date.year
-                    issue_revision.month_on_sale = sale_date.month
-                    issue_revision.day_on_sale = sale_date.day
-                except ValueError:
-                    return render_error(request,
-                                        "on-sale_date '%s' is invalid." %
-                                        on_sale_date)
-            issue_revision.notes = issue_fields[ISSUE_NOTES].strip()
-            if issue_revision.series.has_issue_title:
-                issue_revision.title, issue_revision.no_title = \
-                  _check_for_none(issue_fields[ISSUE_TITLE])
-            issue_revision.keywords = issue_fields[ISSUE_KEYWORDS].strip()
+                    issue_revision.brand_emblem.clear()
+            if 'indicia_printer' in parsed_data:
+                if parsed_data['indicia_printer']:
+                    issue_revision.indicia_printer.set(
+                      parsed_data['indicia_printer'])
+                else:
+                    issue_revision.indicia_printer.clear()
             issue_revision.save()
             running_number = 0
-            return _import_sequences(request, issue_id, changeset,
+            issue = Issue.objects.get(id=issue_id)
+            return _import_sequences(request, issue, changeset,
                                      lines, running_number)
         else:
             return HttpResponseRedirect(
@@ -462,16 +637,19 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
         # Process add form if this is a POST.
         if request.method == 'POST' and 'flatfile' in request.FILES:
             issue_revision = changeset.issuerevisions.get(issue=issue_id)
+            changeset_url = urlresolvers.reverse('edit',
+                                                 kwargs={'id': changeset.id})
             if 'csv' in request.POST:
                 use_csv = True
             else:
                 use_csv = False
-            lines, failure = _process_file(request, changeset,
+            lines, failure = _process_file(request, changeset_url,
                                            is_issue=False, use_csv=use_csv)
             if failure:
                 return lines
             running_number = issue_revision.next_sequence_number()
-            return _import_sequences(request, issue_id, changeset,
+            issue = Issue.objects.get(id=issue_id)
+            return _import_sequences(request, issue, changeset,
                                      lines, running_number)
         else:
             return HttpResponseRedirect(urlresolvers.reverse('edit',
@@ -538,21 +716,30 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                     brand_names += brand.name + '; '
                 brand_names = brand_names[:-2]
                 export_data.append(brand_names)
-        elif field_name == 'indicia_publisher' and not \
-          issue.indicia_publisher and not issue.indicia_pub_not_printed:
+        elif (field_name == 'indicia_publisher' and not
+              issue.indicia_publisher and not issue.indicia_pub_not_printed):
             export_data.append('')
-        elif field_name == 'editing' and getattr(issue, 'no_editing'):
-            export_data.append('None')
-        elif field_name in ['indicia_frequency', 'isbn', 'barcode']\
-          and not getattr(series, 'has_%s' % field_name):
+        elif field_name == 'editing':
+            credit = show_creator_credit(issue, field_name, url=False)
+            if credit:
+                export_data.append(credit)
+            else:
+                export_data.append('None')
+        elif (field_name in ['indicia_frequency', 'isbn', 'barcode', 'rating',
+                             'indicia_printer']
+              and not getattr(series, 'has_%s' % field_name)):
             export_data.append('')
         elif field_name == 'title' and not getattr(series, 'has_issue_title'):
             export_data.append('')
-        elif field_name in ['indicia_frequency', 'isbn', 'barcode', 'title']\
-          and getattr(issue, 'no_%s' % field_name):
+        elif field_name in ['indicia_frequency', 'isbn', 'barcode', 'title',
+                            'rating'] and getattr(issue, 'no_%s' % field_name):
             export_data.append('None')
+        elif field_name == 'indicia_printer':
+            export_data.append(issue.show_printer(url=False))
         else:
             export_data.append(str(getattr(issue, field_name)))
+
+    # reprint_links and keywords need extra handling and come last
     reprint = ''
     from_reprints = list(issue.from_reprints.select_related().all())
     from_reprints.extend(list(issue.from_issue_reprints.select_related()
@@ -567,9 +754,6 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     if reprint != '':
         reprint = reprint[:-2]
     export_data.append(str(reprint))
-    # keywords were added after reprint_links on issue level, so they come
-    # later in the export
-    # TODO check after refactor if this can be changed
     if revision:
         export_data.append(issue.keywords)
     else:
