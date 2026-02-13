@@ -104,8 +104,14 @@ you must wait until those issues are approved.<br>
 Using the flat file import option below, you can add a number of issues at
 once by uploading a properly formatted CSV file. One issue per line.
   </p>
+  <p>
 You can do standard issue adds, or add variants by giving the variant name and
-variant cover status at the end of the issue line. A variant add can optionally
+variant cover status at the end of the issue line. That means, the csv-line needs
+to have 21 fields (which can be empty), where the last two fields are the variant name and variant cover status.
+The variant cover status must be either "artwork difference", "only scan difference", or
+"no difference".
+</p>
+A variant add with status "artwork difference" can optionally
 be followed by a cover sequence.
 </div>
 <table class="border border-gray-300 mt-2">
