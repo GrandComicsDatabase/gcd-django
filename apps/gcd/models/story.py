@@ -196,9 +196,12 @@ def _get_reference_universe(story):
 def _process_single_character(character, appearing_characters,
                               reference_universe_id):
     universe = None
-    if reference_universe_id and character.universe:
-        if character.universe_id != reference_universe_id:
-            universe = character.universe
+    if reference_universe_id:
+        if character.universe:
+            if character.universe_id != reference_universe_id:
+                universe = character.universe
+        else:
+            universe = Universe(name='without a universe')
     civilian_identity = _get_civilian_identity(character,
                                                appearing_characters)
     if civilian_identity:

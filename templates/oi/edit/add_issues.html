@@ -98,5 +98,36 @@ you must wait until those issues are approved.<br>
 {% endif %}
 </table>
 </div>
+
+<div>
+  <p>
+Using the flat file import option below, you can add a number of issues at
+once by uploading a properly formatted CSV file. One issue per line.
+  </p>
+You can do standard issue adds, or add variants by giving the variant name and
+variant cover status at the end of the issue line. A variant add can optionally
+be followed by a cover sequence.
+</div>
+<table class="border border-gray-300 mt-2">
+  <tr class="max-sm:flex max-sm:flex-col border border-gray-300">
+    <form class="" method="POST" enctype="multipart/form-data"
+                  action="{% url 'import_issues_to_series' series_id=series.id %}">
+        {% csrf_token %}
+      <td>
+        Select file: <input type="file" name="file">
+      </td>
+      <td>
+        <button class="btn-blue-editing inline"><input type="submit" name="csv" value="Import Issues (CSV)"></button>
+      </td>
+    </form>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <a class="new_window" href="https://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> about the file format for imports.
+    </td>
+    <td>
+    </td>
+  </tr>
+</table>
 {% endblock %}
 

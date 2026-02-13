@@ -376,18 +376,20 @@ class CharacterFeatureTable(FeatureSearchTable):
         return value
 
     def render_issue_count(self, record):
-        if self.resolve_name == 'character' and self.universe_id is not None:
+        if (self.resolve_name in ('character', 'group') and
+                self.universe_id is not None):
             url = urlresolvers.reverse(
-                    'character_origin_universe_issues_per_feature',
-                    kwargs={'feature_id': record.id,
-                            'character_id': self.character.id,
-                            'universe_id': self.universe_id})
+              '%s_origin_universe_issues_per_feature' % self.resolve_name,
+              kwargs={'feature_id': record.id,
+                      '%s_id' % self.resolve_name:
+                      getattr(self, self.resolve_name).id,
+                      'universe_id': self.universe_id})
         else:
             url = urlresolvers.reverse(
-                    '%s_issues_per_feature' % self.resolve_name,
-                    kwargs={'feature_id': record.id,
-                            '%s_id' % self.resolve_name:
-                            getattr(self, self.resolve_name).id})
+              '%s_issues_per_feature' % self.resolve_name,
+              kwargs={'feature_id': record.id,
+                      '%s_id' % self.resolve_name:
+                      getattr(self, self.resolve_name).id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
 
@@ -400,6 +402,7 @@ class GroupFeatureTable(CharacterFeatureTable):
 
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group')
+        self.universe_id = kwargs.pop('universe_id', None)
         self.resolve_name = 'group'
         super(CharacterFeatureTable, self).__init__(*args, **kwargs)
 

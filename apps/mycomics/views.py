@@ -1159,10 +1159,14 @@ def edit_reading_order(request, reading_order_id=None):
                               commit=True, unique=False)
 
         if form.is_valid() or 'cancel' in request.POST:
-            return HttpResponseRedirect(
-              urlresolvers.reverse('view_reading_order',
-                                   kwargs={'reading_order_id':
-                                           reading_order.id}))
+            if reading_order_id:
+                return HttpResponseRedirect(
+                  urlresolvers.reverse('view_reading_order',
+                                       kwargs={'reading_order_id':
+                                               reading_order.id}))
+            else:
+                return HttpResponseRedirect(
+                  urlresolvers.reverse('reading_orders_list'))
     else:
         form = ReadingOrderForm(instance=reading_order)
 

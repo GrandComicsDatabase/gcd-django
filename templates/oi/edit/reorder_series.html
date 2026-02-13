@@ -67,6 +67,9 @@ Alternately, you can change the sort codes directly to reorder issues.
       <th> Issue </th>
       <th> Publication Date </th>
       <th> Key Date </th>
+      {% if series.has_barcode %}
+        <th> Barcode </th>
+      {% endif %}
     </tr>
   </thead>
   <tbody>
@@ -88,6 +91,9 @@ Alternately, you can change the sort codes directly to reorder issues.
       <td> <a href="{{ issue.get_absolute_url }}">{{ issue }}</a> </td>
       <td> {{ issue.publication_date }} </td>
       <td> {{ issue.key_date }} </td>
+      {% if series.has_barcode %}
+        <td> {{ issue.barcode }} </td>
+      {% endif %}
     </tr>
 {% endfor %}
   </tbody>
