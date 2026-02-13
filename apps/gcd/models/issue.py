@@ -337,7 +337,7 @@ class Issue(GcdData):
     def shown_covers(self):
         return self.active_covers(), self.variant_covers()
 
-    def show_printer(self):
+    def show_printer(self, url=True):
         first = True
         printers = ''
         for printer in self.active_printers():
@@ -345,8 +345,11 @@ class Issue(GcdData):
                 first = False
             else:
                 printers += '; '
-            printers += '<a href="%s">%s</a>' % (printer.get_absolute_url(),
-                                                 esc(printer.name))
+            if url:
+                printers += '<a href="%s">%s</a>' % (
+                  printer.get_absolute_url(), esc(printer.name))
+            else:
+                printers += esc(printer.name)
         if self.indicia_printer_not_printed:
             printers += ' [not printed on item]'
 
