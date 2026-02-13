@@ -1151,12 +1151,13 @@ class CreatorTable(CreatorBaseTable):
         super().__init__(*args, **kwargs)
 
     def render_issue_count(self, record):
-        # Use character_origin_universe URL if universe_id is present
-        if self.resolve_name == 'character' and self.universe_id is not None:
+        if (self.resolve_name in ('character', 'group') and
+                self.universe_id is not None):
             url = urlresolvers.reverse(
-                'character_origin_universe_creator_issues',
+                '%s_origin_universe_creator_issues' % self.resolve_name,
                 kwargs={'creator_id': record.id,
-                        'character_id': getattr(self, 'character').id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id,
                         'universe_id': self.universe_id})
         else:
             url = urlresolvers.reverse(
@@ -1225,12 +1226,13 @@ class CreatorNameTable(CreatorTable):
         return (query_set, True)
 
     def render_issue_count(self, record):
-        # Use character_origin_universe URL if universe_id is present
-        if self.resolve_name == 'character' and self.universe_id is not None:
+        if (self.resolve_name in ('character', 'group') and
+                self.universe_id is not None):
             url = urlresolvers.reverse(
-                'character_origin_universe_creator_name_issues',
+                '%s_origin_universe_creator_name_issues' % self.resolve_name,
                 kwargs={'creator_name_id': record.id,
-                        'character_id': getattr(self, 'character').id,
+                        '%s_id' % self.resolve_name:
+                        getattr(self, self.resolve_name).id,
                         'universe_id': self.universe_id})
         else:
             url = urlresolvers.reverse(
