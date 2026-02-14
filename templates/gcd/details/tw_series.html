@@ -196,7 +196,7 @@
   <btn class="btn btn-blue-editing"><a href="{% url 'add_issues' series_id=series.id %}">
     Add Issues</a></btn>
     {% if perms.indexer.can_approve %}
-      {% if series.issue_count or series.active_base_issues_variant_count %}
+      {% if series.issue_count or series.is_singleton and series.active_base_issues_variant_count %}
     <btn class="btn btn-blue-editing"><a href="{% url 'reorder_series' series_id=series.id %}">
     Reorder Issues</a></btn>
       {% endif %}
