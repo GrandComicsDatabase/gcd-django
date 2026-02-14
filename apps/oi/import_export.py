@@ -176,7 +176,7 @@ def _process_file(request, changeset_url, is_issue, use_csv=False):
             # check here for story_type, otherwise sequences up to an error
             # will be be added
             response, failure = _find_story_type(request, changeset_url,
-                                                 split_line)
+                                                 split_line[TYPE], split_line)
             if failure:
                 return response, True
 
@@ -222,7 +222,8 @@ def _parse_volume(volume):
     return volume, no_volume
 
 
-def _find_story_type(request, changeset_url, split_line):
+def _find_story_type(request, changeset_url, story_type_name,
+                     sequence_fields):
     '''
     make sure that we have a valid StoryType
     returns two values
@@ -234,13 +235,60 @@ def _find_story_type(request, changeset_url, split_line):
       - True for having failed
     '''
     try:
-        story_type = StoryType.objects.get(name=split_line[TYPE].
+        story_type = StoryType.objects.get(name=story_type_name.
                                            strip().lower())
         return story_type, False
     except StoryType.DoesNotExist:
         error_text = 'Story type "%s" in line %s does not exist.' \
-            % (esc(split_line[TYPE]), esc(split_line))
+            % (esc(story_type_name), esc(sequence_fields))
         return _handle_import_error(request, changeset_url, error_text), True
+
+
+def _process_sequence_data(request, sequence_fields, changeset):
+    parsed_data = {}
+    story_type, failure = _find_story_type(request, changeset,
+                                           sequence_fields['type'],
+                                           sequence_fields)
+    if failure:
+        return story_type, True
+    parsed_data['type'] = story_type
+
+    for field in ['title', 'first_line', 'feature', 'genre', 'characters',
+                  'job_number', 'reprint_notes', 'synopsis', 'notes',
+                  'keywords']:
+        parsed_data[field] = sequence_fields.get(field, '').strip()
+
+    if parsed_data['title'].startswith('[') and \
+       parsed_data['title'].endswith(']'):
+        parsed_data['title'] = parsed_data['title'][1:-1]
+        parsed_data['title_inferred'] = True
+    else:
+        parsed_data['title_inferred'] = False
+
+    genres = parsed_data.pop('genre')
+    if genres:
+        filtered_genres = ''
+        for genre in genres.split(';'):
+            if genre.strip() in GENRES['en']:
+                filtered_genres += ';' + genre
+        parsed_data['genre'] = filtered_genres[1:]
+    else:
+        parsed_data['genre'] = genres
+
+    parsed_data['page_count'], parsed_data['page_count_uncertain'] = \
+        _check_page_count(sequence_fields['page_count'])
+
+    # check for none as value and process
+    for field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
+        parsed_data[field], parsed_data['no_' + field] = \
+          _check_for_none(sequence_fields.get(field, '').strip())
+
+    if story_type == StoryType.objects.get(name='cover'):
+        if not parsed_data['script']:
+            parsed_data['no_script'] = True
+        if not parsed_data['letters']:
+            parsed_data['no_letters'] = True
+    return parsed_data, False
 
 
 def _import_sequences(request, issue, changeset, lines, running_number):
@@ -252,76 +300,23 @@ def _import_sequences(request, issue, changeset, lines, running_number):
     """
 
     for fields in lines:
-        story_type, failure = _find_story_type(request, changeset, fields)
+        data = {}
+        cnt = 0
+        line_length = len(fields)
+        if line_length < MAX_SEQUENCE_FIELDS:
+            for i in range(MAX_SEQUENCE_FIELDS - line_length):
+                fields.append('')
+        for field in SEQUENCE_FIELDS:
+            data[field] = fields[cnt]
+            cnt += 1
+        parsed_data, failure = _process_sequence_data(request, data, changeset)
         if failure:
-            return story_type
-
-        title = fields[TITLE].strip()
-        first_line = fields[FIRST_LINE].strip()
-        if title.startswith('[') and title.endswith(']'):
-            title = title[1:-1]
-            title_inferred = True
-        else:
-            title_inferred = False
-        feature = fields[FEATURE].strip()
-        page_count, page_count_uncertain = _check_page_count(
-          fields[STORY_PAGE_COUNT])
-        script, no_script = _check_for_none(fields[SCRIPT])
-        if story_type == StoryType.objects.get(name='cover'):
-            if not script:
-                no_script = True
-        pencils, no_pencils = _check_for_none(fields[PENCILS])
-        inks, no_inks = _check_for_none(fields[INKS])
-        colors, no_colors = _check_for_none(fields[COLORS])
-        letters, no_letters = _check_for_none(fields[LETTERS])
-        editing, no_editing = _check_for_none(fields[STORY_EDITING])
-        genres = fields[GENRE].strip()
-        if genres:
-            filtered_genres = ''
-            for genre in genres.split(';'):
-                if genre.strip() in GENRES['en']:
-                    filtered_genres += ';' + genre
-            genre = filtered_genres[1:]
-        else:
-            genre = genres
-        characters = fields[CHARACTERS].strip()
-        job_number = fields[JOB_NUMBER].strip()
-        reprint_notes = fields[REPRINT_NOTES].strip()
-        synopsis = fields[SYNOPSIS].strip()
-        notes = fields[STORY_NOTES].strip()
-        keywords = fields[STORY_KEYWORDS].strip()
-
+            return parsed_data
         story_revision = StoryRevision(
           changeset=changeset,
-          title=title,
-          title_inferred=title_inferred,
-          first_line=first_line,
-          feature=feature,
-          type=story_type,
           sequence_number=running_number,
-          page_count=page_count,
-          page_count_uncertain=page_count_uncertain,
-          script=script,
-          pencils=pencils,
-          inks=inks,
-          colors=colors,
-          letters=letters,
-          editing=editing,
-          no_script=no_script,
-          no_pencils=no_pencils,
-          no_inks=no_inks,
-          no_colors=no_colors,
-          no_letters=no_letters,
-          no_editing=no_editing,
-          job_number=job_number,
-          genre=genre,
-          characters=characters,
-          synopsis=synopsis,
-          reprint_notes=reprint_notes,
-          notes=notes,
-          keywords=keywords,
-          issue=issue
-          )
+          issue=issue,
+          **parsed_data)
         story_revision.save()
         running_number += 1
     return HttpResponseRedirect(urlresolvers.reverse('edit',
@@ -558,7 +553,36 @@ def import_issues_to_series_structured(request, series_id):
             issue_revision = _create_issue_add(parsed_data, request, series,
                                                series_url)
             if issue_revision.variant_of:
-                pass
+                if len(issue_data.get('story_set', [])) > 1:
+                    error_text = 'Variant %s has more than one story.' % (
+                        issue_revision)
+                    return _handle_import_error(request, series_url,
+                                                error_text)
+                variant_cover_status = issue_revision.variant_cover_status
+                if variant_cover_status != VCS_Codes['ARTWORK_DIFFERENCE'] \
+                   and issue_data.get('story_set', []):
+                    error_text = 'Variant is of cover status %s, ' \
+                                 'but a sequence exists for variant %s.' % (
+                                    VARIANT_COVER_STATUS[variant_cover_status],
+                                    issue_revision)
+                    return _handle_import_error(request, series_url,
+                                                error_text)
+                for story_data in issue_data.get('story_set', []):
+                    if story_data.get('type', '').strip().lower() != 'cover':
+                        error_text = 'Sequence for variant %s is not of ' \
+                          'type cover.' % (issue_revision)
+                        return _handle_import_error(request, series_url,
+                                                    error_text)
+                    parsed_data, failure = _process_sequence_data(
+                      request, story_data, issue_revision.changeset)
+                    if failure:
+                        return parsed_data
+                    story_revision = StoryRevision(
+                      changeset=issue_revision.changeset,
+                      sequence_number=0,
+                      issue=None,
+                      **parsed_data)
+                    story_revision.save()
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
         return HttpResponseRedirect(
@@ -601,7 +625,7 @@ def import_issues_to_series(request, series_id):
             if variant:
                 if line[TYPE].strip().lower() == 'cover':
                     if variant_cover_status != VCS_Codes['ARTWORK_DIFFERENCE']:
-                        error_text = 'variant is of cover status %s, ' \
+                        error_text = 'Variant is of cover status %s, ' \
                           'but cover sequence exists in line %s.' % (
                             VARIANT_COVER_STATUS[variant_cover_status], line)
                         return _handle_import_error(request, series_url,
