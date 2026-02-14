@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from rest_framework import serializers
 from apps.gcd.models import Series, Publisher, Issue, Story
-from apps.gcd.templatetags.credits import show_creator_credit
+from apps.gcd.templatetags.credits import show_creator_credit, \
+                                          show_keywords_as_text
 
 
 class StorySerializer(serializers.ModelSerializer):
@@ -9,7 +10,8 @@ class StorySerializer(serializers.ModelSerializer):
         model = Story
         fields = ['type', 'title', 'feature', 'sequence_number', 'page_count',
                   'script', 'pencils', 'inks', 'colors', 'letters', 'editing',
-                  'job_number', 'genre', 'characters', 'synopsis', 'notes',]
+                  'job_number', 'genre', 'first_line', 'characters',
+                  'synopsis', 'notes', 'keywords']
 
     type = serializers.StringRelatedField(read_only=True)
 
@@ -53,15 +55,21 @@ class StorySerializer(serializers.ModelSerializer):
     def get_characters(self, obj) -> str:
         return (obj.show_characters_as_text())
 
+    keywords = serializers.SerializerMethodField()
+
+    def get_keywords(self, obj) -> str:
+        return (show_keywords_as_text(obj))
+
 
 class IssueSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Issue
-        fields = ['api_url', 'series_name', 'descriptor', 'publication_date',
+        fields = ['api_url', 'series_name', 'descriptor', 'number', 'volume',
+                  'variant_name', 'title', 'publication_date', 'key_date',
                   'price', 'page_count', 'editing', 'indicia_publisher',
-                  'brand', 'isbn', 'barcode', 'rating', 'on_sale_date',
+                  'brand_emblem', 'isbn', 'barcode', 'rating', 'on_sale_date',
                   'indicia_frequency', 'notes', 'variant_of', 'series',
-                  'story_set', 'cover']
+                  'indicia_printer', 'keywords', 'story_set', 'cover']
 
     story_set = StorySerializer(many=True, read_only=True)
 
@@ -71,12 +79,34 @@ class IssueSerializer(serializers.HyperlinkedModelSerializer):
         return (obj.full_descriptor)
 
     indicia_publisher = serializers.StringRelatedField(read_only=True)
-    brand = serializers.StringRelatedField(read_only=True)
+    brand_emblem = serializers.SerializerMethodField()
+    def get_brand_emblem(self, obj) -> str:
+        emblem_string = ''
+        for brand_emblem in obj.brand_emblem.all():
+            if emblem_string != '':
+                emblem_string += '; '
+            emblem_string += brand_emblem.name
+        return (emblem_string)
+
+    indicia_printer = serializers.SerializerMethodField()
+    def get_indicia_printer(self, obj) -> str:
+        printer_string = ''
+        if obj.series.has_indicia_printer:
+            for indicia_printer in obj.indicia_printer.all():
+                if printer_string != '':
+                    printer_string += '; '
+                printer_string += indicia_printer.name
+        return (printer_string)
 
     editing = serializers.SerializerMethodField()
 
     def get_editing(self, obj) -> str:
         return (show_creator_credit(obj, 'editing', url=False))
+
+    keywords = serializers.SerializerMethodField()
+
+    def get_keywords(self, obj) -> str:
+        return (show_keywords_as_text(obj))
 
     cover = serializers.SerializerMethodField()
 

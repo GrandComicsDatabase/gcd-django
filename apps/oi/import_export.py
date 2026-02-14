@@ -4,6 +4,7 @@ import tempfile
 import os
 import csv
 import chardet
+import json
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
@@ -146,9 +147,6 @@ def _process_file(request, changeset_url, is_issue, use_csv=False):
                      MAX_ISSUE_FIELDS)
                 return _handle_import_error(request, changeset_url,
                                             error_text), True
-            if line_length < MAX_ISSUE_FIELDS:
-                for i in range(MAX_ISSUE_FIELDS - line_length):
-                    split_line.append('')
         # later lines are story lines
         else:
             # we had an empty line just before
@@ -355,20 +353,42 @@ def _find_publisher_object(request, changeset_url, name, publisher_objects,
 
 def _parse_issue_line(request, issue_fields, series, changeset_url):
     parsed_data = {}
-    parsed_data['number'] = issue_fields[NUMBER].strip()
+    cnt = 0
+    line_length = len(issue_fields)
+    if line_length < MAX_ISSUE_FIELDS:
+        for i in range(MAX_ISSUE_FIELDS - line_length):
+            issue_fields.append('')
+    for field in ISSUE_FIELDS:
+        parsed_data[field] = issue_fields[cnt]
+        cnt += 1
+    parsed_data['reprint_notes'] = issue_fields[cnt]
+    parsed_data['keywords'] = issue_fields[cnt+1]
+    cnt += 2
+    if len(issue_fields) > cnt:
+        parsed_data['variant_name'] = issue_fields[cnt]
+        cnt += 1
+        parsed_data['variant_cover_status'] = issue_fields[cnt]\
+            .strip().upper().replace(' ', '_')
+    return _process_issue_data(request, parsed_data, series, changeset_url)
+
+
+def _process_issue_data(request, issue_fields, series, changeset_url):
+    parsed_data = {}
+    # use the string value
+    for field in ['number', 'publication_date', 'keywords', 'price', 'notes']:
+        parsed_data[field] = issue_fields.get(field, '').strip()
+
     parsed_data['volume'], parsed_data['no_volume'] = _parse_volume(
-      issue_fields[VOLUME].strip())
+      issue_fields.get('volume', '').strip())
 
-    indicia_publisher_name, parsed_data['indicia_pub_not_printed'] = \
-        _check_for_none(issue_fields[INDICIA_PUBLISHER])
-    parsed_data['indicia_publisher'], failure = _find_publisher_object(
-      request, changeset_url, indicia_publisher_name,
-      series.publisher.active_indicia_publishers(),
-      "Indicia publisher", series.publisher)
-    if failure:
-        return parsed_data['indicia_publisher'], True
+    # check for none as value and process
+    for field in ['indicia_frequency', 'editing', 'isbn', 'barcode', 'rating']:
+        parsed_data[field], parsed_data['no_' + field] = \
+          _check_for_none(issue_fields.get(field, '').strip())
 
-    brand_name, parsed_data['no_brand'] = _check_for_none(issue_fields[BRAND])
+    brand_name, parsed_data['no_brand'] = \
+        _check_for_none(issue_fields.get('brand_emblem', '').strip())
+    # if we have a brand, we need to find the corresponding brand emblems
     brand_array = []
     for brand_emblem in brand_name.split(';'):
         parsed_data['brand_emblem'], failure = _find_publisher_object(
@@ -382,27 +402,29 @@ def _parse_issue_line(request, issue_fields, series, changeset_url):
         parsed_data['brand_emblem'] = brand_array
     else:
         parsed_data['brand_emblem'] = None
-    parsed_data['publication_date'] = issue_fields[PUBLICATION_DATE].strip()
-    parsed_data['key_date'] = issue_fields[KEY_DATE].strip()\
-                                                    .replace('.', '-')
+
+    # indicia publisher has special no_-field, find the corresponding object
+    indicia_publisher_name, parsed_data['indicia_pub_not_printed'] = \
+        _check_for_none(issue_fields.get('indicia_publisher', '').strip())
+    parsed_data['indicia_publisher'], failure = _find_publisher_object(
+      request, changeset_url, indicia_publisher_name,
+      series.publisher.active_indicia_publishers(),
+      "Indicia publisher", series.publisher)
+    if failure:
+        return parsed_data['indicia_publisher'], True
+
+    # check the key date for correct format
+    parsed_data['key_date'] = issue_fields.get('key_date', '').strip()\
+                                          .replace('.', '-')
     if parsed_data['key_date'] and not re.search(KEY_DATE_REGEXP,
                                                  parsed_data['key_date']):
         return render_error(
           request,
           "key_date '%s' is invalid." % parsed_data['key_date']), True
 
-    parsed_data['indicia_frequency'], parsed_data['no_indicia_frequency'] = \
-        _check_for_none(issue_fields[INDICIA_FREQUENCY])
-    parsed_data['price'] = issue_fields[PRICE].strip()
     parsed_data['page_count'], parsed_data['page_count_uncertain'] = \
-        _check_page_count(issue_fields[ISSUE_PAGE_COUNT])
-    parsed_data['editing'], parsed_data['no_editing'] = \
-        _check_for_none(issue_fields[ISSUE_EDITING])
-    parsed_data['isbn'], parsed_data['no_isbn'] = \
-        _check_for_none(issue_fields[ISBN])
-    parsed_data['barcode'], parsed_data['no_barcode'] = \
-        _check_for_none(issue_fields[BARCODE])
-    on_sale_date = issue_fields[ON_SALE_DATE].strip()
+        _check_page_count(issue_fields.get('page_count', '').strip())
+    on_sale_date = issue_fields.get('on_sale_date', '').strip()
     if on_sale_date:
         if on_sale_date[-1] == '?':
             parsed_data['on_sale_date_uncertain'] = True
@@ -433,32 +455,32 @@ def _parse_issue_line(request, issue_fields, series, changeset_url):
             return render_error(request,
                                 "on-sale_date '%s' is invalid." %
                                 on_sale_date), True
-    parsed_data['notes'] = issue_fields[ISSUE_NOTES].strip()
     if series.has_issue_title:
         parsed_data['title'], parsed_data['no_title'] = \
-          _check_for_none(issue_fields[ISSUE_TITLE])
-    printer_name, parsed_data['indicia_printer_not_printed'] = \
-        _check_for_none(issue_fields[INDICIA_PRINTER])
-    printer_array = []
-    for printer in printer_name.split(';'):
-        parsed_data['indicia_printer'], failure = _find_publisher_object(
-          request, changeset_url, printer.strip(),
-          IndiciaPrinter.objects.filter(deleted=False),
-          "Indicia Printer", None)
-        if failure:
-            return parsed_data['indicia_printer'], True
-        printer_array.append(parsed_data['indicia_printer'])
-    if printer_array:
-        parsed_data['indicia_printer'] = printer_array
-    else:
-        parsed_data['indicia_printer'] = None
-    parsed_data['rating'], parsed_data['no_rating'] = \
-        _check_for_none(issue_fields[AGE_GUIDELINES])
-    parsed_data['keywords'] = issue_fields[ISSUE_KEYWORDS].strip()
-    if len(issue_fields) > VARIANT_NAME:
-        parsed_data['variant_name'] = issue_fields[VARIANT_NAME].strip()
+          _check_for_none(issue_fields.get('title', '').strip())
+
+    if series.has_indicia_printer:
+        printer_name, parsed_data['indicia_printer_not_printed'] = \
+            _check_for_none(issue_fields.get('indicia_printer', '').strip())
+        printer_array = []
+        for printer in printer_name.split(';'):
+            parsed_data['indicia_printer'], failure = _find_publisher_object(
+              request, changeset_url, printer.strip(),
+              IndiciaPrinter.objects.filter(deleted=False),
+              "Indicia Printer", None)
+            if failure:
+                return parsed_data['indicia_printer'], True
+            printer_array.append(parsed_data['indicia_printer'])
+        if printer_array:
+            parsed_data['indicia_printer'] = printer_array
+        else:
+            parsed_data['indicia_printer'] = None
+
+    if 'variant_name' in issue_fields:
+        parsed_data['variant_name'] = issue_fields.get('variant_name')
         parsed_data['variant_cover_status'] = \
-            issue_fields[VARIANT_STATUS].strip().upper().replace(' ', '_')
+            issue_fields.get('variant_cover_status', '').upper().replace(' ',
+                                                                         '_')
         if parsed_data['variant_cover_status'] not in VCS_Codes._member_names_:
             return render_error(request,
                                 "variant_cover_status '%s' is invalid." %
@@ -468,8 +490,85 @@ def _parse_issue_line(request, issue_fields, series, changeset_url):
     return parsed_data, False
 
 
+def _create_issue_add(parsed_data, request, series, series_url):
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['issue_add'])
+    changeset.save()
+    # check for variant add
+    if parsed_data.get('variant_name'):
+        number = parsed_data['number']
+        issue = Issue.objects.filter(series=series, number=number,
+                                     variant_of__isnull=True)
+        if issue.count() == 1:
+            issue = issue[0]
+            parsed_data['variant_of'] = issue
+        else:
+            error_text = 'Could not find base issue for variant %s ' \
+                           'with number %s in series %s.' % (
+                             parsed_data['variant_name'], number,
+                             series)
+            return _handle_import_error(request, series_url,
+                                        error_text)
+        current_variants = issue.variant_set.order_by('-sort_code')
+        if current_variants:
+            add_after = current_variants[0]
+        else:
+            add_after = issue
+    else:
+        add_after = series.last_issue
+    brand_emblem = parsed_data.pop('brand_emblem')
+    indicia_printer = parsed_data.pop('indicia_printer')
+    issue_revision = IssueRevision(
+        changeset=changeset, series=series,
+        after=add_after, **parsed_data)
+    issue_revision.save()
+    if brand_emblem:
+        issue_revision.brand_emblem.set(brand_emblem)
+    if indicia_printer:
+        issue_revision.indicia_printer.set(indicia_printer)
+    return issue_revision
+
+
+@permission_required('indexer.can_reserve')
+def import_issues_to_series_structured(request, series_id):
+    series = get_object_or_404(Series, id=series_id)
+    series_url = urlresolvers.reverse('add_issues',
+                                      kwargs={'series_id': series.id})
+    if request.method == 'POST' and 'file' in request.FILES:
+        tmpfile = _convert_upload_to_file(request, request.FILES['file'])
+        try:
+            data = json.load(tmpfile)
+        except json.JSONDecodeError as e:
+            error_text = f'Invalid JSON format: {e}'
+            return _handle_import_error(request, series_url, error_text)
+
+        if 'issue_set' not in data:
+            error_text = 'JSON must contain an "issue_set" key.'
+            return _handle_import_error(request, series_url, error_text)
+        for issue_data in data['issue_set']:
+            # JSON null entries become None in Python, but we want to treat
+            # them as empty strings for the import.
+            for key in issue_data.keys():
+                if issue_data[key] is None:
+                    issue_data[key] = ''
+            parsed_data, failure = _process_issue_data(request, issue_data,
+                                                       series, series_url)
+            if failure:
+                return parsed_data
+            issue_revision = _create_issue_add(parsed_data, request, series,
+                                               series_url)
+            if issue_revision.variant_of:
+                pass
+        return HttpResponseRedirect(urlresolvers.reverse('editing'))
+    else:
+        return HttpResponseRedirect(
+          urlresolvers.reverse('series_details', kwargs={'id': series.id}))
+
+
 @permission_required('indexer.can_reserve')
 def import_issues_to_series(request, series_id):
+    if request.method == 'POST' and 'json' in request.POST:
+        return import_issues_to_series_structured(request, series_id)
     series = get_object_or_404(Series, id=series_id)
     series_url = urlresolvers.reverse('add_issues',
                                       kwargs={'series_id': series.id})
@@ -493,14 +592,11 @@ def import_issues_to_series(request, series_id):
                              'it must have %d fields.' \
                   % (split_line, line_length, MAX_ISSUE_FIELDS+2)
                 return _handle_import_error(request, series_url, error_text)
-            if line_length < MAX_ISSUE_FIELDS:
-                for i in range(MAX_ISSUE_FIELDS - line_length):
-                    split_line.append('')
             lines.append(split_line)
         variant = False
         # initialize to avoid flake warning
         variant_cover_status = -1
-        changeset = None
+        issue_revision = None
         for line in lines:
             if variant:
                 if line[TYPE].strip().lower() == 'cover':
@@ -510,42 +606,19 @@ def import_issues_to_series(request, series_id):
                             VARIANT_COVER_STATUS[variant_cover_status], line)
                         return _handle_import_error(request, series_url,
                                                     error_text)
-                    _import_sequences(request, None, changeset, [line], 0)
+                    _import_sequences(request, None, issue_revision.changeset,
+                                      [line], 0)
                     variant = False
                     continue
             parsed_data, failure = _parse_issue_line(request, line, series,
                                                      series_url)
             if failure:
                 return parsed_data
-            changeset = Changeset(indexer=request.user, state=states.OPEN,
-                                  change_type=CTYPES['issue_add'])
-            changeset.save()
-            # check for variant add
-            if parsed_data.get('variant_name'):
-                number = parsed_data['number']
-                issue = Issue.objects.filter(series=series, number=number,
-                                             variant_of__isnull=True)
-                if issue.count() == 1:
-                    parsed_data['variant_of'] = issue[0]
-                else:
-                    error_text = 'Could not find base issue for variant %s ' \
-                                 'with number %s in series %s.' % (
-                                   parsed_data['variant_name'], number,
-                                   series)
-                    return _handle_import_error(request, series_url,
-                                                error_text)
+            issue_revision = _create_issue_add(parsed_data, request, series,
+                                               series_url)
+            if issue_revision.variant_of:
                 variant = True
-                variant_cover_status = parsed_data['variant_cover_status']
-            brand_emblem = parsed_data.pop('brand_emblem')
-            indicia_printer = parsed_data.pop('indicia_printer')
-            issue_revision = IssueRevision(
-              changeset=changeset, series=series, **parsed_data)
-            issue_revision.save()
-            if brand_emblem:
-                issue_revision.brand_emblem.set(brand_emblem)
-            if indicia_printer:
-                issue_revision.indicia_printer.set(indicia_printer)
-
+                variant_cover_status = issue_revision.variant_cover_status
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
         return HttpResponseRedirect(

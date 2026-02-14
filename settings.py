@@ -347,6 +347,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
         'rest_framework.renderers.JSONRenderer',
         # 'rest_framework_yaml.renderers.YAMLRenderer',
+        'drf_yaml.renderers.YAMLRenderer'
     ),
     # Use Django's standard `django.contrib.auth` permissions, 
     # or allow read-only access for unauthenticated users.
