@@ -422,6 +422,8 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
 
     parsed_data['page_count'], parsed_data['page_count_uncertain'] = \
         _check_page_count(issue_fields.get('page_count', '').strip())
+    if not parsed_data['page_count']:
+        parsed_data['page_count_uncertain'] = False
     on_sale_date = issue_fields.get('on_sale_date', '').strip()
     if on_sale_date:
         if on_sale_date[-1] == '?':
@@ -663,7 +665,7 @@ def import_issues_to_series(request, series_id):
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
         return HttpResponseRedirect(
-          urlresolvers.reverse('series_details', kwargs={'id': series.id}))
+          urlresolvers.reverse('show_series', kwargs={'series_id': series.id}))
 
 
 @permission_required('indexer.can_reserve')
