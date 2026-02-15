@@ -5,6 +5,7 @@ import os
 import csv
 import chardet
 import json
+import yaml
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
@@ -505,7 +506,7 @@ def _create_issue_add(parsed_data, request, series, series_url):
                              parsed_data['variant_name'], number,
                              series)
             return _handle_import_error(request, series_url,
-                                        error_text)
+                                        error_text), True
         current_variants = issue.variant_set.order_by('-sort_code')
         if current_variants:
             add_after = current_variants[0]
@@ -523,24 +524,30 @@ def _create_issue_add(parsed_data, request, series, series_url):
         issue_revision.brand_emblem.set(brand_emblem)
     if indicia_printer:
         issue_revision.indicia_printer.set(indicia_printer)
-    return issue_revision
+    return issue_revision, False
 
 
 @permission_required('indexer.can_reserve')
-def import_issues_to_series_structured(request, series_id):
+def import_issues_to_series_structured(request, series_id, use_yaml=False):
     series = get_object_or_404(Series, id=series_id)
     series_url = urlresolvers.reverse('add_issues',
                                       kwargs={'series_id': series.id})
     if request.method == 'POST' and 'file' in request.FILES:
         tmpfile = _convert_upload_to_file(request, request.FILES['file'])
-        try:
-            data = json.load(tmpfile)
-        except json.JSONDecodeError as e:
-            error_text = f'Invalid JSON format: {e}'
-            return _handle_import_error(request, series_url, error_text)
-
+        if use_yaml:
+            try:
+                data = yaml.safe_load(tmpfile)
+            except yaml.YAMLError as e:
+                error_text = f'Invalid YAML format: {e}'
+                return _handle_import_error(request, series_url, error_text)
+        else:
+            try:
+                data = json.load(tmpfile)
+            except json.JSONDecodeError as e:
+                error_text = f'Invalid JSON format: {e}'
+                return _handle_import_error(request, series_url, error_text)
         if 'issue_set' not in data:
-            error_text = 'JSON must contain an "issue_set" key.'
+            error_text = 'File must contain an "issue_set" key.'
             return _handle_import_error(request, series_url, error_text)
         for issue_data in data['issue_set']:
             # JSON null entries become None in Python, but we want to treat
@@ -552,8 +559,10 @@ def import_issues_to_series_structured(request, series_id):
                                                        series, series_url)
             if failure:
                 return parsed_data
-            issue_revision = _create_issue_add(parsed_data, request, series,
-                                               series_url)
+            issue_revision, failure = _create_issue_add(parsed_data, request,
+                                                        series, series_url)
+            if failure:
+                return issue_revision
             if issue_revision.variant_of:
                 if len(issue_data.get('story_set', [])) > 1:
                     error_text = 'Variant %s has more than one story.' % (
@@ -595,6 +604,10 @@ def import_issues_to_series_structured(request, series_id):
 def import_issues_to_series(request, series_id):
     if request.method == 'POST' and 'json' in request.POST:
         return import_issues_to_series_structured(request, series_id)
+    if request.method == 'POST' and 'yaml' in request.POST:
+        return import_issues_to_series_structured(request, series_id,
+                                                  use_yaml=True)
+
     series = get_object_or_404(Series, id=series_id)
     series_url = urlresolvers.reverse('add_issues',
                                       kwargs={'series_id': series.id})
@@ -640,8 +653,10 @@ def import_issues_to_series(request, series_id):
                                                      series_url)
             if failure:
                 return parsed_data
-            issue_revision = _create_issue_add(parsed_data, request, series,
-                                               series_url)
+            issue_revision, failure = _create_issue_add(parsed_data, request,
+                                                        series, series_url)
+            if failure:
+                return issue_revision
             if issue_revision.variant_of:
                 variant = True
                 variant_cover_status = issue_revision.variant_cover_status
