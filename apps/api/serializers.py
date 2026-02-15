@@ -17,33 +17,38 @@ class StorySerializer(serializers.ModelSerializer):
 
     script = serializers.SerializerMethodField()
 
+    def _get_credit(self, obj, credit_type) -> str:
+        if getattr(obj, f'no_{credit_type}', True):
+            return "None"
+        return (show_creator_credit(obj, credit_type, url=False))
+
     def get_script(self, obj) -> str:
-        return (show_creator_credit(obj, 'script', url=False))
+        return (self._get_credit(obj, 'script'))
 
     pencils = serializers.SerializerMethodField()
 
     def get_pencils(self, obj) -> str:
-        return (show_creator_credit(obj, 'pencils', url=False))
+        return (self._get_credit(obj, 'pencils'))
 
     inks = serializers.SerializerMethodField()
 
     def get_inks(self, obj) -> str:
-        return (show_creator_credit(obj, 'inks', url=False))
+        return (self._get_credit(obj, 'inks'))
 
     colors = serializers.SerializerMethodField()
 
     def get_colors(self, obj) -> str:
-        return (show_creator_credit(obj, 'colors', url=False))
+        return (self._get_credit(obj, 'colors'))
 
     letters = serializers.SerializerMethodField()
 
     def get_letters(self, obj) -> str:
-        return (show_creator_credit(obj, 'letters', url=False))
+        return (self._get_credit(obj, 'letters'))
 
     editing = serializers.SerializerMethodField()
 
     def get_editing(self, obj) -> str:
-        return (show_creator_credit(obj, 'editing', url=False))
+        return (self._get_credit(obj, 'editing'))
 
     feature = serializers.SerializerMethodField()
 

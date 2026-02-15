@@ -288,6 +288,8 @@ def _process_sequence_data(request, sequence_fields, changeset):
             parsed_data['no_script'] = True
         if not parsed_data['letters']:
             parsed_data['no_letters'] = True
+    if not parsed_data['editing']:
+        parsed_data['no_editing'] = True
     return parsed_data, False
 
 
