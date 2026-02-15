@@ -290,11 +290,17 @@ Cover is moved from {{ cover.issue }}.
       <td>
         Select file: <input type="file" name="flatfile">
       </td>
-      <td class="flex">
-        <button class="btn-blue-editing inline"><input type="submit" name="tab" value="Import Issue (Tab Separated)"></button>
+      <td>
+        <button><input class="btn-blue-editing inline" type="submit" name="tab" value="Import Issue (TSV)"></button>
       </td>
       <td>
-        <button class="btn-blue-editing inline"><input type="submit" name="csv" value="Import Issue (CSV)"></button>
+        <button><input class="btn-blue-editing inline" type="submit" name="csv" value="Import Issue (CSV)"></button>
+      </td>
+      <td>
+        <button><input class="btn-blue-editing inline" type="submit" name="json" value="Import Issue (JSON)"></button>
+      </td>
+      <td>
+        <button><input class="btn-blue-editing inline" type="submit" name="yaml" value="Import Issue (YAML)"></button>
       </td>
     </form>
   </tr>
@@ -307,19 +313,23 @@ Cover is moved from {{ cover.issue }}.
       <td>
         Select file: <input type="file" name="flatfile">
       </td>
-      <td class="flex">
-        <button class="btn-blue-editing inline"><input type="submit" name="tab" value="Import Sequences (Tab Separated)"></button>
+      <td>
+        <button><input class="btn-blue-editing inline" type="submit" name="tab" value="Import Sequences (TSV)"></button>
       </td>
       <td>
-        <button class="btn-blue-editing inline"><input type="submit" name="csv" value="Import Sequences (CSV)"></button>
+        <button><input class="btn-blue-editing inline" type="submit" name="csv" value="Import Sequences (CSV)"></button>
+      </td>
+      <td>
+        <button><input class="btn-blue-editing inline" type="submit" name="json" value="Import Sequences (JSON)"></button>
+      </td>
+      <td>
+        <button><input class="btn-blue-editing inline" type="submit" name="yaml" value="Import Sequences (YAML)"></button>
       </td>
     </form>
   </tr>
   <tr>
-    <td colspan="3">
+    <td colspan="5">
       <a class="new_window" href="https://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> about the file format for imports.
-    </td>
-    <td>
     </td>
   </tr>
 </table>

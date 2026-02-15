@@ -294,6 +294,33 @@ def _process_sequence_data(request, sequence_fields, changeset):
     return parsed_data, False
 
 
+def _create_story_add(story_data, request, issue, changeset, running_number):
+    parsed_data, failure = _process_sequence_data(request, story_data,
+                                                  changeset)
+    if failure:
+        return parsed_data, True
+    story_revision = StoryRevision(
+      changeset=changeset,
+      sequence_number=running_number,
+      issue=issue,
+      **parsed_data)
+    story_revision.save()
+    return story_revision, False
+
+
+def _import_sequences_structured(request, issue, changeset, story_data,
+                                 running_number):
+    for story in story_data:
+        response, failure = _create_story_add(story, request, issue,
+                                              changeset, running_number)
+        if failure:
+            return response
+        running_number += 1
+    return HttpResponseRedirect(urlresolvers.reverse(
+                                'edit',
+                                kwargs={'id': changeset.id}))
+
+
 def _import_sequences(request, issue, changeset, lines, running_number):
     """
     Processing of story lines happens here.
@@ -312,15 +339,10 @@ def _import_sequences(request, issue, changeset, lines, running_number):
         for field in SEQUENCE_FIELDS:
             data[field] = fields[cnt]
             cnt += 1
-        parsed_data, failure = _process_sequence_data(request, data, changeset)
+        response, failure = _create_story_add(data, request, issue,
+                                              changeset, running_number)
         if failure:
-            return parsed_data
-        story_revision = StoryRevision(
-          changeset=changeset,
-          sequence_number=running_number,
-          issue=issue,
-          **parsed_data)
-        story_revision.save()
+            return response
         running_number += 1
     return HttpResponseRedirect(urlresolvers.reverse('edit',
                                                      kwargs={'id':
@@ -688,31 +710,58 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
                   ' changeset. Back to the <a href="%s">editing page</a>.'
                   % (esc(issue_revision), changeset_url),
                   is_safe=True)
+
+            use_csv = False
+            use_tsv = False
+            use_json = False
+            use_yaml = False
+
             if 'csv' in request.POST:
                 use_csv = True
+            elif 'json' in request.POST:
+                use_json = True
+            elif 'yaml' in request.POST:
+                use_yaml = True
             else:
-                use_csv = False
-            lines, failure = _process_file(request, changeset_url,
-                                           is_issue=True, use_csv=use_csv)
-            if failure:
-                return lines
-
-            # parse the issue line
-            issue_fields = lines.pop(0)
-            parsed_data, failure = _parse_issue_line(
-              request, issue_fields,
-              issue_revision.issue.series, changeset_url)
+                use_tsv = True
+            if use_tsv or use_csv:
+                lines, failure = _process_file(request, changeset_url,
+                                               is_issue=True, use_csv=use_csv)
+                if failure:
+                    return lines
+                # parse the issue line
+                issue_fields = lines.pop(0)
+                parsed_data, failure = _parse_issue_line(
+                  request, issue_fields,
+                  issue_revision.issue.series, changeset_url)
+            elif use_json or use_yaml:
+                tmpfile = _convert_upload_to_file(request,
+                                                  request.FILES['flatfile'])
+                if use_yaml:
+                    try:
+                        issue_data = yaml.safe_load(tmpfile)
+                    except yaml.YAMLError as e:
+                        error_text = f'Invalid YAML format: {e}'
+                        return _handle_import_error(request, changeset_url,
+                                                    error_text)
+                else:
+                    try:
+                        issue_data = json.load(tmpfile)
+                    except json.JSONDecodeError as e:
+                        error_text = f'Invalid JSON format: {e}'
+                        return _handle_import_error(request, changeset_url,
+                                                    error_text)
+                issue_data.pop('variant_name', None)
+                parsed_data, failure = _process_issue_data(
+                  request, issue_data, issue_revision.series, changeset_url)
             if failure:
                 return parsed_data
+
             for field, value in parsed_data.items():
-                if field in ['indicia_publisher', 'brand_emblem',
-                             'indicia_printer']:
+                if field in ['brand_emblem', 'indicia_printer']:
                     # these are foreign keys, set them differently
                     continue
                 setattr(issue_revision, field, value)
-            if 'indicia_publisher' in parsed_data:
-                issue_revision.indicia_publisher = \
-                  parsed_data['indicia_publisher']
             if 'brand_emblem' in parsed_data:
                 if parsed_data['brand_emblem']:
                     issue_revision.brand_emblem.set(
@@ -728,8 +777,13 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
             issue_revision.save()
             running_number = 0
             issue = Issue.objects.get(id=issue_id)
-            return _import_sequences(request, issue, changeset,
-                                     lines, running_number)
+            if use_json or use_yaml:
+                return _import_sequences_structured(
+                  request, issue, changeset, issue_data.get('story_set'),
+                  running_number)
+            else:
+                return _import_sequences(request, issue, changeset,
+                                         lines, running_number)
         else:
             return HttpResponseRedirect(
               urlresolvers.reverse('edit',
@@ -755,18 +809,48 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
             issue_revision = changeset.issuerevisions.get(issue=issue_id)
             changeset_url = urlresolvers.reverse('edit',
                                                  kwargs={'id': changeset.id})
+            use_csv = False
+            use_tsv = False
+            use_json = False
+            use_yaml = False
+
             if 'csv' in request.POST:
                 use_csv = True
+            elif 'json' in request.POST:
+                use_json = True
+            elif 'yaml' in request.POST:
+                use_yaml = True
             else:
-                use_csv = False
-            lines, failure = _process_file(request, changeset_url,
-                                           is_issue=False, use_csv=use_csv)
-            if failure:
-                return lines
+                use_tsv = True
             running_number = issue_revision.next_sequence_number()
             issue = Issue.objects.get(id=issue_id)
-            return _import_sequences(request, issue, changeset,
-                                     lines, running_number)
+            if use_csv or use_tsv:
+                lines, failure = _process_file(request, changeset_url,
+                                               is_issue=False, use_csv=use_csv)
+                if failure:
+                    return lines
+                return _import_sequences(request, issue, changeset,
+                                         lines, running_number)
+            elif use_json or use_yaml:
+                tmpfile = _convert_upload_to_file(request,
+                                                  request.FILES['flatfile'])
+                if use_yaml:
+                    try:
+                        story_data = yaml.safe_load(tmpfile)
+                    except yaml.YAMLError as e:
+                        error_text = f'Invalid YAML format: {e}'
+                        return _handle_import_error(request, changeset_url,
+                                                    error_text)
+                else:
+                    try:
+                        story_data = json.load(tmpfile)
+                    except json.JSONDecodeError as e:
+                        error_text = f'Invalid JSON format: {e}'
+                        return _handle_import_error(request, changeset_url,
+                                                    error_text)
+                story_data = story_data.get('story_set')
+                return _import_sequences_structured(request, issue, changeset,
+                                                    story_data, running_number)
         else:
             return HttpResponseRedirect(urlresolvers.reverse('edit',
                                         kwargs={'id': changeset.id}))
