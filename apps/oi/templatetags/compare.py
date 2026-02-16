@@ -370,7 +370,57 @@ def _compare_string_genre(revision):
 
 @register.simple_tag
 def diff_list(prev_rev, revision, field):
-    """Generates an array which describes the change in text fields"""
+    """
+    Generates an array which describes the change in text fields.
+
+    Uses the diff-match-patch library to compute differences between field
+    values of a previous revision and a current revision.
+
+    diff_match_patch() returns an instance of the DiffMatchPatch class from
+    the diff-match-patch library. This class provides methods for computing
+    differences between two strings:
+        - diff_main(text1, text2): Returns a list of tuples (op, text), with op:
+            -1 (DIFF_DELETE): text was removed
+             0 (DIFF_EQUAL): text is unchanged
+             1 (DIFF_INSERT): text was added
+        - diff_cleanupSemantic(diffs): Post-processes the diff list in-place to
+          produce more human-readable results by merging small equalities into
+          surrounding edits.
+
+        The op codes used in the returned diff list are further extended in
+        this implementation to handle cases where the diff boundary falls
+        inside an HTML link tag, resulting in split HTML across diff segments.
+        The extended op codes are as follows:
+            -1: deleted text (from diff_match_patch)
+             0: unchanged text (from diff_match_patch)
+             1: inserted text (from diff_match_patch)
+            -2: text preceding a split HTML link in a deleted segment
+             2: text preceding a split HTML link in an inserted segment
+            -3: text inside a split HTML link in a deleted segment
+             3: text inside a split HTML link in an inserted segment
+        Op codes 2, 3, -2, and -3 arise when a diff boundary falls inside
+        an <a href="..."> tag (e.g. for creator or character links), splitting
+        the HTML across multiple diff tuples. These extended codes allow the
+        template to render the link HTML without escaping while still marking
+        the visible link text as added or deleted.
+
+    Args:
+        prev_rev: The previous revision object containing old field values.
+        revision: The current revision object containing new field values.
+        field (str): The name of the field to compare between revisions.
+
+    Returns:
+        list of tuples or None:
+            - For creator/character-linked fields ('script', 'pencils', 'inks',
+              'colors', 'letters', 'editing', 'characters'): Returns a list of
+              (op, text) tuples with extended op codes (2, -2, 3, -3) to handle
+              HTML links that were split across diff segments, with added/deleted
+              spans marked safe for template rendering.
+            - For plain text fields ('notes', 'synopsis', 'title', etc.): Returns
+              the raw diff list of (op, text) tuples from diff_match_patch.
+            - For 'genre': Returns a diff list using field_value() for comparison.
+            - For unrecognized fields: Returns None.
+    """
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing',
                  'characters']:
         diff = diff_match_patch().diff_main(field_value(prev_rev, field),
@@ -446,7 +496,7 @@ def show_diff(diff_list, change):
             elif op == -1:
                 compare_string += span_tag % ("deleted", esc(data))
             elif op == -2:
-                compare_string += esc(data)
+                compare_string += esc(data) + '</span>'
             elif op == -3:
                 compare_string += esc(data)
     else:
@@ -456,7 +506,7 @@ def show_diff(diff_list, change):
             elif op == 1:
                 compare_string += span_tag % ("added", esc(data))
             elif op == 2:
-                compare_string += esc(data)
+                compare_string += esc(data) + '</span>'
             elif op == 3:
                 compare_string += esc(data)
     return mark_safe(compare_string)
