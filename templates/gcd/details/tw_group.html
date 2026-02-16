@@ -91,11 +91,11 @@ GCD :: Group :: {{ group.name }}
 </table>
 {% if group.description %}
 <h3 class="mt-2">Description:</h3>
-{{ group.description|markdown }}
+{{ group.description|render_markdown }}
 {% endif %}
 {% if group.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ group.notes|markdown }}
+{{ group.notes|render_markdown }}
 {% endif %}
 {% endblock %}
 

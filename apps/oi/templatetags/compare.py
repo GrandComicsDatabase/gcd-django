@@ -13,7 +13,7 @@ from apps.gcd.templatetags.display import absolute_url, \
                                           show_isbn
 from apps.gcd.templatetags.credits import format_page_count, \
                                           split_reprint_string, \
-                                          markdown as render_markdown
+                                          render_markdown
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \

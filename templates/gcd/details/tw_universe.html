@@ -28,11 +28,11 @@ GCD :: Universe :: {{ universe.name }}
           </ul>
   {% if universe.description %}
           <h3>Description:</h3>
-    {{ universe.description|markdown }}
+    {{ universe.description|render_markdown }}
   {% endif %}
   {% if universe.notes %}
           <h3>Notes:</h3>
-    {{ universe.notes|markdown }}
+    {{ universe.notes|render_markdown }}
   {% endif %}
         </div>
       </div> 

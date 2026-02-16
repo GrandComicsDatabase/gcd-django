@@ -99,7 +99,7 @@ GCD :: Feature :: {{ feature.name }}
 {% block content %}
 {% if feature.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ feature.notes|markdown }}
+{{ feature.notes|render_markdown }}
 {% endif %}
 {% if page.object_list.count %}
 <hr>

@@ -491,7 +491,7 @@ def show_cover_letterer_credit(story):
 
 @register.filter()
 @stringfilter
-def markdown(value):
+def render_markdown(value):
     return mark_safe(md.markdown(value,
                                  extensions=['nl2br',
                                              'md_in_html',

@@ -160,7 +160,7 @@
   {% endif %}
   {% if series.notes %}
 <h3 class="mt-2">Notes:</h3>
-    {{ series.notes|markdown }}
+    {{ series.notes|render_markdown }}
   {% endif %}
   {% if series.active_issues.count %}
 

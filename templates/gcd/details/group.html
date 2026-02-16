@@ -38,7 +38,7 @@ GCD :: Group :: {{ group.name }}
   {% endif %}
   {% if group.notes %}
         <dt> Notes:
-        <dd> {{ group.notes|markdown }}
+        <dd> {{ group.notes|render_markdown }}
   {% endif %}
 <p>{{ group|show_credit:'keywords' }}</P>
       </dl>

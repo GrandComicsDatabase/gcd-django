@@ -49,11 +49,11 @@ GCD :: Story Arc :: {{ story_arc.name }}
 </table>
 {% if story_arc.description %}
 <h3 class="mt-2">Description:</h3>
-{{ story_arc.description|markdown }}
+{{ story_arc.description|render_markdown }}
 {% endif %}
 {% if story_arc.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ story_arc.notes|markdown }}
+{{ story_arc.notes|render_markdown }}
 {% endif %}
 {% endblock %}
 
