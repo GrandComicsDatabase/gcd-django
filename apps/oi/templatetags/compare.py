@@ -379,7 +379,7 @@ def diff_list(prev_rev, revision, field):
     diff_match_patch() returns an instance of the DiffMatchPatch class from
     the diff-match-patch library. This class provides methods for computing
     differences between two strings:
-        - diff_main(text1, text2): Returns a list of tuples (op, text), with op:
+        - diff_main(text1, text2): Returns list of tuples (op, text), with op:
             -1 (DIFF_DELETE): text was removed
              0 (DIFF_EQUAL): text is unchanged
              1 (DIFF_INSERT): text was added
@@ -414,11 +414,11 @@ def diff_list(prev_rev, revision, field):
             - For creator/character-linked fields ('script', 'pencils', 'inks',
               'colors', 'letters', 'editing', 'characters'): Returns a list of
               (op, text) tuples with extended op codes (2, -2, 3, -3) to handle
-              HTML links that were split across diff segments, with added/deleted
-              spans marked safe for template rendering.
-            - For plain text fields ('notes', 'synopsis', 'title', etc.): Returns
+              HTML links that were split across diff segments, with
+              added/deleted spans marked safe for template rendering.
+            - For plain text fields ('notes', 'synopsis', 'bio', etc.):Returns
               the raw diff list of (op, text) tuples from diff_match_patch.
-            - For 'genre': Returns a diff list using field_value() for comparison.
+            - For 'genre': Returns a diff list using field_value() instead.
             - For unrecognized fields: Returns None.
     """
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing',
