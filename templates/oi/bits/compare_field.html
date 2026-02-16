@@ -5,7 +5,7 @@
   {% if revision.deleted %}
 <tr class="border deleted mt-1">
   {% else %}
-<tr class="border flex flex-col max-sm:border sm:table-row {% if revision.changed|check_changed:field %}changed{% endif %}">
+<tr class="align-top border flex flex-col max-sm:border sm:table-row {% if revision.changed|check_changed:field %}changed{% endif %}">
   {% endif %}
 {% else %}
 <tr class="border {% if revision.changed|check_changed:field %}added{% endif %}">
@@ -17,8 +17,13 @@
       {% if revision.changed|check_changed:field and prev_rev and not revision.deleted %}
         {% diff_list prev_rev revision field as diff_list %}
         {% if diff_list %}
+          {% if field|is_markdown_field %}
+    <td class="pe-1"> {{ diff_list|show_diff_markdown:"orig" }} </td>
+    <td class="pe-1"> {{ diff_list|show_diff_markdown:"change" }} </td>
+          {% else %}
     <td class="pe-1"> {{ diff_list|show_diff:"orig" }} </td>
     <td class="pe-1"> {{ diff_list|show_diff:"change" }} </td>
+          {% endif %}
         {% else %}
     <td class="pe-1"> {{ prev_rev|field_value:field }} </td>
     <td class="pe-1"> {{ revision|field_value:field }} </td>

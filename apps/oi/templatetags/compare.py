@@ -12,7 +12,8 @@ from apps.gcd.templatetags.display import absolute_url, \
                                           sum_page_counts, show_barcode, \
                                           show_isbn
 from apps.gcd.templatetags.credits import format_page_count, \
-                                          split_reprint_string
+                                          split_reprint_string, \
+                                          markdown as render_markdown
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
@@ -22,6 +23,8 @@ from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
 from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
+
+MARKDOWN_FIELDS = {'notes', 'synopsis', 'bio'}
 
 
 def valid_barcode(barcode):
@@ -426,31 +429,88 @@ def diff_list(prev_rev, revision, field):
 
 
 @register.filter
+def is_markdown_field(field):
+    """Check if a field should be rendered as markdown."""
+    return field in MARKDOWN_FIELDS
+
+
+@register.filter
 def show_diff(diff_list, change):
     """show changes in diff with markings for add/delete"""
     compare_string = ""
     span_tag = "<span class='%s'>%s</span>"
     if change == "orig":
-        for i in diff_list:
-            if i[0] == 0:
-                compare_string += esc(i[1])
-            elif i[0] == -1:
-                compare_string += span_tag % ("deleted", esc(i[1]))
-            elif i[0] == -2:
-                compare_string += esc(i[1]) + "</span>"
-            elif i[0] == -3:
-                compare_string += esc(i[1])
+        for op, data in diff_list:
+            if op == 0:
+                compare_string += esc(data)
+            elif op == -1:
+                compare_string += span_tag % ("deleted", esc(data))
+            elif op == -2:
+                compare_string += esc(data)
+            elif op == -3:
+                compare_string += esc(data)
     else:
-        for i in diff_list:
-            if i[0] == 0:
-                compare_string += esc(i[1])
-            elif i[0] == 1:
-                compare_string += span_tag % ("added", esc(i[1]))
-            elif i[0] == 2:
-                compare_string += esc(i[1]) + "</span>"
-            elif i[0] == 3:
-                compare_string += esc(i[1])
+        for op, data in diff_list:
+            if op == 0:
+                compare_string += esc(data)
+            elif op == 1:
+                compare_string += span_tag % ("added", esc(data))
+            elif op == 2:
+                compare_string += esc(data)
+            elif op == 3:
+                compare_string += esc(data)
     return mark_safe(compare_string)
+
+
+@register.filter
+def show_diff_markdown(diff_list, change):
+    """
+    Show changes for markdown fields with inline diff marks on the raw
+    markdown source and a rendered markdown preview below.
+
+    The raw markdown is diffed (preserving structural meaning like headings,
+    lists, emphasis), then displayed with <span> tags for highlighting.  A
+    collapsible rendered preview shows the final result for this side.
+    """
+    highlighted_parts = []
+    plain_parts = []
+
+    if change == "orig":
+        for op, data in diff_list:
+            if op == 0:
+                highlighted_parts.append(esc(data))
+                plain_parts.append(data)
+            elif op == -1:
+                highlighted_parts.append(
+                    "<span class='deleted'>%s</span>" % esc(data))
+                plain_parts.append(data)
+            elif op in (-2, -3):
+                highlighted_parts.append(esc(data))
+                plain_parts.append(data)
+    else:
+        for op, data in diff_list:
+            if op == 0:
+                highlighted_parts.append(esc(data))
+                plain_parts.append(data)
+            elif op == 1:
+                highlighted_parts.append(
+                    "<span class='added'>%s</span>" % esc(data))
+                plain_parts.append(data)
+            elif op in (2, 3):
+                highlighted_parts.append(esc(data))
+                plain_parts.append(data)
+
+    inline_diff = ''.join(highlighted_parts)
+    rendered = render_markdown(''.join(plain_parts))
+
+    if rendered:
+        rendered = '<details class="mt-1">' \
+                   '<summary style="cursor:pointer; color:#666; ' \
+                   'font-style:italic;">Rendered Preview</summary>' \
+                   '<div>%s</div></details>' % (rendered)
+    result = '<div style="white-space:pre-wrap;">%s</div>%s' \
+             % (inline_diff, rendered)
+    return mark_safe(result)
 
 
 @register.filter
@@ -558,7 +618,8 @@ def compare_current_reprints(object_type, changeset):
             if not hasattr(reprint, 'next_revision') or \
               (reprint.next_revision.changeset != changeset and not
                 (reprint.next_revision.changeset.state == states.APPROVED and
-                 reprint.next_revision.changeset.modified <= changeset.modified)):
+                 reprint.next_revision.changeset.modified <=
+                 changeset.modified)):
                 kept_string = '%s<li>%s' % (
                   kept_string, reprint.get_compare_string(object_type.issue))
                 if reprint.source and is_locked(reprint.source):
