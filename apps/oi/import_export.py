@@ -513,9 +513,6 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
 
 
 def _create_issue_add(parsed_data, request, series, series_url):
-    changeset = Changeset(indexer=request.user, state=states.OPEN,
-                          change_type=CTYPES['issue_add'])
-    changeset.save()
     # check for variant add
     if parsed_data.get('variant_name'):
         number = parsed_data['number']
@@ -540,14 +537,20 @@ def _create_issue_add(parsed_data, request, series, series_url):
         add_after = series.last_issue
     brand_emblem = parsed_data.pop('brand_emblem')
     indicia_printer = parsed_data.pop('indicia_printer')
+
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['issue_add'])
+    changeset.save()
     issue_revision = IssueRevision(
         changeset=changeset, series=series,
         after=add_after, **parsed_data)
     issue_revision.save()
+
     if brand_emblem:
         issue_revision.brand_emblem.set(brand_emblem)
     if indicia_printer:
         issue_revision.indicia_printer.set(indicia_printer)
+
     return issue_revision, False
 
 
