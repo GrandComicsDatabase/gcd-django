@@ -70,6 +70,19 @@ class IssuesList(generics.ListAPIView):
                                     deleted=False)
 
 
+class IssuesByOnSaleDate(generics.ListAPIView):
+    """
+    API endpoint that returns all issues with a given on-sale date.
+    Date format: YYYY-MM-DD
+    """
+    serializer_class = IssueOnlySerializer
+
+    def get_queryset(self):
+        date = self.kwargs['date']
+        return Issue.objects.filter(on_sale_date=date,
+                                    deleted=False)
+
+
 class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
     """
     API endpoint that allows Publishers to be viewed.
