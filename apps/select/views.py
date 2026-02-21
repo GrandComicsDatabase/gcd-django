@@ -355,9 +355,9 @@ def select_object(request, select_key):
                                 'Please use the back button to return.',
                                 redirect=False)
     else:
-        raise render_error(request,
-                           'Data for processing the selection is incomplete.',
-                           redirect=False)
+        return render_error(request,
+                            'Data for processing the selection is incomplete.',
+                            redirect=False)
     # right now all return functions for single selects are in oi.views.py
     import apps.oi.views  # here to avoid circular imports
     return_function = getattr(apps.oi.views, data['return'])
