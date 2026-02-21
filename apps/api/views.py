@@ -4,6 +4,7 @@ from apps.api.serializers import SeriesSerializer, PublisherSerializer, \
                                  IssueSerializer, IssueOnlySerializer
 
 from apps.gcd.models import Series, Publisher, Issue
+from apps.gcd.models.issue import issues_for_iso_week
 
 
 class ReadOnlyModelView(mixins.RetrieveModelMixin,
@@ -68,6 +69,18 @@ class IssuesList(generics.ListAPIView):
         return Issue.objects.filter(series__name__icontains=name,
                                     number=number,
                                     deleted=False)
+
+
+class IssuesByOnSaleWeek(generics.ListAPIView):
+    """
+    API endpoint that returns all issues on sale in a given ISO week.
+    """
+    serializer_class = IssueOnlySerializer
+
+    def get_queryset(self):
+        qs, _monday, _sunday = issues_for_iso_week(
+            int(self.kwargs['year']), int(self.kwargs['week']))
+        return qs
 
 
 class PublisherViewSet(viewsets.ReadOnlyModelViewSet):
