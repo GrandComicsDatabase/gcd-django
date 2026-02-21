@@ -624,7 +624,7 @@ def import_issues_to_series_structured(request, series_id, use_yaml=False):
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
         return HttpResponseRedirect(
-          urlresolvers.reverse('series_details', kwargs={'id': series.id}))
+          urlresolvers.reverse('show_series', kwargs={'series_id': series.id}))
 
 
 @permission_required('indexer.can_reserve')
