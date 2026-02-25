@@ -5,7 +5,6 @@
 import re
 from urllib.parse import urlencode, quote
 from datetime import date, datetime, time, timedelta
-from calendar import monthrange
 from operator import attrgetter
 from random import randint, choice
 
@@ -3258,27 +3257,8 @@ def do_on_sale_weekly(request, year=None, week=None):
 
     if year is None:
         year, week = date.today().isocalendar()[0:2]
-    # Gregorian calendar date of the first day of the given ISO year
-    fourth_jan = date(int(year), 1, 4)
-    delta = timedelta(fourth_jan.isoweekday()-1)
-    year_start = fourth_jan - delta
-    monday = year_start + timedelta(weeks=int(week)-1)
-    sunday = monday + timedelta(days=6)
-    # we need this to filter out incomplete on-sale dates
-    if monday.month != sunday.month:
-        endday = monday.replace(day=monthrange(monday.year, monday.month)[1])
-        issues_on_sale = Issue.objects.filter(
-          on_sale_date__gte=monday.isoformat(),
-          on_sale_date__lte=endday.isoformat())
-        startday = sunday.replace(day=1)
-        issues_on_sale = issues_on_sale | Issue.objects.filter(
-          on_sale_date__gte=startday.isoformat(),
-          on_sale_date__lte=sunday.isoformat())
-
-    else:
-        issues_on_sale = Issue.objects\
-                              .filter(on_sale_date__gte=monday.isoformat(),
-                                      on_sale_date__lte=sunday.isoformat())
+    from apps.gcd.models.issue import issues_for_iso_week
+    issues_on_sale, monday, sunday = issues_for_iso_week(int(year), int(week))
     previous_week = (monday - timedelta(weeks=1)).isocalendar()[0:2]
     if monday + timedelta(weeks=1) <= date.today():
         next_week = (monday + timedelta(weeks=1)).isocalendar()[0:2]
@@ -3291,7 +3271,6 @@ def do_on_sale_weekly(request, year=None, week=None):
     query_val['start_date'] = monday.isoformat()
     query_val['end_date'] = sunday.isoformat()
     query_val['use_on_sale_date'] = True
-    issues_on_sale = issues_on_sale.filter(deleted=False)
     choose_url = urlresolvers.reverse("on_sale_this_week")
     choose_url_before = urlresolvers.reverse("on_sale_weekly",
                                              kwargs={
