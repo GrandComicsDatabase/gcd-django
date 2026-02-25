@@ -2,9 +2,9 @@ from datetime import date
 from haystack import indexes
 from haystack.fields import MultiValueField
 from apps.gcd.models import Issue, Series, Story, Publisher, IndiciaPublisher,\
-    Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership,\
-    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature, Printer,\
-    IndiciaPrinter, Character, Group, Universe, StoryArc
+    Brand, BrandGroup, STORY_TYPES, Award, Creator, CreatorMembership, \
+    CreatorArtInfluence, ReceivedAward, CreatorNonComicWork, Feature, \
+    Printer, IndiciaPrinter, Character, Group, Universe, StoryArc, School
 
 from apps.oi.models import on_sale_date_fields
 
@@ -26,7 +26,7 @@ class ObjectIndex(object):
 
     def prepare(self, obj):
         from haystack.exceptions import SkipDocument
-        if obj.deleted == True:
+        if obj.deleted is True:
             self.remove_object(obj)
             raise SkipDocument
 
@@ -596,6 +596,14 @@ class SchoolIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def prepare_facet_model_name(self, obj):
         return "school"
+
+    def should_update(self, instance, **kwargs):
+        return True
+
+    def prepare(self, obj):
+        self.prepared_data = super(ObjectIndex, self).prepare(obj)
+
+        return self.prepared_data
 
 
 class IndiciaPrinterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
