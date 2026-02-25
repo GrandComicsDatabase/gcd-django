@@ -583,6 +583,21 @@ class PrinterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return "printer"
 
 
+class SchoolIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
+    text = indexes.CharField(document=True,
+                             use_template=True,
+                             template_name=
+                             'search/indexes/gcd/school_text.txt')
+    name = indexes.CharField(model_attr="school_name")
+    facet_model_name = indexes.CharField(faceted=True)
+
+    def get_model(self):
+        return School
+
+    def prepare_facet_model_name(self, obj):
+        return "school"
+
+
 class IndiciaPrinterIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True,
                              use_template=True,

@@ -216,6 +216,10 @@
                 :
                   <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
       {% endif %}
+      {% if result.model_name == 'school' %}
+                <td class="pe-2">[SCHOOL]</td>
+                <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.school_name }}</a></td>
+      {% endif %}
       {% if result.model_name == 'printer' %}
                 <td class="pe-2">[PRINTER]</td>
                 <td><img {{ result.object.country|show_country_info }}  class="inline"> <a href="{{ result.object.get_absolute_url }}">{{ result.object.name }}</a></td>
