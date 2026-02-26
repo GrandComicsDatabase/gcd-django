@@ -737,13 +737,13 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     creator_names = _get_creator_names_for_checklist(creator)
     filter = None
 
-    story_types = process_story_type_filter_from_request(request)
-
     if edits:
         issues = Issue.objects.filter(credits__creator__in=creator_names,
                                       credits__deleted=False)\
                               .distinct().select_related('series__publisher')
     else:
+        story_types = process_story_type_filter_from_request(request)
+
         issues = Issue.objects.filter(
           story__credits__creator__in=creator_names,
           story__type__id__in=story_types,
