@@ -477,6 +477,7 @@ SERIES_HELP_TEXTS = {
 ISSUE_LABELS = {
     'indicia_publisher': 'Indicia/colophon publisher',
     'indicia_pub_not_printed': 'Indicia/colophon pub. not printed',
+    'key_date': 'Keydate',
     'isbn': 'ISBN',
     'no_isbn': 'No ISBN',
     'rating': "Publisher's age guidelines",
@@ -517,9 +518,9 @@ ISSUE_HELP_TEXTS = {
         'number of "1", checking this box will display "v2#1" instead '
         'of just "1" in the status grids and issues lists for the series.',
     'publication_date':
-        'The publication date as printed on or in the comic, except with the '
-        'name of the month (if any) spelled out.  Any part of the date '
-        'that is not printed on the comic but is known should be put '
+        'The publication date as printed on or in the comic, using the full '
+        'year and the name of the month (if any) spelled out. Any part of the '
+        'date that is not printed on the comic but is known should be put '
         'in square brackets, such as <i>[January] 2009</i>. ',
     'key_date':
         'Keydate is a translation of the publication date, possibly '
