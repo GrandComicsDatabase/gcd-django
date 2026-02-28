@@ -2060,7 +2060,7 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
-    if brand_group_id:
+    if brand_group_id is not None:
         try:
             brand_group = BrandGroup.objects.get(id=brand_group_id)
             if brand_group.deleted or brand_group.pending_deletion():
@@ -2069,7 +2069,7 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
                   'since "%s" is deleted or pending deletion.' % brand_group)
         except (BrandGroup.DoesNotExist, BrandGroup.MultipleObjectsReturned):
             return render_error(
-              request, 'Could not find Brand Group for id ' + brand_group_id)
+              request, 'Could not find Brand Group for id %d' % brand_group_id)
         publisher = None
     else:
         try:
@@ -2080,7 +2080,7 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
                   'since "%s" is deleted or pending deletion.' % publisher)
         except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
             return render_error(
-              request, 'Could not find Publisher for id ' + publisher_id)
+              request, 'Could not find Publisher for id %d' % publisher_id)
         brand_group = None
 
     if request.method != 'POST':
