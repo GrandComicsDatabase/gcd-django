@@ -3865,6 +3865,8 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                 if character_revision:
                     existing_characters = existing_characters.exclude(
                       id=character_revision[0].id)
+                    character_revision[0].group_name.set(character.group_name
+                                                                  .all())
                 else:
                     new_character = StoryCharacterRevision.clone(
                       character,
