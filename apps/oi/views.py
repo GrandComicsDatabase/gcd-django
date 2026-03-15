@@ -750,6 +750,12 @@ def _save(request, form, revision, changeset=None, model_name=None):
                 for character in characters:
                     character.universe = revision.universe.get()
                     character.save()
+                groups = revision.story_group_revisions.filter(
+                  universe=None,
+                  deleted=False)
+                for group in groups:
+                    group.universe = revision.universe.get()
+                    group.save()
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
