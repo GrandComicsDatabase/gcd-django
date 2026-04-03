@@ -144,6 +144,16 @@ class CharacterRevisionForm(CharacterBaseForm):
         self.helper.label_class = 'col-md-3 create-label'
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
+        if self.instance.universe_id:
+            self.fields['universe'].help_text = (
+                'This field is deprecated. The universe should be set per '
+                'appearance in sequences. Please remove this value if this '
+                'is the only version of this character. If a specialization '
+                'with no universe exists for this character, then transfer '
+                'notes to that and remove this character.'
+            )
+        else:
+            self.fields.pop('universe')
         ordering = list(self.fields)
         # in django 1.9 there is Form.order_fields
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -267,6 +277,14 @@ class GroupRevisionForm(CharacterRevisionForm):
         self.helper.label_class = 'col-md-3 create-label'
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
+        if 'universe' in self.fields:
+            self.fields['universe'].help_text = (
+                'This field is deprecated. The universe should be set per '
+                'appearance in sequences. Please remove this value if this '
+                'is the only version of this group. If a specialization '
+                'with no universe exists for this group, then transfer '
+                'notes to that and remove this group.'
+            )
         ordering = list(self.fields)
         # in django 1.9 there is Form.order_fields
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])

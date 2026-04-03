@@ -38,7 +38,7 @@ GCD :: Character :: {{ character.name }}
 {% if character.universe %}
             <tr>
               <td>Universe:</td>
-              <td>{{ character.universe|absolute_url }}</td>
+              <td>{{ character.universe|absolute_url }} <span class="text-sm italic">(deprecated)</span></td>
             </tr>
 {% endif %}
 {% if character.year_first_published %}
