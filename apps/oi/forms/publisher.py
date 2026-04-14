@@ -16,8 +16,8 @@ from .support import (
     _get_comments_form_field, _set_help_labels,
     _create_embedded_image_revision, _save_runtime_embedded_image_revision,
     GENERIC_ERROR_MESSAGE, PUBLISHER_HELP_LINKS, PUBLISHER_HELP_TEXTS,
-    INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS, PRINTER_HELP_TEXTS,
-    KeywordBaseForm)
+    INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS, PRINTER_HELP_LINKS,
+    PRINTER_HELP_TEXTS, INDICIA_PRINTER_HELP_LINKS, KeywordBaseForm)
 
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision, BrandGroupRevision,
@@ -438,7 +438,7 @@ def get_printer_revision_form(source=None, user=None):
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
-                _set_help_labels(self, PUBLISHER_HELP_LINKS)
+                _set_help_labels(self, PRINTER_HELP_LINKS)
             return super(RuntimePrinterRevisionForm, self).as_table()
     return RuntimePrinterRevisionForm
 
@@ -461,7 +461,7 @@ def get_indicia_printer_revision_form(source=None, user=None):
 
         def as_table(self):
             if not user or user.indexer.show_wiki_links:
-                _set_help_labels(self, INDICIA_PUBLISHER_HELP_LINKS)
+                _set_help_labels(self, INDICIA_PRINTER_HELP_LINKS)
             return super(RuntimeIndiciaPrinterRevisionForm, self).as_table()
 
     return RuntimeIndiciaPrinterRevisionForm

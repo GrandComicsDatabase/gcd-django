@@ -56,6 +56,12 @@ GENERIC_ERROR_MESSAGE = (
 
 DOC_URL = 'https://docs.comics.org/wiki/'
 
+PRINTER_HELP_LINKS = {
+    'name': 'Printer',
+    'keywords': 'Keywords',
+    'comments': 'Comments '
+}
+
 PUBLISHER_HELP_LINKS = {
     'name': 'Publisher_Name',
     'year_began': 'Years_of_Publication',
@@ -156,6 +162,12 @@ INDICIA_PUBLISHER_HELP_LINKS = {
     'country': 'Country_%28Indicia_publisher%29',
     'url': 'URL_%28Indicia_publisher%29',
     'notes': 'Notes_%28Indicia_publisher%29',
+    'keywords': 'Keywords',
+    'comments': 'Comments '
+}
+
+INDICIA_PRINTER_HELP_LINKS = {
+    'name': 'Indicia_Printer',
     'keywords': 'Keywords',
     'comments': 'Comments '
 }
