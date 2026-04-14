@@ -405,6 +405,25 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['sourced_by'] and not cd['is_sourced']:
             cd['sourced_by'] = ""
 
+        if cd['credit_name']:
+            if cd['credit_name'].strip() == "credited":
+                raise forms.ValidationError(
+                    ['"Credit description" cannot be "credited". Please tick '
+                     '"Is credited" instead.']
+                )
+
+            elif cd['credit_name'].strip().endswith("(credited"):
+                raise forms.ValidationError(
+                    ['"Credit description" cannot end with "(credited". '
+                     'Please tick "Is credited" instead.']
+                )
+
+            elif cd['credit_name'].strip().endswith(", credited"):
+                raise forms.ValidationError(
+                    ['"Credit description" cannot end with ", credited". '
+                     'Please tick "Is credited" instead.']
+                )
+
 
 class StoryFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
