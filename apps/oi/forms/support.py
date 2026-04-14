@@ -395,6 +395,30 @@ PUBLISHER_HELP_TEXTS = {
         '"https://", for example "https://www.example.com" not '
         '"www.example.com"', }
 
+PRINTER_HELP_TEXTS = PUBLISHER_HELP_TEXTS
+PRINTER_HELP_TEXTS.update({
+    'year_began':
+        'The first year in which the printer was active with comics.',
+    'year_ended':
+        'The last year in which the printer was active with comics. '
+        'Leave blank if the printer is still active.',
+    'year_ended_uncertain':
+        'Check if you are not certain of the ending year, or if you '
+        'are not certain whether the printer is still active.',
+    'year_overall_began':
+        'The first year in which the printer was active.',
+    'year_overall_ended':
+        'The last year in which the printer was active. '
+        'Leave blank if the printer is still active.',
+    'year_overall_ended_uncertain':
+        'Check if you are not certain of the ending year, or if you '
+        'are not certain whether the printer is still active.',
+    'url':
+        'The official web site of the printer.  Must include "http://" or '
+        '"https://", for example "https://www.example.com" not '
+        '"www.example.com"'
+})
+
 SERIES_HELP_TEXTS = {
     'name':
         'Series name as it appears in the indicia (or cover only if there '

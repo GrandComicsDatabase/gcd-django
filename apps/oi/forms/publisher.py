@@ -16,7 +16,8 @@ from .support import (
     _get_comments_form_field, _set_help_labels,
     _create_embedded_image_revision, _save_runtime_embedded_image_revision,
     GENERIC_ERROR_MESSAGE, PUBLISHER_HELP_LINKS, PUBLISHER_HELP_TEXTS,
-    INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS, KeywordBaseForm)
+    INDICIA_PUBLISHER_HELP_LINKS, BRAND_HELP_LINKS, PRINTER_HELP_TEXTS,
+    KeywordBaseForm)
 
 from apps.oi.models import (
     PublisherRevision, IndiciaPublisherRevision, BrandGroupRevision,
@@ -447,7 +448,7 @@ class PrinterRevisionForm(PublisherRevisionForm):
         model = PrinterRevision
         fields = _get_publisher_fields(middle=('country',))
         widgets = {'name': forms.TextInput(attrs={'autofocus': ''})}
-        help_texts = PUBLISHER_HELP_TEXTS
+        help_texts = PRINTER_HELP_TEXTS
 
 
 def get_indicia_printer_revision_form(source=None, user=None):
