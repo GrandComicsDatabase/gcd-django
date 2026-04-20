@@ -38,7 +38,7 @@ GCD :: Group :: {{ group.name }}
 {% if group.universe %}
             <tr>
               <td>Universe:</td>
-              <td>{{ group.universe|absolute_url }}</td>
+              <td>{{ group.universe|absolute_url }} <span class="text-sm italic">(deprecated)</span></td>
             </tr>
 {% endif %}
 {% if group.year_first_published %}

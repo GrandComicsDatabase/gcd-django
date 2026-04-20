@@ -7562,6 +7562,10 @@ class CharacterRevision(CharacterGroupRevisionBase):
                         'year_first_published_uncertain', 'language',
                         'description', 'notes', 'keywords']
 
+    @classmethod
+    def _get_deprecated_field_names(cls):
+        return frozenset({'universe'})
+
     @property
     def source(self):
         return self.character
@@ -7825,6 +7829,10 @@ class GroupRevision(CharacterGroupRevisionBase):
 
     source_name = 'group'
     source_class = Group
+
+    @classmethod
+    def _get_deprecated_field_names(cls):
+        return frozenset({'universe'})
 
     @property
     def source(self):
