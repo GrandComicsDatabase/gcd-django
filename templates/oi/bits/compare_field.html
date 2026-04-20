@@ -1,4 +1,5 @@
 {% load display %}
+{% load credits %}
 {% load compare %}
 {% comment %} the logic should be done in the view-code for the revision {% endcomment %}
 {% if prev_rev %}
@@ -30,10 +31,18 @@
         {% endif %}
       {% else %}
         {% if prev_rev %}
+          {% if field|is_markdown_field %}
+    <td class="pe-1"> {{ prev_rev|field_value:field|render_markdown }} </td>
+          {% else %}
     <td class="pe-1"> {{ prev_rev|field_value:field }} </td>
+          {% endif %}
         {% endif %}
         {% if not revision.deleted %}
+          {% if field|is_markdown_field %}
+    <td class="pe-1"> {{ revision|field_value:field|render_markdown }} </td>
+          {% else %}
     <td class="pe-1"> {{ revision|field_value:field }} </td>
+          {% endif %}
         {% endif %}
       {% endif %}
   </tr>

@@ -24,7 +24,7 @@ from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
 
-MARKDOWN_FIELDS = {'notes', 'synopsis', 'bio'}
+MARKDOWN_FIELDS = {'notes', 'description', 'bio'}
 
 
 def valid_barcode(barcode):
@@ -169,8 +169,7 @@ def field_value(revision, field):
                 story_arc.get_absolute_url(),
                 esc(story_arc.name))
         return mark_safe(story_arcs)
-    elif field in ['notes', 'tracking_notes', 'publication_notes',
-                   'synopsis']:
+    elif field in ['tracking_notes', 'publication_notes']:
         return linebreaksbr(value)
     elif field == 'reprint_notes':
         reprint = ''
@@ -460,7 +459,7 @@ def diff_list(prev_rev, revision, field):
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
-                 'synopsis', 'title', 'first_line', 'keywords',
+                 'synopsis', 'title', 'first_line', 'keywords', 'description',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name', 'sort_name',
                  'price', 'indicia_frequency', 'variant_name',
