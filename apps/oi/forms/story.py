@@ -536,6 +536,16 @@ class StoryCharacterRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
               ['Cannot select a group universe without a group.'])
 
+        if cd['group_name'] and cd['character']:
+            character_groups = cd['character'].character.active_memberships()
+            character_groups = character_groups.values_list('group', flat=True)
+            for group in cd['group_name']:
+                if group.group_id not in character_groups:
+                    raise forms.ValidationError(
+                      ['%s is not member of the group %s' % (
+                        cd['character'].character, group.group)]
+                    )
+
 
 class BaseStoryCharacterRevisionFormSet(forms.models.BaseInlineFormSet):
     def __init__(self, *args, **kwargs):
