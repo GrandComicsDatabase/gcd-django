@@ -4416,6 +4416,57 @@ def character_issues_character(request, character_id, character_with_id,
     return generic_sortable_list(request, issues, table, template, context)
 
 
+def character_issues_group(request, character_id, group_id,
+                           universe_id=None):
+    character = get_gcd_object(Character, character_id)
+    group = get_gcd_object(Group, group_id)
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
+
+    story_types = process_story_type_filter_from_request(request)
+
+    query = {'appearing_characters__character__character':
+             filter_character,
+             'appearing_characters__deleted': False,
+             'type__id__in': story_types,
+             'deleted': False}
+
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'appearing_characters__',
+      'for %s with %s with origin %s',
+      'for %s with %s',
+      (character, group))
+
+    stories = Story.objects.filter(Q(**query))
+
+    query_with = {'story__appearing_characters__group_name__group':
+                  group,
+                  'story__appearing_characters__deleted': False,
+                  'story__type__id__in': story_types,
+                  'story__deleted': False,
+                  'story__id__in': stories}
+
+    issues = Issue.objects.filter(Q(**query_with)).distinct()\
+                          .select_related('series__publisher')
+    filter = filter_issues(request, issues, story_type_filter=True)
+    filter.filters.pop('language')
+    issues = filter.qs
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': heading,
+        'filter_form': filter.form
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = _table_issues_list_or_grid(request, issues, context)
+    return generic_sortable_list(request, issues, table, template, context)
+
+
 def character_issues_feature(request, character_id, feature_id,
                              universe_id=None):
     character = get_gcd_object(Character, character_id)
