@@ -8,7 +8,7 @@ from collections import OrderedDict
 from dal import autocomplete
 
 from apps.gcd.models import Character, Group, CharacterRelationType, \
-                            GroupRelationType, Universe
+                            GroupRelationType, Universe, StoryCharacter
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -316,6 +316,27 @@ def get_group_membership_revision_form(revision=None, user=None):
         code = None
 
     class RuntimeGroupMembershipRevisionForm(GroupMembershipRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeGroupMembershipRevisionForm, self).__init__(*args,
+                                                                     **kwargs)
+            if self.instance.group_membership:
+                character = self.instance.group_membership.character
+                group = self.instance.group_membership.group
+                if StoryCharacter.objects.filter(
+                  character__character=character,
+                  group_name__group=group,
+                  deleted=False).exists():
+                    self.fields['character'].queryset = \
+                        Character.objects.filter(id=character.id)
+                    self.fields['character'].widget = forms.Select(
+                      choices=[(character.id, character)])
+                    self.fields['group'].queryset = \
+                        Group.objects.filter(id=group.id)
+                    self.fields['group'].widget = forms.Select(
+                      choices=[(group.id, group)])
+                    self.fields['group'].help_text = 'The above cannot be ' \
+                        'changed, character appearances with this group exist.'
+
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=code)
 

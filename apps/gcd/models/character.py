@@ -621,6 +621,14 @@ class GroupMembership(GcdLink):
     year_left_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
 
+    def has_dependents(self):
+        from .story import StoryCharacter
+        if StoryCharacter.objects.filter(character__character=self.character,
+                                         group_name__group=self.group,
+                                         deleted=False).exists():
+            return True
+        return False
+
     def display_years(self):
         if not self.year_joined:
             years = '? - '
