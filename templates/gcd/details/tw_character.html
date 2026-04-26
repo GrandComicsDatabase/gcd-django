@@ -68,6 +68,7 @@ GCD :: Character :: {{ character.name }}
             <li><a href='{% url "character_series" character_id=character.id %}'>Series List</a></li>
             <li><a href='{% url "character_features" character_id=character.id %}'>Feature List</a></li>
             <li><a href='{% url "character_characters" character_id=character.id %}'>Characters Appeared With</a></li>
+            <li><a href='{% url "character_groups" character_id=character.id %}'>Group List</a></li>
             <li><a href='{% url "character_sequences" character_id=character.id %}'>Sequences List</a></li>
           </ul>
       {% with object=character %}

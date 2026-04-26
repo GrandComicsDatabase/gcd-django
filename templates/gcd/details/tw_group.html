@@ -61,6 +61,7 @@ GCD :: Group :: {{ group.name }}
             <li><a href='{% url "group_covers" group_id=group.id %}'>Cover List</a></li>
             <li><a href='{% url "group_series" group_id=group.id %}'>Series List</a></li>
             <li><a href='{% url "group_features" group_id=group.id %}'>Feature List</a></li>
+            <li><a href='{% url "group_characters" group_id=group.id %}'>Character List</a></li>
             <li><a href='{% url "group_sequences" group_id=group.id %}'>Sequences List</a></li>
           </ul>
       {% if group.external_link.count %}

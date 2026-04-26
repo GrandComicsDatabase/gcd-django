@@ -62,6 +62,8 @@ from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       SeriesCharacterTable, \
                                       FeatureCharacterTable, \
                                       CharacterCharacterTable, \
+                                      CharacterGroupTable, \
+                                      GroupCharacterTable, \
                                       DailyChangesCharacterTable
 from apps.gcd.models.feature import FeatureTable, CreatorFeatureTable, \
                                     CharacterFeatureTable, \
@@ -749,7 +751,7 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
           story__type__id__in=story_types,
           story__credits__deleted=False,
           story__credits__credit_type__id__lt=6)\
-          .distinct().select_related('series__publisher')
+            .distinct().select_related('series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
@@ -4173,6 +4175,49 @@ def character_characters(request, character_id, universe_id=None):
     return generic_sortable_list(request, characters, table, template, context)
 
 
+def character_groups(request, character_id, universe_id=None):
+    character = get_gcd_object(Character, character_id)
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
+
+    query = {'group_names__storycharacter__'
+             'character__character':
+             filter_character,
+             'group_names__storycharacter__deleted': False,
+             'group_names__storycharacter__story__type__id__in':
+             CORE_TYPES}
+
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'group_names__storycharacter__story__appearing_characters__',
+      'with appearances of %s with origin %s',
+      'with appearances of %s',
+      (character,))
+    groups = Group.objects.filter(Q(**query)).distinct()
+
+    groups = groups.annotate(issue_count=Count(
+      'group_names__storycharacter__story__issue', distinct=True))
+    groups = groups.annotate(first_appearance=Min(
+      Case(When(group_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('group_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
+        'item_name': 'group',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = CharacterGroupTable(groups,
+                                character=character,
+                                universe_id=link_universe_id,
+                                template_name=TW_SORT_TABLE_TEMPLATE,
+                                order_by=('name'))
+    return generic_sortable_list(request, groups, table, template, context)
+
+
 def character_features(request, character_id, universe_id=None):
     character = get_gcd_object(Character, character_id)
     filter_character, universe_id, link_universe_id = \
@@ -4944,6 +4989,39 @@ def group_origin_universe(request, group_id, universe_id):
     }
     return render(request, 'gcd/details/tw_group_origin_universe.html',
                   context)
+
+
+def group_characters(request, group_id):
+    group = get_gcd_object(Group, group_id)
+
+    query = {'character_names__storycharacter__group_name__group': group,
+             'character_names__storycharacter__deleted': False,
+             'character_names__storycharacter__story__type__id__in':
+             CORE_TYPES}
+
+    heading = 'appearing as members of %s' % group
+    characters = Character.objects.filter(Q(**query)).distinct()
+
+    characters = characters.annotate(issue_count=Count(
+      'character_names__storycharacter__story__issue', distinct=True))
+    characters = characters.annotate(first_appearance=Min(
+      Case(When(character_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('character_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
+        'item_name': 'character',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = GroupCharacterTable(characters,
+                                group=group,
+                                template_name=TW_SORT_TABLE_TEMPLATE,
+                                order_by=('name'))
+    return generic_sortable_list(request, characters, table, template, context)
 
 
 def group_features(request, group_id, universe_id=None):

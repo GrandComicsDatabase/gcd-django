@@ -260,12 +260,12 @@ class Character(CharacterGroupBase):
             appearances = Story.objects.filter(
               appearing_characters__character__character=character,
               appearing_characters__universe=self.universe,
-              appearing_characters__deleted = False,
+              appearing_characters__deleted=False,
               deleted=False)
         else:
             appearances = Story.objects.filter(
               appearing_characters__character__character=self,
-              appearing_characters__deleted = False,
+              appearing_characters__deleted=False,
               deleted=False)
         universes = set(appearances.values_list('universe',
                                                 flat=True).distinct())
@@ -278,7 +278,7 @@ class Character(CharacterGroupBase):
           appearing_characters__universe_id=origin_universe,
           deleted=False)
         universes = set(appearances.values_list('universe',
-                                            flat=True).distinct())
+                                                flat=True).distinct())
         return Universe.objects.filter(id__in=universes)
 
     def translated_from(self):
@@ -469,7 +469,7 @@ class Group(CharacterGroupBase):
           appearing_groups__deleted=False,
           deleted=False)
         universes = set(appearances.values_list('universe',
-                                            flat=True).distinct())
+                                                flat=True).distinct())
         return Universe.objects.filter(id__in=universes)
 
     # what is with translation over character records ?
@@ -874,6 +874,29 @@ class UniverseGroupTable(CharacterSearchTable):
                                                   record.issue_count))
 
 
+class CharacterGroupTable(UniverseGroupTable):
+    def __init__(self, *args, **kwargs):
+        self.character = kwargs.pop('character')
+        self.universe_id = kwargs.pop('universe_id', None)
+        super(UniverseGroupTable, self).__init__(*args, **kwargs)
+
+    def render_issue_count(self, record):
+        if self.universe_id is not None:
+            # TODO This needs to be changed
+            url = urlresolvers.reverse(
+                    'character_origin_universe_issues_per_character',
+                    kwargs={'character_id': self.character.id,
+                            'character_with_id': record.id,
+                            'universe_id': self.universe_id})
+        else:
+            url = urlresolvers.reverse(
+                    'character_issues_group',
+                    kwargs={'character_id': self.character.id,
+                            'group_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
+
+
 class CharacterCharacterTable(UniverseCharacterTable):
     class Meta:
         model = Character
@@ -914,6 +937,29 @@ class FeatureCharacterTable(UniverseCharacterTable):
                 'character_issues_per_feature',
                 kwargs={'feature_id': self.feature.id,
                         'character_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
+
+
+class GroupCharacterTable(UniverseCharacterTable):
+    def __init__(self, *args, **kwargs):
+        self.group_id = kwargs.pop('group').id
+        self.universe_id = kwargs.pop('universe_id', None)
+        super(UniverseCharacterTable, self).__init__(*args, **kwargs)
+
+    def render_issue_count(self, record):
+        if self.universe_id is not None:
+            # TODO This needs to be changed
+            url = urlresolvers.reverse(
+                    'character_origin_universe_issues_per_character',
+                    kwargs={'character_id': record.id,
+                            'group_id': self.group_id,
+                            'universe_id': self.universe_id})
+        else:
+            url = urlresolvers.reverse(
+                    'character_issues_group',
+                    kwargs={'character_id': record.id,
+                            'group_id': self.group_id})
         return mark_safe('<a href="%s">%s</a>' % (url,
                                                   record.issue_count))
 
