@@ -1,6 +1,15 @@
 """View base classes for the v2 API."""
 
+from rest_framework.authentication import (
+    BasicAuthentication,
+    SessionAuthentication,
+    TokenAuthentication,
+)
+from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import ReadOnlyModelViewSet
+
+from apps.api_v2.pagination import V2PageNumberPagination
+from apps.api_v2.throttling import V2AnonRateThrottle, V2UserRateThrottle
 
 
 class GCDBaseViewSet(ReadOnlyModelViewSet):
@@ -22,7 +31,21 @@ class GCDBaseViewSet(ReadOnlyModelViewSet):
     get_queryset()`` to keep the soft-delete filter applied. This base
     class is intended for ``GcdData``-derived models only; do not use it
     for tables without a ``deleted`` column.
+
+    Authentication, permission, pagination and throttling are pinned at
+    the base-class level so they cannot drift between v2 endpoints and
+    so v2 stays decoupled from the project-wide DRF defaults (which v1
+    relies on).
     """
+
+    authentication_classes = [
+        TokenAuthentication,
+        BasicAuthentication,
+        SessionAuthentication,
+    ]
+    permission_classes = [AllowAny]
+    pagination_class = V2PageNumberPagination
+    throttle_classes = [V2AnonRateThrottle, V2UserRateThrottle]
 
     def get_queryset(self):
         """Return the configured queryset filtered to non-deleted rows."""
