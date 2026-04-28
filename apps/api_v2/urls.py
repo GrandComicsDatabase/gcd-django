@@ -3,11 +3,16 @@
 Resource viewsets are registered against ``router`` in subsequent
 sprints. ``auth/token/`` is wired up here so clients can exchange
 basic-auth credentials for a token. ``schema/`` serves a v2-scoped
-OpenAPI document filtered down from the project urlconf.
+OpenAPI document filtered down from the project urlconf, with Swagger
+UI and ReDoc renderers alongside.
 """
 
 from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.routers import DefaultRouter
 
@@ -27,5 +32,15 @@ urlpatterns = [
             },
         ),
         name='api-v2-schema',
+    ),
+    path(
+        'schema/swagger-ui/',
+        SpectacularSwaggerView.as_view(url_name='api-v2-schema'),
+        name='api-v2-swagger-ui',
+    ),
+    path(
+        'schema/redoc/',
+        SpectacularRedocView.as_view(url_name='api-v2-schema'),
+        name='api-v2-redoc',
     ),
 ]

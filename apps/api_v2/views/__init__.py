@@ -9,7 +9,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from apps.api_v2.pagination import V2PageNumberPagination
-from apps.api_v2.throttling import V2AnonRateThrottle, V2UserRateThrottle
+from apps.api_v2.throttling import (
+    V2AnonRateThrottle,
+    V2SessionUserRateThrottle,
+    V2TokenUserRateThrottle,
+)
 
 
 class GCDBaseViewSet(ReadOnlyModelViewSet):
@@ -45,7 +49,11 @@ class GCDBaseViewSet(ReadOnlyModelViewSet):
     ]
     permission_classes = [AllowAny]
     pagination_class = V2PageNumberPagination
-    throttle_classes = [V2AnonRateThrottle, V2UserRateThrottle]
+    throttle_classes = [
+        V2AnonRateThrottle,
+        V2TokenUserRateThrottle,
+        V2SessionUserRateThrottle,
+    ]
 
     def get_queryset(self):
         """Return the configured queryset filtered to non-deleted rows."""
