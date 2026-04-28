@@ -1,0 +1,61 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 79
+# v2 API is the only code under ruff's control. Everything else is excluded
+# so a bare `ruff check .` from project root only touches apps/api_v2/.
+extend-exclude = [
+    "apps/api",
+    "apps/gcd",
+    "apps/indexer",
+    "apps/inducks",
+    "apps/legacy",
+    "apps/middleware",
+    "apps/mycomics",
+    "apps/oi",
+    "apps/projects",
+    "apps/select",
+    "apps/stats",
+    "apps/stddata",
+    "apps/voting",
+    "docs",
+    "locale",
+    "scripts",
+    "static",
+    "templates",
+    "manage.py",
+    "settings.py",
+    "settings_local.py",
+    "urls.py",
+    "wsgi.py",
+]
+force-exclude = true
+
+[tool.ruff.lint]
+select = [
+    "E",       # pycodestyle errors (PEP 8)
+    "W",       # pycodestyle warnings (PEP 8)
+    "F",       # pyflakes (unused imports, undefined names)
+    "I",       # isort (import ordering)
+    "D",       # pydocstyle (PEP 257 docstrings)
+    "UP",      # pyupgrade (modern Python idioms)
+    "PLW0603", # pylint: global statement
+]
+ignore = [
+    "D100", # Missing docstring in public module
+    "D104", # Missing docstring in public package
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "settings"
+python_files = ["test_*.py"]
+testpaths = ["apps/api_v2/tests"]
