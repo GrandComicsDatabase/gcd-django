@@ -13,10 +13,40 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework.authentication import (
+    BasicAuthentication,
+    SessionAuthentication,
+    TokenAuthentication,
+)
 from rest_framework.authtoken.views import obtain_auth_token
-from rest_framework.routers import DefaultRouter
+from rest_framework.permissions import AllowAny
+from rest_framework.routers import APIRootView, DefaultRouter
 
-router = DefaultRouter()
+
+class V2APIRootView(APIRootView):
+    """API root view for v2.
+
+    Overrides ``DEFAULT_AUTHENTICATION_CLASSES`` /
+    ``DEFAULT_PERMISSION_CLASSES`` (which v1 still relies on) so the
+    browsable root at ``/api/v2/`` is anon-readable, matching the rest
+    of v2's read-only public surface.
+    """
+
+    authentication_classes = (
+        TokenAuthentication,
+        BasicAuthentication,
+        SessionAuthentication,
+    )
+    permission_classes = (AllowAny,)
+
+
+class V2APIRouter(DefaultRouter):
+    """``DefaultRouter`` with the v2 root view aligned to v2 auth/perm."""
+
+    APIRootView = V2APIRootView
+
+
+router = V2APIRouter()
 
 urlpatterns = [
     path('', include(router.urls)),
