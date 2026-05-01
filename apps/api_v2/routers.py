@@ -15,14 +15,20 @@ from rest_framework.authentication import (
 from rest_framework.permissions import AllowAny
 from rest_framework.routers import APIRootView, DefaultRouter
 
+from apps.api_v2.throttling import (
+    V2AnonRateThrottle,
+    V2SessionUserRateThrottle,
+    V2TokenUserRateThrottle,
+)
+
 
 class V2APIRootView(APIRootView):
     """API root view for v2.
 
     Overrides ``DEFAULT_AUTHENTICATION_CLASSES`` /
-    ``DEFAULT_PERMISSION_CLASSES`` (which v1 still relies on) so the
-    browsable root at ``/api/v2/`` is anon-readable, matching the rest
-    of v2's read-only public surface.
+    ``DEFAULT_PERMISSION_CLASSES`` / ``DEFAULT_THROTTLE_CLASSES``
+    (which v1 still relies on) so the browsable root at ``/api/v2/``
+    is anon-readable and uses the v2-specific rate buckets.
     """
 
     authentication_classes = (
@@ -31,6 +37,11 @@ class V2APIRootView(APIRootView):
         SessionAuthentication,
     )
     permission_classes = (AllowAny,)
+    throttle_classes = (
+        V2AnonRateThrottle,
+        V2TokenUserRateThrottle,
+        V2SessionUserRateThrottle,
+    )
 
 
 class V2APIRouter(DefaultRouter):

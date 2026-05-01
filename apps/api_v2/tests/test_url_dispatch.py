@@ -17,7 +17,19 @@ from importlib import reload
 
 import pytest
 from django.test import override_settings
-from django.urls import URLResolver, clear_url_caches, reverse
+from django.urls import URLResolver, clear_url_caches, resolve, reverse
+from rest_framework.authentication import (
+    BasicAuthentication,
+    SessionAuthentication,
+    TokenAuthentication,
+)
+from rest_framework.permissions import AllowAny
+
+from apps.api_v2.throttling import (
+    V2AnonRateThrottle,
+    V2SessionUserRateThrottle,
+    V2TokenUserRateThrottle,
+)
 
 
 def _reload_v2_urlconf():
@@ -58,6 +70,21 @@ def _included_module_names():
     return names
 
 
+def _assert_v2_api_policy(view_cls):
+    """Assert that a view class is pinned to the shared v2 API policy."""
+    assert tuple(view_cls.authentication_classes) == (
+        TokenAuthentication,
+        BasicAuthentication,
+        SessionAuthentication,
+    )
+    assert tuple(view_cls.permission_classes) == (AllowAny,)
+    assert tuple(view_cls.throttle_classes) == (
+        V2AnonRateThrottle,
+        V2TokenUserRateThrottle,
+        V2SessionUserRateThrottle,
+    )
+
+
 @override_settings(MYCOMICS=False)
 def test_www_surface_includes_urls_www_only(restore_v2_urlconf):
     """``MYCOMICS=False`` mounts the www surface, not the my surface."""
@@ -89,6 +116,22 @@ def test_cross_cutting_routes_resolve_on_www_surface(restore_v2_urlconf):
     assert reverse('api-v2-redoc') == '/api/v2/schema/redoc/'
 
 
+@override_settings(MYCOMICS=False)
+def test_cross_cutting_routes_use_v2_policy_on_www_surface(
+    restore_v2_urlconf,
+):
+    """Cross-cutting views use the shared v2 auth and throttle policy."""
+    _reload_v2_urlconf()
+
+    for path in (
+        '/api/v2/auth/token/',
+        '/api/v2/schema/',
+        '/api/v2/schema/swagger-ui/',
+        '/api/v2/schema/redoc/',
+    ):
+        _assert_v2_api_policy(resolve(path).func.cls)
+
+
 @override_settings(MYCOMICS=True)
 def test_cross_cutting_routes_resolve_on_my_surface(restore_v2_urlconf):
     """Token, schema, swagger-ui, redoc all resolve on the my surface."""
@@ -98,3 +141,19 @@ def test_cross_cutting_routes_resolve_on_my_surface(restore_v2_urlconf):
     assert reverse('api-v2-schema') == '/api/v2/schema/'
     assert reverse('api-v2-swagger-ui') == '/api/v2/schema/swagger-ui/'
     assert reverse('api-v2-redoc') == '/api/v2/schema/redoc/'
+
+
+@override_settings(MYCOMICS=False)
+def test_api_root_uses_v2_policy_on_www_surface(restore_v2_urlconf):
+    """The www API root stays aligned with the shared v2 policy."""
+    _reload_v2_urlconf()
+
+    _assert_v2_api_policy(resolve('/api/v2/').func.cls)
+
+
+@override_settings(MYCOMICS=True)
+def test_api_root_uses_v2_policy_on_my_surface(restore_v2_urlconf):
+    """The my API root stays aligned with the shared v2 policy."""
+    _reload_v2_urlconf()
+
+    _assert_v2_api_policy(resolve('/api/v2/').func.cls)

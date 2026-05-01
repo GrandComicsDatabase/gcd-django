@@ -22,13 +22,63 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework.authtoken.views import obtain_auth_token
+from rest_framework.authentication import (
+    BasicAuthentication,
+    SessionAuthentication,
+    TokenAuthentication,
+)
+from rest_framework.authtoken.views import ObtainAuthToken
+from rest_framework.permissions import AllowAny
+
+from apps.api_v2.throttling import (
+    V2AnonRateThrottle,
+    V2SessionUserRateThrottle,
+    V2TokenUserRateThrottle,
+)
+
+
+class V2CrossCuttingViewMixin:
+    """Pin auth, permission and throttling for cross-cutting v2 views."""
+
+    authentication_classes = (
+        TokenAuthentication,
+        BasicAuthentication,
+        SessionAuthentication,
+    )
+    permission_classes = (AllowAny,)
+    throttle_classes = (
+        V2AnonRateThrottle,
+        V2TokenUserRateThrottle,
+        V2SessionUserRateThrottle,
+    )
+
+
+class V2ObtainAuthTokenView(V2CrossCuttingViewMixin, ObtainAuthToken):
+    """Issue DRF auth tokens under the v2 rate-limiting policy."""
+
+
+class V2SpectacularAPIView(V2CrossCuttingViewMixin, SpectacularAPIView):
+    """Serve the v2 schema with v2 auth and throttling defaults."""
+
+
+class V2SpectacularSwaggerView(
+    V2CrossCuttingViewMixin, SpectacularSwaggerView
+):
+    """Serve the v2 Swagger UI with v2 auth and throttling defaults."""
+
+
+class V2SpectacularRedocView(V2CrossCuttingViewMixin, SpectacularRedocView):
+    """Serve the v2 ReDoc UI with v2 auth and throttling defaults."""
 
 urlpatterns = [
-    path('auth/token/', obtain_auth_token, name='api-v2-auth-token'),
+    path(
+        'auth/token/',
+        V2ObtainAuthTokenView.as_view(),
+        name='api-v2-auth-token',
+    ),
     path(
         'schema/',
-        SpectacularAPIView.as_view(
+        V2SpectacularAPIView.as_view(
             custom_settings={
                 'PREPROCESSING_HOOKS': [
                     'apps.api_v2.utils.spectacular.v2_endpoints_only',
@@ -40,12 +90,12 @@ urlpatterns = [
     ),
     path(
         'schema/swagger-ui/',
-        SpectacularSwaggerView.as_view(url_name='api-v2-schema'),
+        V2SpectacularSwaggerView.as_view(url_name='api-v2-schema'),
         name='api-v2-swagger-ui',
     ),
     path(
         'schema/redoc/',
-        SpectacularRedocView.as_view(url_name='api-v2-schema'),
+        V2SpectacularRedocView.as_view(url_name='api-v2-schema'),
         name='api-v2-redoc',
     ),
 ]
