@@ -1,55 +1,30 @@
-"""URL configuration for the v2 API.
+"""URL dispatcher for the v2 API.
 
-Resource viewsets are registered against ``router`` in subsequent
-sprints. ``auth/token/`` is wired up here so clients can exchange
-basic-auth credentials for a token. ``schema/`` serves a v2-scoped
-OpenAPI document filtered down from the project urlconf, with Swagger
-UI and ReDoc renderers alongside.
+The v2 API mirrors the project's existing two-instance deployment
+model. Cross-cutting routes (token issuance, schema, Swagger UI, ReDoc)
+live in the dispatcher and appear on both surfaces. Exactly one surface
+URL conf is included per instance:
+
+* ``apps.api_v2.urls_www`` on the www instance (``MYCOMICS=False``),
+  exposing approved GCD data.
+* ``apps.api_v2.urls_my`` on the my instance (``MYCOMICS=True``),
+  exposing user data (collections, reading orders).
+
+The schema view is per-instance scoped automatically — drf-spectacular
+only sees the routes that are loaded in the current Django process, so
+each deployment's ``/api/v2/schema/`` documents only its own surface.
 """
 
+from django.conf import settings
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework.authentication import (
-    BasicAuthentication,
-    SessionAuthentication,
-    TokenAuthentication,
-)
 from rest_framework.authtoken.views import obtain_auth_token
-from rest_framework.permissions import AllowAny
-from rest_framework.routers import APIRootView, DefaultRouter
-
-
-class V2APIRootView(APIRootView):
-    """API root view for v2.
-
-    Overrides ``DEFAULT_AUTHENTICATION_CLASSES`` /
-    ``DEFAULT_PERMISSION_CLASSES`` (which v1 still relies on) so the
-    browsable root at ``/api/v2/`` is anon-readable, matching the rest
-    of v2's read-only public surface.
-    """
-
-    authentication_classes = (
-        TokenAuthentication,
-        BasicAuthentication,
-        SessionAuthentication,
-    )
-    permission_classes = (AllowAny,)
-
-
-class V2APIRouter(DefaultRouter):
-    """``DefaultRouter`` with the v2 root view aligned to v2 auth/perm."""
-
-    APIRootView = V2APIRootView
-
-
-router = V2APIRouter()
 
 urlpatterns = [
-    path('', include(router.urls)),
     path('auth/token/', obtain_auth_token, name='api-v2-auth-token'),
     path(
         'schema/',
@@ -74,3 +49,8 @@ urlpatterns = [
         name='api-v2-redoc',
     ),
 ]
+
+if settings.MYCOMICS:
+    urlpatterns.append(path('', include('apps.api_v2.urls_my')))
+else:
+    urlpatterns.append(path('', include('apps.api_v2.urls_www')))
