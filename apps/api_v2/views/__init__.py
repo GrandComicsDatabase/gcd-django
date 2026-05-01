@@ -42,18 +42,18 @@ class GCDBaseViewSet(ReadOnlyModelViewSet):
     relies on).
     """
 
-    authentication_classes = [
+    authentication_classes = (
         TokenAuthentication,
         BasicAuthentication,
         SessionAuthentication,
-    ]
-    permission_classes = [AllowAny]
+    )
+    permission_classes = (AllowAny,)
     pagination_class = V2PageNumberPagination
-    throttle_classes = [
+    throttle_classes = (
         V2AnonRateThrottle,
         V2TokenUserRateThrottle,
         V2SessionUserRateThrottle,
-    ]
+    )
 
     def get_queryset(self):
         """Return the configured queryset filtered to non-deleted rows."""

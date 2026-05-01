@@ -112,9 +112,10 @@ def authenticated_token(authenticated_user):
 
 
 @pytest.fixture
-def authenticated_client(api_client, authenticated_token):
+def authenticated_client(authenticated_token):
     """Return an ``APIClient`` pre-configured with the test user's token."""
-    api_client.credentials(
+    client = APIClient()
+    client.credentials(
         HTTP_AUTHORIZATION=f'Token {authenticated_token.key}',
     )
-    return api_client
+    return client
