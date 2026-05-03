@@ -282,17 +282,17 @@ def test_series_endpoints_hide_soft_deleted_records(
 
 
 def test_series_list_returns_304_for_if_modified_since(
-    api_client,
+    authenticated_client,
     series,
 ):
     """List responses support Last-Modified cache validation."""
-    response = api_client.get(reverse('series-list'))
+    response = authenticated_client.get(reverse('series-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
-    cached_response = api_client.get(
+    cached_response = authenticated_client.get(
         reverse('series-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
@@ -302,11 +302,11 @@ def test_series_list_returns_304_for_if_modified_since(
 
 
 def test_series_detail_returns_304_for_if_none_match(
-    api_client,
+    authenticated_client,
     series,
 ):
     """Detail responses support ETag cache validation."""
-    response = api_client.get(
+    response = authenticated_client.get(
         reverse('series-detail', kwargs={'pk': series.pk}),
     )
 
@@ -314,7 +314,7 @@ def test_series_detail_returns_304_for_if_none_match(
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
-    cached_response = api_client.get(
+    cached_response = authenticated_client.get(
         reverse('series-detail', kwargs={'pk': series.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )

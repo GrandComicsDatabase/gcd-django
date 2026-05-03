@@ -114,17 +114,17 @@ def test_publisher_endpoints_hide_soft_deleted_records(api_client, country):
 
 
 def test_publisher_list_returns_304_for_if_modified_since(
-    api_client,
+    authenticated_client,
     publisher,
 ):
     """List responses support Last-Modified cache validation."""
-    response = api_client.get(reverse('publisher-list'))
+    response = authenticated_client.get(reverse('publisher-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
-    cached_response = api_client.get(
+    cached_response = authenticated_client.get(
         reverse('publisher-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
@@ -134,11 +134,11 @@ def test_publisher_list_returns_304_for_if_modified_since(
 
 
 def test_publisher_detail_returns_304_for_if_none_match(
-    api_client,
+    authenticated_client,
     publisher,
 ):
     """Detail responses support ETag cache validation."""
-    response = api_client.get(
+    response = authenticated_client.get(
         reverse('publisher-detail', kwargs={'pk': publisher.pk}),
     )
 
@@ -146,7 +146,7 @@ def test_publisher_detail_returns_304_for_if_none_match(
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
-    cached_response = api_client.get(
+    cached_response = authenticated_client.get(
         reverse('publisher-detail', kwargs={'pk': publisher.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
