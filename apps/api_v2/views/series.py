@@ -44,14 +44,46 @@ ACTIVE_ISSUE_PREFETCH = Prefetch(
 class SeriesViewSet(GCDBaseViewSet):
     """Read-only series endpoints for the public v2 API surface."""
 
-    queryset = Series.objects.select_related(
-        'country',
-        'language',
-        'publisher',
-        'publication_type',
-    ).prefetch_related(
-        'keywords',
-        ACTIVE_ISSUE_PREFETCH,
+    queryset = (
+        Series.objects.select_related(
+            'country',
+            'language',
+            'publisher',
+            'publication_type',
+        )
+        .only(
+            'id',
+            'created',
+            'modified',
+            'deleted',
+            'name',
+            'sort_name',
+            'year_began',
+            'year_ended',
+            'color',
+            'dimensions',
+            'paper_stock',
+            'binding',
+            'publishing_format',
+            'notes',
+            'issue_count',
+            'country_id',
+            'language_id',
+            'publisher_id',
+            'publication_type_id',
+            'country__id',
+            'country__code',
+            'language__id',
+            'language__code',
+            'publisher__id',
+            'publisher__name',
+            'publication_type__id',
+            'publication_type__name',
+        )
+        .prefetch_related(
+            'keywords',
+            ACTIVE_ISSUE_PREFETCH,
+        )
     )
     serializer_class = SeriesSerializer
     filter_backends = (DjangoFilterBackend,)
