@@ -58,7 +58,7 @@
 {% if not page.has_previous %}
   {% if indicia_printer.notes %}
   <h3 class="mt-2">Notes:</h3>
-    {{ indicia_printer.notes|markdown }}
+    {{ indicia_printer.notes|render_markdown }}
   {% endif %}
 {% endif %}
 {% endblock content %}

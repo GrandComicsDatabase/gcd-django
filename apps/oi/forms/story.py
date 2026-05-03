@@ -405,6 +405,25 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['sourced_by'] and not cd['is_sourced']:
             cd['sourced_by'] = ""
 
+        if cd['credit_name']:
+            if cd['credit_name'].strip() == "credited":
+                raise forms.ValidationError(
+                    ['"Credit description" cannot be "credited". Please tick '
+                     '"Is credited" instead.']
+                )
+
+            elif cd['credit_name'].strip().endswith("(credited"):
+                raise forms.ValidationError(
+                    ['"Credit description" cannot end with "(credited". '
+                     'Please tick "Is credited" instead.']
+                )
+
+            elif cd['credit_name'].strip().endswith(", credited"):
+                raise forms.ValidationError(
+                    ['"Credit description" cannot end with ", credited". '
+                     'Please tick "Is credited" instead.']
+                )
+
 
 class StoryFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
@@ -526,6 +545,16 @@ class StoryCharacterRevisionForm(forms.ModelForm):
         if cd['group_universe'] and not cd['group_name']:
             raise forms.ValidationError(
               ['Cannot select a group universe without a group.'])
+
+        if cd['group_name'] and cd['character']:
+            character_groups = cd['character'].character.active_memberships()
+            character_groups = character_groups.values_list('group', flat=True)
+            for group in cd['group_name']:
+                if group.group_id not in character_groups:
+                    raise forms.ValidationError(
+                      ['%s is not member of the group %s' % (
+                        cd['character'].character, group.group)]
+                    )
 
 
 class BaseStoryCharacterRevisionFormSet(forms.models.BaseInlineFormSet):

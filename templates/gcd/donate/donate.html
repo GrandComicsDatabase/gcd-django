@@ -1,5 +1,11 @@
 {% extends "gcd/tw_base_view.html" %}
 {% load static %}
+{% block head %}
+{{ block.super }}
+<script
+  src="https://www.paypal.com/sdk/js?client-id=BAAIyvg6_JYPcTgvDi5Oc-GJKWU6b-ZJWo7kwzKCoa8-xKQAXZAdeETMKhQYM4fYUxSFgkY8PNfhE4DSmY&components=hosted-buttons&enable-funding=venmo&currency=USD">
+</script>
+{% endblock %}
 
 {% block title %} GCD :: Donations {% endblock %}
 
@@ -7,58 +13,34 @@
 
 <h2>Donations</h2>
 <p class="mb-2">
-The GCD is available for public use within our licensing guidelines. However, operating the website is not free for the Grand Comicbook Database Foundation and your donations are needed to meet our ongoing costs. Please note that neither the GCD nor the Foundation have any paid employees -- 100% of your gift goes directly to making the GCD appear in your browser window and to furthering research in and education on comics and their history.
+The GCD is available for public use within our licensing guidelines. However, operating the website is not free for the Grand Comicbook Database Foundation and your donations are needed to meet our ongoing costs. Please note that neither the GCD nor the Foundation have any paid employees -- 100% of your donation goes directly to making the GCD appear in your browser window and to furthering research in and education on comics and their history.
 </p>
 <p class="mb-2">
-Donations are accepted from most countries via PayPal. In order to receive official acknowledgment of your gift, you must include a (non-email) mailing address with your contribution.
+Donations are accepted from most countries via PayPal. In order to receive official acknowledgment of your donation, you must include a (non-email) mailing address with your contribution.
 </p>
 <p class="mb-2">
 The Grand Comicbook Database Foundation, Inc. is a 501(c)3, non-profit organization, incorporated in the state of Arkansas, USA. Your donations may be tax deductible. Please contact your tax advisor for further information. A donation to the GCD does not constitute a purchase of goods, services or membership. A donation does not entitle the donor to any rights or privileges.
 </p>
 <p class="mb-2">
-Additionally, Google ads enable the GCD to take advantage of the high usage of our site. Your continued use of the GCD will earn us a few cents, especially if you visit the advertisers' sites.
-</p>
-<p class="mb-2">
 The Grand Comicbook Database Foundation Board and the membership of the GCD thank you for your support in whatever form it takes and we hope that we continue to meet your research needs.
 </p>
 <table class="w-full border border-gray-400 mb-2">
-  <tr class="label-gcd-blue w-full">
-    <th>Make a One-time Donation</th>
-    <th>Make a Recurring Donation</th>
-    <th>Cancel a Recurring Donation</th>
-  </tr>
   <tr class="[&_td]:text-center">
     <td>
-      <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-        <input type="hidden" name="cmd" value="_s-xclick">
-        <input type="hidden" name="hosted_button_id" value="F7NC2DLHBXZFC">
-        <input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" name="submit" alt="PayPal - The safer, easier way to pay online!">
-        <img alt="" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
-      </form>
+      <div id="paypal-container-ZMVHGBSBKARA6" class="justify-center"></div>
+      <script>
+        paypal.HostedButtons({
+          hostedButtonId: "ZMVHGBSBKARA6",
+        }).render("#paypal-container-ZMVHGBSBKARA6")
+      </script>
     </td>
-    <td>
-      <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-      <p  class="my-2">
-        <input type="hidden" name="cmd" value="_s-xclick">
-        <input type="hidden" name="hosted_button_id" value="MKU6BXU9BPCR6">
-        <input type="hidden" name="on0" value="">
-        <select name="os0">
-          <option value="small">$5.00 USD (monthly)</option>
-          <option value="medium">$10.00 USD (monthly)</option>
-          <option value="large">$25.00 USD (monthly)</option>
-        </select>
-        <input type="hidden" name="currency_code" value="USD">
-      </p>
-      <p>
-        <input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" name="submit" alt="PayPal - The safer, easier way to pay online!">
-        <img alt="" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
-      </p>
-      </form>
-    </td>
-    <td>
-      <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_subscr-find&alias=VHUXRXB2A9NLG">
-      <img class="inline" src="https://www.paypal.com/en_US/i/btn/btn_unsubscribe_LG.gif">
-      </a>
+    <td class="text-center">
+      <div id="paypal-container-X4UVP2WQWWCP4" style="text-align: center;"></div>
+      <script>
+        paypal.HostedButtons({
+          hostedButtonId: "X4UVP2WQWWCP4",
+        }).render("#paypal-container-X4UVP2WQWWCP4")
+      </script>
     </td>
   </tr>
 </table>

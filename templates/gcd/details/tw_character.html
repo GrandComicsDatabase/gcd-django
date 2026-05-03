@@ -38,7 +38,7 @@ GCD :: Character :: {{ character.name }}
 {% if character.universe %}
             <tr>
               <td>Universe:</td>
-              <td>{{ character.universe|absolute_url }}</td>
+              <td>{{ character.universe|absolute_url }} <span class="text-sm italic">(deprecated)</span></td>
             </tr>
 {% endif %}
 {% if character.year_first_published %}
@@ -68,6 +68,7 @@ GCD :: Character :: {{ character.name }}
             <li><a href='{% url "character_series" character_id=character.id %}'>Series List</a></li>
             <li><a href='{% url "character_features" character_id=character.id %}'>Feature List</a></li>
             <li><a href='{% url "character_characters" character_id=character.id %}'>Characters Appeared With</a></li>
+            <li><a href='{% url "character_groups" character_id=character.id %}'>Group List</a></li>
             <li><a href='{% url "character_sequences" character_id=character.id %}'>Sequences List</a></li>
           </ul>
       {% with object=character %}
@@ -94,11 +95,11 @@ GCD :: Character :: {{ character.name }}
 </table>
 {% if character.description %}
 <h3 class="mt-2">Description:</h3>
-{{ character.description|markdown }}
+{{ character.description|render_markdown }}
 {% endif %}
 {% if character.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ character.notes|markdown }}
+{{ character.notes|render_markdown }}
 {% endif %}
 {% endblock %}
 

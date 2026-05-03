@@ -5985,6 +5985,7 @@ class StoryRevision(Revision):
                                       fork=True, story_revision=revision,
                                       exclude=exclude)
         if copy_characters:
+            characters = []
             if issue_revision.series.language == story.issue.series.language:
                 same_language = True
             else:
@@ -5996,8 +5997,17 @@ class StoryRevision(Revision):
                                                  fork=True,
                                                  story_revision=revision)
                 else:
-                    StoryCharacterRevision.copied_translation(character,
-                                                              revision)
+                    translated = StoryCharacterRevision.copied_translation(
+                      character, revision)
+                    if translated is None:
+                        characters.append(character.character.character.name)
+                        if character.role:
+                            characters[-1] += ' (%s)' % character.role.name
+            if characters:
+                if revision.characters:
+                    characters.append(revision.characters)
+                revision.characters = '; '.join(characters)
+                revision.save()
 
             for group in story.active_groups:
                 if same_language:
@@ -7701,6 +7711,10 @@ class CharacterRevision(CharacterGroupRevisionBase):
                         'year_first_published_uncertain', 'language',
                         'description', 'notes', 'keywords']
 
+    @classmethod
+    def _get_deprecated_field_names(cls):
+        return frozenset({'universe'})
+
     @property
     def source(self):
         return self.character
@@ -7964,6 +7978,10 @@ class GroupRevision(CharacterGroupRevisionBase):
 
     source_name = 'group'
     source_class = Group
+
+    @classmethod
+    def _get_deprecated_field_names(cls):
+        return frozenset({'universe'})
 
     @property
     def source(self):

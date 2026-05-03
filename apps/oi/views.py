@@ -784,6 +784,12 @@ def _save(request, form, revision, changeset=None, model_name=None):
                 for character in characters:
                     character.universe = revision.universe.get()
                     character.save()
+                groups = revision.story_group_revisions.filter(
+                  universe=None,
+                  deleted=False)
+                for group in groups:
+                    group.universe = revision.universe.get()
+                    group.save()
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
@@ -2098,7 +2104,7 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
-    if brand_group_id:
+    if brand_group_id is not None:
         try:
             brand_group = BrandGroup.objects.get(id=brand_group_id)
             if brand_group.deleted or brand_group.pending_deletion():
@@ -2107,7 +2113,7 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
                   'since "%s" is deleted or pending deletion.' % brand_group)
         except (BrandGroup.DoesNotExist, BrandGroup.MultipleObjectsReturned):
             return render_error(
-              request, 'Could not find Brand Group for id ' + brand_group_id)
+              request, 'Could not find Brand Group for id %d' % brand_group_id)
         publisher = None
     else:
         try:
@@ -2118,7 +2124,7 @@ def add_brand(request, brand_group_id=None, publisher_id=None):
                   'since "%s" is deleted or pending deletion.' % publisher)
         except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
             return render_error(
-              request, 'Could not find Publisher for id ' + publisher_id)
+              request, 'Could not find Publisher for id %d' % publisher_id)
         brand_group = None
 
     if request.method != 'POST':
@@ -3911,6 +3917,8 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                 if character_revision:
                     existing_characters = existing_characters.exclude(
                       id=character_revision[0].id)
+                    character_revision[0].group_name.set(character.group_name
+                                                                  .all())
                 else:
                     new_character = StoryCharacterRevision.clone(
                       character,

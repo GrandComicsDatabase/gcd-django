@@ -97,7 +97,11 @@ class GCDReferenceInlineProcessor(InlineProcessor):
             if link_name:
                 el.text = link_name
             else:
-                el.text = str(object.object_markdown_name())
+                try:
+                    el.text = str(object.object_markdown_name())
+                except AttributeError:
+                    url = ''
+                    el.text = f'Type {ref_type.capitalize()} not supported.'
         else:
             # Return original text if ref_type is not recognized
             url = "#"  # Set a placeholder URL for unrecognized types

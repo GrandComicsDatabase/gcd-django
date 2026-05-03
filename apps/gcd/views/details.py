@@ -5,7 +5,6 @@
 import re
 from urllib.parse import urlencode, quote
 from datetime import date, datetime, time, timedelta
-from calendar import monthrange
 from operator import attrgetter
 from random import randint, choice
 
@@ -63,6 +62,8 @@ from apps.gcd.models.character import CharacterTable, CreatorCharacterTable, \
                                       SeriesCharacterTable, \
                                       FeatureCharacterTable, \
                                       CharacterCharacterTable, \
+                                      CharacterGroupTable, \
+                                      GroupCharacterTable, \
                                       DailyChangesCharacterTable
 from apps.gcd.models.feature import FeatureTable, CreatorFeatureTable, \
                                     CharacterFeatureTable, \
@@ -738,19 +739,19 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     creator_names = _get_creator_names_for_checklist(creator)
     filter = None
 
-    story_types = process_story_type_filter_from_request(request)
-
     if edits:
         issues = Issue.objects.filter(credits__creator__in=creator_names,
                                       credits__deleted=False)\
                               .distinct().select_related('series__publisher')
     else:
+        story_types = process_story_type_filter_from_request(request)
+
         issues = Issue.objects.filter(
           story__credits__creator__in=creator_names,
           story__type__id__in=story_types,
           story__credits__deleted=False,
           story__credits__credit_type__id__lt=6)\
-          .distinct().select_related('series__publisher')
+            .distinct().select_related('series__publisher')
     if country:
         country = get_object_or_404(Country, code=country)
         issues = issues.filter(series__country=country)
@@ -3258,27 +3259,8 @@ def do_on_sale_weekly(request, year=None, week=None):
 
     if year is None:
         year, week = date.today().isocalendar()[0:2]
-    # Gregorian calendar date of the first day of the given ISO year
-    fourth_jan = date(int(year), 1, 4)
-    delta = timedelta(fourth_jan.isoweekday()-1)
-    year_start = fourth_jan - delta
-    monday = year_start + timedelta(weeks=int(week)-1)
-    sunday = monday + timedelta(days=6)
-    # we need this to filter out incomplete on-sale dates
-    if monday.month != sunday.month:
-        endday = monday.replace(day=monthrange(monday.year, monday.month)[1])
-        issues_on_sale = Issue.objects.filter(
-          on_sale_date__gte=monday.isoformat(),
-          on_sale_date__lte=endday.isoformat())
-        startday = sunday.replace(day=1)
-        issues_on_sale = issues_on_sale | Issue.objects.filter(
-          on_sale_date__gte=startday.isoformat(),
-          on_sale_date__lte=sunday.isoformat())
-
-    else:
-        issues_on_sale = Issue.objects\
-                              .filter(on_sale_date__gte=monday.isoformat(),
-                                      on_sale_date__lte=sunday.isoformat())
+    from apps.gcd.models.issue import issues_for_iso_week
+    issues_on_sale, monday, sunday = issues_for_iso_week(int(year), int(week))
     previous_week = (monday - timedelta(weeks=1)).isocalendar()[0:2]
     if monday + timedelta(weeks=1) <= date.today():
         next_week = (monday + timedelta(weeks=1)).isocalendar()[0:2]
@@ -3291,7 +3273,6 @@ def do_on_sale_weekly(request, year=None, week=None):
     query_val['start_date'] = monday.isoformat()
     query_val['end_date'] = sunday.isoformat()
     query_val['use_on_sale_date'] = True
-    issues_on_sale = issues_on_sale.filter(deleted=False)
     choose_url = urlresolvers.reverse("on_sale_this_week")
     choose_url_before = urlresolvers.reverse("on_sale_weekly",
                                              kwargs={
@@ -4194,6 +4175,49 @@ def character_characters(request, character_id, universe_id=None):
     return generic_sortable_list(request, characters, table, template, context)
 
 
+def character_groups(request, character_id, universe_id=None):
+    character = get_gcd_object(Character, character_id)
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
+
+    query = {'group_names__storycharacter__'
+             'character__character':
+             filter_character,
+             'group_names__storycharacter__deleted': False,
+             'group_names__storycharacter__story__type__id__in':
+             CORE_TYPES}
+
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'group_names__storycharacter__story__appearing_characters__',
+      'with appearances of %s with origin %s',
+      'with appearances of %s',
+      (character,))
+    groups = Group.objects.filter(Q(**query)).distinct()
+
+    groups = groups.annotate(issue_count=Count(
+      'group_names__storycharacter__story__issue', distinct=True))
+    groups = groups.annotate(first_appearance=Min(
+      Case(When(group_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('group_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
+        'item_name': 'group',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = CharacterGroupTable(groups,
+                                character=character,
+                                universe_id=link_universe_id,
+                                template_name=TW_SORT_TABLE_TEMPLATE,
+                                order_by=('name'))
+    return generic_sortable_list(request, groups, table, template, context)
+
+
 def character_features(request, character_id, universe_id=None):
     character = get_gcd_object(Character, character_id)
     filter_character, universe_id, link_universe_id = \
@@ -4418,6 +4442,50 @@ def character_issues_character(request, character_id, character_with_id,
                   'story__id__in': stories}
 
     issues = Issue.objects.filter(Q(**query_with)).distinct()\
+                          .select_related('series__publisher')
+    filter = filter_issues(request, issues, story_type_filter=True)
+    filter.filters.pop('language')
+    issues = filter.qs
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': heading,
+        'filter_form': filter.form
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = _table_issues_list_or_grid(request, issues, context)
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def character_issues_group(request, character_id, group_id,
+                           universe_id=None):
+    character = get_gcd_object(Character, character_id)
+    group = get_gcd_object(Group, group_id)
+    filter_character, universe_id, link_universe_id = \
+        _resolve_character_universe(character, universe_id)
+
+    story_types = process_story_type_filter_from_request(request)
+
+    query = {'story__appearing_characters__character__character':
+             filter_character,
+             'story__appearing_characters__group_name__group':
+             group,
+             'story__appearing_characters__deleted': False,
+             'story__type__id__in': story_types,
+             'story__deleted': False}
+
+    heading = _build_universe_filter_and_heading(
+      universe_id, link_universe_id, query,
+      'appearing_characters__',
+      'for %s with %s with origin %s',
+      'for %s with %s',
+      (character, group))
+
+    issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
     filter = filter_issues(request, issues, story_type_filter=True)
     filter.filters.pop('language')
@@ -4921,6 +4989,39 @@ def group_origin_universe(request, group_id, universe_id):
     }
     return render(request, 'gcd/details/tw_group_origin_universe.html',
                   context)
+
+
+def group_characters(request, group_id):
+    group = get_gcd_object(Group, group_id)
+
+    query = {'character_names__storycharacter__group_name__group': group,
+             'character_names__storycharacter__deleted': False,
+             'character_names__storycharacter__story__type__id__in':
+             CORE_TYPES}
+
+    heading = 'appearing as members of %s' % group
+    characters = Character.objects.filter(Q(**query)).distinct()
+
+    characters = characters.annotate(issue_count=Count(
+      'character_names__storycharacter__story__issue', distinct=True))
+    characters = characters.annotate(first_appearance=Min(
+      Case(When(character_names__storycharacter__story__issue__key_date='',
+                then=Value('9999-99-99'),
+                ),
+           default=F('character_names__storycharacter__story__issue__key_date')
+           )))
+    context = {
+        'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,
+        'item_name': 'character',
+        'plural_suffix': 's',
+        'heading': heading
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = GroupCharacterTable(characters,
+                                group=group,
+                                template_name=TW_SORT_TABLE_TEMPLATE,
+                                order_by=('name'))
+    return generic_sortable_list(request, characters, table, template, context)
 
 
 def group_features(request, group_id, universe_id=None):

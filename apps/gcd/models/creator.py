@@ -268,7 +268,7 @@ class CreatorNameDetail(GcdData):
                                  as_name.get_absolute_url(),
                                  esc(display_as_name))
             else:
-                credit_text += ' (%s %s)' % \
+                credit_text += ' (%s%s)' % \
                                 (attribute,
                                  display_as_name)
             if extra_name:

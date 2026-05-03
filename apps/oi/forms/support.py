@@ -56,6 +56,12 @@ GENERIC_ERROR_MESSAGE = (
 
 DOC_URL = 'https://docs.comics.org/wiki/'
 
+PRINTER_HELP_LINKS = {
+    'name': 'Printer',
+    'keywords': 'Keywords',
+    'comments': 'Comments '
+}
+
 PUBLISHER_HELP_LINKS = {
     'name': 'Publisher_Name',
     'year_began': 'Years_of_Publication',
@@ -156,6 +162,12 @@ INDICIA_PUBLISHER_HELP_LINKS = {
     'country': 'Country_%28Indicia_publisher%29',
     'url': 'URL_%28Indicia_publisher%29',
     'notes': 'Notes_%28Indicia_publisher%29',
+    'keywords': 'Keywords',
+    'comments': 'Comments '
+}
+
+INDICIA_PRINTER_HELP_LINKS = {
+    'name': 'Indicia_Printer',
     'keywords': 'Keywords',
     'comments': 'Comments '
 }
@@ -395,6 +407,30 @@ PUBLISHER_HELP_TEXTS = {
         '"https://", for example "https://www.example.com" not '
         '"www.example.com"', }
 
+PRINTER_HELP_TEXTS = PUBLISHER_HELP_TEXTS
+PRINTER_HELP_TEXTS.update({
+    'year_began':
+        'The first year in which the printer was active with comics.',
+    'year_ended':
+        'The last year in which the printer was active with comics. '
+        'Leave blank if the printer is still active.',
+    'year_ended_uncertain':
+        'Check if you are not certain of the ending year, or if you '
+        'are not certain whether the printer is still active.',
+    'year_overall_began':
+        'The first year in which the printer was active.',
+    'year_overall_ended':
+        'The last year in which the printer was active. '
+        'Leave blank if the printer is still active.',
+    'year_overall_ended_uncertain':
+        'Check if you are not certain of the ending year, or if you '
+        'are not certain whether the printer is still active.',
+    'url':
+        'The official web site of the printer.  Must include "http://" or '
+        '"https://", for example "https://www.example.com" not '
+        '"www.example.com"'
+})
+
 SERIES_HELP_TEXTS = {
     'name':
         'Series name as it appears in the indicia (or cover only if there '
@@ -477,6 +513,7 @@ SERIES_HELP_TEXTS = {
 ISSUE_LABELS = {
     'indicia_publisher': 'Indicia/colophon publisher',
     'indicia_pub_not_printed': 'Indicia/colophon pub. not printed',
+    'key_date': 'Keydate',
     'isbn': 'ISBN',
     'no_isbn': 'No ISBN',
     'rating': "Publisher's age guidelines",
@@ -517,9 +554,9 @@ ISSUE_HELP_TEXTS = {
         'number of "1", checking this box will display "v2#1" instead '
         'of just "1" in the status grids and issues lists for the series.',
     'publication_date':
-        'The publication date as printed on or in the comic, except with the '
-        'name of the month (if any) spelled out.  Any part of the date '
-        'that is not printed on the comic but is known should be put '
+        'The publication date as printed on or in the comic, using the full '
+        'year and the name of the month (if any) spelled out. Any part of the '
+        'date that is not printed on the comic but is known should be put '
         'in square brackets, such as <i>[January] 2009</i>. ',
     'key_date':
         'Keydate is a translation of the publication date, possibly '

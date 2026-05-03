@@ -50,7 +50,7 @@ from various smaller templates that are managed via django-templatesadmin.
         </div>
         <div class="font-bold text-lg">{{ creator|absolute_url }}</div>
     {{ creator.display_birthday }}{% if creator.has_death_info %} - {{ creator.display_deathday }}{% endif %}<br>
-    {{ creator.bio|markdown }}
+    {{ creator.bio|render_markdown }}
       </div>
       <div class="clear-both"></div>
   {% endfor %}

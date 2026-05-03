@@ -12,7 +12,8 @@ from apps.gcd.templatetags.display import absolute_url, \
                                           sum_page_counts, show_barcode, \
                                           show_isbn
 from apps.gcd.templatetags.credits import format_page_count, \
-                                          split_reprint_string
+                                          split_reprint_string, \
+                                          render_markdown
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
@@ -22,6 +23,8 @@ from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
 from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
+
+MARKDOWN_FIELDS = {'notes', 'description', 'bio'}
 
 
 def valid_barcode(barcode):
@@ -166,8 +169,7 @@ def field_value(revision, field):
                 story_arc.get_absolute_url(),
                 esc(story_arc.name))
         return mark_safe(story_arcs)
-    elif field in ['notes', 'tracking_notes', 'publication_notes',
-                   'synopsis']:
+    elif field in ['tracking_notes', 'publication_notes']:
         return linebreaksbr(value)
     elif field == 'reprint_notes':
         reprint = ''
@@ -367,7 +369,57 @@ def _compare_string_genre(revision):
 
 @register.simple_tag
 def diff_list(prev_rev, revision, field):
-    """Generates an array which describes the change in text fields"""
+    """
+    Generates an array which describes the change in text fields.
+
+    Uses the diff-match-patch library to compute differences between field
+    values of a previous revision and a current revision.
+
+    diff_match_patch() returns an instance of the DiffMatchPatch class from
+    the diff-match-patch library. This class provides methods for computing
+    differences between two strings:
+        - diff_main(text1, text2): Returns list of tuples (op, text), with op:
+            -1 (DIFF_DELETE): text was removed
+             0 (DIFF_EQUAL): text is unchanged
+             1 (DIFF_INSERT): text was added
+        - diff_cleanupSemantic(diffs): Post-processes the diff list in-place to
+          produce more human-readable results by merging small equalities into
+          surrounding edits.
+
+        The op codes used in the returned diff list are further extended in
+        this implementation to handle cases where the diff boundary falls
+        inside an HTML link tag, resulting in split HTML across diff segments.
+        The extended op codes are as follows:
+            -1: deleted text (from diff_match_patch)
+             0: unchanged text (from diff_match_patch)
+             1: inserted text (from diff_match_patch)
+            -2: text preceding a split HTML link in a deleted segment
+             2: text preceding a split HTML link in an inserted segment
+            -3: text inside a split HTML link in a deleted segment
+             3: text inside a split HTML link in an inserted segment
+        Op codes 2, 3, -2, and -3 arise when a diff boundary falls inside
+        an <a href="..."> tag (e.g. for creator or character links), splitting
+        the HTML across multiple diff tuples. These extended codes allow the
+        template to render the link HTML without escaping while still marking
+        the visible link text as added or deleted.
+
+    Args:
+        prev_rev: The previous revision object containing old field values.
+        revision: The current revision object containing new field values.
+        field (str): The name of the field to compare between revisions.
+
+    Returns:
+        list of tuples or None:
+            - For creator/character-linked fields ('script', 'pencils', 'inks',
+              'colors', 'letters', 'editing', 'characters'): Returns a list of
+              (op, text) tuples with extended op codes (2, -2, 3, -3) to handle
+              HTML links that were split across diff segments, with
+              added/deleted spans marked safe for template rendering.
+            - For plain text fields ('notes', 'synopsis', 'bio', etc.):Returns
+              the raw diff list of (op, text) tuples from diff_match_patch.
+            - For 'genre': Returns a diff list using field_value() instead.
+            - For unrecognized fields: Returns None.
+    """
     if field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing',
                  'characters']:
         diff = diff_match_patch().diff_main(field_value(prev_rev, field),
@@ -407,7 +459,7 @@ def diff_list(prev_rev, revision, field):
             new_diff.append((di[0], mark_safe(di[1])))
         return new_diff
     if field in ['notes', 'tracking_notes', 'publication_notes',
-                 'synopsis', 'title', 'first_line', 'keywords',
+                 'synopsis', 'title', 'first_line', 'keywords', 'description',
                  'format', 'color', 'dimensions', 'paper_stock', 'binding',
                  'publishing_format', 'format', 'name', 'sort_name',
                  'price', 'indicia_frequency', 'variant_name',
@@ -426,31 +478,88 @@ def diff_list(prev_rev, revision, field):
 
 
 @register.filter
+def is_markdown_field(field):
+    """Check if a field should be rendered as markdown."""
+    return field in MARKDOWN_FIELDS
+
+
+@register.filter
 def show_diff(diff_list, change):
     """show changes in diff with markings for add/delete"""
     compare_string = ""
     span_tag = "<span class='%s'>%s</span>"
     if change == "orig":
-        for i in diff_list:
-            if i[0] == 0:
-                compare_string += esc(i[1])
-            elif i[0] == -1:
-                compare_string += span_tag % ("deleted", esc(i[1]))
-            elif i[0] == -2:
-                compare_string += esc(i[1]) + "</span>"
-            elif i[0] == -3:
-                compare_string += esc(i[1])
+        for op, data in diff_list:
+            if op == 0:
+                compare_string += esc(data)
+            elif op == -1:
+                compare_string += span_tag % ("deleted", esc(data))
+            elif op == -2:
+                compare_string += esc(data) + '</span>'
+            elif op == -3:
+                compare_string += esc(data)
     else:
-        for i in diff_list:
-            if i[0] == 0:
-                compare_string += esc(i[1])
-            elif i[0] == 1:
-                compare_string += span_tag % ("added", esc(i[1]))
-            elif i[0] == 2:
-                compare_string += esc(i[1]) + "</span>"
-            elif i[0] == 3:
-                compare_string += esc(i[1])
+        for op, data in diff_list:
+            if op == 0:
+                compare_string += esc(data)
+            elif op == 1:
+                compare_string += span_tag % ("added", esc(data))
+            elif op == 2:
+                compare_string += esc(data) + '</span>'
+            elif op == 3:
+                compare_string += esc(data)
     return mark_safe(compare_string)
+
+
+@register.filter
+def show_diff_markdown(diff_list, change):
+    """
+    Show changes for markdown fields with inline diff marks on the raw
+    markdown source and a rendered markdown preview below.
+
+    The raw markdown is diffed (preserving structural meaning like headings,
+    lists, emphasis), then displayed with <span> tags for highlighting.  A
+    collapsible rendered preview shows the final result for this side.
+    """
+    highlighted_parts = []
+    plain_parts = []
+
+    if change == "orig":
+        for op, data in diff_list:
+            if op == 0:
+                highlighted_parts.append(esc(data))
+                plain_parts.append(data)
+            elif op == -1:
+                highlighted_parts.append(
+                    "<span class='deleted'>%s</span>" % esc(data))
+                plain_parts.append(data)
+            elif op in (-2, -3):
+                highlighted_parts.append(esc(data))
+                plain_parts.append(data)
+    else:
+        for op, data in diff_list:
+            if op == 0:
+                highlighted_parts.append(esc(data))
+                plain_parts.append(data)
+            elif op == 1:
+                highlighted_parts.append(
+                    "<span class='added'>%s</span>" % esc(data))
+                plain_parts.append(data)
+            elif op in (2, 3):
+                highlighted_parts.append(esc(data))
+                plain_parts.append(data)
+
+    inline_diff = ''.join(highlighted_parts)
+    rendered = render_markdown(''.join(plain_parts))
+
+    if rendered:
+        rendered = '<details class="mt-1">' \
+                   '<summary style="cursor:pointer; color:#666; ' \
+                   'font-style:italic;">Rendered Preview</summary>' \
+                   '<div>%s</div></details>' % (rendered)
+    result = '<div style="white-space:pre-wrap;">%s</div>%s' \
+             % (inline_diff, rendered)
+    return mark_safe(result)
 
 
 @register.filter
@@ -558,7 +667,8 @@ def compare_current_reprints(object_type, changeset):
             if not hasattr(reprint, 'next_revision') or \
               (reprint.next_revision.changeset != changeset and not
                 (reprint.next_revision.changeset.state == states.APPROVED and
-                 reprint.next_revision.changeset.modified <= changeset.modified)):
+                 reprint.next_revision.changeset.modified <=
+                 changeset.modified)):
                 kept_string = '%s<li>%s' % (
                   kept_string, reprint.get_compare_string(object_type.issue))
                 if reprint.source and is_locked(reprint.source):

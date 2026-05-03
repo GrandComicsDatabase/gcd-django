@@ -13,10 +13,13 @@
   {% if entry.issue %}
     <div class="border {{ entry.get_cover_color }} {{ cover_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
       <a class="block hover:no-underline link-with-text-color font-bold" href="{{ entry.get_status_url }}">{{ entry.issue.full_descriptor|default:entry }}</a>
-    {% else %}
+  {% elif entry.variant_of and entry.variant_cover_status == 1 %}
+    <div class="border {{ entry.variant_of.active_covers.0.get_cover_color }} {{ cover_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
+      <a class="block hover:no-underline link-with-text-color font-bold" href="{{ entry.get_status_url }}">{{ entry.full_descriptor|default:entry }}</a>
+  {% else %}
     <div class="border {{ cover_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
       <a class="block hover:no-underline link-with-text-color font-bold" href="{% if MYCOMICS %}https://www.comics.org/{% endif %}{% url "upload_cover" issue_id=entry.id %}">{{ entry.full_descriptor|default:entry }}</a>
-    {% endif %}
+  {% endif %}
     </div>
 {% endfor %}
   </div>

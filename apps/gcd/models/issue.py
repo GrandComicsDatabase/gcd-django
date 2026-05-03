@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from datetime import date, timedelta
+from calendar import monthrange
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
@@ -691,6 +693,33 @@ class Issue(GcdData):
                                    self.variant_name)
         else:
             return '%s %s' % (self.series, self.display_number)
+
+
+def issues_for_iso_week(year, week):
+    """
+    Return a queryset of non-deleted Issues whose on_sale_date falls within
+    the given ISO 8601 week (Monday–Sunday).
+
+    Handles weeks that straddle a month boundary by splitting the filter
+    into two ranges, avoiding partial on_sale_date strings being excluded.
+    """
+    # Gregorian calendar date of the first day of the given ISO year
+    fourth_jan = date(year, 1, 4)
+    year_start = fourth_jan - timedelta(fourth_jan.isoweekday() - 1)
+    monday = year_start + timedelta(weeks=week - 1)
+    sunday = monday + timedelta(days=6)
+    if monday.month != sunday.month:
+        endday = monday.replace(day=monthrange(monday.year, monday.month)[1])
+        qs = Issue.objects.filter(on_sale_date__gte=monday.isoformat(),
+                                  on_sale_date__lte=endday.isoformat())
+        startday = sunday.replace(day=1)
+        qs = qs | Issue.objects.filter(on_sale_date__gte=startday.isoformat(),
+                                       on_sale_date__lte=sunday.isoformat())
+    else:
+        qs = Issue.objects.filter(on_sale_date__gte=monday.isoformat(),
+                                  on_sale_date__lte=sunday.isoformat())
+    return qs.filter(deleted=False), monday, sunday
+
 
 ##############################################################################
 # Tables with Sorting

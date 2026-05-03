@@ -271,7 +271,7 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
   {% if issue.notes %}
 <h3 class="bg-blue-100 rounded px-1 mt-1 md:me-1"> Indexer Notes </h3>
 <div class="ml-1">
-      {{ issue.notes|markdown }}
+      {{ issue.notes|render_markdown }}
 </div>
   {% endif %}
 

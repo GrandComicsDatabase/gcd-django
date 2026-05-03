@@ -5,6 +5,7 @@ import os
 import csv
 import chardet
 import json
+import yaml
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
@@ -176,7 +177,7 @@ def _process_file(request, changeset_url, is_issue, use_csv=False):
             # check here for story_type, otherwise sequences up to an error
             # will be be added
             response, failure = _find_story_type(request, changeset_url,
-                                                 split_line)
+                                                 split_line[TYPE], split_line)
             if failure:
                 return response, True
 
@@ -222,7 +223,8 @@ def _parse_volume(volume):
     return volume, no_volume
 
 
-def _find_story_type(request, changeset_url, split_line):
+def _find_story_type(request, changeset_url, story_type_name,
+                     sequence_fields):
     '''
     make sure that we have a valid StoryType
     returns two values
@@ -234,13 +236,89 @@ def _find_story_type(request, changeset_url, split_line):
       - True for having failed
     '''
     try:
-        story_type = StoryType.objects.get(name=split_line[TYPE].
+        story_type = StoryType.objects.get(name=story_type_name.
                                            strip().lower())
         return story_type, False
     except StoryType.DoesNotExist:
         error_text = 'Story type "%s" in line %s does not exist.' \
-            % (esc(split_line[TYPE]), esc(split_line))
+            % (esc(story_type_name), esc(sequence_fields))
         return _handle_import_error(request, changeset_url, error_text), True
+
+
+def _process_sequence_data(request, sequence_fields, changeset):
+    parsed_data = {}
+    story_type, failure = _find_story_type(request, changeset,
+                                           sequence_fields['type'],
+                                           sequence_fields)
+    if failure:
+        return story_type, True
+    parsed_data['type'] = story_type
+
+    for field in ['title', 'first_line', 'feature', 'genre', 'characters',
+                  'job_number', 'reprint_notes', 'synopsis', 'notes',
+                  'keywords']:
+        parsed_data[field] = sequence_fields.get(field, '').strip()
+
+    if parsed_data['title'].startswith('[') and \
+       parsed_data['title'].endswith(']'):
+        parsed_data['title'] = parsed_data['title'][1:-1]
+        parsed_data['title_inferred'] = True
+    else:
+        parsed_data['title_inferred'] = False
+
+    genres = parsed_data.pop('genre')
+    if genres:
+        filtered_genres = ''
+        for genre in genres.split(';'):
+            if genre.strip() in GENRES['en']:
+                filtered_genres += ';' + genre
+        parsed_data['genre'] = filtered_genres[1:]
+    else:
+        parsed_data['genre'] = genres
+
+    parsed_data['page_count'], parsed_data['page_count_uncertain'] = \
+        _check_page_count(sequence_fields['page_count'])
+
+    # check for none as value and process
+    for field in ['script', 'pencils', 'inks', 'colors', 'letters', 'editing']:
+        parsed_data[field], parsed_data['no_' + field] = \
+          _check_for_none(sequence_fields.get(field, '').strip())
+
+    if story_type == StoryType.objects.get(name='cover'):
+        if not parsed_data['script']:
+            parsed_data['no_script'] = True
+        if not parsed_data['letters']:
+            parsed_data['no_letters'] = True
+    if not parsed_data['editing']:
+        parsed_data['no_editing'] = True
+    return parsed_data, False
+
+
+def _create_story_add(story_data, request, issue, changeset, running_number):
+    parsed_data, failure = _process_sequence_data(request, story_data,
+                                                  changeset)
+    if failure:
+        return parsed_data, True
+    story_revision = StoryRevision(
+      changeset=changeset,
+      sequence_number=running_number,
+      issue=issue,
+      **parsed_data)
+    story_revision.save()
+    return story_revision, False
+
+
+def _import_sequences_structured(request, issue, changeset, story_data,
+                                 running_number):
+    for story in story_data:
+        response, failure = _create_story_add(story, request, issue,
+                                              changeset, running_number)
+        if failure:
+            return response
+        running_number += 1
+    return HttpResponseRedirect(urlresolvers.reverse(
+                                'edit',
+                                kwargs={'id': changeset.id}))
 
 
 def _import_sequences(request, issue, changeset, lines, running_number):
@@ -252,77 +330,19 @@ def _import_sequences(request, issue, changeset, lines, running_number):
     """
 
     for fields in lines:
-        story_type, failure = _find_story_type(request, changeset, fields)
+        data = {}
+        cnt = 0
+        line_length = len(fields)
+        if line_length < MAX_SEQUENCE_FIELDS:
+            for i in range(MAX_SEQUENCE_FIELDS - line_length):
+                fields.append('')
+        for field in SEQUENCE_FIELDS:
+            data[field] = fields[cnt]
+            cnt += 1
+        response, failure = _create_story_add(data, request, issue,
+                                              changeset, running_number)
         if failure:
-            return story_type
-
-        title = fields[TITLE].strip()
-        first_line = fields[FIRST_LINE].strip()
-        if title.startswith('[') and title.endswith(']'):
-            title = title[1:-1]
-            title_inferred = True
-        else:
-            title_inferred = False
-        feature = fields[FEATURE].strip()
-        page_count, page_count_uncertain = _check_page_count(
-          fields[STORY_PAGE_COUNT])
-        script, no_script = _check_for_none(fields[SCRIPT])
-        if story_type == StoryType.objects.get(name='cover'):
-            if not script:
-                no_script = True
-        pencils, no_pencils = _check_for_none(fields[PENCILS])
-        inks, no_inks = _check_for_none(fields[INKS])
-        colors, no_colors = _check_for_none(fields[COLORS])
-        letters, no_letters = _check_for_none(fields[LETTERS])
-        editing, no_editing = _check_for_none(fields[STORY_EDITING])
-        genres = fields[GENRE].strip()
-        if genres:
-            filtered_genres = ''
-            for genre in genres.split(';'):
-                if genre.strip() in GENRES['en']:
-                    filtered_genres += ';' + genre
-            genre = filtered_genres[1:]
-        else:
-            genre = genres
-        characters = fields[CHARACTERS].strip()
-        job_number = fields[JOB_NUMBER].strip()
-        reprint_notes = fields[REPRINT_NOTES].strip()
-        synopsis = fields[SYNOPSIS].strip()
-        notes = fields[STORY_NOTES].strip()
-        keywords = fields[STORY_KEYWORDS].strip()
-
-        story_revision = StoryRevision(
-          changeset=changeset,
-          title=title,
-          title_inferred=title_inferred,
-          first_line=first_line,
-          feature=feature,
-          type=story_type,
-          sequence_number=running_number,
-          page_count=page_count,
-          page_count_uncertain=page_count_uncertain,
-          script=script,
-          pencils=pencils,
-          inks=inks,
-          colors=colors,
-          letters=letters,
-          editing=editing,
-          no_script=no_script,
-          no_pencils=no_pencils,
-          no_inks=no_inks,
-          no_colors=no_colors,
-          no_letters=no_letters,
-          no_editing=no_editing,
-          job_number=job_number,
-          genre=genre,
-          characters=characters,
-          synopsis=synopsis,
-          reprint_notes=reprint_notes,
-          notes=notes,
-          keywords=keywords,
-          issue=issue
-          )
-        story_revision.save()
+            return response
         running_number += 1
     return HttpResponseRedirect(urlresolvers.reverse('edit',
                                                      kwargs={'id':
@@ -424,6 +444,8 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
 
     parsed_data['page_count'], parsed_data['page_count_uncertain'] = \
         _check_page_count(issue_fields.get('page_count', '').strip())
+    if not parsed_data['page_count']:
+        parsed_data['page_count_uncertain'] = False
     on_sale_date = issue_fields.get('on_sale_date', '').strip()
     if on_sale_date:
         if on_sale_date[-1] == '?':
@@ -491,9 +513,6 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
 
 
 def _create_issue_add(parsed_data, request, series, series_url):
-    changeset = Changeset(indexer=request.user, state=states.OPEN,
-                          change_type=CTYPES['issue_add'])
-    changeset.save()
     # check for variant add
     if parsed_data.get('variant_name'):
         number = parsed_data['number']
@@ -508,7 +527,7 @@ def _create_issue_add(parsed_data, request, series, series_url):
                              parsed_data['variant_name'], number,
                              series)
             return _handle_import_error(request, series_url,
-                                        error_text)
+                                        error_text), True
         current_variants = issue.variant_set.order_by('-sort_code')
         if current_variants:
             add_after = current_variants[0]
@@ -518,32 +537,44 @@ def _create_issue_add(parsed_data, request, series, series_url):
         add_after = series.last_issue
     brand_emblem = parsed_data.pop('brand_emblem')
     indicia_printer = parsed_data.pop('indicia_printer')
+
+    changeset = Changeset(indexer=request.user, state=states.OPEN,
+                          change_type=CTYPES['issue_add'])
+    changeset.save()
     issue_revision = IssueRevision(
         changeset=changeset, series=series,
         after=add_after, **parsed_data)
     issue_revision.save()
+
     if brand_emblem:
         issue_revision.brand_emblem.set(brand_emblem)
     if indicia_printer:
         issue_revision.indicia_printer.set(indicia_printer)
-    return issue_revision
+
+    return issue_revision, False
 
 
 @permission_required('indexer.can_reserve')
-def import_issues_to_series_structured(request, series_id):
+def import_issues_to_series_structured(request, series_id, use_yaml=False):
     series = get_object_or_404(Series, id=series_id)
     series_url = urlresolvers.reverse('add_issues',
                                       kwargs={'series_id': series.id})
     if request.method == 'POST' and 'file' in request.FILES:
         tmpfile = _convert_upload_to_file(request, request.FILES['file'])
-        try:
-            data = json.load(tmpfile)
-        except json.JSONDecodeError as e:
-            error_text = f'Invalid JSON format: {e}'
-            return _handle_import_error(request, series_url, error_text)
-
+        if use_yaml:
+            try:
+                data = yaml.safe_load(tmpfile)
+            except yaml.YAMLError as e:
+                error_text = f'Invalid YAML format: {e}'
+                return _handle_import_error(request, series_url, error_text)
+        else:
+            try:
+                data = json.load(tmpfile)
+            except json.JSONDecodeError as e:
+                error_text = f'Invalid JSON format: {e}'
+                return _handle_import_error(request, series_url, error_text)
         if 'issue_set' not in data:
-            error_text = 'JSON must contain an "issue_set" key.'
+            error_text = 'File must contain an "issue_set" key.'
             return _handle_import_error(request, series_url, error_text)
         for issue_data in data['issue_set']:
             # JSON null entries become None in Python, but we want to treat
@@ -555,20 +586,55 @@ def import_issues_to_series_structured(request, series_id):
                                                        series, series_url)
             if failure:
                 return parsed_data
-            issue_revision = _create_issue_add(parsed_data, request, series,
-                                               series_url)
+            issue_revision, failure = _create_issue_add(parsed_data, request,
+                                                        series, series_url)
+            if failure:
+                return issue_revision
             if issue_revision.variant_of:
-                pass
+                if len(issue_data.get('story_set', [])) > 1:
+                    error_text = 'Variant %s has more than one story.' % (
+                        issue_revision)
+                    return _handle_import_error(request, series_url,
+                                                error_text)
+                variant_cover_status = issue_revision.variant_cover_status
+                if variant_cover_status != VCS_Codes['ARTWORK_DIFFERENCE'] \
+                   and issue_data.get('story_set', []):
+                    error_text = 'Variant is of cover status %s, ' \
+                                 'but a sequence exists for variant %s.' % (
+                                    VARIANT_COVER_STATUS[variant_cover_status],
+                                    issue_revision)
+                    return _handle_import_error(request, series_url,
+                                                error_text)
+                for story_data in issue_data.get('story_set', []):
+                    if story_data.get('type', '').strip().lower() != 'cover':
+                        error_text = 'Sequence for variant %s is not of ' \
+                          'type cover.' % (issue_revision)
+                        return _handle_import_error(request, series_url,
+                                                    error_text)
+                    parsed_data, failure = _process_sequence_data(
+                      request, story_data, issue_revision.changeset)
+                    if failure:
+                        return parsed_data
+                    story_revision = StoryRevision(
+                      changeset=issue_revision.changeset,
+                      sequence_number=0,
+                      issue=None,
+                      **parsed_data)
+                    story_revision.save()
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
         return HttpResponseRedirect(
-          urlresolvers.reverse('series_details', kwargs={'id': series.id}))
+          urlresolvers.reverse('show_series', kwargs={'series_id': series.id}))
 
 
 @permission_required('indexer.can_reserve')
 def import_issues_to_series(request, series_id):
     if request.method == 'POST' and 'json' in request.POST:
         return import_issues_to_series_structured(request, series_id)
+    if request.method == 'POST' and 'yaml' in request.POST:
+        return import_issues_to_series_structured(request, series_id,
+                                                  use_yaml=True)
+
     series = get_object_or_404(Series, id=series_id)
     series_url = urlresolvers.reverse('add_issues',
                                       kwargs={'series_id': series.id})
@@ -601,7 +667,7 @@ def import_issues_to_series(request, series_id):
             if variant:
                 if line[TYPE].strip().lower() == 'cover':
                     if variant_cover_status != VCS_Codes['ARTWORK_DIFFERENCE']:
-                        error_text = 'variant is of cover status %s, ' \
+                        error_text = 'Variant is of cover status %s, ' \
                           'but cover sequence exists in line %s.' % (
                             VARIANT_COVER_STATUS[variant_cover_status], line)
                         return _handle_import_error(request, series_url,
@@ -614,15 +680,17 @@ def import_issues_to_series(request, series_id):
                                                      series_url)
             if failure:
                 return parsed_data
-            issue_revision = _create_issue_add(parsed_data, request, series,
-                                               series_url)
+            issue_revision, failure = _create_issue_add(parsed_data, request,
+                                                        series, series_url)
+            if failure:
+                return issue_revision
             if issue_revision.variant_of:
                 variant = True
                 variant_cover_status = issue_revision.variant_cover_status
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
         return HttpResponseRedirect(
-          urlresolvers.reverse('series_details', kwargs={'id': series.id}))
+          urlresolvers.reverse('show_series', kwargs={'series_id': series.id}))
 
 
 @permission_required('indexer.can_reserve')
@@ -645,31 +713,58 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
                   ' changeset. Back to the <a href="%s">editing page</a>.'
                   % (esc(issue_revision), changeset_url),
                   is_safe=True)
+
+            use_csv = False
+            use_tsv = False
+            use_json = False
+            use_yaml = False
+
             if 'csv' in request.POST:
                 use_csv = True
+            elif 'json' in request.POST:
+                use_json = True
+            elif 'yaml' in request.POST:
+                use_yaml = True
             else:
-                use_csv = False
-            lines, failure = _process_file(request, changeset_url,
-                                           is_issue=True, use_csv=use_csv)
-            if failure:
-                return lines
-
-            # parse the issue line
-            issue_fields = lines.pop(0)
-            parsed_data, failure = _parse_issue_line(
-              request, issue_fields,
-              issue_revision.issue.series, changeset_url)
+                use_tsv = True
+            if use_tsv or use_csv:
+                lines, failure = _process_file(request, changeset_url,
+                                               is_issue=True, use_csv=use_csv)
+                if failure:
+                    return lines
+                # parse the issue line
+                issue_fields = lines.pop(0)
+                parsed_data, failure = _parse_issue_line(
+                  request, issue_fields,
+                  issue_revision.issue.series, changeset_url)
+            elif use_json or use_yaml:
+                tmpfile = _convert_upload_to_file(request,
+                                                  request.FILES['flatfile'])
+                if use_yaml:
+                    try:
+                        issue_data = yaml.safe_load(tmpfile)
+                    except yaml.YAMLError as e:
+                        error_text = f'Invalid YAML format: {e}'
+                        return _handle_import_error(request, changeset_url,
+                                                    error_text)
+                else:
+                    try:
+                        issue_data = json.load(tmpfile)
+                    except json.JSONDecodeError as e:
+                        error_text = f'Invalid JSON format: {e}'
+                        return _handle_import_error(request, changeset_url,
+                                                    error_text)
+                issue_data.pop('variant_name', None)
+                parsed_data, failure = _process_issue_data(
+                  request, issue_data, issue_revision.series, changeset_url)
             if failure:
                 return parsed_data
+
             for field, value in parsed_data.items():
-                if field in ['indicia_publisher', 'brand_emblem',
-                             'indicia_printer']:
+                if field in ['brand_emblem', 'indicia_printer']:
                     # these are foreign keys, set them differently
                     continue
                 setattr(issue_revision, field, value)
-            if 'indicia_publisher' in parsed_data:
-                issue_revision.indicia_publisher = \
-                  parsed_data['indicia_publisher']
             if 'brand_emblem' in parsed_data:
                 if parsed_data['brand_emblem']:
                     issue_revision.brand_emblem.set(
@@ -685,8 +780,13 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
             issue_revision.save()
             running_number = 0
             issue = Issue.objects.get(id=issue_id)
-            return _import_sequences(request, issue, changeset,
-                                     lines, running_number)
+            if use_json or use_yaml:
+                return _import_sequences_structured(
+                  request, issue, changeset, issue_data.get('story_set'),
+                  running_number)
+            else:
+                return _import_sequences(request, issue, changeset,
+                                         lines, running_number)
         else:
             return HttpResponseRedirect(
               urlresolvers.reverse('edit',
@@ -712,18 +812,48 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
             issue_revision = changeset.issuerevisions.get(issue=issue_id)
             changeset_url = urlresolvers.reverse('edit',
                                                  kwargs={'id': changeset.id})
+            use_csv = False
+            use_tsv = False
+            use_json = False
+            use_yaml = False
+
             if 'csv' in request.POST:
                 use_csv = True
+            elif 'json' in request.POST:
+                use_json = True
+            elif 'yaml' in request.POST:
+                use_yaml = True
             else:
-                use_csv = False
-            lines, failure = _process_file(request, changeset_url,
-                                           is_issue=False, use_csv=use_csv)
-            if failure:
-                return lines
+                use_tsv = True
             running_number = issue_revision.next_sequence_number()
             issue = Issue.objects.get(id=issue_id)
-            return _import_sequences(request, issue, changeset,
-                                     lines, running_number)
+            if use_csv or use_tsv:
+                lines, failure = _process_file(request, changeset_url,
+                                               is_issue=False, use_csv=use_csv)
+                if failure:
+                    return lines
+                return _import_sequences(request, issue, changeset,
+                                         lines, running_number)
+            elif use_json or use_yaml:
+                tmpfile = _convert_upload_to_file(request,
+                                                  request.FILES['flatfile'])
+                if use_yaml:
+                    try:
+                        story_data = yaml.safe_load(tmpfile)
+                    except yaml.YAMLError as e:
+                        error_text = f'Invalid YAML format: {e}'
+                        return _handle_import_error(request, changeset_url,
+                                                    error_text)
+                else:
+                    try:
+                        story_data = json.load(tmpfile)
+                    except json.JSONDecodeError as e:
+                        error_text = f'Invalid JSON format: {e}'
+                        return _handle_import_error(request, changeset_url,
+                                                    error_text)
+                story_data = story_data.get('story_set')
+                return _import_sequences_structured(request, issue, changeset,
+                                                    story_data, running_number)
         else:
             return HttpResponseRedirect(urlresolvers.reverse('edit',
                                         kwargs={'id': changeset.id}))

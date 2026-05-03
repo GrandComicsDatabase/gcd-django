@@ -8,7 +8,7 @@ from collections import OrderedDict
 from dal import autocomplete
 
 from apps.gcd.models import Character, Group, CharacterRelationType, \
-                            GroupRelationType, Universe
+                            GroupRelationType, Universe, StoryCharacter
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field
@@ -144,6 +144,16 @@ class CharacterRevisionForm(CharacterBaseForm):
         self.helper.label_class = 'col-md-3 create-label'
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
+        if self.instance.universe_id:
+            self.fields['universe'].help_text = (
+                'This field is deprecated. The universe should be set per '
+                'appearance in sequences. Please remove this value if this '
+                'is the only version of this character. If a specialization '
+                'with no universe exists for this character, then transfer '
+                'notes to that and remove this character.'
+            )
+        else:
+            self.fields.pop('universe')
         ordering = list(self.fields)
         # in django 1.9 there is Form.order_fields
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -267,6 +277,14 @@ class GroupRevisionForm(CharacterRevisionForm):
         self.helper.label_class = 'col-md-3 create-label'
         self.helper.field_class = 'col-md-9'
         self.helper.form_tag = False
+        if 'universe' in self.fields:
+            self.fields['universe'].help_text = (
+                'This field is deprecated. The universe should be set per '
+                'appearance in sequences. Please remove this value if this '
+                'is the only version of this group. If a specialization '
+                'with no universe exists for this group, then transfer '
+                'notes to that and remove this group.'
+            )
         ordering = list(self.fields)
         # in django 1.9 there is Form.order_fields
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
@@ -298,6 +316,27 @@ def get_group_membership_revision_form(revision=None, user=None):
         code = None
 
     class RuntimeGroupMembershipRevisionForm(GroupMembershipRevisionForm):
+        def __init__(self, *args, **kwargs):
+            super(RuntimeGroupMembershipRevisionForm, self).__init__(*args,
+                                                                     **kwargs)
+            if self.instance.group_membership:
+                character = self.instance.group_membership.character
+                group = self.instance.group_membership.group
+                if StoryCharacter.objects.filter(
+                  character__character=character,
+                  group_name__group=group,
+                  deleted=False).exists():
+                    self.fields['character'].queryset = \
+                        Character.objects.filter(id=character.id)
+                    self.fields['character'].widget = forms.Select(
+                      choices=[(character.id, character)])
+                    self.fields['group'].queryset = \
+                        Group.objects.filter(id=group.id)
+                    self.fields['group'].widget = forms.Select(
+                      choices=[(group.id, group)])
+                    self.fields['group'].help_text = 'The above cannot be ' \
+                        'changed, character appearances with this group exist.'
+
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=code)
 

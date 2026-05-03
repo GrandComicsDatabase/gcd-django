@@ -570,8 +570,8 @@ class IssueRevisionForm(KeywordBaseForm):
         model = IssueRevision
         fields = get_issue_field_list()
         fields.insert(fields.index('editing'), 'creator_help')
-        fields.insert(fields.index('year_on_sale'), 'on_sale_date_help')
         fields.insert(fields.index('year_on_sale'), 'on_sale_date')
+        fields.insert(fields.index('year_on_sale'), 'on_sale_date_help')
         fields.insert(fields.index('keywords') + 1, 'turned_off_help')
         widgets = {
             'number': forms.TextInput(attrs={'class': 'w-full lg:w-4/5',
@@ -650,7 +650,7 @@ class IssueRevisionForm(KeywordBaseForm):
     on_sale_date_help = forms.CharField(
         widget=HiddenInputWithHelp, required=False, label='',
         help_text='The on-sale (shipping) date can be entered in two ways: '
-                  'Either in the next field as YYYY-MM-DD, where all parts '
+                  'Either in the above field as YYYY-MM-DD, where all parts '
                   'need to be entered, or using the following three fields. '
                   'If only partial information is known you need to use the '
                   'second option and enter the part of the date which is '

@@ -38,7 +38,7 @@ GCD :: Group :: {{ group.name }}
 {% if group.universe %}
             <tr>
               <td>Universe:</td>
-              <td>{{ group.universe|absolute_url }}</td>
+              <td>{{ group.universe|absolute_url }} <span class="text-sm italic">(deprecated)</span></td>
             </tr>
 {% endif %}
 {% if group.year_first_published %}
@@ -61,6 +61,7 @@ GCD :: Group :: {{ group.name }}
             <li><a href='{% url "group_covers" group_id=group.id %}'>Cover List</a></li>
             <li><a href='{% url "group_series" group_id=group.id %}'>Series List</a></li>
             <li><a href='{% url "group_features" group_id=group.id %}'>Feature List</a></li>
+            <li><a href='{% url "group_characters" group_id=group.id %}'>Character List</a></li>
             <li><a href='{% url "group_sequences" group_id=group.id %}'>Sequences List</a></li>
           </ul>
       {% if group.external_link.count %}
@@ -91,11 +92,11 @@ GCD :: Group :: {{ group.name }}
 </table>
 {% if group.description %}
 <h3 class="mt-2">Description:</h3>
-{{ group.description|markdown }}
+{{ group.description|render_markdown }}
 {% endif %}
 {% if group.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ group.notes|markdown }}
+{{ group.notes|render_markdown }}
 {% endif %}
 {% endblock %}
 
