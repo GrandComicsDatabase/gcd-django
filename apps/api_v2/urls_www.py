@@ -10,9 +10,11 @@ from django.urls import include, path
 
 from apps.api_v2.routers import V2APIRouter
 from apps.api_v2.views.publishers import PublisherViewSet
+from apps.api_v2.views.series import SeriesViewSet
 
 router = V2APIRouter()
 router.register('publishers', PublisherViewSet, basename='publisher')
+router.register('series', SeriesViewSet, basename='series')
 
 urlpatterns = [
     path('', include(router.urls)),
