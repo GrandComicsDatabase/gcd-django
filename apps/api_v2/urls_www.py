@@ -9,8 +9,10 @@ and the rest as they land in subsequent sprints. The dispatcher in
 from django.urls import include, path
 
 from apps.api_v2.routers import V2APIRouter
+from apps.api_v2.views.publishers import PublisherViewSet
 
 router = V2APIRouter()
+router.register('publishers', PublisherViewSet, basename='publisher')
 
 urlpatterns = [
     path('', include(router.urls)),
