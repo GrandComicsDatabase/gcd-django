@@ -72,16 +72,26 @@ ACTIVE_STORY_PREFETCH = Prefetch(
 class IssueViewSet(GCDBaseViewSet):
     """Read-only issue endpoints for the public v2 API surface."""
 
-    queryset = Issue.objects.select_related(
-        'series',
-        'indicia_publisher',
-        'variant_of',
-    ).prefetch_related(
-        'brand_emblem',
-        'keywords',
-        ACTIVE_ISSUE_CREDIT_PREFETCH,
-        ACTIVE_COVER_PREFETCH,
-        'variant_of__cover_set',
+    queryset = (
+        Issue.objects.select_related(
+            'series',
+            'indicia_publisher',
+            'variant_of',
+        )
+        .prefetch_related(
+            'brand_emblem',
+            'keywords',
+            ACTIVE_ISSUE_CREDIT_PREFETCH,
+            ACTIVE_COVER_PREFETCH,
+            'variant_of__cover_set',
+        )
+        .order_by(
+            # ``Issue.Meta.ordering`` uses the related Series default
+            # ordering, which forces a wide join-based sort on large tables.
+            'series_id',
+            'sort_code',
+            'id',
+        )
     )
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IssueFilterSet

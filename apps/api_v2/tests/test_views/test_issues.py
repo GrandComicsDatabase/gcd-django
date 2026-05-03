@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from django.urls import reverse
 
+from apps.api_v2.views.issues import IssueViewSet
 from apps.gcd.models import Brand, Cover, IndiciaPublisher, Story, StoryType
 
 
@@ -216,6 +217,15 @@ def test_issue_list_applies_filter_query_params(api_client, issue, publisher):
     assert response.status_code == 200
     assert response.data['count'] == 1
     assert response.data['results'][0]['id'] == issue.pk
+
+
+def test_issue_list_queryset_uses_id_based_series_ordering():
+    """The list queryset avoids the costly related-series default sort."""
+    assert IssueViewSet.queryset.query.order_by == (
+        'series_id',
+        'sort_code',
+        'id',
+    )
 
 
 def test_issue_endpoints_hide_soft_deleted_records(api_client, issue):

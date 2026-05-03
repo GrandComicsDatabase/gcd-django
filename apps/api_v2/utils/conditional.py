@@ -9,7 +9,6 @@ queryset evaluation.
 
 import hashlib
 
-from django.db.models import Max
 from rest_framework_condition import etag, last_modified
 from rest_framework_condition.decorators import condition
 
@@ -65,7 +64,14 @@ def make_last_modified(model, *, soft_delete=True, queryset_getter=None):
                 qs.filter(pk=pk).values_list('modified', flat=True).first()
             )
         else:
-            latest = qs.aggregate(latest=Max('modified'))['latest']
+            # Use the indexed modified column directly instead of an
+            # aggregate scan so broad list endpoints stay cheap on the
+            # production-sized tables.
+            latest = (
+                qs.order_by('-modified')
+                .values_list('modified', flat=True)
+                .first()
+            )
         if key is not None:
             cache[key] = latest
         return latest
