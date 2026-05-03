@@ -46,6 +46,7 @@ setuptools
 djangorestframework
 # djangorestframework-yaml
 drf-yaml
+django-rest-framework-condition
 
 # These packages are used in development and testing.
 flake8==6.1.0

@@ -58,6 +58,7 @@ basic_patterns = [
         ),
         name='contact_form_sent'),
     path('api/', include(api_router.urls)),
+    path('api/v2/', include('apps.api_v2.urls')),
 ]
 
 read_only_patterns = [

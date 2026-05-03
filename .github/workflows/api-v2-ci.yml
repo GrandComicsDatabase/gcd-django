@@ -1,0 +1,35 @@
+name: API v2 CI
+
+on:
+  push:
+    branches: [beta]
+    paths:
+      - 'apps/api_v2/**'
+      - '.github/workflows/api-v2-ci.yml'
+  pull_request:
+    branches: [beta]
+    paths:
+      - 'apps/api_v2/**'
+      - '.github/workflows/api-v2-ci.yml'
+
+jobs:
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install ruff
+        run: pip install ruff==0.15.12
+
+      - name: Ruff lint
+        run: ruff check apps/api_v2/
+
+      - name: Ruff format check
+        run: ruff format --check apps/api_v2/
