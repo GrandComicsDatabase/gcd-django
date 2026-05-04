@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Throttle classes for the v2 API.
 
 Three buckets per the PRD: one for anonymous traffic, one for users

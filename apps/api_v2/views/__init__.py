@@ -1,5 +1,10 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """View base classes for the v2 API."""
 
+from django.db import transaction
+from django.utils.decorators import method_decorator
 from rest_framework.authentication import (
     BasicAuthentication,
     SessionAuthentication,
@@ -16,6 +21,7 @@ from apps.api_v2.throttling import (
 )
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class GCDBaseViewSet(ReadOnlyModelViewSet):
     """Read-only viewset that hides soft-deleted records.
 
