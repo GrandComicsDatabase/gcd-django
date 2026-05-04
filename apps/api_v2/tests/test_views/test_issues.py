@@ -222,6 +222,36 @@ def test_issue_list_applies_filter_query_params(api_client, issue, publisher):
     assert response.data['results'][0]['id'] == issue.pk
 
 
+def test_issue_list_uses_variant_base_cover_url(api_client, issue):
+    """Variant issues reuse the base issue cover when configured to do so."""
+    issue.series.is_comics_publication = True
+    issue.series.save()
+    base = issue
+    base.key_date = '2024-01-01'
+    base.on_sale_date = '2024-01-08'
+    base.save()
+    cover = Cover.objects.create(issue=base)
+    variant = _create_issue(
+        issue.series,
+        number='1/A',
+        key_date='2024-01-02',
+        on_sale_date='2024-01-09',
+        sort_code=2,
+    )
+    variant.variant_of = base
+    variant.variant_cover_status = 1
+    variant.save()
+
+    response = api_client.get(reverse('issue-list'))
+
+    assert response.status_code == 200
+    assert response.data['count'] == 2
+    assert response.data['results'][1]['id'] == variant.pk
+    assert response.data['results'][1]['cover_url'] == (
+        f'{cover.get_base_url()}/w400/{cover.id}.jpg'
+    )
+
+
 def test_issue_list_queryset_uses_id_based_series_ordering():
     """The list queryset avoids the costly related-series default sort."""
     assert IssueViewSet.queryset.query.order_by == (

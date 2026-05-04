@@ -51,6 +51,11 @@ ACTIVE_COVER_PREFETCH = Prefetch(
     queryset=Cover.objects.filter(deleted=False).order_by('id'),
     to_attr='active_cover_list',
 )
+ACTIVE_VARIANT_COVER_PREFETCH = Prefetch(
+    'variant_of__cover_set',
+    queryset=Cover.objects.filter(deleted=False).order_by('id'),
+    to_attr='active_cover_list',
+)
 ACTIVE_STORY_CREDIT_PREFETCH = Prefetch(
     'credits',
     queryset=StoryCredit.objects.filter(deleted=False).select_related(
@@ -86,7 +91,7 @@ class IssueViewSet(GCDBaseViewSet):
             'keywords',
             ACTIVE_ISSUE_CREDIT_PREFETCH,
             ACTIVE_COVER_PREFETCH,
-            'variant_of__cover_set',
+            ACTIVE_VARIANT_COVER_PREFETCH,
         )
         .order_by(
             # ``Issue.Meta.ordering`` uses the related Series default

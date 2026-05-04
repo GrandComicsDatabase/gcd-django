@@ -12,7 +12,14 @@ from django.urls import reverse
 from apps.gcd.models import Brand, Cover, Story, StoryType
 
 
-def _create_issue(series, *, number, sort_code):
+def _create_issue(
+    series,
+    *,
+    number,
+    sort_code,
+    variant_of=None,
+    variant_cover_status=3,
+):
     """Create a minimal issue row for performance tests."""
     return series.issue_set.model.objects.create(
         number=number,
@@ -32,6 +39,8 @@ def _create_issue(series, *, number, sort_code):
         notes='',
         indicia_printer_sourced_by='',
         series=series,
+        variant_of=variant_of,
+        variant_cover_status=variant_cover_status,
     )
 
 
@@ -99,3 +108,39 @@ def test_issue_detail_query_count(api_client, issue):
 
     assert response.status_code == 200
     assert len(context) == 10
+
+
+def test_issue_list_variant_cover_query_count(api_client, series):
+    """Variant cover fallback avoids per-row cover lookups."""
+    series.is_comics_publication = True
+    series.save()
+    base = _create_issue(series, number='1', sort_code=1)
+    first_variant = _create_issue(
+        series,
+        number='1/A',
+        sort_code=2,
+        variant_of=base,
+        variant_cover_status=1,
+    )
+    second_variant = _create_issue(
+        series,
+        number='1/B',
+        sort_code=3,
+        variant_of=base,
+        variant_cover_status=1,
+    )
+    Cover.objects.create(issue=base)
+
+    with CaptureQueriesContext(connection) as context:
+        response = api_client.get(reverse('issue-list'))
+
+    assert response.status_code == 200
+    assert response.data['count'] == 3
+    assert response.data['results'][1]['id'] == first_variant.pk
+    assert response.data['results'][2]['id'] == second_variant.pk
+    cover_queries = [
+        query['sql']
+        for query in context.captured_queries
+        if 'FROM `gcd_cover`' in query['sql']
+    ]
+    assert len(cover_queries) == 2
