@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Plain-text credit helpers for the v2 API."""
 
 from apps.gcd.models import CREDIT_TYPES

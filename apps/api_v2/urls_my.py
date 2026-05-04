@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """URL configuration for the user-data (my) v2 API surface.
 
 Mounted on the ``my.comics.org`` instance (``MYCOMICS=True``). Holds

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Tests for the publisher serializer."""
 
 from apps.api_v2.serializers.publishers import PublisherSerializer

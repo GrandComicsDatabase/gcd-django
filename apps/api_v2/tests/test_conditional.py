@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Tests for the conditional-request helpers in ``api_v2.utils``."""
 
 from datetime import datetime

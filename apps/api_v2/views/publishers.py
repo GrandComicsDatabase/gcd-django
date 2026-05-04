@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Viewsets for v2 publisher endpoints."""
 
 from django_filters.rest_framework import DjangoFilterBackend

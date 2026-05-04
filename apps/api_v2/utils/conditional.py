@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Conditional request helpers for the v2 API.
 
 Re-exports the DRF-aware conditional decorators from
