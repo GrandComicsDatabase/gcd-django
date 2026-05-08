@@ -1,14 +1,37 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Conditional request helpers for the v2 API.
 
-Re-exports ``last_modified`` and ``etag`` from
+Re-exports the DRF-aware conditional decorators from
 ``rest_framework_condition`` so v2 viewsets have a single import point,
-and provides ``make_last_modified``, a factory that builds the
-per-model callable described in the PRD: one query against ``modified``,
-no serialization, no full queryset evaluation.
+and provides factories that build the per-model callables described in
+the PRD: one query against ``modified``, no serialization, no full
+queryset evaluation.
 """
 
-from django.db.models import Max
+import hashlib
+
 from rest_framework_condition import etag, last_modified
+from rest_framework_condition.decorators import condition
+
+
+def _cache_key(model, request, pk):
+    """Return a stable request-local cache key for conditional metadata."""
+    return f'{model._meta.label_lower}:{request.get_full_path()}:{pk}'
+
+
+def _request_cache(request):
+    """Return a request-local cache dict, or ``None`` for simple sentinels."""
+    if not hasattr(request, '__dict__') or not hasattr(
+        request, 'get_full_path'
+    ):
+        return None
+    cache = getattr(request, '_gcd_v2_conditional_cache', None)
+    if cache is None:
+        cache = {}
+        request._gcd_v2_conditional_cache = cache
+    return cache
 
 
 def make_last_modified(model, *, soft_delete=True, queryset_getter=None):
@@ -29,6 +52,10 @@ def make_last_modified(model, *, soft_delete=True, queryset_getter=None):
     """
 
     def _last_modified(request, pk=None, **kwargs):
+        cache = _request_cache(request)
+        key = None if cache is None else _cache_key(model, request, pk)
+        if key is not None and key in cache:
+            return cache[key]
         if queryset_getter is None:
             qs = model._default_manager.all()
         else:
@@ -36,10 +63,55 @@ def make_last_modified(model, *, soft_delete=True, queryset_getter=None):
         if soft_delete:
             qs = qs.filter(deleted=False)
         if pk is not None:
-            return qs.filter(pk=pk).values_list('modified', flat=True).first()
-        return qs.aggregate(latest=Max('modified'))['latest']
+            latest = (
+                qs.filter(pk=pk).values_list('modified', flat=True).first()
+            )
+        else:
+            # Use the indexed modified column directly instead of an
+            # aggregate scan so broad list endpoints stay cheap on the
+            # production-sized tables.
+            latest = (
+                qs.order_by('-modified')
+                .values_list('modified', flat=True)
+                .first()
+            )
+        if key is not None:
+            cache[key] = latest
+        return latest
 
     return _last_modified
 
 
-__all__ = ['etag', 'last_modified', 'make_last_modified']
+def make_etag(model, *, soft_delete=True, queryset_getter=None):
+    """Return an ``etag(request, pk=None, **kwargs)`` callable.
+
+    The ETag is derived from the request path plus the latest modified
+    timestamp for the requested resource. Detail requests return
+    ``None`` when the row is absent so the wrapped view can still 404.
+    Empty list result sets still receive a stable ETag so clients can
+    cache the empty response body.
+    """
+    last_modified_getter = make_last_modified(
+        model,
+        soft_delete=soft_delete,
+        queryset_getter=queryset_getter,
+    )
+
+    def _etag(request, pk=None, **kwargs):
+        latest = last_modified_getter(request, pk=pk, **kwargs)
+        if pk is not None and latest is None:
+            return None
+        latest_repr = 'empty' if latest is None else latest.isoformat()
+        payload = f'{request.get_full_path()}::{latest_repr}'
+        return hashlib.sha256(payload.encode('utf-8')).hexdigest()
+
+    return _etag
+
+
+__all__ = [
+    'condition',
+    'etag',
+    'last_modified',
+    'make_etag',
+    'make_last_modified',
+]

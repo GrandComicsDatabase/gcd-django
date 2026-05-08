@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Tests for the MYCOMICS-gated URL dispatch in ``apps/api_v2/urls.py``.
 
 The v2 API mirrors the project's existing two-instance deployment

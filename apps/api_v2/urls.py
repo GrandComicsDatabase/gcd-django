@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """URL dispatcher for the v2 API.
 
 The v2 API mirrors the project's existing two-instance deployment

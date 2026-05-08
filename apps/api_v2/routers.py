@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Grand Comics Database contributors
+# SPDX-License-Identifier: GPL-3.0-only
+
 """Custom DRF routers for the v2 API.
 
 Both surface URL confs (``urls_www`` and ``urls_my``) build their
