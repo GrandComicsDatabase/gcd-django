@@ -5,6 +5,12 @@
 
 from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    extend_schema,
+)
 
 from apps.api_v2.filters.issues import IssueFilterSet
 from apps.api_v2.serializers.issues import (
@@ -76,6 +82,55 @@ ACTIVE_STORY_PREFETCH = Prefetch(
     to_attr='active_story_list',
 )
 
+ISSUE_ON_SALE_SCHEMA_PARAMETERS = [
+    OpenApiParameter(
+        name='on_sale_date__gte',
+        type=OpenApiTypes.DATE,
+        location=OpenApiParameter.QUERY,
+        description=(
+            'Filter issues with on_sale_date on or after this date. '
+            'Use with on_sale_date__lte for a Monday-Sunday range.'
+        ),
+        examples=[
+            OpenApiExample(
+                'rangeStart',
+                value='2025-03-17',
+            ),
+        ],
+    ),
+    OpenApiParameter(
+        name='on_sale_date__lte',
+        type=OpenApiTypes.DATE,
+        location=OpenApiParameter.QUERY,
+        description=(
+            'Filter issues with on_sale_date on or before this date. '
+            'Use with on_sale_date__gte for a Monday-Sunday range.'
+        ),
+        examples=[
+            OpenApiExample(
+                'rangeEnd',
+                value='2025-03-23',
+            ),
+        ],
+    ),
+    OpenApiParameter(
+        name='on_sale_iso_week',
+        type=OpenApiTypes.STR,
+        location=OpenApiParameter.QUERY,
+        description=(
+            'Convenience ISO-week filter in YYYY-Www format. '
+            'Equivalent to the Monday-Sunday on_sale_date range for '
+            'that week.'
+        ),
+        examples=[
+            OpenApiExample(
+                'isoWeek',
+                value='2025-W12',
+            ),
+        ],
+    ),
+]
+
 
 class IssueViewSet(GCDBaseViewSet):
     """Read-only issue endpoints for the public v2 API surface."""
@@ -121,6 +176,7 @@ class IssueViewSet(GCDBaseViewSet):
         etag_func=issue_etag,
         last_modified_func=issue_last_modified,
     )
+    @extend_schema(parameters=ISSUE_ON_SALE_SCHEMA_PARAMETERS)
     def list(self, request, *args, **kwargs):
         """Return a filtered, paginated issue collection."""
         return super().list(request, *args, **kwargs)
