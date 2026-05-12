@@ -360,6 +360,17 @@ def test_issue_list_queryset_uses_variant_ordering_for_variant_filter():
     assert queryset.query.order_by == ('variant_of_id', 'sort_code', 'id')
 
 
+def test_issue_list_skips_exact_count_for_modified_delta_filters():
+    """Modified delta requests opt into no-count pagination."""
+    view = IssueViewSet()
+    request = APIRequestFactory().get(
+        '/api/v2/issues/',
+        {'modified__gt': '2025-01-01T00:00:00Z'},
+    )
+
+    assert view.should_skip_exact_count(Request(request)) is True
+
+
 def test_issue_endpoints_hide_soft_deleted_records(api_client, issue):
     """Soft-deleted issues disappear from list and detail responses."""
     visible = issue

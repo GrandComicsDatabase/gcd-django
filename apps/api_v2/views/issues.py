@@ -13,6 +13,7 @@ from drf_spectacular.utils import (
 )
 
 from apps.api_v2.filters.issues import IssueFilterSet
+from apps.api_v2.pagination import V2IssuePageNumberPagination
 from apps.api_v2.serializers.issues import (
     IssueDetailSerializer,
     IssueListSerializer,
@@ -23,7 +24,14 @@ from apps.api_v2.utils.conditional import (
     make_last_modified,
 )
 from apps.api_v2.views import GCDBaseViewSet
-from apps.gcd.models import Cover, Issue, IssueCredit, Story, StoryCredit
+from apps.gcd.models import (
+    Cover,
+    Issue,
+    IssueCredit,
+    PublisherCodeNumber,
+    Story,
+    StoryCredit,
+)
 
 
 def _issue_filter_queryset(request, *, pk=None, **kwargs):
@@ -56,6 +64,16 @@ ACTIVE_COVER_PREFETCH = Prefetch(
     'cover_set',
     queryset=Cover.objects.filter(deleted=False).order_by('id'),
     to_attr='active_cover_list',
+)
+ACTIVE_PUBLISHER_CODE_NUMBER_PREFETCH = Prefetch(
+    'code_number',
+    queryset=PublisherCodeNumber.objects.filter(
+        deleted=False,
+        number_type_id=1,
+    )
+    .only('id', 'issue_id', 'number', 'number_type_id')
+    .order_by('id'),
+    to_attr='active_publisher_code_number_list',
 )
 ACTIVE_VARIANT_COVER_PREFETCH = Prefetch(
     'variant_of__cover_set',
@@ -169,12 +187,14 @@ class IssueViewSet(GCDBaseViewSet):
             'keywords',
             ACTIVE_ISSUE_CREDIT_PREFETCH,
             ACTIVE_COVER_PREFETCH,
+            ACTIVE_PUBLISHER_CODE_NUMBER_PREFETCH,
             ACTIVE_VARIANT_COVER_PREFETCH,
         )
         .order_by(*ISSUE_BROWSE_ORDERING)
     )
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IssueFilterSet
+    pagination_class = V2IssuePageNumberPagination
 
     def get_queryset(self):
         """Add the nested story prefetch for detail requests only."""
@@ -191,6 +211,13 @@ class IssueViewSet(GCDBaseViewSet):
         ):
             queryset = queryset.order_by(*ISSUE_VARIANT_ORDERING)
         return queryset
+
+    def should_skip_exact_count(self, request):
+        """Skip exact pagination counts for broad modified delta requests."""
+        return any(
+            request.query_params.get(param)
+            for param in ISSUE_MODIFIED_QUERY_PARAMS
+        )
 
     def get_serializer_class(self):
         """Switch to the detail serializer for retrieve requests."""
