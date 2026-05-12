@@ -345,6 +345,21 @@ def test_issue_list_queryset_uses_modified_ordering_for_delta_filters():
     assert queryset.query.order_by == ('modified', 'id')
 
 
+def test_issue_list_queryset_uses_variant_ordering_for_variant_filter():
+    """Variant-only requests switch to variant-group ordering."""
+    view = IssueViewSet()
+    request = APIRequestFactory().get(
+        '/api/v2/issues/',
+        {'variant_of': 'true'},
+    )
+    view.request = Request(request)
+    view.action = 'list'
+
+    queryset = view.get_queryset()
+
+    assert queryset.query.order_by == ('variant_of_id', 'sort_code', 'id')
+
+
 def test_issue_endpoints_hide_soft_deleted_records(api_client, issue):
     """Soft-deleted issues disappear from list and detail responses."""
     visible = issue

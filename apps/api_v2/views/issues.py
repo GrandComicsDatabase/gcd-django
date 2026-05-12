@@ -91,6 +91,11 @@ ISSUE_MODIFIED_DELTA_ORDERING = (
     'modified',
     'id',
 )
+ISSUE_VARIANT_ORDERING = (
+    'variant_of_id',
+    'sort_code',
+    'id',
+)
 ISSUE_MODIFIED_QUERY_PARAMS = frozenset(
     {
         'modified__gt',
@@ -181,6 +186,10 @@ class IssueViewSet(GCDBaseViewSet):
             for param in ISSUE_MODIFIED_QUERY_PARAMS
         ):
             queryset = queryset.order_by(*ISSUE_MODIFIED_DELTA_ORDERING)
+        elif self.action == 'list' and (
+            self.request.query_params.get('variant_of', '').lower() == 'true'
+        ):
+            queryset = queryset.order_by(*ISSUE_VARIANT_ORDERING)
         return queryset
 
     def get_serializer_class(self):

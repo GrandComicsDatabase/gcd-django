@@ -111,6 +111,26 @@ def test_issue_model_exposes_api_v2_modified_delta_index():
     ]
 
 
+def test_issue_model_exposes_api_v2_browse_and_variant_indexes():
+    index_map = {
+        index.name: list(index.fields)
+        for index in Issue._meta.indexes
+    }
+
+    assert index_map['gcd_issue_v2_browse_idx'] == [
+        'deleted',
+        'series',
+        'sort_code',
+        'id',
+    ]
+    assert index_map['gcd_issue_v2_variant_idx'] == [
+        'deleted',
+        'variant_of',
+        'sort_code',
+        'id',
+    ]
+
+
 def test_other_variants():
     with mock.patch('%s.variant_of' % ISSUE_PATH,
                     spec=Issue) as vo_mock, \
