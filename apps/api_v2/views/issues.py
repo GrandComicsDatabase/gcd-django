@@ -82,6 +82,24 @@ ACTIVE_STORY_PREFETCH = Prefetch(
     to_attr='active_story_list',
 )
 
+ISSUE_BROWSE_ORDERING = (
+    'series_id',
+    'sort_code',
+    'id',
+)
+ISSUE_MODIFIED_DELTA_ORDERING = (
+    'modified',
+    'id',
+)
+ISSUE_MODIFIED_QUERY_PARAMS = frozenset(
+    {
+        'modified__gt',
+        'modified__gte',
+        'modified__lt',
+        'modified__lte',
+    }
+)
+
 ISSUE_ON_SALE_SCHEMA_PARAMETERS = [
     OpenApiParameter(
         name='on_sale_date__gte',
@@ -148,13 +166,7 @@ class IssueViewSet(GCDBaseViewSet):
             ACTIVE_COVER_PREFETCH,
             ACTIVE_VARIANT_COVER_PREFETCH,
         )
-        .order_by(
-            # ``Issue.Meta.ordering`` uses the related Series default
-            # ordering, which forces a wide join-based sort on large tables.
-            'series_id',
-            'sort_code',
-            'id',
-        )
+        .order_by(*ISSUE_BROWSE_ORDERING)
     )
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IssueFilterSet
@@ -164,6 +176,11 @@ class IssueViewSet(GCDBaseViewSet):
         queryset = super().get_queryset()
         if self.action == 'retrieve':
             queryset = queryset.prefetch_related(ACTIVE_STORY_PREFETCH)
+        if self.action == 'list' and any(
+            self.request.query_params.get(param)
+            for param in ISSUE_MODIFIED_QUERY_PARAMS
+        ):
+            queryset = queryset.order_by(*ISSUE_MODIFIED_DELTA_ORDERING)
         return queryset
 
     def get_serializer_class(self):

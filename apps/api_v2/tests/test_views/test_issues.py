@@ -7,6 +7,8 @@ import json
 from decimal import Decimal
 
 from django.urls import reverse
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
 
 from apps.api_v2.views.issues import IssueViewSet
 from apps.gcd.models import Brand, Cover, IndiciaPublisher, Story, StoryType
@@ -326,6 +328,21 @@ def test_issue_list_queryset_uses_id_based_series_ordering():
         'sort_code',
         'id',
     )
+
+
+def test_issue_list_queryset_uses_modified_ordering_for_delta_filters():
+    """Modified delta requests switch to an index-friendly ordering."""
+    view = IssueViewSet()
+    request = APIRequestFactory().get(
+        '/api/v2/issues/',
+        {'modified__gt': '2025-01-01T00:00:00Z'},
+    )
+    view.request = Request(request)
+    view.action = 'list'
+
+    queryset = view.get_queryset()
+
+    assert queryset.query.order_by == ('modified', 'id')
 
 
 def test_issue_endpoints_hide_soft_deleted_records(api_client, issue):

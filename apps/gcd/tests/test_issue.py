@@ -98,6 +98,19 @@ def test_has_keywords(any_series):
         assert i.has_keywords() is True
 
 
+def test_issue_model_exposes_api_v2_modified_delta_index():
+    index_map = {
+        index.name: list(index.fields)
+        for index in Issue._meta.indexes
+    }
+
+    assert index_map['gcd_issue_v2_modified_idx'] == [
+        'deleted',
+        'modified',
+        'id',
+    ]
+
+
 def test_other_variants():
     with mock.patch('%s.variant_of' % ISSUE_PATH,
                     spec=Issue) as vo_mock, \
