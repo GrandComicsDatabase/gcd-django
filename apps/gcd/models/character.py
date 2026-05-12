@@ -223,6 +223,17 @@ class Character(CharacterGroupBase):
                 ],
                 name='gcd_character_v2_browse_idx',
             ),
+            models.Index(
+                fields=[
+                    'deleted',
+                    'language',
+                    'sort_name',
+                    'year_first_published',
+                    'disambiguation',
+                    'id',
+                ],
+                name='gcd_char_v2_lang_browse_idx',
+            ),
         ]
         verbose_name_plural = 'Characters'
 

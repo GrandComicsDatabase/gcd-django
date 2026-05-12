@@ -6,6 +6,7 @@
 import django_filters
 
 from apps.gcd.models import Character
+from apps.stddata.models import Language
 
 
 class CharacterFilterSet(django_filters.FilterSet):
@@ -23,7 +24,7 @@ class CharacterFilterSet(django_filters.FilterSet):
         field_name='year_first_published',
         lookup_expr='lte',
     )
-    language = django_filters.CharFilter(field_name='language__code')
+    language = django_filters.CharFilter(method='filter_language')
     universe = django_filters.NumberFilter(field_name='universe_id')
     modified__gt = django_filters.IsoDateTimeFilter(
         field_name='modified',
@@ -77,3 +78,15 @@ class CharacterFilterSet(django_filters.FilterSet):
             'created__lt',
             'created__lte',
         )
+
+    def filter_language(self, queryset, name, value):
+        """Resolve language codes to language_id without a join."""
+        del name
+        language_id = (
+            Language.objects.filter(code=value)
+            .values_list('id', flat=True)
+            .first()
+        )
+        if language_id is None:
+            return queryset.none()
+        return queryset.filter(language_id=language_id)

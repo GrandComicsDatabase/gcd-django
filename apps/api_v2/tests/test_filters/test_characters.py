@@ -180,6 +180,37 @@ def test_character_filter_matches_language_code(db):
     assert list(qs) == [matching]
 
 
+def test_character_filter_language_avoids_language_table_join(db):
+    """The language filter resolves to language_id without a join."""
+    english = _create_language('en', 'English')
+    marvel = _create_multiverse('Marvel')
+    universe = Universe.objects.create(
+        multiverse='Marvel',
+        verse=marvel,
+        name='Mainstream',
+        designation='Earth-616',
+        year_first_published=1961,
+        description='',
+        notes='',
+    )
+    _create_character(
+        name='Spider-Man',
+        sort_name='Spider-Man',
+        year_first_published=1962,
+        language=english,
+        universe=universe,
+    )
+
+    qs = CharacterFilterSet(
+        {'language': 'en'},
+        queryset=Character.objects.filter(deleted=False),
+    ).qs
+    sql = str(qs.query).lower()
+
+    assert 'stddata_language' not in sql
+    assert 'language_id' in sql
+
+
 def test_character_filter_matches_universe_id(db):
     """The universe filter scopes results to one universe id."""
     english = _create_language('en', 'English')
