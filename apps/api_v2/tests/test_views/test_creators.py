@@ -125,6 +125,31 @@ def test_creator_list_returns_paginated_results(api_client, db):
     assert 'awards' not in response.data['results'][0]
 
 
+def test_creator_list_handles_unknown_year_markers(api_client, db):
+    """Legacy unknown-year date markers stay serializable on list responses."""
+    creator = _create_creator(
+        gcd_official_name='Mystery Creator',
+        sort_name='Creator, Mystery',
+        birth_date=_create_date(year='????'),
+    )
+
+    response = api_client.get(reverse('creator-list'))
+
+    assert response.status_code == 200
+    assert response.data['count'] == 1
+    assert response.data['results'][0]['id'] == creator.pk
+    assert response.data['results'][0]['birth_date'] == {
+        'value': '????',
+        'precision': 'year',
+        'year': None,
+        'month': None,
+        'day': None,
+        'year_uncertain': True,
+        'month_uncertain': None,
+        'day_uncertain': None,
+    }
+
+
 def test_creator_detail_returns_expected_payload(
     authenticated_client,
     db,

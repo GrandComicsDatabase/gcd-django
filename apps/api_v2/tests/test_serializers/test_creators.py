@@ -150,6 +150,28 @@ def test_creator_list_serializer_exposes_contract(db):
     assert data['modified']
 
 
+def test_creator_list_serializer_handles_unknown_year_markers(db):
+    """Legacy unknown-year markers do not crash creator date serialization."""
+    creator = _create_creator(
+        gcd_official_name='Mystery Creator',
+        sort_name='Creator, Mystery',
+        birth_date=_create_date(year='????'),
+    )
+
+    data = CreatorListSerializer(creator).data
+
+    assert data['birth_date'] == {
+        'value': '????',
+        'precision': 'year',
+        'year': None,
+        'month': None,
+        'day': None,
+        'year_uncertain': True,
+        'month_uncertain': None,
+        'day_uncertain': None,
+    }
+
+
 def test_creator_detail_serializer_exposes_contract(db):
     """The creator detail serializer emits the Sprint 2 detail contract."""
     usa = _create_country('us', 'United States')

@@ -13,17 +13,28 @@ from apps.gcd.models import (
 )
 
 
+def _serialize_date_component(raw_value):
+    """Return an integer for a normalized date component when possible."""
+    if not raw_value:
+        return None
+    if raw_value.isdigit():
+        return int(raw_value)
+    if raw_value.endswith('?') and raw_value[:-1].isdigit():
+        return int(raw_value[:-1])
+    return None
+
+
 def serialize_partial_date(date_obj):
     """Return the locked partial-date JSON shape for a ``Date`` row."""
     if date_obj is None or str(date_obj) == '':
         return None
 
-    year = int(date_obj.year) if date_obj.year else None
-    month = int(date_obj.month) if date_obj.month else None
-    day = int(date_obj.day) if date_obj.day else None
-    if day is not None:
+    year = _serialize_date_component(date_obj.year)
+    month = _serialize_date_component(date_obj.month)
+    day = _serialize_date_component(date_obj.day)
+    if date_obj.day:
         precision = 'day'
-    elif month is not None:
+    elif date_obj.month:
         precision = 'month'
     else:
         precision = 'year'
@@ -34,13 +45,11 @@ def serialize_partial_date(date_obj):
         'year': year,
         'month': month,
         'day': day,
-        'year_uncertain': (
-            date_obj.year_uncertain if year is not None else None
-        ),
+        'year_uncertain': (date_obj.year_uncertain if date_obj.year else None),
         'month_uncertain': (
-            date_obj.month_uncertain if month is not None else None
+            date_obj.month_uncertain if date_obj.month else None
         ),
-        'day_uncertain': date_obj.day_uncertain if day is not None else None,
+        'day_uncertain': date_obj.day_uncertain if date_obj.day else None,
     }
 
 
