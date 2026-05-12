@@ -16,11 +16,19 @@ dispatcher module afterwards and clear Django's URL resolver caches
 before assertions run.
 """
 
+import json
 from importlib import reload
 
 import pytest
 from django.test import override_settings
-from django.urls import URLResolver, clear_url_caches, resolve, reverse
+from django.urls import (
+    NoReverseMatch,
+    URLResolver,
+    clear_url_caches,
+    resolve,
+    reverse,
+    set_urlconf,
+)
 from rest_framework.authentication import (
     BasicAuthentication,
     SessionAuthentication,
@@ -36,10 +44,13 @@ from apps.api_v2.throttling import (
 
 
 def _reload_v2_urlconf():
-    """Re-evaluate ``apps.api_v2.urls`` and reset Django's URL caches."""
+    """Re-evaluate the v2 dispatcher and project URL tree."""
     import apps.api_v2.urls
+    import urls as project_urls
 
     reload(apps.api_v2.urls)
+    reload(project_urls)
+    set_urlconf(None)
     clear_url_caches()
 
 
@@ -86,6 +97,20 @@ def _assert_v2_api_policy(view_cls):
         V2TokenUserRateThrottle,
         V2SessionUserRateThrottle,
     )
+
+
+SPRINT_2_ROUTE_SPECS = (
+    ('universe-list', '/api/v2/universes/'),
+    ('group-list', '/api/v2/groups/'),
+    ('character-list', '/api/v2/characters/'),
+    ('creator-list', '/api/v2/creators/'),
+)
+
+
+def _schema_paths(response):
+    """Return the set of path keys from a schema response."""
+    schema = json.loads(response.content)
+    return set(schema['paths'])
 
 
 @override_settings(MYCOMICS=False)
@@ -160,3 +185,109 @@ def test_api_root_uses_v2_policy_on_my_surface(restore_v2_urlconf):
     _reload_v2_urlconf()
 
     _assert_v2_api_policy(resolve('/api/v2/').func.cls)
+
+
+@override_settings(MYCOMICS=False)
+def test_sprint_2_routes_resolve_on_www_surface(restore_v2_urlconf):
+    """Sprint 2 collection routes resolve on the public-data surface."""
+    _reload_v2_urlconf()
+
+    for route_name, expected_path in SPRINT_2_ROUTE_SPECS:
+        assert reverse(route_name) == expected_path
+        _assert_v2_api_policy(resolve(expected_path).func.cls)
+
+
+@override_settings(MYCOMICS=True)
+def test_sprint_2_routes_stay_absent_on_my_surface(restore_v2_urlconf):
+    """Sprint 2 public-data routes are not mounted on the my surface."""
+    _reload_v2_urlconf()
+
+    for route_name, _expected_path in SPRINT_2_ROUTE_SPECS:
+        with pytest.raises(NoReverseMatch):
+            reverse(route_name)
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_schema_and_docs_load_on_www_surface(client, restore_v2_urlconf):
+    """Schema, Swagger UI, and ReDoc return 200 on the public surface."""
+    _reload_v2_urlconf()
+
+    schema_response = client.get('/api/v2/schema/', {'format': 'json'})
+    swagger_response = client.get('/api/v2/schema/swagger-ui/')
+    redoc_response = client.get('/api/v2/schema/redoc/')
+
+    assert schema_response.status_code == 200
+    assert swagger_response.status_code == 200
+    assert redoc_response.status_code == 200
+    assert schema_response['Content-Type'].startswith('application/vnd.oai')
+    assert swagger_response['Content-Type'].startswith('text/html')
+    assert redoc_response['Content-Type'].startswith('text/html')
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=True)
+def test_schema_and_docs_load_on_my_surface(client, restore_v2_urlconf):
+    """Schema, Swagger UI, and ReDoc return 200 on the my surface."""
+    _reload_v2_urlconf()
+
+    schema_response = client.get('/api/v2/schema/', {'format': 'json'})
+    swagger_response = client.get('/api/v2/schema/swagger-ui/')
+    redoc_response = client.get('/api/v2/schema/redoc/')
+
+    assert schema_response.status_code == 200
+    assert swagger_response.status_code == 200
+    assert redoc_response.status_code == 200
+    assert schema_response['Content-Type'].startswith('application/vnd.oai')
+    assert swagger_response['Content-Type'].startswith('text/html')
+    assert redoc_response['Content-Type'].startswith('text/html')
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_schema_includes_sprint_2_public_routes_on_www_surface(
+    client,
+    restore_v2_urlconf,
+):
+    """The public schema documents the full Sprint 2 endpoint surface."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    assert _schema_paths(response) >= {
+        '/api/v2/universes/',
+        '/api/v2/universes/{id}/',
+        '/api/v2/groups/',
+        '/api/v2/groups/{id}/',
+        '/api/v2/characters/',
+        '/api/v2/characters/{id}/',
+        '/api/v2/creators/',
+        '/api/v2/creators/{id}/',
+    }
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=True)
+def test_schema_excludes_sprint_2_public_routes_on_my_surface(
+    client,
+    restore_v2_urlconf,
+):
+    """The my schema omits the public Sprint 2 endpoint surface."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    assert _schema_paths(response).isdisjoint(
+        {
+            '/api/v2/universes/',
+            '/api/v2/universes/{id}/',
+            '/api/v2/groups/',
+            '/api/v2/groups/{id}/',
+            '/api/v2/characters/',
+            '/api/v2/characters/{id}/',
+            '/api/v2/creators/',
+            '/api/v2/creators/{id}/',
+        },
+    )
