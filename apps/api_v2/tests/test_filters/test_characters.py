@@ -4,7 +4,9 @@
 """Tests for the character filter set."""
 
 from datetime import timedelta
+from unittest.mock import MagicMock, patch
 
+from django.test import RequestFactory
 from django.utils import timezone
 
 from apps.api_v2.filters.characters import CharacterFilterSet
@@ -209,6 +211,35 @@ def test_character_filter_language_avoids_language_table_join(db):
 
     assert 'stddata_language' not in sql
     assert 'language_id' in sql
+
+
+def test_character_filter_language_reuses_request_cached_language_id():
+    """Repeated filtersets on one request share the resolved language id."""
+    request = RequestFactory().get('/api/v2/characters/', {'language': 'en'})
+    queryset = Character.objects.all()
+    values_qs = MagicMock()
+    values_qs.first.return_value = 25
+    lookup_qs = MagicMock()
+    lookup_qs.values_list.return_value = values_qs
+
+    with patch(
+        'apps.api_v2.filters.characters.Language.objects.filter',
+        return_value=lookup_qs,
+    ) as lookup:
+        first = CharacterFilterSet(
+            {'language': 'en'},
+            queryset=queryset,
+            request=request,
+        ).qs
+        second = CharacterFilterSet(
+            {'language': 'en'},
+            queryset=queryset,
+            request=request,
+        ).qs
+
+    assert lookup.call_count == 1
+    assert 'language_id' in str(first.query).lower()
+    assert str(first.query) == str(second.query)
 
 
 def test_character_filter_matches_universe_id(db):

@@ -23,6 +23,7 @@ def _character_filter_queryset(request, *, pk=None, **kwargs):
     return CharacterFilterSet(
         request.GET,
         queryset=Character.objects.all(),
+        request=request,
     ).qs
 
 
@@ -67,6 +68,27 @@ class CharacterViewSet(GCDBaseViewSet):
             'language',
             'universe',
             'universe__verse',
+        )
+        .only(
+            'id',
+            'created',
+            'modified',
+            'name',
+            'sort_name',
+            'disambiguation',
+            'universe_id',
+            'year_first_published',
+            'language_id',
+            'description',
+            'notes',
+            'language__id',
+            'language__code',
+            'universe__id',
+            'universe__name',
+            'universe__designation',
+            'universe__verse_id',
+            'universe__verse__id',
+            'universe__verse__name',
         )
         .prefetch_related(
             'keywords',
