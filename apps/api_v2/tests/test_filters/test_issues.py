@@ -193,6 +193,25 @@ def test_issue_filter_matches_on_sale_iso_week_across_month_boundary(series):
     assert outside not in qs
 
 
+def test_issue_filter_on_sale_iso_week_avoids_pk_subquery(series):
+    """ISO-week filters combine directly into the issue queryset."""
+    _create_issue(
+        series,
+        number='1',
+        key_date='2025-03-17',
+        on_sale_date='2025-03-17',
+    )
+
+    qs = IssueFilterSet(
+        {'on_sale_iso_week': '2025-W12'},
+        queryset=Issue.objects.all(),
+    ).qs
+    sql = str(qs.query).lower()
+
+    assert 'on_sale_date' in sql
+    assert ' in (select ' not in sql
+
+
 def test_issue_filter_rejects_invalid_on_sale_iso_week(series):
     """Malformed ISO-week values are rejected instead of silently ignored."""
     filterset = IssueFilterSet(

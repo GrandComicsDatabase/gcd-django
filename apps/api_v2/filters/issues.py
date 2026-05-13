@@ -151,4 +151,4 @@ class IssueFilterSet(django_filters.FilterSet):
             int(year_text),
             int(week_text),
         )
-        return queryset.filter(pk__in=week_qs.values('pk'))
+        return queryset & week_qs
