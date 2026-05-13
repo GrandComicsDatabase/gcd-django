@@ -179,6 +179,63 @@ def test_creator_filter_matches_death_date_range(db):
     assert list(qs) == [matching]
 
 
+def test_creator_filter_excludes_non_numeric_legacy_birth_dates(db):
+    """Non-numeric legacy birth years are ignored by range filters."""
+    matching = _create_creator(
+        gcd_official_name='Will Eisner',
+        sort_name='Eisner, Will',
+        birth_date=_create_date(year='1917'),
+    )
+    _create_creator(
+        gcd_official_name='Joe Kubert',
+        sort_name='Kubert, Joe',
+        birth_date=_create_date(year='1926', month='09', day='18'),
+    )
+    _create_creator(
+        gcd_official_name='Unknown Creator',
+        sort_name='Unknown Creator',
+        birth_date=_create_date(year='????'),
+    )
+    _create_creator(
+        gcd_official_name='Approximate Creator',
+        sort_name='Approximate Creator',
+        birth_date=_create_date(year='19??'),
+    )
+
+    qs = CreatorFilterSet(
+        {'birth_date__lte': '1917'},
+        queryset=Creator.objects.filter(deleted=False),
+    ).qs
+
+    assert list(qs) == [matching]
+
+
+def test_creator_filter_excludes_non_numeric_legacy_death_dates(db):
+    """Non-numeric legacy death years are ignored by range filters."""
+    matching = _create_creator(
+        gcd_official_name='Will Eisner',
+        sort_name='Eisner, Will',
+        death_date=_create_date(year='2005', month='01', day='03'),
+    )
+    _create_creator(
+        gcd_official_name='Joe Kubert',
+        sort_name='Kubert, Joe',
+        death_date=_create_date(year='1999'),
+    )
+    _create_creator(
+        gcd_official_name='Approximate Creator',
+        sort_name='Approximate Creator',
+        death_date=_create_date(year='200?'),
+    )
+
+    qs = CreatorFilterSet(
+        {'death_date__gte': '2000'},
+        queryset=Creator.objects.filter(deleted=False),
+    ).qs
+
+    assert list(qs) == [matching]
+
+
 def test_creator_filter_matches_living_creators(db):
     """The death-date isnull filter matches living creators."""
     matching = _create_creator(

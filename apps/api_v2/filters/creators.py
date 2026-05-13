@@ -12,9 +12,11 @@ from django.db.models import (
     ExpressionWrapper,
     F,
     IntegerField,
+    Q,
     Value,
     When,
 )
+from django.db.models.functions import Cast
 
 from apps.gcd.models import Creator
 from apps.stddata.forms import DateForm
@@ -22,6 +24,7 @@ from apps.stddata.forms import DateForm
 PARTIAL_DATE_ERROR = (
     'Enter a valid partial date in YYYY, YYYY-MM, or YYYY-MM-DD format.'
 )
+NUMERIC_COMPONENT_RE = r'^\d+$'
 
 
 def _parse_partial_date(value):
@@ -40,9 +43,8 @@ def validate_partial_date(value):
 def _date_component_expr(field_name, component):
     """Return an integer expression for one ``Date`` component."""
     return Case(
-        When(**{f'{field_name}__isnull': True}, then=Value(0)),
         When(**{f'{field_name}__{component}': ''}, then=Value(0)),
-        default=F(f'{field_name}__{component}'),
+        default=Cast(F(f'{field_name}__{component}'), IntegerField()),
         output_field=IntegerField(),
     )
 
@@ -77,6 +79,22 @@ def _upper_bound(date_obj):
         return year * 10000 + month * 100 + last_day
     day = int(date_obj.day)
     return year * 10000 + month * 100 + day
+
+
+def _filter_comparable_partial_dates(queryset, field_name):
+    """Restrict filters to partial dates with numeric stored components."""
+    return (
+        queryset.filter(**{f'{field_name}__isnull': False})
+        .filter(**{f'{field_name}__year__regex': NUMERIC_COMPONENT_RE})
+        .filter(
+            Q(**{f'{field_name}__month': ''})
+            | Q(**{f'{field_name}__month__regex': NUMERIC_COMPONENT_RE})
+        )
+        .filter(
+            Q(**{f'{field_name}__day': ''})
+            | Q(**{f'{field_name}__day__regex': NUMERIC_COMPONENT_RE})
+        )
+    )
 
 
 class CreatorFilterSet(django_filters.FilterSet):
@@ -170,7 +188,7 @@ class CreatorFilterSet(django_filters.FilterSet):
         )
         sort_key_name = f'_{field_name}_sort_key'
         return (
-            queryset.filter(**{f'{field_name}__isnull': False})
+            _filter_comparable_partial_dates(queryset, field_name)
             .annotate(**{sort_key_name: _date_sort_key(field_name)})
             .filter(**{f'{sort_key_name}__{lookup}': bound})
         )
