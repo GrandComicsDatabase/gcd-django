@@ -20,12 +20,7 @@ class _DeltaView:
 def test_issue_pagination_skips_exact_count_for_delta_requests():
     """Delta issue pagination returns links without paying for COUNT(*)."""
     paginator = V2IssuePageNumberPagination()
-    request = Request(
-        APIRequestFactory().get(
-            '/api/v2/issues/?page=2',
-            HTTP_HOST='localhost:8000',
-        )
-    )
+    request = Request(APIRequestFactory().get('/api/v2/issues/?page=2'))
 
     page = paginator.paginate_queryset(
         list(range(120)),
@@ -36,7 +31,5 @@ def test_issue_pagination_skips_exact_count_for_delta_requests():
 
     assert page == list(range(50, 100))
     assert response.data['count'] is None
-    assert response.data['next'] == (
-        'http://localhost:8000/api/v2/issues/?page=3'
-    )
-    assert response.data['previous'] == 'http://localhost:8000/api/v2/issues/'
+    assert response.data['next'] == 'http://testserver/api/v2/issues/?page=3'
+    assert response.data['previous'] == 'http://testserver/api/v2/issues/'
