@@ -3,9 +3,12 @@
 
 """Tests for the issue v2 endpoints."""
 
+import json
 from decimal import Decimal
 
 from django.urls import reverse
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
 
 from apps.api_v2.views.issues import IssueViewSet
 from apps.gcd.models import Brand, Cover, IndiciaPublisher, Story, StoryType
@@ -222,6 +225,72 @@ def test_issue_list_applies_filter_query_params(api_client, issue, publisher):
     assert response.data['results'][0]['id'] == issue.pk
 
 
+def test_issue_list_applies_on_sale_iso_week_query_param(api_client, issue):
+    """The list endpoint supports ISO-week on-sale filtering."""
+    issue.key_date = '2025-03-17'
+    issue.on_sale_date = '2025-03-17'
+    issue.save()
+    _create_issue(
+        issue.series,
+        number='2',
+        key_date='2025-03-24',
+        on_sale_date='2025-03-24',
+        sort_code=2,
+    )
+
+    response = api_client.get(
+        reverse('issue-list'),
+        {'on_sale_iso_week': '2025-W12'},
+    )
+
+    assert response.status_code == 200
+    assert response.data['count'] == 1
+    assert response.data['results'][0]['id'] == issue.pk
+
+
+def test_issue_list_rejects_invalid_on_sale_iso_week(api_client, db):
+    """Malformed ISO-week values return a validation error."""
+    response = api_client.get(
+        reverse('issue-list'),
+        {'on_sale_iso_week': '2025-12'},
+    )
+
+    assert response.status_code == 400
+    assert response.data == {
+        'on_sale_iso_week': ['Enter a valid ISO week in YYYY-Www format.'],
+    }
+
+
+def test_issue_schema_documents_on_sale_iso_week_examples(api_client, db):
+    """The issue schema documents both range and ISO-week query styles."""
+    response = api_client.get(
+        reverse('api-v2-schema'),
+        {'format': 'json'},
+    )
+
+    assert response.status_code == 200
+    schema = json.loads(response.content)
+    parameters = {
+        parameter['name']: parameter
+        for parameter in schema['paths']['/api/v2/issues/']['get'][
+            'parameters'
+        ]
+    }
+
+    assert (
+        parameters['on_sale_date__gte']['examples']['RangeStart']['value']
+        == '2025-03-17'
+    )
+    assert (
+        parameters['on_sale_date__lte']['examples']['RangeEnd']['value']
+        == '2025-03-23'
+    )
+    assert (
+        parameters['on_sale_iso_week']['examples']['IsoWeek']['value']
+        == '2025-W12'
+    )
+
+
 def test_issue_list_uses_variant_base_cover_url(api_client, issue):
     """Variant issues reuse the base issue cover when configured to do so."""
     issue.series.is_comics_publication = True
@@ -259,6 +328,47 @@ def test_issue_list_queryset_uses_id_based_series_ordering():
         'sort_code',
         'id',
     )
+
+
+def test_issue_list_queryset_uses_modified_ordering_for_delta_filters():
+    """Modified delta requests switch to an index-friendly ordering."""
+    view = IssueViewSet()
+    request = APIRequestFactory().get(
+        '/api/v2/issues/',
+        {'modified__gt': '2025-01-01T00:00:00Z'},
+    )
+    view.request = Request(request)
+    view.action = 'list'
+
+    queryset = view.get_queryset()
+
+    assert queryset.query.order_by == ('modified', 'id')
+
+
+def test_issue_list_queryset_uses_variant_ordering_for_variant_filter():
+    """Variant-only requests switch to variant-group ordering."""
+    view = IssueViewSet()
+    request = APIRequestFactory().get(
+        '/api/v2/issues/',
+        {'variant_of': 'true'},
+    )
+    view.request = Request(request)
+    view.action = 'list'
+
+    queryset = view.get_queryset()
+
+    assert queryset.query.order_by == ('variant_of_id', 'sort_code', 'id')
+
+
+def test_issue_list_skips_exact_count_for_modified_delta_filters():
+    """Modified delta requests opt into no-count pagination."""
+    view = IssueViewSet()
+    request = APIRequestFactory().get(
+        '/api/v2/issues/',
+        {'modified__gt': '2025-01-01T00:00:00Z'},
+    )
+
+    assert view.should_skip_exact_count(Request(request)) is True
 
 
 def test_issue_endpoints_hide_soft_deleted_records(api_client, issue):

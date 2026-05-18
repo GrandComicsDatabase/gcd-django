@@ -8,8 +8,8 @@ from rest_framework import serializers
 from apps.gcd.models import Series
 
 
-class SeriesSerializer(serializers.ModelSerializer):
-    """Serialize series for v2 list and detail endpoints."""
+class BaseSeriesSerializer(serializers.ModelSerializer):
+    """Serialize shared series fields for the v2 API."""
 
     country = serializers.SlugRelatedField(read_only=True, slug_field='code')
     language = serializers.SlugRelatedField(read_only=True, slug_field='code')
@@ -19,7 +19,6 @@ class SeriesSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
     publisher = serializers.SerializerMethodField()
-    active_issue_ids = serializers.SerializerMethodField()
     keywords = serializers.SlugRelatedField(
         many=True,
         read_only=True,
@@ -27,7 +26,7 @@ class SeriesSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        """Serializer metadata for series field selection."""
+        """Serializer metadata for shared series fields."""
 
         model = Series
         fields = (
@@ -47,7 +46,6 @@ class SeriesSerializer(serializers.ModelSerializer):
             'publishing_format',
             'notes',
             'issue_count',
-            'active_issue_ids',
             'keywords',
             'created',
             'modified',
@@ -59,6 +57,21 @@ class SeriesSerializer(serializers.ModelSerializer):
             'id': obj.publisher_id,
             'name': obj.publisher.name,
         }
+
+
+class SeriesListSerializer(BaseSeriesSerializer):
+    """Serialize lightweight series list rows for the v2 API."""
+
+
+class SeriesSerializer(BaseSeriesSerializer):
+    """Serialize series detail rows for the v2 API."""
+
+    active_issue_ids = serializers.SerializerMethodField()
+
+    class Meta(BaseSeriesSerializer.Meta):
+        """Serializer metadata for series detail payloads."""
+
+        fields = BaseSeriesSerializer.Meta.fields + ('active_issue_ids',)
 
     def get_active_issue_ids(self, obj):
         """Return ordered non-deleted issue ids for the series."""

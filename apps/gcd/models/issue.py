@@ -125,6 +125,20 @@ class IssueCredit(GcdData):
 class Issue(GcdData):
     class Meta:
         app_label = 'gcd'
+        indexes = [
+            models.Index(
+                fields=['deleted', 'series', 'sort_code', 'id'],
+                name='gcd_issue_v2_browse_idx',
+            ),
+            models.Index(
+                fields=['deleted', 'modified', 'id'],
+                name='gcd_issue_v2_modified_idx',
+            ),
+            models.Index(
+                fields=['deleted', 'variant_of', 'sort_code', 'id'],
+                name='gcd_issue_v2_variant_idx',
+            ),
+        ]
         ordering = ['series', 'sort_code']
         unique_together = ('series', 'sort_code')
 

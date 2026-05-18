@@ -7,7 +7,10 @@ from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.api_v2.filters.series import SeriesFilterSet
-from apps.api_v2.serializers.series import SeriesSerializer
+from apps.api_v2.serializers.series import (
+    SeriesListSerializer,
+    SeriesSerializer,
+)
 from apps.api_v2.utils.conditional import (
     condition,
     make_etag,
@@ -43,54 +46,66 @@ ACTIVE_ISSUE_PREFETCH = Prefetch(
     to_attr='active_issue_list',
 )
 
+BASE_SERIES_QUERYSET = (
+    Series.objects.select_related(
+        'country',
+        'language',
+        'publisher',
+        'publication_type',
+    )
+    .only(
+        'id',
+        'created',
+        'modified',
+        'deleted',
+        'name',
+        'sort_name',
+        'year_began',
+        'year_ended',
+        'color',
+        'dimensions',
+        'paper_stock',
+        'binding',
+        'publishing_format',
+        'notes',
+        'issue_count',
+        'country_id',
+        'language_id',
+        'publisher_id',
+        'publication_type_id',
+        'country__id',
+        'country__code',
+        'language__id',
+        'language__code',
+        'publisher__id',
+        'publisher__name',
+        'publication_type__id',
+        'publication_type__name',
+    )
+    .prefetch_related('keywords')
+)
+
 
 class SeriesViewSet(GCDBaseViewSet):
     """Read-only series endpoints for the public v2 API surface."""
 
-    queryset = (
-        Series.objects.select_related(
-            'country',
-            'language',
-            'publisher',
-            'publication_type',
-        )
-        .only(
-            'id',
-            'created',
-            'modified',
-            'deleted',
-            'name',
-            'sort_name',
-            'year_began',
-            'year_ended',
-            'color',
-            'dimensions',
-            'paper_stock',
-            'binding',
-            'publishing_format',
-            'notes',
-            'issue_count',
-            'country_id',
-            'language_id',
-            'publisher_id',
-            'publication_type_id',
-            'country__id',
-            'country__code',
-            'language__id',
-            'language__code',
-            'publisher__id',
-            'publisher__name',
-            'publication_type__id',
-            'publication_type__name',
-        )
-        .prefetch_related(
-            'keywords',
-            ACTIVE_ISSUE_PREFETCH,
-        )
-    )
+    queryset = BASE_SERIES_QUERYSET
     serializer_class = SeriesSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = SeriesFilterSet
+
+    def get_queryset(self):
+        """Return the queryset tuned for the current series action."""
+        queryset = super().get_queryset()
+        if self.action == 'retrieve':
+            return queryset.prefetch_related(ACTIVE_ISSUE_PREFETCH)
+        return queryset.order_by('sort_name', 'year_began', 'id')
+
+    def get_serializer_class(self):
+        """Return the serializer class for the current series action."""
+        if self.action == 'list':
+            return SeriesListSerializer
+        return SeriesSerializer
 
     @condition(
         etag_func=series_etag,

@@ -1,11 +1,14 @@
 # SPDX-FileCopyrightText: Grand Comics Database contributors
 # SPDX-License-Identifier: GPL-3.0-only
 
-"""Tests for the series serializer."""
+"""Tests for the series serializers."""
 
 import pytest
 
-from apps.api_v2.serializers.series import SeriesSerializer
+from apps.api_v2.serializers.series import (
+    SeriesListSerializer,
+    SeriesSerializer,
+)
 from apps.gcd.models import Issue, SeriesPublicationType
 
 
@@ -42,14 +45,67 @@ def _create_issue(series, *, sort_code, deleted=False):
     )
 
 
-def test_series_serializer_exposes_prd_fields(
+def test_series_list_serializer_exposes_list_fields(
     series,
     country,
     language,
     publisher,
     series_publication_type,
 ):
-    """The series serializer emits the Sprint 1 series contract."""
+    """The list serializer omits heavy issue-id fan-out fields."""
+    series.publication_type = series_publication_type
+    series.color = 'Color'
+    series.dimensions = '7.25" x 10.5"'
+    series.paper_stock = 'Glossy'
+    series.binding = 'Saddle-stitched'
+    series.publishing_format = 'Ongoing'
+    series.notes = 'Series notes'
+    series.issue_count = 2
+    series.save()
+    _create_issue(series, sort_code=20)
+    _create_issue(series, sort_code=10)
+    _create_issue(series, sort_code=30, deleted=True)
+    series.keywords.add('alpha', 'beta')
+
+    data = SeriesListSerializer(series).data
+
+    assert set(data) == {
+        'id',
+        'name',
+        'sort_name',
+        'year_began',
+        'year_ended',
+        'country',
+        'language',
+        'publisher',
+        'publication_type',
+        'color',
+        'dimensions',
+        'paper_stock',
+        'binding',
+        'publishing_format',
+        'notes',
+        'issue_count',
+        'keywords',
+        'created',
+        'modified',
+    }
+    assert 'active_issue_ids' not in data
+    assert data['publisher'] == {
+        'id': publisher.pk,
+        'name': publisher.name,
+    }
+    assert set(data['keywords']) == {'alpha', 'beta'}
+
+
+def test_series_serializer_exposes_detail_fields(
+    series,
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """The detail serializer emits the full series contract."""
     series.publication_type = series_publication_type
     series.color = 'Color'
     series.dimensions = '7.25" x 10.5"'
