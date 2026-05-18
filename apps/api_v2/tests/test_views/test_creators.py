@@ -284,6 +284,43 @@ def test_creator_list_applies_filter_query_params(
     assert response.data['results'][0]['id'] == matching.pk
 
 
+def test_creator_list_filters_uncertain_partial_years(
+    authenticated_client,
+    db,
+):
+    """Bounded date filters keep uncertain year markers usable."""
+    uncertain_match = _create_creator(
+        gcd_official_name='Approximate Creator',
+        sort_name='Approximate Creator',
+        death_date=_create_date(year='200?'),
+    )
+    matching = _create_creator(
+        gcd_official_name='Will Eisner',
+        sort_name='Eisner, Will',
+        death_date=_create_date(year='2005', month='01', day='03'),
+    )
+    _create_creator(
+        gcd_official_name='Joe Kubert',
+        sort_name='Kubert, Joe',
+        death_date=_create_date(year='2012'),
+    )
+
+    response = authenticated_client.get(
+        reverse('creator-list'),
+        {
+            'death_date__gte': '2000',
+            'death_date__lte': '2009-12-31',
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.data['count'] == 2
+    assert [row['id'] for row in response.data['results']] == [
+        uncertain_match.pk,
+        matching.pk,
+    ]
+
+
 def test_creator_list_rejects_invalid_partial_date(
     authenticated_client,
     db,

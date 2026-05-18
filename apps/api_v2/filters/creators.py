@@ -9,14 +9,13 @@ import django_filters
 from django.core.exceptions import ValidationError
 from django.db.models import (
     Case,
-    ExpressionWrapper,
+    CharField,
     F,
-    IntegerField,
     Q,
     Value,
     When,
 )
-from django.db.models.functions import Cast
+from django.db.models.functions import Concat, Replace, Right
 
 from apps.gcd.models import Creator
 from apps.stddata.forms import DateForm
@@ -25,6 +24,8 @@ PARTIAL_DATE_ERROR = (
     'Enter a valid partial date in YYYY, YYYY-MM, or YYYY-MM-DD format.'
 )
 NUMERIC_COMPONENT_RE = r'^\d+$'
+PARTIAL_YEAR_RE = r'^[0-9?]+$'
+PARTIAL_YEAR_HAS_DIGIT_RE = r'.*\d.*'
 
 
 def _parse_partial_date(value):
@@ -40,52 +41,122 @@ def validate_partial_date(value):
     _parse_partial_date(value)
 
 
-def _date_component_expr(field_name, component):
-    """Return an integer expression for one ``Date`` component."""
+def _date_component_expr(field_name, component, *, empty_value, replacement):
+    """Return a zero-padded string expression for one ``Date`` component."""
+    width = 4 if component == 'year' else 2
+    raw_value = Right(
+        Concat(
+            Value('0' * width),
+            Replace(
+                F(f'{field_name}__{component}'),
+                Value('?'),
+                Value(replacement),
+            ),
+        ),
+        width,
+    )
     return Case(
-        When(**{f'{field_name}__{component}': ''}, then=Value(0)),
-        default=Cast(F(f'{field_name}__{component}'), IntegerField()),
-        output_field=IntegerField(),
+        When(**{f'{field_name}__{component}': ''}, then=Value(empty_value)),
+        default=raw_value,
+        output_field=CharField(),
     )
 
 
-def _date_sort_key(field_name):
-    """Return a sortable integer key for a related partial date."""
-    year_expr = _date_component_expr(field_name, 'year')
-    month_expr = _date_component_expr(field_name, 'month')
-    day_expr = _date_component_expr(field_name, 'day')
-    return ExpressionWrapper(
-        year_expr * 10000 + month_expr * 100 + day_expr,
-        output_field=IntegerField(),
+def _date_bound_expr(field_name, *, replacement, month_empty, day_empty):
+    """Return an ISO-style date bound for comparing stored partial dates."""
+    year_expr = _date_component_expr(
+        field_name,
+        'year',
+        empty_value='0000',
+        replacement=replacement,
     )
+    month_expr = _date_component_expr(
+        field_name,
+        'month',
+        empty_value=month_empty,
+        replacement=replacement,
+    )
+    day_expr = _date_component_expr(
+        field_name,
+        'day',
+        empty_value=day_empty,
+        replacement=replacement,
+    )
+    return Concat(
+        year_expr,
+        Value('-'),
+        month_expr,
+        Value('-'),
+        day_expr,
+        output_field=CharField(),
+    )
+
+
+def _stored_lower_bound_expr(field_name):
+    """Return the earliest possible date for a stored partial date."""
+    return _date_bound_expr(
+        field_name,
+        replacement='0',
+        month_empty='01',
+        day_empty='01',
+    )
+
+
+def _stored_upper_bound_expr(field_name):
+    """Return the latest possible date for a stored partial date."""
+    return _date_bound_expr(
+        field_name,
+        replacement='9',
+        month_empty='12',
+        day_empty='31',
+    )
+
+
+def _normalize_year_bound(value, replacement):
+    """Return a four-digit year bound for a parsed partial-date component."""
+    if not value:
+        return '0000'
+    return value.replace('?', replacement).zfill(4)
+
+
+def _normalize_component_bound(value, *, empty_value):
+    """Return a two-digit month/day bound for a parsed component."""
+    if not value:
+        return empty_value
+    return value.zfill(2)
 
 
 def _lower_bound(date_obj):
-    """Return the inclusive lower-bound sort key for a partial date."""
-    year = int(date_obj.year)
-    month = int(date_obj.month) if date_obj.month else 0
-    day = int(date_obj.day) if date_obj.day else 0
-    return year * 10000 + month * 100 + day
+    """Return the inclusive lower-bound ISO date for a partial date."""
+    return (
+        f'{_normalize_year_bound(date_obj.year, "0")}-'
+        f'{_normalize_component_bound(date_obj.month, empty_value="01")}-'
+        f'{_normalize_component_bound(date_obj.day, empty_value="01")}'
+    )
 
 
 def _upper_bound(date_obj):
-    """Return the inclusive upper-bound sort key for a partial date."""
-    year = int(date_obj.year)
+    """Return the inclusive upper-bound ISO date for a partial date."""
+    year = _normalize_year_bound(date_obj.year, '9')
     if not date_obj.month:
-        return year * 10000 + 1231
-    month = int(date_obj.month)
+        return f'{year}-12-31'
+    month = _normalize_component_bound(date_obj.month, empty_value='12')
     if not date_obj.day:
-        last_day = calendar.monthrange(year, month)[1]
-        return year * 10000 + month * 100 + last_day
-    day = int(date_obj.day)
-    return year * 10000 + month * 100 + day
+        if '?' in date_obj.year:
+            last_day = 31
+        else:
+            last_day = calendar.monthrange(int(year), int(month))[1]
+        return f'{year}-{month}-{last_day:02d}'
+    day = _normalize_component_bound(date_obj.day, empty_value='31')
+    return f'{year}-{month}-{day}'
 
 
 def _filter_comparable_partial_dates(queryset, field_name):
-    """Restrict filters to partial dates with numeric stored components."""
+    """Restrict filters to partial dates that can satisfy range queries."""
     return (
         queryset.filter(**{f'{field_name}__isnull': False})
-        .filter(**{f'{field_name}__year__regex': NUMERIC_COMPONENT_RE})
+        .filter(**{f'{field_name}__year__regex': PARTIAL_YEAR_RE})
+        .filter(**{f'{field_name}__year__regex': PARTIAL_YEAR_HAS_DIGIT_RE})
         .filter(
             Q(**{f'{field_name}__month': ''})
             | Q(**{f'{field_name}__month__regex': NUMERIC_COMPONENT_RE})
@@ -186,11 +257,16 @@ class CreatorFilterSet(django_filters.FilterSet):
         bound = (
             _lower_bound(parsed) if lookup == 'gte' else _upper_bound(parsed)
         )
-        sort_key_name = f'_{field_name}_sort_key'
+        bound_expr = (
+            _stored_lower_bound_expr(field_name)
+            if lookup == 'gte'
+            else _stored_upper_bound_expr(field_name)
+        )
+        bound_name = f'_{field_name}_{lookup}_bound'
         return (
             _filter_comparable_partial_dates(queryset, field_name)
-            .annotate(**{sort_key_name: _date_sort_key(field_name)})
-            .filter(**{f'{sort_key_name}__{lookup}': bound})
+            .annotate(**{bound_name: bound_expr})
+            .filter(**{f'{bound_name}__{lookup}': bound})
         )
 
     def filter_birth_date_gte(self, queryset, name, value):
