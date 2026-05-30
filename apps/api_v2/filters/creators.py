@@ -17,6 +17,10 @@ from django.db.models import (
 )
 from django.db.models.functions import Concat, Replace, Right
 
+from apps.api_v2.filters.common import (
+    TIMESTAMP_FILTER_FIELDS,
+    TimestampFilterSet,
+)
 from apps.gcd.models import Creator
 from apps.stddata.forms import DateForm
 
@@ -168,7 +172,7 @@ def _filter_comparable_partial_dates(queryset, field_name):
     )
 
 
-class CreatorFilterSet(django_filters.FilterSet):
+class CreatorFilterSet(TimestampFilterSet):
     """Filters for creator list endpoints."""
 
     name = django_filters.CharFilter(
@@ -196,38 +200,6 @@ class CreatorFilterSet(django_filters.FilterSet):
         field_name='death_date',
         lookup_expr='isnull',
     )
-    modified__gt = django_filters.IsoDateTimeFilter(
-        field_name='modified',
-        lookup_expr='gt',
-    )
-    modified__gte = django_filters.IsoDateTimeFilter(
-        field_name='modified',
-        lookup_expr='gte',
-    )
-    modified__lt = django_filters.IsoDateTimeFilter(
-        field_name='modified',
-        lookup_expr='lt',
-    )
-    modified__lte = django_filters.IsoDateTimeFilter(
-        field_name='modified',
-        lookup_expr='lte',
-    )
-    created__gt = django_filters.IsoDateTimeFilter(
-        field_name='created',
-        lookup_expr='gt',
-    )
-    created__gte = django_filters.IsoDateTimeFilter(
-        field_name='created',
-        lookup_expr='gte',
-    )
-    created__lt = django_filters.IsoDateTimeFilter(
-        field_name='created',
-        lookup_expr='lt',
-    )
-    created__lte = django_filters.IsoDateTimeFilter(
-        field_name='created',
-        lookup_expr='lte',
-    )
 
     class Meta:
         """FilterSet metadata for creator filtering."""
@@ -241,15 +213,7 @@ class CreatorFilterSet(django_filters.FilterSet):
             'death_date__gte',
             'death_date__lte',
             'death_date__isnull',
-            'modified__gt',
-            'modified__gte',
-            'modified__lt',
-            'modified__lte',
-            'created__gt',
-            'created__gte',
-            'created__lt',
-            'created__lte',
-        )
+        ) + TIMESTAMP_FILTER_FIELDS
 
     def _filter_partial_date(self, queryset, field_name, value, lookup):
         """Filter a related ``Date`` field against a compact range bound."""

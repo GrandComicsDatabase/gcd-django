@@ -8,6 +8,17 @@ from django_filters.constants import EMPTY_VALUES
 
 from apps.stddata.models import Language
 
+TIMESTAMP_FILTER_FIELDS = (
+    'modified__gt',
+    'modified__gte',
+    'modified__lt',
+    'modified__lte',
+    'created__gt',
+    'created__gte',
+    'created__lt',
+    'created__lte',
+)
+
 
 def _request_filter_cache(request):
     """Return a request-local cache for repeated filter lookups."""
@@ -59,3 +70,40 @@ class LanguageCodeFilter(django_filters.CharFilter):
         if language_id is None:
             return qs.none()
         return qs.filter(**{f'{self.field_name}_id': language_id})
+
+
+class TimestampFilterSet(django_filters.FilterSet):
+    """Base filter set for standard v2 created/modified ranges."""
+
+    modified__gt = django_filters.IsoDateTimeFilter(
+        field_name='modified',
+        lookup_expr='gt',
+    )
+    modified__gte = django_filters.IsoDateTimeFilter(
+        field_name='modified',
+        lookup_expr='gte',
+    )
+    modified__lt = django_filters.IsoDateTimeFilter(
+        field_name='modified',
+        lookup_expr='lt',
+    )
+    modified__lte = django_filters.IsoDateTimeFilter(
+        field_name='modified',
+        lookup_expr='lte',
+    )
+    created__gt = django_filters.IsoDateTimeFilter(
+        field_name='created',
+        lookup_expr='gt',
+    )
+    created__gte = django_filters.IsoDateTimeFilter(
+        field_name='created',
+        lookup_expr='gte',
+    )
+    created__lt = django_filters.IsoDateTimeFilter(
+        field_name='created',
+        lookup_expr='lt',
+    )
+    created__lte = django_filters.IsoDateTimeFilter(
+        field_name='created',
+        lookup_expr='lte',
+    )
