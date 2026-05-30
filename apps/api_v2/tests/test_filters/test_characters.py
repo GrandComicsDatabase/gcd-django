@@ -4,7 +4,7 @@
 """Tests for the character filter set."""
 
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.test import RequestFactory
 from django.utils import timezone
@@ -217,14 +217,10 @@ def test_character_filter_language_reuses_request_cached_language_id():
     """Repeated filtersets on one request share the resolved language id."""
     request = RequestFactory().get('/api/v2/characters/', {'language': 'en'})
     queryset = Character.objects.all()
-    values_qs = MagicMock()
-    values_qs.first.return_value = 25
-    lookup_qs = MagicMock()
-    lookup_qs.values_list.return_value = values_qs
 
     with patch(
-        'apps.api_v2.filters.characters.Language.objects.filter',
-        return_value=lookup_qs,
+        'apps.api_v2.filters.common._lookup_language_id',
+        return_value=25,
     ) as lookup:
         first = CharacterFilterSet(
             {'language': 'en'},

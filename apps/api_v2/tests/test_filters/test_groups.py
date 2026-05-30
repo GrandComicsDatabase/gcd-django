@@ -163,6 +163,37 @@ def test_group_filter_matches_year_language_and_universe(db):
     assert list(qs) == [matching]
 
 
+def test_group_filter_language_avoids_language_table_join(db):
+    """The shared language-code filter resolves to language_id."""
+    english = _create_language('en', 'English')
+    marvel = _create_multiverse('Marvel')
+    universe = Universe.objects.create(
+        multiverse='Marvel',
+        verse=marvel,
+        name='Mainstream',
+        designation='Earth-616',
+        year_first_published=1961,
+        description='',
+        notes='',
+    )
+    _create_group(
+        name='X-Men',
+        sort_name='X-Men',
+        year_first_published=1963,
+        language=english,
+        universe=universe,
+    )
+
+    qs = GroupFilterSet(
+        {'language': 'en'},
+        queryset=Group.objects.filter(deleted=False),
+    ).qs
+    sql = str(qs.query).lower()
+
+    assert 'stddata_language' not in sql
+    assert 'language_id' in sql
+
+
 def test_group_filter_matches_modified_range(db):
     """Modified range filters support delta-style sync queries."""
     english = _create_language('en', 'English')

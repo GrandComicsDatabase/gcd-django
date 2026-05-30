@@ -198,6 +198,32 @@ def test_series_filter_matches_exact_fields(
     assert list(qs) == [matching]
 
 
+def test_series_filter_language_avoids_language_table_join(
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """The shared language-code filter resolves to language_id."""
+    _create_series(
+        country=country,
+        language=language,
+        name='Matching Series',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1985,
+    )
+
+    qs = SeriesFilterSet(
+        {'language': language.code},
+        queryset=Series.objects.all(),
+    ).qs
+    sql = str(qs.query).lower()
+
+    assert 'stddata_language' not in sql
+    assert 'language_id' in sql
+
+
 def test_series_filter_matches_modified_range(
     country,
     language,

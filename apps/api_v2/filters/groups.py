@@ -5,6 +5,7 @@
 
 import django_filters
 
+from apps.api_v2.filters.common import LanguageCodeFilter
 from apps.gcd.models import Group
 
 
@@ -23,7 +24,7 @@ class GroupFilterSet(django_filters.FilterSet):
         field_name='year_first_published',
         lookup_expr='lte',
     )
-    language = django_filters.CharFilter(field_name='language__code')
+    language = LanguageCodeFilter(field_name='language')
     universe = django_filters.NumberFilter(field_name='universe_id')
     modified__gt = django_filters.IsoDateTimeFilter(
         field_name='modified',
