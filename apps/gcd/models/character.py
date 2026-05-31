@@ -308,9 +308,11 @@ class Character(CharacterGroupBase):
         return self.active_names().get(is_official_name=True)
 
     def has_dependents(self):
-        if super(Character, self).has_dependents() or \
-          self.active_memberships().exists():
-            return True
+        # Relations and memberships are deleted when the character is deleted,
+        # see _do_create_dependent_revisions in oi/models.py, so we do not
+        # need to check for them here.
+        # The has_dependents on memberships will be False if the character
+        # has no appearances, which is checked below anyhow.
         from .story import StoryCharacter
         if StoryCharacter.objects.filter(character__character=self,
                                          deleted=False).exists():

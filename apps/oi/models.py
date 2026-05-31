@@ -394,6 +394,8 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['character']:
             return (self.characterrevisions.all(),
                     self.characternamedetailrevisions.all(),
+                    self.characterrelationrevisions.all(),
+                    self.groupmembershiprevisions.all(),
                     self.externallinkrevisions.all())
 
         if self.change_type == CTYPES['character_relation']:
@@ -1966,8 +1968,11 @@ class Revision(models.Model):
         # for models of type GcdLink we need to clear the source info in
         # all revisions since the link object gets deleted
         #
-        # TODO many models of this type have this routine as well,likely
+        # TODO many models of this type have this routine as well, likely
         # not needed but an oversight during re-factor of these models ?
+        # These models set directly to None the field that is referred
+        # to as source, which seems to be doing the same thing as setting
+        # self.source to None here. Double check.
         if GcdLink in type(self.source).mro():
             for revision in self.source.revisions.all():
                 setattr(revision, 'source', None)
@@ -2880,7 +2885,7 @@ class BrandRevision(PublisherRevisionBase):
                                 brand_use,
                                 changeset=self.changeset)
                 if brand_use_lock is None:
-                    return False
+                    raise IntegrityError("needed BrandUse lock not possible")
 
                 use_revision = BrandUseRevision.clone(brand_use,
                                                       self.changeset)
@@ -3468,6 +3473,8 @@ class SeriesRevision(Revision):
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE,
                                   related_name='series_revisions')
+    # Imprint is removed from Series, but here we keep it around for the
+    # change history of old revisions.
     imprint = models.ForeignKey(Publisher, on_delete=models.CASCADE,
                                 null=True, blank=True, default=None,
                                 related_name='imprint_series_revisions')
@@ -7589,6 +7596,30 @@ class CharacterRevision(CharacterGroupRevisionBase):
             if delete:
                 character_name.deleted = True
                 character_name.save()
+        if delete:
+            for group_membership in self.character.active_memberships():
+                membership_lock = _get_revision_lock(group_membership,
+                                                     changeset=self.changeset)
+                if membership_lock is None:
+                    raise IntegrityError("needed GroupMembership lock not "
+                                         "possible")
+                group_membership_revision = \
+                    GroupMembershipRevision.clone(group_membership,
+                                                    self.changeset)
+                group_membership_revision.deleted = True
+                group_membership_revision.save()
+            for character_relation in self.character.active_relations():
+                relation_lock = _get_revision_lock(character_relation,
+                                                   changeset=self.changeset)
+                if relation_lock is None:
+                    raise IntegrityError("needed CharacterRelation lock not "
+                                         "possible")
+                character_relation_revision = \
+                    CharacterRelationRevision.clone(character_relation,
+                                                    self.changeset)
+                character_relation_revision.deleted = True
+                character_relation_revision.save()
+
 
     def extra_forms(self, request):
         from apps.oi.forms import CharacterRevisionFormSet
