@@ -9,6 +9,43 @@ from apps.api_v2.utils.credits import collect_credit_strings
 from apps.gcd.models import Issue, Story
 
 
+def _publisher_code_number(issue):
+    """Return the single publisher code number when exactly one exists."""
+    code_numbers = getattr(issue, 'active_publisher_code_number_list', None)
+    if code_numbers is None:
+        code_numbers = list(
+            issue.active_code_numbers().filter(
+                deleted=False,
+                number_type_id=1,
+            )
+        )
+    if len(code_numbers) != 1:
+        return ''
+    return code_numbers[0].number
+
+
+def _descriptor_addon(issue):
+    """Return the variant/code-number addon segment for an issue."""
+    add_on = ''
+    code_number = _publisher_code_number(issue)
+    if code_number:
+        code_number = f'({code_number})'
+    if issue.variant_name:
+        add_on = f'[{issue.variant_name}]'
+    if add_on and code_number:
+        code_number = f' {code_number}'
+    return f'{add_on}{code_number}'
+
+
+def _full_descriptor(issue):
+    """Return the full issue descriptor without triggering code-number N+1s."""
+    add_on = _descriptor_addon(issue)
+    issue_descriptor = issue.issue_descriptor
+    if issue_descriptor and add_on:
+        add_on = f' {add_on}'
+    return f'{issue_descriptor}{add_on}'
+
+
 def _cover_url(issue):
     """Return the best available cover URL for an issue."""
     covers = getattr(issue, 'active_cover_list', None)
@@ -185,7 +222,7 @@ class IssueListSerializer(serializers.ModelSerializer):
 
     def get_descriptor(self, obj):
         """Return the full issue descriptor."""
-        return obj.full_descriptor
+        return _full_descriptor(obj)
 
     def get_editing_credits(self, obj):
         """Return issue editing credits as plain-text entries."""

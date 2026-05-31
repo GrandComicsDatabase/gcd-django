@@ -100,8 +100,8 @@ def test_series_list_returns_paginated_results(
     series.publication_type = series_publication_type
     series.issue_count = 2
     series.save()
-    first_issue = _create_issue(series, sort_code=20)
-    second_issue = _create_issue(series, sort_code=10)
+    _create_issue(series, sort_code=20)
+    _create_issue(series, sort_code=10)
     _create_issue(series, sort_code=30, deleted=True)
     series.keywords.add('alpha')
 
@@ -120,10 +120,7 @@ def test_series_list_returns_paginated_results(
         'name': series.publisher.name,
     }
     assert response.data['results'][0]['publication_type'] == 'Comic Book'
-    assert response.data['results'][0]['active_issue_ids'] == [
-        second_issue.pk,
-        first_issue.pk,
-    ]
+    assert 'active_issue_ids' not in response.data['results'][0]
 
 
 def test_series_detail_returns_expected_payload(

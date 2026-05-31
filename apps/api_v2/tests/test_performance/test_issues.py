@@ -66,7 +66,7 @@ def test_issue_list_query_count(api_client, series):
         response = api_client.get(reverse('issue-list'))
 
     assert response.status_code == 200
-    assert len(context) == 9
+    assert len(context) == 8
 
 
 def test_issue_detail_query_count(api_client, issue):

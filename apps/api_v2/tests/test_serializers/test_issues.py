@@ -9,7 +9,15 @@ from apps.api_v2.serializers.issues import (
     IssueDetailSerializer,
     IssueListSerializer,
 )
-from apps.gcd.models import Brand, Cover, IndiciaPublisher, Story, StoryType
+from apps.gcd.models import (
+    Brand,
+    CodeNumberType,
+    Cover,
+    IndiciaPublisher,
+    PublisherCodeNumber,
+    Story,
+    StoryType,
+)
 
 
 def test_issue_serializers_expose_prd_fields(issue, publisher, country):
@@ -158,3 +166,21 @@ def test_issue_serializers_expose_prd_fields(issue, publisher, country):
     ]
     assert detail_data['stories'][0]['editing'] == ['Story Editor']
     assert detail_data['stories'][0]['keywords'] == ['story-alpha']
+
+
+def test_issue_list_serializer_descriptor_includes_publisher_code_number(
+    issue,
+):
+    """List descriptors preserve publisher code numbers in the addon slot."""
+    code_type = CodeNumberType.objects.create(name='Publisher Code')
+    PublisherCodeNumber.objects.create(
+        number='DC-12',
+        number_type=code_type,
+        issue=issue,
+    )
+    issue.variant_name = 'Newsstand'
+    issue.save()
+
+    data = IssueListSerializer(issue).data
+
+    assert data['descriptor'] == issue.full_descriptor

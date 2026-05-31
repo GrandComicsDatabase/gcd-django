@@ -14,11 +14,20 @@ Three groups:
 """
 
 import pytest
+from django.core.cache import cache
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from apps.gcd.models import Issue, Publisher, Series
 from apps.stddata.models import Country, Language
+
+
+@pytest.fixture(autouse=True)
+def clear_test_cache():
+    """Reset cache state so throttle counters never leak by test order."""
+    cache.clear()
+    yield
+    cache.clear()
 
 
 @pytest.fixture

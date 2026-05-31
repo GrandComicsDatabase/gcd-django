@@ -66,7 +66,7 @@ def test_series_list_query_count(api_client, publisher, country, language):
         response = api_client.get(reverse('series-list'))
 
     assert response.status_code == 200
-    assert len(context) == 5
+    assert len(context) == 4
 
 
 def test_series_detail_query_count(api_client, series):

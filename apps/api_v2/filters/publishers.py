@@ -5,10 +5,14 @@
 
 import django_filters
 
+from apps.api_v2.filters.common import (
+    TIMESTAMP_FILTER_FIELDS,
+    TimestampFilterSet,
+)
 from apps.gcd.models import Publisher
 
 
-class PublisherFilterSet(django_filters.FilterSet):
+class PublisherFilterSet(TimestampFilterSet):
     """Filters for publisher list endpoints."""
 
     name = django_filters.CharFilter(
@@ -16,38 +20,6 @@ class PublisherFilterSet(django_filters.FilterSet):
         lookup_expr='icontains',
     )
     country = django_filters.CharFilter(field_name='country__code')
-    modified__gt = django_filters.IsoDateTimeFilter(
-        field_name='modified',
-        lookup_expr='gt',
-    )
-    modified__gte = django_filters.IsoDateTimeFilter(
-        field_name='modified',
-        lookup_expr='gte',
-    )
-    modified__lt = django_filters.IsoDateTimeFilter(
-        field_name='modified',
-        lookup_expr='lt',
-    )
-    modified__lte = django_filters.IsoDateTimeFilter(
-        field_name='modified',
-        lookup_expr='lte',
-    )
-    created__gt = django_filters.IsoDateTimeFilter(
-        field_name='created',
-        lookup_expr='gt',
-    )
-    created__gte = django_filters.IsoDateTimeFilter(
-        field_name='created',
-        lookup_expr='gte',
-    )
-    created__lt = django_filters.IsoDateTimeFilter(
-        field_name='created',
-        lookup_expr='lt',
-    )
-    created__lte = django_filters.IsoDateTimeFilter(
-        field_name='created',
-        lookup_expr='lte',
-    )
 
     class Meta:
         """FilterSet metadata for publisher filtering."""
@@ -58,12 +30,4 @@ class PublisherFilterSet(django_filters.FilterSet):
             'year_began',
             'year_ended',
             'country',
-            'modified__gt',
-            'modified__gte',
-            'modified__lt',
-            'modified__lte',
-            'created__gt',
-            'created__gte',
-            'created__lt',
-            'created__lte',
-        )
+        ) + TIMESTAMP_FILTER_FIELDS

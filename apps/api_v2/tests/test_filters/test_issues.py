@@ -133,6 +133,98 @@ def test_issue_filter_matches_key_date_and_on_sale_date_ranges(series):
     assert earlier not in qs
 
 
+def test_issue_filter_matches_on_sale_iso_week(series):
+    """ISO-week filtering expands to the matching Monday-Sunday window."""
+    monday = _create_issue(
+        series,
+        number='1',
+        key_date='2025-03-17',
+        on_sale_date='2025-03-17',
+    )
+    sunday = _create_issue(
+        series,
+        number='2',
+        key_date='2025-03-23',
+        on_sale_date='2025-03-23',
+    )
+    outside = _create_issue(
+        series,
+        number='3',
+        key_date='2025-03-24',
+        on_sale_date='2025-03-24',
+    )
+
+    qs = IssueFilterSet(
+        {'on_sale_iso_week': '2025-W12'},
+        queryset=Issue.objects.all(),
+    ).qs
+
+    assert list(qs) == [monday, sunday]
+    assert outside not in qs
+
+
+def test_issue_filter_matches_on_sale_iso_week_across_month_boundary(series):
+    """ISO-week filtering keeps issues from both months in a split week."""
+    january = _create_issue(
+        series,
+        number='1',
+        key_date='2025-01-27',
+        on_sale_date='2025-01-27',
+    )
+    february = _create_issue(
+        series,
+        number='2',
+        key_date='2025-02-02',
+        on_sale_date='2025-02-02',
+    )
+    outside = _create_issue(
+        series,
+        number='3',
+        key_date='2025-02-03',
+        on_sale_date='2025-02-03',
+    )
+
+    qs = IssueFilterSet(
+        {'on_sale_iso_week': '2025-W05'},
+        queryset=Issue.objects.all(),
+    ).qs
+
+    assert list(qs) == [january, february]
+    assert outside not in qs
+
+
+def test_issue_filter_on_sale_iso_week_avoids_pk_subquery(series):
+    """ISO-week filters combine directly into the issue queryset."""
+    _create_issue(
+        series,
+        number='1',
+        key_date='2025-03-17',
+        on_sale_date='2025-03-17',
+    )
+
+    qs = IssueFilterSet(
+        {'on_sale_iso_week': '2025-W12'},
+        queryset=Issue.objects.all(),
+    ).qs
+    sql = str(qs.query).lower()
+
+    assert 'on_sale_date' in sql
+    assert ' in (select ' not in sql
+
+
+def test_issue_filter_rejects_invalid_on_sale_iso_week(series):
+    """Malformed ISO-week values are rejected instead of silently ignored."""
+    filterset = IssueFilterSet(
+        {'on_sale_iso_week': '2025-12'},
+        queryset=Issue.objects.all(),
+    )
+
+    assert not filterset.form.is_valid()
+    assert filterset.form.errors['on_sale_iso_week'] == [
+        'Enter a valid ISO week in YYYY-Www format.',
+    ]
+
+
 def test_issue_filter_matches_variant_presence(series):
     """Variant filtering supports base-only and variant-only queries."""
     base = _create_issue(
