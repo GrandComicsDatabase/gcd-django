@@ -1066,6 +1066,18 @@ class Story(GcdData):
         return self.characters or self.appearing_characters.count() or \
             self.appearing_groups.count()
 
+    def has_characters_order_appearance(self):
+        """
+        UI check for characters in order of appearances.
+        """
+        return self.character_orders.filter(type__id=1).exists()
+
+    def has_characters_order_importance(self):
+        """
+        UI check for characters in order of importance.
+        """
+        return self.character_orders.filter(type__id=2).exists()
+
     def has_feature(self):
         """
         UI check for features.

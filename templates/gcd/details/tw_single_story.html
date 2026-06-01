@@ -103,22 +103,53 @@
       <li>{{ story|show_credit_tw_inline:"feature_logo" }}</li>
       <li>{{ story|show_credit_tw_inline:"first_line" }}</li>
       <li>{{ story|show_credit_tw_inline:"keywords" }}</li>
-      {% if story.universe.exists %}
-      {{ story.show_universe }}
-      {% endif %}
+    {% if story.universe.exists %}
+    {{ story.show_universe }}
+    {% endif %}
     </ul>
     {% if story.has_characters %}
-    <div class="field-name-label">Characters:</div>
-      {% with characters=story.process_appearing_characters %}
-        {% include 'gcd/bits/tw_story_characters.html' %}
-      {% endwith %}
-      {% for character_order in story.character_orders.all %}
-        <div class="field-name-label">Character {{ character_order.type|title }}:</div>
-        {% with characters=character_order.process_ordered_appearing_characters %}
+      {% with has_orders=story.character_orders.exists %}
+    <div id="character-tabs-{{ story.id }}">
+        {% if has_orders %}
+      <div class="flex flex-wrap items-center gap-2 border-b">
+        <div class="field-name-label mb-0">Characters:</div> Ordered by:
+        <input checked class="sr-only" type="radio" name="character-tabs-{{ story.id }}" id="character-tab-1-{{ story.id }}" data-panel="1">
+        <label for="character-tab-1-{{ story.id }}" class="cursor-pointer inline-block rounded hover:bg-blue-400 px-2 mx-1 py-1 bg-blue-100" data-character-tab-label>Name </label>
+
+          {% if story.has_characters_order_appearance %}
+        <input class="sr-only" type="radio" name="character-tabs-{{ story.id }}" id="character-tab-2-{{ story.id }}" data-panel="2">
+        <label for="character-tab-2-{{ story.id }}" class="cursor-pointer inline-block rounded hover:bg-blue-400 px-2 mx-1 py-1 bg-blue-100" data-character-tab-label>Appearance</label>
+          {% endif %}
+
+          {% if story.has_characters_order_importance %}
+        <input class="sr-only" type="radio" name="character-tabs-{{ story.id }}" id="character-tab-3-{{ story.id }}" data-panel="3">
+        <label for="character-tab-3-{{ story.id }}" class="cursor-pointer inline-block rounded hover:bg-blue-400 px-2 mx-1 py-1 bg-blue-100" data-character-tab-label>Importance</label>
+          {% endif %}
+      </div>
+        {% else %}
+      <div class="field-name-label">Characters:</div>
+        {% endif %}
+
+      <div class="">
+        <div data-character-panel="1">
+        {% with characters=story.process_appearing_characters %}
           {% include 'gcd/bits/tw_story_characters.html' %}
         {% endwith %}
-      {% endfor %}
-      {{ story.characters }}
+        </div>
+
+        {% if has_orders %}
+          {% for character_order in story.character_orders.all %}
+        <div class="hidden" data-character-panel="{{ character_order.type.id|add:1 }}">
+            {% with characters=character_order.process_ordered_appearing_characters %}
+              {% include 'gcd/bits/tw_story_characters.html' %}
+            {% endwith %}
+        </div>
+          {% endfor %}
+        {% endif %}
+        {{ story.characters }}
+      </div>
+    </div>
+      {% endwith %}
     {% endif %}
     <dl>
       {{ story|show_credit_description_list:"synopsis"|linebreaksbr }}
@@ -163,4 +194,52 @@
   {% endif %}
 {% endif %} <!-- shown_types -->
 </div>
+<script>
+  (function () {
+    const root = document.getElementById('character-tabs-{{ story.id }}');
+    if (!root) return;
+
+    const radios = root.querySelectorAll('input[type="radio"][name="character-tabs-{{ story.id }}"]');
+    const panels = root.querySelectorAll('[data-character-panel]');
+    const labels = root.querySelectorAll('[data-character-tab-label]');
+
+    function updateTabStyles() {
+      labels.forEach((label) => {
+        label.classList.remove('bg-blue-400');
+        label.classList.add('bg-blue-100');
+      });
+
+      const checked = root.querySelector('input[type="radio"][name="character-tabs-{{ story.id }}"]:checked');
+      if (!checked) return;
+
+      const activeLabel = root.querySelector('label[for="' + checked.id + '"]');
+      if (activeLabel) {
+        activeLabel.classList.remove('bg-blue-100');
+        activeLabel.classList.add('bg-blue-400',);
+      }
+    }
+
+    function showPanel(panelId) {
+      panels.forEach((panel) => {
+        panel.classList.toggle('hidden', panel.dataset.characterPanel !== panelId);
+      });
+    }
+
+    radios.forEach((radio) => {
+      radio.addEventListener('change', function () {
+        if (this.checked) {
+          const panelId = this.dataset.panel;
+          showPanel(panelId);
+          updateTabStyles();
+        }
+      });
+    });
+
+    const checked = root.querySelector('input[type="radio"][name="character-tabs-{{ story.id }}"]:checked');
+    if (checked) {
+      showPanel(checked.dataset.panel);
+      updateTabStyles();
+    }
+  })();
+</script>
 
