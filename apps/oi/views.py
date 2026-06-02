@@ -617,7 +617,8 @@ thanks,
         if not is_changed:
             changeset.approver = User.objects.get(username='anon')
             changeset.state = states.REVIEWING
-            changeset.approve()
+            changeset.approve('Auto-approved since there are only character '
+                              'order changes.')
 
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
