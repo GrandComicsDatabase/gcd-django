@@ -111,7 +111,7 @@
       {% with has_orders=story.character_orders.exists %}
     <div id="character-tabs-{{ story.id }}">
         {% if has_orders %}
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex flex-wrap items-center">
         <div class="field-name-label mb-0">Characters:</div> Ordered by:
         <input checked class="sr-only" type="radio" name="character-tabs-{{ story.id }}" id="character-tab-1-{{ story.id }}" data-panel="1">
         <label for="character-tab-1-{{ story.id }}" class="cursor-pointer inline-block rounded hover:bg-blue-400 px-2 mx-1 py-1 bg-blue-100" data-character-tab-label>Name </label>
