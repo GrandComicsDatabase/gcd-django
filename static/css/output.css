@@ -1729,6 +1729,10 @@ a:hover {
   cursor: move;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
 .list-inside {
   list-style-position: inside;
 }
@@ -1822,6 +1826,10 @@ a:hover {
 
 .gap-1 {
   gap: 0.25rem;
+}
+
+.gap-2 {
+  gap: 0.5rem;
 }
 
 .gap-4 {
@@ -1981,11 +1989,6 @@ a:hover {
   border-color: rgb(107 114 128 / var(--tw-border-opacity));
 }
 
-.border-orange-400 {
-  --tw-border-opacity: 1;
-  border-color: rgb(251 146 60 / var(--tw-border-opacity));
-}
-
 .\!bg-white {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity)) !important;
@@ -2079,11 +2082,6 @@ a:hover {
 .bg-my-comics {
   --tw-bg-opacity: 1;
   background-color: rgb(169 48 42 / var(--tw-bg-opacity));
-}
-
-.bg-orange-400 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(251 146 60 / var(--tw-bg-opacity));
 }
 
 .bg-preview {
@@ -2347,6 +2345,10 @@ a:hover {
 
 .font-semibold {
   font-weight: 600;
+}
+
+.capitalize {
+  text-transform: capitalize;
 }
 
 .italic {
@@ -2885,6 +2887,10 @@ select {
          columns: 3;
   }
 
+  .sm\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .sm\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -3053,6 +3059,10 @@ select {
   .lg\:columns-3 {
     -moz-columns: 3;
          columns: 3;
+  }
+
+  .lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .lg\:grid-cols-8 {
@@ -3280,10 +3290,6 @@ select {
 .\[\&_td\]\:px-3 td {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
-}
-
-.\[\&_td\]\:text-center td {
-  text-align: center;
 }
 
 .\[\&_td\]\:align-top td {

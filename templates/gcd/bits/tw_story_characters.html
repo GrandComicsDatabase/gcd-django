@@ -10,7 +10,7 @@
               {% endif %}
               {% if group.2 %}
                 {% with character_list=group.2 %}
-    <ul class="list-disc sm:columns-2 ps-8 lg:columns-3 gap-8">
+    <ul class="list-disc grid sm:grid-cols-2 lg:grid-cols-3 ps-8">
                   {% include 'gcd/bits/tw_character_list.html' %}
     </ul>
                 {% endwith %}
@@ -21,7 +21,7 @@
           {% endif %}
           {% if character_list %}
             {% if character_list|length > 1 %}
-    <ul class="list-disc sm:columns-2 lg:columns-3 ps-4 gap-8">
+    <ul class="list-disc grid sm:grid-cols-2 lg:grid-cols-3 ps-4">
             {% else %}
     <ul class="list-disc ps-4 gap-8">
             {% endif %}
