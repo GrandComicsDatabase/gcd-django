@@ -39,13 +39,15 @@ class GcdNameQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdNameQuery, self).prepare(query_obj)
         query_return = ''
-        query_string = query_string.replace('[', r'\[')\
-                                   .replace(']', r'\]')\
-                                   .replace('{', r'\{')\
-                                   .replace('}', r'\}')\
-                                   .replace(':', r'\:')\
-                                   .replace('!', r'\!')\
-                                   .replace('/', ' ')
+        query_string = (
+            query_string.replace('[', r'\[')
+                        .replace(']', r'\]')
+                        .replace('{', r'\{')
+                        .replace('}', r'\}')
+                        .replace(':', r'\:')
+                        .replace('!', r'\!')
+                        .replace('/', ' ')
+        )
         if ((query_string[0] == '"' and query_string[-1] == '"') or
            (query_string[0] == "'" and query_string[-1] == "'")):
             query_return = query_string
