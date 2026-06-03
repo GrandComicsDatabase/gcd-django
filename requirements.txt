@@ -40,7 +40,7 @@ simplejson<3.21
 tablib<3.10
 unidecode
 # is used by python-graph-core, which has a successor python-graph, which just was released, check
-setuptools
+setuptools<81
 
 # REST-API
 djangorestframework
@@ -65,4 +65,3 @@ redis<5.1
 rq<2.7
 django-rq<3.3
 git+https://github.com/GrandComicsDatabase/haystack-rqueue.git
-setuptools<81
