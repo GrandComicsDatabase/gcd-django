@@ -39,12 +39,12 @@ class GcdNameQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdNameQuery, self).prepare(query_obj)
         query_return = ''
-        query_string = query_string.replace('[', '\[')\
-                                   .replace(']', '\]')\
-                                   .replace('{', '\{')\
-                                   .replace('}', '\}')\
-                                   .replace(':', '\:')\
-                                   .replace('!', '\!')\
+        query_string = query_string.replace('[', r'\[')\
+                                   .replace(']', r'\]')\
+                                   .replace('{', r'\{')\
+                                   .replace('}', r'\}')\
+                                   .replace(':', r'\:')\
+                                   .replace('!', r'\!')\
                                    .replace('/', ' ')
         if ((query_string[0] == '"' and query_string[-1] == '"') or
            (query_string[0] == "'" and query_string[-1] == "'")):
@@ -60,8 +60,8 @@ class GcdNameQuery(AutoQuery):
 class GcdAutoQuery(AutoQuery):
     def prepare(self, query_obj):
         query_string = super(GcdAutoQuery, self).prepare(query_obj)
-        if '\*' in query_string and len(query_string) > 2:
-            query_string = query_string.replace('\*', '*')
+        if r'\*' in query_string and len(query_string) > 2:
+            query_string = query_string.replace(r'\*', '*')
         if ' ' in query_string:
             query_string = '"' + query_string + '"'
         return query_string
