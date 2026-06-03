@@ -553,7 +553,11 @@ class Issue(GcdData):
             'covers': self.active_covers(stats=True).count(),
         }
 
-        if not self.variant_of_id:
+        # Base issues always contribute +1 to their series count. 
+        # Standard variants return 0 to prevent inflating the base issue's series count.
+        # However, cross-series variants (where the variant belongs to a different 
+        # series than its parent) must return +1 to correctly increment their new target series.
+        if not self.variant_of_id or self.series_id != self.variant_of.series_id:
             counts['series issues'] = 1
 
         if self.series.is_comics_publication:
