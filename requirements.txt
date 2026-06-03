@@ -65,3 +65,4 @@ redis<5.1
 rq<2.7
 django-rq<3.3
 git+https://github.com/GrandComicsDatabase/haystack-rqueue.git
+setuptools<81
