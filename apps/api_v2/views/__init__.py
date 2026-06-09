@@ -21,14 +21,20 @@ from apps.api_v2.throttling import (
 )
 
 
+def _model_has_deleted_field(model):
+    """Return whether ``model`` exposes the standard soft-delete field."""
+    return any(field.name == 'deleted' for field in model._meta.fields)
+
+
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
 class GCDBaseViewSet(ReadOnlyModelViewSet):
-    """Read-only viewset that hides soft-deleted records.
+    """Read-only viewset with the shared v2 API policy.
 
-    All v2 list/detail viewsets inherit from this class. Every GCD model
-    derived from ``GcdData`` has a ``deleted`` boolean; ``get_queryset``
-    applies ``deleted=False`` automatically so subclasses do not have to
-    repeat it.
+    All v2 list/detail viewsets inherit from this class. GCD models derived
+    from ``GcdData`` have a ``deleted`` boolean; ``get_queryset`` applies
+    ``deleted=False`` automatically so subclasses do not have to repeat it.
+    Link models derived from ``GcdLink`` have no soft-delete column and are
+    returned without that predicate.
 
     Subclasses are expected to set:
 
@@ -38,9 +44,7 @@ class GCDBaseViewSet(ReadOnlyModelViewSet):
     * ``serializer_class``.
 
     Subclasses that override ``get_queryset`` must call ``super().
-    get_queryset()`` to keep the soft-delete filter applied. This base
-    class is intended for ``GcdData``-derived models only; do not use it
-    for tables without a ``deleted`` column.
+    get_queryset()`` to keep shared queryset policy applied.
 
     Authentication, permission, pagination and throttling are pinned at
     the base-class level so they cannot drift between v2 endpoints and
@@ -62,5 +66,8 @@ class GCDBaseViewSet(ReadOnlyModelViewSet):
     )
 
     def get_queryset(self):
-        """Return the configured queryset filtered to non-deleted rows."""
-        return super().get_queryset().filter(deleted=False)
+        """Return the configured queryset with shared v2 filtering."""
+        queryset = super().get_queryset()
+        if _model_has_deleted_field(queryset.model):
+            queryset = queryset.filter(deleted=False)
+        return queryset
