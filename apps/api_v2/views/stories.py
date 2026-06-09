@@ -63,7 +63,7 @@ ACTIVE_STORY_CHARACTER_PREFETCH = Prefetch(
     'appearing_characters',
     queryset=StoryCharacter.objects.filter(deleted=False)
     .select_related(
-        'character__character',
+        'character',
         'role',
     )
     .order_by(

@@ -9,7 +9,10 @@ from django.urls import reverse
 from rest_framework.request import Request
 from rest_framework.test import APIRequestFactory
 
-from apps.api_v2.views.stories import StoryViewSet
+from apps.api_v2.views.stories import (
+    ACTIVE_STORY_CHARACTER_PREFETCH,
+    StoryViewSet,
+)
 from apps.gcd.models import (
     CREDIT_TYPES,
     Character,
@@ -272,6 +275,14 @@ def test_story_list_queryset_uses_id_based_issue_ordering():
         'sequence_number',
         'id',
     )
+
+
+def test_story_character_prefetch_avoids_parent_character_join():
+    """Character appearances only join the name detail and role rows."""
+    assert ACTIVE_STORY_CHARACTER_PREFETCH.queryset.query.select_related == {
+        'character': {},
+        'role': {},
+    }
 
 
 def test_story_list_queryset_uses_modified_ordering_for_delta_filters():

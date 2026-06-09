@@ -151,7 +151,7 @@ class StorySerializer(StoryListSerializer):
             appearances = (
                 obj.appearing_characters.filter(deleted=False)
                 .select_related(
-                    'character__character',
+                    'character',
                     'role',
                 )
                 .order_by('character__sort_name', 'character__id')
