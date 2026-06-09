@@ -108,6 +108,7 @@ SPRINT_2_ROUTE_SPECS = (
 SPRINT_3_ROUTE_SPECS = (
     ('story-list', '/api/v2/stories/'),
     ('reprint-list', '/api/v2/reprints/'),
+    ('story-arc-list', '/api/v2/story-arcs/'),
 )
 
 
@@ -308,6 +309,8 @@ def test_schema_includes_sprint_3_routes_on_www_surface(
         '/api/v2/stories/{id}/',
         '/api/v2/reprints/',
         '/api/v2/reprints/{id}/',
+        '/api/v2/story-arcs/',
+        '/api/v2/story-arcs/{id}/',
     }
 
 
@@ -355,5 +358,7 @@ def test_schema_excludes_sprint_3_routes_on_my_surface(
             '/api/v2/stories/{id}/',
             '/api/v2/reprints/',
             '/api/v2/reprints/{id}/',
+            '/api/v2/story-arcs/',
+            '/api/v2/story-arcs/{id}/',
         },
     )
