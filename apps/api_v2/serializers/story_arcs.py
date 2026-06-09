@@ -3,9 +3,10 @@
 
 """Serializers for v2 story-arc endpoints."""
 
+from django.db.models import Prefetch
 from rest_framework import serializers
 
-from apps.gcd.models import StoryArc
+from apps.gcd.models import Reprint, StoryArc
 
 
 def _issue_reference(issue):
@@ -34,6 +35,15 @@ def _primary_stories(story_arc):
     stories = getattr(story_arc, 'active_story_arc_story_list', None)
     if stories is None:
         stories, _reprinted_stories = story_arc.stories()
+        stories = stories.prefetch_related(
+            Prefetch(
+                'from_all_reprints',
+                queryset=Reprint.objects.select_related(
+                    'origin_issue__series',
+                ).order_by('id'),
+                to_attr='active_story_arc_reprint_list',
+            ),
+        )
     return [
         story
         for story in stories

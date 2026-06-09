@@ -5,6 +5,9 @@
 
 from decimal import Decimal
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
+
 from apps.api_v2.serializers.story_arcs import (
     StoryArcListSerializer,
     StoryArcSerializer,
@@ -197,3 +200,29 @@ def test_story_arc_detail_serializer_omits_reprinted_story_bucket(
             'sequence_number': 1,
         },
     ]
+
+
+def test_story_arc_detail_serializer_prefetches_fallback_reprint_checks(
+    issue,
+    language,
+):
+    """Direct serializer use avoids per-story reprint checks."""
+    story_arc = _create_story_arc(language)
+    stories = [
+        _create_story(
+            issue,
+            title=f'Primary Story {number}',
+            sequence_number=number,
+        )
+        for number in range(1, 4)
+    ]
+    for story in stories:
+        story.story_arc.add(story_arc)
+
+    with CaptureQueriesContext(connection) as context:
+        data = StoryArcSerializer(story_arc).data
+
+    assert [story['id'] for story in data['stories']] == [
+        story.pk for story in stories
+    ]
+    assert len(context) == 2
