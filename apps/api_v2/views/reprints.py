@@ -6,6 +6,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.api_v2.filters.reprints import ReprintFilterSet
+from apps.api_v2.pagination import V2DeltaPageNumberPagination
 from apps.api_v2.serializers.reprints import ReprintSerializer
 from apps.api_v2.utils.conditional import (
     condition,
@@ -36,6 +37,31 @@ reprint_etag = make_etag(
     queryset_getter=_reprint_filter_queryset,
 )
 
+REPRINT_BROWSE_ORDERING = (
+    'origin_issue_id',
+    'target_issue_id',
+    'id',
+)
+REPRINT_MODIFIED_DELTA_ORDERING = (
+    'modified',
+    'id',
+)
+REPRINT_MODIFIED_QUERY_PARAMS = frozenset(
+    {
+        'modified__gt',
+        'modified__gte',
+        'modified__lt',
+        'modified__lte',
+    }
+)
+
+
+def _has_modified_delta_filter(query_params):
+    """Return whether request params contain a modified delta filter."""
+    return any(
+        query_params.get(param) for param in REPRINT_MODIFIED_QUERY_PARAMS
+    )
+
 
 class ReprintViewSet(GCDBaseViewSet):
     """Read-only reprint endpoints for the public v2 API surface."""
@@ -47,14 +73,24 @@ class ReprintViewSet(GCDBaseViewSet):
         'target',
         'target_issue',
         'target_issue__series',
-    ).order_by(
-        'origin_issue_id',
-        'target_issue_id',
-        'id',
-    )
+    ).order_by(*REPRINT_BROWSE_ORDERING)
     serializer_class = ReprintSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = ReprintFilterSet
+    pagination_class = V2DeltaPageNumberPagination
+
+    def get_queryset(self):
+        """Switch broad modified delta requests to modified ordering."""
+        queryset = super().get_queryset()
+        if self.action == 'list' and _has_modified_delta_filter(
+            self.request.query_params,
+        ):
+            queryset = queryset.order_by(*REPRINT_MODIFIED_DELTA_ORDERING)
+        return queryset
+
+    def should_skip_exact_count(self, request):
+        """Skip exact pagination counts for broad modified delta requests."""
+        return _has_modified_delta_filter(request.query_params)
 
     @condition(
         etag_func=reprint_etag,

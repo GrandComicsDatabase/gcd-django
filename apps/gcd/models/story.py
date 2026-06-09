@@ -748,6 +748,16 @@ class Story(GcdData):
     class Meta:
         app_label = 'gcd'
         ordering = ['sequence_number']
+        indexes = [
+            models.Index(
+                fields=['deleted', 'issue', 'sequence_number', 'id'],
+                name='gcd_story_v2_browse_idx',
+            ),
+            models.Index(
+                fields=['deleted', 'modified', 'id'],
+                name='gcd_story_v2_modified_idx',
+            ),
+        ]
 
     # Core story fields.
     title = models.CharField(max_length=255)

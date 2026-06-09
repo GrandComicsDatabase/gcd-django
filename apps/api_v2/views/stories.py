@@ -7,6 +7,7 @@ from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.api_v2.filters.stories import StoryFilterSet
+from apps.api_v2.pagination import V2DeltaPageNumberPagination
 from apps.api_v2.serializers.stories import (
     StoryListSerializer,
     StorySerializer,
@@ -97,6 +98,31 @@ ACTIVE_REPRINT_TARGET_PREFETCH = Prefetch(
     to_attr='active_reprint_target_list',
 )
 
+STORY_BROWSE_ORDERING = (
+    'issue_id',
+    'sequence_number',
+    'id',
+)
+STORY_MODIFIED_DELTA_ORDERING = (
+    'modified',
+    'id',
+)
+STORY_MODIFIED_QUERY_PARAMS = frozenset(
+    {
+        'modified__gt',
+        'modified__gte',
+        'modified__lt',
+        'modified__lte',
+    }
+)
+
+
+def _has_modified_delta_filter(query_params):
+    """Return whether request params contain a modified delta filter."""
+    return any(
+        query_params.get(param) for param in STORY_MODIFIED_QUERY_PARAMS
+    )
+
 
 class StoryViewSet(GCDBaseViewSet):
     """Read-only story endpoints for the public v2 API surface."""
@@ -105,13 +131,10 @@ class StoryViewSet(GCDBaseViewSet):
         'type',
         'issue',
         'issue__series',
-    ).order_by(
-        'issue_id',
-        'sequence_number',
-        'id',
-    )
+    ).order_by(*STORY_BROWSE_ORDERING)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = StoryFilterSet
+    pagination_class = V2DeltaPageNumberPagination
 
     def get_queryset(self):
         """Add detail-only story relation prefetches."""
@@ -126,7 +149,15 @@ class StoryViewSet(GCDBaseViewSet):
                 ACTIVE_REPRINT_ORIGIN_PREFETCH,
                 ACTIVE_REPRINT_TARGET_PREFETCH,
             )
+        elif self.action == 'list' and _has_modified_delta_filter(
+            self.request.query_params,
+        ):
+            queryset = queryset.order_by(*STORY_MODIFIED_DELTA_ORDERING)
         return queryset
+
+    def should_skip_exact_count(self, request):
+        """Skip exact pagination counts for broad modified delta requests."""
+        return _has_modified_delta_filter(request.query_params)
 
     def get_serializer_class(self):
         """Switch to the detail serializer for retrieve requests."""

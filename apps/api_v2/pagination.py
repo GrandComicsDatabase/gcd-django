@@ -21,14 +21,13 @@ class V2PageNumberPagination(PageNumberPagination):
     max_page_size = 200
 
 
-class V2IssuePageNumberPagination(V2PageNumberPagination):
-    """Issue pagination with an optional no-count delta mode.
+class V2DeltaPageNumberPagination(V2PageNumberPagination):
+    """Pagination with an optional no-count delta mode.
 
-    Broad delta sync requests can match hundreds of thousands of issues.
-    For those requests the exact ``COUNT(*)`` dominates latency, so the
-    issue view can opt into a page-number mode that fetches one extra row
-    to determine ``next`` and returns ``count: null`` instead of paying
-    for the full count query.
+    Broad delta sync requests can match hundreds of thousands of rows. For
+    those requests the exact ``COUNT(*)`` dominates latency, so a view can opt
+    into a page-number mode that fetches one extra row to determine ``next``
+    and returns ``count: null`` instead of paying for the full count query.
     """
 
     def paginate_queryset(self, queryset, request, view=None):
@@ -106,7 +105,7 @@ class V2IssuePageNumberPagination(V2PageNumberPagination):
         return replace_query_param(url, self.page_query_param, previous_page)
 
     def get_paginated_response_schema(self, schema):
-        """Document that issue delta pages may omit an exact count."""
+        """Document that delta pages may omit an exact count."""
         paginated = super().get_paginated_response_schema(schema)
         paginated['properties']['count'] = {
             'anyOf': [
@@ -114,8 +113,8 @@ class V2IssuePageNumberPagination(V2PageNumberPagination):
                 {'type': 'null'},
             ],
             'description': (
-                'Exact total result count. Delta-style issue sync '
-                'responses may return null to avoid an expensive count.'
+                'Exact total result count. Delta-style sync responses may '
+                'return null to avoid an expensive count.'
             ),
         }
         return paginated
@@ -125,3 +124,7 @@ class V2IssuePageNumberPagination(V2PageNumberPagination):
         if view is None or not hasattr(view, 'should_skip_exact_count'):
             return False
         return bool(view.should_skip_exact_count(request))
+
+
+class V2IssuePageNumberPagination(V2DeltaPageNumberPagination):
+    """Issue pagination with an optional no-count delta mode."""

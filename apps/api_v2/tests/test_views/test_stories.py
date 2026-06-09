@@ -6,7 +6,10 @@
 from decimal import Decimal
 
 from django.urls import reverse
+from rest_framework.request import Request
+from rest_framework.test import APIRequestFactory
 
+from apps.api_v2.views.stories import StoryViewSet
 from apps.gcd.models import (
     CREDIT_TYPES,
     Character,
@@ -260,6 +263,41 @@ def test_story_list_returns_paginated_results(api_client, issue):
     }
     assert 'credits' not in response.data['results'][0]
     assert 'characters' not in response.data['results'][0]
+
+
+def test_story_list_queryset_uses_id_based_issue_ordering():
+    """The list queryset avoids the costly related-issue default sort."""
+    assert StoryViewSet.queryset.query.order_by == (
+        'issue_id',
+        'sequence_number',
+        'id',
+    )
+
+
+def test_story_list_queryset_uses_modified_ordering_for_delta_filters():
+    """Modified delta requests switch to an index-friendly ordering."""
+    view = StoryViewSet()
+    request = APIRequestFactory().get(
+        '/api/v2/stories/',
+        {'modified__gt': '2025-01-01T00:00:00Z'},
+    )
+    view.request = Request(request)
+    view.action = 'list'
+
+    queryset = view.get_queryset()
+
+    assert queryset.query.order_by == ('modified', 'id')
+
+
+def test_story_list_skips_exact_count_for_modified_delta_filters():
+    """Modified delta requests opt into no-count pagination."""
+    view = StoryViewSet()
+    request = APIRequestFactory().get(
+        '/api/v2/stories/',
+        {'modified__gt': '2025-01-01T00:00:00Z'},
+    )
+
+    assert view.should_skip_exact_count(Request(request)) is True
 
 
 def test_story_detail_returns_expected_payload(api_client, issue):
