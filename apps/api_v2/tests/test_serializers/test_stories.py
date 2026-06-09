@@ -6,6 +6,7 @@
 from decimal import Decimal
 
 from apps.api_v2.serializers.stories import (
+    FeatureObjectSerializer,
     StoryListSerializer,
     StorySerializer,
 )
@@ -145,6 +146,49 @@ def _create_feature(language):
         year_first_published=1939,
         notes='',
     )
+
+
+def test_feature_object_serializer_handles_missing_feature_type(issue):
+    """Malformed feature objects serialize without raising."""
+    features = [
+        Feature(
+            id=123,
+            name='Batman',
+            sort_name='Batman',
+            disambiguation='',
+            genre='superhero',
+            language=issue.series.language,
+            feature_type=None,
+            year_first_published=1939,
+            notes='',
+        ),
+        Feature(
+            id=124,
+            name='Robin',
+            sort_name='Robin',
+            disambiguation='',
+            genre='superhero',
+            language=issue.series.language,
+            feature_type_id=999999,
+            year_first_published=1940,
+            notes='',
+        ),
+    ]
+
+    data = FeatureObjectSerializer(features, many=True).data
+
+    assert data == [
+        {
+            'id': 123,
+            'name': 'Batman',
+            'feature_type': None,
+        },
+        {
+            'id': 124,
+            'name': 'Robin',
+            'feature_type': None,
+        },
+    ]
 
 
 def test_story_list_serializer_exposes_list_contract(issue):

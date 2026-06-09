@@ -3,6 +3,7 @@
 
 """Serializers for v2 story endpoints."""
 
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from apps.api_v2.utils.credits import collect_story_credit_entries
@@ -63,9 +64,15 @@ class FeatureObjectSerializer(serializers.ModelSerializer):
 
     def get_feature_type(self, obj):
         """Return the minimal nested feature type reference."""
+        if obj.feature_type_id is None:
+            return None
+        try:
+            feature_type_name = obj.feature_type.name
+        except ObjectDoesNotExist:
+            return None
         return {
             'id': obj.feature_type_id,
-            'name': obj.feature_type.name,
+            'name': feature_type_name,
         }
 
 
