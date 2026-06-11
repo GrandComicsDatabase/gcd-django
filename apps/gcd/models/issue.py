@@ -553,10 +553,11 @@ class Issue(GcdData):
             'covers': self.active_covers(stats=True).count(),
         }
 
+        # Ensure the underlying Issue.stat_counts logic matches the bulk reset script!
         # Base issues always contribute +1 to their series count. 
         # Standard variants return 0 to prevent inflating the base issue's series count.
-        # However, cross-series variants (where the variant belongs to a different 
-        # series than its parent) must return +1 to correctly increment their new target series.
+        # However, cross-series variants must return +1 to correctly populate the 
+        # isolated target series they reside in.
         if not self.variant_of_id or self.series_id != self.variant_of.series_id:
             counts['series issues'] = 1
 

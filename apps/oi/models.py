@@ -4100,10 +4100,26 @@ class IssueRevision(Revision):
     @property
     def series_changed(self):
         """ True if the series changed and this is neither add nor delete. """
-        return ((not self.deleted) and
+        # Check 1: Standard direct series column change
+        # Catches standard issues or variants directly moved to a new series.
+        if ((not self.deleted) and
                 (self.previous_revision is not None) and
-                self.previous_revision.series != self.series)
+                self.previous_revision.series != self.series):
+            return True
 
+        # Check 2: Cross-series variant parent change detect
+        # IMPORTANT: If an editor moves a base issue to a new series, any cross-series 
+        # variants attached to it undergo a relational boundary change, even though 
+        # the variant's own `series` field remains untouched. Flag this as a series 
+        # change so the _adjust_stats engine routes the delta correctly.
+        if (not self.deleted) and (self.previous_revision is not None) and self.variant_of:
+            old_base_series = getattr(self.previous_revision.variant_of, 'series_id', None)
+            new_base_series = getattr(self.variant_of, 'series_id', None)
+            if old_base_series and new_base_series and old_base_series != new_base_series:
+                return True
+
+        return False
+    
     @classmethod
     def fork_variant(cls, issue, changeset,
                      variant_name, variant_cover_revision=None,
