@@ -4487,26 +4487,27 @@ class IssueRevision(Revision):
             story.issue = self.issue
             story.save()
 
-        # Handle cross-series variant boundary changes
-        # If this base issue moved, its left-behind variants might have become 
-        # (or ceased to be) cross-series variants.
+        # ---------------------------------------------------------------------
+        # Cross-Series Variant Stat Routing
+        # ---------------------------------------------------------------------
+        # When a base issue moves to a new series, its variants do not automatically 
+        # follow it. This means a variant left behind in the old series just became 
+        # a "cross-series" variant (which contributes +1 to its series issue_count), 
+        # or vice-versa. Adjust the cached counts of the affected series.
         if changes.get('series changed'):
             old_series = changes.get('old series')
             new_series = self.issue.series
             
-            # THE FIX: Query the Issue model directly instead of using the reverse relation
             IssueClass = type(self.issue)
             variants = IssueClass.objects.filter(variant_of=self.issue, deleted=False)
             
             for variant in variants:
-                # 1. Variant left behind: Goes from Standard -> Cross-Series
-                # It now contributes +1 to the old series it resides in.
+                # 1. Variant left behind: Goes from Standard -> Cross-Series (+1)
                 if variant.series == old_series and variant.series != new_series:
                     variant.series.issue_count += 1
                     variant.series.save()
                     
-                # 2. Base issue returns: Goes from Cross-Series -> Standard
-                # It ceases to contribute to the series, losing -1.
+                # 2. Base issue returns: Goes from Cross-Series -> Standard (-1)
                 elif variant.series != old_series and variant.series == new_series:
                     if variant.series.issue_count > 0:
                         variant.series.issue_count -= 1

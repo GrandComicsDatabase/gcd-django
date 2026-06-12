@@ -20,13 +20,14 @@ def main():
     # -------------------------------------------------------------------------
     # Rebuild Series.issue_count Caches
     # -------------------------------------------------------------------------
+    # An issue contributes +1 to a Series count if:
+    #   (a) It is a standard base issue (variant_of is NULL)
+    #   (b) It is a cross-series variant (its series differs from its base issue's series)
+    # Standard variants within the same series do not count, preventing inflation.
+    # 
     # This bulk aggregation MUST remain synchronized with the real-time Python
     # logic in `apps.gcd.models.issue.Issue.stat_counts()`.
-    #
-    # Recompute per-series cached `issue_count` to match Issue.stat_counts()
-    # Rule: an issue counts for its series if it's not a variant, OR it is a
-    # variant whose base issue is in a different series (cross-series variant).
-    # Inside scripts/reset_stats.py
+    
     from django.db.models import Subquery, OuterRef
     from django.db.models.functions import Coalesce
 
