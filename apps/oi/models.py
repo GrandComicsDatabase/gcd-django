@@ -4100,25 +4100,9 @@ class IssueRevision(Revision):
     @property
     def series_changed(self):
         """ True if the series changed and this is neither add nor delete. """
-        # Check 1: Standard direct series column change
-        # Catches standard issues or variants directly moved to a new series.
-        if ((not self.deleted) and
+        return ((not self.deleted) and
                 (self.previous_revision is not None) and
-                self.previous_revision.series != self.series):
-            return True
-
-        # Check 2: Cross-series variant parent change detect
-        # IMPORTANT: If an editor moves a base issue to a new series, any cross-series 
-        # variants attached to it undergo a relational boundary change, even though 
-        # the variant's own `series` field remains untouched. Flag this as a series 
-        # change so the _adjust_stats engine routes the delta correctly.
-        if (not self.deleted) and (self.previous_revision is not None) and self.variant_of:
-            old_base_series = getattr(self.previous_revision.variant_of, 'series_id', None)
-            new_base_series = getattr(self.variant_of, 'series_id', None)
-            if old_base_series and new_base_series and old_base_series != new_base_series:
-                return True
-
-        return False
+                self.previous_revision.series != self.series)
     
     @classmethod
     def fork_variant(cls, issue, changeset,
@@ -4502,6 +4486,31 @@ class IssueRevision(Revision):
         for story in self.changeset.storyrevisions.filter(issue=None):
             story.issue = self.issue
             story.save()
+
+        # Handle cross-series variant boundary changes
+        # If this base issue moved, its left-behind variants might have become 
+        # (or ceased to be) cross-series variants.
+        if changes.get('series changed'):
+            old_series = changes.get('old series')
+            new_series = self.issue.series
+            
+            # THE FIX: Query the Issue model directly instead of using the reverse relation
+            IssueClass = type(self.issue)
+            variants = IssueClass.objects.filter(variant_of=self.issue, deleted=False)
+            
+            for variant in variants:
+                # 1. Variant left behind: Goes from Standard -> Cross-Series
+                # It now contributes +1 to the old series it resides in.
+                if variant.series == old_series and variant.series != new_series:
+                    variant.series.issue_count += 1
+                    variant.series.save()
+                    
+                # 2. Base issue returns: Goes from Cross-Series -> Standard
+                # It ceases to contribute to the series, losing -1.
+                elif variant.series != old_series and variant.series == new_series:
+                    if variant.series.issue_count > 0:
+                        variant.series.issue_count -= 1
+                    variant.series.save()
 
     def extra_forms(self, request):
         from apps.oi.forms import IssueRevisionFormSet, \

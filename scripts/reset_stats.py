@@ -26,15 +26,18 @@ def main():
     # Recompute per-series cached `issue_count` to match Issue.stat_counts()
     # Rule: an issue counts for its series if it's not a variant, OR it is a
     # variant whose base issue is in a different series (cross-series variant).
-    issue_qs = Issue.objects.filter(deleted=False).filter(
-        Q(variant_of__isnull=True) | ~Q(series=F('variant_of__series'))
-    ).values('series').annotate(c=Count('id'))
+    # Inside scripts/reset_stats.py
+    from django.db.models import Subquery, OuterRef
+    from django.db.models.functions import Coalesce
 
-    whens = [When(pk=entry['series'], then=entry['c']) for entry in issue_qs]
-    if whens:
-        Series.objects.update(issue_count=Case(*whens, default=0))
-    else:
-        Series.objects.update(issue_count=0)
+    subquery = Issue.objects.filter(
+        deleted=False,
+        series_id=OuterRef('pk')
+    ).filter(
+        Q(variant_of__isnull=True) | ~Q(series_id=F('variant_of__series_id'))
+    ).values('series_id').annotate(c=Count('id')).values('c')
+
+    Series.objects.update(issue_count=Coalesce(Subquery(subquery), 0))
 
 
 def run():
