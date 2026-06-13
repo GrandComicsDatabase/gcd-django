@@ -4501,17 +4501,23 @@ class IssueRevision(Revision):
             IssueClass = type(self.issue)
             variants = IssueClass.objects.filter(variant_of=self.issue, deleted=False)
             
+            old_series_id = old_series.id if old_series else None
+            new_series_id = self.issue.series_id
+
             for variant in variants:
                 # 1. Variant left behind: Goes from Standard -> Cross-Series (+1)
-                if variant.series == old_series and variant.series != new_series:
-                    variant.series.issue_count += 1
-                    variant.series.save()
-                    
+                if variant.series_id == old_series_id and \
+                        variant.series_id != new_series_id:
+                    old_series.issue_count += 1
+                    old_series.save()
+
                 # 2. Base issue returns: Goes from Cross-Series -> Standard (-1)
-                elif variant.series != old_series and variant.series == new_series:
-                    if variant.series.issue_count > 0:
-                        variant.series.issue_count -= 1
-                    variant.series.save()
+                elif variant.series_id != old_series_id and \
+                        variant.series_id == new_series_id:
+                    if new_series.issue_count > 0:
+                        new_series.issue_count -= 1
+                    new_series.save()
+
 
     def extra_forms(self, request):
         from apps.oi.forms import IssueRevisionFormSet, \

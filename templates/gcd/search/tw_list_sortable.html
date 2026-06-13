@@ -28,12 +28,9 @@
   </div>
 {% if json_download_url %}
   <div class="me-1">
-    <btn class="btn btn-blue-editing hover:bg-stone-200">
-      <div class="flex justify-center">
-        Download:
-        <a class="hover:bg-stone-400" href="{{ json_download_url }}"><span class="px-1">(JSON)</span></a>
-      </div>
-    </btn>
+    <a class="btn btn-blue-editing hover:bg-stone-200 flex justify-center" href="{{ json_download_url }}">
+      Download: <span class="px-1 font-semibold">(JSON)</span>
+    </a>
   </div>
 {% endif %}
 {% if list_grid %}

@@ -164,7 +164,7 @@ class SeriesOverviewItemSerializer(serializers.ModelSerializer):
     cover_url = serializers.SerializerMethodField()
 
     def get_cover_url(self, obj) -> str:
-        covers = obj.active_covers()
+        covers = getattr(obj, 'active_covers_list', [])
         if covers:
             cover = covers[0]
             return cover.get_base_url() + ("/w400/%d.jpg" % cover.id)
@@ -173,26 +173,9 @@ class SeriesOverviewItemSerializer(serializers.ModelSerializer):
     longest_story = serializers.SerializerMethodField()
 
     def get_longest_story(self, obj):
-        from apps.gcd.models.story import Story
-
-        story_id = getattr(obj, 'longest_story_id', None)
-        if story_id:
-            try:
-                story = Story.objects.prefetch_related(
-                    'credits__creator__creator').get(id=story_id)
-                return StorySerializer(story).data
-            except Story.DoesNotExist:
-                pass
-
-        # Fallback: variant issues — check parent issue's longest story
-        if obj.variant_of_id:
-            story_qs = obj.variant_of.active_stories()\
-                          .filter(type_id=19, deleted=False)\
-                          .prefetch_related('credits__creator__creator')\
-                          .order_by('-page_count')
-            if story_qs.exists():
-                return StorySerializer(story_qs[0]).data
-
+        stories = getattr(obj, 'longest_story_list', [])
+        if stories:
+            return StorySerializer(stories[0]).data
         return None
 
 

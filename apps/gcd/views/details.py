@@ -2292,7 +2292,9 @@ def series_overview(request, series_id):
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': heading,
-        'json_download_url': '/api/series/%d/overview/?format=json' % series_id,
+        'json_download_url': urlresolvers.reverse(
+            'series-overview-list', kwargs={'series_id': series_id}
+        ) + '?format=json',
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = CoverIssueStoryTable(issues,

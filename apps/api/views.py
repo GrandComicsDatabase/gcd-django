@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.db.models import Subquery, OuterRef
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, mixins, generics
@@ -7,7 +7,7 @@ from apps.api.serializers import SeriesSerializer, PublisherSerializer, \
                                  IssueSerializer, IssueOnlySerializer, \
                                  SeriesOverviewItemSerializer
 
-from apps.gcd.models import Series, Publisher, Issue
+from apps.gcd.models import Series, Publisher, Issue, Cover
 from apps.gcd.models.issue import issues_for_iso_week
 from apps.gcd.models.story import Story
 
@@ -101,13 +101,18 @@ class SeriesOverviewList(generics.ListAPIView):
         return (
             series.active_issues()
             .filter(variant_of=None)
-            .annotate(
-                longest_story_id=Subquery(
-                    Story.objects.filter(
-                        issue_id=OuterRef('pk'),
-                        type_id=19,
-                        deleted=False,
-                    ).values('pk').order_by('-page_count', 'sequence_number')[:1]
+            .prefetch_related(
+                Prefetch(
+                    'cover_set',
+                    queryset=Cover.objects.filter(deleted=False),
+                    to_attr='active_covers_list'
+                ),
+                Prefetch(
+                    'story_set',
+                    queryset=Story.objects.filter(type_id=19, deleted=False)
+                    .order_by('-page_count', 'sequence_number')
+                    .prefetch_related('credits__creator__creator'),
+                    to_attr='longest_story_list'
                 )
             )
             .select_related('series__publisher')
