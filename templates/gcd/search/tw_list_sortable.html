@@ -19,13 +19,23 @@
 {% endblock %}
 
 {% block view_body %}
-<div class="flex">
+<div class="flex items-center">
   <div class="flex-1">
 {{ result_disclaimer }}
 {% if not result_disclaimer and not filter_form %}
 <span>&nbsp;</span>
 {% endif %}
   </div>
+{% if json_download_url %}
+  <div class="me-1">
+    <btn class="btn btn-blue-editing hover:bg-stone-200">
+      <div class="flex justify-center">
+        Download:
+        <a class="hover:bg-stone-400" href="{{ json_download_url }}"><span class="px-1">(JSON)</span></a>
+      </div>
+    </btn>
+  </div>
+{% endif %}
 {% if list_grid %}
   <div class="flex justify-end items-center">
     <a href="{% querystring 'display'='list' %}"
