@@ -437,7 +437,8 @@ class CharacterRelationRevisionForm(forms.ModelForm):
         else:
             cd['relation_type'] = CharacterRelationType.objects.get(id=type)
 
-        if cd['from_character'] == cd['to_character']:
+        if 'from_character' in cd and 'to_character' in cd and \
+              cd['from_character'] == cd['to_character']:
             raise forms.ValidationError(
               'Character A and Character B cannot be the same character.')
         if cd['from_character'].language != cd['to_character'].language:
@@ -512,7 +513,8 @@ class GroupRelationRevisionForm(forms.ModelForm):
         else:
             cd['relation_type'] = GroupRelationType.objects.get(id=type)
 
-        if cd['from_group'] == cd['to_group']:
+        if 'from_group' in cd and 'to_group' in cd and \
+              cd['from_group'] == cd['to_group']:
             raise forms.ValidationError(
               'Group A and Group B cannot be the same group.')
         if cd['from_group'].language != cd['to_group'].language:
