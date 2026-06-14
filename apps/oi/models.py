@@ -4394,12 +4394,12 @@ class IssueRevision(Revision):
             if not self.series.has_gallery and \
                self.issue.active_covers().count():
                 self.series.has_gallery = True
-                self.series.save()
+                self.series.save(update_fields=['has_gallery'])
 
             # old series might have lost gallery after move
             if old_series.scan_count == 0:
                 old_series.has_gallery = False
-                old_series.save()
+                old_series.save(update_fields=['has_gallery'])
         if self.source.variant_of and self.added:
             self.source.is_indexed = self.source.variant_of.is_indexed
             self.source.save()
@@ -4505,13 +4505,13 @@ class IssueRevision(Revision):
                 # 1. Variant left behind: Goes from Standard -> Cross-Series (+1)
                 if variant.series == old_series and variant.series != new_series:
                     variant.series.issue_count += 1
-                    variant.series.save()
+                    variant.series.save(update_fields=['issue_count'])
                     
                 # 2. Base issue returns: Goes from Cross-Series -> Standard (-1)
                 elif variant.series != old_series and variant.series == new_series:
                     if variant.series.issue_count > 0:
                         variant.series.issue_count -= 1
-                    variant.series.save()
+                        variant.series.save(update_fields=['issue_count'])
 
     def extra_forms(self, request):
         from apps.oi.forms import IssueRevisionFormSet, \
