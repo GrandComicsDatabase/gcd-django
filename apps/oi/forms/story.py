@@ -1388,4 +1388,8 @@ class StoryArcRelationRevisionForm(forms.ModelForm):
             cd['relation_type'] = StoryArcRelationType.objects.get(id=-type)
         else:
             cd['relation_type'] = StoryArcRelationType.objects.get(id=type)
+        if 'from_story_arc' in cd and 'to_story_arc' in cd and \
+              cd['from_story_arc'] == cd['to_story_arc']:
+            raise forms.ValidationError(
+              'Story Arc A and Story Arc B cannot be the same story arc.')
         return cd
