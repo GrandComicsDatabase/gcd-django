@@ -105,6 +105,11 @@ SPRINT_2_ROUTE_SPECS = (
     ('character-list', '/api/v2/characters/'),
     ('creator-list', '/api/v2/creators/'),
 )
+SPRINT_3_ROUTE_SPECS = (
+    ('story-list', '/api/v2/stories/'),
+    ('reprint-list', '/api/v2/reprints/'),
+    ('story-arc-list', '/api/v2/story-arcs/'),
+)
 
 
 def _schema_paths(response):
@@ -207,6 +212,26 @@ def test_sprint_2_routes_stay_absent_on_my_surface(restore_v2_urlconf):
             reverse(route_name)
 
 
+@override_settings(MYCOMICS=False)
+def test_sprint_3_routes_resolve_on_www_surface(restore_v2_urlconf):
+    """Sprint 3 routes resolve on the public-data surface."""
+    _reload_v2_urlconf()
+
+    for route_name, expected_path in SPRINT_3_ROUTE_SPECS:
+        assert reverse(route_name) == expected_path
+        _assert_v2_api_policy(resolve(expected_path).func.cls)
+
+
+@override_settings(MYCOMICS=True)
+def test_sprint_3_routes_stay_absent_on_my_surface(restore_v2_urlconf):
+    """Sprint 3 routes are not mounted on the my surface."""
+    _reload_v2_urlconf()
+
+    for route_name, _expected_path in SPRINT_3_ROUTE_SPECS:
+        with pytest.raises(NoReverseMatch):
+            reverse(route_name)
+
+
 @pytest.mark.django_db
 @override_settings(MYCOMICS=False)
 def test_schema_and_docs_load_on_www_surface(client, restore_v2_urlconf):
@@ -268,6 +293,28 @@ def test_schema_includes_sprint_2_public_routes_on_www_surface(
 
 
 @pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_schema_includes_sprint_3_routes_on_www_surface(
+    client,
+    restore_v2_urlconf,
+):
+    """The public schema documents Sprint 3 list and detail routes."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    assert _schema_paths(response) >= {
+        '/api/v2/stories/',
+        '/api/v2/stories/{id}/',
+        '/api/v2/reprints/',
+        '/api/v2/reprints/{id}/',
+        '/api/v2/story-arcs/',
+        '/api/v2/story-arcs/{id}/',
+    }
+
+
+@pytest.mark.django_db
 @override_settings(MYCOMICS=True)
 def test_schema_excludes_sprint_2_public_routes_on_my_surface(
     client,
@@ -289,5 +336,29 @@ def test_schema_excludes_sprint_2_public_routes_on_my_surface(
             '/api/v2/characters/{id}/',
             '/api/v2/creators/',
             '/api/v2/creators/{id}/',
+        },
+    )
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=True)
+def test_schema_excludes_sprint_3_routes_on_my_surface(
+    client,
+    restore_v2_urlconf,
+):
+    """The my schema omits Sprint 3 routes."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    assert _schema_paths(response).isdisjoint(
+        {
+            '/api/v2/stories/',
+            '/api/v2/stories/{id}/',
+            '/api/v2/reprints/',
+            '/api/v2/reprints/{id}/',
+            '/api/v2/story-arcs/',
+            '/api/v2/story-arcs/{id}/',
         },
     )
