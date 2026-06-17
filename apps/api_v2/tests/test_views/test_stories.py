@@ -417,6 +417,43 @@ def test_story_list_applies_filter_query_params(api_client, issue, publisher):
     assert response.data['results'][0]['id'] == matching.pk
 
 
+def test_story_list_filters_by_linked_feature_genre(api_client, issue):
+    """The list endpoint matches genres stored on linked feature rows."""
+    matching = _create_story(
+        issue,
+        title='Feature Genre Story',
+        sequence_number=1,
+        genre='',
+    )
+    feature_type = FeatureType.objects.create(name='Character')
+    feature = Feature.objects.create(
+        name='Space Feature',
+        sort_name='Space Feature',
+        disambiguation='',
+        genre='science fiction; superhero',
+        language=issue.series.language,
+        feature_type=feature_type,
+        year_first_published=1939,
+        notes='',
+    )
+    matching.feature_object.add(feature)
+    _create_story(
+        issue,
+        title='Western Story',
+        sequence_number=2,
+        genre='western',
+    )
+
+    response = api_client.get(
+        reverse('story-list'),
+        {'genre': 'superhero'},
+    )
+
+    assert response.status_code == 200
+    assert response.data['count'] == 1
+    assert response.data['results'][0]['id'] == matching.pk
+
+
 def test_story_endpoints_hide_soft_deleted_records(api_client, issue):
     """Soft-deleted stories disappear from list and detail responses."""
     visible = _create_story(issue, title='Visible Story', sequence_number=1)

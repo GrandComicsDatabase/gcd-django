@@ -9,7 +9,7 @@ from decimal import Decimal
 from django.utils import timezone
 
 from apps.api_v2.filters.stories import StoryFilterSet
-from apps.gcd.models import Story, StoryType
+from apps.gcd.models import Feature, FeatureType, Story, StoryType
 
 
 def _create_story_type(name='Comic Story', sort_code=19):
@@ -72,6 +72,21 @@ def _create_story(
         notes='',
         issue=issue,
         type=story_type or _create_story_type(),
+    )
+
+
+def _create_feature(language, *, name, genre):
+    """Create a feature row for linked-genre filter tests."""
+    feature_type, _ = FeatureType.objects.get_or_create(name='Character')
+    return Feature.objects.create(
+        name=name,
+        sort_name=name,
+        disambiguation='',
+        genre=genre,
+        language=language,
+        feature_type=feature_type,
+        year_first_published=1939,
+        notes='',
     )
 
 
@@ -164,6 +179,47 @@ def test_story_filter_matches_type_genre_issue_and_series(
     ).qs
 
     assert list(qs) == [matching]
+
+
+def test_story_filter_matches_story_and_feature_genres(issue):
+    """The genre filter checks story text and linked feature genres."""
+    story_genre_match = _create_story(
+        issue,
+        title='Story Genre Match',
+        sequence_number=1,
+        genre='superhero',
+    )
+    feature_genre_match = _create_story(
+        issue,
+        title='Feature Genre Match',
+        sequence_number=2,
+        genre='',
+    )
+    feature_genre_match.feature_object.add(
+        _create_feature(
+            issue.series.language,
+            name='Space Feature',
+            genre='science fiction; superhero',
+        ),
+        _create_feature(
+            issue.series.language,
+            name='Mask Feature',
+            genre='superhero',
+        ),
+    )
+    _create_story(
+        issue,
+        title='Western Story',
+        sequence_number=3,
+        genre='western',
+    )
+
+    qs = StoryFilterSet(
+        {'genre': 'superhero'},
+        queryset=Story.objects.filter(deleted=False),
+    ).qs.order_by('id')
+
+    assert list(qs) == [story_genre_match, feature_genre_match]
 
 
 def test_story_filter_matches_modified_range(issue):
