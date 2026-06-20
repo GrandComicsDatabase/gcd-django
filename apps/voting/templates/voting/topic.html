@@ -172,7 +172,7 @@ Total number of voters: {{ topic.num_voters }}
     <div class="option_text">{{ option.text }}</div>
           {% endif %}
   <div>
-    <input class="me-2" name="option_{{ option.id }}">{{ option.name }}
+    <input class="me-2" type="text" name="option_{{ option.id }}">{{ option.name }}
   </div>
         {% endif %}
     {% empty %}
