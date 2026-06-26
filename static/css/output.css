@@ -1184,16 +1184,16 @@ a:hover {
 }
 
 .object-page-numbered-list {
+  /* @apply ms-2 list-decimal sm:columns-2 list-outside ps-4; */
   margin-inline-start: 0.5rem;
-  list-style-position: outside;
+  display: grid;
   list-style-type: decimal;
-  padding-inline-start: 1rem;
+  padding-inline-start: 1rem
 }
 
 @media (min-width: 640px) {
   .object-page-numbered-list {
-    -moz-columns: 2;
-         columns: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
