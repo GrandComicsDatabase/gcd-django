@@ -711,8 +711,13 @@ class CharacterNameAutocomplete(LoginRequiredMixin,
             qs = qs.filter(character__language__code__in=[language, 'zxx'])
 
         if group_name:
-            qs = qs.filter(
-              character__memberships__group__group_names=group_name).distinct()
+            if not isinstance(group_name, list):
+                group_name = [group_name]
+            group_name = [g for g in group_name if g]
+            if group_name:
+                qs = qs.filter(
+                    character__memberships__group__group_names__in=group_name
+                ).distinct()
         qs = _filter_and_sort(qs, self.q, parent_disambiguation='character',
                               chrono_sort='character__year_first_published')
 

@@ -481,7 +481,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
     character = forms.ModelChoiceField(
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='character_name_autocomplete',
-                                       forward=['language_code'],
+                                       forward=['language_code', 'group_name'],
                                        attrs={'class': 'w-full lg:w-4/5',
                                               'style': 'width: 80%'}),
       required=True,
