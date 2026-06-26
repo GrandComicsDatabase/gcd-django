@@ -73,10 +73,23 @@
     {% endblock table.tfoot %}
   </table>
 {% endblock table %}
-{% if not table.no_export %}
-<p>Download the shown data as <a href="{% export_url "csv" %}"><code>.csv</code></a> or <a href="{% export_url "json" %}"><code>.json</code></a>.<br>
-  {% if not table.no_raw_export %}
-Download the raw database fields for the shown objects as <a href="{% export_url "db_csv" %}"><code>.csv</code></a> or <a href="{% export_url "db_json" %}"><code>.json</code></a>. Technical note, this download does include only the IDs of foreign keys and contains no many-to-many relationships.  </p>
+{% if table.context.json_download_url %}
+  <div class="flex items-center">
+    <div class="me-1 sm:w-1/2">
+      <a class="hover:no-underline" href="{{ table.context.json_download_url }}">
+        <btn class="btn btn-blue-editing"> Download: (JSON)</btn>
+      </a>
+    </div>
+    {% if not request.user.is_authenticated %}
+    Login required to download the JSON file.
+    {% endif %}
+  </div>
+{% else %}
+  {% if not table.no_export %}
+  <p>Download the shown data as <a href="{% export_url "csv" %}"><code>.csv</code></a> or <a href="{% export_url "json" %}"><code>.json</code></a>.<br>
+    {% if not table.no_raw_export %}
+  Download the raw database fields for the shown objects as <a href="{% export_url "db_csv" %}"><code>.csv</code></a> or <a href="{% export_url "db_json" %}"><code>.json</code></a>. Technical note, this download does include only the IDs of foreign keys and contains no many-to-many relationships.  </p>
+    {% endif %}
   {% endif %}
 {% endif %}
 </div>

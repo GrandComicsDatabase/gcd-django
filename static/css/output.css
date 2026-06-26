@@ -1184,16 +1184,16 @@ a:hover {
 }
 
 .object-page-numbered-list {
+  /* @apply ms-2 list-decimal sm:columns-2 list-outside ps-4; */
   margin-inline-start: 0.5rem;
-  list-style-position: outside;
+  display: grid;
   list-style-type: decimal;
-  padding-inline-start: 1rem;
+  padding-inline-start: 1rem
 }
 
 @media (min-width: 640px) {
   .object-page-numbered-list {
-    -moz-columns: 2;
-         columns: 2;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -1981,11 +1981,6 @@ a:hover {
   border-color: rgb(107 114 128 / var(--tw-border-opacity));
 }
 
-.border-orange-400 {
-  --tw-border-opacity: 1;
-  border-color: rgb(251 146 60 / var(--tw-border-opacity));
-}
-
 .\!bg-white {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity)) !important;
@@ -2079,11 +2074,6 @@ a:hover {
 .bg-my-comics {
   --tw-bg-opacity: 1;
   background-color: rgb(169 48 42 / var(--tw-bg-opacity));
-}
-
-.bg-orange-400 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(251 146 60 / var(--tw-bg-opacity));
 }
 
 .bg-preview {
@@ -2347,6 +2337,10 @@ a:hover {
 
 .font-semibold {
   font-weight: 600;
+}
+
+.capitalize {
+  text-transform: capitalize;
 }
 
 .italic {
@@ -3280,10 +3274,6 @@ select {
 .\[\&_td\]\:px-3 td {
   padding-left: 0.75rem;
   padding-right: 0.75rem;
-}
-
-.\[\&_td\]\:text-center td {
-  text-align: center;
 }
 
 .\[\&_td\]\:align-top td {
