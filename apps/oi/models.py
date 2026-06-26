@@ -4487,31 +4487,38 @@ class IssueRevision(Revision):
             story.issue = self.issue
             story.save()
 
-        # ---------------------------------------------------------------------
+        # -------------------------------------------------------------------
         # Cross-Series Variant Stat Routing
-        # ---------------------------------------------------------------------
-        # When a base issue moves to a new series, its variants do not automatically 
-        # follow it. This means a variant left behind in the old series just became 
-        # a "cross-series" variant (which contributes +1 to its series issue_count), 
-        # or vice-versa. Adjust the cached counts of the affected series.
+        # -------------------------------------------------------------------
+        # When a base issue moves to a new series, its variants do not
+        # automatically follow it. This means a variant left behind in the
+        # old series just became a "cross-series" variant (which contributes
+        # +1 to its series issue_count), or vice-versa. Adjust the cached
+        # counts of the affected series.
         if changes.get('series changed'):
             old_series = changes.get('old series')
             new_series = self.issue.series
             
             IssueClass = type(self.issue)
-            variants = IssueClass.objects.filter(variant_of=self.issue, deleted=False)
+            variants = IssueClass.objects.filter(variant_of=self.issue,
+                                                 deleted=False)
             
             for variant in variants:
-                # 1. Variant left behind: Goes from Standard -> Cross-Series (+1)
-                if variant.series == old_series and variant.series != new_series:
+                # 1. Variant left behind:
+                # Goes from Standard -> Cross-Series (+1)
+                if variant.series == old_series and \
+                        variant.series != new_series:
                     variant.series.issue_count += 1
                     variant.series.save(update_fields=['issue_count'])
                     
-                # 2. Base issue returns: Goes from Cross-Series -> Standard (-1)
-                elif variant.series != old_series and variant.series == new_series:
+                # 2. Base issue returns:
+                # Goes from Cross-Series -> Standard (-1)
+                elif variant.series != old_series and \
+                        variant.series == new_series:
                     if variant.series.issue_count > 0:
                         variant.series.issue_count -= 1
                         variant.series.save(update_fields=['issue_count'])
+
 
     def extra_forms(self, request):
         from apps.oi.forms import IssueRevisionFormSet, \
