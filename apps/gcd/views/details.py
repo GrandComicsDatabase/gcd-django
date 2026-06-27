@@ -1394,7 +1394,8 @@ def show_publisher_issues(request, publisher_id):
     publisher = get_gcd_object(Publisher, publisher_id)
     issues = Issue.objects.filter(series__publisher=publisher,
                                   deleted=False).order_by(
-      'series__sort_name', 'sort_code').prefetch_related('series', 'brand',
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'brand_emblem',
                                                          'indicia_publisher')
     context = {'heading': 'of publisher %s' % publisher,
                'item_name': 'issue',
