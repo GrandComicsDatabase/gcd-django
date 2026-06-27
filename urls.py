@@ -102,6 +102,7 @@ elif settings.MYCOMICS:
                     [path('', include('apps.stats.urls'))] + \
                     [path('', include('apps.indexer.urls'))] + \
                     [path('', include('apps.select.urls'))] + \
+                    [path('api/', include('apps.api.urls'))] + \
                     read_only_patterns
 else:
     urlpatterns = basic_patterns + \
