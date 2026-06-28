@@ -2410,9 +2410,9 @@ def compute_prefix(target, current):
         if target == 'publisher':
             return 'brandgroup__'
         if target == 'issue':
-            return 'brand__group__'
+            return 'brand_emblem__group__'
         if target in ('series', 'sequence', 'feature', 'cover', 'issue_cover'):
-            return 'issue__brand__group__'
+            return 'issue__brand_emblem__group__'
     elif current == 'brand_emblem':
         if target == 'indicia_publisher':
             raise SearchError("Cannot search for Indicia Publishers by "
@@ -2565,8 +2565,6 @@ def compute_order(data):
         elif target in ('sequence', 'feature', 'cover', 'issue_cover'):
             if order == 'publisher':
                 terms.append('issue__series__publisher')
-            elif order == 'brand':
-                terms.append('issue__brand')
             elif order == 'indicia_publisher':
                 terms.append('issue__indicia_publisher')
             elif order == 'series':
