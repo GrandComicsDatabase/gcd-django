@@ -46,7 +46,8 @@ from apps.gcd.models import Publisher, Series, Issue, StoryType, Image, \
                             CreatorArtInfluence, CreatorRelation, \
                             CreatorSchool, CreatorNameDetail, \
                             CreatorNonComicWork, CreatorSignature, \
-                            Feature, FeatureLogo, FeatureRelation, \
+                            Feature, FeatureNameDetail, FeatureLogo, \
+                            FeatureRelation, \
                             Printer, IndiciaPrinter, School, Story, \
                             Character, CharacterNameDetail, Group, \
                             GroupNameDetail, Universe, Multiverse, \
@@ -3621,6 +3622,8 @@ def show_feature(request, feature, preview=False):
         selected_issue = None
 
     context = {'feature': feature,
+               'additional_names': feature.active_names()
+                                          .filter(is_official_name=False),
                'table': table,
                'image_tag': image_tag,
                'image_issue': selected_issue,
@@ -3703,6 +3706,42 @@ def feature_issues(request, feature_id, to_be_migrated=False):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = _table_issues_list_or_grid(request, issues, context)
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def feature_name_issues(request, feature_name_id, universe_id=None):
+    feature_name = get_gcd_object(FeatureNameDetail, feature_name_id)
+    feature = feature_name.feature
+    heading = 'for name %s of feature %s' % (feature_name.name, feature)
+
+    story_types = process_story_type_filter_from_request(request)
+
+    query = {
+        'story__feature_name': feature_name,
+        'story__type__id__in': story_types,
+        'story__deleted': False
+    }
+
+    issues = Issue.objects.filter(**query).distinct()\
+                          .select_related('series__publisher')
+
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    filter = filter_issues(request, issues, story_type_filter=True)
+    filter.filters.pop('language')
+    issues = filter.qs
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'heading': heading,
+        'filter_form': filter.form
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = IssueTable(issues,
+                       attrs={'class': 'sortable_listing'},
+                       template_name=TW_SORT_TABLE_TEMPLATE,
+                       order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
 
 

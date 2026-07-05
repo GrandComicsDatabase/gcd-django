@@ -420,6 +420,8 @@ urlpatterns = [
      gcd_views.search.feature_by_name, name='feature_by_name'),
     path('feature/search/',
          gcd_views.search.feature_search_hx, name='feature_search_hx'),
+    path('feature_name/<int:feature_name_id>/issues/',
+      gcd_views.details.feature_name_issues, name='feature_name_issues'),
     path('feature_logo/<int:feature_logo_id>/issues/',
       gcd_views.details.feature_logo_issuelist_by_id, name='feature_logo_issuelist_by_id'),
     path('feature_logo/<int:feature_logo_id>/sequences/',

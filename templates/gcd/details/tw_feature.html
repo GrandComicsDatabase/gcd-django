@@ -75,6 +75,20 @@ GCD :: Feature :: {{ feature.name }}
 {% with object=feature %}
   {% include "gcd/bits/external_links.html" %}
 {% endwith %}
+        <h3>Name:</h3>
+          <ol class="ps-4">
+            <a href='{% url "feature_name_issues" feature_name_id=feature.official_name.id %}'>{{ feature.official_name.name }}</a>
+          </ol>
+      {% if additional_names %}
+        <h3>Additional Names:</h3>
+          <ol class="ps-6 object-page-numbered-list">
+        {% for name in additional_names %}
+            <li class="break-inside-avoid-column">
+              <a href='{% url "feature_name_issues" feature_name_id=name.id %}'>{{ name.name }}</a>
+            </li>
+        {% endfor %}
+          </ol>
+      {% endif %}
         </div>
       </div> 
     </td>
