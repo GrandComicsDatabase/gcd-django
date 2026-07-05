@@ -18,7 +18,7 @@ from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
                    STORY_TYPES, OLD_TYPES, NON_OPTIONAL_TYPES, CREDIT_TYPES, \
                    DEPRECATED_TYPES, CORE_TYPES, AD_TYPES
 from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
-                      FeatureRelationType)
+                      FeatureRelationType, FeatureNameDetail)
 from .character import (Character, CharacterNameDetail, CharacterRelationType,
                         CharacterRelation, Group, GroupNameDetail,
                         GroupRelation, GroupRelationType, GroupMembership,

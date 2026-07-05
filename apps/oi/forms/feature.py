@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django import forms
+from django.forms import inlineformset_factory
 from django.forms.widgets import HiddenInput
 
 from dal import autocomplete
@@ -9,13 +10,14 @@ from collections import OrderedDict
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, HTML
 
-from apps.gcd.models import Feature, FeatureRelationType
+from apps.gcd.models import Feature, FeatureNameDetail, FeatureRelationType
 from apps.gcd.models.support import GENRES
 
 from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
-                            FeatureRelationRevision, remove_leading_article)
+                            FeatureRelationRevision, FeatureNameDetailRevision,
+                            remove_leading_article)
 
-from .support import (KeywordBaseForm, FEATURE_HELP_LINKS,
+from .support import (KeywordBaseForm, FEATURE_HELP_LINKS, HiddenInputWithHelp,
                       _get_comments_form_field, combine_reverse_relations,
                       GENERIC_ERROR_MESSAGE, _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision)
@@ -52,6 +54,64 @@ def get_feature_revision_form(revision=None, user=None):
     return RuntimeFeatureRevisionForm
 
 
+class FeatureNameDetailRevisionForm(forms.ModelForm):
+    class Meta:
+        model = FeatureNameDetailRevision
+        fields = model._base_field_list
+        widgets = {
+            'name': forms.TextInput(attrs={'autofocus': ''}),
+            }
+
+    def __init__(self, *args, **kwargs):
+        super(FeatureNameDetailRevisionForm, self).__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_tag = True
+        self.helper.layout = Layout(*(f for f in self.fields))
+        if self.instance.feature_name_detail:
+            if self.instance.feature_name_detail.story_set\
+                                                .filter(deleted=False)\
+                                                .count():
+                self.no_delete = True
+                self.fields['name'].help_text = \
+                    'Feature names with existing credits cannot be removed.'
+
+            if self.instance.feature_name_detail.is_official_name:
+                self.no_delete = True
+
+
+class FeatureInlineFormSet(forms.BaseInlineFormSet):
+    def _should_delete_form(self, form):
+        # TODO check if still needed, we do not allow the removal, see above
+        if form.instance.feature_name_detail:
+            if form.instance.feature_name_detail.story_set\
+                            .filter(deleted=False).count():
+                form.cleaned_data['DELETE'] = False
+                return False
+        if form.instance.feature_name_detail:
+            if form.instance.feature_name_detail.is_official_name:
+                form.cleaned_data['DELETE'] = False
+                return False
+        return super(FeatureInlineFormSet, self)._should_delete_form(form)
+
+    def clean(self):
+        super(FeatureInlineFormSet, self).clean()
+        gcd_official_count = 0
+        for form in self.forms:
+            cd = form.cleaned_data
+            if 'is_official_name' in cd and cd['is_official_name'] and \
+               not cd['DELETE']:
+                gcd_official_count += 1
+        if gcd_official_count != 1:
+            raise forms.ValidationError(
+              "Exactly one name needs to selected as the gcd_official_name.")
+
+
+FeatureRevisionFormSet = inlineformset_factory(
+    FeatureRevision, FeatureNameDetailRevision,
+    form=FeatureNameDetailRevisionForm, can_delete=True, extra=1,
+    formset=FeatureInlineFormSet)
+
+
 class FeatureRevisionForm(KeywordBaseForm):
     class Meta:
         model = FeatureRevision
@@ -67,9 +127,13 @@ class FeatureRevisionForm(KeywordBaseForm):
         self.helper.disable_csrf = True
         fields = list(self.fields)
         genres = fields.index('genre')
-        field_list = [BaseField(Field(field,
+
+        field_list = [BaseField(Field('additional_names_help',
+                                      template='oi/bits/uni_field.html'))]
+        field_list.append(Formset('feature_names_formset'))
+        field_list.extend(BaseField(Field(field,
                                       template='oi/bits/uni_field.html'))
-                      for field in fields[:genres]]
+                      for field in fields[:genres])
         field_list.append(HTML(
           '<tr class="mb-2"><th>Selected Genre:</th>'
           '<td id="selected-genres"></td></tr>'))
@@ -84,6 +148,15 @@ class FeatureRevisionForm(KeywordBaseForm):
                            for field in fields[description_pos:]])
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = FEATURE_HELP_LINKS
+
+    additional_names_help = forms.CharField(
+        widget=HiddenInputWithHelp,
+        required=False,
+        help_text="Multiple significantly distinct names for the feature can be "
+                  "entered, where the feature fundamentally remains "
+                  "unchanged under the different names. One name is marked "
+                  "as the official name.",
+        label='')
 
     def clean(self):
         cd = self.cleaned_data
@@ -187,6 +260,11 @@ class FeatureLogoRevisionForm(forms.ModelForm):
         queryset=Feature.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2Multiple(url='feature_autocomplete')
     )
+    feature_name = forms.ModelMultipleChoiceField(
+        queryset=FeatureNameDetail.objects.filter(deleted=False),
+        widget=autocomplete.ModelSelect2Multiple(
+          url='feature_name_autocomplete')
+    )
     generic = forms.BooleanField(
         required=False,
         help_text="A generic feature logo is used to record the printed name "
@@ -214,6 +292,14 @@ class FeatureLogoRevisionForm(forms.ModelForm):
             raise forms.ValidationError(
                 'Only one feature can be assigned per language.')
         return self.cleaned_data['feature']
+
+    def clean_feature_name(self):
+        languages = self.cleaned_data['feature_name']\
+                        .values('feature__language')
+        if languages.count() != languages.distinct().count():
+            raise forms.ValidationError(
+                'Only one feature can be assigned per language.')
+        return self.cleaned_data['feature_name']
 
     def clean(self):
         cd = self.cleaned_data
@@ -278,7 +364,7 @@ class FeatureRelationRevisionForm(forms.ModelForm):
         else:
             cd['relation_type'] = FeatureRelationType.objects.get(id=type)
         if 'from_feature' in cd and 'to_feature' in cd and \
-              cd['from_feature'] == cd['to_feature']:
+           cd['from_feature'] == cd['to_feature']:
             raise forms.ValidationError(
               'Feature A and Feature B cannot be the same feature.')
         return cd

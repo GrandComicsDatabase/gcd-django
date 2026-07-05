@@ -67,6 +67,7 @@ class Feature(GcdData):
     def has_dependents(self):
         return bool(self.active_logos().exists()) or \
                bool(self.active_stories().exists()) or \
+               bool(self.active_names().exists()) or \
                bool(self.from_related_feature.all().exists()) or \
                bool(self.to_related_feature.all().exists())
 
@@ -75,6 +76,12 @@ class Feature(GcdData):
 
     def active_stories(self):
         return self.story_set.filter(deleted=False)
+
+    def active_names(self):
+        return self.feature_names.filter(deleted=False)
+
+    def official_name(self):
+        return self.active_names().get(is_official_name=True)
 
     def translated_from(self):
         try:
@@ -124,6 +131,37 @@ class Feature(GcdData):
         return base_name
 
 
+class FeatureNameDetail(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_feature_detail_name'
+        ordering = ('sort_name', 'feature__year_first_published')
+
+    feature = models.ForeignKey(Feature, on_delete=models.CASCADE,
+                                related_name='feature_names')
+    name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True,
+                                 default='')
+    is_official_name = models.BooleanField(default=False)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_feature',
+                kwargs={'feature_id': self.feature.id})
+
+    def name_with_disambiguation(self):
+        extra = ''
+        if self.feature.disambiguation:
+            extra = ' [%s]' % self.feature.disambiguation
+        base_name = str('%s%s' % (self.name, extra))
+        if self.feature.feature_type.id != 1:
+            base_name += ' [%s]' % self.feature.feature_type.name[0]
+        return base_name
+
+    def __str__(self):
+        return '%s - %s' % (str(self.feature), self.name)
+
+
 class FeatureLogo(GcdData):
     """
     Logos of features.
@@ -137,6 +175,9 @@ class FeatureLogo(GcdData):
 
     feature = models.ManyToManyField(Feature,
                                      db_table='gcd_feature_logo_2_feature')
+    feature_name = models.ManyToManyField(
+      FeatureNameDetail,
+      db_table='gcd_feature_logo_2_feature_name')
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
     generic = models.BooleanField(default=False)
