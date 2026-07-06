@@ -1737,15 +1737,20 @@ class Revision(models.Model):
         name = 'publisher' if attrs[-1] == 'parent' else attrs[-1]
 
         if attrs == ('brand_emblem', 'group'):
-            # Handle the special case of brand_emblem and group.
-            # If we have more m2m-related objects that need stats
-            # updating, we may need a more general mechanism.
-            old_value = []
-            for brand_emblem in old.brand_emblem.all() if old else []:
-                old_value.extend(brand_emblem.group.all())
-            new_value = []
-            for brand_emblem in new.brand_emblem.all():
-                new_value.extend(brand_emblem.group.all())
+            # Special case: a two-hop m2m path that RelPath below cannot
+            # follow. If more m2m-related objects need stats updating,
+            # we may need a more general mechanism.
+            def brand_groups(issue_or_revision):
+                groups = set()
+                for emblem in issue_or_revision.brand_emblem.prefetch_related(
+                        'group'):
+                    groups.update(emblem.group.all())
+                return groups
+
+            # As in the generic path: an add has no old value and a
+            # delete has no new value.
+            old_value = brand_groups(old) if old and not self.added else set()
+            new_value = brand_groups(new) if not self.deleted else set()
             multi_valued = True
             boolean_valued = False
         else:
@@ -4123,7 +4128,7 @@ class IssueRevision(Revision):
                 'on_sale_date',
                 'on_sale_date_uncertain',
                 'price',
-                'brand',
+                'brand_emblem',
                 'no_brand',
                 'isbn',
                 'no_isbn',
