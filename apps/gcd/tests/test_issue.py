@@ -518,10 +518,14 @@ def test_stat_counts_base_indexed_covers_stories(any_series, stat_count_mocks):
 
 
 def test_stat_counts_variant_partial(any_series, stat_count_mocks):
+    # A saved-looking parent in the same series, cached on the instance
+    # so that stat_counts() does not hit the database.
+    variant_parent = Issue(number='0', series=any_series)
+    variant_parent.pk = 1234
     i = Issue(number='1',
               series=any_series,
               is_indexed=INDEXED['partial'],
-              variant_of_id=1234)
+              variant_of=variant_parent)
 
     counts = i.stat_counts()
     assert counts == {

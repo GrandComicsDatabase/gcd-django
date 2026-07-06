@@ -340,7 +340,11 @@ def pre_save_mocks():
     with mock.patch('%s.get_ongoing_reservation' % SERIES) as get_ongoing, \
       mock.patch('apps.gcd.models.series.Series.scan_count',
                  new_callable=mock.PropertyMock) as scan_count:
-        yield SeriesRevision(series=Series()), get_ongoing, scan_count
+        # A previous_revision makes this an edit, not an add; the
+        # has_gallery update only runs for edits.
+        yield (SeriesRevision(series=Series(),
+                              previous_revision=SeriesRevision()),
+               get_ongoing, scan_count)
 
 
 def test_pre_save_object_from_current(pre_save_mocks):

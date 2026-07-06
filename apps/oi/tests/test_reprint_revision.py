@@ -20,11 +20,13 @@ def patched_for_save():
             mock.patch('apps.gcd.models.story.Story.__str__', story_uni), \
             mock.patch('apps.gcd.models.issue.Issue.__str__', issue_uni):
         s = Series(name='Test Series')
+        o_issue = Issue(number='1', title='o issue', series=s)
+        o_issue.pk = 1
+        t_issue = Issue(number='9', title='t issue', series=s)
+        t_issue.pk = 9
         yield (save_mock,
-               Story(title='origin',
-                     issue=Issue(number='1', title='o issue', series=s)),
-               Story(title='target',
-                     issue=Issue(number='9', title='t issue', series=s)))
+               Story(title='origin', issue=o_issue),
+               Story(title='target', issue=t_issue))
 
 
 @pytest.fixture
@@ -87,7 +89,8 @@ def test_save_origin_mismatch(patched_for_save):
 
     v = str(exc_info.value)
     assert "origin story and issue do not match" in v
-    expected = "issue: '%s'; Issue: '%s'" % (origin.issue, target.issue)
+    expected = "issue: '%d: %s'; Issue: '%d: %s'" % (
+        origin.issue.id, origin.issue, target.issue.id, target.issue)
     assert expected in v
     assert not save_mock.called
 
@@ -102,7 +105,8 @@ def test_save_target_mismatch(patched_for_save):
 
     v = str(exc_info.value)
     assert "target story and issue do not match" in v
-    expected = "issue: '%s'; Issue: '%s'" % (target.issue, origin.issue)
+    expected = "issue: '%d: %s'; Issue: '%d: %s'" % (
+        target.issue.id, target.issue, origin.issue.id, origin.issue)
     assert expected in v
     assert not save_mock.called
 

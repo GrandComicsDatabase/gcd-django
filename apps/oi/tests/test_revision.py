@@ -211,7 +211,7 @@ def test_set_source():
 
 
 def test_source_class():
-    assert Revision.source_class is NotImplemented
+    assert Revision.source_class is NotImplementedError
     assert DummyRevision.source_class is Dummy
 
 
