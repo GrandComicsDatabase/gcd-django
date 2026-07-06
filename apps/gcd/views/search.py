@@ -2262,7 +2262,7 @@ def search_stories(data, op):
         stories = list(Story.objects.filter(
           credits__creator__id__in=creators,
           credits__deleted=False,
-          credits__credit_type__id=CREDIT_TYPES[field])
+          credits__credit_type__id=CREDIT_TYPES['editing'])
           .values_list('id', flat=True))
         if (stories):
             linked_credits_q_objs.append(
