@@ -126,7 +126,7 @@ def test_has_dependents(issues, issue_revisions):
         assert s.has_dependents() is any((issue_revisions, issues))
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def issues_qs():
     """
     Provides a queryset mock for active_issues().exclude(...)
@@ -235,7 +235,7 @@ def test_counts_deleted():
     assert s.stat_counts() == {}
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def f_mock():
     with mock.patch('apps.gcd.models.series.F') as f_mock:
 

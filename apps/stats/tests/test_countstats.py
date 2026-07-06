@@ -30,7 +30,7 @@ def test_init_stats_not_both():
     assert 'either country or language stats' in str(excinfo.value)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_filters():
     """
     Returns all of the *.objects.filter/create methods patched as a tuple.
@@ -208,7 +208,7 @@ def test_init_stats_neither(patched_filters):
             mock.call(name='stories', count=STORY_COUNT, **lc_args)])
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def mocks_for_update():
     """
     Returns a 4-tuple of mocks for testing CountStatsManager.update().
@@ -355,7 +355,7 @@ def test_update_init_country_no_language(mocks_for_update):
     _check_delta_applications(f_mock, cs_mocks, 1)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def mocks_for_update_all():
     """
     Returns a 3-tuple of mocks for testing update_all().

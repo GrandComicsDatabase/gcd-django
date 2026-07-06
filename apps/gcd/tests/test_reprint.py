@@ -8,7 +8,7 @@ from django.utils.html import conditional_escape as esc
 from apps.gcd.models import Story, Issue, Series, Reprint
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_for_save():
     with mock.patch('apps.gcd.models.reprint.GcdLink.save') as save_mock:
         yield (save_mock,
@@ -64,7 +64,7 @@ def test_save_fields_target_with_story(patched_for_save):
     assert r.target_issue == target.issue
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def patched_for_strings():
     def full_name(self):
         return self.number
