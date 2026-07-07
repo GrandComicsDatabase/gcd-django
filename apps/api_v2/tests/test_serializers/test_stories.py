@@ -76,6 +76,29 @@ def _create_story(issue, *, title, sequence_number):
     )
 
 
+def _create_issue(series, *, number, sort_code):
+    """Create a minimal issue row for serializer tests."""
+    return series.issue_set.model.objects.create(
+        number=number,
+        title='',
+        volume='',
+        isbn='',
+        valid_isbn='',
+        variant_name='',
+        barcode='',
+        publication_date='',
+        key_date='2024-01-01',
+        on_sale_date='2024-01-08',
+        sort_code=sort_code,
+        indicia_frequency='',
+        price='',
+        editing='',
+        notes='',
+        indicia_printer_sourced_by='',
+        series=series,
+    )
+
+
 def _create_creator(name, sort_name):
     """Return a creator plus official name-detail row."""
     creator = Creator.objects.create(
@@ -264,19 +287,43 @@ def test_story_detail_serializer_exposes_detail_contract(issue):
     )
     origin = _create_story(issue, title='Original Story', sequence_number=2)
     target = _create_story(issue, title='Reprint Story', sequence_number=3)
-    Reprint.objects.create(
+    issue_level_origin = _create_issue(
+        issue.series,
+        number='2',
+        sort_code=2,
+    )
+    issue_level_target = _create_issue(
+        issue.series,
+        number='3',
+        sort_code=3,
+    )
+    origin_reprint = Reprint.objects.create(
         origin=origin,
         target=story,
         origin_issue=origin.issue,
         target_issue=story.issue,
         notes='',
     )
-    Reprint.objects.create(
+    issue_origin_reprint = Reprint.objects.create(
+        origin=None,
+        target=story,
+        origin_issue=issue_level_origin,
+        target_issue=story.issue,
+        notes='Issue-level origin.',
+    )
+    target_reprint = Reprint.objects.create(
         origin=story,
         target=target,
         origin_issue=story.issue,
         target_issue=target.issue,
         notes='',
+    )
+    issue_target_reprint = Reprint.objects.create(
+        origin=story,
+        target=None,
+        origin_issue=story.issue,
+        target_issue=issue_level_target,
+        notes='Issue-level target.',
     )
 
     data = StorySerializer(story).data
@@ -295,6 +342,8 @@ def test_story_detail_serializer_exposes_detail_contract(issue):
         'feature_logo',
         'credits',
         'characters',
+        'text_credits',
+        'text_characters',
         'synopsis',
         'genre',
         'first_line',
@@ -339,10 +388,103 @@ def test_story_detail_serializer_exposes_detail_contract(issue):
             'role': 'cameo',
         },
     ]
+    assert data['text_credits'] == {
+        'script': ['Legacy Writer'],
+        'pencils': [],
+        'inks': [],
+        'colors': [],
+        'letters': [],
+        'editing': [],
+    }
+    assert data['text_characters'] == 'Legacy Character'
     assert data['synopsis'] == 'Story synopsis'
     assert data['genre'] == 'superhero'
     assert data['first_line'] == 'First line'
     assert data['notes'] == 'Story notes'
     assert data['keywords'] == ['alpha', 'beta']
-    assert data['reprint_origins'] == [origin.pk]
-    assert data['reprint_targets'] == [target.pk]
+    assert data['reprint_origins'] == [
+        {
+            'id': origin_reprint.pk,
+            'origin_story': {
+                'id': origin.pk,
+                'title': 'Original Story',
+            },
+            'origin_issue': {
+                'id': origin.issue_id,
+                'descriptor': origin.issue.issue_descriptor,
+                'series_name': origin.issue.series.name,
+            },
+            'target_story': {
+                'id': story.pk,
+                'title': 'Lead Story',
+            },
+            'target_issue': {
+                'id': story.issue_id,
+                'descriptor': story.issue.issue_descriptor,
+                'series_name': story.issue.series.name,
+            },
+            'notes': '',
+        },
+        {
+            'id': issue_origin_reprint.pk,
+            'origin_story': None,
+            'origin_issue': {
+                'id': issue_level_origin.pk,
+                'descriptor': issue_level_origin.issue_descriptor,
+                'series_name': issue_level_origin.series.name,
+            },
+            'target_story': {
+                'id': story.pk,
+                'title': 'Lead Story',
+            },
+            'target_issue': {
+                'id': story.issue_id,
+                'descriptor': story.issue.issue_descriptor,
+                'series_name': story.issue.series.name,
+            },
+            'notes': 'Issue-level origin.',
+        },
+    ]
+    assert data['reprint_targets'] == [
+        {
+            'id': target_reprint.pk,
+            'origin_story': {
+                'id': story.pk,
+                'title': 'Lead Story',
+            },
+            'origin_issue': {
+                'id': story.issue_id,
+                'descriptor': story.issue.issue_descriptor,
+                'series_name': story.issue.series.name,
+            },
+            'target_story': {
+                'id': target.pk,
+                'title': 'Reprint Story',
+            },
+            'target_issue': {
+                'id': target.issue_id,
+                'descriptor': target.issue.issue_descriptor,
+                'series_name': target.issue.series.name,
+            },
+            'notes': '',
+        },
+        {
+            'id': issue_target_reprint.pk,
+            'origin_story': {
+                'id': story.pk,
+                'title': 'Lead Story',
+            },
+            'origin_issue': {
+                'id': story.issue_id,
+                'descriptor': story.issue.issue_descriptor,
+                'series_name': story.issue.series.name,
+            },
+            'target_story': None,
+            'target_issue': {
+                'id': issue_level_target.pk,
+                'descriptor': issue_level_target.issue_descriptor,
+                'series_name': issue_level_target.series.name,
+            },
+            'notes': 'Issue-level target.',
+        },
+    ]

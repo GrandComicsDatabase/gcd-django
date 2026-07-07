@@ -226,22 +226,59 @@ def _add_story_detail_relations(story):
         title='Reprint Story',
         sequence_number=3,
     )
-    Reprint.objects.create(
+    issue_level_origin = _create_issue(
+        story.issue.series,
+        number='2',
+        sort_code=2,
+    )
+    issue_level_target = _create_issue(
+        story.issue.series,
+        number='3',
+        sort_code=3,
+    )
+    origin_reprint = Reprint.objects.create(
         origin=origin,
         target=story,
         origin_issue=origin.issue,
         target_issue=story.issue,
         notes='',
     )
-    Reprint.objects.create(
+    issue_origin_reprint = Reprint.objects.create(
+        origin=None,
+        target=story,
+        origin_issue=issue_level_origin,
+        target_issue=story.issue,
+        notes='Issue-level origin.',
+    )
+    target_reprint = Reprint.objects.create(
         origin=story,
         target=target,
         origin_issue=story.issue,
         target_issue=target.issue,
         notes='',
     )
+    issue_target_reprint = Reprint.objects.create(
+        origin=story,
+        target=None,
+        origin_issue=story.issue,
+        target_issue=issue_level_target,
+        notes='Issue-level target.',
+    )
     story.keywords.add('alpha', 'beta')
-    return feature, logo, creator, character, origin, target
+    return (
+        feature,
+        logo,
+        creator,
+        character,
+        origin,
+        target,
+        origin_reprint,
+        issue_origin_reprint,
+        target_reprint,
+        issue_target_reprint,
+        issue_level_origin,
+        issue_level_target,
+    )
 
 
 def test_story_list_returns_paginated_results(api_client, issue):
@@ -314,9 +351,20 @@ def test_story_list_skips_exact_count_for_modified_delta_filters():
 def test_story_detail_returns_expected_payload(api_client, issue):
     """The detail endpoint returns the story detail serializer payload."""
     story = _create_story(issue, title='Lead Story', sequence_number=1)
-    feature, logo, creator, character, origin, target = (
-        _add_story_detail_relations(story)
-    )
+    (
+        feature,
+        logo,
+        creator,
+        character,
+        origin,
+        target,
+        origin_reprint,
+        issue_origin_reprint,
+        target_reprint,
+        issue_target_reprint,
+        issue_level_origin,
+        issue_level_target,
+    ) = _add_story_detail_relations(story)
 
     response = api_client.get(reverse('story-detail', kwargs={'pk': story.pk}))
 
@@ -358,9 +406,102 @@ def test_story_detail_returns_expected_payload(api_client, issue):
             'role': 'cameo',
         },
     ]
+    assert response.data['text_credits'] == {
+        'script': ['Legacy Writer'],
+        'pencils': [],
+        'inks': [],
+        'colors': [],
+        'letters': [],
+        'editing': [],
+    }
+    assert response.data['text_characters'] == 'Legacy Character'
     assert response.data['keywords'] == ['alpha', 'beta']
-    assert response.data['reprint_origins'] == [origin.pk]
-    assert response.data['reprint_targets'] == [target.pk]
+    assert response.data['reprint_origins'] == [
+        {
+            'id': origin_reprint.pk,
+            'origin_story': {
+                'id': origin.pk,
+                'title': 'Original Story',
+            },
+            'origin_issue': {
+                'id': origin.issue_id,
+                'descriptor': origin.issue.issue_descriptor,
+                'series_name': origin.issue.series.name,
+            },
+            'target_story': {
+                'id': story.pk,
+                'title': 'Lead Story',
+            },
+            'target_issue': {
+                'id': story.issue_id,
+                'descriptor': story.issue.issue_descriptor,
+                'series_name': story.issue.series.name,
+            },
+            'notes': '',
+        },
+        {
+            'id': issue_origin_reprint.pk,
+            'origin_story': None,
+            'origin_issue': {
+                'id': issue_level_origin.pk,
+                'descriptor': issue_level_origin.issue_descriptor,
+                'series_name': issue_level_origin.series.name,
+            },
+            'target_story': {
+                'id': story.pk,
+                'title': 'Lead Story',
+            },
+            'target_issue': {
+                'id': story.issue_id,
+                'descriptor': story.issue.issue_descriptor,
+                'series_name': story.issue.series.name,
+            },
+            'notes': 'Issue-level origin.',
+        },
+    ]
+    assert response.data['reprint_targets'] == [
+        {
+            'id': target_reprint.pk,
+            'origin_story': {
+                'id': story.pk,
+                'title': 'Lead Story',
+            },
+            'origin_issue': {
+                'id': story.issue_id,
+                'descriptor': story.issue.issue_descriptor,
+                'series_name': story.issue.series.name,
+            },
+            'target_story': {
+                'id': target.pk,
+                'title': 'Reprint Story',
+            },
+            'target_issue': {
+                'id': target.issue_id,
+                'descriptor': target.issue.issue_descriptor,
+                'series_name': target.issue.series.name,
+            },
+            'notes': '',
+        },
+        {
+            'id': issue_target_reprint.pk,
+            'origin_story': {
+                'id': story.pk,
+                'title': 'Lead Story',
+            },
+            'origin_issue': {
+                'id': story.issue_id,
+                'descriptor': story.issue.issue_descriptor,
+                'series_name': story.issue.series.name,
+            },
+            'target_story': None,
+            'target_issue': {
+                'id': issue_level_target.pk,
+                'descriptor': issue_level_target.issue_descriptor,
+                'series_name': issue_level_target.series.name,
+            },
+            'notes': 'Issue-level target.',
+        },
+    ]
 
 
 def test_story_list_applies_filter_query_params(api_client, issue, publisher):

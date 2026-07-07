@@ -9,6 +9,65 @@ from rest_framework import serializers
 from apps.api_v2.utils.credits import collect_story_credit_entries
 from apps.gcd.models import Feature, FeatureLogo, Story
 
+LEGACY_CREDIT_FIELDS = (
+    'script',
+    'pencils',
+    'inks',
+    'colors',
+    'letters',
+    'editing',
+)
+
+
+def _split_legacy_text(value):
+    """Return semicolon-delimited legacy text as clean entries."""
+    if not value:
+        return []
+    return [part.strip() for part in value.split(';') if part.strip()]
+
+
+def _story_reference(story):
+    """Return the minimal nested story reference, preserving nulls."""
+    if story is None:
+        return None
+    return {
+        'id': story.pk,
+        'title': story.title,
+    }
+
+
+def _issue_reference(issue):
+    """Return the minimal nested issue reference for story reprints."""
+    return {
+        'id': issue.pk,
+        'descriptor': issue.issue_descriptor,
+        'series_name': issue.series.name,
+    }
+
+
+def _reprint_reference(reprint):
+    """Return a nested reprint reference for story detail responses."""
+    return {
+        'id': reprint.pk,
+        'origin_story': _story_reference(reprint.origin),
+        'origin_issue': _issue_reference(reprint.origin_issue),
+        'target_story': _story_reference(reprint.target),
+        'target_issue': _issue_reference(reprint.target_issue),
+        'notes': reprint.notes,
+    }
+
+
+def _select_reprint_related(queryset, *ordering):
+    """Return reprints with the related rows needed by story detail."""
+    return queryset.select_related(
+        'origin',
+        'origin_issue',
+        'origin_issue__series',
+        'target',
+        'target_issue',
+        'target_issue__series',
+    ).order_by(*ordering)
+
 
 class StoryListSerializer(serializers.ModelSerializer):
     """Serialize story list responses for the v2 public API."""
@@ -98,6 +157,11 @@ class StorySerializer(StoryListSerializer):
     feature_logo = serializers.SerializerMethodField()
     credits = serializers.SerializerMethodField()
     characters = serializers.SerializerMethodField()
+    text_credits = serializers.SerializerMethodField()
+    text_characters = serializers.CharField(
+        source='characters',
+        read_only=True,
+    )
     keywords = serializers.SlugRelatedField(
         many=True,
         read_only=True,
@@ -114,6 +178,8 @@ class StorySerializer(StoryListSerializer):
             'feature_logo',
             'credits',
             'characters',
+            'text_credits',
+            'text_characters',
             'synopsis',
             'genre',
             'first_line',
@@ -178,30 +244,33 @@ class StorySerializer(StoryListSerializer):
             for appearance in appearances
         ]
 
+    def get_text_credits(self, obj):
+        """Return legacy plain-text credit fields grouped by role."""
+        return {
+            credit_field: _split_legacy_text(getattr(obj, credit_field))
+            for credit_field in LEGACY_CREDIT_FIELDS
+        }
+
     def get_reprint_origins(self, obj):
-        """Return story ids reprinted into this story."""
+        """Return reprints of source material into this story."""
         reprints = getattr(obj, 'active_reprint_origin_list', None)
         if reprints is None:
-            reprints = obj.from_all_reprints.exclude(origin=None).order_by(
+            reprints = _select_reprint_related(
+                obj.from_all_reprints,
+                'origin_issue_id',
                 'origin_id',
                 'id',
             )
-        return [
-            reprint.origin_id
-            for reprint in reprints
-            if reprint.origin_id is not None
-        ]
+        return [_reprint_reference(reprint) for reprint in reprints]
 
     def get_reprint_targets(self, obj):
-        """Return story ids that reprint this story."""
+        """Return reprints whose target includes this story."""
         reprints = getattr(obj, 'active_reprint_target_list', None)
         if reprints is None:
-            reprints = obj.to_all_reprints.exclude(target=None).order_by(
+            reprints = _select_reprint_related(
+                obj.to_all_reprints,
+                'target_issue_id',
                 'target_id',
                 'id',
             )
-        return [
-            reprint.target_id
-            for reprint in reprints
-            if reprint.target_id is not None
-        ]
+        return [_reprint_reference(reprint) for reprint in reprints]

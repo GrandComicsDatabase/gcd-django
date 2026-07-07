@@ -190,6 +190,44 @@ def _add_story_detail_relations(story):
         title='Reprint Story',
         sequence_number=3,
     )
+    issue_level_origin = story.issue.series.issue_set.model.objects.create(
+        number='2',
+        title='',
+        volume='',
+        isbn='',
+        valid_isbn='',
+        variant_name='',
+        barcode='',
+        publication_date='',
+        key_date='2024-01-01',
+        on_sale_date='2024-01-08',
+        sort_code=2,
+        indicia_frequency='',
+        price='',
+        editing='',
+        notes='',
+        indicia_printer_sourced_by='',
+        series=story.issue.series,
+    )
+    issue_level_target = story.issue.series.issue_set.model.objects.create(
+        number='3',
+        title='',
+        volume='',
+        isbn='',
+        valid_isbn='',
+        variant_name='',
+        barcode='',
+        publication_date='',
+        key_date='2024-01-01',
+        on_sale_date='2024-01-08',
+        sort_code=3,
+        indicia_frequency='',
+        price='',
+        editing='',
+        notes='',
+        indicia_printer_sourced_by='',
+        series=story.issue.series,
+    )
     Reprint.objects.create(
         origin=origin,
         target=story,
@@ -198,11 +236,25 @@ def _add_story_detail_relations(story):
         notes='',
     )
     Reprint.objects.create(
+        origin=None,
+        target=story,
+        origin_issue=issue_level_origin,
+        target_issue=story.issue,
+        notes='Issue-level origin.',
+    )
+    Reprint.objects.create(
         origin=story,
         target=target,
         origin_issue=story.issue,
         target_issue=target.issue,
         notes='',
+    )
+    Reprint.objects.create(
+        origin=story,
+        target=None,
+        origin_issue=story.issue,
+        target_issue=issue_level_target,
+        notes='Issue-level target.',
     )
     story.keywords.add('alpha', 'beta')
 

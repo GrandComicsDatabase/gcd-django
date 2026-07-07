@@ -89,12 +89,34 @@ ACTIVE_FEATURE_LOGO_PREFETCH = Prefetch(
 )
 ACTIVE_REPRINT_ORIGIN_PREFETCH = Prefetch(
     'from_all_reprints',
-    queryset=Reprint.objects.exclude(origin=None).order_by('origin_id', 'id'),
+    queryset=Reprint.objects.select_related(
+        'origin',
+        'origin_issue',
+        'origin_issue__series',
+        'target',
+        'target_issue',
+        'target_issue__series',
+    ).order_by(
+        'origin_issue_id',
+        'origin_id',
+        'id',
+    ),
     to_attr='active_reprint_origin_list',
 )
 ACTIVE_REPRINT_TARGET_PREFETCH = Prefetch(
     'to_all_reprints',
-    queryset=Reprint.objects.exclude(target=None).order_by('target_id', 'id'),
+    queryset=Reprint.objects.select_related(
+        'origin',
+        'origin_issue',
+        'origin_issue__series',
+        'target',
+        'target_issue',
+        'target_issue__series',
+    ).order_by(
+        'target_issue_id',
+        'target_id',
+        'id',
+    ),
     to_attr='active_reprint_target_list',
 )
 
