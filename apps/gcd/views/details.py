@@ -3682,13 +3682,13 @@ def feature_issues(request, feature_id, to_be_migrated=False):
         result_disclaimer = ''
         heading = 'to be migrated for feature %s' % (feature)
     elif feature.feature_type.id == 1:
-        issues = Issue.objects.filter(story__feature_object=feature,
+        issues = Issue.objects.filter(story__feature_name__feature=feature,
                                       story__type__id__in=story_types,
                                       story__deleted=False).distinct()\
                               .select_related('series__publisher')
         result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
     else:
-        issues = Issue.objects.filter(story__feature_object=feature,
+        issues = Issue.objects.filter(story__feature_name__feature=feature,
                                       story__deleted=False).distinct()\
                               .select_related('series__publisher')
         result_disclaimer = MIGRATE_DISCLAIMER

@@ -1084,9 +1084,9 @@ class Story(GcdData):
         UI check for features.
 
         feature_logo entry automatically results in corresponding
-        feature_object entry, therefore no check needed
+        feature_name entry, therefore no check needed
         """
-        return self.feature or self.feature_object.count()
+        return self.feature or self.feature_name.count()
 
     def has_reprints(self, notes=True, ignore=STORY_TYPES['preview']):
         if self.type_id not in [STORY_TYPES['preview'],
