@@ -17,6 +17,7 @@ def main():
         if Series.objects.filter(country=i).exists():
             CountStats.objects.init_stats(country=i)
 
+def reset_series_issue_count_cache():
     # -------------------------------------------------------------------------
     # Rebuild Series.issue_count Caches
     # -------------------------------------------------------------------------
@@ -43,4 +44,6 @@ def main():
 
 def run():
     main()
+    # only reset the series issue count cache if explicitly requested
+    # reset_series_issue_count_cache()
 
