@@ -54,8 +54,10 @@ def patched_filters():
         cr_filter.return_value.count.return_value = CREATOR_COUNT
         s_filter.return_value.count.return_value = SERIES_COUNT
         i_filter.return_value.count.return_value = ISSUE_COUNT
-        i_filter.return_value.exclude.return_value.count.side_effect = (
-            VARIANT_COUNT, INDEX_COUNT)
+        i_filter.return_value.exclude.return_value.count.return_value = \
+            VARIANT_COUNT
+        i_filter.return_value.filter.return_value.count.return_value = \
+            INDEX_COUNT
         c_filter.return_value.count.return_value = COVER_COUNT
         t_filter.return_value.count.return_value = STORY_COUNT
 
@@ -105,8 +107,8 @@ def test_init_stats_language(patched_filters):
             mock.call().exclude(variant_of=None),
             mock.call().exclude().count(),
             mock.call(variant_of=None, **i_kwargs),
-            mock.call().exclude(is_indexed=INDEXED['skeleton']),
-            mock.call().exclude().count()])
+            mock.call().filter(is_indexed__gt=INDEXED['some_data']),
+            mock.call().filter().count()])
 
         c_filter.assert_called_once_with(**c_t_kwargs)
         t_filter.assert_called_once_with(**c_t_kwargs)
@@ -143,8 +145,8 @@ def test_init_stats_country(patched_filters):
             mock.call().exclude(variant_of=None),
             mock.call().exclude().count(),
             mock.call(variant_of=None, **i_kwargs),
-            mock.call().exclude(is_indexed=INDEXED['skeleton']),
-            mock.call().exclude().count()])
+            mock.call().filter(is_indexed__gt=INDEXED['some_data']),
+            mock.call().filter().count()])
 
         c_filter.assert_called_once_with(**c_t_kwargs)
         t_filter.assert_called_once_with(**c_t_kwargs)
@@ -185,8 +187,8 @@ def test_init_stats_neither(patched_filters):
             mock.call().exclude(variant_of=None),
             mock.call().exclude().count(),
             mock.call(variant_of=None, **i_kwargs),
-            mock.call().exclude(is_indexed=INDEXED['skeleton']),
-            mock.call().exclude().count()])
+            mock.call().filter(is_indexed__gt=INDEXED['some_data']),
+            mock.call().filter().count()])
 
         c_filter.assert_called_once_with(**c_t_kwargs)
         t_filter.assert_called_once_with(**c_t_kwargs)

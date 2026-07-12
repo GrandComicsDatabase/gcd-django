@@ -29,11 +29,8 @@ def test_commit_added_revision(any_added_printer_rev, printer_add_values,
     with mock.patch(update_all) as updater:
         rev.commit_to_display()
 
-    updater.assert_has_calls([
-        mock.call({}, country=None, language=None, negate=True),
-        mock.call({}, country=rev.printer.country, language=None),
-    ])
-    assert updater.call_count == 2
+    # Printers do not opt into _update_stats, so no stats calls are made.
+    assert updater.call_count == 0
 
     assert rev.printer is not None
     assert rev.source is rev.printer

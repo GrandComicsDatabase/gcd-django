@@ -208,16 +208,19 @@ def brand_dep_mocks():
     b = '%s.Brand' % PATH
     with mock.patch('%s.use_revisions' % b) as bu_mock, \
             mock.patch('%s.issue_revisions' % b) as ish_mock, \
-            mock.patch('%s.in_use' % b) as in_use_mock:
+            mock.patch('%s.in_use' % b) as in_use_mock, \
+            mock.patch('%s.active_issues' % b) as ai_mock:
 
         for m in (bu_mock, ish_mock):
             m.active_set.return_value.exists.return_value = False
         in_use_mock.exists.return_value = False
+        ai_mock.return_value.exists.return_value = False
 
         yield {
             'bu': bu_mock,
             'ish': ish_mock,
             'in_use': in_use_mock,
+            'ai': ai_mock,
         }
 
 
