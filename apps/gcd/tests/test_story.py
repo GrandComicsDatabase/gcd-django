@@ -19,6 +19,25 @@ def test_stat_counts(is_comics, deleted):
     assert story.stat_counts() == {} if deleted else {'stories': 1}
 
 
+def test_story_model_exposes_api_v2_browse_and_modified_indexes():
+    index_map = {
+        index.name: list(index.fields)
+        for index in Story._meta.indexes
+    }
+
+    assert index_map['gcd_story_v2_browse_idx'] == [
+        'deleted',
+        'issue',
+        'sequence_number',
+        'id',
+    ]
+    assert index_map['gcd_story_v2_modified_idx'] == [
+        'deleted',
+        'modified',
+        'id',
+    ]
+
+
 @pytest.yield_fixture
 def re_story_mocks():
     with mock.patch('%s.from_all_reprints' % STORY_PATH) as from_mock, \
