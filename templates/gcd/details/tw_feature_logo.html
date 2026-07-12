@@ -20,8 +20,8 @@
 <div>
   <ul>
     <li><span class="font-bold">Feature:</span>
-  {% for feature in feature_logo.feature.all %}
-      <a href="{{ feature.get_absolute_url }}">{{ feature }}</a>
+  {% for feature_name in feature_logo.feature_name.all %}
+      <a href="{{ feature_name.get_absolute_url }}">{{ feature_name }}</a>
     {% if not forloop.last %}; {% endif %}
   {%  endfor %}
     </li>

@@ -7565,6 +7565,7 @@ class FeatureLogoRevision(Revision):
     def _get_blank_values(self):
         return {
             'feature': None,
+            'feature_name': None,
             'name': '',
             'leading_article': False,
             'generic': False,

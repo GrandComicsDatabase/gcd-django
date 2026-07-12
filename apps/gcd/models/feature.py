@@ -159,7 +159,10 @@ class FeatureNameDetail(GcdData):
         return base_name
 
     def __str__(self):
-        return '%s - %s' % (str(self.feature), self.name)
+        if self.feature.name == self.name:
+            return str(self.feature)
+        else:
+            return '%s - %s' % (str(self.feature), self.name)
 
 
 class FeatureLogo(GcdData):
