@@ -317,6 +317,10 @@ class Character(CharacterGroupBase):
         if StoryCharacter.objects.filter(character__character=self,
                                          deleted=False).exists():
             return True
+        from apps.oi.models import StoryCharacterRevision
+        if StoryCharacterRevision.objects.active_set()\
+                                 .filter(character__character=self).exists():
+            return True
         return False
 
     # def stat_counts(self):
@@ -507,6 +511,10 @@ class Group(CharacterGroupBase):
         from .story import StoryGroup
         if StoryGroup.objects.filter(group_name__group=self,
                                      deleted=False).exists():
+            return True
+        from apps.oi.models import StoryGroupRevision
+        if StoryGroupRevision.objects.active_set()\
+                             .filter(group_name__group=self).exists():
             return True
         return False
 
