@@ -25,7 +25,7 @@ DELTAS = {
 }
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def f_mock():
     with mock.patch('%s.F' % PATH) as f_mock:
 
@@ -79,7 +79,7 @@ def test_update_cached_counts_subtract(f_mock):
     assert p.issue_count == ISSUE_COUNT - DELTAS['issues']
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def pub_dep_mocks():
     p = '%s.Publisher' % PATH
     with mock.patch('%s.active_brands' % p) as ab_mock, \
@@ -135,7 +135,7 @@ def test_pub_has_non_dependents_nonzero_counts(pub_dep_mocks, which_count):
     assert has is False
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def ipub_dep_mock():
     ip = '%s.IndiciaPublisher' % PATH
     with mock.patch('%s.issue_revisions' % ip) as ip_mock:
@@ -163,7 +163,7 @@ def test_ipub_has_dependents_issue_count(ipub_dep_mock):
     assert has is True
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def group_dep_mocks():
     g = '%s.BrandGroup' % PATH
     with mock.patch('%s.brand_revisions' % g) as br_mock, \
@@ -203,7 +203,7 @@ def test_group_has_dependents_issue_count(group_dep_mocks):
     assert has is True
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def brand_dep_mocks():
     b = '%s.Brand' % PATH
     with mock.patch('%s.use_revisions' % b) as bu_mock, \
@@ -303,7 +303,7 @@ def test_brand_use_active_issues():
             issue__series__publisher=bu.publisher)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def pub_child_set_mocks():
     p = '%s.Publisher' % PATH
     with mock.patch('%s.active_indicia_publishers' % p) as ip_mock, \

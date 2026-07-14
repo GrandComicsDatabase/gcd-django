@@ -10,7 +10,6 @@
 
 # Local configuration
 settings_local.py
-pytest.ini
 
 # Editor temp and config files
 *.py~

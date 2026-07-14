@@ -24,7 +24,7 @@ def any_series():
                   is_comics_publication=True)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def image_and_content_type():
     """
     Returns a 4-tuple of mocks for use in testing image properties.
@@ -152,7 +152,7 @@ def test_cant_upload_variants_active_revisions(any_series):
         assert can_upload_variants is False
 
 
-#@pytest.yield_fixture
+#@pytest.fixture
 #def re_issue_mocks(any_series):
     #with mock.patch('%s.from_all_reprints' % ISSUE_PATH) as from_mock, \
             #mock.patch('%s.to_all_reprints' % ISSUE_PATH) as to_mock:
@@ -231,7 +231,7 @@ def test_delete():
         i.save.assert_called_once_with()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def del_issue_mocks():
     """ Dict of mocks of things needed for deletability testing. """
     with mock.patch('%s.has_reprints' % ISSUE_PATH) as issue_hr_mock, \
@@ -471,7 +471,7 @@ def test_shown_covers(any_series):
         assert second == [v3, v4, v5]
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def stat_count_mocks():
     """
     Yields a 2-tuple of mocks for testing statistics.
