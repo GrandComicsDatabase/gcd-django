@@ -152,8 +152,8 @@ class FeatureRevisionForm(KeywordBaseForm):
     additional_names_help = forms.CharField(
         widget=HiddenInputWithHelp,
         required=False,
-        help_text="Multiple significantly distinct names for the feature can be "
-                  "entered, where the feature fundamentally remains "
+        help_text="Multiple significantly distinct names for the feature can "
+                  "be entered, where the feature fundamentally remains "
                   "unchanged under the different names. One name is marked "
                   "as the official name.",
         label='')
@@ -256,10 +256,6 @@ class FeatureLogoRevisionForm(forms.ModelForm):
         new_fields = OrderedDict([(f, self.fields[f]) for f in ordering])
         self.fields = new_fields
 
-    feature = forms.ModelMultipleChoiceField(
-        queryset=Feature.objects.filter(deleted=False),
-        widget=autocomplete.ModelSelect2Multiple(url='feature_autocomplete')
-    )
     feature_name = forms.ModelMultipleChoiceField(
         queryset=FeatureNameDetail.objects.filter(deleted=False),
         widget=autocomplete.ModelSelect2Multiple(

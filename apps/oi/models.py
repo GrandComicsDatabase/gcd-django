@@ -7554,8 +7554,7 @@ class FeatureLogoRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'leading_article', 'feature', 'feature_name',
-                        'generic',
+    _base_field_list = ['name', 'leading_article', 'feature_name', 'generic',
                         'year_began', 'year_began_uncertain',
                         'year_ended', 'year_ended_uncertain', 'notes']
 

@@ -72,7 +72,8 @@ class Feature(GcdData):
                bool(self.to_related_feature.all().exists())
 
     def active_logos(self):
-        return self.featurelogo_set.filter(deleted=False)
+        return FeatureLogo.objects.filter(feature_name__feature=self,
+                                          deleted=False)
 
     def active_stories(self):
         return self.story_set.filter(deleted=False)
