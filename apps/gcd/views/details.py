@@ -390,8 +390,7 @@ def creator_sequences(request, creator_id, series_id=None,
         heading = 'for creator %s' % (creator)
 
     if not series_id:
-        filter = filter_sequences(request, stories)
-        stories = filter.qs
+        filter, stories = filter_sequences(request, stories)
     else:
         filter = None
 
@@ -481,8 +480,7 @@ def creator_creators(request, creator_id):
                                    type__id__in=story_types,
                                    credits__credit_type__id__lt=6,
                                    credits__deleted=False).distinct()
-    filter = filter_sequences(request, stories)
-    stories = filter.qs
+    filter, stories = filter_sequences(request, stories)
     stories_ids = stories.values_list('id', flat=True)
 
     creators = Creator.objects.filter(
@@ -3645,10 +3643,7 @@ def feature_sequences(request, feature_id, country=None):
         stories = stories.filter(issue__series__country=country)
     heading = 'for feature %s' % (feature)
 
-    filter = filter_sequences(request, stories)
-    filter.filters.pop('language', None)
-    filter.form.fields.pop('language', None)
-    stories = filter.qs
+    filter, stories = filter_sequences(request, stories, language_filter=False)
 
     context = {
         'result_disclaimer': MIGRATE_DISCLAIMER,
@@ -3913,9 +3908,7 @@ def feature_logo_sequences(request, feature_logo_id, country=None):
         stories = stories.filter(issue__series__country=country)
     heading = 'for feature logo %s' % (feature_logo)
 
-    filter = filter_sequences(request, stories)
-    filter.filters.pop('language')
-    stories = filter.qs
+    filter, stories = filter_sequences(request, stories, language_filter=False)
 
     context = {
         'result_disclaimer': MIGRATE_DISCLAIMER,
@@ -4043,10 +4036,7 @@ def universe_sequences(request, universe_id):
     stories = Story.objects.filter(universe=universe, deleted=False)\
                    .distinct().select_related('issue__series__publisher')
 
-    filter = filter_sequences(request, stories)
-    filter.filters.pop('language', None)
-    filter.form.fields.pop('language', None)
-    stories = filter.qs
+    filter, stories = filter_sequences(request, stories)
 
     context = {
         'result_disclaimer': MIGRATE_DISCLAIMER,
@@ -4732,9 +4722,7 @@ def character_creators(request, character_id, creator_names=False,
       'working on character %s',
       (character,))
     stories = Story.objects.filter(**query).distinct()
-    filter = filter_sequences(request, stories)
-    filter.filters.pop('language')
-    stories = filter.qs
+    filter, stories = filter_sequences(request, stories, language_filter=False)
     stories_ids = stories.values_list('id', flat=True)
     if creator_names:
         creators = CreatorNameDetail.objects.filter(
@@ -4798,9 +4786,7 @@ def character_sequences(request, character_id, universe_id=None):
     stories = Story.objects.filter(**query).distinct()\
                            .select_related('issue__series__publisher')
 
-    filter = filter_sequences(request, stories)
-    filter.filters.pop('language')
-    stories = filter.qs
+    filter, stories = filter_sequences(request, stories, language_filter=False)
 
     context = {
         'result_disclaimer': CHAR_MIGRATE_DISCLAIMER,

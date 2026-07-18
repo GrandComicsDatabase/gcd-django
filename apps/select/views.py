@@ -1093,6 +1093,12 @@ class SequenceFilter(CommonFilter):
         model = Issue
         fields = ['country', 'language', 'publisher', 'story_type']
 
+    def __init__(self, *args, **kwargs):
+        language_filter = kwargs.pop('language_filter', None)
+        super(SequenceFilter, self).__init__(*args, **kwargs)
+        if not language_filter:
+            self.form.fields.pop('language')
+
 
 class KeywordUsedFilter(FilterSet):
     content_type = ModelChoiceFilter(field_name='content_type',
@@ -1166,13 +1172,20 @@ def filter_covers(request, covers):
     return filter
 
 
-def filter_sequences(request, sequences):
+def filter_sequences(request, sequences, language_filter=True):
     filter = SequenceFilter(request.GET,
                             queryset=sequences,
                             country='issue__series__country',
                             language='issue__series__language',
-                            publisher='issue__series__publisher')
-    return filter
+                            publisher='issue__series__publisher',
+                            language_filter=language_filter)
+    sequences = filter.qs
+    if not sequences:
+        filter.form.fields.pop('publisher', None)
+        filter.form.fields.pop('country', None)
+        filter.form.fields.pop('language', None)
+
+    return filter, sequences
 
 
 def filter_facets(request, things, fields, size=100):
