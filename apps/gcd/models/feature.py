@@ -381,6 +381,18 @@ class FeatureLogoTable(tables.Table):
         self.feature_id = kwargs.pop('feature_id')
         super(FeatureLogoTable, self).__init__(*args, **kwargs)
 
+    def order_year_began(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'year_began',
+                                       'sort_name')
+        return (query_set, True)
+
+    def order_year_ended(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'year_ended',
+                                       'sort_name')
+        return (query_set, True)
+
     def render_issue_count(self, record):
         url = urlresolvers.reverse(
             'feature_logo_feature_issues',

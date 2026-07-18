@@ -3588,9 +3588,10 @@ def feature(request, feature_id):
 
 def show_feature(request, feature, preview=False):
     logos = feature.active_logos().annotate(
-      issue_count=Count('story__issue',filter=Q(story__issue__deleted=False,
-                                                story__feature_object=feature),
-                                                distinct=True))
+      issue_count=Count('story__issue',
+                        filter=Q(story__issue__deleted=False,
+                                 story__feature_name__feature=feature),
+                        distinct=True))
 
     table = FeatureLogoTable(logos,
                              template_name=TW_SORT_TABLE_TEMPLATE,
@@ -3979,7 +3980,8 @@ def feature_logo_feature_issues(request, feature_logo_id, feature_id):
         'item_name': 'issue',
         'plural_suffix': 's',
         'filter_form': filter.form,
-        'heading': 'for feature logo %s and feature %s' % (feature_logo, feature)
+        'heading': 'for feature logo %s and feature %s' % (feature_logo,
+                                                           feature)
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = _table_issues_list_or_grid(request, issues, context)
