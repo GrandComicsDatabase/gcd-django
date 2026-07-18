@@ -377,6 +377,17 @@ class FeatureLogoTable(tables.Table):
                                 attrs={'td': {'class':
                                               TW_COLUMN_ALIGN_RIGHT}})
 
+    def __init__(self, *args, **kwargs):
+        self.feature_id = kwargs.pop('feature_id')
+        super(FeatureLogoTable, self).__init__(*args, **kwargs)
+
+    def render_issue_count(self, record):
+        url = urlresolvers.reverse(
+            'feature_logo_feature_issues',
+            kwargs={'feature_id': self.feature_id,
+                    'feature_logo_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
     def render_logo(self, record):
         if not settings.FAKE_IMAGES and record.logo:
             return mark_safe('<a href="%s"><img src="%s"></a>' %

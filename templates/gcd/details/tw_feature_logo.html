@@ -43,7 +43,7 @@
   {% endif %}
   </ul>
   <ul class="object-page-link-list">
-    <li><a href='{% url "feature_logo_issuelist_by_id" feature_logo_id=feature_logo.id %}'>Issue Checklist (via linked story records)</a></li>
+    <li><a href='{% url "feature_logo_issues" feature_logo_id=feature_logo.id %}'>Issue Checklist (via linked story records)</a></li>
     <li><a href='{% url "feature_logo_sequences" feature_logo_id=feature_logo.id %}'>Sequences List (via linked story records)</a></li>
   </ul>    
 </div>

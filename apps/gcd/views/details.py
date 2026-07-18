@@ -613,8 +613,7 @@ def creator_overview(request, creator_id):
                                 type_id=19, deleted=False)
                                 .values('pk')
                                 .order_by('-page_count')[:1]))
-    filter = filter_issues(request, issues)
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues)
 
     context = {
         'item_name': 'issue',
@@ -840,10 +839,9 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     else:
         heading = 'for creator %s' % (creator)
     if edits:
-        filter = filter_issues(request, issues)
+        filter, issues = filter_issues(request, issues)
     else:
-        filter = filter_issues(request, issues, story_type_filter=True)
-    issues = filter.qs
+        filter, issues = filter_issues(request, issues, story_type_filter=True)
     context = {
         'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
         'item_name': 'issue',
@@ -1008,8 +1006,7 @@ def cover_checklist_by_id(request, creator_id, series_id=None,
                                                     series)
     else:
         heading = 'for creator %s' % (creator)
-        filter = filter_issues(request, issues)
-        issues = filter.qs
+        filter, issues = filter_issues(request, issues)
 
     context = {
         'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
@@ -1071,8 +1068,7 @@ def checklist_by_name(request, creator, country=None, language=None,
         issues = Issue.objects.filter(id__in=id1)
         filter = None
     else:
-        filter = filter_issues(request, issues)
-        issues = filter.qs
+        filter, issues = filter_issues(request, issues)
         context['heading'] = 'to be migrated ' + context['heading']
 
     template = 'gcd/search/tw_list_sortable.html'
@@ -2113,8 +2109,7 @@ def printer_issues(request, printer_id):
     issues = Issue.objects.filter(indicia_printer__parent=printer,
                                   deleted=False).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues)
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues)
 
     context = {
         'item_name': 'issue',
@@ -2150,8 +2145,7 @@ def indicia_printer_issues(request, indicia_printer_id):
     issues = Issue.objects.filter(indicia_printer=indicia_printer,
                                   deleted=False).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues)
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues)
 
     context = {
         'item_name': 'issue',
@@ -3322,8 +3316,7 @@ def on_sale_weekly(request, year=None, week=None, variant=True):
 
     if not variant:
         issues_on_sale = issues_on_sale.filter(variant_of=None)
-    filter = filter_issues(request, issues_on_sale)
-    issues_on_sale = filter.qs
+    filter, issues_on_sale = filter_issues(request, issues_on_sale)
     table = CoverIssueStoryPublisherTable(issues_on_sale,
                                           template_name=TW_SORT_TABLE_TEMPLATE,
                                           order_by=('issues'))
@@ -3438,8 +3431,7 @@ def on_sale_monthly(request, year=None, month=None, variant=True):
                                 .order_by('-page_count')[:1]))
     if not variant:
         issues_on_sale = issues_on_sale.filter(variant_of=None)
-    filter = filter_issues(request, issues_on_sale)
-    issues_on_sale = filter.qs
+    filter, issues_on_sale = filter_issues(request, issues_on_sale)
 
     if variant:
         if year:
@@ -3598,11 +3590,14 @@ def feature(request, feature_id):
 
 def show_feature(request, feature, preview=False):
     logos = feature.active_logos().annotate(
-      issue_count=Count('story__issue', distinct=True))
+      issue_count=Count('story__issue',filter=Q(story__issue__deleted=False,
+                                                story__feature_object=feature),
+                                                distinct=True))
 
     table = FeatureLogoTable(logos,
                              template_name=TW_SORT_TABLE_TEMPLATE,
-                             order_by=('year_began'))
+                             order_by=('year_began'),
+                             feature_id=feature.id)
     table.no_export = True
     table.not_sticky = True
 
@@ -3651,7 +3646,8 @@ def feature_sequences(request, feature_id, country=None):
     heading = 'for feature %s' % (feature)
 
     filter = filter_sequences(request, stories)
-    filter.filters.pop('language')
+    filter.filters.pop('language', None)
+    filter.form.fields.pop('language', None)
     stories = filter.qs
 
     context = {
@@ -3693,9 +3689,8 @@ def feature_issues(request, feature_id, to_be_migrated=False):
                               .select_related('series__publisher')
         result_disclaimer = MIGRATE_DISCLAIMER
 
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -3726,9 +3721,8 @@ def feature_name_issues(request, feature_name_id, universe_id=None):
                           .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -3765,9 +3759,7 @@ def feature_overview(request, feature_id):
         issues = Issue.objects.none()
         result_disclaimer = 'not supported for this feature type'
 
-    filter = filter_issues(request, issues)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, language_filter=False)
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -3877,9 +3869,7 @@ def feature_covers(request, feature_id):
 
     heading = 'with feature %s' % feature
 
-    filter = filter_issues(request, issues)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, language_filter=False)
 
     context = {
         'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
@@ -3923,11 +3913,16 @@ def feature_logo_sequences(request, feature_logo_id, country=None):
         stories = stories.filter(issue__series__country=country)
     heading = 'for feature logo %s' % (feature_logo)
 
+    filter = filter_sequences(request, stories)
+    filter.filters.pop('language')
+    stories = filter.qs
+
     context = {
         'result_disclaimer': MIGRATE_DISCLAIMER,
         'item_name': 'sequence',
         'plural_suffix': 's',
-        'heading': heading
+        'heading': heading,
+        'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = StoryTable(stories,
@@ -3937,7 +3932,7 @@ def feature_logo_sequences(request, feature_logo_id, country=None):
     return generic_sortable_list(request, stories, table, template, context)
 
 
-def feature_logo_issuelist_by_id(request, feature_logo_id):
+def feature_logo_issues(request, feature_logo_id):
     feature_logo = get_gcd_object(FeatureLogo, feature_logo_id)
 
     if feature_logo.feature.all()[0].feature_type.id == 1:
@@ -3952,17 +3947,49 @@ def feature_logo_issuelist_by_id(request, feature_logo_id):
                               .select_related('series__publisher')
         result_disclaimer = MIGRATE_DISCLAIMER
 
+    filter, issues = filter_issues(request, issues, language_filter=False)
+
     context = {
         'result_disclaimer': result_disclaimer,
         'item_name': 'issue',
         'plural_suffix': 's',
+        'filter_form': filter.form,
         'heading': 'for feature logo %s' % (feature_logo)
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = IssueTable(issues,
-                       attrs={'class': 'sortable_listing'},
-                       template_name=TW_SORT_TABLE_TEMPLATE,
-                       order_by=('publication_date'))
+    table = _table_issues_list_or_grid(request, issues, context)
+    return generic_sortable_list(request, issues, table, template, context)
+
+
+def feature_logo_feature_issues(request, feature_logo_id, feature_id):
+    feature_logo = get_gcd_object(FeatureLogo, feature_logo_id)
+    feature = get_gcd_object(Feature, feature_id)
+
+    if feature_logo.feature.all()[0].feature_type.id == 1:
+        issues = Issue.objects.filter(story__feature_logo=feature_logo,
+                                      story__feature_name__feature=feature,
+                                      story__type__id__in=CORE_TYPES,
+                                      story__deleted=False).distinct()\
+                              .select_related('series__publisher')
+        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    else:
+        issues = Issue.objects.filter(story__feature_logo=feature_logo,
+                                      story__feature_name__feature=feature,
+                                      story__deleted=False).distinct()\
+                              .select_related('series__publisher')
+        result_disclaimer = MIGRATE_DISCLAIMER
+
+    filter, issues = filter_issues(request, issues, language_filter=False)
+
+    context = {
+        'result_disclaimer': result_disclaimer,
+        'item_name': 'issue',
+        'plural_suffix': 's',
+        'filter_form': filter.form,
+        'heading': 'for feature logo %s and feature %s' % (feature_logo, feature)
+    }
+    template = 'gcd/search/tw_list_sortable.html'
+    table = _table_issues_list_or_grid(request, issues, context)
     return generic_sortable_list(request, issues, table, template, context)
 
 
@@ -4017,6 +4044,8 @@ def universe_sequences(request, universe_id):
                    .distinct().select_related('issue__series__publisher')
 
     filter = filter_sequences(request, stories)
+    filter.filters.pop('language', None)
+    filter.form.fields.pop('language', None)
     stories = filter.qs
 
     context = {
@@ -4042,8 +4071,7 @@ def universe_issues(request, universe_id):
       story__deleted=False,
       deleted=False).distinct().select_related('series__publisher')
 
-    filter = filter_issues(request, issues)
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, language_filter=False)
 
     context = {
         'result_disclaimer': MIGRATE_DISCLAIMER,
@@ -4370,9 +4398,8 @@ def character_issues(request, character_id, layer=None, universe_id=None,
                               .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + CHAR_MIGRATE_DISCLAIMER
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
 
     if link_universe_id:
         heading = 'for character %s with origin %s%s' % (
@@ -4530,9 +4557,8 @@ def character_issues_group(request, character_id, group_id,
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
@@ -4575,9 +4601,8 @@ def character_issues_feature(request, character_id, feature_id,
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
     context = {
@@ -4890,9 +4915,8 @@ def character_name_issues(request, character_name_id, universe_id=None):
                           .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -5151,8 +5175,8 @@ def group_issues(request, group_id, universe_id=None, story_universe_id=None):
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
-    filter = filter_issues(request, issues, story_type_filter=True)
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
 
     if link_universe_id:
         heading = 'for group %s with origin %s%s' % (
@@ -5229,9 +5253,8 @@ def group_name_issues(request, group_name_id, universe_id=None):
                           .select_related('series__publisher')
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -5272,9 +5295,8 @@ def group_issues_feature(request, group_id, feature_id, universe_id=None):
 
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
     context = {
@@ -5508,9 +5530,7 @@ def group_covers(request, group_id, universe_id=None):
     issues = Issue.objects.filter(**query).distinct()\
                           .select_related('series__publisher')
 
-    filter = filter_issues(request, issues)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, language_filter=False)
 
     context = {
         'result_disclaimer': COVER_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,

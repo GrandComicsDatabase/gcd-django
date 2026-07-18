@@ -1,0 +1,73 @@
+[tool.pytest.ini_options]
+# Boot Django with these settings first; without this the suite won't start at all.
+DJANGO_SETTINGS_MODULE = "settings"
+# Where the tests live, so a bare `pytest` finds them.
+testpaths = ["apps"]
+
+[project]
+name = "gcd-django-5-2"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "chardet<5.3",
+    "crispy-bootstrap3>=2024.1",
+    "diff-match-patch==20181111",
+    "django<6.0",
+    "django-autocomplete-light<3.13",
+    "django-bootstrap3<26",
+    "django-compressor<4.7",
+    "django-contact-form<6",
+    "django-crispy-forms<2.6",
+    "django-extensions<4.2",
+    "django-filter<26",
+    "django-haystack<3.4",
+    "django-haystack-rqueue",
+    "django-imagekit<6.1",
+    "django-markdownx<4.1",
+    "django-model-utils<5.1",
+    "django-mysql<4.20.0",
+    "django-queryset-csv",
+    "django-recaptcha<4.2",
+    "django-rosetta>=0.10.3",
+    "django-rq<3.3",
+    "django-tables2<2.9",
+    "django-taggit",
+    "django-templatesadmin",
+    "djangorestframework>=3.16.1",
+    "djangorestframework-yaml>=2.0.0",
+    "drf-yaml",
+    "mdiff",
+    "drf-spectacular<0.30",
+    "elasticsearch>7.0,<8.0",
+    "flake8>=7.3.0",
+    "ipython>=9.9.0",
+    "mock>=5.2.0",
+    "mysqlclient<2.3",
+    "numpy<2.4",
+    "opencv-python-headless<4.13",
+    "pillow<13.0",
+    "pyicu<2.17",
+    "pymemcache<4.1",
+    "pytest>=9.0.2",
+    "pytest-django>=4.11.1",
+    "python-graph-core<1.9",
+    "python-memcached<1.63",
+    "python-stdnum<2.2",
+    "python3-vote-core==20170329.0",
+    "pyyaml<6.1",
+    "redis<5.1",
+    "requests<2.33",
+    "rq<2.7",
+    "setuptools<81",
+    "simplejson<3.21",
+    "tablib<3.10",
+    "unidecode>=1.4.0",
+]
+
+[tool.uv.sources]
+django-queryset-csv = { git = "https://github.com/mikemanger/django-queryset-csv", rev = "0ac0261cd499fa2b0cee04d955d2abf361192475" }
+django-taggit = { git = "https://github.com/GrandComicsDatabase/django-taggit.git", rev = "django52" }
+django-templatesadmin = { git = "https://github.com/GrandComicsDatabase/django-templatesadmin.git", rev = "django-42" }
+django-haystack-rqueue = { git = "https://github.com/GrandComicsDatabase/haystack-rqueue.git" }

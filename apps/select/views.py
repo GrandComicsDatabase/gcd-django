@@ -1039,6 +1039,7 @@ class IssueFilter(CommonFilter):
         else:
             collections = None
         story_type_filter = kwargs.pop('story_type_filter', None)
+        language_filter = kwargs.pop('language_filter', None)
         super(IssueFilter, self).__init__(*args, **kwargs)
         if collections:
             qs = Collection.objects.filter(id__in=collections)
@@ -1047,6 +1048,8 @@ class IssueFilter(CommonFilter):
             self.form.fields.pop('collection')
         if not story_type_filter:
             self.form.fields.pop('story_type')
+        if not language_filter:
+            self.form.fields.pop('language')
 
 
 class CoverFilter(CommonFilter):
@@ -1129,7 +1132,8 @@ def filter_series(request, series):
     return filter
 
 
-def filter_issues(request, issues, story_type_filter=False):
+def filter_issues(request, issues, story_type_filter=False,
+                  language_filter=True):
     if settings.MYCOMICS and request.user.is_authenticated:
         collections = request.user.collector.collections.all()\
                              .order_by('name').values_list('id', flat=True)
@@ -1141,9 +1145,16 @@ def filter_issues(request, issues, story_type_filter=False):
                          language='series__language',
                          publisher='series__publisher',
                          collections=collections,
-                         story_type_filter=story_type_filter
+                         story_type_filter=story_type_filter,
+                         language_filter=language_filter
                          )
-    return filter
+    issues = filter.qs
+    if not issues:
+        filter.form.fields.pop('publisher', None)
+        filter.form.fields.pop('country', None)
+        filter.form.fields.pop('language', None)
+
+    return filter, issues
 
 
 def filter_covers(request, covers):
