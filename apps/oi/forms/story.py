@@ -861,19 +861,6 @@ class StoryRevisionForm(KeywordBaseForm):
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3)
 
-    feature_object = forms.ModelMultipleChoiceField(
-      queryset=Feature.objects.all(),
-      widget=autocomplete.ModelSelect2Multiple(
-                          url='feature_autocomplete',
-                          forward=['language_code', 'type'],
-                          attrs={'class': 'w-full lg:w-4/5'}),
-      required=False,
-      help_text='Only features for the series language can be selected. Enter '
-                '"&lt;space&gt;[&lt;text&gt;" to search the disambiguation. '
-                '[l] marks letter page features, [i] stands for in-house '
-                'columns, [a] stands for ad features.'
-     )
-
     feature_name = forms.ModelMultipleChoiceField(
       queryset=FeatureNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(

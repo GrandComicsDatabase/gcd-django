@@ -5246,7 +5246,7 @@ class PreviewIssue(Issue):
 
 def get_story_field_list():
     return ['sequence_number', 'title', 'title_inferred', 'first_line', 'type',
-            'feature', 'feature_object', 'feature_name', 'feature_logo',
+            'feature', 'feature_name', 'feature_logo',
             'story_arc',
             'genre', 'job_number', 'page_count', 'page_count_uncertain',
             'script', 'no_script', 'pencils', 'no_pencils', 'inks', 'no_inks',
