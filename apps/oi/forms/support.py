@@ -407,7 +407,7 @@ PUBLISHER_HELP_TEXTS = {
         '"https://", for example "https://www.example.com" not '
         '"www.example.com"', }
 
-PRINTER_HELP_TEXTS = PUBLISHER_HELP_TEXTS
+PRINTER_HELP_TEXTS = PUBLISHER_HELP_TEXTS.copy()
 PRINTER_HELP_TEXTS.update({
     'year_began':
         'The first year in which the printer was active with comics.',
