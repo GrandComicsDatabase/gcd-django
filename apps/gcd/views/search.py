@@ -2216,6 +2216,37 @@ def handle_numbers(field, data, prefix):
     return reduce(lambda x, y: x | y, q_or_only)
 
 
+def _linked_story_ids(creator, credit_field, op):
+    creator_q_obj = Q(**{'name__%s' % op: creator})
+    creator_q_obj |= Q(**{
+        'creator__gcd_official_name__%s' % op: creator,
+    })
+    # Materialize the ids; MySQL optimizes IN (subquery) poorly. See
+    # https://docs.djangoproject.com/en/5.2/ref/models/querysets/#nested-queries-performance
+    creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
+                    .values_list('id', flat=True))
+    return list(Story.objects.filter(
+        credits__creator__id__in=creators,
+        credits__deleted=False,
+        credits__credit_type__id=CREDIT_TYPES[credit_field])
+        .values_list('id', flat=True))
+
+
+def _linked_story_credit_filters(search_value, credit_field, prefix, op):
+    creator_names = [creator.strip()
+                     for creator in search_value.split(';')
+                     if creator.strip()]
+    if not creator_names:
+        return [Q(**{'%sid__in' % prefix: [-1]})]
+
+    filters = []
+    for creator in creator_names:
+        # Keep unmatched terms represented so AND searches cannot drop them.
+        stories = _linked_story_ids(creator, credit_field, op) or [-1]
+        filters.append(Q(**{'%sid__in' % prefix: stories}))
+    return filters
+
+
 def search_stories(data, op):
     """
     Build the query against the story table.  As it is the lowest
@@ -2229,45 +2260,23 @@ def search_stories(data, op):
     linked_credits_q_objs = []
     q_and_only = []
 
-    for field in ('script', 'pencils', 'inks', 'colors', 'letters'):
-        if data[field]:
-            text_credits_q_objs.append(
-              Q(**{'%s%s__%s' % (prefix, field, op): data[field]}))
-            for creator in data[field].split(';'):
-                creator = creator.strip()
-                creator_q_obj = Q(**{'name__%s' % (op): creator})
-                creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
-                                      creator})
-                creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
-                                                 .values_list('id', flat=True))
-                stories = list(Story.objects.filter(
-                  credits__creator__id__in=creators,
-                  credits__deleted=False,
-                  credits__credit_type__id=CREDIT_TYPES[field])
-                  .values_list('id', flat=True))
-                if (stories):
-                    linked_credits_q_objs.append(
-                      (Q(**{'%sid__in' % (prefix): stories}))
-                    )
+    story_credit_fields = {
+        'script': 'script',
+        'pencils': 'pencils',
+        'inks': 'inks',
+        'colors': 'colors',
+        'letters': 'letters',
+        'story_editing': 'editing',
+    }
+    for search_field, credit_field in story_credit_fields.items():
+        search_value = data[search_field]
+        if not search_value:
+            continue
 
-    if data['story_editing']:
-        text_credits_q_objs.append(Q(**{'%sediting__%s' % (prefix, op):
-                                   data['story_editing']}))
-
-        creator_q_obj = Q(**{'name__%s' % (op): data['story_editing']})
-        creator_q_obj |= Q(**{'creator__gcd_official_name__%s' % (op):
-                              data['story_editing']})
-        creators = list(CreatorNameDetail.objects.filter(creator_q_obj)
-                                         .values_list('id', flat=True))
-        stories = list(Story.objects.filter(
-          credits__creator__id__in=creators,
-          credits__deleted=False,
-          credits__credit_type__id=CREDIT_TYPES['editing'])
-          .values_list('id', flat=True))
-        if (stories):
-            linked_credits_q_objs.append(
-                (Q(**{'%sid__in' % (prefix): stories}))
-            )
+        text_credits_q_objs.append(
+            Q(**{'%s%s__%s' % (prefix, credit_field, op): search_value}))
+        linked_credits_q_objs.extend(_linked_story_credit_filters(
+            search_value, credit_field, prefix, op))
 
     for field in ('title', 'first_line', 'job_number', 'characters',
                   'synopsis', 'reprint_notes', 'notes'):
