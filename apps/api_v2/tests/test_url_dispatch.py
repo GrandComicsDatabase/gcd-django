@@ -112,6 +112,7 @@ SPRINT_3_ROUTE_SPECS = (
 )
 SPRINT_4_ROUTE_SPECS = (
     ('indicia-publisher-list', '/api/v2/indicia-publishers/'),
+    ('indicia-printer-list', '/api/v2/indicia-printers/'),
 )
 
 
@@ -352,6 +353,8 @@ def test_schema_includes_sprint_4_routes_on_www_surface(
     assert _schema_paths(response) >= {
         '/api/v2/indicia-publishers/',
         '/api/v2/indicia-publishers/{id}/',
+        '/api/v2/indicia-printers/',
+        '/api/v2/indicia-printers/{id}/',
     }
 
 
@@ -421,5 +424,7 @@ def test_schema_excludes_sprint_4_routes_on_my_surface(
         {
             '/api/v2/indicia-publishers/',
             '/api/v2/indicia-publishers/{id}/',
+            '/api/v2/indicia-printers/',
+            '/api/v2/indicia-printers/{id}/',
         },
     )
