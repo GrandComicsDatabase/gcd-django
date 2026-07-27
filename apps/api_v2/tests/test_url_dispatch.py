@@ -111,6 +111,7 @@ SPRINT_3_ROUTE_SPECS = (
     ('story-arc-list', '/api/v2/story-arcs/'),
 )
 SPRINT_4_ROUTE_SPECS = (
+    ('award-list', '/api/v2/awards/'),
     ('brand-group-list', '/api/v2/brand-groups/'),
     ('brand-list', '/api/v2/brands/'),
     ('feature-list', '/api/v2/features/'),
@@ -354,6 +355,9 @@ def test_schema_includes_sprint_4_routes_on_www_surface(
 
     assert response.status_code == 200
     assert _schema_paths(response) >= {
+        '/api/v2/awards/',
+        '/api/v2/awards/{id}/',
+        '/api/v2/awards/{id}/recipients/',
         '/api/v2/brand-groups/',
         '/api/v2/brand-groups/{id}/',
         '/api/v2/brands/',
@@ -364,6 +368,42 @@ def test_schema_includes_sprint_4_routes_on_www_surface(
         '/api/v2/indicia-publishers/{id}/',
         '/api/v2/indicia-printers/',
         '/api/v2/indicia-printers/{id}/',
+    }
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_award_recipient_schema_describes_paginated_typed_objects(
+    client,
+    restore_v2_urlconf,
+):
+    """The Award recipient action documents its page and object variants."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    schema = json.loads(response.content)
+    response_schema = schema['paths']['/api/v2/awards/{id}/recipients/'][
+        'get'
+    ]['responses']['200']['content']['application/json']['schema']
+    components = schema['components']['schemas']
+    recipient_schema = components['AwardRecipient']['properties']['recipient']
+
+    assert response_schema == {
+        '$ref': '#/components/schemas/PaginatedAwardRecipientList',
+    }
+    assert recipient_schema['allOf'] == [
+        {'$ref': '#/components/schemas/AwardRecipientReference'},
+    ]
+    assert recipient_schema['readOnly'] is True
+    assert {
+        item['$ref'] for item in components['AwardRecipientReference']['oneOf']
+    } == {
+        '#/components/schemas/AwardCreatorRecipientReference',
+        '#/components/schemas/AwardIssueRecipientReference',
+        '#/components/schemas/AwardSeriesRecipientReference',
+        '#/components/schemas/AwardStoryRecipientReference',
     }
 
 
@@ -431,6 +471,9 @@ def test_schema_excludes_sprint_4_routes_on_my_surface(
     assert response.status_code == 200
     assert _schema_paths(response).isdisjoint(
         {
+            '/api/v2/awards/',
+            '/api/v2/awards/{id}/',
+            '/api/v2/awards/{id}/recipients/',
             '/api/v2/brand-groups/',
             '/api/v2/brand-groups/{id}/',
             '/api/v2/brands/',
