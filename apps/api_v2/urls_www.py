@@ -13,6 +13,7 @@ from django.urls import include, path
 
 from apps.api_v2.routers import V2APIRouter
 from apps.api_v2.views.brand_groups import BrandGroupViewSet
+from apps.api_v2.views.brands import BrandViewSet
 from apps.api_v2.views.characters import CharacterViewSet
 from apps.api_v2.views.creators import CreatorViewSet
 from apps.api_v2.views.groups import GroupViewSet
@@ -28,6 +29,7 @@ from apps.api_v2.views.universes import UniverseViewSet
 
 router = V2APIRouter()
 router.register('brand-groups', BrandGroupViewSet, basename='brand-group')
+router.register('brands', BrandViewSet, basename='brand')
 router.register('characters', CharacterViewSet, basename='character')
 router.register('creators', CreatorViewSet, basename='creator')
 router.register('groups', GroupViewSet, basename='group')
