@@ -111,6 +111,7 @@ SPRINT_3_ROUTE_SPECS = (
     ('story-arc-list', '/api/v2/story-arcs/'),
 )
 SPRINT_4_ROUTE_SPECS = (
+    ('brand-group-list', '/api/v2/brand-groups/'),
     ('indicia-publisher-list', '/api/v2/indicia-publishers/'),
     ('indicia-printer-list', '/api/v2/indicia-printers/'),
 )
@@ -351,6 +352,8 @@ def test_schema_includes_sprint_4_routes_on_www_surface(
 
     assert response.status_code == 200
     assert _schema_paths(response) >= {
+        '/api/v2/brand-groups/',
+        '/api/v2/brand-groups/{id}/',
         '/api/v2/indicia-publishers/',
         '/api/v2/indicia-publishers/{id}/',
         '/api/v2/indicia-printers/',
@@ -422,6 +425,8 @@ def test_schema_excludes_sprint_4_routes_on_my_surface(
     assert response.status_code == 200
     assert _schema_paths(response).isdisjoint(
         {
+            '/api/v2/brand-groups/',
+            '/api/v2/brand-groups/{id}/',
             '/api/v2/indicia-publishers/',
             '/api/v2/indicia-publishers/{id}/',
             '/api/v2/indicia-printers/',
