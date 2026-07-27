@@ -1,0 +1,9 @@
+.git
+.DS_Store
+**/.DS_Store
+.idea
+.pytest_cache
+.ruff_cache
+**/__pycache__
+**/*.py[cod]
+settings_local.py
