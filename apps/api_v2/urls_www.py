@@ -25,6 +25,7 @@ from apps.api_v2.views.issues import IssueViewSet
 from apps.api_v2.views.publishers import PublisherViewSet
 from apps.api_v2.views.reprints import ReprintViewSet
 from apps.api_v2.views.series import SeriesViewSet
+from apps.api_v2.views.series_bonds import SeriesBondViewSet
 from apps.api_v2.views.stories import StoryViewSet
 from apps.api_v2.views.story_arcs import StoryArcViewSet
 from apps.api_v2.views.universes import UniverseViewSet
@@ -51,6 +52,7 @@ router.register('issues', IssueViewSet, basename='issue')
 router.register('publishers', PublisherViewSet, basename='publisher')
 router.register('reprints', ReprintViewSet, basename='reprint')
 router.register('series', SeriesViewSet, basename='series')
+router.register('series-bonds', SeriesBondViewSet, basename='series-bond')
 router.register('story-arcs', StoryArcViewSet, basename='story-arc')
 router.register('stories', StoryViewSet, basename='story')
 router.register('universes', UniverseViewSet, basename='universe')

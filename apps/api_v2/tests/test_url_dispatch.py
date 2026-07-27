@@ -117,6 +117,7 @@ SPRINT_4_ROUTE_SPECS = (
     ('feature-list', '/api/v2/features/'),
     ('indicia-publisher-list', '/api/v2/indicia-publishers/'),
     ('indicia-printer-list', '/api/v2/indicia-printers/'),
+    ('series-bond-list', '/api/v2/series-bonds/'),
 )
 
 
@@ -368,7 +369,35 @@ def test_schema_includes_sprint_4_routes_on_www_surface(
         '/api/v2/indicia-publishers/{id}/',
         '/api/v2/indicia-printers/',
         '/api/v2/indicia-printers/{id}/',
+        '/api/v2/series-bonds/',
+        '/api/v2/series-bonds/{id}/',
     }
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_series_bond_schema_documents_legacy_timestamp_baseline(
+    client,
+    restore_v2_urlconf,
+):
+    """Series Bond timestamps explain the legacy-row backfill policy."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    schema = json.loads(response.content)
+    properties = schema['components']['schemas']['SeriesBondList'][
+        'properties'
+    ]
+    assert (
+        'migration-time timestamp-tracking baseline'
+        in properties['created']['description']
+    )
+    assert (
+        'migration-time timestamp-tracking baseline'
+        in properties['modified']['description']
+    )
 
 
 @pytest.mark.django_db
@@ -484,5 +513,7 @@ def test_schema_excludes_sprint_4_routes_on_my_surface(
             '/api/v2/indicia-publishers/{id}/',
             '/api/v2/indicia-printers/',
             '/api/v2/indicia-printers/{id}/',
+            '/api/v2/series-bonds/',
+            '/api/v2/series-bonds/{id}/',
         },
     )

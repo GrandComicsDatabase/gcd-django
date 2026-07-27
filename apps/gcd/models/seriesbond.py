@@ -2,6 +2,8 @@
 from django.db import models
 from functools import total_ordering
 
+from .gcddata import GcdLink
+
 BOND_TRACKING = {1, 2, 3, 4, 5, 6, 7}
 SUBNUMBER_TRACKING = 4
 MERGE_TRACKING = {5, 6}
@@ -22,7 +24,7 @@ class SeriesBondType(models.Model):
         return self.description
 
 
-class SeriesBond(models.Model):
+class SeriesBond(GcdLink):
     class Meta:
         app_label = 'gcd'
         db_table = 'gcd_series_bond'
@@ -43,10 +45,6 @@ class SeriesBond(models.Model):
 
     # Fields related to change management.
     reserved = models.BooleanField(default=False, db_index=True)
-
-    @property
-    def modified(self):
-        return self.revisions.filter(changeset__state=5).latest().modified
 
     # we check for deleted in the oi for models, so set to False
     deleted = False
