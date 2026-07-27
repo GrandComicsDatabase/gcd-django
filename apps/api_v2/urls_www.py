@@ -15,6 +15,7 @@ from apps.api_v2.routers import V2APIRouter
 from apps.api_v2.views.characters import CharacterViewSet
 from apps.api_v2.views.creators import CreatorViewSet
 from apps.api_v2.views.groups import GroupViewSet
+from apps.api_v2.views.indicia_publishers import IndiciaPublisherViewSet
 from apps.api_v2.views.issues import IssueViewSet
 from apps.api_v2.views.publishers import PublisherViewSet
 from apps.api_v2.views.reprints import ReprintViewSet
@@ -27,6 +28,11 @@ router = V2APIRouter()
 router.register('characters', CharacterViewSet, basename='character')
 router.register('creators', CreatorViewSet, basename='creator')
 router.register('groups', GroupViewSet, basename='group')
+router.register(
+    'indicia-publishers',
+    IndiciaPublisherViewSet,
+    basename='indicia-publisher',
+)
 router.register('issues', IssueViewSet, basename='issue')
 router.register('publishers', PublisherViewSet, basename='publisher')
 router.register('reprints', ReprintViewSet, basename='reprint')
