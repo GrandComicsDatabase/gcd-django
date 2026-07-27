@@ -16,6 +16,7 @@ from apps.api_v2.views.brand_groups import BrandGroupViewSet
 from apps.api_v2.views.brands import BrandViewSet
 from apps.api_v2.views.characters import CharacterViewSet
 from apps.api_v2.views.creators import CreatorViewSet
+from apps.api_v2.views.features import FeatureViewSet
 from apps.api_v2.views.groups import GroupViewSet
 from apps.api_v2.views.indicia_printers import IndiciaPrinterViewSet
 from apps.api_v2.views.indicia_publishers import IndiciaPublisherViewSet
@@ -32,6 +33,7 @@ router.register('brand-groups', BrandGroupViewSet, basename='brand-group')
 router.register('brands', BrandViewSet, basename='brand')
 router.register('characters', CharacterViewSet, basename='character')
 router.register('creators', CreatorViewSet, basename='creator')
+router.register('features', FeatureViewSet, basename='feature')
 router.register('groups', GroupViewSet, basename='group')
 router.register(
     'indicia-printers',
