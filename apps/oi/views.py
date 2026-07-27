@@ -35,6 +35,7 @@ from apps.gcd.models import (
     CreatorMembership, CreatorArtInfluence, CreatorDegree, CreatorNonComicWork,
     CreatorRelation, CreatorSchool, CreatorNameDetail,
     Story, StoryType, StoryArc, StoryArcRelation, STORY_TYPES, BiblioEntry,
+    CharacterOrderType,
     Feature, FeatureLogo, FeatureRelation,
     Printer, IndiciaPrinter,
     CreatorSignature, Character, CharacterRelation, Group,
@@ -60,7 +61,8 @@ from apps.oi.models import (
     Changeset, BrandGroupRevision, BrandRevision, BrandUseRevision,
     CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
-    StoryRevision, BiblioEntryRevision, OngoingReservation, RevisionLock,
+    StoryRevision, BiblioEntryRevision, CharacterOrderRevision,
+    OngoingReservation, RevisionLock,
     _get_revision_lock, _free_revision_lock, CTYPES,
     get_issue_field_list, set_series_first_last,
     AwardRevision, ReceivedAwardRevision, IssueCreditRevision,
@@ -139,6 +141,7 @@ REVISION_CLASSES = {
     'issue': IssueRevision,
     'story': StoryRevision,
     'biblio_entry': BiblioEntryRevision,
+    'character_order': CharacterOrderRevision,
     'story_arc': StoryArcRevision,
     'story_arc_relation': StoryArcRelationRevision,
     'feature': FeatureRevision,
@@ -559,7 +562,8 @@ def submit(request, id):
     if comment_text == '' and changeset.approver is None and \
        changeset.comments.count() == 1:
         changeset.calculate_imps()
-        if changeset.imps == 0:
+        if changeset.imps == 0 and not \
+           changeset.characterorderrevisions.exists():
             return oi_render(
               request, 'indexer/error.html',
               {'error_text': mark_safe('A submission needs to consists of at '
@@ -600,6 +604,21 @@ thanks,
 
     if comment_text:
         send_comment_observer(request, changeset, comment_text)
+
+    # If there are only CharacterOrderRevisions, and no actual changes,
+    # we can skip the reviewing and commit.
+    if changeset.imps == 0 and changeset.characterorderrevisions.exists():
+        is_changed = False
+        for c in changeset.revisions:
+            c.compare_changes()
+            if c.is_changed and type(c) is not CharacterOrderRevision:
+                is_changed = True
+                break
+        if not is_changed:
+            changeset.approver = User.objects.get(username='anon')
+            changeset.state = states.REVIEWING
+            changeset.approve('Auto-approved since there are only character '
+                              'order changes.')
 
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
@@ -742,6 +761,22 @@ def _save(request, form, revision, changeset=None, model_name=None):
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
+        if 'create_appearance_order' in request.POST and model_name == 'story':
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'create_character_order_revision',
+              kwargs={'story_revision_id': revision.id, 'type_id': 1}))
+        if 'edit_appearance_order' in request.POST and model_name == 'story':
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'edit_character_order_revision',
+              kwargs={'story_revision_id': revision.id, 'type_id': 1}))
+        if 'create_importance_order' in request.POST and model_name == 'story':
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'create_character_order_revision',
+              kwargs={'story_revision_id': revision.id, 'type_id': 2}))
+        if 'edit_importance_order' in request.POST and model_name == 'story':
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'edit_character_order_revision',
+              kwargs={'story_revision_id': revision.id, 'type_id': 2}))
         if 'save_and_set_universe' in request.POST:
             if revision.universe.count() == 1:
                 characters = revision.story_character_revisions.filter(
@@ -1588,7 +1623,11 @@ def process_revision(request, id, model_name):
     if 'save' in request.POST or 'save_return' in request.POST \
        or 'save_migrate' in request.POST \
        or 'save_migrate_feature' in request.POST \
-       or 'save_and_set_universe' in request.POST:
+       or 'save_and_set_universe' in request.POST \
+       or 'edit_appearance_order' in request.POST \
+       or 'create_appearance_order' in request.POST \
+       or 'edit_importance_order' in request.POST \
+       or 'create_importance_order' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         form = get_revision_form(revision,
                                  user=request.user)(request.POST,
@@ -2999,6 +3038,7 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
             setattr(revision, field, getattr(compare_revision, field))
         # m2m fields
         if field in fields_to_set:
+            getattr(revision, field).clear()
             getattr(revision, field).add(*list(getattr(compare_revision,
                                                        field).all()))
     if 'year_on_sale' in selected_fields:
@@ -3573,6 +3613,14 @@ def add_story(request, issue_revision_id, changeset_id):
               urlresolvers.reverse('edit_revision',
                                    kwargs={'model_name': 'biblio_entry',
                                            'id': biblio_revision.id}))
+        if 'create_appearance_order' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'create_character_order_revision',
+              kwargs={'story_revision_id': revision.id, 'type_id': 1}))
+        if 'create_importance_order' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'create_character_order_revision',
+              kwargs={'story_revision_id': revision.id, 'type_id': 2}))
 
         return HttpResponseRedirect(urlresolvers.reverse('edit',
                                     kwargs={'id': changeset.id}))
@@ -3796,6 +3844,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
             setattr(revision, field, getattr(compare_revision, field))
         # m2m fields
         if field in fields_to_set:
+            getattr(revision, field).clear()
             getattr(revision, field).add(*list(getattr(compare_revision,
                                                        field).all()))
         # special handling for keywords due to their different storage
@@ -3943,6 +3992,48 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
         urlresolvers.reverse('edit_revision',
                              kwargs={'model_name': 'story',
                                      'id': revision.id}))
+
+
+@permission_required('indexer.can_reserve')
+def edit_character_order_revision(request, story_revision_id, type_id):
+    story_revision = get_object_or_404(StoryRevision, id=story_revision_id)
+    changeset = get_object_or_404(Changeset, id=story_revision.changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(
+          request, 'Only the reservation holder may edit character orders.')
+    type = get_object_or_404(CharacterOrderType, id=type_id)
+    if not story_revision.character_order_revisions.filter(type=type).exists():
+        return render_error(
+          request,
+          'A character order of type "%s" does not exist for story "%s".'
+          % (type.name, story_revision))
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'reorder_characters',
+      kwargs={'character_order_id':
+              story_revision.character_order_revisions.get(type=type).id}))
+
+
+@permission_required('indexer.can_reserve')
+def create_character_order_revision(request, story_revision_id, type_id):
+    story_revision = get_object_or_404(StoryRevision, id=story_revision_id)
+    changeset = get_object_or_404(Changeset, id=story_revision.changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(
+          request, 'Only the reservation holder may create character orders.')
+    type = get_object_or_404(CharacterOrderType, id=type_id)
+    if story_revision.character_order_revisions.filter(type=type).exists():
+        return render_error(
+          request,
+          'A character order of type "%s" already exists for story "%s".'
+          % (type.name, story_revision))
+    order_revision = CharacterOrderRevision(
+      story_revision=story_revision,
+      type=type,
+      changeset=changeset)
+    order_revision.save()
+    return HttpResponseRedirect(urlresolvers.reverse(
+      'reorder_characters',
+      kwargs={'character_order_id': order_revision.id}))
 
 ##############################################################################
 # Series Bond Editing
@@ -5533,7 +5624,7 @@ def reorder_stories(request, issue_id, changeset_id):
           'Only the reservation holder may reorder stories.')
 
     # At this time, only existing issues can have their stories reordered.
-    # This is analagous to issues needing to exist before stories can be added.
+    # This is analogous to issues needing to exist before stories can be added.
     issue_revision = changeset.issuerevisions.get(issue=issue_id)
     if request.method != 'POST':
         return oi_render(request, 'oi/edit/reorder_stories.html',
@@ -5553,6 +5644,69 @@ def reorder_stories(request, issue_id, changeset_id):
 
         return HttpResponseRedirect(urlresolvers.reverse(
           'edit', kwargs={'id': changeset_id}))
+
+    except ViewTerminationError as vte:
+        return vte.response
+
+
+@permission_required('indexer.can_reserve')
+def reorder_characters(request, character_order_id):
+    character_order_revision = get_object_or_404(CharacterOrderRevision,
+                                                 id=character_order_id)
+    changeset = character_order_revision.changeset
+    if request.user != changeset.indexer:
+        return render_error(
+          request,
+          'Only the reservation holder may reorder characters.')
+
+    if request.method != 'POST':
+        return oi_render(request, 'oi/edit/reorder_characters.html',
+                         {'character_order': character_order_revision})
+
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit_revision',
+          kwargs={'id': character_order_revision.story_revision.id,
+                  'model_name': 'story'}))
+
+    try:
+        order_code_boundary = request.POST['order_code_boundary']
+        request_post = request.POST.copy()
+        for key in request.POST:
+            if key.startswith('order_code_') and key != 'order_code_boundary':
+                value = request.POST[key]
+                if value and float(value) >= float(order_code_boundary):
+                    request_post.pop(key)
+                    character_id = int(key.split('_')[-1])
+                    revision_characters = character_order_revision\
+                        .character_revisions
+                    if revision_characters.filter(id=character_id).exists():
+                        revision_characters.remove(character_id)
+        request.POST = request_post
+        characters = _process_reorder_form(request, character_order_revision,
+                                           'order_code',
+                                           'character', StoryCharacterRevision)
+        order = 0
+        for character in characters:
+            revision_characters = character_order_revision.character_revisions
+            if not revision_characters.filter(id=character.id).exists():
+                revision_characters.add(character,
+                                        through_defaults={'order_code': order})
+            else:
+                through_instance = revision_characters.through.objects.get(
+                    order=character_order_revision,
+                    story_character=character
+                )
+                through_instance.order_code = order
+                through_instance.save()
+            order += 1
+        if 'commit_and_changeset' in request.POST:
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'edit', kwargs={'id': changeset.id}))
+        return HttpResponseRedirect(urlresolvers.reverse(
+          'edit_revision',
+          kwargs={'id': character_order_revision.story_revision.id,
+                  'model_name': 'story'}))
 
     except ViewTerminationError as vte:
         return vte.response
@@ -5584,7 +5738,7 @@ def _reorder_children(request, parent, children, sort_field, child_set,
         # There's a "unique together" constraint on series_id and sort_code in
         # the issue table, which is great for avoiding nonsensical sort_code
         # situations that we had in the old system, but annoying when updating
-        # the codes.  Get around it by shifing the numbers down to starting
+        # the codes.  Get around it by shifting the numbers down to starting
         # at one if they'll fit, or up above the current range if not.  Given
         # that the numbers were all set to consecutive ranges when we migrated
         # to this system, and this code always produces consecutive ranges, the

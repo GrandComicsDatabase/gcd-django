@@ -38,7 +38,7 @@ def test_story_model_exposes_api_v2_browse_and_modified_indexes():
     ]
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def re_story_mocks():
     with mock.patch('%s.from_all_reprints' % STORY_PATH) as from_mock, \
             mock.patch('%s.to_all_reprints' % STORY_PATH) as to_mock:

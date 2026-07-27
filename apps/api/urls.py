@@ -21,6 +21,10 @@ urlpatterns = [
     path('series/name/<path:name>/year/<int:year>/',
          views.SeriesList.as_view()),
     path('series/name/<path:name>/', views.SeriesList.as_view()),
+    path('series/<int:series_id>/overview/',
+         views.SeriesOverviewList.as_view(),
+         name='series-overview-list'),
     path('issue/on_sale_weekly/<int:year>/week/<int:week>/',
          views.IssuesByOnSaleWeek.as_view()),
 ]
+

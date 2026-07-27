@@ -116,15 +116,17 @@ def test_delete():
     (True, True), (True, False), (False, True), (False, False)])
 def test_has_dependents(issues, issue_revisions):
     with mock.patch('%s.active_issues' % SERIES_PATH) as is_mock, \
-            mock.patch('%s.active_set' % REVMGR_PATH) as rev_mock:
+            mock.patch('%s.active_set' % REVMGR_PATH) as rev_mock, \
+            mock.patch('%s.has_series_bonds' % SERIES_PATH) as bond_mock:
         rev_mock.return_value.exists.return_value = issue_revisions
+        bond_mock.return_value = False
         s = Series()
         is_mock.return_value.exists.return_value = issues
 
         assert s.has_dependents() is any((issue_revisions, issues))
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def issues_qs():
     """
     Provides a queryset mock for active_issues().exclude(...)
@@ -151,9 +153,10 @@ def test_active_non_base_variants(issues_qs):
 
 def test_active_indexed_issues(issues_qs):
     s = Series()
+    s.active_issues.return_value.filter.return_value = issues_qs
     assert s.active_indexed_issues() == issues_qs
-    s.active_issues.return_value.exclude.assert_called_once_with(
-        is_indexed=INDEXED['skeleton'])
+    s.active_issues.return_value.filter.assert_called_once_with(
+        is_indexed__gt=INDEXED['some_data'])
 
 
 def test_active_base_issues_variant_count():
@@ -232,7 +235,7 @@ def test_counts_deleted():
     assert s.stat_counts() == {}
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def f_mock():
     with mock.patch('apps.gcd.models.series.F') as f_mock:
 
@@ -265,8 +268,8 @@ def test_update_cached_counts_subtract(f_mock):
 
 def test_set_first_last_issues_empty():
     with mock.patch('apps.gcd.models.series.Series.save'), \
-            mock.patch('apps.gcd.models.series.models.QuerySet.order_by') \
-            as order_mock, \
+            mock.patch('apps.gcd.models.series.Series.active_issues') \
+            as active_mock, \
             mock.patch('apps.gcd.models.issue.Issue.series'):
 
         # Create some issues that are set as first/last even though no longer
@@ -284,7 +287,7 @@ def test_set_first_last_issues_empty():
         qs.count.return_value = 0
         qs.__getitem__.side_effect = index_faker
 
-        order_mock.return_value = qs
+        active_mock.return_value.order_by.return_value = qs
 
         s.set_first_last_issues()
 
@@ -295,8 +298,8 @@ def test_set_first_last_issues_empty():
 
 def test_set_first_last_issues_nonempty():
     with mock.patch('apps.gcd.models.series.Series.save'), \
-            mock.patch('apps.gcd.models.series.models.QuerySet.order_by') \
-            as order_mock, \
+            mock.patch('apps.gcd.models.series.Series.active_issues') \
+            as active_mock, \
             mock.patch('apps.gcd.models.issue.Issue.series'):
 
         s = Series(issue_count=0)
@@ -315,7 +318,7 @@ def test_set_first_last_issues_nonempty():
         qs.__getitem__.side_effect = index_faker
         qs.__iter__.return_value = iter(issue_list)
 
-        order_mock.return_value = qs
+        active_mock.return_value.order_by.return_value = qs
 
         s.set_first_last_issues()
 

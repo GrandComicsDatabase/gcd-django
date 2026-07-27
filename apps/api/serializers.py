@@ -135,6 +135,50 @@ class IssueOnlySerializer(IssueSerializer):
                   'price', 'page_count', 'variant_of', 'series',]
 
 
+class SeriesOverviewItemSerializer(serializers.ModelSerializer):
+    """
+    Serializes one row of the Cover and Main Story Overview table
+    (/series/<id>/overview/) as structured JSON.
+
+    Fields mirror what the HTML view renders per issue:
+    - cover_url: direct image link (empty string if no scan exists)
+    - longest_story: the longest comic-story sequence (type 19) for the issue,
+      or null if none exists.  Variant issues fall back to their parent's story,
+      matching the HTML table behaviour.
+    """
+
+    class Meta:
+        model = Issue
+        fields = [
+            'issue_id', 'descriptor', 'number', 'publication_date',
+            'on_sale_date', 'key_date', 'cover_url', 'longest_story',
+        ]
+
+    issue_id = serializers.IntegerField(source='id')
+
+    descriptor = serializers.SerializerMethodField()
+
+    def get_descriptor(self, obj) -> str:
+        return obj.full_descriptor
+
+    cover_url = serializers.SerializerMethodField()
+
+    def get_cover_url(self, obj) -> str:
+        covers = getattr(obj, 'active_covers_list', [])
+        if covers:
+            cover = covers[0]
+            return cover.get_base_url() + ("/w400/%d.jpg" % cover.id)
+        return ""
+
+    longest_story = serializers.SerializerMethodField()
+
+    def get_longest_story(self, obj):
+        stories = getattr(obj, 'longest_story_list', [])
+        if stories:
+            return StorySerializer(stories[0]).data
+        return None
+
+
 class SeriesSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Series

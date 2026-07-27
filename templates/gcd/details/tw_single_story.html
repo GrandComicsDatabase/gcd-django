@@ -94,7 +94,7 @@
   {% if story.has_content %}
   <hr></hr>
   <div class="ml-1">
-    <ul class="md:columns-2">
+    <ul {% if story.job_number %}class="md:columns-2">{% endif %}
       <li class="break-inside-avoid-column">{{ story|show_credit_tw_inline:"genre" }}</li>
       <li>{{ story|show_credit_tw_inline:"job_number" }}</li>
     </ul>
@@ -103,46 +103,53 @@
       <li>{{ story|show_credit_tw_inline:"feature_logo" }}</li>
       <li>{{ story|show_credit_tw_inline:"first_line" }}</li>
       <li>{{ story|show_credit_tw_inline:"keywords" }}</li>
-      {% if story.universe.exists %}
-      {{ story.show_universe }}
-      {% endif %}
+    {% if story.universe.exists %}
+    {{ story.show_universe }}
+    {% endif %}
     </ul>
     {% if story.has_characters %}
-    <div class="field-name-label">Characters:</div>
-      {% with characters=story.process_appearing_characters %}
-        {% with group_list=characters.0 character_list=characters.1 %}
-          {% if group_list %}
-            {% for group in group_list %}
-    <a href="{{ group.0.group_name.group.get_absolute_url }}"><b>{{ group.0.group_name.name }}</b></a>
-              {% if group.1 %}
-    <span class=""><i>({{ group.1 }})</i></span>
-              {% endif %}
-              {% if group.0.notes %}
-    <span class="">({{ group.0.notes }})</span>
-              {% endif %}
-              {% if group.2 %}
-                {% with character_list=group.2 %}
-    <ul class="list-disc sm:columns-2 ps-8 lg:columns-3 gap-8">
-                  {% include 'gcd/bits/tw_character_list.html' %}
-    </ul>
-                {% endwith %}
-              {% else %}
-                <br>
-              {% endif %}
-            {% endfor %}
+      {% with has_orders=story.character_orders.exists %}
+    <div id="character-tabs-{{ story.id }}">
+        {% if has_orders %}
+      <div class="flex flex-wrap items-center">
+        <div class="field-name-label mb-0">Characters:</div> Ordered by:
+        <input checked class="sr-only" type="radio" name="character-tabs-{{ story.id }}" id="character-tab-1-{{ story.id }}" data-panel="1">
+        <label for="character-tab-1-{{ story.id }}" class="cursor-pointer inline-block rounded hover:bg-blue-400 px-2 mx-1 py-1 bg-blue-100" data-character-tab-label>Name </label>
+
+          {% if story.has_characters_order_appearance %}
+        <input class="sr-only" type="radio" name="character-tabs-{{ story.id }}" id="character-tab-2-{{ story.id }}" data-panel="2">
+        <label for="character-tab-2-{{ story.id }}" class="cursor-pointer inline-block rounded hover:bg-blue-400 px-2 mx-1 py-1 bg-blue-100" data-character-tab-label>Appearance</label>
           {% endif %}
-          {% if character_list %}
-            {% if character_list|length > 1 %}
-    <ul class="list-disc sm:columns-2 lg:columns-3 ps-4 gap-8">
-            {% else %}
-    <ul class="list-disc ps-4 gap-8">
-            {% endif %}
-            {% include 'gcd/bits/tw_character_list.html' %}
-    </ul>
+
+          {% if story.has_characters_order_importance %}
+        <input class="sr-only" type="radio" name="character-tabs-{{ story.id }}" id="character-tab-3-{{ story.id }}" data-panel="3">
+        <label for="character-tab-3-{{ story.id }}" class="cursor-pointer inline-block rounded hover:bg-blue-400 px-2 mx-1 py-1 bg-blue-100" data-character-tab-label>Importance</label>
           {% endif %}
+      </div>
+        {% else %}
+      <div class="field-name-label">Characters:</div>
+        {% endif %}
+
+      <div class="">
+        <div data-character-panel="1">
+        {% with characters=story.process_appearing_characters %}
+          {% include 'gcd/bits/tw_story_characters.html' %}
         {% endwith %}
+        </div>
+
+        {% if has_orders %}
+          {% for character_order in story.character_orders.all %}
+        <div class="hidden" data-character-panel="{{ character_order.type.id|add:1 }}">
+            {% with characters=character_order.process_ordered_appearing_characters %}
+              {% include 'gcd/bits/tw_story_characters.html' %}
+            {% endwith %}
+        </div>
+          {% endfor %}
+        {% endif %}
+        {{ story.characters }}
+      </div>
+    </div>
       {% endwith %}
-    {{ story.characters }}
     {% endif %}
     <dl>
       {{ story|show_credit_description_list:"synopsis"|linebreaksbr }}
@@ -187,4 +194,3 @@
   {% endif %}
 {% endif %} <!-- shown_types -->
 </div>
-

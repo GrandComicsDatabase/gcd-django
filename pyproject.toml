@@ -56,6 +56,7 @@ quote-style = "single"
 indent-style = "space"
 
 [tool.pytest.ini_options]
+# Boot Django with these settings first; without this the suite won't start at all.
 DJANGO_SETTINGS_MODULE = "settings"
-python_files = ["test_*.py"]
-testpaths = ["apps/api_v2/tests"]
+# Where the tests live, so a bare `pytest` finds them.
+testpaths = ["apps"]

@@ -171,6 +171,11 @@ class CreatorNameDetail(GcdData):
                     # point to both, creator and house name
                     as_name = self.creator_relation.get().to_creator\
                                   .active_names().get(is_official_name=True)
+                    if as_name != self.name:
+                        if as_name.creator.active_names().filter(
+                          name=self.name):
+                            as_name = as_name.creator.active_names().filter(
+                              name=self.name)[0]
                 else:
                     # handles case of house name with different spellings,
                     # show only the name as entered, not also official name
