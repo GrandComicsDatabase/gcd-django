@@ -708,6 +708,10 @@ class CreatorRelationRevisionForm(forms.ModelForm):
     def clean(self):
         cd = self.cleaned_data
 
+        if 'from_creator' in cd and 'to_creator' in cd and \
+           cd['from_creator'] == cd['to_creator']:
+            raise forms.ValidationError(
+              'Creator A and Creator B cannot be the same creator.')
         if cd['creator_name'] and not cd['relation_type'].id in [2, 3, 4, 9]:
             self.add_error(
               'creator_name', 'Select a creator name only for owners or '

@@ -1394,7 +1394,8 @@ def show_publisher_issues(request, publisher_id):
     publisher = get_gcd_object(Publisher, publisher_id)
     issues = Issue.objects.filter(series__publisher=publisher,
                                   deleted=False).order_by(
-      'series__sort_name', 'sort_code').prefetch_related('series', 'brand',
+      'series__sort_name', 'sort_code').prefetch_related('series',
+                                                         'brand_emblem',
                                                          'indicia_publisher')
     context = {'heading': 'of publisher %s' % publisher,
                'item_name': 'issue',
@@ -1775,7 +1776,7 @@ def indicia_publisher(request, indicia_publisher_id):
 def show_indicia_publisher(request, indicia_publisher, preview=False):
     indicia_publisher_issues = indicia_publisher.active_issues()\
                                                 .prefetch_related('series',
-                                                                  'brand')
+                                                                  'brand_emblem',)
     image_tag, selected_issue = _get_random_cover_image(request,
                                                         indicia_publisher,
                                                         'indicia_publisher',
@@ -2292,6 +2293,9 @@ def series_overview(request, series_id):
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': heading,
+        'json_download_url': urlresolvers.reverse(
+            'series-overview-list', kwargs={'series_id': series_id}
+        ) + '?format=json',
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = CoverIssueStoryTable(issues,

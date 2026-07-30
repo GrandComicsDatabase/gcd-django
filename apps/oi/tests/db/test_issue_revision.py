@@ -17,7 +17,6 @@ EXCLUDED_FORK_FIELDS = {
     'day_on_sale': None,
     'on_sale_date_uncertain': False,
     'price': '',
-    'brand': None,
     'no_brand': False,
     'isbn': '',
     'no_isbn': False,
@@ -106,17 +105,21 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
 
     old_series_issue_count = rev.series.issue_count
     old_ind_pub_issue_count = rev.indicia_publisher.issue_count
-    old_brand_issue_count = rev.brand.issue_count
+    brand = rev.brand_emblem.get()
+    old_brand_issue_count = brand.issue_count
     old_publisher_issue_count = rev.series.publisher.issue_count
     old_brand_group_counts = {group.pk: group.issue_count
-                              for group in rev.brand.group.all()}
+                              for group in brand.group.all()}
 
     with mock.patch(UPDATE_ALL) as updater:
         rev.commit_to_display()
 
-    updater.has_calls([
+    # An add pushes the new issue's own stat_counts to the global stats
+    # (nothing to remove first), so cross-check against stat_counts()
+    # rather than a hand-copied dict.
+    updater.assert_has_calls([
       mock.call({}, language=None, country=None, negate=True),
-      mock.call({'issues': 1}, 
+      mock.call(rev.issue.stat_counts(),
                 language=rev.series.language, country=rev.series.country),
     ])
 
@@ -145,14 +148,14 @@ def test_commit_added_revision(any_added_issue_rev, issue_add_values,
     rev.issue.series.refresh_from_db()
     rev.issue.series.publisher.refresh_from_db()
     rev.issue.indicia_publisher.refresh_from_db()
-    rev.issue.brand.refresh_from_db()
+    issue_brand = rev.issue.brand_emblem.get()
 
     s = rev.issue.series
     assert s.issue_count == old_series_issue_count + 1
     assert s.publisher.issue_count == old_publisher_issue_count + 1
-    assert rev.issue.brand.issue_count == old_brand_issue_count + 1
+    assert issue_brand.issue_count == old_brand_issue_count + 1
     assert {
-        group.pk: group.issue_count for group in rev.issue.brand.group.all()
+        group.pk: group.issue_count for group in issue_brand.group.all()
     } == {k: v + 1 for k, v in old_brand_group_counts.items()}
     assert rev.issue.indicia_publisher.issue_count == \
         old_ind_pub_issue_count + 1
@@ -166,17 +169,18 @@ def test_commit_variant_added_revision(any_added_variant_rev,
 
     old_series_issue_count = rev.series.issue_count
     old_ind_pub_issue_count = rev.indicia_publisher.issue_count
-    old_brand_issue_count = rev.brand.issue_count
+    brand = rev.brand_emblem.get()
+    old_brand_issue_count = brand.issue_count
     old_brand_group_counts = {group.pk: group.issue_count
-                              for group in rev.brand.group.all()}
+                              for group in brand.group.all()}
     old_publisher_issue_count = rev.series.publisher.issue_count
 
     with mock.patch(UPDATE_ALL) as updater:
         rev.commit_to_display()
 
-    updater.has_calls([
+    updater.assert_has_calls([
       mock.call({}, language=None, country=None, negate=True),
-      mock.call({'variant issues': 1}, 
+      mock.call(rev.issue.stat_counts(),
                 language=rev.series.language, country=rev.series.country),
     ])
 
@@ -199,9 +203,10 @@ def test_commit_variant_added_revision(any_added_variant_rev,
     # Variants do not affect the issue counts.
     assert s.issue_count == old_series_issue_count
     assert s.publisher.issue_count == old_publisher_issue_count
-    assert rev.issue.brand.issue_count == old_brand_issue_count
+    issue_brand = rev.issue.brand_emblem.get()
+    assert issue_brand.issue_count == old_brand_issue_count
     assert {group.pk: group.issue_count
-            for group in rev.issue.brand.group.all()} == old_brand_group_counts
+            for group in issue_brand.group.all()} == old_brand_group_counts
     assert rev.issue.indicia_publisher.issue_count == old_ind_pub_issue_count
 
 
@@ -242,6 +247,28 @@ def test_create_variant_edit_revision(any_added_variant, variant_add_values,
 
 
 @pytest.mark.django_db
+def test_add_issue_two_emblems_same_group_counts_once(
+        any_adding_changeset, issue_add_values, any_added_brand,
+        second_brand_same_group, any_added_brand_group1):
+    group = any_added_brand_group1
+    group.refresh_from_db()
+    old_group_count = group.issue_count
+
+    issue_add_values.pop('brand_emblem')
+    indicia_printer = issue_add_values.pop('indicia_printer')
+    rev = IssueRevision(changeset=any_adding_changeset, **issue_add_values)
+    rev.save()
+    rev.indicia_printer.set([indicia_printer])
+    rev.brand_emblem.set([any_added_brand, second_brand_same_group])
+
+    rev.commit_to_display()
+
+    group.refresh_from_db()
+    assert group.issue_count == old_group_count + 1
+    assert group.issue_count == group.active_issues().count()
+
+
+@pytest.mark.django_db
 def test_delete_issue(any_added_issue, any_deleting_changeset,
                       any_added_issue_rev):
     rev = IssueRevision.clone(data_object=any_added_issue,
@@ -257,9 +284,10 @@ def test_delete_issue(any_added_issue, any_deleting_changeset,
 
     old_series_issue_count = rev.series.issue_count
     old_ind_pub_issue_count = rev.indicia_publisher.issue_count
-    old_brand_issue_count = rev.brand.issue_count
+    brand = rev.brand_emblem.get()
+    old_brand_issue_count = brand.issue_count
     old_brand_group_counts = {group.pk: group.issue_count
-                              for group in rev.brand.group.all()}
+                              for group in brand.group.all()}
     old_publisher_issue_count = rev.series.publisher.issue_count
 
     rev.commit_to_display()
@@ -276,9 +304,10 @@ def test_delete_issue(any_added_issue, any_deleting_changeset,
     s = rev.issue.series
     assert s.issue_count == old_series_issue_count - 1
     assert s.publisher.issue_count == old_publisher_issue_count - 1
-    assert rev.issue.brand.issue_count == old_brand_issue_count - 1
+    issue_brand = rev.issue.brand_emblem.get()
+    assert issue_brand.issue_count == old_brand_issue_count - 1
     assert {
-        group.pk: group.issue_count for group in rev.issue.brand.group.all()
+        group.pk: group.issue_count for group in issue_brand.group.all()
     } == {k: v - 1 for k, v in old_brand_group_counts.items()}
     assert rev.issue.indicia_publisher.issue_count == \
         old_ind_pub_issue_count - 1
@@ -300,9 +329,10 @@ def test_delete_variant(any_added_variant, any_deleting_changeset,
 
     old_series_issue_count = rev.series.issue_count
     old_ind_pub_issue_count = rev.indicia_publisher.issue_count
-    old_brand_issue_count = rev.brand.issue_count
+    brand = rev.brand_emblem.get()
+    old_brand_issue_count = brand.issue_count
     old_brand_group_counts = {group.pk: group.issue_count
-                              for group in rev.brand.group.all()}
+                              for group in brand.group.all()}
     old_publisher_issue_count = rev.series.publisher.issue_count
 
     rev.commit_to_display()
@@ -320,9 +350,10 @@ def test_delete_variant(any_added_variant, any_deleting_changeset,
     # Variants do not affect issue counts.
     assert s.issue_count == old_series_issue_count
     assert s.publisher.issue_count == old_publisher_issue_count
-    assert rev.issue.brand.issue_count == old_brand_issue_count
+    issue_brand = rev.issue.brand_emblem.get()
+    assert issue_brand.issue_count == old_brand_issue_count
     assert {group.pk: group.issue_count
-            for group in rev.issue.brand.group.all()} == old_brand_group_counts
+            for group in issue_brand.group.all()} == old_brand_group_counts
     assert rev.issue.indicia_publisher.issue_count == old_ind_pub_issue_count
 
 
@@ -341,12 +372,10 @@ def test_noncomics_counts(any_added_series_rev,
     with mock.patch(UPDATE_ALL) as updater:
         s_rev.commit_to_display()
 
-    updater.has_calls([
-      mock.call({}, language=None, country=None, negate=True),
-      mock.call({'series': 1}, 
-                language=s_rev.series.language, country=s_rev.series.country),
-    ])
-
+    # Each commit makes two global-stats calls (remove old, apply new).
+    # The exact dicts are characterization-only and belong to the
+    # apps/stats tests; this test's value is the per-object count
+    # assertions below, so here we only check that shape.
     assert updater.call_count == 2
 
     series = Series.objects.get(pk=s_rev.series.pk)
@@ -354,16 +383,19 @@ def test_noncomics_counts(any_added_series_rev,
     issue_add_values['series'] = series
 
     indicia_printer = issue_add_values.pop('indicia_printer')
+    brand = issue_add_values.pop('brand_emblem')
     i_rev = IssueRevision(changeset=any_adding_changeset, **issue_add_values)
     i_rev.save()
     i_rev.indicia_printer.set([indicia_printer,])
+    i_rev.brand_emblem.set([brand,])
     i_rev = IssueRevision.objects.get(pk=i_rev.pk)
 
     old_series_issue_count = i_rev.series.issue_count
     old_ind_pub_issue_count = i_rev.indicia_publisher.issue_count
-    old_brand_issue_count = i_rev.brand.issue_count
+    brand = i_rev.brand_emblem.get()
+    old_brand_issue_count = brand.issue_count
     old_brand_group_counts = {group.pk: group.issue_count
-                              for group in i_rev.brand.group.all()}
+                              for group in brand.group.all()}
     old_publisher_issue_count = i_rev.series.publisher.issue_count
 
     with mock.patch(UPDATE_ALL) as updater:
@@ -372,12 +404,6 @@ def test_noncomics_counts(any_added_series_rev,
     i_rev.changeset.state = states.APPROVED
     i_rev.changeset.save()
 
-    updater.has_calls([
-      mock.call({}, language=None, country=None, negate=True),
-      mock.call({'stories': 0, 'covers': 0}, 
-                language=i_rev.series.language, country=i_rev.series.country),
-    ])
-
     assert updater.call_count == 2
 
     i_rev = IssueRevision.objects.get(pk=i_rev.pk)
@@ -385,9 +411,10 @@ def test_noncomics_counts(any_added_series_rev,
     # Non-comics issues do not affect the issue counts EXCEPT on the series.
     assert s.issue_count == old_series_issue_count + 1
     assert s.publisher.issue_count == old_publisher_issue_count
-    assert i_rev.issue.brand.issue_count == old_brand_issue_count
+    issue_brand = i_rev.issue.brand_emblem.get()
+    assert issue_brand.issue_count == old_brand_issue_count
     assert {
-        group.pk: group.issue_count for group in i_rev.issue.brand.group.all()
+        group.pk: group.issue_count for group in issue_brand.group.all()
     } == old_brand_group_counts
     assert i_rev.issue.indicia_publisher.issue_count == old_ind_pub_issue_count
 
@@ -397,16 +424,17 @@ def test_noncomics_counts(any_added_series_rev,
                           variant_of=i_rev.issue,
                           variant_name='alternate cover',
                           series=i_rev.series,
-                          brand=i_rev.brand,
                           indicia_publisher=i_rev.indicia_publisher)
     v_rev.save()
+    v_rev.brand_emblem.set([brand,])
     v_rev = IssueRevision.objects.get(pk=v_rev.pk)
 
     old_series_issue_count = v_rev.series.issue_count
     old_ind_pub_issue_count = v_rev.indicia_publisher.issue_count
-    old_brand_issue_count = v_rev.brand.issue_count
+    brand = v_rev.brand_emblem.get()
+    old_brand_issue_count = brand.issue_count
     old_brand_group_counts = {group.pk: group.issue_count
-                              for group in v_rev.brand.group.all()}
+                              for group in brand.group.all()}
     old_publisher_issue_count = v_rev.series.publisher.issue_count
 
     with mock.patch(UPDATE_ALL) as updater:
@@ -415,13 +443,6 @@ def test_noncomics_counts(any_added_series_rev,
     v_rev.changeset.state = states.APPROVED
     v_rev.changeset.save()
 
-    updater.has_calls([
-      mock.call({'stories': 0, 'covers': 0}, language=None, country=None,
-                negate=True),
-      mock.call({'stories': 0, 'covers': 0}, 
-                language=i_rev.series.language, country=i_rev.series.country),
-    ])
-
     assert updater.call_count == 2
 
     v_rev = IssueRevision.objects.get(pk=v_rev.pk)
@@ -429,10 +450,11 @@ def test_noncomics_counts(any_added_series_rev,
     # Non-comics variants do not affect the issue counts on anything.
     assert s.issue_count == old_series_issue_count
     assert s.publisher.issue_count == old_publisher_issue_count
-    assert v_rev.issue.brand.issue_count == old_brand_issue_count
+    issue_brand = v_rev.issue.brand_emblem.get()
+    assert issue_brand.issue_count == old_brand_issue_count
     assert {
         group.pk: group.issue_count
-        for group in v_rev.issue.brand.group.all()
+        for group in issue_brand.group.all()
     } == old_brand_group_counts
     assert v_rev.issue.indicia_publisher.issue_count == old_ind_pub_issue_count
 
@@ -449,21 +471,16 @@ def test_noncomics_counts(any_added_series_rev,
 
     del_v_rev = IssueRevision.objects.get(pk=del_v_rev.pk)
 
-    updater.has_calls([
-      mock.call({'stories': 0, 'covers': 0}, language=None, country=None,
-                negate=True),
-      mock.call({'stories': 0, 'covers': 0}, 
-                language=i_rev.series.language, country=i_rev.series.country),
-    ])
     assert updater.call_count == 2
 
     s = Series.objects.get(pk=del_v_rev.series.pk)
     i = Issue.objects.get(pk=del_v_rev.issue.pk)
     assert s.issue_count == old_series_issue_count
     assert s.publisher.issue_count == old_publisher_issue_count
-    assert i.brand.issue_count == old_brand_issue_count
+    issue_brand = i.brand_emblem.get()
+    assert issue_brand.issue_count == old_brand_issue_count
     assert {group.pk: group.issue_count
-            for group in i.brand.group.all()} == old_brand_group_counts
+            for group in issue_brand.group.all()} == old_brand_group_counts
     assert i.indicia_publisher.issue_count == old_ind_pub_issue_count
 
     # Finally, delete the base issue, check for only series.issue_count
@@ -483,12 +500,6 @@ def test_noncomics_counts(any_added_series_rev,
         del_i_rev.commit_to_display()
 
     del_i_rev = IssueRevision.objects.get(pk=del_v_rev.pk)
-    updater.has_calls([
-      mock.call({'stories': 0, 'covers': 0}, language=None, country=None,
-                negate=True),
-      mock.call({'stories': 0, 'covers': 0}, 
-                language=i_rev.series.language, country=i_rev.series.country),
-    ])
     assert updater.call_count == 2
     s = Series.objects.get(pk=del_i_rev.series.pk)
     i = Issue.objects.get(pk=del_i_rev.issue.pk)
@@ -496,9 +507,10 @@ def test_noncomics_counts(any_added_series_rev,
     # Series issue counts are adjusted even for non comics.
     assert s.issue_count == old_series_issue_count - 1
     assert s.publisher.issue_count == old_publisher_issue_count
-    assert i.brand.issue_count == old_brand_issue_count
+    issue_brand = i.brand_emblem.get()
+    assert issue_brand.issue_count == old_brand_issue_count
     assert {group.pk: group.issue_count
-            for group in i.brand.group.all()} == old_brand_group_counts
+            for group in issue_brand.group.all()} == old_brand_group_counts
     assert i.indicia_publisher.issue_count == old_ind_pub_issue_count
 
 
@@ -527,6 +539,9 @@ def test_fork_variant_for_cover_no_reserve(any_added_issue,
         elif name == 'indicia_printer':
             indicia_printers = list(issue_rev.indicia_printer.order_by('id'))
             assert indicia_printers == [any_added_indicia_printer]
+        elif name == 'brand_emblem':
+            # Excluded from forking, so the variant starts without brands.
+            assert issue_rev.brand_emblem.count() == 0
         elif name in EXCLUDED_FORK_FIELDS:
             assert getattr(issue_rev, name) == EXCLUDED_FORK_FIELDS[name]
         else:

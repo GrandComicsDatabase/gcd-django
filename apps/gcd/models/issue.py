@@ -192,8 +192,8 @@ class Issue(GcdData):
                                           on_delete=models.CASCADE, null=True)
     indicia_pub_not_printed = models.BooleanField(default=False)
     brand_emblem = models.ManyToManyField(Brand)
-    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True,
-                              related_name='issues_deprecated')
+    # brand = models.ForeignKey(Brand, on_delete=models.CASCADE, null=True,
+    #                           related_name='issues_deprecated')
     no_brand = models.BooleanField(default=False, db_index=True)
     indicia_printer = models.ManyToManyField(IndiciaPrinter)
     indicia_printer_not_printed = models.BooleanField(default=False)
@@ -567,7 +567,12 @@ class Issue(GcdData):
             'covers': self.active_covers(stats=True).count(),
         }
 
-        if not self.variant_of_id:
+        # Ensure the underlying Issue.stat_counts logic matches the bulk reset script!
+        # Base issues always contribute +1 to their series count. 
+        # Standard variants return 0 to prevent inflating the base issue's series count.
+        # However, cross-series variants must return +1 to correctly populate the 
+        # isolated target series they reside in.
+        if not self.variant_of_id or self.series_id != self.variant_of.series_id:
             counts['series issues'] = 1
 
         if self.series.is_comics_publication:

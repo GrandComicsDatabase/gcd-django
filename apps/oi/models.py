@@ -38,6 +38,7 @@ from apps.gcd.models import (
     SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
     CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
     StoryGroup, StoryArc, StoryArcRelation, Universe, Multiverse,
+    CharacterOrderType, CharacterOrder,
     BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
     Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
@@ -342,7 +343,8 @@ class Changeset(models.Model):
                     self.coverrevisions.all(),
                     self.reprintrevisions.all(),
                     self.publishercodenumberrevisions.all(),
-                    self.externallinkrevisions.all())
+                    self.externallinkrevisions.all(),
+                    self.characterorderrevisions.all(),)
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
             if self.issuerevisions.all().count() == 1 and \
@@ -356,7 +358,8 @@ class Changeset(models.Model):
                         self.coverrevisions.all(),
                         self.reprintrevisions.all(),
                         self.publishercodenumberrevisions.all(),
-                        self.externallinkrevisions.all())
+                        self.externallinkrevisions.all(),
+                        self.characterorderrevisions.all(),)
             elif self.issuerevisions.all().count() == 1:
                 return (self.issuerevisions.all(),
                         self.issuecreditrevisions.all(),
@@ -394,6 +397,8 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['character']:
             return (self.characterrevisions.all(),
                     self.characternamedetailrevisions.all(),
+                    self.characterrelationrevisions.all(),
+                    self.groupmembershiprevisions.all(),
                     self.externallinkrevisions.all())
 
         if self.change_type == CTYPES['character_relation']:
@@ -1253,8 +1258,8 @@ class Revision(models.Model):
 
     # Child classes must set these properly.  Unlike source, they cannot be
     # instance properties because they are needed during revision construction.
-    # H.TODO source_name = NotImplemented
-    source_class = NotImplemented
+    # H.TODO source_name = NotImplementedError
+    source_class = NotImplementedError
     # H.TODO no separate _get_source
 
     @property
@@ -1732,15 +1737,20 @@ class Revision(models.Model):
         name = 'publisher' if attrs[-1] == 'parent' else attrs[-1]
 
         if attrs == ('brand_emblem', 'group'):
-            # Handle the special case of brand_emblem and group.
-            # If we have more m2m-related objects that need stats
-            # updating, we may need a more general mechanism.
-            old_value = []
-            for brand_emblem in old.brand_emblem.all() if old else []:
-                old_value.extend(brand_emblem.group.all())
-            new_value = []
-            for brand_emblem in new.brand_emblem.all():
-                new_value.extend(brand_emblem.group.all())
+            # Special case: a two-hop m2m path that RelPath below cannot
+            # follow. If more m2m-related objects need stats updating,
+            # we may need a more general mechanism.
+            def brand_groups(issue_or_revision):
+                groups = set()
+                for emblem in issue_or_revision.brand_emblem.prefetch_related(
+                        'group'):
+                    groups.update(emblem.group.all())
+                return groups
+
+            # As in the generic path: an add has no old value and a
+            # delete has no new value.
+            old_value = brand_groups(old) if old and not self.added else set()
+            new_value = brand_groups(new) if not self.deleted else set()
             multi_valued = True
             boolean_valued = False
         else:
@@ -1966,8 +1976,11 @@ class Revision(models.Model):
         # for models of type GcdLink we need to clear the source info in
         # all revisions since the link object gets deleted
         #
-        # TODO many models of this type have this routine as well,likely
+        # TODO many models of this type have this routine as well, likely
         # not needed but an oversight during re-factor of these models ?
+        # These models set directly to None the field that is referred
+        # to as source, which seems to be doing the same thing as setting
+        # self.source to None here. Double check.
         if GcdLink in type(self.source).mro():
             for revision in self.source.revisions.all():
                 setattr(revision, 'source', None)
@@ -2113,7 +2126,6 @@ class Revision(models.Model):
         for multi in self._get_multi_value_fields():
             old_rp = relpath.RelPath(type(self), multi)
             new_rp = relpath.RelPath(type(self.source), multi)
-
             new_rp.set_value(self.source, old_rp.get_value(self))
 
         self._post_save_object(changes)
@@ -2880,7 +2892,7 @@ class BrandRevision(PublisherRevisionBase):
                                 brand_use,
                                 changeset=self.changeset)
                 if brand_use_lock is None:
-                    return False
+                    raise IntegrityError("needed BrandUse lock not possible")
 
                 use_revision = BrandUseRevision.clone(brand_use,
                                                       self.changeset)
@@ -3468,6 +3480,8 @@ class SeriesRevision(Revision):
     # Fields related to the publishers table.
     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE,
                                   related_name='series_revisions')
+    # Imprint is removed from Series, but here we keep it around for the
+    # change history of old revisions.
     imprint = models.ForeignKey(Publisher, on_delete=models.CASCADE,
                                 null=True, blank=True, default=None,
                                 related_name='imprint_series_revisions')
@@ -4055,9 +4069,9 @@ class IssueRevision(Revision):
     indicia_pub_not_printed = models.BooleanField(default=False)
     brand_emblem = models.ManyToManyField(Brand, blank=True,
                                           related_name='issue_revisions')
-    brand = models.ForeignKey(
-      Brand, on_delete=models.CASCADE, null=True, default=None, blank=True,
-      related_name='issue_revisions_deprecated')
+    # brand = models.ForeignKey(
+    #   Brand, on_delete=models.CASCADE, null=True, default=None, blank=True,
+    #   related_name='issue_revisions_deprecated')
     # TODO when removing brand_emblem, remove msdropdown from revision_form_utils.html
     # and remove apps/oi/templates/forms/widgets/select_brand.html
     no_brand = models.BooleanField(default=False)
@@ -4096,7 +4110,7 @@ class IssueRevision(Revision):
         return ((not self.deleted) and
                 (self.previous_revision is not None) and
                 self.previous_revision.series != self.series)
-
+    
     @classmethod
     def fork_variant(cls, issue, changeset,
                      variant_name, variant_cover_revision=None,
@@ -4114,7 +4128,7 @@ class IssueRevision(Revision):
                 'on_sale_date',
                 'on_sale_date_uncertain',
                 'price',
-                'brand',
+                'brand_emblem',
                 'no_brand',
                 'isbn',
                 'no_isbn',
@@ -4387,12 +4401,12 @@ class IssueRevision(Revision):
             if not self.series.has_gallery and \
                self.issue.active_covers().count():
                 self.series.has_gallery = True
-                self.series.save()
+                self.series.save(update_fields=['has_gallery'])
 
             # old series might have lost gallery after move
             if old_series.scan_count == 0:
                 old_series.has_gallery = False
-                old_series.save()
+                old_series.save(update_fields=['has_gallery'])
         if self.source.variant_of and self.added:
             self.source.is_indexed = self.source.variant_of.is_indexed
             self.source.save()
@@ -4428,6 +4442,17 @@ class IssueRevision(Revision):
                 if delete:
                     credit_revision.deleted = story_revision.deleted
                     credit_revision.save()
+            for character_order in story.character_orders.all():
+                order_lock = _get_revision_lock(character_order,
+                                                changeset=self.changeset)
+                if order_lock is None:
+                    raise IntegrityError("needed Order lock not possible")
+                order_revision = CharacterOrderRevision.clone(
+                  character_order, self.changeset,
+                  story_revision=story_revision)
+                if delete:
+                    order_revision.deleted = story_revision.deleted
+                    order_revision.save()
             for character in story.active_characters:
                 character_lock = _get_revision_lock(character,
                                                     changeset=self.changeset)
@@ -4438,6 +4463,14 @@ class IssueRevision(Revision):
                 if delete:
                     character_revision.deleted = story_revision.deleted
                     character_revision.save()
+                for order in character.characterorder_set.all():
+                    order_code = character\
+                      .characterthroughorder_set.get(order=order).order_code
+                    order_revision = order.revisions.get(
+                      changeset=self.changeset)
+                    order_revision.character_revisions.add(
+                      character_revision,
+                      through_defaults={'order_code': order_code})
             for group in story.active_groups:
                 group_lock = _get_revision_lock(group,
                                                 changeset=self.changeset)
@@ -4479,6 +4512,39 @@ class IssueRevision(Revision):
         for story in self.changeset.storyrevisions.filter(issue=None):
             story.issue = self.issue
             story.save()
+
+        # -------------------------------------------------------------------
+        # Cross-Series Variant Stat Routing
+        # -------------------------------------------------------------------
+        # When a base issue moves to a new series, its variants do not
+        # automatically follow it. This means a variant left behind in the
+        # old series just became a "cross-series" variant (which contributes
+        # +1 to its series issue_count), or vice-versa. Adjust the cached
+        # counts of the affected series.
+        if changes.get('series changed'):
+            old_series = changes.get('old series')
+            new_series = self.issue.series
+            
+            IssueClass = type(self.issue)
+            variants = IssueClass.objects.filter(variant_of=self.issue,
+                                                 deleted=False)
+            
+            for variant in variants:
+                # 1. Variant left behind:
+                # Goes from Standard -> Cross-Series (+1)
+                if variant.series == old_series and \
+                        variant.series != new_series:
+                    variant.series.issue_count += 1
+                    variant.series.save(update_fields=['issue_count'])
+                    
+                # 2. Base issue returns:
+                # Goes from Cross-Series -> Standard (-1)
+                elif variant.series != old_series and \
+                        variant.series == new_series:
+                    if variant.series.issue_count > 0:
+                        variant.series.issue_count -= 1
+                        variant.series.save(update_fields=['issue_count'])
+
 
     def extra_forms(self, request):
         from apps.oi.forms import IssueRevisionFormSet, \
@@ -5414,6 +5480,10 @@ class StoryCharacterRevision(Revision):
             return new_character
         return None
 
+    def show_character_notes(self):
+        from apps.gcd.models.story import character_notes
+        return character_notes(self)
+
     def __str__(self):
         if hasattr(self, 'character'):
             return "%s: %s" % (self.story_revision, self.character)
@@ -5449,6 +5519,121 @@ class StoryCharacterRevision(Revision):
     def _imps_for(self, field_name):
         # imps already come from StoryRevision, since is_changed is True there
         return 0
+
+
+class CharacterOrderRevision(Revision):
+    class Meta:
+        app_label = 'oi'
+        db_table = 'oi_character_order_revision'
+
+    character_order = models.ForeignKey(CharacterOrder, null=True,
+                                        on_delete=models.CASCADE,
+                                        related_name='revisions')
+    character_revisions = models.ManyToManyField(
+      StoryCharacterRevision, through='CharacterThroughOrderRevision')
+    story_revision = models.ForeignKey(
+      'StoryRevision', on_delete=models.CASCADE,
+      related_name='character_order_revisions')
+    type = models.ForeignKey(CharacterOrderType,
+                             on_delete=models.CASCADE)
+
+    source_name = 'character_order'
+    source_class = CharacterOrder
+
+    @property
+    def source(self):
+        return self.character_order
+
+    @source.setter
+    def source(self, value):
+        self.character_order = value
+
+    def _pre_save_object(self, changes):
+        self.character_order.story = self.story_revision.story
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        self.story_revision = kwargs['story_revision']
+
+    def _post_save_object(self, changes):
+        characters = self.character_order.characters.all()
+        character_revisions = self.character_revisions.all()
+        for character in characters:
+            if not character_revisions.filter(
+              character__id=character.id,
+              universe=character.universe).count():
+                self.character_order.characters.remove(character)
+            else:
+                character.order_code = character_revisions.get(
+                  character__id=character.id,
+                  universe=character.universe).order_code
+                character.save()
+        for character_revision in character_revisions:
+            if not characters.filter(
+              id=character_revision.character.id,
+              universe=character_revision.universe).exists():
+                order_code = character_revision\
+                  .characterthroughorderrevision_set.get(order=self).order_code
+                self.character_order.characters.add(
+                  character_revision.story_character,
+                  through_defaults={'order_code': order_code})
+
+    @property
+    def ordered_characters(self):
+        return self.character_revisions.order_by(
+          'characterthroughorderrevision__order_code')
+
+    def story_characters(self):
+        # get existing characters in their order
+        order = 0
+        character_order_list = []
+        for character in self.ordered_characters:
+            character_order_list.append((character, order))
+            order += 1
+        character_order_list.append((None, order))
+        order += 1
+        # get all characters appearing in the story
+        # user order by id, which could reflect creation order
+        story_characters = self.story_revision.appearing_characters\
+                               .order_by('id')
+        # process characters to have civilians after their aliases
+        character_list = _order_civilian_after_alias(story_characters)
+        for character in character_list:
+            character_id = character[0].id
+            # add characters to the list if not already present in the order
+            if not self.character_revisions.filter(id=character_id).exists():
+                character_order_list.append((character[0], order))
+                order += 1
+                # we do not add civilians if their alias is present, so
+                # we ignore character[1] here
+        return character_order_list
+
+    def _get_blank_values(self):
+        return {
+            'story_revision': None,
+            'type': None,
+        }
+
+    def process_ordered_appearing_characters(self):
+        from apps.gcd.models.story import process_ordered_appearing_characters
+        self.story = self.story_revision
+        return process_ordered_appearing_characters(self)
+
+    def __str__(self):
+        return "%s: (order: %s)" % (self.story_revision, self.type)
+
+
+class CharacterThroughOrderRevision(models.Model):
+    class Meta:
+        app_label = 'oi'
+        db_table = 'oi_character_through_order'
+        ordering = ['order_code']
+
+    order = models.ForeignKey(CharacterOrderRevision,
+                              on_delete=models.CASCADE)
+    story_character = models.ForeignKey(StoryCharacterRevision,
+                                        on_delete=models.CASCADE)
+    order_code = models.IntegerField(default=0, db_index=True)
 
 
 class StoryGroupRevision(Revision):
@@ -5676,6 +5861,28 @@ class StoryArcRelationRevision(Revision):
                                str(self.relation_type),
                                str(self.to_story_arc)
                                )
+
+
+def _order_civilian_after_alias(story_characters):
+    character_list = []
+    for character in story_characters:
+        alias_identity = set(
+            character.character.character.from_related_character
+                     .filter(relation_type__id=2)
+                     .values_list('from_character', flat=True))\
+                     .intersection(story_characters.filter(
+                                   universe=character.universe).values_list(
+                                   'character__character', flat=True))
+        if alias_identity:
+            continue
+        civilian_identity = _get_civilian_identity(character,
+                                                   story_characters)
+        if civilian_identity:
+            civilian_identity = story_characters.filter(
+                universe=character.universe,
+                character__character__id__in=civilian_identity)
+        character_list.append([character, civilian_identity])
+    return character_list
 
 
 class StoryRevision(Revision):
@@ -6112,24 +6319,7 @@ class StoryRevision(Revision):
           queryset=self.story_credit_revisions.filter(deleted=False))
 
         story_characters = self.story_character_revisions.filter(deleted=False)
-        character_list = []
-        for character in story_characters:
-            alias_identity = set(
-              character.character.character.from_related_character
-                       .filter(relation_type__id=2)
-                       .values_list('from_character', flat=True))\
-                       .intersection(story_characters.filter(
-                          universe=character.universe).values_list(
-                          'character__character', flat=True))
-            if alias_identity:
-                continue
-            civilian_identity = _get_civilian_identity(character,
-                                                       story_characters)
-            if civilian_identity:
-                civilian_identity = story_characters.filter(
-                  universe=character.universe,
-                  character__character__id__in=civilian_identity)
-            character_list.append([character, civilian_identity])
+        character_list = _order_civilian_after_alias(story_characters)
         order = 0
         # Create a dict to store order by character id
         order_map = {}
@@ -6965,6 +7155,10 @@ class PreviewStory(Story):
     def active_groups(self):
         return self.revision.story_group_revisions.exclude(deleted=True)
 
+    @property
+    def character_orders(self):
+        return self.revision.character_order_revisions.exclude(deleted=True)
+
     def has_credits(self):
         """
         Simplifies UI checks for conditionals.  Credit fields.
@@ -7589,6 +7783,30 @@ class CharacterRevision(CharacterGroupRevisionBase):
             if delete:
                 character_name.deleted = True
                 character_name.save()
+        if delete:
+            for group_membership in self.character.active_memberships():
+                membership_lock = _get_revision_lock(group_membership,
+                                                     changeset=self.changeset)
+                if membership_lock is None:
+                    raise IntegrityError("needed GroupMembership lock not "
+                                         "possible")
+                group_membership_revision = \
+                    GroupMembershipRevision.clone(group_membership,
+                                                    self.changeset)
+                group_membership_revision.deleted = True
+                group_membership_revision.save()
+            for character_relation in self.character.active_relations():
+                relation_lock = _get_revision_lock(character_relation,
+                                                   changeset=self.changeset)
+                if relation_lock is None:
+                    raise IntegrityError("needed CharacterRelation lock not "
+                                         "possible")
+                character_relation_revision = \
+                    CharacterRelationRevision.clone(character_relation,
+                                                    self.changeset)
+                character_relation_revision.deleted = True
+                character_relation_revision.save()
+
 
     def extra_forms(self, request):
         from apps.oi.forms import CharacterRevisionFormSet

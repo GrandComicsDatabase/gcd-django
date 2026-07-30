@@ -476,4 +476,51 @@ Related Links
       
     })
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[id^="character-tabs-"]').forEach(function(root) {
+      const radios = root.querySelectorAll('input[type="radio"]');
+      const panels = root.querySelectorAll('[data-character-panel]');
+      const labels = root.querySelectorAll('[data-character-tab-label]');
+
+      function updateTabStyles() {
+        labels.forEach((label) => {
+          label.classList.remove('bg-blue-400');
+          label.classList.add('bg-blue-100');
+        });
+
+        const checked = root.querySelector('input[type="radio"]:checked');
+        if (!checked) return;
+
+        const activeLabel = root.querySelector('label[for="' + checked.id + '"]');
+        if (activeLabel) {
+          activeLabel.classList.remove('bg-blue-100');
+          activeLabel.classList.add('bg-blue-400');
+        }
+      }
+
+      function showPanel(panelId) {
+        panels.forEach((panel) => {
+          panel.classList.toggle('hidden', panel.dataset.characterPanel !== panelId);
+        });
+      }
+
+      radios.forEach((radio) => {
+        radio.addEventListener('change', function () {
+          if (this.checked) {
+            const panelId = this.dataset.panel;
+            showPanel(panelId);
+            updateTabStyles();
+          }
+        });
+      });
+
+      const checked = root.querySelector('input[type="radio"]:checked');
+      if (checked) {
+        showPanel(checked.dataset.panel);
+        updateTabStyles();
+      }
+    });
+  });
+</script>
 {% endblock %}

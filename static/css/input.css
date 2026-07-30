@@ -169,7 +169,7 @@ html {
 
 @layer components {
   .object-page-numbered-list {
-    @apply ms-2 list-decimal sm:columns-2 list-outside ps-4;
+    @apply ms-2 list-decimal grid sm:grid-cols-2 ps-4;
 
     li {
       @apply pr-4;
