@@ -246,5 +246,5 @@ class AwardViewSet(GCDBaseViewSet):
             raise ValidationError(filterset.errors)
 
         page = self.paginate_queryset(filterset.qs)
-        serializer = AwardRecipientSerializer(page, many=True)
+        serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)

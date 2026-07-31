@@ -7,6 +7,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
+from apps.api_v2.serializers.awards import AwardRecipientSerializer
 from apps.gcd.models import Award, Creator, ReceivedAward
 
 pytestmark = pytest.mark.django_db
@@ -144,6 +145,36 @@ def test_award_recipients_are_paginated_and_hide_deleted_rows(api_client):
     assert response.data['results'][0]['id'] == first.pk
     assert response.data['results'][0]['recipient_type'] == 'creator'
     assert response.data['results'][0]['recipient']['id'] == creator.pk
+
+
+def test_award_recipient_serializer_receives_view_context(
+    api_client,
+    monkeypatch,
+):
+    """The recipient action uses DRF's context-aware serializer factory."""
+    award = Award.objects.create(name='Eisner Awards', notes='')
+    _create_received_award(
+        award=award,
+        recipient=_create_creator('Jane Doe'),
+    )
+    original = AwardRecipientSerializer.to_representation
+
+    def assert_view_context(serializer, instance):
+        assert 'request' in serializer.context
+        assert 'view' in serializer.context
+        return original(serializer, instance)
+
+    monkeypatch.setattr(
+        AwardRecipientSerializer,
+        'to_representation',
+        assert_view_context,
+    )
+
+    response = api_client.get(
+        reverse('award-recipients', kwargs={'pk': award.pk}),
+    )
+
+    assert response.status_code == 200
 
 
 def test_award_recipients_apply_type_and_year_filters(api_client, issue):
