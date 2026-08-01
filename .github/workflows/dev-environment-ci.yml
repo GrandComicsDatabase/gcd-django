@@ -17,13 +17,13 @@ permissions:
 
 jobs:
   compatibility:
-    name: Python 3.14 and MySQL 8.4
+    name: Python 3.13 and MySQL 8.0+
     runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     services:
       mysql:
-        image: mysql:8.4.10
+        image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: test
           MYSQL_DATABASE: gcd_ci
@@ -37,7 +37,6 @@ jobs:
 
     env:
       DJANGO_SETTINGS_MODULE: settings_dev
-      EXPECTED_MYSQL_VERSION: 8.4.10
       MYSQL_DATABASE: gcd_ci
       MYSQL_HOST: 127.0.0.1
       MYSQL_PASSWORD: test
@@ -51,7 +50,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: '3.14.6'
+          python-version: '3.13'
           cache: pip
 
       - name: Install system dependencies

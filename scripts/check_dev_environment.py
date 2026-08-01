@@ -1,13 +1,14 @@
-"""Verify the provisional development runtime contract."""
+"""Verify the supported development runtime contract."""
 
 import os
 import sys
 from pathlib import Path
 
 
-EXPECTED_PYTHON = (3, 14, 6)
+MINIMUM_PYTHON = (3, 13)
+MAXIMUM_PYTHON = (3, 14)
 EXPECTED_DJANGO = (5, 2)
-EXPECTED_MYSQL = '8.4.10'
+MINIMUM_MYSQL = (8, 0)
 
 
 def _require(actual, expected, component):
@@ -18,9 +19,29 @@ def _require(actual, expected, component):
         )
 
 
+def _require_in_range(actual, minimum, maximum, component):
+    """Require a version within a lower-inclusive, upper-exclusive range."""
+    if not minimum <= actual < maximum:
+        raise RuntimeError(
+            f'{component} version mismatch: expected >= {minimum} and '
+            f'< {maximum}, got {actual}'
+        )
+
+
+def _require_at_least(actual, minimum, component):
+    """Require a version at or above a supported minimum."""
+    if actual < minimum:
+        raise RuntimeError(
+            f'{component} version mismatch: expected >= {minimum}, '
+            f'got {actual}'
+        )
+
+
 def main():
     """Check Python, Django, MySQL, and Django system configuration."""
-    _require(sys.version_info[:3], EXPECTED_PYTHON, 'Python')
+    _require_in_range(
+        sys.version_info[:3], MINIMUM_PYTHON, MAXIMUM_PYTHON, 'Python'
+    )
 
     project_root = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(project_root))
@@ -35,20 +56,15 @@ def main():
     django.setup()
     call_command('check')
 
-    with connection.cursor() as cursor:
-        cursor.execute('SELECT VERSION()')
-        mysql_version = cursor.fetchone()[0].split('-')[0]
-
-    expected_mysql = os.environ.get(
-        'EXPECTED_MYSQL_VERSION', EXPECTED_MYSQL
-    )
-    _require(mysql_version, expected_mysql, 'MySQL')
+    mysql_version = connection.get_database_version()
+    _require_at_least(mysql_version, MINIMUM_MYSQL, 'MySQL')
+    mysql_version_text = '.'.join(map(str, mysql_version))
 
     print(
         'Development environment verified: '
         f'Python {sys.version_info.major}.{sys.version_info.minor}.'
         f'{sys.version_info.micro}, Django {django.get_version()}, '
-        f'MySQL {mysql_version}'
+        f'MySQL {mysql_version_text}'
     )
 
 

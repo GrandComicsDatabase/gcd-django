@@ -1,3 +1,8 @@
+[project]
+name = "gcd-django"
+dynamic = ["version"]
+requires-python = ">=3.13,<3.14"
+
 [tool.pytest.ini_options]
 # Boot Django with these settings first; without this the suite won't start at all.
 DJANGO_SETTINGS_MODULE = "settings_dev"
