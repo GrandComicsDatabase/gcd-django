@@ -4,8 +4,6 @@ const colors = require('tailwindcss/colors')
 module.exports = {
   content: ['./templates/*.html', './templates/**/*.html',
             './templates/**/**/*.html',
-            // Include class names assigned by browser-side scripts.
-            './static/js/*.js', './static/js/**/*.js',
             './apps/indexer/templates/indexer/*.html',
             './apps/indexer/templates/indexer/bits/*.html',
 	    './apps/voting/templates/voting/*.html',
