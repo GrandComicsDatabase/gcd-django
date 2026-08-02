@@ -30,8 +30,6 @@ def _house_name_credit(matching_name):
         name='Official House Name', creator=target_creator)
     active_names.get.return_value = official_name
     active_names.filter.return_value.first.return_value = matching_name
-    active_names.filter.return_value.__bool__.return_value = \
-        matching_name is not None
     target_creator.active_names.return_value = active_names
 
     relation_manager = mock.MagicMock()
