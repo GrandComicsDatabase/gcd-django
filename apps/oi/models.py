@@ -5560,7 +5560,7 @@ class CharacterOrderRevision(Revision):
         current_orders = {
             current_order.story_character_id: current_order
             for current_order in CharacterThroughOrder.objects.filter(
-                order=self.character_order)
+                order_id=self.character_order_id)
         }
         revision_orders = CharacterThroughOrderRevision.objects.filter(
             order=self).select_related('story_character')
@@ -5577,7 +5577,7 @@ class CharacterOrderRevision(Revision):
         removed_ids = current_orders.keys() - desired_orders.keys()
         if removed_ids:
             CharacterThroughOrder.objects.filter(
-                order=self.character_order,
+                order_id=self.character_order_id,
                 story_character_id__in=removed_ids).delete()
 
         changed_orders = []
@@ -5590,7 +5590,7 @@ class CharacterOrderRevision(Revision):
                     changed_orders.append(current_order)
             else:
                 new_orders.append(CharacterThroughOrder(
-                    order=self.character_order,
+                    order_id=self.character_order_id,
                     story_character_id=story_character_id,
                     order_code=order_code))
 

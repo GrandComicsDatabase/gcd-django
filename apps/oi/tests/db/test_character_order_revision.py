@@ -167,6 +167,8 @@ def test_reconciliation_uses_bounded_queries(large_character_order_world):
         for number in range(10)
     ]
     revision = revision_with_order(*desired_order)
+    # Exercise reconciliation without a cached CharacterOrder relation.
+    revision = CharacterOrderRevision.objects.get(pk=revision.pk)
 
     with CaptureQueriesContext(connection) as queries:
         revision._post_save_object({})
