@@ -106,7 +106,8 @@ def validate_revision_for_transition(revision, request):
     valid = form.is_valid()
     for formset in extra_forms.values():
         if formset is not None:
-            valid = formset.is_valid() and valid
+            if not formset.is_valid():
+                valid = False
 
     if valid:
         return []
