@@ -9,12 +9,19 @@ from django.utils.html import conditional_escape as esc
 from django import template
 
 from apps.gcd.templatetags.display import absolute_url, show_story_short
+from apps.oi.action_labels import WORKFLOW_ACTION_LABELS
 from apps.oi.models import RevisionLock, CTYPES, StoryRevision
 from apps.oi.coordinators import issue_revision_modified
 
 register = template.Library()
 
 DOC_URL = 'https://docs.comics.org/wiki/'
+
+
+@register.simple_tag
+def workflow_action_label(action):
+    """Keep workflow instructions synchronized with their button labels."""
+    return WORKFLOW_ACTION_LABELS[action]
 
 
 @register.filter
@@ -192,8 +199,8 @@ def is_overdue(changeset):
                                  CTYPES['series']]:
         changeset.expires = changeset.created + \
           timedelta(days=settings.RESERVE_NON_ISSUE_DAYS)
-        if datetime.now(timezone.utc) - changeset.created > \
-            timedelta(days=settings.RESERVE_NON_ISSUE_DAYS/2):
+        if (datetime.now(timezone.utc) - changeset.created >
+                timedelta(days=settings.RESERVE_NON_ISSUE_DAYS/2)):
             return mark_safe("class='text-red-700'")
     # TODO these likely should be treated as above
     elif changeset.change_type not in [CTYPES['issue'],
@@ -205,8 +212,8 @@ def is_overdue(changeset):
                 timedelta(weeks=settings.RESERVE_ISSUE_WEEKS-1):
             return mark_safe("class='text-red-700'")
     elif changeset.issuerevisions.earliest('created').issue and \
-      changeset.issuerevisions.earliest('created').issue.revisions\
-                                                        .count() > 2:
+        changeset.issuerevisions.earliest('created').issue.revisions.count() \
+            > 2:
         if check_for_modified(changeset, settings.RESERVE_ISSUE_WEEKS):
             return mark_safe("class='text-red-700'")
     else:

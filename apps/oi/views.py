@@ -4,6 +4,7 @@
 import re
 import sys
 import glob
+import logging
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
@@ -16,7 +17,9 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F, Q
 from django.db.models.fields import Field
-from django.utils.html import mark_safe, conditional_escape as esc
+from django.utils.html import (mark_safe, conditional_escape as esc,
+                               format_html, format_html_join)
+from django.utils.translation import gettext as _
 
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required
@@ -125,7 +128,12 @@ from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
 from apps.oi import states
+from apps.oi.action_labels import (APPROVE, SEND_BACK_TO_INDEXER,
+                                   SUBMIT_CHANGES_FOR_APPROVAL)
+from apps.oi.submission_validation import validate_changeset_revisions
 from apps.oi.templatetags.editing import is_locked
+
+logger = logging.getLogger(__name__)
 
 REVISION_CLASSES = {
     'publisher': PublisherRevision,
@@ -219,6 +227,20 @@ REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
 ##############################################################################
 # Helper functions
 ##############################################################################
+
+
+def _send_notification(user, subject, body):
+    """Send non-critical email after commit and log delivery failures."""
+    def deliver():
+        try:
+            user.email_user(subject, body, settings.EMAIL_INDEXING)
+        except Exception:
+            # Email delivery must not turn a completed workflow action into a
+            # user-facing error, but operators still need the traceback.
+            logger.exception(
+              'Failed to send OI notification to user %s.', user.pk)
+
+    transaction.on_commit(deliver)
 
 
 def _cant_get(request):
@@ -545,6 +567,27 @@ def _display_edit_form(request, changeset, form, revision=None,
     return response
 
 
+def _invalid_revision_response(request, invalid_revisions, instruction):
+    """Render links to revisions that must be corrected before an action."""
+    error_items = []
+    for revision, messages in invalid_revisions:
+        error_items.append((
+          urlresolvers.reverse(
+            'edit_revision',
+            kwargs={'model_name': revision.source_name,
+                    'id': revision.id}),
+          str(revision),
+          '; '.join(messages)))
+    errors = format_html_join(
+      '', '<li><a href="{}">{}</a>: {}</li>', error_items)
+    return oi_render(
+      request, 'indexer/error.html',
+      {'error_text': format_html(
+        '{} {}<ul>{}</ul>',
+        _('This change still contains invalid issue or sequence data.'),
+        instruction, errors)})
+
+
 @permission_required('indexer.can_reserve')
 def submit(request, id):
     """
@@ -558,6 +601,18 @@ def submit(request, id):
         return oi_render(
           request, 'indexer/error.html',
           {'error_text': 'A change may only be submitted by its author.'})
+
+    # Revalidate saved values because migrations and other non-form code paths
+    # can modify a revision after its edit form was last submitted.
+    invalid_revisions = validate_changeset_revisions(changeset, request)
+    if invalid_revisions:
+        instruction = format_html(
+          _('Correct and save the revisions, then select '
+            '<strong>{submit}</strong>. Affected revisions:'),
+          submit=SUBMIT_CHANGES_FOR_APPROVAL)
+        return _invalid_revision_response(
+          request, invalid_revisions, instruction)
+
     comment_text = request.POST['comments'].strip()
     if comment_text == '' and changeset.approver is None and \
        changeset.comments.count() == 1:
@@ -599,8 +654,8 @@ thanks,
                      settings.SITE_NAME,
                      settings.SITE_URL)
 
-        changeset.approver.email_user('GCD change to review', email_body,
-                                      settings.EMAIL_INDEXING)
+        _send_notification(
+          changeset.approver, 'GCD change to review', email_body)
 
     if comment_text:
         send_comment_observer(request, changeset, comment_text)
@@ -896,8 +951,8 @@ thanks,
                          settings.SITE_NAME,
                          settings.SITE_URL)
 
-            changeset.approver.email_user('Reviewed GCD change discarded',
-                                          email_body, settings.EMAIL_INDEXING)
+            _send_notification(
+              changeset.approver, 'Reviewed GCD change discarded', email_body)
         if comment_text:
             send_comment_observer(request, changeset, comment_text)
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
@@ -974,8 +1029,8 @@ thanks,
                      settings.SITE_NAME,
                      settings.SITE_URL)
 
-        changeset.indexer.email_user('GCD change rejected', email_body,
-                                     settings.EMAIL_INDEXING)
+        _send_notification(
+          changeset.indexer, 'GCD change rejected', email_body)
         if comment_text:
             send_comment_observer(request, changeset, comment_text)
         if request.user.approved_changeset.filter(state=states.REVIEWING)\
@@ -1064,8 +1119,7 @@ thanks,
                        'compare', kwargs={'id': changeset.id}),
                      settings.SITE_NAME,
                      settings.SITE_URL)
-        changeset.indexer.email_user('GCD comment', email_body,
-                                     settings.EMAIL_INDEXING)
+        _send_notification(changeset.indexer, 'GCD comment', email_body)
 
         send_comment_observer(request, changeset, comment_text)
 
@@ -1115,8 +1169,7 @@ thanks,
                        'compare', kwargs={'id': changeset.id}),
                      settings.SITE_NAME,
                      settings.SITE_URL)
-        changeset.indexer.email_user(
-          'GCD comment', email_body, settings.EMAIL_INDEXING)
+        _send_notification(changeset.indexer, 'GCD comment', email_body)
 
         send_comment_observer(request, changeset, comment_text)
 
@@ -1197,12 +1250,10 @@ thanks,
         subject = 'GCD change put into discussion'
 
     if request.user == changeset.indexer:
-        changeset.approver.email_user(subject, email_body,
-                                      settings.EMAIL_INDEXING)
+        _send_notification(changeset.approver, subject, email_body)
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
-        changeset.indexer.email_user(subject, email_body,
-                                     settings.EMAIL_INDEXING)
+        _send_notification(changeset.indexer, subject, email_body)
 
         if request.user.approved_changeset.filter(
           state=states.REVIEWING).count():
@@ -1240,6 +1291,18 @@ def approve(request, id):
        or changeset.approver is None:
         return render_error(
           request, 'Only REVIEWING changes with an approver can be approved.')
+
+    # This second check protects production data if a persisted revision was
+    # changed after submission or bypassed the normal editing form entirely.
+    invalid_revisions = validate_changeset_revisions(changeset, request)
+    if invalid_revisions:
+        instruction = format_html(
+          _('Do not select <strong>{approve}</strong> or edit these '
+            'revisions. Select <strong>{send_back}</strong> and describe '
+            'the required correction in the comment. Affected revisions:'),
+          approve=APPROVE, send_back=SEND_BACK_TO_INDEXER)
+        return _invalid_revision_response(
+          request, invalid_revisions, instruction)
 
     comment_text = request.POST['comments'].strip()
     changeset.approve(notes=comment_text)
@@ -1285,8 +1348,7 @@ thanks,
             send_comment_observer(request, changeset, comment_text)
         else:
             subject = 'GCD change approved'
-        changeset.indexer.email_user(subject, email_body,
-                                     settings.EMAIL_INDEXING)
+        _send_notification(changeset.indexer, subject, email_body)
 
     # Note that series ongoing reservations must be processed first, as
     # they could potentially apply to the issue reservations if we ever
@@ -1380,10 +1442,8 @@ thanks,
        urlresolvers.reverse('editing'),
        settings.SITE_NAME, settings.SITE_URL)
 
-    indexer.email_user(
-      'GCD automatic reservation declined',
-      email_body,
-      settings.EMAIL_INDEXING)
+    _send_notification(
+      indexer, 'GCD automatic reservation declined', email_body)
 
 
 def _send_declined_ongoing_email(indexer, series):
@@ -1409,10 +1469,8 @@ thanks,
        course_of_action,
        settings.SITE_NAME, settings.SITE_URL)
 
-    indexer.email_user(
-      'GCD automatic reservation declined',
-      email_body,
-      settings.EMAIL_INDEXING)
+    _send_notification(
+      indexer, 'GCD automatic reservation declined', email_body)
 
 
 @permission_required('indexer.can_approve')
@@ -1430,10 +1488,12 @@ def disapprove(request, id):
 
     comment_text = request.POST['comments'].strip()
     if not comment_text:
-        return render_error(request,
-                            'You must explain why you are disapproving this '
-                            'change.  Please press the "back" button and use '
-                            'the comments field for the explanation.')
+        return render_error(
+          request,
+          format_html(
+            _('Enter an explanation in the comment field before selecting '
+              '<strong>{send_back}</strong>.'),
+            send_back=SEND_BACK_TO_INDEXER))
 
     changeset.disapprove(notes=comment_text)
 
@@ -1458,8 +1518,7 @@ thanks,
        settings.SITE_NAME,
        settings.SITE_URL)
 
-    changeset.indexer.email_user(
-      'GCD change sent back', email_body, settings.EMAIL_INDEXING)
+    _send_notification(changeset.indexer, 'GCD change sent back', email_body)
 
     send_comment_observer(request, changeset, comment_text)
 
@@ -1503,8 +1562,8 @@ thanks,
                      .exclude(commenter__in=excluding)
                      .values_list('commenter', flat=True))
     for commenter in commenters:
-        User.objects.get(id=commenter).email_user(
-          'GCD comment', email_body, settings.EMAIL_INDEXING)
+        _send_notification(
+          User.objects.get(id=commenter), 'GCD comment', email_body)
 
 
 @permission_required('indexer.can_reserve')
@@ -1545,11 +1604,9 @@ thanks,
                      settings.SITE_URL)
 
         if request.user != changeset.indexer:
-            changeset.indexer.email_user(
-              'GCD comment', email_body, settings.EMAIL_INDEXING)
+            _send_notification(changeset.indexer, 'GCD comment', email_body)
         if changeset.approver and request.user != changeset.approver:
-            changeset.approver.email_user(
-              'GCD comment', email_body, settings.EMAIL_INDEXING)
+            _send_notification(changeset.approver, 'GCD comment', email_body)
 
         send_comment_observer(request, changeset, comment_text)
 
