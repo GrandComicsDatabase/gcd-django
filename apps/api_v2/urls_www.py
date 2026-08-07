@@ -12,25 +12,47 @@ and the rest as they land in subsequent sprints. The dispatcher in
 from django.urls import include, path
 
 from apps.api_v2.routers import V2APIRouter
+from apps.api_v2.views.awards import AwardViewSet
+from apps.api_v2.views.brand_groups import BrandGroupViewSet
+from apps.api_v2.views.brands import BrandViewSet
 from apps.api_v2.views.characters import CharacterViewSet
 from apps.api_v2.views.creators import CreatorViewSet
+from apps.api_v2.views.features import FeatureViewSet
 from apps.api_v2.views.groups import GroupViewSet
+from apps.api_v2.views.indicia_printers import IndiciaPrinterViewSet
+from apps.api_v2.views.indicia_publishers import IndiciaPublisherViewSet
 from apps.api_v2.views.issues import IssueViewSet
 from apps.api_v2.views.publishers import PublisherViewSet
 from apps.api_v2.views.reprints import ReprintViewSet
 from apps.api_v2.views.series import SeriesViewSet
+from apps.api_v2.views.series_bonds import SeriesBondViewSet
 from apps.api_v2.views.stories import StoryViewSet
 from apps.api_v2.views.story_arcs import StoryArcViewSet
 from apps.api_v2.views.universes import UniverseViewSet
 
 router = V2APIRouter()
+router.register('awards', AwardViewSet, basename='award')
+router.register('brand-groups', BrandGroupViewSet, basename='brand-group')
+router.register('brands', BrandViewSet, basename='brand')
 router.register('characters', CharacterViewSet, basename='character')
 router.register('creators', CreatorViewSet, basename='creator')
+router.register('features', FeatureViewSet, basename='feature')
 router.register('groups', GroupViewSet, basename='group')
+router.register(
+    'indicia-printers',
+    IndiciaPrinterViewSet,
+    basename='indicia-printer',
+)
+router.register(
+    'indicia-publishers',
+    IndiciaPublisherViewSet,
+    basename='indicia-publisher',
+)
 router.register('issues', IssueViewSet, basename='issue')
 router.register('publishers', PublisherViewSet, basename='publisher')
 router.register('reprints', ReprintViewSet, basename='reprint')
 router.register('series', SeriesViewSet, basename='series')
+router.register('series-bonds', SeriesBondViewSet, basename='series-bond')
 router.register('story-arcs', StoryArcViewSet, basename='story-arc')
 router.register('stories', StoryViewSet, basename='story')
 router.register('universes', UniverseViewSet, basename='universe')

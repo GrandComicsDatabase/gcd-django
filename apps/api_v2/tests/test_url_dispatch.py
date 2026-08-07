@@ -110,6 +110,15 @@ SPRINT_3_ROUTE_SPECS = (
     ('reprint-list', '/api/v2/reprints/'),
     ('story-arc-list', '/api/v2/story-arcs/'),
 )
+SPRINT_4_ROUTE_SPECS = (
+    ('award-list', '/api/v2/awards/'),
+    ('brand-group-list', '/api/v2/brand-groups/'),
+    ('brand-list', '/api/v2/brands/'),
+    ('feature-list', '/api/v2/features/'),
+    ('indicia-publisher-list', '/api/v2/indicia-publishers/'),
+    ('indicia-printer-list', '/api/v2/indicia-printers/'),
+    ('series-bond-list', '/api/v2/series-bonds/'),
+)
 
 
 def _schema_paths(response):
@@ -232,6 +241,26 @@ def test_sprint_3_routes_stay_absent_on_my_surface(restore_v2_urlconf):
             reverse(route_name)
 
 
+@override_settings(MYCOMICS=False)
+def test_sprint_4_routes_resolve_on_www_surface(restore_v2_urlconf):
+    """Sprint 4 routes resolve on the public-data surface."""
+    _reload_v2_urlconf()
+
+    for route_name, expected_path in SPRINT_4_ROUTE_SPECS:
+        assert reverse(route_name) == expected_path
+        _assert_v2_api_policy(resolve(expected_path).func.cls)
+
+
+@override_settings(MYCOMICS=True)
+def test_sprint_4_routes_stay_absent_on_my_surface(restore_v2_urlconf):
+    """Sprint 4 routes are not mounted on the my surface."""
+    _reload_v2_urlconf()
+
+    for route_name, _expected_path in SPRINT_4_ROUTE_SPECS:
+        with pytest.raises(NoReverseMatch):
+            reverse(route_name)
+
+
 @pytest.mark.django_db
 @override_settings(MYCOMICS=False)
 def test_schema_and_docs_load_on_www_surface(client, restore_v2_urlconf):
@@ -315,6 +344,99 @@ def test_schema_includes_sprint_3_routes_on_www_surface(
 
 
 @pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_schema_includes_sprint_4_routes_on_www_surface(
+    client,
+    restore_v2_urlconf,
+):
+    """The public schema documents implemented Sprint 4 routes."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    assert _schema_paths(response) >= {
+        '/api/v2/awards/',
+        '/api/v2/awards/{id}/',
+        '/api/v2/awards/{id}/recipients/',
+        '/api/v2/brand-groups/',
+        '/api/v2/brand-groups/{id}/',
+        '/api/v2/brands/',
+        '/api/v2/brands/{id}/',
+        '/api/v2/features/',
+        '/api/v2/features/{id}/',
+        '/api/v2/indicia-publishers/',
+        '/api/v2/indicia-publishers/{id}/',
+        '/api/v2/indicia-printers/',
+        '/api/v2/indicia-printers/{id}/',
+        '/api/v2/series-bonds/',
+        '/api/v2/series-bonds/{id}/',
+    }
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_series_bond_schema_documents_legacy_timestamp_baseline(
+    client,
+    restore_v2_urlconf,
+):
+    """Series Bond timestamps explain the legacy-row backfill policy."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    schema = json.loads(response.content)
+    properties = schema['components']['schemas']['SeriesBondList'][
+        'properties'
+    ]
+    assert (
+        'migration-time timestamp-tracking baseline'
+        in properties['created']['description']
+    )
+    assert (
+        'migration-time timestamp-tracking baseline'
+        in properties['modified']['description']
+    )
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_award_recipient_schema_describes_paginated_typed_objects(
+    client,
+    restore_v2_urlconf,
+):
+    """The Award recipient action documents its page and object variants."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    schema = json.loads(response.content)
+    response_schema = schema['paths']['/api/v2/awards/{id}/recipients/'][
+        'get'
+    ]['responses']['200']['content']['application/json']['schema']
+    components = schema['components']['schemas']
+    recipient_schema = components['AwardRecipient']['properties']['recipient']
+
+    assert response_schema == {
+        '$ref': '#/components/schemas/PaginatedAwardRecipientList',
+    }
+    assert recipient_schema['allOf'] == [
+        {'$ref': '#/components/schemas/AwardRecipientReference'},
+    ]
+    assert recipient_schema['readOnly'] is True
+    assert {
+        item['$ref'] for item in components['AwardRecipientReference']['oneOf']
+    } == {
+        '#/components/schemas/AwardCreatorRecipientReference',
+        '#/components/schemas/AwardIssueRecipientReference',
+        '#/components/schemas/AwardSeriesRecipientReference',
+        '#/components/schemas/AwardStoryRecipientReference',
+    }
+
+
+@pytest.mark.django_db
 @override_settings(MYCOMICS=True)
 def test_schema_excludes_sprint_2_public_routes_on_my_surface(
     client,
@@ -360,5 +482,38 @@ def test_schema_excludes_sprint_3_routes_on_my_surface(
             '/api/v2/reprints/{id}/',
             '/api/v2/story-arcs/',
             '/api/v2/story-arcs/{id}/',
+        },
+    )
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=True)
+def test_schema_excludes_sprint_4_routes_on_my_surface(
+    client,
+    restore_v2_urlconf,
+):
+    """The my schema omits implemented Sprint 4 routes."""
+    _reload_v2_urlconf()
+
+    response = client.get('/api/v2/schema/', {'format': 'json'})
+
+    assert response.status_code == 200
+    assert _schema_paths(response).isdisjoint(
+        {
+            '/api/v2/awards/',
+            '/api/v2/awards/{id}/',
+            '/api/v2/awards/{id}/recipients/',
+            '/api/v2/brand-groups/',
+            '/api/v2/brand-groups/{id}/',
+            '/api/v2/brands/',
+            '/api/v2/brands/{id}/',
+            '/api/v2/features/',
+            '/api/v2/features/{id}/',
+            '/api/v2/indicia-publishers/',
+            '/api/v2/indicia-publishers/{id}/',
+            '/api/v2/indicia-printers/',
+            '/api/v2/indicia-printers/{id}/',
+            '/api/v2/series-bonds/',
+            '/api/v2/series-bonds/{id}/',
         },
     )
