@@ -54,7 +54,8 @@ from apps.gcd.models.gcddata import GcdData, GcdLink
 from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.story import show_feature, show_feature_as_text, \
                                   show_characters, show_title, \
-                                  _get_civilian_identity
+                                  _get_civilian_identity, \
+                                  CharacterThroughOrder
 from apps.gcd.models.image import CropToFace
 from apps.indexer.views import ErrorWithMessage
 
@@ -5556,27 +5557,48 @@ class CharacterOrderRevision(Revision):
         self.story_revision = kwargs['story_revision']
 
     def _post_save_object(self, changes):
-        characters = self.character_order.characters.all()
-        character_revisions = self.character_revisions.all()
-        for character in characters:
-            if not character_revisions.filter(
-              character__id=character.id,
-              universe=character.universe).count():
-                self.character_order.characters.remove(character)
+        current_orders = {
+            current_order.story_character_id: current_order
+            for current_order in CharacterThroughOrder.objects.filter(
+                order_id=self.character_order_id)
+        }
+        revision_orders = CharacterThroughOrderRevision.objects.filter(
+            order=self).select_related('story_character')
+        desired_orders = {}
+        for revision_order in revision_orders:
+            story_character_id = \
+                revision_order.story_character.story_character_id
+            if story_character_id is None:
+                raise IntegrityError(
+                    'Character order revision contains an uncommitted '
+                    'story character revision.')
+            desired_orders[story_character_id] = revision_order.order_code
+
+        removed_ids = current_orders.keys() - desired_orders.keys()
+        if removed_ids:
+            CharacterThroughOrder.objects.filter(
+                order_id=self.character_order_id,
+                story_character_id__in=removed_ids).delete()
+
+        changed_orders = []
+        new_orders = []
+        for story_character_id, order_code in desired_orders.items():
+            if story_character_id in current_orders:
+                current_order = current_orders[story_character_id]
+                if current_order.order_code != order_code:
+                    current_order.order_code = order_code
+                    changed_orders.append(current_order)
             else:
-                character.order_code = character_revisions.get(
-                  character__id=character.id,
-                  universe=character.universe).order_code
-                character.save()
-        for character_revision in character_revisions:
-            if not characters.filter(
-              id=character_revision.character.id,
-              universe=character_revision.universe).exists():
-                order_code = character_revision\
-                  .characterthroughorderrevision_set.get(order=self).order_code
-                self.character_order.characters.add(
-                  character_revision.story_character,
-                  through_defaults={'order_code': order_code})
+                new_orders.append(CharacterThroughOrder(
+                    order_id=self.character_order_id,
+                    story_character_id=story_character_id,
+                    order_code=order_code))
+
+        if changed_orders:
+            CharacterThroughOrder.objects.bulk_update(
+                changed_orders, ['order_code'])
+        if new_orders:
+            CharacterThroughOrder.objects.bulk_create(new_orders)
 
     @property
     def ordered_characters(self):
