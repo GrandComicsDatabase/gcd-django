@@ -8,12 +8,9 @@ from apps.gcd.models import CreditType, Feature, FeatureType, StoryType, \
                             CREDIT_TYPES, STORY_TYPES
 from apps.indexer.models import Indexer
 from apps.oi import states
-from apps.oi.action_labels import APPROVE, SEND_BACK_TO_INDEXER
 from apps.oi.models import Changeset, CTYPES, IssueRevision, RevisionLock
-from apps.oi.submission_validation import (
-    validate_changeset_revisions,
-)
-from apps.oi.views import approve, disapprove, submit
+from apps.oi.views import (APPROVE, SEND_BACK_TO_INDEXER, approve, disapprove,
+                           submit, validate_changeset_revisions)
 
 
 pytestmark = pytest.mark.django_db

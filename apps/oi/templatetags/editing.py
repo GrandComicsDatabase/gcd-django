@@ -9,19 +9,12 @@ from django.utils.html import conditional_escape as esc
 from django import template
 
 from apps.gcd.templatetags.display import absolute_url, show_story_short
-from apps.oi.action_labels import WORKFLOW_ACTION_LABELS
 from apps.oi.models import RevisionLock, CTYPES, StoryRevision
 from apps.oi.coordinators import issue_revision_modified
 
 register = template.Library()
 
 DOC_URL = 'https://docs.comics.org/wiki/'
-
-
-@register.simple_tag
-def workflow_action_label(action):
-    """Keep workflow instructions synchronized with their button labels."""
-    return WORKFLOW_ACTION_LABELS[action]
 
 
 @register.filter

@@ -1,5 +1,4 @@
 {% load crispy_forms_tags %}
-{% load editing %}
 <form action="{% url "process" id=changeset.id %}" method="POST" enctype="multipart/form-data">
   {% csrf_token %}
   <table class="editing">
@@ -25,7 +24,7 @@
     {% if revision.source_label == "issue" %}
 <button class="btn-blue-editing inline" type="submit" name="save">Save And Continue Editing</button>
     {% endif %}
-<button class="btn-blue-editing inline" type="submit" name="submit">{% workflow_action_label 'submit' %}</button>
+<button class="btn-blue-editing inline" type="submit" name="submit">{{ workflow_action_labels.submit }}</button>
     {% if changeset.approver %}
 <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
   {% endif %}

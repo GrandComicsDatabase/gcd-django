@@ -4,21 +4,23 @@
 import re
 import sys
 import glob
+from copy import copy
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
-from django.forms import HiddenInput, MultipleHiddenInput
+from django.forms import (CheckboxInput, FileField, HiddenInput,
+                          ModelChoiceField, MultipleHiddenInput)
 import django.urls as urlresolvers
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, QueryDict
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F, Q
 from django.db.models.fields import Field
 from django.utils.html import (mark_safe, conditional_escape as esc,
                                format_html, format_html_join)
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, gettext_lazy
 
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required
@@ -127,9 +129,6 @@ from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
                            get_preview_image_tags_per_page, UPLOAD_WIDTH
 from apps.oi import states
-from apps.oi.action_labels import (APPROVE, SEND_BACK_TO_INDEXER,
-                                   SUBMIT_CHANGES_FOR_APPROVAL)
-from apps.oi.submission_validation import validate_changeset_revisions
 from apps.oi.templatetags.editing import is_locked
 
 REVISION_CLASSES = {
@@ -221,9 +220,137 @@ REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
   'If you are an experienced indexer and frequently hit ' \
   'your reservation limit please contact us.'
 
+SUBMIT_CHANGES_FOR_APPROVAL = gettext_lazy('Submit Changes For Approval')
+APPROVE = gettext_lazy('Approve')
+SEND_BACK_TO_INDEXER = gettext_lazy('Send Back to Indexer')
+
+WORKFLOW_ACTION_LABELS = {
+    'submit': SUBMIT_CHANGES_FOR_APPROVAL,
+    'approve': APPROVE,
+    'disapprove': SEND_BACK_TO_INDEXER,
+}
+
 ##############################################################################
 # Helper functions
 ##############################################################################
+
+
+def _value_for_post(value):
+    if hasattr(value, 'pk'):
+        return value.pk
+    return value
+
+
+def _add_form_data(data, form):
+    """Serialize an unbound form's current values as browser-like POST data."""
+    for name, field in form.fields.items():
+        if isinstance(field, FileField):
+            # Omitting a file input preserves the file already on the instance.
+            continue
+
+        key = form.add_prefix(name)
+        value = form[name].value()
+
+        # A select without an empty choice submits its first option even when
+        # the unbound BoundField has no explicit initial value.
+        if value is None and isinstance(field, ModelChoiceField) and \
+           not getattr(field.widget, 'allow_multiple_selected', False) and \
+           field.empty_label is None:
+            first_choice = field.queryset.first()
+            if first_choice is not None:
+                value = first_choice.pk
+
+        if getattr(field.widget, 'allow_multiple_selected', False) or \
+           isinstance(value, (list, tuple)) or hasattr(value, 'all'):
+            # An empty multi-select is omitted from browser POST data; posting
+            # one empty value makes Django reject it as an invalid choice.
+            if value is None or value == '':
+                values = []
+            elif hasattr(value, 'all'):
+                values = value.all()
+            elif isinstance(value, (list, tuple)):
+                values = value
+            else:
+                values = [value]
+            data.setlist(key, [str(_value_for_post(item))
+                               for item in values])
+        elif isinstance(field.widget, CheckboxInput):
+            if value:
+                data[key] = 'on'
+        else:
+            value = _value_for_post(value)
+            data[key] = '' if value is None else str(value)
+
+
+def _add_formset_data(data, formset):
+    prefix = formset.prefix
+    data['%s-TOTAL_FORMS' % prefix] = str(formset.total_form_count())
+    data['%s-INITIAL_FORMS' % prefix] = str(formset.initial_form_count())
+    data['%s-MIN_NUM_FORMS' % prefix] = str(formset.min_num)
+    data['%s-MAX_NUM_FORMS' % prefix] = str(formset.max_num)
+    for form in formset.forms:
+        _add_form_data(data, form)
+
+
+def _validation_messages(form, extra_forms):
+    messages = []
+    for errors in form.errors.values():
+        messages.extend(str(error) for error in errors)
+    for formset in extra_forms.values():
+        if formset is None:
+            continue
+        for errors in formset.errors:
+            for field_errors in errors.values():
+                messages.extend(str(error) for error in field_errors)
+        messages.extend(str(error) for error in formset.non_form_errors())
+    return list(dict.fromkeys(messages))
+
+
+def validate_revision_for_transition(revision, request):
+    """Run the editing form and formset validators against saved values."""
+    # extra_forms() reads request.POST, so use request copies rather than
+    # replacing the data submitted to the workflow action itself.
+    unbound_request = copy(request)
+    unbound_request.POST = QueryDict()
+
+    form_class = get_revision_form(revision, user=request.user)
+    unbound_form = form_class(instance=revision)
+    unbound_extra_forms = revision.extra_forms(unbound_request)
+
+    data = QueryDict('', mutable=True)
+    _add_form_data(data, unbound_form)
+    for formset in unbound_extra_forms.values():
+        if formset is not None:
+            _add_formset_data(data, formset)
+
+    bound_request = copy(request)
+    bound_request.POST = data
+    form = form_class(data, instance=revision)
+    extra_forms = revision.extra_forms(bound_request)
+
+    # Evaluate every formset even if the main form fails so the indexer sees
+    # all persisted-data errors in one pass.
+    valid = form.is_valid()
+    for formset in extra_forms.values():
+        if formset is not None:
+            if not formset.is_valid():
+                valid = False
+
+    if valid:
+        return []
+    return _validation_messages(form, extra_forms)
+
+
+def validate_changeset_revisions(changeset, request):
+    """Return invalid active issue/story revisions and their errors."""
+    invalid = []
+    revisions = list(changeset.issuerevisions.filter(deleted=False))
+    revisions.extend(changeset.storyrevisions.filter(deleted=False))
+    for revision in revisions:
+        messages = validate_revision_for_transition(revision, request)
+        if messages:
+            invalid.append((revision, messages))
+    return invalid
 
 
 def _cant_get(request):
@@ -235,6 +362,7 @@ def _cant_get(request):
 
 def oi_render(request, template_name, context={}):
     context['EDITING'] = True
+    context['workflow_action_labels'] = WORKFLOW_ACTION_LABELS
     return render(request, template_name, context)
 
 ##############################################################################
