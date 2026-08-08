@@ -58,10 +58,11 @@ def test_classification():
         'series': gf('series'),
         'indicia_publisher': gf('indicia_publisher'),
         'indicia_pub_not_printed': gf('indicia_pub_not_printed'),
-        'brand': gf('brand'),
+        'brand_emblem': gf('brand_emblem'),
         'no_brand': gf('no_brand'),
-        'no_indicia_printer': gf('no_indicia_printer'),
         'indicia_printer': gf('indicia_printer'),
+        'indicia_printer_not_printed': gf('indicia_printer_not_printed'),
+        'indicia_printer_sourced_by': gf('indicia_printer_sourced_by'),
     }
 
     irregular_fields = {
@@ -79,9 +80,13 @@ def test_classification():
     single_value_fields = regular_fields.copy()
     del single_value_fields['keywords']
     del single_value_fields['indicia_printer']
+    del single_value_fields['brand_emblem']
     assert IssueRevision._get_single_value_fields() == single_value_fields
 
-    assert IssueRevision._get_multi_value_fields() == {'indicia_printer': gf('indicia_printer'),}
+    assert IssueRevision._get_multi_value_fields() == {
+        'indicia_printer': gf('indicia_printer'),
+        'brand_emblem': gf('brand_emblem'),
+    }
 
 
 def test_conditional_field_mapping():
@@ -99,7 +104,7 @@ def test_conditional_field_mapping():
         'indicia_frequency': ('series', 'has_indicia_frequency'),
         'no_indicia_frequency': ('series', 'has_indicia_frequency'),
         'indicia_printer': ('series', 'has_indicia_printer'),
-        'no_indicia_printer': ('series', 'has_indicia_printer'),
+        'indicia_printer_not_printed': ('series', 'has_indicia_printer'),
     }
 
 
@@ -107,9 +112,10 @@ def test_parent_field_tuples():
     assert IssueRevision._get_parent_field_tuples() == {
         ('series',),
         ('series', 'publisher'),
-        ('brand', 'group'),
-        ('brand',),
+        ('brand_emblem', 'group'),
+        ('brand_emblem',),
         ('indicia_publisher',),
+        ('indicia_printer',),
     }
 
 
@@ -604,7 +610,7 @@ def test_post_save_new_gains_gallery(patch_for_move):
     assert new.has_gallery is True
 
     assert not old.save.called
-    new.save.assert_called_once_with()
+    new.save.assert_called_once_with(update_fields=['has_gallery'])
 
 
 @pytest.mark.parametrize('has_gallery, count', [(True, 1), (False, 0)])
@@ -627,7 +633,7 @@ def test_post_save_old_loses_gallery(patch_for_move, has_gallery, count):
     assert old.has_gallery is False
     assert new.has_gallery is has_gallery
 
-    old.save.assert_called_once_with()
+    old.save.assert_called_once_with(update_fields=['has_gallery'])
     assert not new.save.called
 
 

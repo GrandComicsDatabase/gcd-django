@@ -3038,6 +3038,7 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
             setattr(revision, field, getattr(compare_revision, field))
         # m2m fields
         if field in fields_to_set:
+            getattr(revision, field).clear()
             getattr(revision, field).add(*list(getattr(compare_revision,
                                                        field).all()))
     if 'year_on_sale' in selected_fields:
@@ -3843,6 +3844,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
             setattr(revision, field, getattr(compare_revision, field))
         # m2m fields
         if field in fields_to_set:
+            getattr(revision, field).clear()
             getattr(revision, field).add(*list(getattr(compare_revision,
                                                        field).all()))
         # special handling for keywords due to their different storage

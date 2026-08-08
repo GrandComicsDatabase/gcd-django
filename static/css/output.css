@@ -1157,6 +1157,26 @@ a:hover {
   color: rgb(248 113 113 / var(--tw-text-opacity));
 }
 
+/* Keep verification visible while preserving unsaved form fields. */
+
+.cloudflare_challenge_notice {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  right: 0;
+  left: 0;
+  padding: 0.75rem 1rem;
+  background-color: #fef3c7;
+  border-bottom: 1px solid #854d0e;
+  color: #713f12;
+  text-align: center;
+}
+
+.cloudflare_challenge_notice a {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
 .added {
   --tw-bg-opacity: 1;
   background-color: rgb(74 222 128 / var(--tw-bg-opacity));

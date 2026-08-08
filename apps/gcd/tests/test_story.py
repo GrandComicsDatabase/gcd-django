@@ -19,7 +19,7 @@ def test_stat_counts(is_comics, deleted):
     assert story.stat_counts() == {} if deleted else {'stories': 1}
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def re_story_mocks():
     with mock.patch('%s.from_all_reprints' % STORY_PATH) as from_mock, \
             mock.patch('%s.to_all_reprints' % STORY_PATH) as to_mock:

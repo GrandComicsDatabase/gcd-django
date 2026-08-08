@@ -367,6 +367,23 @@ def any_added_brand(any_added_brand_rev):
 
 
 @pytest.fixture
+def second_brand_same_group(brand_add_values, any_indexer,
+                            any_added_brand_group1):
+    changeset = Changeset(state=states.OPEN, indexer=any_indexer,
+                          change_type=CTYPES['publisher'])
+    changeset.save()
+    values = dict(brand_add_values)
+    values['name'] = 'Second Test Brand'
+    br = BrandRevision(changeset=changeset, **values)
+    br.save()
+    br.group.add(any_added_brand_group1)
+    br.commit_to_display()
+    changeset.state = states.APPROVED
+    changeset.save()
+    return br.brand
+
+
+@pytest.fixture
 def brand_use_add_values(any_added_publisher, any_added_brand):
     return {
         'publisher': any_added_publisher,
@@ -522,7 +539,7 @@ def issue_add_values(any_adding_changeset, any_country, any_language,
         'series': series_rev.series,
         'indicia_publisher': any_added_indicia_publisher,
         'indicia_printer': any_added_indicia_printer,
-        'brand': any_added_brand,
+        'brand_emblem': any_added_brand,
         'publication_date': 'January 1947',
         'key_date': '1947-01-00',
         'year_on_sale': 1946,
@@ -544,9 +561,11 @@ def issue_add_values(any_adding_changeset, any_country, any_language,
 @pytest.fixture
 def any_added_issue_rev(any_adding_changeset, issue_add_values):
     indicia_printer = issue_add_values.pop('indicia_printer')
+    brand = issue_add_values.pop('brand_emblem')
     rev = IssueRevision(changeset=any_adding_changeset, **issue_add_values)
     rev.save()
     rev.indicia_printer.set([indicia_printer,])
+    rev.brand_emblem.set([brand,])
     return rev
 
 
@@ -565,15 +584,17 @@ def variant_add_values(any_added_issue):
         'variant_name': 'varied variant',
         'series': any_added_issue.series,
         'indicia_publisher': any_added_issue.indicia_publisher,
-        'brand': any_added_issue.brand,
+        'brand_emblem': any_added_issue.brand_emblem.get(),
     }
 
 
 @pytest.fixture
 def any_added_variant_rev(any_variant_adding_changeset, variant_add_values):
+    brand = variant_add_values.pop('brand_emblem')
     rev = IssueRevision(changeset=any_variant_adding_changeset,
                         **variant_add_values)
     rev.save()
+    rev.brand_emblem.set([brand,])
     return IssueRevision.objects.get(pk=rev.pk)
 
 
