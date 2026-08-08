@@ -4,7 +4,6 @@
 import re
 import sys
 import glob
-import logging
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
@@ -133,8 +132,6 @@ from apps.oi.action_labels import (APPROVE, SEND_BACK_TO_INDEXER,
 from apps.oi.submission_validation import validate_changeset_revisions
 from apps.oi.templatetags.editing import is_locked
 
-logger = logging.getLogger(__name__)
-
 REVISION_CLASSES = {
     'publisher': PublisherRevision,
     'indicia_publisher': IndiciaPublisherRevision,
@@ -227,20 +224,6 @@ REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
 ##############################################################################
 # Helper functions
 ##############################################################################
-
-
-def _send_notification(user, subject, body):
-    """Send non-critical email after commit and log delivery failures."""
-    def deliver():
-        try:
-            user.email_user(subject, body, settings.EMAIL_INDEXING)
-        except Exception:
-            # Email delivery must not turn a completed workflow action into a
-            # user-facing error, but operators still need the traceback.
-            logger.exception(
-              'Failed to send OI notification to user %s.', user.pk)
-
-    transaction.on_commit(deliver)
 
 
 def _cant_get(request):
@@ -654,8 +637,8 @@ thanks,
                      settings.SITE_NAME,
                      settings.SITE_URL)
 
-        _send_notification(
-          changeset.approver, 'GCD change to review', email_body)
+        changeset.approver.email_user('GCD change to review', email_body,
+                                      settings.EMAIL_INDEXING)
 
     if comment_text:
         send_comment_observer(request, changeset, comment_text)
@@ -951,8 +934,8 @@ thanks,
                          settings.SITE_NAME,
                          settings.SITE_URL)
 
-            _send_notification(
-              changeset.approver, 'Reviewed GCD change discarded', email_body)
+            changeset.approver.email_user('Reviewed GCD change discarded',
+                                          email_body, settings.EMAIL_INDEXING)
         if comment_text:
             send_comment_observer(request, changeset, comment_text)
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
@@ -1029,8 +1012,8 @@ thanks,
                      settings.SITE_NAME,
                      settings.SITE_URL)
 
-        _send_notification(
-          changeset.indexer, 'GCD change rejected', email_body)
+        changeset.indexer.email_user('GCD change rejected', email_body,
+                                     settings.EMAIL_INDEXING)
         if comment_text:
             send_comment_observer(request, changeset, comment_text)
         if request.user.approved_changeset.filter(state=states.REVIEWING)\
@@ -1119,7 +1102,8 @@ thanks,
                        'compare', kwargs={'id': changeset.id}),
                      settings.SITE_NAME,
                      settings.SITE_URL)
-        _send_notification(changeset.indexer, 'GCD comment', email_body)
+        changeset.indexer.email_user('GCD comment', email_body,
+                                     settings.EMAIL_INDEXING)
 
         send_comment_observer(request, changeset, comment_text)
 
@@ -1169,7 +1153,8 @@ thanks,
                        'compare', kwargs={'id': changeset.id}),
                      settings.SITE_NAME,
                      settings.SITE_URL)
-        _send_notification(changeset.indexer, 'GCD comment', email_body)
+        changeset.indexer.email_user(
+          'GCD comment', email_body, settings.EMAIL_INDEXING)
 
         send_comment_observer(request, changeset, comment_text)
 
@@ -1250,10 +1235,12 @@ thanks,
         subject = 'GCD change put into discussion'
 
     if request.user == changeset.indexer:
-        _send_notification(changeset.approver, subject, email_body)
+        changeset.approver.email_user(subject, email_body,
+                                      settings.EMAIL_INDEXING)
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
-        _send_notification(changeset.indexer, subject, email_body)
+        changeset.indexer.email_user(subject, email_body,
+                                     settings.EMAIL_INDEXING)
 
         if request.user.approved_changeset.filter(
           state=states.REVIEWING).count():
@@ -1348,7 +1335,8 @@ thanks,
             send_comment_observer(request, changeset, comment_text)
         else:
             subject = 'GCD change approved'
-        _send_notification(changeset.indexer, subject, email_body)
+        changeset.indexer.email_user(subject, email_body,
+                                     settings.EMAIL_INDEXING)
 
     # Note that series ongoing reservations must be processed first, as
     # they could potentially apply to the issue reservations if we ever
@@ -1442,8 +1430,10 @@ thanks,
        urlresolvers.reverse('editing'),
        settings.SITE_NAME, settings.SITE_URL)
 
-    _send_notification(
-      indexer, 'GCD automatic reservation declined', email_body)
+    indexer.email_user(
+      'GCD automatic reservation declined',
+      email_body,
+      settings.EMAIL_INDEXING)
 
 
 def _send_declined_ongoing_email(indexer, series):
@@ -1469,8 +1459,10 @@ thanks,
        course_of_action,
        settings.SITE_NAME, settings.SITE_URL)
 
-    _send_notification(
-      indexer, 'GCD automatic reservation declined', email_body)
+    indexer.email_user(
+      'GCD automatic reservation declined',
+      email_body,
+      settings.EMAIL_INDEXING)
 
 
 @permission_required('indexer.can_approve')
@@ -1518,7 +1510,8 @@ thanks,
        settings.SITE_NAME,
        settings.SITE_URL)
 
-    _send_notification(changeset.indexer, 'GCD change sent back', email_body)
+    changeset.indexer.email_user(
+      'GCD change sent back', email_body, settings.EMAIL_INDEXING)
 
     send_comment_observer(request, changeset, comment_text)
 
@@ -1562,8 +1555,8 @@ thanks,
                      .exclude(commenter__in=excluding)
                      .values_list('commenter', flat=True))
     for commenter in commenters:
-        _send_notification(
-          User.objects.get(id=commenter), 'GCD comment', email_body)
+        User.objects.get(id=commenter).email_user(
+          'GCD comment', email_body, settings.EMAIL_INDEXING)
 
 
 @permission_required('indexer.can_reserve')
@@ -1604,9 +1597,11 @@ thanks,
                      settings.SITE_URL)
 
         if request.user != changeset.indexer:
-            _send_notification(changeset.indexer, 'GCD comment', email_body)
+            changeset.indexer.email_user(
+              'GCD comment', email_body, settings.EMAIL_INDEXING)
         if changeset.approver and request.user != changeset.approver:
-            _send_notification(changeset.approver, 'GCD comment', email_body)
+            changeset.approver.email_user(
+              'GCD comment', email_body, settings.EMAIL_INDEXING)
 
         send_comment_observer(request, changeset, comment_text)
 

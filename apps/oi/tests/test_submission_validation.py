@@ -68,10 +68,6 @@ def _put_in_review(changeset, editor, *locked_objects):
     changeset.save()
 
 
-def _refuse_email(*args, **kwargs):
-    raise ConnectionRefusedError
-
-
 def test_submission_validation_finds_mixed_feature_data(
         any_edit_story_rev, any_indexer):
     changeset = any_edit_story_rev.changeset
@@ -171,22 +167,15 @@ def test_approve_keeps_invalid_changeset_in_review(any_edit_story_rev,
     assert str(SEND_BACK_TO_INDEXER).encode() in response.content
 
 
-def test_approve_allows_corrected_changeset(
-        any_edit_story_rev, any_editor, monkeypatch,
-        django_capture_on_commit_callbacks):
+def test_approve_allows_corrected_changeset(any_edit_story_rev, any_editor):
     changeset = any_edit_story_rev.changeset
     changeset.change_type = CTYPES['issue']
     issue_revision = IssueRevision.clone(
       any_edit_story_rev.issue, changeset=changeset)
     _put_in_review(changeset, any_editor, any_edit_story_rev.issue,
                    any_edit_story_rev.story)
-    changeset.indexer.indexer.notify_on_approve = True
-    changeset.indexer.indexer.save(update_fields=['notify_on_approve'])
-    monkeypatch.setattr(User, 'email_user', _refuse_email)
 
-    with django_capture_on_commit_callbacks(execute=True):
-        response = approve.__wrapped__(
-          _request_for(any_editor), changeset.id)
+    response = approve.__wrapped__(_request_for(any_editor), changeset.id)
 
     changeset.refresh_from_db()
     issue_revision.refresh_from_db()
@@ -195,47 +184,6 @@ def test_approve_allows_corrected_changeset(
     assert changeset.state == states.APPROVED
     assert issue_revision.committed is True
     assert any_edit_story_rev.committed is True
-
-
-def test_send_back_ignores_notification_failure(
-        any_edit_story_rev, any_editor, monkeypatch,
-        django_capture_on_commit_callbacks):
-    changeset = any_edit_story_rev.changeset
-    changeset.change_type = CTYPES['issue']
-    IssueRevision.clone(any_edit_story_rev.issue, changeset=changeset)
-    _put_in_review(changeset, any_editor, any_edit_story_rev.issue,
-                   any_edit_story_rev.story)
-
-    monkeypatch.setattr(User, 'email_user', _refuse_email)
-    request = RequestFactory().post(
-      '/send-back/', {'comments': 'Correct the conflicting Feature fields.'})
-    request.user = any_editor
-
-    with django_capture_on_commit_callbacks(execute=True):
-        response = disapprove.__wrapped__(request, changeset.id)
-
-    changeset.refresh_from_db()
-    assert response.status_code == 302
-    assert changeset.state == states.OPEN
-
-
-def test_resubmit_ignores_notification_failure(
-        any_edit_story_rev, any_editor, monkeypatch,
-        django_capture_on_commit_callbacks):
-    changeset = any_edit_story_rev.changeset
-    changeset.change_type = CTYPES['issue']
-    IssueRevision.clone(any_edit_story_rev.issue, changeset=changeset)
-    changeset.approver = any_editor
-    changeset.save(update_fields=['change_type', 'approver'])
-    monkeypatch.setattr(User, 'email_user', _refuse_email)
-
-    with django_capture_on_commit_callbacks(execute=True):
-        response = submit.__wrapped__(
-          _request_for(changeset.indexer), changeset.id)
-
-    changeset.refresh_from_db()
-    assert response.status_code == 302
-    assert changeset.state == states.REVIEWING
 
 
 def test_send_back_requires_comment_using_button_label(any_edit_story_rev,
