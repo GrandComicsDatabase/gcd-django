@@ -342,11 +342,17 @@ def validate_revision_for_transition(revision, request):
 
 
 def validate_changeset_revisions(changeset, request):
-    """Return invalid active issue/story revisions and their errors."""
+    """Return invalid changed issue/story revisions and their errors."""
     invalid = []
     revisions = list(changeset.issuerevisions.filter(deleted=False))
     revisions.extend(changeset.storyrevisions.filter(deleted=False))
     for revision in revisions:
+        # A changeset can contain cloned sequences that the indexer did not
+        # edit. Recompute comparison state so legacy data in those untouched
+        # sequences does not become part of the indexer's required work.
+        revision.compare_changes()
+        if not revision.is_changed:
+            continue
         messages = validate_revision_for_transition(revision, request)
         if messages:
             invalid.append((revision, messages))

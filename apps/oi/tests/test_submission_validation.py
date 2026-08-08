@@ -53,6 +53,7 @@ def _add_feature_object(story_revision, language):
       feature_type=feature_type,
       notes='')
     story_revision.feature_object.add(feature)
+    return feature
 
 
 def _put_in_review(changeset, editor, *locked_objects):
@@ -80,6 +81,20 @@ def test_submission_validation_finds_mixed_feature_data(
     assert invalid[0][0] == any_edit_story_rev
     assert 'Either use the text feature field or the database objects.' \
            in invalid[0][1]
+
+
+def test_submission_validation_skips_unchanged_invalid_story(
+        any_edit_story_rev, any_indexer):
+    feature = _add_feature_object(
+      any_edit_story_rev, any_edit_story_rev.issue.series.language)
+    # Give the prior revision the same legacy-invalid combination so the
+    # cloned sequence is present in the changeset but was not edited.
+    any_edit_story_rev.previous().feature_object.add(feature)
+
+    invalid = validate_changeset_revisions(
+      any_edit_story_rev.changeset, _request_for(any_indexer))
+
+    assert invalid == []
 
 
 def test_submission_validation_finds_invalid_issue(any_added_issue,
