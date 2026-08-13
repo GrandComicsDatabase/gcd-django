@@ -18,7 +18,7 @@ from .award import ReceivedAward
 from .character import CharacterNameDetail, Group, GroupNameDetail, \
                        Universe, Multiverse
 from .creator import CreatorNameDetail, CreatorSignature
-from .feature import Feature, FeatureLogo
+from .feature import Feature, FeatureLogo, FeatureNameDetail
 from .support_tables import render_publisher
 
 # TODO rename STORY_TYPES to SEQUENCE_TYPES
@@ -66,7 +66,7 @@ DEPRECATED_TYPES = [3, 4, 23]
 def show_feature(story, url=True):
     first = True
     features = ''
-    for feature in story.feature_object.all():
+    for feature in story.feature_name.all():
         if first:
             first = False
         else:
@@ -887,6 +887,7 @@ class Story(GcdData):
     first_line = models.CharField(max_length=255, default='')
     feature = models.CharField(max_length=255)
     feature_object = models.ManyToManyField(Feature)
+    feature_name = models.ManyToManyField(FeatureNameDetail)
     feature_logo = models.ManyToManyField(FeatureLogo)
     story_arc = models.ManyToManyField(StoryArc)
     universe = models.ManyToManyField(Universe)
@@ -1083,9 +1084,9 @@ class Story(GcdData):
         UI check for features.
 
         feature_logo entry automatically results in corresponding
-        feature_object entry, therefore no check needed
+        feature_name entry, therefore no check needed
         """
-        return self.feature or self.feature_object.count()
+        return self.feature or self.feature_name.count()
 
     def has_reprints(self, notes=True, ignore=STORY_TYPES['preview']):
         if self.type_id not in [STORY_TYPES['preview'],

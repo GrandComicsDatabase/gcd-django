@@ -23,7 +23,8 @@ from taggit.models import Tag
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
-                            Feature, FeatureLogo, IndiciaPrinter, School, \
+                            Feature, FeatureNameDetail, FeatureLogo, \
+                            IndiciaPrinter, School, \
                             Character, CharacterNameDetail, Group, \
                             GroupNameDetail, Universe, StoryArc, Brand, \
                             BrandGroup, \
@@ -623,6 +624,36 @@ class FeatureAutocomplete(LoginRequiredMixin,
         return qs
 
 
+class FeatureNameAutocomplete(LoginRequiredMixin,
+                              autocomplete.Select2QuerySetView):
+    def get_queryset(self, interactive=True):
+        qs = FeatureNameDetail.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+        type = self.forwarded.get('type', None)
+
+        if language and language not in ['zxx', 'und']:
+            qs = qs.filter(feature__language__code__in=[language, 'zxx'])
+
+        if type:
+            type = int(type)
+            if type == STORY_TYPES['letters_page']:
+                qs = qs.filter(feature__feature_type__id=2)
+            else:
+                qs = qs.exclude(feature__feature_type__id=2)
+            if type == STORY_TYPES['in-house column']:
+                qs = qs.filter(feature__feature_type__id=4)
+            else:
+                qs = qs.exclude(feature__feature_type__id=4)
+            if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
+                qs = qs.exclude(feature__feature_type__id=3)
+
+        qs = _filter_and_sort(qs, self.q, parent_disambiguation='feature',
+                              interactive=interactive)
+
+        return qs
+
+
 class FeatureLogoAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
     def get_result_label(self, feature_logo):
@@ -1008,6 +1039,7 @@ class IssueFilter(CommonFilter):
         else:
             collections = None
         story_type_filter = kwargs.pop('story_type_filter', None)
+        language_filter = kwargs.pop('language_filter', None)
         super(IssueFilter, self).__init__(*args, **kwargs)
         if collections:
             qs = Collection.objects.filter(id__in=collections)
@@ -1016,6 +1048,8 @@ class IssueFilter(CommonFilter):
             self.form.fields.pop('collection')
         if not story_type_filter:
             self.form.fields.pop('story_type')
+        if not language_filter:
+            self.form.fields.pop('language')
 
 
 class CoverFilter(CommonFilter):
@@ -1059,6 +1093,12 @@ class SequenceFilter(CommonFilter):
         model = Issue
         fields = ['country', 'language', 'publisher', 'story_type']
 
+    def __init__(self, *args, **kwargs):
+        language_filter = kwargs.pop('language_filter', None)
+        super(SequenceFilter, self).__init__(*args, **kwargs)
+        if not language_filter:
+            self.form.fields.pop('language')
+
 
 class KeywordUsedFilter(FilterSet):
     content_type = ModelChoiceFilter(field_name='content_type',
@@ -1098,7 +1138,8 @@ def filter_series(request, series):
     return filter
 
 
-def filter_issues(request, issues, story_type_filter=False):
+def filter_issues(request, issues, story_type_filter=False,
+                  language_filter=True):
     if settings.MYCOMICS and request.user.is_authenticated:
         collections = request.user.collector.collections.all()\
                              .order_by('name').values_list('id', flat=True)
@@ -1110,9 +1151,16 @@ def filter_issues(request, issues, story_type_filter=False):
                          language='series__language',
                          publisher='series__publisher',
                          collections=collections,
-                         story_type_filter=story_type_filter
+                         story_type_filter=story_type_filter,
+                         language_filter=language_filter
                          )
-    return filter
+    issues = filter.qs
+    if not issues:
+        filter.form.fields.pop('publisher', None)
+        filter.form.fields.pop('country', None)
+        filter.form.fields.pop('language', None)
+
+    return filter, issues
 
 
 def filter_covers(request, covers):
@@ -1124,13 +1172,20 @@ def filter_covers(request, covers):
     return filter
 
 
-def filter_sequences(request, sequences):
+def filter_sequences(request, sequences, language_filter=True):
     filter = SequenceFilter(request.GET,
                             queryset=sequences,
                             country='issue__series__country',
                             language='issue__series__language',
-                            publisher='issue__series__publisher')
-    return filter
+                            publisher='issue__series__publisher',
+                            language_filter=language_filter)
+    sequences = filter.qs
+    if not sequences:
+        filter.form.fields.pop('publisher', None)
+        filter.form.fields.pop('country', None)
+        filter.form.fields.pop('language', None)
+
+    return filter, sequences
 
 
 def filter_facets(request, things, fields, size=100):

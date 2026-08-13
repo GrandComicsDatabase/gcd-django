@@ -32,7 +32,8 @@ from .story import (get_story_revision_form, get_biblio_revision_form,
                     StoryCharacterRevisionFormSet, StoryGroupRevisionFormSet)
 from .feature import (get_feature_revision_form,
                       get_feature_logo_revision_form,
-                      get_feature_relation_revision_form)
+                      get_feature_relation_revision_form,
+                      FeatureRevisionFormSet)
 from .character import (get_universe_revision_form,
                         get_character_revision_form, get_group_revision_form,
                         get_group_membership_revision_form,

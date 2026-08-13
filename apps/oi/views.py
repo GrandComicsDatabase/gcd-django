@@ -6356,6 +6356,10 @@ def compare(request, id):
         group_name_revisions = changeset.groupnamedetailrevisions.all()
         for group_name_revision in group_name_revisions:
             revisions_before.append(group_name_revision)
+    elif changeset.change_type == CTYPES['feature']:
+        feature_name_revisions = changeset.featurenamedetailrevisions.all()
+        for feature_name_revision in feature_name_revisions:
+            revisions_before.append(feature_name_revision)
     for revision_before in revisions_before:
         revision_before.compare_changes()
     for revision_after in revisions_after:
