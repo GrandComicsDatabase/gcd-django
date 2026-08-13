@@ -7694,11 +7694,6 @@ class FeatureNameDetailRevision(Revision):
         }
 
     def _imps_for(self, field_name):
-        if field_name == 'sort_name':
-            if self.sort_name == self.name:
-                return 0
-            else:
-                return 1
         if field_name in self._field_list():
             return 1
         return 0
