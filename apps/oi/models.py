@@ -7350,6 +7350,9 @@ class FeatureRevision(Revision):
                                                null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
+    description = models.TextField(
+      blank=True,
+      help_text='concise description, including background and premise')
     keywords = models.TextField(blank=True, default='')
 
     external_link_revisions = GenericRelation(ExternalLinkRevision)
@@ -7465,7 +7468,7 @@ class FeatureRevision(Revision):
                         'genre', 'language', 'feature_type',
                         'year_first_published',
                         'year_first_published_uncertain',
-                        'notes', 'keywords']
+                        'description', 'notes', 'keywords']
 
     def _field_list(self):
         return self._base_field_list
@@ -7478,6 +7481,7 @@ class FeatureRevision(Revision):
             'feature_type': None,
             'year_first_published': None,
             'year_first_published_uncertain': False,
+            'description': '',
             'notes': '',
             'keywords': '',
         }

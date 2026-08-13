@@ -60,6 +60,7 @@ class Feature(GcdData):
     feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
     year_first_published = models.IntegerField(db_index=True, null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
+    description = models.TextField()
     notes = models.TextField()
     external_link = models.ManyToManyField(ExternalLink)
     keywords = TaggableManager()
