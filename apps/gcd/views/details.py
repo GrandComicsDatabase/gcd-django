@@ -3959,7 +3959,7 @@ def feature_logo_feature_issues(request, feature_logo_id, feature_id):
     feature_logo = get_gcd_object(FeatureLogo, feature_logo_id)
     feature = get_gcd_object(Feature, feature_id)
 
-    if feature_logo.feature.all()[0].feature_type.id == 1:
+    if feature.feature_type.id == 1:
         issues = Issue.objects.filter(story__feature_logo=feature_logo,
                                       story__feature_name__feature=feature,
                                       story__type__id__in=CORE_TYPES,
