@@ -2563,7 +2563,7 @@ def compute_order(data):
             elif order == 'indicia_publisher':
                 terms.append('indicia_publisher')
             elif order == 'brand':
-                terms.append('brand')
+                terms.append('brand_emblem')
             elif order == 'publisher':
                 terms.append('series__publisher')
             elif order == 'country':
@@ -2576,6 +2576,8 @@ def compute_order(data):
                 terms.append('issue__series__publisher')
             elif order == 'indicia_publisher':
                 terms.append('issue__indicia_publisher')
+            elif order == 'brand':
+                terms.append('issue__brand_emblem')
             elif order == 'series':
                 terms.append('issue__series')
             elif order == 'date':
