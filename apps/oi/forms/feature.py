@@ -17,7 +17,8 @@ from apps.oi.models import (FeatureRevision, FeatureLogoRevision, FeatureType,
                             FeatureRelationRevision, FeatureNameDetailRevision,
                             remove_leading_article)
 
-from .support import (KeywordBaseForm, FEATURE_HELP_LINKS, HiddenInputWithHelp,
+from .support import (CharacterBaseForm, FEATURE_HELP_LINKS,
+                      HiddenInputWithHelp,
                       _get_comments_form_field, combine_reverse_relations,
                       GENERIC_ERROR_MESSAGE, _create_embedded_image_revision,
                       _save_runtime_embedded_image_revision)
@@ -112,7 +113,7 @@ FeatureRevisionFormSet = inlineformset_factory(
     formset=FeatureInlineFormSet)
 
 
-class FeatureRevisionForm(KeywordBaseForm):
+class FeatureRevisionForm(CharacterBaseForm):
     class Meta:
         model = FeatureRevision
         fields = model._base_field_list
@@ -132,12 +133,12 @@ class FeatureRevisionForm(KeywordBaseForm):
                                       template='oi/bits/uni_field.html'))]
         field_list.append(Formset('feature_names_formset'))
         field_list.extend(BaseField(Field(field,
-                                      template='oi/bits/uni_field.html'))
-                      for field in fields[:genres])
+                                    template='oi/bits/uni_field.html'))
+                          for field in fields[:genres])
         field_list.append(HTML(
           '<tr class="mb-2"><th>Selected Genre:</th>'
           '<td id="selected-genres"></td></tr>'))
-        description_pos = fields.index('notes')
+        description_pos = fields.index('description')
 
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
@@ -145,7 +146,7 @@ class FeatureRevisionForm(KeywordBaseForm):
         field_list.append(Formset('external_link_formset'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[description_pos:]])
+                           for field in fields[description_pos:-1]])
         self.helper.layout = Layout(*(f for f in field_list))
         self.helper.doc_links = FEATURE_HELP_LINKS
 
