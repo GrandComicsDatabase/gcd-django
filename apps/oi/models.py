@@ -5970,10 +5970,12 @@ class StoryRevision(Revision):
                           ('issue', 'series', 'language',)})
 
     def _pre_delete(self, changes):
-        # sigh, some people add story_credits to be deleted stories
-        for revision in self.story_credit_revisions.all():
-            if revision.added:
-                revision.delete()
+        for related_name in ('story_credit_revisions',
+                             'story_character_revisions',
+                             'story_group_revisions'):
+            for revision in getattr(self, related_name).all():
+                if revision.added:
+                    revision.delete()
 
     @classmethod
     def copied_revision(cls, story, changeset, issue_revision,
@@ -6232,10 +6234,20 @@ class StoryRevision(Revision):
         self.issue = issue
 
     def _reset_values(self):
-        # TODO: undo StoryCredit and StoryCharacter changes
-        # TODO: remove added StoryCredit, StoryCharacter
-        # and StoryGroup revisions
         if self.deleted:
+            for related_name in ('story_credit_revisions',
+                                 'story_character_revisions',
+                                 'story_group_revisions'):
+                for revision in getattr(self, related_name).all():
+                    for field in revision._get_single_value_fields():
+                        setattr(revision, field,
+                                getattr(revision.source, field))
+                    revision.deleted = True
+                    revision.save()
+                    for field in revision._get_multi_value_fields():
+                        getattr(revision, field).set(
+                          getattr(revision.source, field).all())
+
             # users can edit story revisions before deleting them.
             # ensure that the final deleted revision matches the
             # final state of the story.
@@ -6735,15 +6747,12 @@ class StoryRevision(Revision):
         when the revision is committed.
         """
         self.deleted = not self.deleted
-        if bool(self.story_credit_revisions.all()):
-            for story_credit_revision in self.story_credit_revisions.all():
-                story_credit_revision.deleted = self.deleted
-                story_credit_revision.save()
-        if bool(self.story_character_revisions.all()):
-            for story_character_revision in self.story_character_revisions\
-                                                .all():
-                story_character_revision.deleted = self.deleted
-                story_character_revision.save()
+        for related_name in ('story_credit_revisions',
+                             'story_character_revisions',
+                             'story_group_revisions'):
+            for revision in getattr(self, related_name).all():
+                revision.deleted = self.deleted
+                revision.save()
         self.save()
 
     def get_absolute_url(self):
