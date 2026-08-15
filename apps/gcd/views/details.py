@@ -4508,7 +4508,7 @@ def character_issues_character(request, character_id, character_with_id,
     filter, issues = filter_issues(request, issues, story_type_filter=True,
                                    language_filter=False)
 
-    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    result_disclaimer = CHAR_MIGRATE_DISCLAIMER
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -4551,7 +4551,7 @@ def character_issues_group(request, character_id, group_id,
     filter, issues = filter_issues(request, issues, story_type_filter=True,
                                    language_filter=False)
 
-    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    result_disclaimer = CHAR_MIGRATE_DISCLAIMER
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -4594,7 +4594,7 @@ def character_issues_feature(request, character_id, feature_id,
                           .select_related('series__publisher')
     filter, issues = filter_issues(request, issues, story_type_filter=True,
                                    language_filter=False)
-    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    result_disclaimer = CHAR_MIGRATE_DISCLAIMER
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -4632,7 +4632,7 @@ def character_issues_series(request, character_id, series_id,
     issues = Issue.objects.filter(Q(**query)).distinct()\
                           .select_related('series__publisher')
 
-    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + CHAR_MIGRATE_DISCLAIMER
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -4723,25 +4723,25 @@ def character_creators(request, character_id, creator_names=False,
       'working on character %s',
       (character,))
     stories = Story.objects.filter(**query).distinct()
+    story_types = process_story_type_filter_from_request(request)
     filter, stories = filter_sequences(request, stories, language_filter=False)
     stories_ids = stories.values_list('id', flat=True)
     if creator_names:
         creators = CreatorNameDetail.objects.filter(
           storycredit__story__id__in=stories_ids,
-          storycredit__story__type__id__in=CORE_TYPES,
+          storycredit__story__type__id__in=story_types,
           storycredit__deleted=False,
           storycredit__credit_type__id__lt=6)
         creators = _annotate_creator_name_detail_list(creators)
     else:
         creators = Creator.objects.filter(
           creator_names__storycredit__story__id__in=stories_ids,
-          creator_names__storycredit__story__type__id__in=CORE_TYPES,
+          creator_names__storycredit__story__type__id__in=story_types,
           creator_names__storycredit__deleted=False,
           creator_names__storycredit__credit_type__id__lt=6)
         creators = _annotate_creator_list(creators)
 
-    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER + \
-        CHAR_MIGRATE_DISCLAIMER
+    result_disclaimer = MIGRATE_DISCLAIMER + CHAR_MIGRATE_DISCLAIMER
 
     context = {
         'result_disclaimer': result_disclaimer,
@@ -4786,7 +4786,6 @@ def character_sequences(request, character_id, universe_id=None):
       (character,))
     stories = Story.objects.filter(**query).distinct()\
                            .select_related('issue__series__publisher')
-
     filter, stories = filter_sequences(request, stories, language_filter=False)
 
     context = {
@@ -4899,7 +4898,7 @@ def character_name_issues(request, character_name_id, universe_id=None):
     issues = Issue.objects.filter(**query).distinct()\
                           .select_related('series__publisher')
 
-    result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+    result_disclaimer = CHAR_MIGRATE_DISCLAIMER
     filter, issues = filter_issues(request, issues, story_type_filter=True,
                                    language_filter=False)
 
