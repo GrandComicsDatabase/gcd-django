@@ -4505,9 +4505,8 @@ def character_issues_character(request, character_id, character_with_id,
 
     issues = Issue.objects.filter(Q(**query_with)).distinct()\
                           .select_related('series__publisher')
-    filter = filter_issues(request, issues, story_type_filter=True)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, story_type_filter=True,
+                                   language_filter=False)
 
     result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
 
