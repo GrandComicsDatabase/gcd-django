@@ -4827,9 +4827,7 @@ def character_covers(request, character_id, universe_id=None):
     issues = Issue.objects.filter(**query).distinct()\
                           .select_related('series__publisher')
 
-    filter = filter_issues(request, issues)
-    filter.filters.pop('language')
-    issues = filter.qs
+    filter, issues = filter_issues(request, issues, language_filter=False)
 
     context = {
         'result_disclaimer': (COVER_CHECKLIST_DISCLAIMER +

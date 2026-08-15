@@ -390,8 +390,7 @@ def generic_by_name(request, name, q_obj, sort,
         else:
             order_by = 'issue'
         if things:
-            filter = filter_issues(request, things)
-            things = filter.qs
+            filter, things = filter_issues(request, things)
             filter_form = filter.form
         else:
             filter_form = None
