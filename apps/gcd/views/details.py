@@ -3631,8 +3631,8 @@ def show_feature(request, feature, preview=False):
 
 
 def feature_genres(request, feature_id):
-    feature = get_gcd_object(Feature, feature_id)
-    genres = feature.genre
+    feature_name = get_gcd_object(FeatureNameDetail, feature_id)
+    genres = feature_name.feature.genre
     return HttpResponse(genres,
                         content_type='text/plain')
 
