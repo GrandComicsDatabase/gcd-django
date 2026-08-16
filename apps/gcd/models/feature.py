@@ -76,6 +76,7 @@ class Feature(GcdData):
                                           deleted=False)
 
     def active_stories(self):
+        from apps.gcd.models import Story
         return Story.objects.filter(deleted=False,
                                     feature_name__feature_id=self.id)
 
