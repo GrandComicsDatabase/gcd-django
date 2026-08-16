@@ -26,7 +26,7 @@ from .character import (Character, CharacterNameDetail, CharacterRelationType,
 from .cover import Cover
 from .reprint import Reprint
 from .seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING, \
-                        SUBNUMBER_TRACKING, MERGE_TRACKING
+                        SUBNUMBER_TRACKING, MERGE_TRACKING, REBOOT_TRACKING
 from .image import ImageType, Image
 from .creator import CreatorArtInfluence, Creator, CreatorDegree, \
                     CreatorNameDetail, CreatorSignature, CreatorSchool,\
