@@ -76,7 +76,8 @@ class Feature(GcdData):
                                           deleted=False)
 
     def active_stories(self):
-        return self.story_set.filter(deleted=False)
+        return Story.objects.filter(deleted=False,
+                                    feature_name__feature_id=self.id)
 
     def active_names(self):
         return self.feature_names.filter(deleted=False)
