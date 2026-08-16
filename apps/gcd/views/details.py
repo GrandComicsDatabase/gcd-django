@@ -140,6 +140,9 @@ MIGRATE_DISCLAIMER = ' Text credits are currently being migrated to '\
 CHAR_MIGRATE_DISCLAIMER = ' Text character appearances are currently being ' \
                           'migrated to links. Therefore not all appearances ' \
                           ' in our database are shown here.'
+FEATURE_MIGRATE_DISCLAIMER = ' Text features are currently being migrated ' \
+                             'to links. Therefore not all occurrences ' \
+                             ' in our database are shown here.'
 
 WITHOUT_UNIVERSE_NAME = 'without a universe'
 
@@ -841,7 +844,7 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
     else:
         filter, issues = filter_issues(request, issues, story_type_filter=True)
     context = {
-        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'result_disclaimer': MIGRATE_DISCLAIMER,
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': heading,
@@ -1167,7 +1170,7 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
         issues = issues.filter(series__language=language)
 
     context = {
-        'result_disclaimer': ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER,
+        'result_disclaimer': MIGRATE_DISCLAIMER,
         'item_name': 'issue',
         'plural_suffix': 's',
         'heading': 'for creator %s %s' % (creator, heading_addon)
@@ -3636,7 +3639,7 @@ def feature_genres(request, feature_id):
 
 def feature_sequences(request, feature_id, country=None):
     feature = get_gcd_object(Feature, feature_id)
-    stories = Story.objects.filter(feature_object=feature,
+    stories = Story.objects.filter(feature_name__feature=feature,
                                    deleted=False).distinct()\
                            .select_related('issue__series__publisher')
     if country:
@@ -3678,12 +3681,12 @@ def feature_issues(request, feature_id, to_be_migrated=False):
                                       story__type__id__in=story_types,
                                       story__deleted=False).distinct()\
                               .select_related('series__publisher')
-        result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
+        result_disclaimer = FEATURE_MIGRATE_DISCLAIMER
     else:
         issues = Issue.objects.filter(story__feature_name__feature=feature,
                                       story__deleted=False).distinct()\
                               .select_related('series__publisher')
-        result_disclaimer = MIGRATE_DISCLAIMER
+        result_disclaimer = FEATURE_MIGRATE_DISCLAIMER
 
     filter, issues = filter_issues(request, issues, story_type_filter=True,
                                    language_filter=False)
@@ -3739,7 +3742,7 @@ def feature_overview(request, feature_id):
     feature = get_gcd_object(Feature, feature_id)
 
     if feature.feature_type.id == 1:
-        issues = Issue.objects.filter(story__feature_object=feature,
+        issues = Issue.objects.filter(story__feature_name__feature=feature,
                                       story__type__id=19,
                                       story__deleted=False).distinct()\
                               .select_related('series__publisher')
@@ -3776,7 +3779,7 @@ def feature_overview(request, feature_id):
 def feature_characters(request, feature_id):
     feature = get_gcd_object(Feature, feature_id)
     characters = Character.objects.filter(
-      character_names__storycharacter__story__feature_object=feature,
+      character_names__storycharacter__story__feature_name__feature=feature,
       character_names__storycharacter__story__type__id__in=CORE_TYPES,
       character_names__storycharacter__deleted=False,
       deleted=False).distinct()
@@ -3811,13 +3814,13 @@ def feature_creators(request, feature_id, creator_names=False):
         creators = CreatorNameDetail.objects.all()
         if feature.feature_type.id == 1:
             creators = creators.filter(
-              storycredit__story__feature_object__id=feature_id,
+              storycredit__story__feature_name__feature=feature,
               storycredit__story__type__id__in=CORE_TYPES,
               storycredit__deleted=False).distinct().select_related('creator')
             result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
         else:
             creators = creators.filter(
-              storycredit__story__feature_object__id=feature_id,
+              storycredit__story__feature_name__feature=feature,
               storycredit__deleted=False).distinct().select_related('creator')
             result_disclaimer = MIGRATE_DISCLAIMER
         creators = _annotate_creator_name_detail_list(creators)
@@ -3825,13 +3828,13 @@ def feature_creators(request, feature_id, creator_names=False):
         creators = Creator.objects.all()
         if feature.feature_type.id == 1:
             creators = creators.filter(
-              creator_names__storycredit__story__feature_object__id=feature_id,
+              creator_names__storycredit__story__feature_name__feature=feature,
               creator_names__storycredit__story__type__id__in=CORE_TYPES,
               creator_names__storycredit__deleted=False).distinct()
             result_disclaimer = ISSUE_CHECKLIST_DISCLAIMER + MIGRATE_DISCLAIMER
         else:
             creators = creators.filter(
-              creator_names__storycredit__story__feature_object__id=feature_id,
+              creator_names__storycredit__story__feature_name__feature=feature,
               creator_names__storycredit__deleted=False).distinct()
             result_disclaimer = MIGRATE_DISCLAIMER
         creators = _annotate_creator_list(creators)
@@ -3858,7 +3861,7 @@ def feature_creators(request, feature_id, creator_names=False):
 
 def feature_covers(request, feature_id):
     feature = get_gcd_object(Feature, feature_id)
-    issues = Issue.objects.filter(story__feature_object=feature,
+    issues = Issue.objects.filter(story__feature_name__feature=feature,
                                   story__type__id=6,
                                   story__deleted=False).distinct()\
                           .select_related('series__publisher')
