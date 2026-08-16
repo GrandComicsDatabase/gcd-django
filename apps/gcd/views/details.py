@@ -815,7 +815,7 @@ def checklist_by_id(request, creator_id, series_id=None, character_id=None,
         issues = issues.filter(story__credits__creator__creator=creator,
                                story__type__id__in=story_types,
                                story__credits__credit_type__id__lt=6,
-                               story__feature_object=feature,
+                               story__feature_name__feature=feature,
                                story__credits__deleted=False,
                                story__deleted=False).distinct()
         heading = 'for creator %s on feature %s' % (creator,
@@ -1155,7 +1155,7 @@ def creator_name_checklist(request, creator_name_id, character_id=None,
     if feature_id:
         feature = get_gcd_object(Feature, feature_id)
         issues = issues.filter(story__credits__creator=creator,
-                               story__feature_object=feature)
+                               story__feature_name__feature=feature)
         heading_addon = 'on feature %s' % (feature)
     if series_id:
         series = get_gcd_object(Series, series_id)
@@ -3603,7 +3603,7 @@ def show_feature(request, feature, preview=False):
     table.no_export = True
     table.not_sticky = True
 
-    issues = Issue.objects.filter(story__feature_object=feature,
+    issues = Issue.objects.filter(story__feature_name__feature=feature,
                                   story__type__id=6,
                                   story__credits__deleted=False,
                                   cover__isnull=False,
@@ -3748,7 +3748,7 @@ def feature_overview(request, feature_id):
                               .select_related('series__publisher')
         issues = issues.annotate(
           longest_story_id=Subquery(Story.objects.filter(
-                                    feature_object=feature,
+                                    feature_name__feature=feature,
                                     issue_id=OuterRef('pk'),
                                     type_id=19, deleted=False)
                                     .values('pk')
@@ -4582,7 +4582,7 @@ def character_issues_feature(request, character_id, feature_id,
             filter_character,
         'story__appearing_characters__deleted': False,
         'story__type__id__in': story_types,
-        'story__feature_object__id': feature_id,
+        'story__feature_name__feature__id': feature_id,
         'story__deleted': False
     }
 
@@ -5270,7 +5270,7 @@ def group_issues_feature(request, group_id, feature_id, universe_id=None):
              filter_group,
              'story__appearing_groups__deleted': False,
              'story__type__id__in': story_types,
-             'story__feature_object__id': feature_id,
+             'story__feature_name__feature__id': feature_id,
              'story__deleted': False}
 
     heading = _build_universe_filter_and_heading(
@@ -5829,7 +5829,7 @@ def show_story_modal(request, story_id):
     Show a single story in a modal.
     """
     story = get_object_or_404(Story.objects.prefetch_related(
-                              'feature_object',
+                              'feature_name',
                               'feature_logo__feature',
                               'credits__creator__creator',
                               'credits__creator__type'),
