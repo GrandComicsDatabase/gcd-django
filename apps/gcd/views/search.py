@@ -460,8 +460,7 @@ def generic_by_name(request, name, q_obj, sort,
                 query_val[credit] = name
                 credit = None
                 things = things.prefetch_related('feature_object')
-                filter = filter_sequences(request, things)
-                things = filter.qs
+                filter, things = filter_sequences(request, things)
                 table = StoryTable(
                   things,
                   template_name='gcd/bits/tw_sortable_table.html',
@@ -481,8 +480,7 @@ def generic_by_name(request, name, q_obj, sort,
                 query_val['logic'] = True
             else:
                 target = credit
-            filter = filter_sequences(request, things)
-            things = filter.qs
+            filter, things = filter_sequences(request, things)
 
             table = MatchedSearchStoryTable(
                 things, attrs={'class': 'sortable_listing'},
