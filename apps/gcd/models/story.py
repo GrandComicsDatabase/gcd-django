@@ -1056,7 +1056,7 @@ class Story(GcdData):
             self.synopsis or \
             self.has_keywords() or \
             self.has_reprints() or \
-            self.feature_object.exclude(genre='').values('genre').exists() or \
+            self.feature_name.exclude(feature__genre='').exists() or \
             self.feature_logo.count() or \
             self.active_awards().count()
 

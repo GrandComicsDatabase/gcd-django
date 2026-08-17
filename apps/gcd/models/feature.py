@@ -150,7 +150,7 @@ class FeatureNameDetail(GcdData):
     def get_absolute_url(self):
         return urlresolvers.reverse(
                 'show_feature',
-                kwargs={'feature_id': self.feature.id})
+                kwargs={'feature_id': self.feature_id})
 
     def name_with_disambiguation(self):
         extra = ''
