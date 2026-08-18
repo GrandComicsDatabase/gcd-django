@@ -674,18 +674,19 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
         type = self.forwarded.get('type', None)
 
         if language and language not in ['zxx', 'und']:
-            qs = qs.filter(feature__language__code__in=[language, 'zxx'])
+            qs = qs.filter(feature_name__feature__language__code__in=[language,
+                                                                      'zxx'])
 
         if type:
             type = int(type)
             if type == STORY_TYPES['cover']:
                 qs = FeatureLogo.objects.none()
             elif type == STORY_TYPES['letters_page']:
-                qs = qs.filter(feature__feature_type__id=2)
+                qs = qs.filter(feature_name__feature__feature_type__id=2)
             else:
-                qs = qs.exclude(feature__feature_type__id=2)
+                qs = qs.exclude(feature_name__feature__feature_type__id=2)
             if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
-                qs = qs.exclude(feature__feature_type__id=3)
+                qs = qs.exclude(feature_name__feature__feature_type__id=3)
 
         qs = _filter_and_sort(qs, self.q)
 
