@@ -3932,7 +3932,7 @@ def feature_logo_sequences(request, feature_logo_id, country=None):
 def feature_logo_issues(request, feature_logo_id):
     feature_logo = get_gcd_object(FeatureLogo, feature_logo_id)
 
-    if feature_logo.feature.all()[0].feature_type.id == 1:
+    if feature_logo.feature_name.all()[0].feature.feature_type.id == 1:
         issues = Issue.objects.filter(story__feature_logo=feature_logo,
                                       story__type__id__in=CORE_TYPES,
                                       story__deleted=False).distinct()\
