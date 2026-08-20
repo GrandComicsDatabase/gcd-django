@@ -91,6 +91,23 @@ def test_save_rejects_internal_reprint(patched_for_save):
     assert not save_mock.called
 
 
+def test_is_internal_uses_issue_ids_without_loading_issues():
+    revision = ReprintRevision(
+        origin_revision=StoryRevision(issue_id=1),
+        target_revision=StoryRevision(issue_id=1))
+
+    assert revision.is_internal()
+
+
+def test_is_internal_handles_shared_unsaved_issue():
+    issue = Issue()
+    revision = ReprintRevision(
+        origin_revision=StoryRevision(issue=issue),
+        target_revision=StoryRevision(issue=issue))
+
+    assert revision.is_internal()
+
+
 def test_save_allows_initial_clone_of_legacy_internal_reprint(
         patched_for_save):
     save_mock, origin, _ = patched_for_save
