@@ -26,10 +26,22 @@ class Reprint(GcdLink):
 
     def is_internal(self):
         """Return whether both ends of the link are in the same issue."""
-        origin_issue = self.origin.issue if self.origin else self.origin_issue
-        target_issue = self.target.issue if self.target else self.target_issue
-        return (origin_issue is not None and target_issue is not None and
-                origin_issue == target_issue)
+        origin_issue_id = (self.origin.issue_id if self.origin
+                           else self.origin_issue_id)
+        target_issue_id = (self.target.issue_id if self.target
+                           else self.target_issue_id)
+
+        if origin_issue_id is None and target_issue_id is None:
+            origin_issue = (self.origin.issue if self.origin
+                            else self.origin_issue)
+            target_issue = (self.target.issue if self.target
+                            else self.target_issue)
+            return (origin_issue is not None and
+                    origin_issue == target_issue)
+
+        return (origin_issue_id is not None and
+                target_issue_id is not None and
+                origin_issue_id == target_issue_id)
 
     def save(self, update_fields=None, *args, **kwargs):
         """

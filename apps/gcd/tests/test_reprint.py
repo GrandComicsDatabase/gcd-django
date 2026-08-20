@@ -49,6 +49,15 @@ def test_save_rejects_internal_reprint(patched_for_save):
     assert not save_mock.called
 
 
+def test_is_internal_uses_issue_ids_without_loading_issues():
+    r = Reprint(origin=Story(issue_id=1),
+                target=Story(issue_id=1),
+                origin_issue_id=1,
+                target_issue_id=1)
+
+    assert r.is_internal()
+
+
 def test_save_fields_origin_with_story(patched_for_save):
     save_mock, origin, target = patched_for_save
     # Put in nonsense target_issue to show that save() properly ignores it
