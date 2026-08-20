@@ -5,11 +5,12 @@ import re
 import mock
 import pytest
 
+from django.db.models import Q
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 
-from apps.gcd.models import Issue, Story
+from apps.gcd.models import Issue, Reprint, Story
 from apps.oi import states
 from apps.oi.models import ReprintRevision, StoryRevision
 from apps.oi.views import add_reprint, confirm_reprint, \
@@ -308,12 +309,7 @@ def test_internal_reprint_disables_restore():
     ) == 1
 
 
-@pytest.mark.parametrize(
-    ('reprint_manager', 'other_issue_field'),
-    (('from_all_reprints', 'origin_issue_id'),
-     ('to_all_reprints', 'target_issue_id')))
-def test_move_story_rejects_internal_reprint_before_reserving(
-        reprint_manager, other_issue_field):
+def test_move_story_rejects_internal_reprint_before_reserving():
     request = RequestFactory().post('/')
     indexer = mock.Mock()
     request.user = indexer
@@ -323,16 +319,14 @@ def test_move_story_rejects_internal_reprint_before_reserving(
     changeset.issuerevisions.count.return_value = 2
     changeset.issuerevisions.exclude.return_value.get.return_value = new_issue
     story = mock.Mock(changeset=changeset, issue=old_issue, story_id=1)
-    story.story.from_all_reprints.filter.return_value.exists.return_value = \
-        reprint_manager == 'from_all_reprints'
-    story.story.to_all_reprints.filter.return_value.exists.return_value = \
-        reprint_manager == 'to_all_reprints'
     error_response = HttpResponse('internal reprint')
 
     with mock.patch('apps.oi.views.get_object_or_404', return_value=story), \
             mock.patch('apps.oi.views.render_error',
                        return_value=error_response) as render_error_mock, \
+            mock.patch.object(Reprint.objects, 'filter') as filter_mock, \
             mock.patch('apps.oi.views._do_reserve') as reserve_mock:
+        filter_mock.return_value.exists.return_value = True
         response = move_story_revision.__wrapped__(request, id=story.id)
 
     assert response is error_response
@@ -343,9 +337,11 @@ def test_move_story_rejects_internal_reprint_before_reserving(
     assert story.issue is old_issue
     reserve_mock.assert_not_called()
     changeset.reprintrevisions.filter.assert_not_called()
-    manager = getattr(story.story, reprint_manager)
-    manager.filter.assert_called_once_with(
-        **{other_issue_field: new_issue.issue_id})
+    filter_mock.assert_called_once_with(
+        Q(target_id=story.story_id,
+          origin_issue_id=new_issue.issue_id) |
+        Q(origin_id=story.story_id,
+          target_issue_id=new_issue.issue_id))
 
 
 @pytest.mark.django_db

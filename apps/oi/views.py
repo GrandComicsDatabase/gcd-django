@@ -5220,11 +5220,11 @@ def move_issue(request, issue_revision_id, series_id):
 def _story_move_creates_internal_reprint(story, new_issue):
     if not story.story_id or not new_issue.issue_id:
         return False
-    return (
-      story.story.from_all_reprints.filter(
-        origin_issue_id=new_issue.issue_id).exists() or
-      story.story.to_all_reprints.filter(
-        target_issue_id=new_issue.issue_id).exists())
+    return Reprint.objects.filter(
+        Q(target_id=story.story_id,
+          origin_issue_id=new_issue.issue_id) |
+        Q(origin_id=story.story_id,
+          target_issue_id=new_issue.issue_id)).exists()
 
 
 @permission_required('indexer.can_reserve')
