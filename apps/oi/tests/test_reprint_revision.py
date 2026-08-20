@@ -3,7 +3,7 @@
 import mock
 import pytest
 
-from apps.gcd.models import Story, Issue, Series
+from apps.gcd.models import Reprint, Story, Issue, Series
 from apps.oi.models import StoryRevision, ReprintRevision, Changeset
 
 
@@ -77,6 +77,52 @@ def test_save_stories_and_issues_only(patched_for_save):
     assert r.target == target
     assert r.origin_issue == origin.issue
     assert r.target_issue == target.issue
+
+
+def test_save_rejects_internal_reprint(patched_for_save):
+    save_mock, origin, _ = patched_for_save
+    target = Story(title='target', issue=origin.issue)
+    origin_revision = StoryRevision(issue=origin.issue)
+    r = ReprintRevision(origin_revision=origin_revision, target=target)
+
+    with pytest.raises(ValueError, match='same issue'):
+        r.save()
+
+    assert not save_mock.called
+
+
+def test_save_allows_initial_clone_of_legacy_internal_reprint(
+        patched_for_save):
+    save_mock, origin, _ = patched_for_save
+    target = Story(title='target', issue=origin.issue)
+    source = Reprint(pk=1, origin=origin, target=target)
+    revision = ReprintRevision(reprint=source, origin=origin, target=target)
+
+    revision.save()
+
+    save_mock.assert_called_once_with()
+    revision._state.adding = False
+    save_mock.reset_mock()
+    with pytest.raises(ValueError, match='same issue'):
+        revision.save()
+    assert not save_mock.called
+
+    revision.deleted = True
+    revision.save()
+    save_mock.assert_called_once_with()
+
+
+def test_save_rejects_internal_change_to_valid_source(patched_for_save):
+    save_mock, origin, external_target = patched_for_save
+    internal_target = Story(title='target', issue=origin.issue)
+    source = Reprint(pk=1, origin=origin, target=external_target)
+    revision = ReprintRevision(reprint=source, origin=origin,
+                               target=internal_target)
+
+    with pytest.raises(ValueError, match='same issue'):
+        revision.save()
+
+    assert not save_mock.called
 
 
 def test_save_origin_mismatch(patched_for_save):

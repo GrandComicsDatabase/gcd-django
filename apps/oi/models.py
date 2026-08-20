@@ -8706,6 +8706,30 @@ class ReprintRevision(Revision):
             return 1
         return 0
 
+    def is_internal(self):
+        """Return whether both ends of the link are in the same issue."""
+        if self.origin_revision:
+            origin_issue = self.origin_revision.issue
+        elif self.origin:
+            origin_issue = self.origin.issue
+        else:
+            origin_issue = self.origin_issue
+
+        if self.target_revision:
+            target_issue = self.target_revision.issue
+        elif self.target:
+            target_issue = self.target.issue
+        else:
+            target_issue = self.target_issue
+
+        return (origin_issue is not None and target_issue is not None and
+                origin_issue == target_issue)
+
+    def _is_legacy_internal_clone(self):
+        """Return whether this is the initial clone of an internal source."""
+        return (self._state.adding and self.reprint_id is not None and
+                self.reprint.is_internal())
+
     def save(self, *args, **kwargs):
         # Ensure that we can't create a nonsense link.
         # Check first revisions since for sequence moves things get
@@ -8759,6 +8783,11 @@ class ReprintRevision(Revision):
                                                           self.target_issue))
             if not self.target_issue:
                 self.target_issue = self.target.issue
+
+        if (not self.deleted and self.is_internal() and
+                not self._is_legacy_internal_clone()):
+            raise ValueError(
+                'Reprint origin and target cannot be in the same issue.')
 
         super(ReprintRevision, self).save(*args, **kwargs)
 
