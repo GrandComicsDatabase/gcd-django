@@ -73,7 +73,8 @@ def get_select_data(request, select_key):
 
 
 def get_select_forms(request, initial, data, publisher=False,
-                     series=False, issue=False, story=False, cover=False):
+                     series=False, issue=False, story=False, cover=False,
+                     exclude_issue_id=None):
     if issue:
         cached_issues = get_cached_issues(request)
     else:
@@ -99,7 +100,8 @@ def get_select_forms(request, initial, data, publisher=False,
 
     cache_form = get_select_cache_form(cached_issues=cached_issues,
                                        cached_stories=cached_stories,
-                                       cached_covers=cached_covers)()
+                                       cached_covers=cached_covers,
+                                       exclude_issue_id=exclude_issue_id)()
 
     return search_form, cache_form
 
@@ -298,6 +300,7 @@ def select_object(request, select_key):
         issue = data.get('issue', False)
         story = data.get('story', False)
         cover = data.get('cover', False)
+        exclude_issue_id = data.get('exclude_issue_id')
         search_form, cache_form = get_select_forms(request,
                                                    initial,
                                                    request_data,
@@ -305,12 +308,15 @@ def select_object(request, select_key):
                                                    series=series,
                                                    issue=issue,
                                                    story=story,
-                                                   cover=cover)
+                                                   cover=cover,
+                                                   exclude_issue_id=(
+                                                     exclude_issue_id))
         haystack_form = FacetedSearchForm()
         return render(request, 'select/select_object.html',
                       {'heading': data['heading'],
                        'select_key': select_key,
                        'cache_form': cache_form,
+                       'disabled_choices': cache_form.disabled_choices,
                        'search_form': search_form,
                        'haystack_form': haystack_form,
                        'publisher': publisher,

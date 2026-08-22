@@ -72,9 +72,20 @@ or select from the data cache:
     {% for radio in cache_form.object_choice %}
 <form action="{% url 'select_object' select_key=select_key %}" method="POST">
       {% csrf_token %}
-<button class="btn-blue-editing inline" type="submit" name="select_object">Select</button>
+<button
+  class="{% if radio.data.value in disabled_choices %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline py-1 px-2"
+  type="submit" name="select_object"
+  {% if radio.data.value in disabled_choices %}
+  disabled
+  aria-describedby="disabled-reprint-{{ forloop.counter }}"
+  title="Cannot select because reprint links must connect different issues."
+  {% endif %}>Select</button>
  <input type="hidden" name="object_choice" value="{{ radio.data.value }}">
       {{ radio.choice_label }}
+      {% if radio.data.value in disabled_choices %}
+        <small id="disabled-reprint-{{ forloop.counter }}"><em>(Current issue;
+        cannot select for a reprint link.)</em></small>
+      {% endif %}
 </form>
     {% endfor %}
   {% endif %}

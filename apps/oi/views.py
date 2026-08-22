@@ -217,6 +217,8 @@ REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
   'If you are an experienced indexer and frequently hit ' \
   'your reservation limit please contact us.'
 
+INTERNAL_REPRINT_ERROR = 'Reprint links must connect different issues.'
+
 ##############################################################################
 # Helper functions
 ##############################################################################
@@ -4330,6 +4332,16 @@ def reserve_reprint(request, changeset_id, reprint_id):
       'edit_reprint', kwargs={'id': revision.id, 'which_side': which_side}))
 
 
+def _reprint_issue_id(story=None, story_revision=None, issue=None):
+    if story_revision:
+        return story_revision.issue_id
+    if story:
+        return story.issue_id
+    if issue:
+        return issue.id
+    return None
+
+
 @permission_required('indexer.can_reserve')
 def edit_reprint(request, id, which_side=None):
     reprint_revision = get_object_or_404(ReprintRevision, id=id)
@@ -4402,6 +4414,9 @@ def edit_reprint(request, id, which_side=None):
         else:
             story_revision = reprint_revision.origin_revision
     elif which_side == 'flip_direction':
+        if reprint_revision.is_internal():
+            return render_error(
+                request, INTERNAL_REPRINT_ERROR, redirect=False)
         origin = reprint_revision.target
         origin_revision = reprint_revision.target_revision
         origin_issue = reprint_revision.target_issue
@@ -4421,6 +4436,9 @@ def edit_reprint(request, id, which_side=None):
           'list_issue_reprints', kwargs={'id': changeset_issue.id}))
     elif which_side == 'restore':
         if reprint_revision.deleted:
+            if reprint_revision.is_internal():
+                return render_error(
+                    request, INTERNAL_REPRINT_ERROR, redirect=False)
             reprint_revision.deleted = False
             reprint_revision.save()
             return HttpResponseRedirect(
@@ -4432,6 +4450,9 @@ def edit_reprint(request, id, which_side=None):
         return HttpResponseRedirect(
           urlresolvers.reverse('remove_reprint_revision', kwargs={'id': id}))
     elif which_side == 'matching_sequence':
+        if reprint_revision.is_internal():
+            return render_error(
+                request, INTERNAL_REPRINT_ERROR, redirect=False)
         if reprint_revision.origin:
             story = reprint_revision.origin
             issue = reprint_revision.target_issue
@@ -4540,6 +4561,8 @@ def edit_reprint(request, id, which_side=None):
         story_revision_id = None
         heading = 'Select story/issue for the reprint link with %s' \
                   % (esc(issue))
+    exclude_issue_id = _reprint_issue_id(
+      story=story, story_revision=story_revision, issue=issue)
     data = {'story_id': story_id,
             'story_revision_id': story_revision_id,
             'issue_id': issue_id,
@@ -4547,6 +4570,7 @@ def edit_reprint(request, id, which_side=None):
             'changeset_id': changeset.id,
             'story': True,
             'issue': True,
+            'exclude_issue_id': exclude_issue_id,
             'initial': initial,
             'heading': mark_safe('<h2>%s</h2>' % heading),
             'target': 'a story or issue',
@@ -4565,9 +4589,11 @@ def add_reprint(request, changeset_id,
     if story_id:
         story = get_object_or_404(StoryRevision, id=story_id,
                                   changeset__id=changeset_id)
+        exclude_issue_id = story.issue_id
     else:
         issue = get_object_or_404(IssueRevision, id=issue_id,
                                   changeset__id=changeset_id)
+        exclude_issue_id = issue.issue_id
     if reprint_note:
         publisher, series, year, number, volume = \
             parse_reprint(unquote(reprint_note).split(';')[0])
@@ -4586,6 +4612,7 @@ def add_reprint(request, changeset_id,
             'changeset_id': changeset_id,
             'story': True,
             'issue': True,
+            'exclude_issue_id': exclude_issue_id,
             'initial': initial,
             'heading': mark_safe('<h2>%s</h2>' % heading),
             'target': 'a story or issue',
@@ -4739,6 +4766,9 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
           'Only the reservation holder may access this page.')
     if issue != changeset_issue.issue:
         return _cant_get(request)
+    if reprint_revision.is_internal():
+        return render_error(
+            request, INTERNAL_REPRINT_ERROR, redirect=False)
     if request.method != 'POST' and not edit:
         if story == reprint_revision.origin:
             direction = 'from'
@@ -4788,6 +4818,7 @@ def confirm_reprint(request, data, object_type, selected_id):
 
     if 'story_id' in data and data['story_id']:
         story = get_object_or_404(Story, id=data['story_id'])
+        current_issue_id = story.issue_id
         story_revision = False
         story_story = True
         current_issue = None
@@ -4797,6 +4828,7 @@ def confirm_reprint(request, data, object_type, selected_id):
         story_revision = get_object_or_404(StoryRevision,
                                            id=data['story_revision_id'],
                                            changeset__id=data['changeset_id'])
+        current_issue_id = story_revision.issue_id
         story = PreviewStory.init(story_revision)
         current_issue = None
     elif 'issue_id' in data and data['issue_id']:
@@ -4804,13 +4836,15 @@ def confirm_reprint(request, data, object_type, selected_id):
         story_revision = False
         story = None
         current_issue = get_object_or_404(Issue, id=data['issue_id'])
+        current_issue_id = current_issue.id
     elif 'issue_revision_id' in data and data['issue_revision_id']:
         story_story = False
         story_revision = False
         story = None
-        current_issue = get_object_or_404(IssueRevision,
-                                          id=data['issue_revision_id'])
-        current_issue = current_issue.issue
+        current_issue_revision = get_object_or_404(
+          IssueRevision, id=data['issue_revision_id'])
+        current_issue = current_issue_revision.issue
+        current_issue_id = current_issue_revision.issue_id
     else:
         raise NotImplementedError
 
@@ -4819,9 +4853,15 @@ def confirm_reprint(request, data, object_type, selected_id):
     if object_type == 'story':
         selected_story = get_object_or_404(Story, id=selected_id)
         selected_issue = None
+        selected_issue_id = selected_story.issue_id
     else:
         selected_story = None
         selected_issue = get_object_or_404(Issue, id=selected_id)
+        selected_issue_id = selected_issue.id
+
+    if current_issue_id and current_issue_id == selected_issue_id:
+        return render_error(
+            request, INTERNAL_REPRINT_ERROR, redirect=False)
 
     if 'reprint_revision_id' in data:
         reprint_revision = get_object_or_404(ReprintRevision,
@@ -4881,12 +4921,12 @@ def save_reprint(request, reprint_revision_id, changeset_id,
     target = None
     target_revision = None
     target_issue = None
+    story_revision = None
 
     if story_revision_id:
         story_revision = StoryRevision.objects.get(id=story_revision_id)
         if 'reprint_notes' in request.POST:
             story_revision.reprint_notes = request.POST['reprint_notes']
-        story_revision.save()
         if story_revision.story:
             story_one_id = story_revision.story.id
             story_revision_id = None
@@ -4919,7 +4959,8 @@ def save_reprint(request, reprint_revision_id, changeset_id,
             target_issue = Issue.objects.get(id=issue_two_id)
 
     notes = request.POST['reprint_link_notes']
-    if revision:
+    is_new_revision = revision is None
+    if not is_new_revision:
         revision.origin = origin
         revision.origin_revision = origin_revision
         revision.origin_issue = origin_issue
@@ -4927,7 +4968,6 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         revision.target_revision = target_revision
         revision.target_issue = target_issue
         revision.notes = notes
-        revision.save()
     else:
         revision = ReprintRevision(origin=origin,
                                    origin_revision=origin_revision,
@@ -4936,11 +4976,22 @@ def save_reprint(request, reprint_revision_id, changeset_id,
                                    target_revision=target_revision,
                                    target_issue=target_issue,
                                    notes=notes)
+
+    if revision.is_internal():
+        return render_error(
+            request, INTERNAL_REPRINT_ERROR, redirect=False)
+
+    if story_revision:
+        story_revision.save()
+
+    if is_new_revision:
         revision.save_added_revision(changeset=changeset)
         if request.POST['direction'] == 'from':
             request.session['which_side'] = 'origin'
         else:
             request.session['which_side'] = 'target'
+    else:
+        revision.save()
 
     if request.POST['comments'].strip():
         revision.comments.create(commenter=request.user,
@@ -5195,6 +5246,16 @@ def move_issue(request, issue_revision_id, series_id):
           'edit', kwargs={'id': issue_revision.changeset.id}))
 
 
+def _story_move_creates_internal_reprint(story, new_issue):
+    if not story.story_id or not new_issue.issue_id:
+        return False
+    return Reprint.objects.filter(
+        Q(target_id=story.story_id,
+          origin_issue_id=new_issue.issue_id) |
+        Q(origin_id=story.story_id,
+          target_issue_id=new_issue.issue_id)).exists()
+
+
 @permission_required('indexer.can_reserve')
 def move_story_revision(request, id):
     """ move story revision between two issue revisions """
@@ -5211,6 +5272,9 @@ def move_story_revision(request, id):
         return _cant_get(request)
 
     new_issue = story.changeset.issuerevisions.exclude(issue=story.issue).get()
+    if _story_move_creates_internal_reprint(story, new_issue):
+        return render_error(
+            request, INTERNAL_REPRINT_ERROR, redirect=False)
     story.issue = new_issue.issue
 
     # In a two issue changeset (so far) one cannot add/edit reprints, but
