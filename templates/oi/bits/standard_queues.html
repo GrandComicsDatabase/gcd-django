@@ -24,8 +24,10 @@
       {% endif %}
       {% if queue_name != 'reviews' %}
     <th class="max-sm:hidden"> Approver</th>
-      {% endif %}
     <th class="max-sm:hidden"> State </th>
+      {% else %}
+    <th><span class="max-sm:hidden"> State </span><span class="sm:hidden"> S </span></th>
+      {% endif %}
       {% if queue_name == 'editing' %}
     <th class="max-sm:hidden"> Last State Change </th>
     <th> Expires </th>
@@ -47,20 +49,6 @@
     </td>
         {% endif %}
     <td>
-        {% if queue_name == 'reviews' %}
-      <span
-        class="sm:hidden block w-fit mb-0.5 rounded px-1 py-0.5
-               text-sm font-bold text-black
-               {% if changeset.state == states.OPEN %}
-                 bg-index-status-edit
-               {% elif changeset.state == states.DISCUSSED %}
-                 bg-index-status-in-queue border border-gray-400
-               {% else %}
-                 bg-index-status-in-queue
-               {% endif %}">
-        {{ changeset.display_state|upper }}
-      </span>
-        {% endif %}
         {% if link_target == 'preview' or changeset.state == states.PENDING or changeset.state == states.REVIEWING or changeset.state == states.DISCUSSED %}
       <a href="{% url 'compare' id=changeset.id %}{% if user.indexer.collapse_compare_view %}?collapse=1{% endif %}">
         {% else %}
@@ -79,8 +67,21 @@
         {% endif %}
         {% if queue_name != 'reviews' %}
     <td  class="max-sm:hidden"> {{ changeset.approver.indexer|absolute_url|default:"None" }} </td>
-        {% endif %}
     <td class="max-sm:hidden"> {{ changeset.display_state }} </td>
+        {% else %}
+    <td><span class="max-sm:hidden"> {{ changeset.display_state }} </span>
+      <span
+        class="sm:hidden block text-center rounded px-1 py-0.5 text-black
+               {% if changeset.state == states.OPEN %}
+                 bg-red-400">E
+               {% elif changeset.state == states.DISCUSSED %}
+                 bg-yellow-400">D
+               {% else %}
+                 bg-green-400">R
+               {% endif %}
+      </span>
+    </td>
+        {% endif %}
     <td class="max-sm:hidden"> {{ changeset.modified|naturaltime }} </td>
       {% if queue_name == 'editing' %}
     <td {{ changeset|is_overdue }} > {{ changeset.expires|naturaltime }} </td>

@@ -47,10 +47,10 @@ def render_queue(changeset_state, queue_name='reviews'):
 @pytest.mark.parametrize(
     ('changeset_state', 'label', 'classes'),
     (
-        (states.OPEN, 'EDITING', 'bg-index-status-edit'),
-        (states.DISCUSSED, 'IN DISCUSSION',
-         'bg-index-status-in-queue border border-gray-400'),
-        (states.REVIEWING, 'UNDER REVIEW', 'bg-index-status-in-queue'),
+        (states.OPEN, 'E', 'bg-red-400'),
+        (states.DISCUSSED, 'D',
+         'bg-yellow-400'),
+        (states.REVIEWING, 'R', 'bg-green-400'),
     ),
 )
 def test_reviewing_queue_shows_mobile_state_badge(
@@ -58,12 +58,12 @@ def test_reviewing_queue_shows_mobile_state_badge(
     rendered = render_queue(changeset_state)
 
     assert label in rendered
-    assert 'sm:hidden block w-fit' in rendered
+    assert 'sm:hidden block text-center' in rendered
     assert classes in rendered
 
 
 def test_mobile_state_badge_is_limited_to_reviewing_queue():
     rendered = render_queue(states.REVIEWING, queue_name='pending')
 
-    assert 'UNDER REVIEW' not in rendered
-    assert 'sm:hidden block w-fit' not in rendered
+    assert 'bg-green-400">R' not in rendered
+    assert 'sm:hidden block text-center' not in rendered
