@@ -20,8 +20,8 @@
 <div>
   <ul>
     <li><span class="font-bold">Feature:</span>
-  {% for feature in feature_logo.feature.all %}
-      <a href="{{ feature.get_absolute_url }}">{{ feature }}</a>
+  {% for feature_name in feature_logo.feature_name.all %}
+      <a href="{{ feature_name.get_absolute_url }}">{{ feature_name }}</a>
     {% if not forloop.last %}; {% endif %}
   {%  endfor %}
     </li>
@@ -43,7 +43,7 @@
   {% endif %}
   </ul>
   <ul class="object-page-link-list">
-    <li><a href='{% url "feature_logo_issuelist_by_id" feature_logo_id=feature_logo.id %}'>Issue Checklist (via linked story records)</a></li>
+    <li><a href='{% url "feature_logo_issues" feature_logo_id=feature_logo.id %}'>Issue Checklist (via linked story records)</a></li>
     <li><a href='{% url "feature_logo_sequences" feature_logo_id=feature_logo.id %}'>Sequences List (via linked story records)</a></li>
   </ul>    
 </div>

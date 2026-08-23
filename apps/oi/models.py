@@ -41,9 +41,10 @@ from apps.gcd.models import (
     CharacterOrderType, CharacterOrder,
     BiblioEntry, Reprint,
     SeriesPublicationType, SeriesBondType, StoryType, CreditType, FeatureType,
-    Feature, FeatureLogo, FeatureRelation, Character, CharacterRelation,
-    CharacterNameDetail, Group, GroupNameDetail, GroupRelation,
-    GroupMembership, ImageType, Printer, IndiciaPrinter,
+    Feature, FeatureLogo, FeatureRelation, FeatureNameDetail,
+    Character, CharacterRelation, CharacterNameDetail,
+    Group, GroupNameDetail, GroupRelation, GroupMembership,
+    ImageType, Printer, IndiciaPrinter,
     Creator, CreatorArtInfluence, CreatorDegree, CreatorMembership,
     CreatorNameDetail, CreatorNonComicWork, CreatorSchool, CreatorRelation,
     CreatorSignature, NonComicWorkYear, Award, ReceivedAward, DataSource,
@@ -54,7 +55,8 @@ from apps.gcd.models.gcddata import GcdData, GcdLink
 from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.story import show_feature, show_feature_as_text, \
                                   show_characters, show_title, \
-                                  _get_civilian_identity
+                                  _get_civilian_identity, \
+                                  CharacterThroughOrder
 from apps.gcd.models.image import CropToFace
 from apps.indexer.views import ErrorWithMessage
 
@@ -368,7 +370,6 @@ class Changeset(models.Model):
                 return (self.issuerevisions.all().select_related('issue',
                                                                  'series'),
                         self.issuecreditrevisions.all(),)
-
         if self.change_type == CTYPES['cover']:
             return (self.coverrevisions.all(),
                     self.issuerevisions.all(),
@@ -382,6 +383,7 @@ class Changeset(models.Model):
 
         if self.change_type == CTYPES['feature']:
             return (self.featurerevisions.all(),
+                    self.featurenamedetailrevisions.all(),
                     self.externallinkrevisions.all(),)
 
         if self.change_type == CTYPES['feature_logo']:
@@ -4069,11 +4071,6 @@ class IssueRevision(Revision):
     indicia_pub_not_printed = models.BooleanField(default=False)
     brand_emblem = models.ManyToManyField(Brand, blank=True,
                                           related_name='issue_revisions')
-    # brand = models.ForeignKey(
-    #   Brand, on_delete=models.CASCADE, null=True, default=None, blank=True,
-    #   related_name='issue_revisions_deprecated')
-    # TODO when removing brand_emblem, remove msdropdown from revision_form_utils.html
-    # and remove apps/oi/templates/forms/widgets/select_brand.html
     no_brand = models.BooleanField(default=False)
     indicia_printer = models.ManyToManyField(IndiciaPrinter, blank=True,
                                              related_name='issue_revisions')
@@ -4524,19 +4521,19 @@ class IssueRevision(Revision):
         if changes.get('series changed'):
             old_series = changes.get('old series')
             new_series = self.issue.series
-            
+
             IssueClass = type(self.issue)
             variants = IssueClass.objects.filter(variant_of=self.issue,
                                                  deleted=False)
-            
+
             for variant in variants:
                 # 1. Variant left behind:
                 # Goes from Standard -> Cross-Series (+1)
                 if variant.series == old_series and \
-                        variant.series != new_series:
+                    variant.series != new_series:
                     variant.series.issue_count += 1
                     variant.series.save(update_fields=['issue_count'])
-                    
+
                 # 2. Base issue returns:
                 # Goes from Cross-Series -> Standard (-1)
                 elif variant.series != old_series and \
@@ -4544,7 +4541,6 @@ class IssueRevision(Revision):
                     if variant.series.issue_count > 0:
                         variant.series.issue_count -= 1
                         variant.series.save(update_fields=['issue_count'])
-
 
     def extra_forms(self, request):
         from apps.oi.forms import IssueRevisionFormSet, \
@@ -5255,8 +5251,9 @@ class PreviewIssue(Issue):
 
 
 def get_story_field_list():
-    return ['sequence_number', 'title', 'title_inferred', 'first_line',
-            'type', 'feature', 'feature_object', 'feature_logo', 'story_arc',
+    return ['sequence_number', 'title', 'title_inferred', 'first_line', 'type',
+            'feature', 'feature_name', 'feature_logo',
+            'story_arc',
             'genre', 'job_number', 'page_count', 'page_count_uncertain',
             'script', 'no_script', 'pencils', 'no_pencils', 'inks', 'no_inks',
             'colors', 'no_colors', 'letters', 'no_letters',
@@ -5556,27 +5553,48 @@ class CharacterOrderRevision(Revision):
         self.story_revision = kwargs['story_revision']
 
     def _post_save_object(self, changes):
-        characters = self.character_order.characters.all()
-        character_revisions = self.character_revisions.all()
-        for character in characters:
-            if not character_revisions.filter(
-              character__id=character.id,
-              universe=character.universe).count():
-                self.character_order.characters.remove(character)
+        current_orders = {
+            current_order.story_character_id: current_order
+            for current_order in CharacterThroughOrder.objects.filter(
+                order_id=self.character_order_id)
+        }
+        revision_orders = CharacterThroughOrderRevision.objects.filter(
+            order=self).select_related('story_character')
+        desired_orders = {}
+        for revision_order in revision_orders:
+            story_character_id = \
+                revision_order.story_character.story_character_id
+            if story_character_id is None:
+                raise IntegrityError(
+                    'Character order revision contains an uncommitted '
+                    'story character revision.')
+            desired_orders[story_character_id] = revision_order.order_code
+
+        removed_ids = current_orders.keys() - desired_orders.keys()
+        if removed_ids:
+            CharacterThroughOrder.objects.filter(
+                order_id=self.character_order_id,
+                story_character_id__in=removed_ids).delete()
+
+        changed_orders = []
+        new_orders = []
+        for story_character_id, order_code in desired_orders.items():
+            if story_character_id in current_orders:
+                current_order = current_orders[story_character_id]
+                if current_order.order_code != order_code:
+                    current_order.order_code = order_code
+                    changed_orders.append(current_order)
             else:
-                character.order_code = character_revisions.get(
-                  character__id=character.id,
-                  universe=character.universe).order_code
-                character.save()
-        for character_revision in character_revisions:
-            if not characters.filter(
-              id=character_revision.character.id,
-              universe=character_revision.universe).exists():
-                order_code = character_revision\
-                  .characterthroughorderrevision_set.get(order=self).order_code
-                self.character_order.characters.add(
-                  character_revision.story_character,
-                  through_defaults={'order_code': order_code})
+                new_orders.append(CharacterThroughOrder(
+                    order_id=self.character_order_id,
+                    story_character_id=story_character_id,
+                    order_code=order_code))
+
+        if changed_orders:
+            CharacterThroughOrder.objects.bulk_update(
+                changed_orders, ['order_code'])
+        if new_orders:
+            CharacterThroughOrder.objects.bulk_create(new_orders)
 
     @property
     def ordered_characters(self):
@@ -5898,6 +5916,7 @@ class StoryRevision(Revision):
     first_line = models.CharField(max_length=255, blank=True)
     feature = models.CharField(max_length=255, blank=True)
     feature_object = models.ManyToManyField(Feature, blank=True)
+    feature_name = models.ManyToManyField(FeatureNameDetail, blank=True)
     feature_logo = models.ManyToManyField(FeatureLogo, blank=True)
     story_arc = models.ManyToManyField(StoryArc, blank=True)
     universe = models.ManyToManyField(Universe, blank=True)
@@ -5951,10 +5970,12 @@ class StoryRevision(Revision):
                           ('issue', 'series', 'language',)})
 
     def _pre_delete(self, changes):
-        # sigh, some people add story_credits to be deleted stories
-        for revision in self.story_credit_revisions.all():
-            if revision.added:
-                revision.delete()
+        for related_name in ('story_credit_revisions',
+                             'story_character_revisions',
+                             'story_group_revisions'):
+            for revision in getattr(self, related_name).all():
+                if revision.added:
+                    revision.delete()
 
     @classmethod
     def copied_revision(cls, story, changeset, issue_revision,
@@ -5983,33 +6004,37 @@ class StoryRevision(Revision):
             revision.first_line = ''
             credits = credits.exclude(credit_type_id=CREDIT_TYPES['letters'])
             revision.feature_logo.clear()
-            for feature_object in revision.feature_object.all():
+            for feature_name in revision.feature_name.all():
                 # TODO this works for now, but make consistent with
                 # StoryCharacterRevision.copied_translation and
                 # extend to StoryArcs
                 # in particular, use .translations(language)
-                translations = feature_object.translations().filter(
+                translations = feature_name.feature.translations().filter(
                   to_feature__language=revision.issue.series.language)
                 if translations.count() == 1:
                     # revision is a translation from original
-                    revision.feature_object.add(translations.get().to_feature)
+                    revision.feature_name.add(translations.get()
+                                              .to_feature.official_name())
                 elif (translations.count() == 0 and
-                      feature_object.translated_from() is not None):
-                    translated_from = feature_object.translated_from()
+                      feature_name.feature.translated_from() is not None):
+                    translated_from = feature_name.feature.translated_from()
                     if translated_from.language == \
                        revision.issue.series.language:
                         # revision is the source of a translation
-                        revision.feature_object.add(translated_from)
+                        revision.feature_name.add(translated_from
+                                                  .official_name())
                     else:
-                        other_translations = feature_object.translated_from()\
-                                                           .translations()\
-                                                           .filter(
+                        other_translations = feature_name.feature\
+                                                         .translated_from()\
+                                                         .translations()\
+                                                         .filter(
                           to_feature__language=revision.issue.series.language)
                         if other_translations.count() == 1:
                             # revision is a translation from another language
-                            revision.feature_object.add(
-                              other_translations.get().to_feature)
-                revision.feature_object.remove(feature_object)
+                            revision.feature_name.add(
+                              other_translations.get().to_feature
+                                                .official_name())
+                revision.feature_name.remove(feature_name)
             for story_arc in revision.story_arc.all():
                 # translations = story_arc.get_translations_in_language(
                 #   revision.issue.series.language)
@@ -6190,8 +6215,8 @@ class StoryRevision(Revision):
                 self.changed['genre'] = False
 
         if 'genre' not in self.changed or not self.changed['genre']:
-            if 'feature_object' in self.changed and \
-              self.changed['feature_object']:
+            if 'feature_name' in self.changed and \
+              self.changed['feature_name']:
                 from apps.oi.templatetags.compare import _compare_string_genre
                 if self.previous():
                     previous = _compare_string_genre(self.previous())
@@ -6209,10 +6234,20 @@ class StoryRevision(Revision):
         self.issue = issue
 
     def _reset_values(self):
-        # TODO: undo StoryCredit and StoryCharacter changes
-        # TODO: remove added StoryCredit, StoryCharacter
-        # and StoryGroup revisions
         if self.deleted:
+            for related_name in ('story_credit_revisions',
+                                 'story_character_revisions',
+                                 'story_group_revisions'):
+                for revision in getattr(self, related_name).all():
+                    for field in revision._get_single_value_fields():
+                        setattr(revision, field,
+                                getattr(revision.source, field))
+                    revision.deleted = True
+                    revision.save()
+                    for field in revision._get_multi_value_fields():
+                        getattr(revision, field).set(
+                          getattr(revision.source, field).all())
+
             # users can edit story revisions before deleting them.
             # ensure that the final deleted revision matches the
             # final state of the story.
@@ -6451,10 +6486,10 @@ class StoryRevision(Revision):
                 language = self.my_issue_revision.\
                                 other_issue_revision.series.language
             for feature_logo in self.feature_logo.all():
-                if feature_logo.feature.get(language=language) not in \
-                  self.feature_object.all():
-                    self.feature_object.add(feature_logo.feature.
-                                            get(language=language))
+                if feature_logo.feature_name.get(
+                   feature__language=language) not in self.feature_name.all():
+                    self.feature_name.add(feature_logo.feature_name.
+                                          get(feature__language=language))
         if self.story_character_revisions.count():
             for story_character in self.story_character_revisions.all():
                 # no processing for deleted appearances
@@ -6645,7 +6680,7 @@ class StoryRevision(Revision):
                 self.save()
 
     def migrate_single_feature(self, feature):
-        from apps.select.views import FeatureAutocomplete
+        from apps.select.views import FeatureNameAutocomplete
         if self.issue:
             series = self.issue.series
         else:
@@ -6653,23 +6688,24 @@ class StoryRevision(Revision):
         self.forwarded = {'language_code': series.language.code,
                           'type': self.type_id}
         self.q = feature
-        feature_object = FeatureAutocomplete.get_queryset(
+        feature_name = FeatureNameAutocomplete.get_queryset(
           self, interactive=False)
-        if feature_object.count() > 1:
-            feature_object = feature_object.filter(name=feature)
-        if feature_object.count() == 1:
-            self.feature_object.add(feature_object.get())
+        if feature_name.count() > 1:
+            feature_name = feature_name.filter(name=feature)
+        if feature_name.count() == 1:
+            self.feature_name.add(feature_name.get())
             return True
-        if feature_object.count() == 0:
+        if feature_name.count() == 0:
             self.forwarded = {'type': self.type_id}
-            feature_object = FeatureAutocomplete.get_queryset(
+            feature_name = FeatureNameAutocomplete.get_queryset(
               self, interactive=False)
-            if feature_object.count() == 1:
-                feature_other_language = feature_object.get()
+            if feature_name.count() == 1:
+                feature_other_language = feature_name.get().feature
                 translations = feature_other_language.translations().filter(
                   to_feature__language=series.language)
                 if translations.count() == 1:
-                    self.feature_object.add(translations.get().to_feature)
+                    self.feature_name.add(translations.get().to_feature
+                                                            .official_name())
                     return True
         return False
 
@@ -6711,15 +6747,12 @@ class StoryRevision(Revision):
         when the revision is committed.
         """
         self.deleted = not self.deleted
-        if bool(self.story_credit_revisions.all()):
-            for story_credit_revision in self.story_credit_revisions.all():
-                story_credit_revision.deleted = self.deleted
-                story_credit_revision.save()
-        if bool(self.story_character_revisions.all()):
-            for story_character_revision in self.story_character_revisions\
-                                                .all():
-                story_character_revision.deleted = self.deleted
-                story_character_revision.save()
+        for related_name in ('story_credit_revisions',
+                             'story_character_revisions',
+                             'story_group_revisions'):
+            for revision in getattr(self, related_name).all():
+                revision.deleted = self.deleted
+                revision.save()
         self.save()
 
     def get_absolute_url(self):
@@ -6731,9 +6764,9 @@ class StoryRevision(Revision):
     def has_feature(self):
         """
         feature_logo entry automatically results in corresponding
-        feature_object entry, therefore no check needed
+        feature_name entry, therefore no check needed
         """
-        return self.feature or self.feature_object.count()
+        return self.feature or self.feature_name.count()
 
     @property
     def appearing_characters(self):
@@ -6826,6 +6859,7 @@ class StoryRevision(Revision):
             'first_line': '',
             'feature': '',
             'feature_object': None,
+            'feature_name': None,
             'feature_logo': None,
             'story_arc': None,
             'page_count': None,
@@ -6892,7 +6926,7 @@ class StoryRevision(Revision):
                 return 0
 
         if not self._seen_feature and field_name in ('feature',
-                                                     'feature_object',
+                                                     'feature_name',
                                                      'feature_logo'):
             self._seen_feature = True
             return 1
@@ -7132,8 +7166,8 @@ class PreviewStory(Story):
         return preview_story
 
     @property
-    def feature_object(self):
-        return self.revision.feature_object.exclude(deleted=True)
+    def feature_name(self):
+        return self.revision.feature_name.exclude(deleted=True)
 
     @property
     def story_arc(self):
@@ -7182,7 +7216,8 @@ class PreviewStory(Story):
             self.synopsis or \
             self.has_keywords() or \
             self.has_reprints() or \
-            self.feature_object.exclude(genre='').values('genre').exists() or \
+            self.feature_name.exclude(feature__genre='')\
+                .values('feature__genre').exists() or \
             self.revision.feature_logo.count() or \
             self.active_awards().count()
 
@@ -7229,7 +7264,7 @@ class PreviewStory(Story):
         return self.revision.universe.all()
 
     def has_feature(self):
-        return self.revision.feature or self.revision.feature_object.count()
+        return self.revision.feature or self.revision.feature_name.count()
 
     def show_feature_logo(self):
         return self._show_feature_logo(self.revision)
@@ -7324,6 +7359,9 @@ class FeatureRevision(Revision):
                                                null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
     notes = models.TextField(blank=True)
+    description = models.TextField(
+      blank=True,
+      help_text='concise description, including background and premise')
     keywords = models.TextField(blank=True, default='')
 
     external_link_revisions = GenericRelation(ExternalLinkRevision)
@@ -7350,11 +7388,78 @@ class FeatureRevision(Revision):
         else:
             self.feature.sort_name = self.name
 
+    def _do_create_dependent_revisions(self, delete=False):
+        name_details = self.feature.active_names()
+        for name_detail in name_details:
+            name_lock = _get_revision_lock(name_detail,
+                                           changeset=self.changeset)
+            if name_lock is None:
+                raise IntegrityError("needed Name lock not possible")
+            feature_name = FeatureNameDetailRevision.clone(name_detail,
+                                                           self.changeset)
+            feature_name.save_added_revision(changeset=self.changeset,
+                                             feature_revision=self)
+
+            if delete:
+                feature_name.deleted = True
+                feature_name.save()
+
+    def _pre_save_object(self, changes):
+        name = self.changeset.featurenamedetailrevisions.get(
+                              is_official_name=True)
+        self.feature.name = name.name
+        if name.leading_article:
+            self.feature.sort_name = remove_leading_article(name.name)
+        else:
+            self.feature.sort_name = name.name
+
+    def _handle_dependents(self, changes):
+        # for new feature, we need to save the record_id in the name revisions
+        if self.added:
+            for name in self.changeset.featurenamedetailrevisions.all():
+                name.feature = self.feature
+                name.save()
+
     def extra_forms(self, request):
+        from apps.oi.forms import FeatureRevisionFormSet
+
+        feature_names_formset = FeatureRevisionFormSet(
+          request.POST or None, instance=self,
+          queryset=self.feature_name_revisions.filter(deleted=False))
+
         external_link_formset = self._create_external_link_formset(request)
-        return {'external_link_formset': external_link_formset}
+
+        return {'feature_names_formset': feature_names_formset,
+                'external_link_formset': external_link_formset
+                }
 
     def process_extra_forms(self, extra_forms):
+        feature_names_formset = extra_forms['feature_names_formset']
+        # TODO use _process_formset, but needs to handle official name update
+        removed_names = feature_names_formset.deleted_forms
+        for feature_name_form in feature_names_formset:
+            if feature_name_form.is_valid() and \
+               feature_name_form.cleaned_data and \
+               feature_name_form not in removed_names:
+                cd = feature_name_form.cleaned_data
+                if 'id' in cd and cd['id']:
+                    feature_revision = feature_name_form.save()
+                else:
+                    feature_revision = feature_name_form.save(commit=False)
+                    feature_revision.save_added_revision(
+                      changeset=self.changeset, feature_revision=self)
+                if cd['is_official_name']:
+                    self.name = cd['name']
+                    self.save()
+            elif (
+              not feature_name_form.is_valid() and
+              feature_name_form not in feature_names_formset.deleted_forms
+            ):
+                raise ValueError
+
+        if removed_names:
+            _removed_related_objects(removed_names, 'feature_name_detail')
+
         self._process_external_link_formset(extra_forms)
 
     def get_absolute_url(self):
@@ -7368,25 +7473,24 @@ class FeatureRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'leading_article', 'disambiguation',
+    _base_field_list = ['disambiguation',
                         'genre', 'language', 'feature_type',
                         'year_first_published',
                         'year_first_published_uncertain',
-                        'notes', 'keywords']
+                        'description', 'notes', 'keywords']
 
     def _field_list(self):
         return self._base_field_list
 
     def _get_blank_values(self):
         return {
-            'name': '',
-            'leading_article': False,
             'disambiguation': '',
             'genre': '',
             'language': None,
             'feature_type': None,
             'year_first_published': None,
             'year_first_published_uncertain': False,
+            'description': '',
             'notes': '',
             'keywords': '',
         }
@@ -7409,12 +7513,30 @@ class FeatureRevision(Revision):
                                 self.language.code.upper())
 
 
+class PreviewFeature(Feature):
+    class Meta:
+        proxy = True
+
+    @property
+    def official_name(self):
+        return self.revision.feature_name_revisions.get(
+          is_official_name=True)
+
+    def has_keywords(self):
+        return self.revision.has_keywords()
+
+    def display_keywords(self):
+        return self.revision.keywords
+
+
 class FeatureLogoRevision(Revision):
     class Meta:
         db_table = 'oi_feature_logo_revision'
         ordering = ['-created', '-id']
 
     feature = models.ManyToManyField(Feature, related_name='logo_revisions')
+    feature_name = models.ManyToManyField(FeatureNameDetail,
+                                          related_name='logo_revisions')
     feature_logo = models.ForeignKey(FeatureLogo, on_delete=models.CASCADE,
                                      null=True, related_name='revisions')
 
@@ -7472,9 +7594,9 @@ class FeatureLogoRevision(Revision):
     ######################################
     # TODO old methods, t.b.c
 
-    _base_field_list = ['name', 'leading_article', 'feature', 'generic',
-                        'year_began', 'year_began_uncertain', 'year_ended',
-                        'year_ended_uncertain', 'notes']
+    _base_field_list = ['name', 'leading_article', 'feature_name', 'generic',
+                        'year_began', 'year_began_uncertain',
+                        'year_ended', 'year_ended_uncertain', 'notes']
 
     def _field_list(self):
         return self._base_field_list
@@ -7482,6 +7604,7 @@ class FeatureLogoRevision(Revision):
     def _get_blank_values(self):
         return {
             'feature': None,
+            'feature_name': None,
             'name': '',
             'leading_article': False,
             'generic': False,
@@ -7507,6 +7630,82 @@ class FeatureLogoRevision(Revision):
 
     def _queue_name(self):
         return '%s (%s)' % (self.name, self.year_began)
+
+
+class FeatureNameDetailRevision(Revision):
+    """
+    record of the feature's name
+    """
+
+    class Meta:
+        db_table = 'oi_feature_name_detail_revision'
+        ordering = ['-created', '-id']
+        verbose_name_plural = 'Feature Name Detail Revisions'
+
+    feature_name_detail = models.ForeignKey('gcd.FeatureNameDetail',
+                                            on_delete=models.CASCADE,
+                                            null=True,
+                                            related_name='revisions')
+    feature_revision = models.ForeignKey(
+      FeatureRevision,
+      on_delete=models.CASCADE,
+      related_name='feature_name_revisions',
+      null=True)
+    feature = models.ForeignKey(Feature, on_delete=models.CASCADE,
+                                related_name='name_revisions', null=True)
+    name = models.CharField(max_length=255, db_index=True)
+    leading_article = models.BooleanField(default=False)
+    is_official_name = models.BooleanField(default=False)
+
+    source_name = 'feature_name_detail'
+    source_class = FeatureNameDetail
+
+    @property
+    def source(self):
+        return self.feature_name_detail
+
+    @source.setter
+    def source(self, value):
+        self.feature_name_detail = value
+
+    def _do_complete_added_revision(self, feature_revision):
+        self.feature_revision = feature_revision
+
+    def _post_create_for_add(self, changes):
+        self.feature = self.feature_revision.feature
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        if fork is False:
+            self.leading_article = (self.feature_name_detail.name !=
+                                    self.feature_name_detail.sort_name)
+
+    def _post_assign_fields(self, changes):
+        if self.leading_article:
+            self.feature_name_detail.sort_name = remove_leading_article(self.name)
+        else:
+            self.feature_name_detail.sort_name = self.name
+
+    def __str__(self):
+        return '%s - %s' % (
+            str(self.feature), str(self.name))
+
+    _base_field_list = ['name', 'leading_article', 'is_official_name']
+
+    def _field_list(self):
+        return ['name', 'leading_article', 'is_official_name']
+
+    def _get_blank_values(self):
+        return {
+            'name': '',
+            'leading_article': False,
+            'is_official_name': False,
+        }
+
+    def _imps_for(self, field_name):
+        if field_name in self._field_list():
+            return 1
+        return 0
 
 
 class FeatureRelationRevision(Revision):
@@ -7792,7 +7991,7 @@ class CharacterRevision(CharacterGroupRevisionBase):
                                          "possible")
                 group_membership_revision = \
                     GroupMembershipRevision.clone(group_membership,
-                                                    self.changeset)
+                                                  self.changeset)
                 group_membership_revision.deleted = True
                 group_membership_revision.save()
             for character_relation in self.character.active_relations():
@@ -7806,7 +8005,6 @@ class CharacterRevision(CharacterGroupRevisionBase):
                                                     self.changeset)
                 character_relation_revision.deleted = True
                 character_relation_revision.save()
-
 
     def extra_forms(self, request):
         from apps.oi.forms import CharacterRevisionFormSet

@@ -250,6 +250,13 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 5120
 # type of implicitly generated primary key
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+# The default scheme for forms.URLField will be changed from 'http' to
+# 'https' in Django 6.0.
+# We set the FORMS_URLFIELD_ASSUME_HTTPS transitional setting to True to
+# opt into using 'https' as the new default scheme.
+
+FORMS_URLFIELD_ASSUME_HTTPS = True
+
 #################################################################################
 # 3rd-party app settings
 #################################################################################
@@ -354,8 +361,7 @@ REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions, 
     # or allow read-only access for unauthenticated users.
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',

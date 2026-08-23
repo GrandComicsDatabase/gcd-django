@@ -24,7 +24,8 @@ from apps.oi.models import (
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
-                            Feature, FeatureLogo, CharacterNameDetail, \
+                            Feature, FeatureLogo, FeatureNameDetail, \
+                            CharacterNameDetail, \
                             GroupNameDetail, CharacterRole, StoryArc, \
                             StoryArcRelationType, Universe, \
                             STORY_TYPES, NON_OPTIONAL_TYPES, \
@@ -860,10 +861,10 @@ class StoryRevisionForm(KeywordBaseForm):
     page_count = forms.DecimalField(widget=PageCountInput, required=False,
                                     max_digits=10, decimal_places=3)
 
-    feature_object = forms.ModelMultipleChoiceField(
-      queryset=Feature.objects.all(),
+    feature_name = forms.ModelMultipleChoiceField(
+      queryset=FeatureNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
-                          url='feature_autocomplete',
+                          url='feature_name_autocomplete',
                           forward=['language_code', 'type'],
                           attrs={'class': 'w-full lg:w-4/5'}),
       required=False,
@@ -1211,7 +1212,7 @@ class StoryRevisionForm(KeywordBaseForm):
                 ['Do not use [] around unofficial story titles, check the '
                  'unofficial checkbox instead.'])
 
-        if (cd['feature'] or cd['feature_object'] or cd['feature_logo']) and \
+        if (cd['feature'] or cd['feature_name'] or cd['feature_logo']) and \
            cd['type'].id in NO_FEATURE_TYPES:
             raise forms.ValidationError(
                 ['The sequence type cannot have a feature.'])
@@ -1224,27 +1225,27 @@ class StoryRevisionForm(KeywordBaseForm):
             raise forms.ValidationError(
                 ['The sequence type cannot have a genre.'])
 
-        if cd['feature'] and (cd['feature_object'] or cd['feature_logo']):
+        if cd['feature'] and (cd['feature_name'] or cd['feature_logo']):
             raise forms.ValidationError(
                 ['Either use the text feature field or the database objects.'])
 
-        if cd['feature_object']:
-            for feature in cd['feature_object']:
+        if cd['feature_name']:
+            for feature_name in cd['feature_name']:
                 if cd['type'].id == STORY_TYPES['letters_page']:
-                    if not feature.feature_type.id == 2:
+                    if not feature_name.feature.feature_type.id == 2:
                         raise forms.ValidationError(
                           ['Select the correct feature for a letters page.'])
                 elif cd['type'].id == STORY_TYPES['in-house column']:
-                    if not feature.feature_type.id == 4:
+                    if not feature_name.feature.feature_type.id == 4:
                         raise forms.ValidationError(
                           ['Select the correct feature for an in-house '
                            'column.'])
-                elif feature.feature_type.id == 3:
+                elif feature_name.feature.feature_type.id == 3:
                     if not cd['type'].id in [STORY_TYPES['ad'],
                                              STORY_TYPES['comics-form ad']]:
                         raise forms.ValidationError(
                           ['Incorrect feature for this sequence.'])
-                elif feature.feature_type.id in [2, 4]:
+                elif feature_name.feature.feature_type.id in [2, 4]:
                     raise forms.ValidationError(
                       ['Incorrect feature for this sequence.'])
 
@@ -1456,7 +1457,7 @@ class StoryArcRelationRevisionForm(forms.ModelForm):
         else:
             cd['relation_type'] = StoryArcRelationType.objects.get(id=type)
         if 'from_story_arc' in cd and 'to_story_arc' in cd and \
-              cd['from_story_arc'] == cd['to_story_arc']:
+            cd['from_story_arc'] == cd['to_story_arc']:
             raise forms.ValidationError(
               'Story Arc A and Story Arc B cannot be the same story arc.')
         return cd
