@@ -32,7 +32,11 @@ class StoryFilterSet(TimestampFilterSet):
         del name
         return queryset.filter(
             Q(genre__icontains=value)
-            | Q(feature_object__genre__icontains=value),
+            | Q(
+                feature_name__deleted=False,
+                feature_name__feature__deleted=False,
+                feature_name__feature__genre__icontains=value,
+            ),
         ).distinct()
 
     class Meta:

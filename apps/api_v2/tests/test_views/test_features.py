@@ -8,6 +8,7 @@ from django.urls import reverse
 from apps.gcd.models import (
     Feature,
     FeatureLogo,
+    FeatureNameDetail,
     FeatureRelation,
     FeatureRelationType,
     FeatureType,
@@ -48,7 +49,15 @@ def _create_logo(feature, *, name, deleted=False):
         notes='',
         deleted=deleted,
     )
-    logo.feature.add(feature)
+    feature_name, _ = FeatureNameDetail.objects.get_or_create(
+        feature=feature,
+        name=feature.name,
+        defaults={
+            'sort_name': feature.sort_name,
+            'is_official_name': True,
+        },
+    )
+    logo.feature_name.add(feature_name)
     return logo
 
 

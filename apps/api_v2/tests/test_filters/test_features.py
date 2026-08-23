@@ -9,7 +9,7 @@ import pytest
 from django.utils import timezone
 
 from apps.api_v2.filters.features import FeatureFilterSet
-from apps.gcd.models import Feature, FeatureType
+from apps.gcd.models import Feature, FeatureNameDetail, FeatureType
 from apps.stddata.models import Language
 
 pytestmark = pytest.mark.django_db
@@ -61,6 +61,41 @@ def test_feature_filter_matches_name_icontains(language):
 
     queryset = FeatureFilterSet(
         {'name': 'spider'},
+        queryset=Feature.objects.all(),
+    ).qs
+
+    assert list(queryset) == [matching]
+
+
+def test_feature_filter_matches_active_alternate_name(language):
+    """The name filter finds active aliases without matching deleted ones."""
+    feature_type = FeatureType.objects.create(name='Character')
+    matching = _create_feature(
+        language=language,
+        feature_type=feature_type,
+        name='Captain Marvel',
+    )
+    FeatureNameDetail.objects.create(
+        feature=matching,
+        name='Shazam',
+        sort_name='Shazam',
+        is_official_name=False,
+    )
+    deleted_alias = _create_feature(
+        language=language,
+        feature_type=feature_type,
+        name='Different Feature',
+    )
+    FeatureNameDetail.objects.create(
+        feature=deleted_alias,
+        name='Shazam Family',
+        sort_name='Shazam Family',
+        is_official_name=False,
+        deleted=True,
+    )
+
+    queryset = FeatureFilterSet(
+        {'name': 'shazam'},
         queryset=Feature.objects.all(),
     ).qs
 

@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import serializers
 
 from apps.api_v2.utils.credits import collect_story_credit_entries
-from apps.gcd.models import Feature, FeatureLogo, Story
+from apps.gcd.models import FeatureLogo, FeatureNameDetail, Story
 
 LEGACY_CREDIT_FIELDS = (
     'script',
@@ -107,14 +107,15 @@ class StoryListSerializer(serializers.ModelSerializer):
 
 
 class FeatureObjectSerializer(serializers.ModelSerializer):
-    """Serialize trimmed feature references for story detail."""
+    """Serialize selected feature names as parent Feature references."""
 
+    id = serializers.IntegerField(source='feature_id')
     feature_type = serializers.SerializerMethodField()
 
     class Meta:
         """Serializer metadata for feature references."""
 
-        model = Feature
+        model = FeatureNameDetail
         fields = (
             'id',
             'name',
@@ -123,14 +124,14 @@ class FeatureObjectSerializer(serializers.ModelSerializer):
 
     def get_feature_type(self, obj):
         """Return the minimal nested feature type reference."""
-        if obj.feature_type_id is None:
+        if obj.feature.feature_type_id is None:
             return None
         try:
-            feature_type_name = obj.feature_type.name
+            feature_type_name = obj.feature.feature_type.name
         except ObjectDoesNotExist:
             return None
         return {
-            'id': obj.feature_type_id,
+            'id': obj.feature.feature_type_id,
             'name': feature_type_name,
         }
 
@@ -190,15 +191,18 @@ class StorySerializer(StoryListSerializer):
         )
 
     def get_feature_object(self, obj):
-        """Return structured feature references for the story."""
-        features = getattr(obj, 'active_feature_list', None)
-        if features is None:
-            features = (
-                obj.feature_object.filter(deleted=False)
-                .select_related('feature_type')
+        """Return selected feature names with parent Feature identities."""
+        feature_names = getattr(obj, 'active_feature_name_list', None)
+        if feature_names is None:
+            feature_names = (
+                obj.feature_name.filter(
+                    deleted=False,
+                    feature__deleted=False,
+                )
+                .select_related('feature', 'feature__feature_type')
                 .order_by('sort_name', 'id')
             )
-        return FeatureObjectSerializer(features, many=True).data
+        return FeatureObjectSerializer(feature_names, many=True).data
 
     def get_feature_logo(self, obj):
         """Return structured feature-logo references for the story."""

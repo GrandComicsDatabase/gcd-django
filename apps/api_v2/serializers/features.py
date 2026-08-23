@@ -3,9 +3,10 @@
 
 """Serializers for v2 Feature endpoints."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from apps.gcd.models import Feature, FeatureLogo
+from apps.gcd.models import Feature, FeatureLogo, FeatureNameDetail
 
 
 def _feature_type_reference(feature_type):
@@ -41,6 +42,21 @@ class FeatureLogoSerializer(serializers.ModelSerializer):
             'year_ended',
             'year_began_uncertain',
             'year_ended_uncertain',
+        )
+
+
+class FeatureNameDetailSerializer(serializers.ModelSerializer):
+    """Serialize active names for a Feature."""
+
+    class Meta:
+        """Serializer metadata for Feature name-detail fields."""
+
+        model = FeatureNameDetail
+        fields = (
+            'id',
+            'name',
+            'sort_name',
+            'is_official_name',
         )
 
 
@@ -117,6 +133,7 @@ class FeatureSerializer(FeatureListSerializer):
         read_only=True,
         slug_field='name',
     )
+    name_details = serializers.SerializerMethodField()
     logos = serializers.SerializerMethodField()
     relations = serializers.SerializerMethodField()
 
@@ -125,19 +142,47 @@ class FeatureSerializer(FeatureListSerializer):
 
         fields = FeatureListSerializer.Meta.fields + (
             'year_first_published_uncertain',
+            'description',
             'notes',
+            'name_details',
             'keywords',
             'logos',
             'relations',
         )
 
-    def get_logos(self, obj):
-        """Return ordered active Feature Logos."""
-        logos = getattr(obj, 'active_feature_logo_list', None)
-        if logos is None:
-            logos = obj.featurelogo_set.filter(deleted=False).order_by(
+    @extend_schema_field(FeatureNameDetailSerializer(many=True))
+    def get_name_details(self, obj):
+        """Return ordered active names for the Feature."""
+        name_details = getattr(obj, 'active_name_detail_list', None)
+        if name_details is None:
+            name_details = obj.feature_names.filter(deleted=False).order_by(
                 'sort_name',
                 'id',
+            )
+        return FeatureNameDetailSerializer(name_details, many=True).data
+
+    def get_logos(self, obj):
+        """Return ordered active Feature Logos."""
+        name_details = getattr(obj, 'active_name_detail_list', None)
+        if name_details is None:
+            logos = (
+                FeatureLogo.objects.filter(
+                    deleted=False,
+                    feature_name__deleted=False,
+                    feature_name__feature=obj,
+                )
+                .distinct()
+                .order_by('sort_name', 'id')
+            )
+        else:
+            logos_by_id = {
+                logo.pk: logo
+                for name_detail in name_details
+                for logo in name_detail.active_feature_logo_list
+            }
+            logos = sorted(
+                logos_by_id.values(),
+                key=lambda logo: (logo.sort_name, logo.pk),
             )
         return FeatureLogoSerializer(logos, many=True).data
 

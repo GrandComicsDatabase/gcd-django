@@ -361,7 +361,7 @@ class FeatureRelationRevisionForm(forms.ModelForm):
         else:
             cd['relation_type'] = FeatureRelationType.objects.get(id=type)
         if 'from_feature' in cd and 'to_feature' in cd and \
-            cd['from_feature'] == cd['to_feature']:
+           cd['from_feature'] == cd['to_feature']:
             raise forms.ValidationError(
               'Feature A and Feature B cannot be the same feature.')
         return cd

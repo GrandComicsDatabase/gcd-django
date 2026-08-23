@@ -17,7 +17,12 @@ from apps.api_v2.utils.conditional import (
     make_last_modified,
 )
 from apps.api_v2.views import GCDBaseViewSet
-from apps.gcd.models import Feature, FeatureLogo, FeatureRelation
+from apps.gcd.models import (
+    Feature,
+    FeatureLogo,
+    FeatureNameDetail,
+    FeatureRelation,
+)
 
 
 def _feature_filter_queryset(request, *, pk=None, **kwargs):
@@ -39,13 +44,23 @@ feature_etag = make_etag(
     queryset_getter=_feature_filter_queryset,
 )
 
-ACTIVE_FEATURE_LOGO_PREFETCH = Prefetch(
-    'featurelogo_set',
-    queryset=FeatureLogo.objects.filter(deleted=False).order_by(
-        'sort_name',
-        'id',
+ACTIVE_FEATURE_NAME_PREFETCH = Prefetch(
+    'feature_names',
+    queryset=(
+        FeatureNameDetail.objects.filter(deleted=False)
+        .prefetch_related(
+            Prefetch(
+                'featurelogo_set',
+                queryset=FeatureLogo.objects.filter(deleted=False).order_by(
+                    'sort_name',
+                    'id',
+                ),
+                to_attr='active_feature_logo_list',
+            ),
+        )
+        .order_by('sort_name', 'id')
     ),
-    to_attr='active_feature_logo_list',
+    to_attr='active_name_detail_list',
 )
 OUTGOING_FEATURE_RELATION_PREFETCH = Prefetch(
     'to_related_feature',
@@ -102,7 +117,7 @@ class FeatureViewSet(GCDBaseViewSet):
         if self.action == 'retrieve':
             queryset = queryset.prefetch_related(
                 'keywords',
-                ACTIVE_FEATURE_LOGO_PREFETCH,
+                ACTIVE_FEATURE_NAME_PREFETCH,
                 OUTGOING_FEATURE_RELATION_PREFETCH,
                 INCOMING_FEATURE_RELATION_PREFETCH,
             )

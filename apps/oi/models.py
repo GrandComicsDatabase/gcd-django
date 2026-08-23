@@ -4107,7 +4107,7 @@ class IssueRevision(Revision):
         return ((not self.deleted) and
                 (self.previous_revision is not None) and
                 self.previous_revision.series != self.series)
-    
+
     @classmethod
     def fork_variant(cls, issue, changeset,
                      variant_name, variant_cover_revision=None,
@@ -4530,7 +4530,7 @@ class IssueRevision(Revision):
                 # 1. Variant left behind:
                 # Goes from Standard -> Cross-Series (+1)
                 if variant.series == old_series and \
-                    variant.series != new_series:
+                        variant.series != new_series:
                     variant.series.issue_count += 1
                     variant.series.save(update_fields=['issue_count'])
 

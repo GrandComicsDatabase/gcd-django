@@ -3,7 +3,7 @@
 
 """Migration tests for persistent Series Bond timestamps."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from django.contrib.auth import get_user_model
@@ -88,11 +88,11 @@ def test_series_bond_timestamp_migration_uses_history_or_shared_baseline(
         state=1,
         name='unapproved',
     )
-    earliest_created = datetime(2010, 1, 1, tzinfo=timezone.utc)
-    earliest_modified = datetime(2010, 1, 2, tzinfo=timezone.utc)
-    latest_created = datetime(2020, 1, 1, tzinfo=timezone.utc)
-    latest_modified = datetime(2020, 1, 2, tzinfo=timezone.utc)
-    ignored_created = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    earliest_created = datetime(2010, 1, 1, tzinfo=UTC)
+    earliest_modified = datetime(2010, 1, 2, tzinfo=UTC)
+    latest_created = datetime(2020, 1, 1, tzinfo=UTC)
+    latest_modified = datetime(2020, 1, 2, tzinfo=UTC)
+    ignored_created = datetime(2025, 1, 1, tzinfo=UTC)
     SeriesBondRevision.objects.filter(pk=earliest.pk).update(
         created=earliest_created,
         modified=earliest_modified,

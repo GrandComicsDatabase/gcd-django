@@ -19,6 +19,7 @@ from apps.gcd.models import (
     CreditType,
     Feature,
     FeatureLogo,
+    FeatureNameDetail,
     FeatureType,
     Reprint,
     Story,
@@ -146,6 +147,12 @@ def _add_story_detail_relations(story):
         year_first_published=1939,
         notes='',
     )
+    feature_name = FeatureNameDetail.objects.create(
+        feature=feature,
+        name='The Bat-Man',
+        sort_name='Bat-Man, The',
+        is_official_name=False,
+    )
     logo = FeatureLogo.objects.create(
         name='Bat Logo',
         sort_name='Bat Logo',
@@ -154,8 +161,8 @@ def _add_story_detail_relations(story):
         year_ended=1945,
         notes='',
     )
-    logo.feature.add(feature)
-    story.feature_object.add(feature)
+    logo.feature_name.add(feature_name)
+    story.feature_name.add(feature_name)
     story.feature_logo.add(logo)
     _creator, creator_name = _create_creator('Writer One', 'Writer, One')
     script_type = _create_credit_type('script', 1)
