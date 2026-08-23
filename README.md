@@ -22,6 +22,10 @@ http://groups.google.com/group/gcd-tech/
 See [the core development environment guide](docs/development/CORE_SETUP.md)
 for the supported Docker and Docker-free local setup.
 
+For the default Docker setup with deterministic development data, run
+`./bin/dev setup`. Contributors who have manually downloaded an authenticated
+GCD catalog archive can use `./bin/dev setup --dump ~/Downloads/current.zip`.
+
 You can find manual instructions for various platforms using virtual environments for python in the docs directory
 [GCD Docs](https://github.com/GrandComicsDatabase/gcd-django/tree/beta/docs) but they aren't
 necessarily up to date.  As of September 2023 they should work.

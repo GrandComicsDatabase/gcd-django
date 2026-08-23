@@ -94,6 +94,8 @@ def test_dev_launcher_documents_supported_commands():
 
     assert result.returncode == 0
     assert './bin/dev up' in result.stdout
+    assert './bin/dev setup' in result.stdout
+    assert './bin/dev setup --dump ~/Downloads/current.zip' in result.stdout
     assert '--runtime native' in result.stdout
     assert 'reset --yes' in result.stdout
 
@@ -104,6 +106,16 @@ def test_dev_launcher_refuses_reset_without_explicit_confirmation():
 
     assert result.returncode != 0
     assert '--yes' in result.stderr
+
+
+def test_dev_launcher_declares_a_confirmation_gated_dump_setup_flow():
+    """Full-catalog setup stays a single command without silent replacement."""
+    launcher = _read_project_file('bin/dev')
+
+    assert 'setup [--dump ARCHIVE] [--replace --yes]' in launcher
+    assert 'setup_dump_database' in launcher
+    assert 'seed_development_data' in launcher
+    assert 'A non-empty local database will be replaced' in launcher
 
 
 def test_dev_launcher_handles_crlf_dotenv_and_native_database_overrides():

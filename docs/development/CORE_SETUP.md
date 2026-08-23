@@ -17,10 +17,63 @@ The application is available at <http://127.0.0.1:8000>. MySQL is available
 only on `127.0.0.1:3308` from the local machine. The database data lives in the
 Docker volume named `gcd-django-dev_mysql_data`.
 
+## Ready-to-use development data
+
+For a small, deterministic local dataset, use one command instead of running
+migrations, fixtures, and account setup separately:
+
+```bash
+./bin/dev setup
+```
+
+It creates the development database, applies migrations, loads local
+development accounts, initializes global statistics, and starts the
+application.
+
+The seeded accounts are deliberately public local-development fixtures. They
+work only in this local database and must never be used for beta or production:
+
+| Username | Password | Intended use |
+| --- | --- | --- |
+| `admin` | `admin` | Local Django superuser and administrator |
+| `editor` | `editme` | Editor, indexer, and member workflow testing |
+| `dexter_1234` | `test` | Standard indexer workflow testing |
+| `anon` | — | Anonymous fixture account; it cannot log in |
+
+### Full GCD catalog dump
+
+The full catalog dump is optional. Download it manually from
+<https://www.comics.org/download/> after accepting the GCD download terms, then
+run:
+
+```bash
+./bin/dev setup --dump ~/Downloads/current.zip
+```
+
+The command handles everything else: it validates the archive, restores it to
+a temporary local staging database, creates a clean migrated development
+database, checks compatibility, copies catalog data, initializes local
+accounts/statistics, and starts the site. It does not need a database name,
+manual SQL command, fake migration, or separate seed step from the
+contributor.
+
+If a local database already exists, `setup` asks once before replacing it. For
+non-interactive use, supply the explicit confirmation:
+
+```bash
+./bin/dev setup --dump ~/Downloads/current.zip --replace --yes
+```
+
+The full-dump workflow is currently supported by the default Docker runtime.
+It needs approximately 12 GB of free Docker storage while the temporary
+staging database and final development database coexist. The public dump does
+not contain uploaded cover/image files; development uses fake images instead.
+
 Useful commands:
 
 ```bash
 ./bin/dev doctor
+./bin/dev setup
 ./bin/dev test
 ./bin/dev manage createsuperuser
 ./bin/dev logs web
