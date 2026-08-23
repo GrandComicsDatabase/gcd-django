@@ -51,14 +51,14 @@ sudo apt-get install -y build-essential default-libmysqlclient-dev git libicu-de
 On macOS with Homebrew, install them with:
 
 ```bash
-brew install icu4c mysql-client pkg-config
-export PKG_CONFIG_PATH="$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix mysql-client)/lib/pkgconfig"
-export ICU_VERSION="$(pkg-config --modversion icu-i18n)"
+brew install icu4c@78 mysql-client pkgconf
+export PKG_CONFIG_PATH="$(brew --prefix icu4c@78)/lib/pkgconfig:$(brew --prefix mysql-client)/lib/pkgconfig"
 ```
 
-Keep the two `export` lines in the shell session used for dependency
-installation, or add them to the environment activation script for your local
-virtual environment. They allow PyICU to find Homebrew's ICU installation.
+Keep the `export` line in the shell session used for dependency installation,
+or add it to the environment activation script for your local virtual
+environment. Do not set `ICU_VERSION`: PyICU uses `pkg-config` to obtain the
+required compiler and linker flags on macOS.
 
 ```bash
 python3.13 -m venv .venv
