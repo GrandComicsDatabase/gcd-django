@@ -7,7 +7,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${PYTHON:-python}"
 ALLOWED_ENVIRONMENT_VARIABLES=(
   COMPOSE_PROJECT_NAME GCD_WEB_PORT GCD_MYSQL_PORT MYSQL_DATABASE MYSQL_USER
-  MYSQL_PASSWORD MYSQL_ROOT_PASSWORD
+  MYSQL_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_HOST MYSQL_PORT
 )
 
 usage() {
@@ -48,6 +48,7 @@ load_optional_environment() {
   local environment_file="$PROJECT_ROOT/.env" line key value
   [[ -f "$environment_file" ]] || return 0
   while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
     [[ -z "$line" || "$line" == \#* ]] && continue
     if [[ ! "$line" =~ ^([A-Z][A-Z0-9_]*)=(.*)$ ]]; then
       echo "Invalid .env entry (expected KEY=VALUE): $line" >&2

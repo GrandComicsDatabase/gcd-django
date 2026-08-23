@@ -13,7 +13,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u'$$MYSQL_USER' -p'$$MYSQL_PASSWORD'"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -55,7 +55,7 @@ services:
     ports:
       - "127.0.0.1:${GCD_WEB_PORT:-8000}:8000"
     healthcheck:
-      test: ["CMD-SHELL", 'python -c "from urllib.request import urlopen; urlopen(\"http://127.0.0.1:8000/\", timeout=3)"']
+      test: ["CMD-SHELL", "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/', timeout=3)\""]
       interval: 5s
       timeout: 5s
       retries: 12

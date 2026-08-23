@@ -62,6 +62,21 @@ def test_compose_waits_for_database_and_migrations_before_web_starts():
     assert 'runserver 0.0.0.0:8000' in services['web']['command']
 
 
+def test_compose_healthchecks_quote_credentials_and_remain_readable():
+    """Healthchecks safely handle credentials and retain a clear web command."""
+    services = _load_compose_file()['services']
+
+    assert services['db']['healthcheck']['test'] == [
+        'CMD-SHELL',
+        "mysqladmin ping -h localhost -u'$$MYSQL_USER' -p'$$MYSQL_PASSWORD'",
+    ]
+    assert services['web']['healthcheck']['test'] == [
+        'CMD-SHELL',
+        "python -c \"from urllib.request import urlopen; "
+        "urlopen('http://127.0.0.1:8000/', timeout=3)\"",
+    ]
+
+
 def test_development_image_uses_the_supported_python_line():
     """The Docker image is built from the supported Python release line."""
     dockerfile = _read_project_file('Dockerfile.dev')
@@ -89,3 +104,14 @@ def test_dev_launcher_refuses_reset_without_explicit_confirmation():
 
     assert result.returncode != 0
     assert '--yes' in result.stderr
+
+
+def test_dev_launcher_handles_crlf_dotenv_and_native_database_overrides():
+    """The .env parser supports Windows endings and native DB configuration."""
+    launcher = _read_project_file('bin/dev')
+    example_environment = _read_project_file('.env.example')
+
+    assert 'MYSQL_HOST MYSQL_PORT' in launcher
+    assert 'line="${line%$\'\\r\'}"' in launcher
+    assert 'MYSQL_HOST=127.0.0.1' in example_environment
+    assert 'MYSQL_PORT=3308' in example_environment
