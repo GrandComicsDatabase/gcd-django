@@ -51,6 +51,11 @@ urlpatterns = [
         name='feature_autocomplete',
     ),
     path(
+        'autocomplete/feature_name/',
+        select_views.FeatureNameAutocomplete.as_view(),
+        name='feature_name_autocomplete',
+    ),
+    path(
         'autocomplete/feature_logo/',
         select_views.FeatureLogoAutocomplete.as_view(),
         name='feature_logo_autocomplete',

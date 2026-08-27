@@ -390,8 +390,7 @@ def generic_by_name(request, name, q_obj, sort,
         else:
             order_by = 'issue'
         if things:
-            filter = filter_issues(request, things)
-            things = filter.qs
+            filter, things = filter_issues(request, things)
             filter_form = filter.form
         else:
             filter_form = None
@@ -461,8 +460,7 @@ def generic_by_name(request, name, q_obj, sort,
                 query_val[credit] = name
                 credit = None
                 things = things.prefetch_related('feature_object')
-                filter = filter_sequences(request, things)
-                things = filter.qs
+                filter, things = filter_sequences(request, things)
                 table = StoryTable(
                   things,
                   template_name='gcd/bits/tw_sortable_table.html',
@@ -482,8 +480,7 @@ def generic_by_name(request, name, q_obj, sort,
                 query_val['logic'] = True
             else:
                 target = credit
-            filter = filter_sequences(request, things)
-            things = filter.qs
+            filter, things = filter_sequences(request, things)
 
             table = MatchedSearchStoryTable(
                 things, attrs={'class': 'sortable_listing'},
@@ -2563,7 +2560,7 @@ def compute_order(data):
             elif order == 'indicia_publisher':
                 terms.append('indicia_publisher')
             elif order == 'brand':
-                terms.append('brand')
+                terms.append('brand_emblem')
             elif order == 'publisher':
                 terms.append('series__publisher')
             elif order == 'country':
@@ -2576,6 +2573,8 @@ def compute_order(data):
                 terms.append('issue__series__publisher')
             elif order == 'indicia_publisher':
                 terms.append('issue__indicia_publisher')
+            elif order == 'brand':
+                terms.append('issue__brand_emblem')
             elif order == 'series':
                 terms.append('issue__series')
             elif order == 'date':

@@ -10,6 +10,7 @@ from django.urls import reverse
 from apps.gcd.models import (
     Feature,
     FeatureLogo,
+    FeatureNameDetail,
     FeatureRelation,
     FeatureRelationType,
     FeatureType,
@@ -32,6 +33,12 @@ def _create_feature(*, language, feature_type, name):
 
 def _create_relationships(feature, *, language, feature_type, count):
     """Attach logos plus incoming and outgoing relations to ``feature``."""
+    feature_name = FeatureNameDetail.objects.create(
+        feature=feature,
+        name=feature.name,
+        sort_name=feature.sort_name,
+        is_official_name=True,
+    )
     relation_type = FeatureRelationType.objects.create(
         name='alternate_version',
         description='is an alternate version of',
@@ -43,7 +50,7 @@ def _create_relationships(feature, *, language, feature_type, count):
             sort_name=f'Logo {number:03d}',
             notes='',
         )
-        logo.feature.add(feature)
+        logo.feature_name.add(feature_name)
         outgoing_target = _create_feature(
             language=language,
             feature_type=feature_type,
@@ -116,4 +123,4 @@ def test_feature_detail_query_count_is_relationship_count_independent(
     assert response.status_code == 200
     assert len(response.data['logos']) == 8
     assert len(response.data['relations']) == 16
-    assert len(context) == 6
+    assert len(context) == 7

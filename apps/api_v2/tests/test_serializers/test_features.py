@@ -12,6 +12,7 @@ from apps.api_v2.serializers.features import (
 from apps.gcd.models import (
     Feature,
     FeatureLogo,
+    FeatureNameDetail,
     FeatureRelation,
     FeatureRelationType,
     FeatureType,
@@ -38,6 +39,7 @@ def _create_feature(
         feature_type=feature_type,
         year_first_published=1960,
         year_first_published_uncertain=True,
+        description='Feature description',
         notes='Feature notes',
         deleted=deleted,
     )
@@ -63,7 +65,15 @@ def _create_logo(
         notes='',
         deleted=deleted,
     )
-    logo.feature.add(feature)
+    feature_name, _ = FeatureNameDetail.objects.get_or_create(
+        feature=feature,
+        name=feature.name,
+        defaults={
+            'sort_name': feature.sort_name,
+            'is_official_name': True,
+        },
+    )
+    logo.feature_name.add(feature_name)
     return logo
 
 
@@ -121,6 +131,18 @@ def test_feature_detail_serializer_normalizes_active_relationships(language):
         name='Main Feature',
     )
     feature.keywords.add('alpha', 'beta')
+    official_name = FeatureNameDetail.objects.create(
+        feature=feature,
+        name='Main Feature',
+        sort_name='Feature, Main',
+        is_official_name=True,
+    )
+    alternate_name = FeatureNameDetail.objects.create(
+        feature=feature,
+        name='Alternate Feature',
+        sort_name='Feature, Alternate',
+        is_official_name=False,
+    )
     beta_logo = _create_logo(
         feature,
         name='Beta Logo',
@@ -132,6 +154,8 @@ def test_feature_detail_serializer_normalizes_active_relationships(language):
         name='Alpha Logo',
         sort_name='Alpha Logo',
     )
+    alpha_logo.feature_name.add(official_name)
+    beta_logo.feature_name.add(alternate_name)
     _create_logo(
         feature,
         name='Deleted Logo',
@@ -189,13 +213,30 @@ def test_feature_detail_serializer_normalizes_active_relationships(language):
         'created',
         'modified',
         'year_first_published_uncertain',
+        'description',
         'notes',
+        'name_details',
         'keywords',
         'logos',
         'relations',
     }
     assert data['year_first_published_uncertain'] is True
+    assert data['description'] == 'Feature description'
     assert data['notes'] == 'Feature notes'
+    assert data['name_details'] == [
+        {
+            'id': alternate_name.pk,
+            'name': 'Alternate Feature',
+            'sort_name': 'Feature, Alternate',
+            'is_official_name': False,
+        },
+        {
+            'id': official_name.pk,
+            'name': 'Main Feature',
+            'sort_name': 'Feature, Main',
+            'is_official_name': True,
+        },
+    ]
     assert set(data['keywords']) == {'alpha', 'beta'}
     assert data['logos'] == [
         {

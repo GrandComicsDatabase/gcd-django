@@ -7,6 +7,7 @@ from .gcddata import GcdLink
 BOND_TRACKING = {1, 2, 3, 4, 5, 6, 7}
 SUBNUMBER_TRACKING = 4
 MERGE_TRACKING = {5, 6}
+REBOOT_TRACKING = {7}
 
 
 class SeriesBondType(models.Model):

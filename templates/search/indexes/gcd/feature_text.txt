@@ -1,6 +1,9 @@
 {% load credits %}
 {{ object.name_with_disambiguation|safe }}
 {{ object.notes|safe }}
+{% for feature_name in object.active_names %}
+    {{ feature_name.name|safe }}
+{% endfor %}
 {% for feature_logo in object.active_logos %}
     {{ feature_logo.name|safe }}
 {% endfor %}

@@ -1,5 +1,10 @@
+[project]
+name = "gcd-django"
+dynamic = ["version"]
+requires-python = ">=3.13,<3.14"
+
 [tool.ruff]
-target-version = "py310"
+target-version = "py313"
 line-length = 79
 # v2 API is the only code under ruff's control. Everything else is excluded
 # so a bare `ruff check .` from project root only touches apps/api_v2/.
@@ -57,6 +62,6 @@ indent-style = "space"
 
 [tool.pytest.ini_options]
 # Boot Django with these settings first; without this the suite won't start at all.
-DJANGO_SETTINGS_MODULE = "settings"
+DJANGO_SETTINGS_MODULE = "settings_dev"
 # Where the tests live, so a bare `pytest` finds them.
 testpaths = ["apps"]

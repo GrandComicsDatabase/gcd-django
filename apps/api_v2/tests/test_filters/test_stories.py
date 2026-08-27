@@ -9,7 +9,13 @@ from decimal import Decimal
 from django.utils import timezone
 
 from apps.api_v2.filters.stories import StoryFilterSet
-from apps.gcd.models import Feature, FeatureType, Story, StoryType
+from apps.gcd.models import (
+    Feature,
+    FeatureNameDetail,
+    FeatureType,
+    Story,
+    StoryType,
+)
 
 
 def _create_story_type(name='Comic Story', sort_code=19):
@@ -195,7 +201,7 @@ def test_story_filter_matches_story_and_feature_genres(issue):
         sequence_number=2,
         genre='',
     )
-    feature_genre_match.feature_object.add(
+    linked_features = (
         _create_feature(
             issue.series.language,
             name='Space Feature',
@@ -206,6 +212,17 @@ def test_story_filter_matches_story_and_feature_genres(issue):
             name='Mask Feature',
             genre='superhero',
         ),
+    )
+    feature_genre_match.feature_name.add(
+        *[
+            FeatureNameDetail.objects.create(
+                feature=feature,
+                name=feature.name,
+                sort_name=feature.sort_name,
+                is_official_name=True,
+            )
+            for feature in linked_features
+        ],
     )
     _create_story(
         issue,

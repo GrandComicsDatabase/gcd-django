@@ -20,6 +20,7 @@ from apps.gcd.models import (
     CreditType,
     Feature,
     FeatureLogo,
+    FeatureNameDetail,
     FeatureType,
     Reprint,
     Story,
@@ -173,42 +174,50 @@ def _create_feature(language):
 
 def test_feature_object_serializer_handles_missing_feature_type(issue):
     """Malformed feature objects serialize without raising."""
-    features = [
-        Feature(
-            id=123,
-            name='Batman',
-            sort_name='Batman',
-            disambiguation='',
-            genre='superhero',
-            language=issue.series.language,
-            feature_type=None,
-            year_first_published=1939,
-            notes='',
+    feature_names = [
+        FeatureNameDetail(
+            feature=Feature(
+                id=123,
+                name='Batman',
+                sort_name='Batman',
+                disambiguation='',
+                genre='superhero',
+                language=issue.series.language,
+                feature_type=None,
+                year_first_published=1939,
+                notes='',
+            ),
+            name='The Bat-Man',
+            sort_name='Bat-Man, The',
         ),
-        Feature(
-            id=124,
-            name='Robin',
-            sort_name='Robin',
-            disambiguation='',
-            genre='superhero',
-            language=issue.series.language,
-            feature_type_id=999999,
-            year_first_published=1940,
-            notes='',
+        FeatureNameDetail(
+            feature=Feature(
+                id=124,
+                name='Robin',
+                sort_name='Robin',
+                disambiguation='',
+                genre='superhero',
+                language=issue.series.language,
+                feature_type_id=999999,
+                year_first_published=1940,
+                notes='',
+            ),
+            name='Robin the Boy Wonder',
+            sort_name='Robin the Boy Wonder',
         ),
     ]
 
-    data = FeatureObjectSerializer(features, many=True).data
+    data = FeatureObjectSerializer(feature_names, many=True).data
 
     assert data == [
         {
             'id': 123,
-            'name': 'Batman',
+            'name': 'The Bat-Man',
             'feature_type': None,
         },
         {
             'id': 124,
-            'name': 'Robin',
+            'name': 'Robin the Boy Wonder',
             'feature_type': None,
         },
     ]
@@ -251,6 +260,12 @@ def test_story_detail_serializer_exposes_detail_contract(issue):
     story = _create_story(issue, title='Lead Story', sequence_number=1)
     story.keywords.add('alpha', 'beta')
     feature = _create_feature(issue.series.language)
+    feature_name = FeatureNameDetail.objects.create(
+        feature=feature,
+        name='The Bat-Man',
+        sort_name='Bat-Man, The',
+        is_official_name=False,
+    )
     logo = FeatureLogo.objects.create(
         name='Bat Logo',
         sort_name='Bat Logo',
@@ -259,8 +274,8 @@ def test_story_detail_serializer_exposes_detail_contract(issue):
         year_ended=1945,
         notes='',
     )
-    logo.feature.add(feature)
-    story.feature_object.add(feature)
+    logo.feature_name.add(feature_name)
+    story.feature_name.add(feature_name)
     story.feature_logo.add(logo)
     creator, creator_name = _create_creator('Writer One', 'Writer, One')
     script_type = _create_credit_type('script', 1)
@@ -355,7 +370,7 @@ def test_story_detail_serializer_exposes_detail_contract(issue):
     assert data['feature_object'] == [
         {
             'id': feature.pk,
-            'name': 'Batman',
+            'name': 'The Bat-Man',
             'feature_type': {
                 'id': feature.feature_type_id,
                 'name': 'Character',

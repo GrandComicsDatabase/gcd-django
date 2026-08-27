@@ -300,7 +300,7 @@ class Issue(GcdData):
                                    .order_by('sequence_number')
                                    .select_related('type', 'migration_status')
                                    .prefetch_related(
-                                     'feature_object',
+                                     'feature_name',
                                      'feature_logo__feature',
                                      'credits__creator__creator',
                                      'credits__creator__type'))

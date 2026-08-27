@@ -112,6 +112,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            GroupMembershipRevisionForm,
                            CharacterRevisionFormSet,
                            GroupRevisionFormSet,
+                           FeatureRevisionFormSet,
                            ReceivedAwardRevisionForm,
                            CreatorNonComicWorkRevisionForm,
                            CreatorRelationRevisionForm,
@@ -3085,13 +3086,13 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
 @permission_required('indexer.can_reserve')
 def add_generic(request, model_name,
                 object_url='', object_name=None,
-                initial={}, cancel='', save_kwargs={}):
+                initial={}, cancel='', save_kwargs={},
+                extra_forms=None):
     """
     Add a new object through the Online Indexer interface.
 
-    This view handles the creation of new objects that do not have extra
-    forms (such as publishers, features, etc.) through a revision/changeset
-    workflow.
+    This view handles the creation of new objects through a
+    revision/changeset workflow.
 
     It requires the user to have the 'indexer.can_reserve' permission and
     checks if the user can reserve another item.
@@ -3108,6 +3109,9 @@ def add_generic(request, model_name,
         cancel (str, optional): URL to redirect to on cancel. Defaults to ''.
         save_kwargs (dict, optional): Additional keyword arguments to pass to
             the save_added_revision method. Defaults to {}.
+        extra_forms (dict, optional): Extra forms/formsets to validate and
+            process, keyed by template context name. Values are form/formset
+            classes (instantiated with POST data). Defaults to None.
 
     Returns:
         HttpResponse:
@@ -3119,12 +3123,15 @@ def add_generic(request, model_name,
 
     Notes:
         - Creates a new Changeset with OPEN state when form is valid
-        - Uses get_revision_form to dynamically get the appropriate form
-          class
+        - Uses get_revision_form to dynamically get the appropriate form class
+        - Optionally validates and processes extra forms/formsets
         - Object name and URL are auto-generated if not provided
     """
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
+
+    if extra_forms is None:
+        extra_forms = {}
 
     if request.method == 'POST' and 'cancel' in request.POST:
         if cancel:
@@ -3134,12 +3141,24 @@ def add_generic(request, model_name,
     form = get_revision_form(model_name=model_name,
                              user=request.user)(request.POST or None,
                                                 initial=initial)
-    if form.is_valid():
+
+    instantiated_extra_forms = {}
+    for extra_form_name, extra_form in extra_forms.items():
+        instantiated_extra_forms[extra_form_name] = extra_form(
+          request.POST or None)
+
+    valid = form.is_valid()
+    for extra_form in instantiated_extra_forms.values():
+        valid = extra_form.is_valid() and valid
+
+    if valid:
         changeset = Changeset(indexer=request.user, state=states.OPEN,
                               change_type=CTYPES[model_name])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset, **save_kwargs)
+        if instantiated_extra_forms:
+            revision.process_extra_forms(instantiated_extra_forms)
         return submit(request, changeset.id)
     else:
         if not object_name:
@@ -3147,18 +3166,28 @@ def add_generic(request, model_name,
         if not object_url:
             object_url = urlresolvers.reverse('add_%s' % model_name)
 
+        context = {
+          'object_name': object_name,
+          'object_url': object_url,
+          'action_label': 'Submit New',
+          'form': form,
+        }
+        context.update(instantiated_extra_forms)
+
         return oi_render(
           request, 'oi/edit/add_frame.html',
-          {
-            'object_name': object_name,
-            'object_url': object_url,
-            'action_label': 'Submit New',
-            'form': form,
-          })
+          context)
 
 
 def add_feature(request):
-    return add_generic(request, 'feature')
+    feature_names_formset = FeatureRevisionFormSet
+    external_link_formset = ExternalLinkRevisionFormSet
+
+    return add_generic(request, 'feature',
+                       extra_forms={'feature_names_formset':
+                                    feature_names_formset,
+                                    'external_link_formset':
+                                    external_link_formset})
 
 
 @permission_required('indexer.can_reserve')
@@ -6356,6 +6385,10 @@ def compare(request, id):
         group_name_revisions = changeset.groupnamedetailrevisions.all()
         for group_name_revision in group_name_revisions:
             revisions_before.append(group_name_revision)
+    elif changeset.change_type == CTYPES['feature']:
+        feature_name_revisions = changeset.featurenamedetailrevisions.all()
+        for feature_name_revision in feature_name_revisions:
+            revisions_before.append(feature_name_revision)
     for revision_before in revisions_before:
         revision_before.compare_changes()
     for revision_after in revisions_after:

@@ -19,8 +19,8 @@ from apps.api_v2.utils.conditional import (
 )
 from apps.api_v2.views import GCDBaseViewSet
 from apps.gcd.models import (
-    Feature,
     FeatureLogo,
+    FeatureNameDetail,
     Reprint,
     Story,
     StoryCharacter,
@@ -72,12 +72,15 @@ ACTIVE_STORY_CHARACTER_PREFETCH = Prefetch(
     ),
     to_attr='active_character_list',
 )
-ACTIVE_FEATURE_PREFETCH = Prefetch(
-    'feature_object',
-    queryset=Feature.objects.filter(deleted=False)
-    .select_related('feature_type')
+ACTIVE_FEATURE_NAME_PREFETCH = Prefetch(
+    'feature_name',
+    queryset=FeatureNameDetail.objects.filter(
+        deleted=False,
+        feature__deleted=False,
+    )
+    .select_related('feature', 'feature__feature_type')
     .order_by('sort_name', 'id'),
-    to_attr='active_feature_list',
+    to_attr='active_feature_name_list',
 )
 ACTIVE_FEATURE_LOGO_PREFETCH = Prefetch(
     'feature_logo',
@@ -164,7 +167,7 @@ class StoryViewSet(GCDBaseViewSet):
         if self.action == 'retrieve':
             queryset = queryset.prefetch_related(
                 'keywords',
-                ACTIVE_FEATURE_PREFETCH,
+                ACTIVE_FEATURE_NAME_PREFETCH,
                 ACTIVE_FEATURE_LOGO_PREFETCH,
                 ACTIVE_STORY_CREDIT_PREFETCH,
                 ACTIVE_STORY_CHARACTER_PREFETCH,
