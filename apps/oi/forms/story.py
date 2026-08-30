@@ -1268,7 +1268,7 @@ class StoryRevisionForm(KeywordBaseForm):
                         raise forms.ValidationError(
                           ['Select the correct feature logo for an '
                            'in-house column.'])
-                elif feature_logo.feature_name.feature\
+                elif feature_logo.feature_name\
                                  .filter(feature__feature_type__id=3).exists():
                     if not cd['type'].id in [STORY_TYPES['ad'],
                                              STORY_TYPES['comics-form ad']]:
