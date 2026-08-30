@@ -24,7 +24,7 @@ from apps.oi.models import (
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
-                            Feature, FeatureLogo, FeatureNameDetail, \
+                            FeatureLogo, FeatureNameDetail, \
                             CharacterNameDetail, \
                             GroupNameDetail, CharacterRole, StoryArc, \
                             StoryArcRelationType, Universe, \
@@ -1255,24 +1255,25 @@ class StoryRevisionForm(KeywordBaseForm):
                   ['No feature logos for cover sequences.'])
             for feature_logo in cd['feature_logo']:
                 if cd['type'].id == STORY_TYPES['letters_page']:
-                    if not feature_logo.feature.filter(feature_type__id=2)\
-                                               .count():
+                    if not feature_logo.feature_name.feature\
+                                       .filter(feature_type__id=2).count():
                         raise forms.ValidationError(
                           ['Select the correct feature logo for a '
                            'letters page.'])
                 elif cd['type'].id == STORY_TYPES['in-house column']:
-                    if not feature_logo.feature.filter(feature_type__id=4)\
-                                               .count():
+                    if not feature_logo.feature_name.feature\
+                                       .filter(feature_type__id=4).count():
                         raise forms.ValidationError(
                           ['Select the correct feature logo for an '
                            'in-house column.'])
-                elif feature_logo.feature.filter(feature_type__id=3).count():
+                elif feature_logo.feature_name.feature\
+                                 .filter(feature_type__id=3).count():
                     if not cd['type'].id in [STORY_TYPES['ad'],
                                              STORY_TYPES['comics-form ad']]:
                         raise forms.ValidationError(
                           ['Incorrect feature logo for this sequence.'])
-                elif feature_logo.feature.filter(feature_type_id__in=[2, 4])\
-                                         .count():
+                elif feature_logo.feature_name.feature\
+                                 .filter(feature_type_id__in=[2, 4]).count():
                     raise forms.ValidationError(
                       ['Incorrect feature logo for this sequence.'])
 
