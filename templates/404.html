@@ -1,25 +1,21 @@
-{% extends "gcd/base_view.html" %}
+{% extends "gcd/tw_base_view.html" %}
 {% load static %}
 
 {% block title %}
   GCD :: Page not found
 {% endblock %}
-{% block css %}
-  <link rel="stylesheet" type="text/css"
-        href="{% static "css/gcd/default.css" %}"/>
-{% endblock %}
 
-{% block view_body %}
-<h1 class="item_id search_id">
+{% block body %}
+  {% block nav_bar %}
+  {% include "gcd/bits/tw_search_bar.html" %}
+  {% endblock %}
+<h1 class="bg-blue-100 px-2">
 <div class="left">
 Page not found
 </div>
 </h1>
-<div class="item_id">
-<div class="left">
+<div class="px-2 py-2">
 Looks like you followed a bad link. If you think it's our fault, please <a href="https://github.com/GrandComicsDatabase/gcd-django/issues/new?body=Occurred+at+{{ request.build_absolute_uri|urlencode }}">let us know.</a>
 </div>
-</div>
-&nbsp;
 {% endblock %}
 
