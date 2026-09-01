@@ -6,22 +6,26 @@
   <td class="ps-1"> {{ reprint|link_other_reprint:is_source }}</td>
 {% endif %}
   <td>
+{% with reprint.is_internal as internal_reprint %}
 {% if not reprint|is_locked and not reprint.changeset %}
     <form action="{% url 'reserve_reprint' reprint_id=reprint.id changeset_id=changeset.id %}" method="POST">
   {% csrf_token %}
   {% if not is_source %}
-      <button class="btn-blue-editing inline" type="submit" name="edit_target_internal">Change Target</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_origin">Change Origin</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_note_target">Edit Note</button>
+      <button class="btn-blue-editing inline" type="submit" name="{% if internal_reprint %}edit_target{% else %}edit_target_internal{% endif %}">Change Target</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-target-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_origin">Change Origin</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-target-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_note_target">Edit Note</button>
   {% else %}
-      <button class="btn-blue-editing inline" type="submit" name="edit_origin_internal">Change Origin</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-source-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_origin_internal">Change Origin</button>
       <button class="btn-blue-editing inline" type="submit" name="edit_target">Change Target</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_note_origin">Edit Note</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-source-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_note_origin">Edit Note</button>
   {% endif %}
-      <button class="btn-blue-editing inline" type="submit" name="flip_direction">Flip Reprint Direction</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="flip_direction">Flip Reprint Direction</button>
       <button class="btn-blue-editing inline" type="submit" name="delete">Mark To Delete</button>
   {% if create_sequence %}
-      <button class="btn-blue-editing inline" type="submit" name="matching_sequence">Create Corresponding Sequence</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="matching_sequence">Create Corresponding Sequence</button>
+  {% endif %}
+  {% if internal_reprint %}
+      <small id="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason"><em>(Legacy internal link; change its target or mark it to delete.)</em></small>
   {% endif %}
     </form>
 {% else %}
@@ -29,25 +33,31 @@
     <form action="{% url 'edit_reprint' id=reprint.id %}" method="POST">
     {% csrf_token %}
     {% if reprint.deleted %}
-      <button class="btn-blue-editing inline" type="submit" name="restore">Restore</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason" title="Cannot restore because reprint links must connect different issues."{% endif %} name="restore">Restore</button>
+      {% if internal_reprint %}
+      <small id="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason"><em>(Legacy internal link; restoring it is unavailable.)</em></small>
+      {% endif %}
     {% else %}
       {% if not is_source %}
-      <button class="btn-blue-editing inline {% if not reprint.source %}bg-stone-100 hover:bg-stone-100 {% endif %}" type="submit" {% if not reprint.source %} disabled {% endif %} name="edit_target_internal">Change Target</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_origin">Change Origin</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_note_target">Edit Note</button>
+      <button class="btn-blue-editing inline {% if not reprint.source %}bg-stone-100 hover:bg-stone-100 {% endif %}" type="submit" {% if not reprint.source %} disabled {% endif %} name="{% if internal_reprint %}edit_target{% else %}edit_target_internal{% endif %}">Change Target</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-target-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_origin">Change Origin</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-target-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_note_target">Edit Note</button>
       {% else %}
-      <button class="btn-blue-editing inline {% if not reprint.source %}bg-stone-100 hover:bg-stone-100 {% endif %}" type="submit" {% if not reprint.source %} disabled {% endif %} name="edit_origin_internal">Change Origin</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing {% if not reprint.source %}bg-stone-100 hover:bg-stone-100 {% endif %}{% endif %} inline" type="submit" {% if internal_reprint or not reprint.source %}disabled{% endif %} {% if internal_reprint %}aria-describedby="internal-reprint-{{ reprint.id }}-source-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_origin_internal">Change Origin</button>
       <button class="btn-blue-editing inline" type="submit" name="edit_target">Change Target</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_note_origin">Edit Note</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-source-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_note_origin">Edit Note</button>
       {% endif %}
-      <button class="btn-blue-editing inline" type="submit" name="flip_direction">Flip Reprint Direction</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="flip_direction">Flip Reprint Direction</button>
       {% if reprint.source %}
       <button class="btn-blue-editing inline" type="submit" name="delete">Mark To Delete</button>
       {% else %}
       <button class="btn-blue-editing inline" type="submit" name="remove">Remove</button>
       {% endif %}
       {% if create_sequence %}
-      <button class="btn-blue-editing inline" type="submit" name="matching_sequence">Create Corresponding Sequence</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="matching_sequence">Create Corresponding Sequence</button>
+      {% endif %}
+      {% if internal_reprint %}
+      <small id="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason"><em>(Legacy internal link; change its target or mark it to delete.)</em></small>
       {% endif %}
     {% endif %}
     </form>
@@ -56,18 +66,21 @@
     <form action="{% url 'reserve_reprint' reprint_id=reprint.source.id changeset_id=changeset.id %}" method="POST">
       {% csrf_token %}
       {% if not is_source %}
-      <button class="btn-blue-editing inline" type="submit" name="edit_target_internal">Change Target</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_origin">Change Origin</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_note_target">Edit Note</button>
+      <button class="btn-blue-editing inline" type="submit" name="{% if internal_reprint %}edit_target{% else %}edit_target_internal{% endif %}">Change Target</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-target-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_origin">Change Origin</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-target-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_note_target">Edit Note</button>
       {% else %}
-      <button class="btn-blue-editing inline" type="submit" name="edit_origin_internal">Change Origin</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-source-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_origin_internal">Change Origin</button>
       <button class="btn-blue-editing inline" type="submit" name="edit_target">Change Target</button>
-      <button class="btn-blue-editing inline" type="submit" name="edit_note_origin">Edit Note</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-source-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="edit_note_origin">Edit Note</button>
       {% endif %}
-      <button class="btn-blue-editing inline" type="submit" name="flip_direction">Flip Reprint Direction</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="flip_direction">Flip Reprint Direction</button>
       <button class="btn-blue-editing inline" type="submit" name="delete">Mark To Delete</button>
       {% if create_sequence %}
-      <button class="btn-blue-editing inline" type="submit" name="matching_sequence">Create Corresponding Sequence</button>
+      <button class="{% if internal_reprint %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline" type="submit" {% if internal_reprint %}disabled aria-describedby="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason" title="Unavailable for an internal reprint link. Change the target or mark it to delete."{% endif %} name="matching_sequence">Create Corresponding Sequence</button>
+      {% endif %}
+      {% if internal_reprint %}
+      <small id="internal-reprint-{{ reprint.id }}-{% if is_source %}source{% else %}target{% endif %}-reason"><em>(Legacy internal link; change its target or mark it to delete.)</em></small>
       {% endif %}
     </form>
     {% else %}
@@ -81,5 +94,6 @@
     </span>
   {% endif %}
 {% endif %}
+{% endwith %}
   </td>
 </tr>

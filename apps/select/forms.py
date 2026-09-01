@@ -7,24 +7,35 @@ from apps.gcd.templatetags.display import show_story_short
 
 
 def get_select_cache_form(cached_issues=None, cached_stories=None,
-                          cached_covers=None):
+                          cached_covers=None, exclude_issue_id=None):
 
     class SelectCacheForm(forms.Form):
         fields = []
+        disabled_choices = []
         if cached_issues:
             for cached_issue in cached_issues:
-                fields.append(('issue_%d' % cached_issue.id,
+                choice = 'issue_%d' % cached_issue.id
+                fields.append((choice,
                               'issue: %s' % cached_issue))
+                if cached_issue.id == exclude_issue_id:
+                    disabled_choices.append(choice)
         if cached_stories:
             for cached_story in cached_stories:
-                fields.append(('story_%d' % cached_story.id,
+                choice = 'story_%d' % cached_story.id
+                fields.append((choice,
                               mark_safe('story: %s in %s' %
                                         (show_story_short(cached_story),
                                          esc(cached_story.issue)))))
+                if cached_story.issue_id == exclude_issue_id:
+                    disabled_choices.append(choice)
         if cached_covers:
             for cached_cover in cached_covers:
-                fields.append(('cover_%d' % cached_cover.id,
+                choice = 'cover_%d' % cached_cover.id
+                fields.append((choice,
                               'cover of issue: %s' % cached_cover.issue))
+                if cached_cover.issue_id == exclude_issue_id:
+                    disabled_choices.append(choice)
+        disabled_choices = tuple(disabled_choices)
         if fields:
             object_choice = forms.ChoiceField(widget=RadioSelect,
                                               choices=fields, label='')
