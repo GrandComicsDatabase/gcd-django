@@ -1,0 +1,9 @@
+.git
+.github
+.env
+.venv
+__pycache__
+*.py[cod]
+.DS_Store
+media
+static_root

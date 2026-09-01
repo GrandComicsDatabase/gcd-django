@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+# One entry point for the supported local development workflows.
+
+set -euo pipefail
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTHON_BIN="${PYTHON:-python}"
+ALLOWED_ENVIRONMENT_VARIABLES=(
+  COMPOSE_PROJECT_NAME GCD_WEB_PORT GCD_MYSQL_PORT MYSQL_DATABASE MYSQL_USER
+  MYSQL_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_HOST MYSQL_PORT
+)
+
+usage() {
+  cat <<'EOF'
+Usage: ./bin/dev [--runtime docker|native] <command> [arguments]
+
+Runtime defaults to docker. Docker is the supported default; native is an
+intentional Docker-free path for a locally installed Python 3.13 and MySQL 8.
+
+Commands:
+  up                  Start the application at http://127.0.0.1:8000
+  down                Stop the Docker stack (native has nothing to stop)
+  test [pytest args]  Run the test suite
+  shell               Open a Django development shell
+  manage <args>       Run a Django management command
+  doctor              Check the selected development environment
+  logs [service]      Follow Docker logs (db, migrate, or web)
+  reset --yes         Destroy Docker data, or flush the native development DB
+  help                Show this command reference
+
+Examples:
+  ./bin/dev up
+  ./bin/dev test apps/gcd/tests
+  ./bin/dev manage createsuperuser
+  ./bin/dev --runtime native up
+EOF
+}
+
+is_allowed_environment_variable() {
+  local key="$1" allowed
+  for allowed in "${ALLOWED_ENVIRONMENT_VARIABLES[@]}"; do
+    [[ "$key" == "$allowed" ]] && return 0
+  done
+  return 1
+}
+
+load_optional_environment() {
+  local environment_file="$PROJECT_ROOT/.env" line key value
+  [[ -f "$environment_file" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    if [[ ! "$line" =~ ^([A-Z][A-Z0-9_]*)=(.*)$ ]]; then
+      echo "Invalid .env entry (expected KEY=VALUE): $line" >&2
+      exit 2
+    fi
+    key="${BASH_REMATCH[1]}"
+    value="${BASH_REMATCH[2]}"
+    if ! is_allowed_environment_variable "$key"; then
+      echo "Unsupported .env variable: $key" >&2
+      exit 2
+    fi
+    if [[ -z "${!key+x}" ]]; then
+      export "$key=$value"
+    fi
+  done < "$environment_file"
+}
+
+set_defaults() {
+  export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-gcd-django-dev}"
+  export GCD_WEB_PORT="${GCD_WEB_PORT:-8000}"
+  export GCD_MYSQL_PORT="${GCD_MYSQL_PORT:-3308}"
+  export MYSQL_DATABASE="${MYSQL_DATABASE:-gcd_dev}"
+  export MYSQL_USER="${MYSQL_USER:-gcd_dev}"
+  export MYSQL_PASSWORD="${MYSQL_PASSWORD:-gcd_dev_password}"
+  export MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-gcd_dev_root}"
+  export DEV_UID="${DEV_UID:-$(id -u)}"
+  export DEV_GID="${DEV_GID:-$(id -g)}"
+}
+
+compose() {
+  docker compose --project-directory "$PROJECT_ROOT" -f "$PROJECT_ROOT/compose.yaml" "$@"
+}
+
+require_docker() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is required for the default runtime. Use --runtime native for Docker-free development." >&2
+    exit 1
+  fi
+  if ! docker info >/dev/null 2>&1; then
+    echo "Docker is installed but its daemon is unavailable. Start Docker Desktop and try again." >&2
+    exit 1
+  fi
+}
+
+require_native_python() {
+  if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    echo "Python executable not found: $PYTHON_BIN" >&2
+    exit 1
+  fi
+  if ! "$PYTHON_BIN" -c 'import sys; raise SystemExit(sys.version_info[:2] != (3, 13))'; then
+    echo "Native development requires Python 3.13; use PYTHON=/path/to/python3.13." >&2
+    exit 1
+  fi
+}
+
+prepare_docker_application() {
+  compose build web
+  compose up -d --wait db
+}
+
+native_environment() {
+  export DJANGO_SETTINGS_MODULE=settings_dev
+  export MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
+  export MYSQL_PORT="${MYSQL_PORT:-$GCD_MYSQL_PORT}"
+}
+
+native_database_name() {
+  "$PYTHON_BIN" -c 'import django; django.setup(); from django.conf import settings; print(settings.DATABASES["default"]["NAME"])'
+}
+
+runtime="docker"
+if [[ "${1:-}" == "--runtime" ]]; then
+  runtime="${2:-}"
+  shift 2
+fi
+if [[ "$runtime" != "docker" && "$runtime" != "native" ]]; then
+  echo "Unknown runtime: $runtime (expected docker or native)" >&2
+  exit 2
+fi
+command="${1:-help}"
+if [[ $# -gt 0 ]]; then shift; fi
+
+load_optional_environment
+set_defaults
+
+case "$command" in
+  help|-h|--help) usage ;;
+  up)
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker
+      compose up --build --wait
+      echo "GCD is available at http://127.0.0.1:${GCD_WEB_PORT}"
+    else
+      require_native_python; native_environment
+      "$PYTHON_BIN" manage.py migrate --noinput
+      exec "$PYTHON_BIN" manage.py runserver "127.0.0.1:${GCD_WEB_PORT}"
+    fi ;;
+  down)
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; compose down
+    else
+      echo "The native runtime does not manage a background stack."
+    fi ;;
+  test)
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; prepare_docker_application
+      compose run --rm --no-deps -e MYSQL_USER=root -e MYSQL_PASSWORD="$MYSQL_ROOT_PASSWORD" web python -m pytest "$@"
+    else
+      require_native_python; native_environment; "$PYTHON_BIN" -m pytest "$@"
+    fi ;;
+  shell)
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; prepare_docker_application
+      compose run --rm --no-deps web python manage.py shell
+    else
+      require_native_python; native_environment; exec "$PYTHON_BIN" manage.py shell
+    fi ;;
+  manage)
+    if [[ $# -eq 0 ]]; then
+      echo "Usage: ./bin/dev manage <Django management command>" >&2; exit 2
+    fi
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; prepare_docker_application
+      compose run --rm --no-deps web python manage.py "$@"
+    else
+      require_native_python; native_environment; exec "$PYTHON_BIN" manage.py "$@"
+    fi ;;
+  doctor)
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; compose config --quiet
+      if compose ps --status running --services | grep -qx web; then
+        compose exec -T web python scripts/check_dev_environment.py
+      else
+        echo "Docker configuration is valid. The web service is not running; run ./bin/dev up."
+      fi
+    else
+      require_native_python; native_environment; "$PYTHON_BIN" scripts/check_dev_environment.py
+    fi ;;
+  logs)
+    if [[ "$runtime" != "docker" ]]; then
+      echo "Logs are managed by your native process supervisor or terminal." >&2; exit 2
+    fi
+    require_docker
+    service="${1:-web}"
+    if [[ "$service" != "db" && "$service" != "migrate" && "$service" != "web" ]]; then
+      echo "Unknown service: $service (expected db, migrate, or web)" >&2; exit 2
+    fi
+    compose logs --follow "$service" ;;
+  reset)
+    if [[ "${1:-}" != "--yes" ]]; then
+      echo "reset is destructive; rerun with: ./bin/dev reset --yes" >&2; exit 2
+    fi
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; compose down --volumes; compose up --build --wait
+    else
+      require_native_python; native_environment
+      database_name="$(native_database_name)"
+      if [[ "$database_name" != "gcd_dev" && "$database_name" != "gcd_django_dev" ]]; then
+        echo "Native reset only permits gcd_dev or gcd_django_dev (got $database_name)." >&2; exit 2
+      fi
+      "$PYTHON_BIN" manage.py flush --noinput
+      "$PYTHON_BIN" manage.py migrate --noinput
+    fi ;;
+  *) echo "Unknown command: $command" >&2; usage >&2; exit 2 ;;
+esac
