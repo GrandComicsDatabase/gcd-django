@@ -4,19 +4,23 @@
 import re
 import sys
 import glob
+from copy import copy
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
-from django.forms import HiddenInput, MultipleHiddenInput
+from django.forms import (CheckboxInput, FileField, HiddenInput,
+                          ModelChoiceField, MultipleHiddenInput)
 import django.urls as urlresolvers
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, QueryDict
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F, Q
 from django.db.models.fields import Field
-from django.utils.html import mark_safe, conditional_escape as esc
+from django.utils.html import (mark_safe, conditional_escape as esc,
+                               format_html, format_html_join)
+from django.utils.translation import gettext as _, gettext_lazy
 
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required
@@ -217,9 +221,143 @@ REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
   'If you are an experienced indexer and frequently hit ' \
   'your reservation limit please contact us.'
 
+SUBMIT_CHANGES_FOR_APPROVAL = gettext_lazy('Submit Changes For Approval')
+APPROVE = gettext_lazy('Approve')
+SEND_BACK_TO_INDEXER = gettext_lazy('Send Back to Indexer')
+
+WORKFLOW_ACTION_LABELS = {
+    'submit': SUBMIT_CHANGES_FOR_APPROVAL,
+    'approve': APPROVE,
+    'disapprove': SEND_BACK_TO_INDEXER,
+}
+
 ##############################################################################
 # Helper functions
 ##############################################################################
+
+
+def _value_for_post(value):
+    if hasattr(value, 'pk'):
+        return value.pk
+    return value
+
+
+def _add_form_data(data, form):
+    """Serialize an unbound form's current values as browser-like POST data."""
+    for name, field in form.fields.items():
+        if isinstance(field, FileField):
+            # Omitting a file input preserves the file already on the instance.
+            continue
+
+        key = form.add_prefix(name)
+        value = form[name].value()
+
+        # A select without an empty choice submits its first option even when
+        # the unbound BoundField has no explicit initial value.
+        if value is None and isinstance(field, ModelChoiceField) and \
+           not getattr(field.widget, 'allow_multiple_selected', False) and \
+           field.empty_label is None:
+            first_choice = field.queryset.first()
+            if first_choice is not None:
+                value = first_choice.pk
+
+        if getattr(field.widget, 'allow_multiple_selected', False) or \
+           isinstance(value, (list, tuple)) or hasattr(value, 'all'):
+            # An empty multi-select is omitted from browser POST data; posting
+            # one empty value makes Django reject it as an invalid choice.
+            if value is None or value == '':
+                values = []
+            elif hasattr(value, 'all'):
+                values = value.all()
+            elif isinstance(value, (list, tuple)):
+                values = value
+            else:
+                values = [value]
+            data.setlist(key, [str(_value_for_post(item))
+                               for item in values])
+        elif isinstance(field.widget, CheckboxInput):
+            if value:
+                data[key] = 'on'
+        else:
+            value = _value_for_post(value)
+            data[key] = '' if value is None else str(value)
+
+
+def _add_formset_data(data, formset):
+    prefix = formset.prefix
+    data['%s-TOTAL_FORMS' % prefix] = str(formset.total_form_count())
+    data['%s-INITIAL_FORMS' % prefix] = str(formset.initial_form_count())
+    data['%s-MIN_NUM_FORMS' % prefix] = str(formset.min_num)
+    data['%s-MAX_NUM_FORMS' % prefix] = str(formset.max_num)
+    for form in formset.forms:
+        _add_form_data(data, form)
+
+
+def _validation_messages(form, extra_forms):
+    messages = []
+    for errors in form.errors.values():
+        messages.extend(str(error) for error in errors)
+    for formset in extra_forms.values():
+        if formset is None:
+            continue
+        for errors in formset.errors:
+            for field_errors in errors.values():
+                messages.extend(str(error) for error in field_errors)
+        messages.extend(str(error) for error in formset.non_form_errors())
+    return list(dict.fromkeys(messages))
+
+
+def validate_revision_for_transition(revision, request):
+    """Run the editing form and formset validators against saved values."""
+    # extra_forms() reads request.POST, so use request copies rather than
+    # replacing the data submitted to the workflow action itself.
+    unbound_request = copy(request)
+    unbound_request.POST = QueryDict()
+
+    form_class = get_revision_form(revision, user=request.user)
+    unbound_form = form_class(instance=revision)
+    unbound_extra_forms = revision.extra_forms(unbound_request)
+
+    data = QueryDict('', mutable=True)
+    _add_form_data(data, unbound_form)
+    for formset in unbound_extra_forms.values():
+        if formset is not None:
+            _add_formset_data(data, formset)
+
+    bound_request = copy(request)
+    bound_request.POST = data
+    form = form_class(data, instance=revision)
+    extra_forms = revision.extra_forms(bound_request)
+
+    # Evaluate every formset even if the main form fails so the indexer sees
+    # all persisted-data errors in one pass.
+    valid = form.is_valid()
+    for formset in extra_forms.values():
+        if formset is not None:
+            if not formset.is_valid():
+                valid = False
+
+    if valid:
+        return []
+    return _validation_messages(form, extra_forms)
+
+
+def validate_changeset_revisions(changeset, request):
+    """Return invalid changed issue/story revisions and their errors."""
+    invalid = []
+    revisions = list(changeset.issuerevisions.filter(deleted=False))
+    revisions.extend(changeset.storyrevisions.filter(deleted=False))
+    for revision in revisions:
+        # A changeset can contain cloned sequences that the indexer did not
+        # edit. Recompute comparison state so legacy data in those untouched
+        # sequences does not become part of the indexer's required work.
+        revision.compare_changes()
+        if not revision.is_changed:
+            continue
+        messages = validate_revision_for_transition(revision, request)
+        if messages:
+            invalid.append((revision, messages))
+    return invalid
 
 
 def _cant_get(request):
@@ -231,6 +369,7 @@ def _cant_get(request):
 
 def oi_render(request, template_name, context={}):
     context['EDITING'] = True
+    context['workflow_action_labels'] = WORKFLOW_ACTION_LABELS
     return render(request, template_name, context)
 
 ##############################################################################
@@ -546,6 +685,27 @@ def _display_edit_form(request, changeset, form, revision=None,
     return response
 
 
+def _invalid_revision_response(request, invalid_revisions, instruction):
+    """Render links to revisions that must be corrected before an action."""
+    error_items = []
+    for revision, messages in invalid_revisions:
+        error_items.append((
+          urlresolvers.reverse(
+            'edit_revision',
+            kwargs={'model_name': revision.source_name,
+                    'id': revision.id}),
+          str(revision),
+          '; '.join(messages)))
+    errors = format_html_join(
+      '', '<li><a href="{}">{}</a>: {}</li>', error_items)
+    return oi_render(
+      request, 'indexer/error.html',
+      {'error_text': format_html(
+        '{} {}<ul>{}</ul>',
+        _('This change still contains invalid issue or sequence data.'),
+        instruction, errors)})
+
+
 @permission_required('indexer.can_reserve')
 def submit(request, id):
     """
@@ -559,6 +719,18 @@ def submit(request, id):
         return oi_render(
           request, 'indexer/error.html',
           {'error_text': 'A change may only be submitted by its author.'})
+
+    # Revalidate saved values because migrations and other non-form code paths
+    # can modify a revision after its edit form was last submitted.
+    invalid_revisions = validate_changeset_revisions(changeset, request)
+    if invalid_revisions:
+        instruction = format_html(
+          _('Correct and save the revisions, then select '
+            '<strong>{submit}</strong>. Affected revisions:'),
+          submit=SUBMIT_CHANGES_FOR_APPROVAL)
+        return _invalid_revision_response(
+          request, invalid_revisions, instruction)
+
     comment_text = request.POST['comments'].strip()
     if comment_text == '' and changeset.approver is None and \
        changeset.comments.count() == 1:
@@ -1242,6 +1414,18 @@ def approve(request, id):
         return render_error(
           request, 'Only REVIEWING changes with an approver can be approved.')
 
+    # This second check protects production data if a persisted revision was
+    # changed after submission or bypassed the normal editing form entirely.
+    invalid_revisions = validate_changeset_revisions(changeset, request)
+    if invalid_revisions:
+        instruction = format_html(
+          _('Do not select <strong>{approve}</strong> or edit these '
+            'revisions. Select <strong>{send_back}</strong> and describe '
+            'the required correction in the comment. Affected revisions:'),
+          approve=APPROVE, send_back=SEND_BACK_TO_INDEXER)
+        return _invalid_revision_response(
+          request, invalid_revisions, instruction)
+
     comment_text = request.POST['comments'].strip()
     changeset.approve(notes=comment_text)
     email_comments = '.'
@@ -1431,10 +1615,12 @@ def disapprove(request, id):
 
     comment_text = request.POST['comments'].strip()
     if not comment_text:
-        return render_error(request,
-                            'You must explain why you are disapproving this '
-                            'change.  Please press the "back" button and use '
-                            'the comments field for the explanation.')
+        return render_error(
+          request,
+          format_html(
+            _('Enter an explanation in the comment field before selecting '
+              '<strong>{send_back}</strong>.'),
+            send_back=SEND_BACK_TO_INDEXER))
 
     changeset.disapprove(notes=comment_text)
 
