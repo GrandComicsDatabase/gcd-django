@@ -5701,34 +5701,50 @@ def reorder_characters(request, character_order_id):
     try:
         order_code_boundary = request.POST['order_code_boundary']
         request_post = request.POST.copy()
+        revision_characters = character_order_revision.character_revisions
+        revision_character_ids = set(
+            revision_characters.values_list('id', flat=True))
+        removed_character_ids = []
         for key in request.POST:
             if key.startswith('order_code_') and key != 'order_code_boundary':
                 value = request.POST[key]
                 if value and float(value) >= float(order_code_boundary):
                     request_post.pop(key)
                     character_id = int(key.split('_')[-1])
-                    revision_characters = character_order_revision\
-                        .character_revisions
-                    if revision_characters.filter(id=character_id).exists():
-                        revision_characters.remove(character_id)
+                    if character_id in revision_character_ids:
+                        removed_character_ids.append(character_id)
+                        revision_character_ids.remove(character_id)
+        if removed_character_ids:
+            revision_characters.remove(*removed_character_ids)
         request.POST = request_post
         characters = _process_reorder_form(request, character_order_revision,
                                            'order_code',
                                            'character', StoryCharacterRevision)
         order = 0
+        through_model = revision_characters.through
+        current_through = {
+            row.story_character_id: row
+            for row in through_model.objects.filter(
+                order=character_order_revision)
+        }
+        changed_through = []
+        new_through = []
         for character in characters:
-            revision_characters = character_order_revision.character_revisions
-            if not revision_characters.filter(id=character.id).exists():
-                revision_characters.add(character,
-                                        through_defaults={'order_code': order})
+            through_instance = current_through.get(character.id)
+            if through_instance is None:
+                new_through.append(through_model(
+                    order_id=character_order_revision.id,
+                    story_character_id=character.id,
+                    order_code=order,
+                ))
             else:
-                through_instance = revision_characters.through.objects.get(
-                    order=character_order_revision,
-                    story_character=character
-                )
                 through_instance.order_code = order
-                through_instance.save()
+                changed_through.append(through_instance)
             order += 1
+        if changed_through:
+            through_model.objects.bulk_update(changed_through, ['order_code'])
+        if new_through:
+            through_model.objects.bulk_create(new_through)
         if 'commit_and_changeset' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit', kwargs={'id': changeset.id}))

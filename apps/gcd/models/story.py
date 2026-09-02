@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+from django.db.models import Q
 from django.db.models.functions import NullIf
 from django.db.models import Value
 import django.urls as urlresolvers
@@ -15,8 +16,8 @@ from apps.stddata.models import Language
 
 from .gcddata import GcdData, GcdLink
 from .award import ReceivedAward
-from .character import CharacterNameDetail, Group, GroupNameDetail, \
-                       Universe, Multiverse
+from .character import CharacterNameDetail, CharacterRelation, Group, \
+                       GroupNameDetail, Universe, Multiverse
 from .creator import CreatorNameDetail, CreatorSignature
 from .feature import Feature, FeatureLogo, FeatureNameDetail
 from .support_tables import render_publisher
@@ -193,8 +194,52 @@ def _get_reference_universe(story):
     return reference_universe_id
 
 
+def _build_character_identity_cache(appearing_characters):
+    """Load alias and civilian identities for all appearances in one pass."""
+    appearances = list(appearing_characters.select_related(
+        'character__character', 'universe'))
+    character_ids = {
+        appearance.character.character_id for appearance in appearances
+    }
+    relation_rows = CharacterRelation.objects.filter(
+        relation_type_id=2,
+    ).filter(
+        Q(from_character_id__in=character_ids)
+        | Q(to_character_id__in=character_ids)
+    ).values_list('from_character_id', 'to_character_id')
+    civilian_ids = {}
+    alias_ids = {}
+    for from_id, to_id in relation_rows:
+        civilian_ids.setdefault(from_id, set()).add(to_id)
+        alias_ids.setdefault(to_id, set()).add(from_id)
+
+    appearances_by_universe = {}
+    for appearance in appearances:
+        appearances_by_universe.setdefault(appearance.universe_id, []).append(
+            appearance)
+
+    civilian_appearances = {}
+    has_alias = {}
+    for appearance in appearances:
+        same_universe = appearances_by_universe[appearance.universe_id]
+        character_id = appearance.character.character_id
+        same_universe_ids = {
+            item.character.character_id for item in same_universe
+        }
+        civilian_appearances[appearance.id] = [
+            item for item in same_universe
+            if item.character.character_id in
+            civilian_ids.get(character_id, set())
+        ]
+        has_alias[appearance.id] = bool(
+            alias_ids.get(character_id, set()).intersection(same_universe_ids)
+        )
+    return civilian_appearances, has_alias
+
+
 def _process_single_character(character, appearing_characters,
-                              reference_universe_id):
+                              reference_universe_id,
+                              civilian_identity_cache=None):
     universe = None
     if reference_universe_id:
         if character.universe:
@@ -202,12 +247,15 @@ def _process_single_character(character, appearing_characters,
                 universe = character.universe
         else:
             universe = Universe(name='without a universe')
-    civilian_identity = _get_civilian_identity(character,
-                                               appearing_characters)
-    if civilian_identity:
-        civilian_identity = appearing_characters.filter(
-          universe=character.universe,
-          character__character__id__in=civilian_identity)
+    if civilian_identity_cache is None:
+        civilian_identity = _get_civilian_identity(character,
+                                                   appearing_characters)
+        if civilian_identity:
+            civilian_identity = appearing_characters.filter(
+                  universe=character.universe,
+                  character__character__id__in=civilian_identity)
+    else:
+        civilian_identity = civilian_identity_cache.get(character.id, [])
     return (character, civilian_identity, universe)
 
 
@@ -221,6 +269,8 @@ def process_appearing_characters(story):
     groups = story.active_groups
 
     reference_universe_id = _get_reference_universe(story)
+    civilian_identity_cache, has_alias = _build_character_identity_cache(
+        all_appearing_characters)
 
     group_list = []
     processed_appearances_ids = []
@@ -233,7 +283,8 @@ def process_appearing_characters(story):
         for member in in_group.filter(group_name=group.group_name_id,
                                       group_universe=group.universe_id):
             character_list.append(_process_single_character(
-              member, all_appearing_characters, reference_universe_id))
+              member, all_appearing_characters, reference_universe_id,
+              civilian_identity_cache))
             processed_appearances_ids.append(member.id)
         group_list.append((group, group_universe, character_list))
     appearing_characters = all_appearing_characters.exclude(
@@ -241,17 +292,11 @@ def process_appearing_characters(story):
 
     character_list = []
     for character in appearing_characters:
-        alias_identity = set(
-          character.character.character.from_related_character
-                   .filter(relation_type__id=2).values_list('from_character',
-                                                            flat=True))\
-                   .intersection(all_appearing_characters.filter(
-                      universe=character.universe).values_list(
-                      'character__character', flat=True))
-        if alias_identity:
+        if has_alias.get(character.id, False):
             continue
         character_list.append(_process_single_character(
-          character, all_appearing_characters, reference_universe_id))
+          character, all_appearing_characters, reference_universe_id,
+          civilian_identity_cache))
     return (group_list, character_list)
 
 
@@ -269,12 +314,23 @@ def process_ordered_appearing_characters(character_order):
     else:
         field = 'characters'
     through_model = character_order._meta.get_field(field).remote_field.through
-    in_character_order = all_appearing_characters.filter(
-      **{f'{through_model.__name__.lower()}__order': character_order}
-    ).distinct()
+    through_rows = through_model.objects.filter(order=character_order)
+    if field == 'character_revisions':
+        through_rows = through_rows.values(
+            'story_character__story_character_id', 'order_code')
+        order_codes = {
+            row['story_character__story_character_id']: row['order_code']
+            for row in through_rows
+        }
+    else:
+        order_codes = dict(through_rows.values_list(
+            'story_character_id', 'order_code'))
+    in_character_order_ids = set(order_codes)
     groups = story.active_groups
 
     reference_universe_id = _get_reference_universe(story)
+    civilian_identity_cache, has_alias = _build_character_identity_cache(
+        all_appearing_characters)
 
     group_list = []
     processed_appearances_ids = []
@@ -287,21 +343,20 @@ def process_ordered_appearing_characters(character_order):
         ordered_character_list = []
         for member in in_group.filter(group_name=group.group_name_id,
                                       group_universe=group.universe_id):
-            if member in in_character_order:
+            if member.id in in_character_order_ids:
                 ordered_character_list.append((
-                  getattr(character_order,
-                          f'{through_model.__name__.lower()}_set').get(
-                    order=character_order,
-                    story_character=member).order_code, member))
+                    order_codes[member.id], member))
             else:
                 character_list.append(_process_single_character(
-                  member, all_appearing_characters, reference_universe_id))
+                  member, all_appearing_characters, reference_universe_id,
+                  civilian_identity_cache))
             processed_appearances_ids.append(member.id)
         ordered_character_list.sort(key=lambda x: x[0])
         cnt = 0
         for _, member in ordered_character_list:
             character_list.insert(cnt, _process_single_character(
-              member, all_appearing_characters, reference_universe_id))
+              member, all_appearing_characters, reference_universe_id,
+              civilian_identity_cache))
             cnt += 1
         group_list.append((group, group_universe, character_list))
     appearing_characters = all_appearing_characters.exclude(
@@ -310,29 +365,21 @@ def process_ordered_appearing_characters(character_order):
     character_list = []
     ordered_character_list = []
     for character in appearing_characters:
-        alias_identity = set(
-          character.character.character.from_related_character
-                   .filter(relation_type__id=2).values_list('from_character',
-                                                            flat=True))\
-                   .intersection(all_appearing_characters.filter(
-                      universe=character.universe).values_list(
-                      'character__character', flat=True))
-        if alias_identity:
+        if has_alias.get(character.id, False):
             continue
-        if character in in_character_order:
+        if character.id in in_character_order_ids:
             ordered_character_list.append((
-              getattr(character_order,
-                      f'{through_model.__name__.lower()}_set').get(
-                order=character_order,
-                story_character=character).order_code, character))
+                order_codes[character.id], character))
         else:
             character_list.append(_process_single_character(
-              character, all_appearing_characters, reference_universe_id))
+              character, all_appearing_characters, reference_universe_id,
+              civilian_identity_cache))
     ordered_character_list.sort(key=lambda x: x[0])
     cnt = 0
     for _, character in ordered_character_list:
         character_list.insert(cnt, _process_single_character(
-          character, all_appearing_characters, reference_universe_id))
+          character, all_appearing_characters, reference_universe_id,
+          civilian_identity_cache))
         cnt += 1
     return (group_list, character_list)
 

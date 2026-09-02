@@ -55,7 +55,7 @@ from apps.gcd.models.gcddata import GcdData, GcdLink
 from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.story import show_feature, show_feature_as_text, \
                                   show_characters, show_title, \
-                                  _get_civilian_identity, \
+                                  _build_character_identity_cache, \
                                   CharacterThroughOrder
 from apps.gcd.models.image import CropToFace
 from apps.indexer.views import ErrorWithMessage
@@ -5616,10 +5616,12 @@ class CharacterOrderRevision(Revision):
                                .order_by('id')
         # process characters to have civilians after their aliases
         character_list = _order_civilian_after_alias(story_characters)
+        ordered_character_ids = set(
+            self.character_revisions.values_list('id', flat=True))
         for character in character_list:
             character_id = character[0].id
             # add characters to the list if not already present in the order
-            if not self.character_revisions.filter(id=character_id).exists():
+            if character_id not in ordered_character_ids:
                 character_order_list.append((character[0], order))
                 order += 1
                 # we do not add civilians if their alias is present, so
@@ -5882,24 +5884,17 @@ class StoryArcRelationRevision(Revision):
 
 
 def _order_civilian_after_alias(story_characters):
+    civilian_identity_cache, has_alias = _build_character_identity_cache(
+        story_characters)
+    appearances_by_id = {item.id: item for item in story_characters}
     character_list = []
-    for character in story_characters:
-        alias_identity = set(
-            character.character.character.from_related_character
-                     .filter(relation_type__id=2)
-                     .values_list('from_character', flat=True))\
-                     .intersection(story_characters.filter(
-                                   universe=character.universe).values_list(
-                                   'character__character', flat=True))
-        if alias_identity:
+    for character in civilian_identity_cache:
+        if has_alias.get(character, False):
             continue
-        civilian_identity = _get_civilian_identity(character,
-                                                   story_characters)
-        if civilian_identity:
-            civilian_identity = story_characters.filter(
-                universe=character.universe,
-                character__character__id__in=civilian_identity)
-        character_list.append([character, civilian_identity])
+        character_list.append([
+            appearances_by_id[character],
+            civilian_identity_cache.get(character, []),
+        ])
     return character_list
 
 
