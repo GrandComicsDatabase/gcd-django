@@ -192,10 +192,10 @@ def process_select_search(request, select_key):
     else:
         select_issue = False
 
-    publisher_name = cd['publisher'] if cd['publisher'] else '?'
-    series_name = cd['series'] if cd.get('series') else ''
-    number = cd['number'] if cd.get('number') else ''
-    year = cd['year'] if cd.get('year') else ''
+    publisher_name = cd.get('publisher') or '?'
+    series_name = cd.get('series') or ''
+    number = cd.get('number') or ''
+    year = cd.get('year') or ''
 
     if 'search_story' in request.GET or 'search_cover' in request.GET:
         search = Story.objects.filter(
@@ -297,7 +297,7 @@ def process_select_search(request, select_key):
       'select_target': select_target,
       'select_issue': select_issue and select_target == 'story',
       'no_bulk_edit': True,
-      'publisher': cd['publisher'] if cd['publisher'] else '',
+      'publisher': cd.get('publisher') or '',
       'series': series_name,
       'year': year,
       'number': number
