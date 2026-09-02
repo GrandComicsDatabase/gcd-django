@@ -196,6 +196,19 @@ def test_display_order_uses_bounded_queries(large_character_order_world):
 
 
 @pytest.mark.django_db
+def test_revision_display_uses_revision_through_ids(large_character_order_world):
+    """Revision ordering matches StoryCharacterRevision IDs correctly."""
+    _, _, revision_with_order = large_character_order_world
+    revision = revision_with_order(
+        ('Gamma', 5), ('Alpha', 10), ('Beta', 15))
+
+    _, characters = revision.process_ordered_appearing_characters()
+
+    assert [item[0].character.name for item in characters[:3]] == [
+        'Gamma', 'Alpha', 'Beta']
+
+
+@pytest.mark.django_db
 def test_edit_order_list_uses_bounded_queries(large_character_order_world):
     """Preparing the edit list does not query once per appearing character."""
     _, _, revision_with_order = large_character_order_world

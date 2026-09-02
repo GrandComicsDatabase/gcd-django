@@ -317,9 +317,9 @@ def process_ordered_appearing_characters(character_order):
     through_rows = through_model.objects.filter(order=character_order)
     if field == 'character_revisions':
         through_rows = through_rows.values(
-            'story_character__story_character_id', 'order_code')
+            'story_character_id', 'order_code')
         order_codes = {
-            row['story_character__story_character_id']: row['order_code']
+            row['story_character_id']: row['order_code']
             for row in through_rows
         }
     else:
