@@ -1,9 +1,8 @@
 # Core development environment
 
 This is the supported one-clone setup for working on `gcd-django`. It runs the
-application with Python 3.13 and MySQL 8.0. Elasticsearch, sample data, image
-fixtures, and optional service integrations are intentionally outside this
-first setup layer.
+application with Python 3.13 and MySQL 8.0. Elasticsearch and optional service
+integrations are intentionally outside this first setup layer.
 
 ## Docker (default)
 
@@ -27,8 +26,10 @@ migrations, fixtures, and account setup separately:
 ```
 
 It creates the development database, applies migrations, loads local
-development accounts, initializes global statistics, and starts the
-application.
+development accounts, seeds a small relationship-rich catalog, creates a
+dummy cover image and approved change-history comment, initializes global
+statistics, and starts the application. The sample records are marked
+`[GCD DEV]` so they are easy to find and safe to recreate.
 
 The seeded accounts are deliberately public local-development fixtures. They
 work only in this local database and must never be used for beta or production:
@@ -67,7 +68,10 @@ non-interactive use, supply the explicit confirmation:
 The full-dump workflow is currently supported by the default Docker runtime.
 It needs approximately 12 GB of free Docker storage while the temporary
 staging database and final development database coexist. The public dump does
-not contain uploaded cover/image files; development uses fake images instead.
+not contain uploaded cover/image files; development uses the deterministic fake
+image created by `seed_development_data` instead. The dump also does not
+replace the local migration ledger, accounts, statistics, or change-history
+fixtures.
 
 Useful commands:
 

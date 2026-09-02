@@ -26,9 +26,8 @@ For the default Docker setup with deterministic development data, run
 `./bin/dev setup`. Contributors who have manually downloaded an authenticated
 GCD catalog archive can use `./bin/dev setup --dump ~/Downloads/current.zip`.
 
-You can find manual instructions for various platforms using virtual environments for python in the docs directory
-[GCD Docs](https://github.com/GrandComicsDatabase/gcd-django/tree/beta/docs) but they aren't
-necessarily up to date.  As of September 2023 they should work.
+The core guide is the canonical setup path. Platform-specific notes in the
+`docs` directory are retained for reference and may describe older workflows.
 
 ## Workflow
 
