@@ -136,6 +136,21 @@ mysql_root_query() {
   printf '%s\n' "$1" | mysql_root_without_headers
 }
 
+validate_dump_archive() {
+  local archive="$1"
+  if [[ ! -f "$archive" ]]; then
+    echo "Dump archive not found: $archive" >&2
+    exit 2
+  fi
+  case "$archive" in
+    *.zip|*.sql) ;;
+    *)
+      echo "The dump must be a .zip archive or .sql file." >&2
+      exit 2
+      ;;
+  esac
+}
+
 validate_setup_database_name() {
   if [[ ! "$MYSQL_DATABASE" =~ ^gcd_dev(_[a-z0-9_]+)?$ ]] && \
      [[ "$MYSQL_DATABASE" != "gcd_django_dev" ]]; then
@@ -202,6 +217,7 @@ dump_sql_entry() {
 
 stream_dump_to_stage() {
   local archive="$1" sql_entry
+  validate_dump_archive "$archive"
   case "$archive" in
     *.zip)
       sql_entry="$(dump_sql_entry "$archive")"
@@ -243,7 +259,7 @@ validate_dump_schema() {
 
 copy_dump_catalog() {
   local catalog_copy_sql auto_increment_sql
-  catalog_copy_sql="$(mysql_root_query "SELECT CONCAT('DELETE FROM ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), '; INSERT INTO ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ' (', GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96)) ORDER BY ordinal_position SEPARATOR ','), ') SELECT ', GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96)) ORDER BY ordinal_position SEPARATOR ','), ' FROM ', CHAR(96), 'gcd_dev_import_stage', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ';') FROM information_schema.columns WHERE table_schema = 'gcd_dev_import_stage' AND table_name REGEXP '^(gcd|stddata)_' GROUP BY table_name ORDER BY table_name;")"
+  catalog_copy_sql="$(mysql_root_query "SET SESSION group_concat_max_len = 1000000; SELECT CONCAT('DELETE FROM ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), '; INSERT INTO ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ' (', GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96)) ORDER BY ordinal_position SEPARATOR ','), ') SELECT ', GROUP_CONCAT(CONCAT(CHAR(96), column_name, CHAR(96)) ORDER BY ordinal_position SEPARATOR ','), ' FROM ', CHAR(96), 'gcd_dev_import_stage', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ';') FROM information_schema.columns WHERE table_schema = 'gcd_dev_import_stage' AND table_name REGEXP '^(gcd|stddata)_' GROUP BY table_name ORDER BY table_name;")"
   auto_increment_sql="$(mysql_root_query "SELECT CONCAT('ALTER TABLE ', CHAR(96), '${MYSQL_DATABASE}', CHAR(96), '.', CHAR(96), table_name, CHAR(96), ' AUTO_INCREMENT = 1;') FROM information_schema.columns WHERE table_schema = 'gcd_dev_import_stage' AND table_name REGEXP '^(gcd|stddata)_' AND extra LIKE '%auto_increment%' GROUP BY table_name ORDER BY table_name;")"
   {
     printf '%s\n' 'SET FOREIGN_KEY_CHECKS=0;'
@@ -255,10 +271,7 @@ copy_dump_catalog() {
 
 setup_dump_database() {
   local archive="$1"
-  if [[ ! -f "$archive" ]]; then
-    echo "Dump archive not found: $archive" >&2
-    exit 2
-  fi
+  validate_dump_archive "$archive"
   mysql_root_query 'DROP DATABASE IF EXISTS gcd_dev_import_stage;'
   echo "Importing the catalog dump into a temporary local staging database..."
   stream_dump_to_stage "$archive"
@@ -275,6 +288,9 @@ seed_docker_development_data() {
 setup_docker_environment() {
   local archive="$1" replace="$2" yes="$3"
   validate_setup_database_name
+  if [[ -n "$archive" ]]; then
+    validate_dump_archive "$archive"
+  fi
   compose up -d --wait db
   confirm_setup_replacement "$replace" "$yes"
   fresh_docker_database

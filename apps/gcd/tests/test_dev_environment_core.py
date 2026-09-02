@@ -118,6 +118,23 @@ def test_dev_launcher_declares_a_confirmation_gated_dump_setup_flow():
     assert 'A non-empty local database will be replaced' in launcher
 
 
+def test_dev_launcher_validates_dump_before_replacing_database():
+    """Invalid dump paths and extensions cannot trigger a database reset."""
+    launcher = _read_project_file('bin/dev')
+    setup_body = launcher.split('setup_docker_environment() {', 1)[1]
+    assert 'validate_dump_archive "$archive"' in setup_body
+    assert setup_body.index('validate_dump_archive "$archive"') < \
+        setup_body.index('fresh_docker_database')
+    assert 'The dump must be a .zip archive or .sql file.' in launcher
+
+
+def test_dev_launcher_allows_long_catalog_column_lists():
+    """Dump table-copy SQL is not truncated by MySQL's default limit."""
+    launcher = _read_project_file('bin/dev')
+    assert 'SET SESSION group_concat_max_len = 1000000; SELECT CONCAT' \
+        in launcher
+
+
 def test_dev_launcher_handles_crlf_dotenv_and_native_database_overrides():
     """The .env parser supports Windows endings and native DB configuration."""
     launcher = _read_project_file('bin/dev')
