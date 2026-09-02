@@ -579,6 +579,13 @@ def submit(request, id):
                       comment_text
         else:
             comment = ''
+        compare_url = settings.SITE_URL.rstrip('/') + urlresolvers.reverse(
+          'compare', kwargs={'id': changeset.id})
+        if (hasattr(changeset.approver, 'indexer') and
+                changeset.approver.indexer.collapse_compare_view):
+            # The compare route currently has no query parameters. If any are
+            # added later, merge this parameter instead of appending another ?.
+            compare_url += '?collapse=1'
         email_body = """
 Hello from the %s!
 
@@ -594,8 +601,7 @@ thanks,
                      str(changeset),
                      str(changeset.indexer.indexer),
                      comment,
-                     settings.SITE_URL.rstrip('/') + urlresolvers.reverse(
-                       'compare', kwargs={'id': changeset.id}),
+                     compare_url,
                      settings.SITE_NAME,
                      settings.SITE_URL)
 
