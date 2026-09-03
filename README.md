@@ -19,7 +19,8 @@ http://groups.google.com/group/gcd-tech/
 
 ## Setting up a Development Environment
 
-We recommend that you use [our Docker-based development environment](https://github.com/GrandComicsDatabase/gcd-django-docker).
+See [the core development environment guide](docs/development/CORE_SETUP.md)
+for the supported Docker and Docker-free local setup.
 
 You can find manual instructions for various platforms using virtual environments for python in the docs directory
 [GCD Docs](https://github.com/GrandComicsDatabase/gcd-django/tree/beta/docs) but they aren't
