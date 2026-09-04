@@ -34,7 +34,7 @@ python-memcached<1.63
 pymemcache<4.1
 python-stdnum<2.2
 python3-vote-core==20170329.0
-python-graph-core<1.9
+python-graph<2.1
 requests<2.33
 simplejson<3.21
 tablib<3.10
