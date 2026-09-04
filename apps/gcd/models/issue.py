@@ -586,6 +586,8 @@ class Issue(GcdData):
                                     .get(number_type__id=1).number)
         if self.variant_name:
             add_on = "[%s]" % (self.variant_name)
+        elif self.variant_of:
+            add_on = "[unnamed variant]"
         if add_on and code_number:
             code_number = " " + code_number
         return "%s%s" % (add_on, code_number)
