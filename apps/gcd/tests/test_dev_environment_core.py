@@ -94,6 +94,8 @@ def test_dev_launcher_documents_supported_commands():
 
     assert result.returncode == 0
     assert './bin/dev up' in result.stdout
+    assert './bin/dev setup' in result.stdout
+    assert './bin/dev setup --dump ~/Downloads/current.zip' in result.stdout
     assert '--runtime native' in result.stdout
     assert 'reset --yes' in result.stdout
 
@@ -104,6 +106,33 @@ def test_dev_launcher_refuses_reset_without_explicit_confirmation():
 
     assert result.returncode != 0
     assert '--yes' in result.stderr
+
+
+def test_dev_launcher_declares_a_confirmation_gated_dump_setup_flow():
+    """Full-catalog setup stays a single command without silent replacement."""
+    launcher = _read_project_file('bin/dev')
+
+    assert 'setup [--dump ARCHIVE] [--replace --yes]' in launcher
+    assert 'setup_dump_database' in launcher
+    assert 'seed_development_data' in launcher
+    assert 'A non-empty local database will be replaced' in launcher
+
+
+def test_dev_launcher_validates_dump_before_replacing_database():
+    """Invalid dump paths and extensions cannot trigger a database reset."""
+    launcher = _read_project_file('bin/dev')
+    setup_body = launcher.split('setup_docker_environment() {', 1)[1]
+    assert 'validate_dump_archive "$archive"' in setup_body
+    assert setup_body.index('validate_dump_archive "$archive"') < \
+        setup_body.index('fresh_docker_database')
+    assert 'The dump must be a .zip archive or .sql file.' in launcher
+
+
+def test_dev_launcher_allows_long_catalog_column_lists():
+    """Dump table-copy SQL is not truncated by MySQL's default limit."""
+    launcher = _read_project_file('bin/dev')
+    assert 'SET SESSION group_concat_max_len = 1000000; SELECT CONCAT' \
+        in launcher
 
 
 def test_dev_launcher_handles_crlf_dotenv_and_native_database_overrides():
