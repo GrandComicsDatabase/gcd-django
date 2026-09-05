@@ -8,7 +8,7 @@ from django.test.utils import CaptureQueriesContext
 
 from apps.gcd.models import (
     Character, CharacterNameDetail, CharacterOrder, CharacterOrderType,
-    StoryCharacter)
+    CharacterRelation, CharacterRelationType, StoryCharacter)
 from apps.gcd.models.story import CharacterThroughOrder
 from apps.oi.models import (
     CharacterOrderRevision, CharacterThroughOrderRevision, Changeset,
@@ -175,3 +175,70 @@ def test_reconciliation_uses_bounded_queries(large_character_order_world):
 
     # Two reads plus at most one batched delete, update, and insert.
     assert len(queries) <= 5
+
+
+@pytest.mark.django_db
+def test_display_order_uses_bounded_queries(large_character_order_world):
+    """Character-order display does not query once per ordered character."""
+    character_order, _, _ = large_character_order_world
+
+    with CaptureQueriesContext(connection) as queries:
+        result = character_order.process_ordered_appearing_characters()
+
+    assert [item[0].character.name for item in result[1]] == [
+        'Alpha', 'Beta',
+        *['Extra %s' % number for number in range(10)],
+        'Gamma',
+    ]
+    # The count stays bounded as the order grows; this fixture currently uses
+    # thirteen appearing characters.
+    assert len(queries) <= 20
+
+
+@pytest.mark.django_db
+def test_revision_display_uses_revision_through_ids(large_character_order_world):
+    """Revision ordering matches StoryCharacterRevision IDs correctly."""
+    _, _, revision_with_order = large_character_order_world
+    revision = revision_with_order(
+        ('Gamma', 5), ('Alpha', 10), ('Beta', 15))
+
+    _, characters = revision.process_ordered_appearing_characters()
+
+    assert [item[0].character.name for item in characters[:3]] == [
+        'Gamma', 'Alpha', 'Beta']
+
+
+@pytest.mark.django_db
+def test_edit_order_list_uses_bounded_queries(large_character_order_world):
+    """Preparing the edit list does not query once per appearing character."""
+    _, _, revision_with_order = large_character_order_world
+    revision = revision_with_order(
+        ('Alpha', 10), ('Beta', 20), ('Gamma', 30),
+        *[('Extra %s' % number, 40 + number * 10)
+          for number in range(10)])
+
+    with CaptureQueriesContext(connection) as queries:
+        result = revision.story_characters()
+
+    assert result
+    assert len(queries) <= 10
+
+
+@pytest.mark.django_db
+def test_display_keeps_alias_and_civilian_order(character_order_world):
+    """Bulk identity loading preserves alias/civilian display behavior."""
+    character_order, appearances, _ = character_order_world
+    relation_type, _ = CharacterRelationType.objects.get_or_create(
+        id=2, defaults={'type': 'civilian identity',
+                        'reverse_type': 'alias'})
+    CharacterRelation.objects.create(
+        from_character=appearances['Alpha'].character.character,
+        to_character=appearances['Gamma'].character.character,
+        relation_type=relation_type,
+        notes='')
+
+    _, characters = character_order.process_ordered_appearing_characters()
+
+    assert [item[0].character.name for item in characters] == [
+        'Alpha', 'Beta']
+    assert [item.character.name for item in characters[0][1]] == ['Gamma']
