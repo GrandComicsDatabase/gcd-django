@@ -110,13 +110,19 @@ def test_series_bond_timestamp_migration_uses_history_or_shared_baseline(
     latest_targets = executor.loader.graph.leaf_nodes()
     previous_targets = [
         ('gcd', '0073_merge_api_v2_beta'),
-        ('oi', '0062_add_character_order'),
+        ('gcd', '0071_feature_description'),
+        ('oi', '0067_changeset_comment_utf8mb4'),
+    ]
+    migration_targets = [
+        ('gcd', '0074_series_bond_timestamps'),
+        ('gcd', '0071_feature_description'),
+        ('oi', '0067_changeset_comment_utf8mb4'),
     ]
 
     try:
         executor.migrate(previous_targets)
         executor = MigrationExecutor(connection)
-        executor.migrate([('gcd', '0074_series_bond_timestamps')])
+        executor.migrate(migration_targets)
         migrated_apps = executor.loader.project_state(
             [('gcd', '0074_series_bond_timestamps')]
         ).apps

@@ -23,3 +23,6 @@ settings_local.py
 *.nja
 .idea
 *.iml
+# Local development environment
+.env
+.venv/

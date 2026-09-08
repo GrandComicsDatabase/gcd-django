@@ -1,4 +1,7 @@
 .git
+.github
+.env
+.venv
 .DS_Store
 **/.DS_Store
 .idea
@@ -7,3 +10,5 @@
 **/__pycache__
 **/*.py[cod]
 settings_local.py
+media
+static_root

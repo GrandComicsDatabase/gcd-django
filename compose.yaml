@@ -1,0 +1,65 @@
+name: gcd-django-dev
+
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gcd_dev}
+      MYSQL_USER: ${MYSQL_USER:-gcd_dev}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gcd_dev_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-gcd_dev_root}
+    ports:
+      - "127.0.0.1:${GCD_MYSQL_PORT:-3308}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u'$$MYSQL_USER' -p'$$MYSQL_PASSWORD'"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    environment: &django_environment
+      DJANGO_SETTINGS_MODULE: settings_dev
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gcd_dev}
+      MYSQL_USER: ${MYSQL_USER:-gcd_dev}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gcd_dev_password}
+      MYSQL_HOST: db
+      MYSQL_PORT: "3306"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: python manage.py migrate --noinput
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    environment: *django_environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "127.0.0.1:${GCD_WEB_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/', timeout=3)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+volumes:
+  mysql_data:

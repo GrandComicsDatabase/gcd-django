@@ -1040,7 +1040,7 @@ class ChangesetComment(models.Model):
         get_latest_by = "created"
 
     commenter = models.ForeignKey(User, on_delete=models.CASCADE)
-    text = models.TextField()
+    text = models.TextField(db_collation='utf8mb4_unicode_ci')
 
     changeset = models.ForeignKey(Changeset, on_delete=models.CASCADE,
                                   related_name='comments')

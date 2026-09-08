@@ -111,6 +111,10 @@ GCD :: Feature :: {{ feature.name }}
 {% endblock %}
 
 {% block content %}
+{% if feature.description %}
+<h3 class="mt-2">Description:</h3>
+{{ feature.description|render_markdown }}
+{% endif %}
 {% if feature.notes %}
 <h3 class="mt-2">Notes:</h3>
 {{ feature.notes|render_markdown }}

@@ -131,6 +131,15 @@ def test_issue_model_exposes_api_v2_browse_and_variant_indexes():
     ]
 
 
+@pytest.mark.django_db
+def test_unnamed_variant_descriptor_does_not_fetch_base_issue(
+        django_assert_num_queries):
+    issue = Issue(variant_of_id=1, variant_name='')
+
+    with django_assert_num_queries(0):
+        assert issue._descriptor_addon(show_code=False) == '[unnamed variant]'
+
+
 def test_other_variants():
     with mock.patch('%s.variant_of' % ISSUE_PATH,
                     spec=Issue) as vo_mock, \
