@@ -6024,12 +6024,12 @@ class StoryRevision(Revision):
                         revision.feature_name.add(translated_from
                                                   .official_name())
                     else:
+                        lang = revision.issue.series.language
                         other_translations = (
-                          feature_name.feature.translated_from()
-                          .translations()
-                          .filter(
-                            to_feature__language=(
-                              revision.issue.series.language)))
+                            feature_name.feature.translated_from()
+                            .translations()
+                            .filter(to_feature__language=lang)
+                        )
                         if other_translations.count() == 1:
                             # revision is a translation from another language
                             revision.feature_name.add(
