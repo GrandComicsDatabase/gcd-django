@@ -6024,11 +6024,12 @@ class StoryRevision(Revision):
                         revision.feature_name.add(translated_from
                                                   .official_name())
                     else:
-                        other_translations = feature_name.feature\
-                                                         .translated_from()\
-                                                         .translations()\
-                                                         .filter(
-                          to_feature__language=revision.issue.series.language)
+                        lang = revision.issue.series.language
+                        other_translations = (
+                            feature_name.feature.translated_from()
+                            .translations()
+                            .filter(to_feature__language=lang)
+                        )
                         if other_translations.count() == 1:
                             # revision is a translation from another language
                             revision.feature_name.add(
@@ -7682,7 +7683,8 @@ class FeatureNameDetailRevision(Revision):
 
     def _post_assign_fields(self, changes):
         if self.leading_article:
-            self.feature_name_detail.sort_name = remove_leading_article(self.name)
+            self.feature_name_detail.sort_name = remove_leading_article(
+              self.name)
         else:
             self.feature_name_detail.sort_name = self.name
 
