@@ -3,7 +3,7 @@
 import mock
 import pytest
 
-from apps.gcd.models import Story, Issue, Series
+from apps.gcd.models import Reprint, Story, Issue, Series
 from apps.oi.models import StoryRevision, ReprintRevision, Changeset
 
 
@@ -77,6 +77,40 @@ def test_save_stories_and_issues_only(patched_for_save):
     assert r.target == target
     assert r.origin_issue == origin.issue
     assert r.target_issue == target.issue
+
+
+def test_save_rejects_internal_reprint(patched_for_save):
+    save_mock, origin, _ = patched_for_save
+    target = Story(title='target', issue=origin.issue)
+    origin_revision = StoryRevision(issue=origin.issue)
+    r = ReprintRevision(origin_revision=origin_revision, target=target)
+
+    with pytest.raises(ValueError, match='connect different issues'):
+        r.save()
+
+    assert not save_mock.called
+
+
+def test_validate_reprint_link_uses_issue_ids_without_loading_issues():
+    revision = ReprintRevision(
+        origin_revision=StoryRevision(issue_id=1),
+        target_revision=StoryRevision(issue_id=1))
+
+    with pytest.raises(ValueError, match='connect different issues'):
+        revision.validate_reprint_link()
+
+
+def test_save_rejects_internal_change_to_valid_source(patched_for_save):
+    save_mock, origin, external_target = patched_for_save
+    internal_target = Story(title='target', issue=origin.issue)
+    source = Reprint(pk=1, origin=origin, target=external_target)
+    revision = ReprintRevision(reprint=source, origin=origin,
+                               target=internal_target)
+
+    with pytest.raises(ValueError, match='connect different issues'):
+        revision.save()
+
+    assert not save_mock.called
 
 
 def test_save_origin_mismatch(patched_for_save):
