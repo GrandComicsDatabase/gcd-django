@@ -69,14 +69,22 @@ Search for {{ target }} by entering the relevant information here:
 
   {% if cache_form.visible_fields %}
 or select from the data cache:
-    {% for radio in cache_form.object_choice %}
-<form action="{% url 'select_object' select_key=select_key %}" method="POST">
+<form id="manage_cached_objects" action="{% url 'select_object' select_key=select_key %}" method="POST">
       {% csrf_token %}
-<button class="btn-blue-editing inline" type="submit" name="select_object">Select</button>
- <input type="hidden" name="object_choice" value="{{ radio.data.value }}">
-      {{ radio.choice_label }}
-</form>
+  {% if can_copy_multiple %}
+  <button class="btn-blue-editing inline" type="submit" name="copy_objects">Copy Selected Objects</button>
+  {% else %}
+  <button class="btn-blue-editing inline" type="submit" name="select_object">Select Object</button>
+  {% endif %}
+  <button class="btn-blue-editing inline" type="submit" name="remove_objects">Remove Selected Object</button>
+  <button class="btn-blue-editing inline" type="submit" name="clear_objects">Clear Objects</button>
+    {% for radio in cache_form.object_choice %}
+  <div>
+    <input type="checkbox" name="cached_object" value="{{ radio.data.value }}" id="cached_object_{{ forloop.counter }}">
+    <label for="cached_object_{{ forloop.counter }}">{{ radio.choice_label }}</label>
+  </div>
     {% endfor %}
+</form>
   {% endif %}
   {% if story or issue %}
     {% if issue %}

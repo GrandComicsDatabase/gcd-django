@@ -4653,6 +4653,61 @@ def select_internal_object(request, id, changeset_id, which_side,
                       'which_side': which_side})
 
 
+def _selected_copy_sequences(request, data, select_key):
+    issue_revision = get_object_or_404(IssueRevision,
+                                     id=data['issue_revision_id'])
+    if request.user != issue_revision.changeset.indexer:
+        return render_error(request,
+                            'Only the reservation holder may add stories.',
+                            redirect=False)
+
+    allowed = {}
+    for object_type in ('story', 'cover'):
+        if data.get(object_type) or \
+           (object_type == 'cover' and data.get('story')):
+            cache_key = 'cached_stories' if object_type == 'story' \
+                else 'cached_covers'
+            for object_id in request.session.get(cache_key, []):
+                allowed['%s_%s' % (object_type, object_id)] = int(object_id)
+    choices = request.POST.getlist('cached_object')
+    if not choices or any(choice not in allowed for choice in choices):
+        return render_error(
+          request,
+          'Select at least one cached story to copy. Please return to the '
+          'selection page and try again.',
+          redirect=False)
+    # A cover may also be cached as a story; copy each source only once.
+    story_ids = list(dict.fromkeys(allowed[choice] for choice in choices))
+    sources = Story.objects.filter(id__in=story_ids, deleted=False).in_bulk()
+    if len(sources) != len(story_ids):
+        return render_error(request, 'A selected story is no longer available.',
+                            redirect=False)
+    stories = [sources[story_id] for story_id in story_ids]
+    if 'confirm_copy_objects' not in request.POST:
+        return oi_render(request, 'oi/edit/confirm_copy_sequence.html', {
+            'issue_revision': issue_revision, 'stories': stories,
+            'select_key': select_key, 'cached_objects': choices,
+        })
+
+    with transaction.atomic():
+        existing = list(issue_revision.active_stories())
+        copy_credit_info = request.POST.get('copy_credit_info', False)
+        copy_characters = request.POST.get('copy_characters', False)
+        copies = [StoryRevision.copied_revision(
+            story, issue_revision.changeset, issue_revision=issue_revision,
+            copy_credit_info=copy_credit_info,
+            copy_characters=copy_characters) for story in stories]
+        sequence_number = data.get('sequence_number')
+        if sequence_number is not None:
+            position = max(0, min(sequence_number, len(existing)))
+            ordered = existing[:position] + copies + existing[position:]
+            _reorder_children(request, issue_revision, ordered,
+                              'sequence_number', issue_revision.active_stories(),
+                              commit=True, unique=False)
+    return HttpResponseRedirect(urlresolvers.reverse(
+        'edit', kwargs={'id': issue_revision.changeset_id}))
+
+
 def _selected_copy_sequence(request, data, object_type, selected_id):
     if request.method != 'POST':
         return _cant_get(request)
@@ -4690,6 +4745,7 @@ def copy_sequence(request, issue_revision_id, story_id=None,
                 'changeset_id': issue_revision.changeset_id,
                 'story': story,
                 'cover': cover,
+                'multiple_selection': True,
                 'initial': {},
                 'heading': mark_safe('<h2>%s</h2>' % heading),
                 'target': 'a story',

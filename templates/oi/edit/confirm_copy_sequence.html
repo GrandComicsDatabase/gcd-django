@@ -3,10 +3,16 @@
 {% load credits %}
 
 {% block view_body %}
-<h2>Confirm to copy the following story into {{ issue_revision }}:
+<h2>Confirm to copy the following {% if stories %}stories{% else %}story{% endif %} into {{ issue_revision }}:
 </h2>
 <div class="edit">
-  {% if story_revision %}
+  {% if stories %}
+  <form id="confirm" action="{% url 'select_object' select_key=select_key %}" method="POST">
+    <input type="hidden" name="confirm_copy_objects" value="1">
+    {% for choice in cached_objects %}
+    <input type="hidden" name="cached_object" value="{{ choice }}">
+    {% endfor %}
+  {% elif story_revision %}
   <form id="confirm" action="{% url "confirm_copy_story_revision" story_revision_id=story.revision.id issue_revision_id=issue_revision.id %}" method="POST">
   {% else %}
   <form id="confirm" action="{% url "confirm_copy_story" story_id=story.id issue_revision_id=issue_revision.id sequence_number=sequence_number %}" method="POST">
@@ -30,11 +36,15 @@
 
   {% with 1 as preview %}
   <div id="story_data">
+    {% for story in stories %}
+      {% include "gcd/details/tw_single_story.html" %}
+    {% empty %}
     {% include "gcd/details/tw_single_story.html" %}
+    {% endfor %}
   </div>
   {% endwith %}
-  <button><input class="btn-blue-editing" type="submit" name="confirm" value="Confirm Copy"></button>
-  <button><input class="btn-blue-editing" type="submit" name="cancel" value="Cancel"></button>
+  <button class="btn-blue-editing" type="submit" name="confirm">Confirm Copy</button>
+  <button class="btn-blue-editing" type="submit" name="cancel">Cancel</button>
   </form>
 </div>
 {% endblock %}

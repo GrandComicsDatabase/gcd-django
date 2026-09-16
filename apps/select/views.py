@@ -11,7 +11,6 @@ import django.urls as urlresolvers
 from django.http import HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.shortcuts import render
-from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.html import format_html
 from django import forms
 
@@ -50,6 +49,23 @@ def _cant_get_key(request):
       request,
       'Internal data for selecting objects is corrupted. If this message '
       'persists try logging out and logging in.', redirect=False)
+
+
+def _parse_selection(request, choice):
+        try:
+                object_type, selected_id = choice.split('_', 1)
+        except ValueError:
+                return None, None, render_error(
+                    request,
+                    'The selected object is invalid. Please return and try again.',
+                    redirect=False)
+        if object_type not in ('publisher', 'series', 'issue', 'story', 'cover') \
+             or not selected_id.isdecimal():
+                return None, None, render_error(
+                    request,
+                    'The selected object is invalid. Please return and try again.',
+                    redirect=False)
+        return object_type, selected_id, None
 
 
 ##############################################################################
@@ -333,6 +349,9 @@ def select_object(request, select_key):
                                                    story=story,
                                                    cover=cover)
         haystack_form = FacetedSearchForm()
+        can_copy_multiple = data.get('multiple_selection')
+        if can_copy_multiple is None:
+            can_copy_multiple = data.get('return') == '_selected_copy_sequence'
         return render(request, 'select/select_object.html',
                       {'heading': data['heading'],
                        'select_key': select_key,
@@ -344,25 +363,48 @@ def select_object(request, select_key):
                        'issue': issue,
                        'story': story,
                        'cover': cover,
+                       'can_copy_multiple': can_copy_multiple,
                        'target': data['target']
                        })
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(data['cancel'])
+    elif 'copy_objects' in request.POST or 'confirm_copy_objects' in request.POST:
+        if not data.get('multiple_selection',
+                data.get('return') == '_selected_copy_sequence'):
+            return render_error(request, 'Multiple copies are not available '
+                                'for this selection.', redirect=False)
+        import apps.oi.views
+        return apps.oi.views._selected_copy_sequences(request, data, select_key)
+    elif 'clear_objects' in request.POST or 'remove_objects' in request.POST:
+        choices = set(request.POST.getlist('cached_object'))
+        for object_type, cache_key in [('issue', 'cached_issues'),
+                                       ('story', 'cached_stories'),
+                                       ('cover', 'cached_covers')]:
+            if 'clear_objects' in request.POST:
+                request.session.pop(cache_key, None)
+            elif cache_key in request.session:
+                request.session[cache_key] = [
+                    object_id for object_id in request.session[cache_key]
+                    if '%s_%s' % (object_type, object_id) not in choices]
+        return HttpResponseRedirect(urlresolvers.reverse(
+            'select_object', kwargs={'select_key': select_key}))
     elif 'select_object' in request.POST:
-        try:
-            choice = request.POST['object_choice']
-            object_type, selected_id = choice.split('_')
-            if object_type == 'cover':
-                object_type = 'story'
-        except MultiValueDictKeyError:
-            return render_error(request,
-                                'You did not select a cached object. '
-                                'Please use the back button to return.',
+        choices = (request.POST.getlist('cached_object') or
+                   request.POST.getlist('object_choice'))
+        if len(choices) != 1:
+            return render_error(request, 'Please select exactly one object.',
                                 redirect=False)
+        object_type, selected_id, error = _parse_selection(request, choices[0])
+        if error:
+            return error
+        if object_type == 'cover':
+            object_type = 'story'
     elif 'search_select' in request.POST:
-        choice = request.POST['object_choice']
-        object_type, selected_id = choice.split('_')
+        object_type, selected_id, error = _parse_selection(
+            request, request.POST.get('object_choice', ''))
+        if error:
+            return error
     elif 'entered_issue_id' in request.POST:
         object_type = 'issue'
         try:
