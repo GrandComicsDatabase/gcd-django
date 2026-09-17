@@ -68,7 +68,9 @@ def test_compose_healthchecks_quote_credentials_and_remain_readable():
 
     assert services['db']['healthcheck']['test'] == [
         'CMD-SHELL',
-        "mysqladmin ping -h localhost -u'$$MYSQL_USER' -p'$$MYSQL_PASSWORD'",
+        'mysql --protocol=TCP -h localhost -u"$$MYSQL_USER" '
+        '-p"$$MYSQL_PASSWORD" --database="$$MYSQL_DATABASE" '
+        '--execute="SELECT 1" >/dev/null',
     ]
     assert services['web']['healthcheck']['test'] == [
         'CMD-SHELL',
