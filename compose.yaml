@@ -34,6 +34,10 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gcd_dev_password}
       MYSQL_HOST: db
       MYSQL_PORT: "3306"
+      USE_ELASTICSEARCH: ${USE_ELASTICSEARCH:-false}
+      ELASTICSEARCH_URL: ${ELASTICSEARCH_URL:-http://elasticsearch:9200/}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
     depends_on:
       db:
         condition: service_healthy
@@ -61,5 +65,60 @@ services:
       retries: 12
       start_period: 20s
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.29
+    profiles: ["search"]
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "127.0.0.1:${GCD_ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent 'http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=1s' >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  redis:
+    image: redis:7.4-alpine
+    profiles: ["search"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  worker:
+    profiles: ["search"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    user: "${DEV_UID:-1000}:${DEV_GID:-1000}"
+    working_dir: /workspace
+    volumes:
+      - ./:/workspace
+    environment:
+      <<: *django_environment
+      USE_ELASTICSEARCH: "true"
+      ELASTICSEARCH_URL: http://elasticsearch:9200/
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: python manage.py rqworker default
+
 volumes:
   mysql_data:
+  elasticsearch_data:
+  redis_data:

@@ -112,3 +112,27 @@ jobs:
       - name: Stop the core stack
         if: always()
         run: docker compose down --volumes
+
+  search-smoke:
+    name: Docker Compose optional search
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Create the deterministic development database
+        run: ./bin/dev setup --replace --yes
+
+      - name: Start search and build the sample index
+        run: ./bin/dev search-rebuild --batch-size 100
+
+      - name: Verify queries and queued updates
+        run: >-
+          docker compose exec -T web python manage.py
+          verify_development_search
+
+      - name: Stop the search stack
+        if: always()
+        run: docker compose --profile search down --volumes

@@ -2,7 +2,7 @@
 
 This is the supported one-clone setup for working on `gcd-django`. It runs the
 application with Python 3.13 and MySQL 8.0. Elasticsearch and optional service
-integrations are intentionally outside this first setup layer.
+integrations remain opt-in.
 
 ## Docker (default)
 
@@ -84,12 +84,41 @@ Useful commands:
 ./bin/dev down
 ```
 
-To change local ports or development-only credentials, copy `.env.example` to
-`.env` and edit literal `KEY=VALUE` entries. Shell expressions are deliberately
-not evaluated. Do not use production credentials in this file.
+## Optional Elasticsearch search
 
-`./bin/dev reset --yes` removes the local Docker database volume and starts a
-fresh database. It is intentionally confirmation-gated.
+The existing Haystack indexes and Elasticsearch 7 backend can run as an
+optional extension of the core environment. For the first search-enabled
+startup, or after replacing the development database, run:
+
+```bash
+./bin/dev search-rebuild
+```
+
+This one command starts Elasticsearch 7.17, Redis, the RQ index-update worker,
+and the application, then rebuilds the search index with a batch size of 1,000
+and four workers. Rebuilding a full catalog dump can still take several hours;
+the deterministic sample dataset completes quickly. You can override the
+defaults with Haystack options such as `--workers 2`, or set
+`GCD_SEARCH_WORKERS` in `.env` for the local machine.
+
+After an index exists, preserve and reuse it with:
+
+```bash
+./bin/dev search-up
+```
+
+Search data and queued jobs live in Docker volumes and survive normal
+`./bin/dev down` / `search-up` cycles. The normal `./bin/dev up` command keeps
+search disabled and does not start Elasticsearch, Redis, or the worker.
+
+To change local ports or development-only credentials, including the
+Elasticsearch host port, copy `.env.example` to `.env` and edit literal
+`KEY=VALUE` entries. Shell expressions are deliberately not evaluated. Do not
+use production credentials in this file.
+
+`./bin/dev reset --yes` removes the local Docker database, Elasticsearch, and
+Redis volumes and starts a fresh core database. It is intentionally
+confirmation-gated.
 
 ## Native (Docker-free)
 
