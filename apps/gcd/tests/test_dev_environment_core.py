@@ -73,7 +73,7 @@ def test_compose_healthchecks_quote_credentials_and_remain_readable():
     assert services['web']['healthcheck']['test'] == [
         'CMD-SHELL',
         "python -c \"from urllib.request import urlopen; "
-        "urlopen('http://127.0.0.1:8000/', timeout=3)\"",
+        "urlopen('http://127.0.0.1:8000/health/', timeout=3)\"",
     ]
 
 

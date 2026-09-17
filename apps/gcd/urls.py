@@ -5,6 +5,7 @@ from haystack.forms import FacetedSearchForm
 from haystack.views import search_view_factory
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
      GcdSearchQuerySet
+from apps.gcd.views.health import health
 
 from apps.gcd import views as gcd_views
 import apps.gcd.views.search
@@ -25,6 +26,7 @@ urlpatterns = [
     # or else it will never be used because the shorter form will always match.
     ###########################################################################
 
+    path('health/', health, name='health'),
     path('', gcd_views.index, name='home'),
     path('search/', gcd_views.search.search, name='basic_search'),
     path('search/advanced/', gcd_views.search.advanced_search,
