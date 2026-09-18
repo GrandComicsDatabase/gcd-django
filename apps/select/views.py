@@ -52,20 +52,20 @@ def _cant_get_key(request):
 
 
 def _parse_selection(request, choice):
-        try:
-                object_type, selected_id = choice.split('_', 1)
-        except ValueError:
-                return None, None, render_error(
-                    request,
-                    'The selected object is invalid. Please return and try again.',
-                    redirect=False)
-        if object_type not in ('publisher', 'series', 'issue', 'story', 'cover') \
-             or not selected_id.isdecimal():
-                return None, None, render_error(
-                    request,
-                    'The selected object is invalid. Please return and try again.',
-                    redirect=False)
-        return object_type, selected_id, None
+    try:
+        object_type, selected_id = choice.split('_', 1)
+    except ValueError:
+        return None, None, render_error(
+            request,
+            'The selected object is invalid. Please return and try again.',
+            redirect=False)
+    if (object_type not in ('publisher', 'series', 'issue', 'story', 'cover')
+            or not selected_id.isdecimal()):
+        return None, None, render_error(
+            request,
+            'The selected object is invalid. Please return and try again.',
+            redirect=False)
+    return object_type, selected_id, None
 
 
 ##############################################################################
@@ -370,8 +370,10 @@ def select_object(request, select_key):
     if 'cancel' in request.POST:
         return HttpResponseRedirect(data['cancel'])
     elif 'copy_objects' in request.POST or 'confirm_copy_objects' in request.POST:
-        if not data.get('multiple_selection',
-                data.get('return') == '_selected_copy_sequence'):
+        can_copy_multiple = data.get('multiple_selection')
+        if can_copy_multiple is None:
+            can_copy_multiple = data.get('return') == '_selected_copy_sequence'
+        if not can_copy_multiple:
             return render_error(request, 'Multiple copies are not available '
                                 'for this selection.', redirect=False)
         import apps.oi.views

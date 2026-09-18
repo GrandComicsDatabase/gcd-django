@@ -3762,8 +3762,8 @@ def copy_story_revision(request, issue_revision_id, changeset_id=None,
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit', kwargs={'id': changeset.id}))
         story_revision = changeset.storyrevisions.get(id=story_revision_id)
-        copy_credit_info = request.POST.get('copy_credit_info', False)
-        copy_characters = request.POST.get('copy_characters', False)
+        copy_credit_info = 'copy_credit_info' in request.POST
+        copy_characters = 'copy_characters' in request.POST
         rev = StoryRevision.clone_revision(story_revision, changeset,
                                            issue_revision=issue_revision,
                                            copy_credit_info=copy_credit_info,
@@ -4691,8 +4691,8 @@ def _selected_copy_sequences(request, data, select_key):
 
     with transaction.atomic():
         existing = list(issue_revision.active_stories())
-        copy_credit_info = request.POST.get('copy_credit_info', False)
-        copy_characters = request.POST.get('copy_characters', False)
+        copy_credit_info = 'copy_credit_info' in request.POST
+        copy_characters = 'copy_characters' in request.POST
         copies = [StoryRevision.copied_revision(
             story, issue_revision.changeset, issue_revision=issue_revision,
             copy_credit_info=copy_credit_info,
@@ -4762,8 +4762,8 @@ def copy_sequence(request, issue_revision_id, story_id=None,
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit', kwargs={'id': issue_revision.changeset_id}))
         story = get_object_or_404(Story, id=story_id)
-        copy_credit_info = request.POST.get('copy_credit_info', False)
-        copy_characters = request.POST.get('copy_characters', False)
+        copy_credit_info = 'copy_credit_info' in request.POST
+        copy_characters = 'copy_characters' in request.POST
         story_revision = StoryRevision.copied_revision(
           story, issue_revision.changeset, issue_revision=issue_revision,
           copy_credit_info=copy_credit_info, copy_characters=copy_characters)
@@ -4819,11 +4819,11 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
         elif edit:
             copy_credit_info = False
         else:
-            copy_credit_info = request.POST.get('copy_credit_info', False)
+            copy_credit_info = 'copy_credit_info' in request.POST
         if edit:
             copy_characters = True
         else:
-            copy_characters = request.POST.get('copy_characters', False)
+            copy_characters = 'copy_characters' in request.POST
         story_revision = StoryRevision.copied_revision(
           story, changeset, issue_revision=changeset_issue,
           copy_credit_info=copy_credit_info, copy_characters=copy_characters)
