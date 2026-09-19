@@ -1,5 +1,7 @@
+# Italian translations for the GCD website.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
+# Donald Dale Milne <dondmilne@att.net>
 #
 #, fuzzy
 msgid ""
@@ -7,14 +9,13 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-01-31 15:46+0000\n"
-"PO-Revision-Date: 2021-02-22 23:10+0000\n"
-"Last-Translator: b'Donald Dale Milne <dondmilne@att.net>'\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Simone Nardi\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translated-Using: django-rosetta 0.9.5\n"
 
 #: apps/gcd/models/story.py:1194 apps/gcd/templatetags/credits.py:611
 msgid "page"
@@ -28,7 +29,7 @@ msgstr "Numero di lavoro"
 
 #: apps/gcd/templatetags/credits.py:290
 msgid "First Line of Dialogue or Text"
-msgstr "Prima riga di dialogo o testo"
+msgstr "Prima riga del testo o dialogo"
 
 #: apps/gcd/templatetags/credits.py:298
 msgid "Reprinted"
@@ -86,7 +87,7 @@ msgstr "Cambia la mia password"
 
 #: apps/indexer/templates/indexer/password_reset_confirm.html:26
 msgid "Password reset unsuccessful"
-msgstr "Reimpostazione password non riuscita"
+msgstr "Reimpostazione della password non riuscita"
 
 #: apps/indexer/templates/indexer/password_reset_confirm.html:28
 msgid ""
@@ -173,7 +174,7 @@ msgstr "Elemento <b>%s</b> rimosso da %s"
 
 #: apps/mycomics/views.py:418
 msgid "Item moved between collections"
-msgstr "Elemento spostato tra collezioni"
+msgstr "Elemento spostato tra le collezioni"
 
 #: apps/mycomics/views.py:425
 #, python-format
@@ -190,7 +191,7 @@ msgstr "Lo stato dell'elemento è impostato su «in vendita» a causa del valore
 
 #: apps/mycomics/views.py:444
 msgid "Item copied between collections"
-msgstr "Elemento copiato tra collezioni"
+msgstr "Elemento copiato tra le collezioni"
 
 #: apps/mycomics/views.py:448
 msgid "Own/want default for new collection differs from item status."
@@ -232,16 +233,16 @@ msgstr "Più di 500 righe. Suddividi il file di importazione in parti più picco
 #: apps/mycomics/views.py:1075
 #, python-format
 msgid "%s is already subscribed for the collection %s."
-msgstr "%s è già sottoscritto per la collezione %s."
+msgstr "%s è già iscritto alla collezione %s."
 
 #: apps/mycomics/views.py:1083
 #, python-format
 msgid "Series %s is now subscribed for the collection %s."
-msgstr "La serie %s è ora sottoscritta per la collezione %s."
+msgstr "La serie %s è ora iscritta alla collezione %s."
 
 #: apps/mycomics/views.py:1087
 msgid "Selected series is not ongoing."
-msgstr "La serie selezionata non è in corso."
+msgstr "La serie selezionata non è più in corso."
 
 #: apps/mycomics/views.py:1152
 msgid "Reading order saved."
@@ -396,7 +397,7 @@ msgstr "Visualizza profilo"
 
 #: templates/gcd/bits/front_page_login.html:11
 msgid "Admin"
-msgstr "Amministrazione"
+msgstr "Admin"
 
 #: templates/gcd/bits/front_page_login.html:15
 msgid "Logout"
@@ -433,11 +434,11 @@ msgstr "Come contribuire"
 
 #: templates/gcd/bits/front_page_menu.html:13
 msgid "Documentation Wiki"
-msgstr "Wiki della documentazione"
+msgstr "Documentazione Wiki"
 
 #: templates/gcd/bits/front_page_menu.html:16
 msgid "Mailing Lists"
-msgstr "Liste di distribuzione"
+msgstr "Mailing List"
 
 #: templates/gcd/bits/front_page_menu.html:17 templates/gcd/tw_index.html:24
 msgid "Contact Us"
@@ -494,7 +495,7 @@ msgstr "Fascia d'età indicata dall'editore"
 #: templates/gcd/bits/issue_data.html:29
 #: templates/gcd/bits/tw_issue_data.html:49
 msgid "Indicia&nbsp;/&nbsp;Colophon Publisher"
-msgstr "Editore in indicia&nbsp;/&nbsp;colophon"
+msgstr "Editore nell'indicia&nbsp;/&nbsp;colophon"
 
 #: templates/gcd/bits/issue_data.html:32
 #: templates/gcd/bits/tw_issue_data.html:52
@@ -630,7 +631,7 @@ msgstr ""
 
 #: templates/gcd/bits/tw_front_page_content.html:66 templates/gcd/index.html:59
 msgid "Disclaimer"
-msgstr "Limitazioni di responsabilità"
+msgstr "Avvertenze"
 
 #: templates/gcd/bits/tw_front_page_content.html:69 templates/gcd/index.html:63
 msgid ""
@@ -651,11 +652,11 @@ msgid ""
 msgstr ""
 "Il GCD riconosce che la natura omnicomprensiva del progetto di catalogazione "
 "può portare alla pubblicazione di scansioni di copertina che alcuni "
-"potrebbero trovare offensive."
+"potrebbero ritenere offensive."
 
 #: templates/gcd/bits/tw_front_page_content.html:75 templates/gcd/index.html:69
 msgid "Viewer discretion is advised."
-msgstr "Si consiglia discrezionalità durante la visualizzazione dei contenuti."
+msgstr "Si consiglia cautela nella visualizzazione dei contenuti."
 
 #: templates/gcd/bits/tw_front_page_content.html:78 templates/gcd/index.html:72
 msgid "The Grand Comics Database Team"
@@ -663,30 +664,30 @@ msgstr "Il team del Grand Comics Database"
 
 #: templates/gcd/details/brand.html:97
 msgid "Replace Publisher's Brand Image"
-msgstr "Sostituisci immagine marchio dell'editore"
+msgstr "Sostituisci l'immagine del marchio dell'editore"
 
 #: templates/gcd/details/brand.html:101
 msgid "Delete Publisher's Brand Image"
-msgstr "Elimina immagine marchio dell'editore"
+msgstr "Elimina l'immagine del marchio dell'editore"
 
 #: templates/gcd/details/brand.html:109
 msgid "Add Publisher's Brand Image"
-msgstr "Aggiungi immagine marchio dell'editore"
+msgstr "Aggiungi l'immagine del marchio dell'editore"
 
 #: templates/gcd/details/feature_logo.html:63
 #: templates/gcd/details/tw_feature_logo.html:68
 msgid "Replace Feature Logo Scan"
-msgstr "Sostituisci scansione del logo della testata"
+msgstr "Sostituisci la scansione del logo della feature"
 
 #: templates/gcd/details/feature_logo.html:67
 #: templates/gcd/details/tw_feature_logo.html:72
 msgid "Delete Feature Logo Scan"
-msgstr "Elimina scansione del logo della testata"
+msgstr "Elimina la scansione del logo della feature"
 
 #: templates/gcd/details/feature_logo.html:75
 #: templates/gcd/details/tw_feature_logo.html:80
 msgid "Add Feature Logo Scan"
-msgstr "Aggiungi scansione del logo della testata"
+msgstr "Aggiungi la scansione del logo della feature"
 
 #: templates/gcd/details/issue.html:204
 msgid "Edit with another issue"
@@ -787,7 +788,7 @@ msgstr " copertine pubblicate"
 
 #: templates/gcd/tw_index.html:25
 msgid "How to Search"
-msgstr "Come effettuare una ricerca"
+msgstr "Come cercare"
 
 #: templates/gcd/tw_index.html:28
 msgid "Today's Covers"
@@ -1041,7 +1042,7 @@ msgstr "Pubblicazioni"
 #: templates/mycomics/collection_subscriptions.html:12
 #: templates/mycomics/collection_subscriptions.html:29
 msgid "Unsubscribe series in collection "
-msgstr "Annulla la sottoscrizione della serie nella collezione "
+msgstr "Disiscrivi la serie dalla collezione "
 
 #: templates/mycomics/collection_subscriptions.html:13
 #: templates/mycomics/collection_subscriptions.html:30
