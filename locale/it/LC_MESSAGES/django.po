@@ -434,7 +434,7 @@ msgstr "Come contribuire"
 
 #: templates/gcd/bits/front_page_menu.html:13
 msgid "Documentation Wiki"
-msgstr "Documentazione Wiki"
+msgstr "Wiki della documentazione"
 
 #: templates/gcd/bits/front_page_menu.html:16
 msgid "Mailing Lists"
@@ -677,17 +677,17 @@ msgstr "Aggiungi l'immagine del marchio dell'editore"
 #: templates/gcd/details/feature_logo.html:63
 #: templates/gcd/details/tw_feature_logo.html:68
 msgid "Replace Feature Logo Scan"
-msgstr "Sostituisci la scansione del logo della feature"
+msgstr "Sostituisci la scansione del logo della testata"
 
 #: templates/gcd/details/feature_logo.html:67
 #: templates/gcd/details/tw_feature_logo.html:72
 msgid "Delete Feature Logo Scan"
-msgstr "Elimina la scansione del logo della feature"
+msgstr "Elimina la scansione del logo della testata"
 
 #: templates/gcd/details/feature_logo.html:75
 #: templates/gcd/details/tw_feature_logo.html:80
 msgid "Add Feature Logo Scan"
-msgstr "Aggiungi la scansione del logo della feature"
+msgstr "Aggiungi la scansione del logo della testata"
 
 #: templates/gcd/details/issue.html:204
 msgid "Edit with another issue"
