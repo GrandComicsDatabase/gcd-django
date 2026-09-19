@@ -306,13 +306,21 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             if 'variant_name' in cd:
                 cd['variant_name'] = cd['variant_name'].strip()
 
-            if 'variant_cover_status' in cd and cd['variant_cover_status'] < 3:
-                if revision and revision.changeset.storyrevisions.filter(
-                  issue=revision.issue, deleted=False).exists():
-                    raise forms.ValidationError(
-                        'A cover sequence exists for this variant. Before '
-                        'changing the variant cover status please first mark '
-                        'it for delete or remove it.')
+            if 'variant_cover_status' in cd and revision:
+                if cd['variant_cover_status'] < 3:
+                    if revision.changeset.storyrevisions.filter(
+                      issue=revision.issue, deleted=False).exists():
+                        raise forms.ValidationError(
+                            'A cover sequence exists for this variant. Before '
+                            'changing the variant cover status please first '
+                            'mark it for delete or remove it.')
+
+                if cd['variant_cover_status'] == 1:
+                    if revision.issue and revision.issue.has_covers():
+                        raise forms.ValidationError(
+                            'A cover scan exists for this variant. Before '
+                            'changing the variant cover status please first '
+                            'delete the cover scan in a separate change.')
 
             if cd['no_title'] and cd['title']:
                 raise forms.ValidationError(
