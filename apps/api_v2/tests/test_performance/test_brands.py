@@ -43,7 +43,7 @@ def test_brand_list_query_count(api_client, db):
     _create_brand(name='Beta Brand')
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('brand-list'))
+        response = api_client.get(reverse('api-v2-brand-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -60,7 +60,7 @@ def test_brand_detail_query_count_is_relationship_count_independent(
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('brand-detail', kwargs={'pk': brand.pk}),
+            reverse('api-v2-brand-detail', kwargs={'pk': brand.pk}),
         )
 
     assert response.status_code == 200

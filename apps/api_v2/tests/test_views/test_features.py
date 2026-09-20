@@ -69,7 +69,7 @@ def test_feature_list_returns_paginated_results(api_client, language):
         feature_type=feature_type,
     )
 
-    response = api_client.get(reverse('feature-list'))
+    response = api_client.get(reverse('api-v2-feature-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -134,7 +134,7 @@ def test_feature_detail_returns_normalized_relationships(
     )
 
     response = authenticated_client.get(
-        reverse('feature-detail', kwargs={'pk': feature.pk}),
+        reverse('api-v2-feature-detail', kwargs={'pk': feature.pk}),
     )
 
     assert response.status_code == 200
@@ -187,7 +187,7 @@ def test_feature_list_applies_filter_query_params(
     )
 
     response = authenticated_client.get(
-        reverse('feature-list'),
+        reverse('api-v2-feature-list'),
         {
             'name': 'spider',
             'feature_type': str(character_type.pk),
@@ -220,9 +220,9 @@ def test_feature_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('feature-list'))
+    list_response = api_client.get(reverse('api-v2-feature-list'))
     detail_response = api_client.get(
-        reverse('feature-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-feature-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -239,14 +239,14 @@ def test_feature_list_returns_304_for_if_modified_since(
     feature_type = FeatureType.objects.create(name='Character')
     _create_feature(language=language, feature_type=feature_type)
 
-    response = authenticated_client.get(reverse('feature-list'))
+    response = authenticated_client.get(reverse('api-v2-feature-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('feature-list'),
+        reverse('api-v2-feature-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -266,7 +266,7 @@ def test_feature_detail_returns_304_for_if_none_match(
     )
 
     response = authenticated_client.get(
-        reverse('feature-detail', kwargs={'pk': feature.pk}),
+        reverse('api-v2-feature-detail', kwargs={'pk': feature.pk}),
     )
 
     assert response.status_code == 200
@@ -274,7 +274,7 @@ def test_feature_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('feature-detail', kwargs={'pk': feature.pk}),
+        reverse('api-v2-feature-detail', kwargs={'pk': feature.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

@@ -39,7 +39,7 @@ def test_indicia_publisher_list_query_count(
     )
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('indicia-publisher-list'))
+        response = api_client.get(reverse('api-v2-indicia-publisher-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -61,7 +61,7 @@ def test_indicia_publisher_detail_query_count(
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
             reverse(
-                'indicia-publisher-detail',
+                'api-v2-indicia-publisher-detail',
                 kwargs={'pk': indicia_publisher.pk},
             ),
         )

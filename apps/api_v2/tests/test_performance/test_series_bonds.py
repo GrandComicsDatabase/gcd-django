@@ -58,7 +58,7 @@ def test_series_bond_list_query_count(api_client, series, issue):
     _create_bond(series, other_target, bond_type, origin_issue=issue)
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('series-bond-list'))
+        response = api_client.get(reverse('api-v2-series-bond-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -85,7 +85,7 @@ def test_series_bond_detail_query_count(api_client, series, issue):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('series-bond-detail', kwargs={'pk': bond.pk}),
+            reverse('api-v2-series-bond-detail', kwargs={'pk': bond.pk}),
         )
 
     assert response.status_code == 200

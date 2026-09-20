@@ -74,10 +74,10 @@ def test_award_list_and_detail_query_counts(api_client):
     award = Award.objects.create(name='Eisner Awards', notes='')
 
     with CaptureQueriesContext(connection) as list_context:
-        list_response = api_client.get(reverse('award-list'))
+        list_response = api_client.get(reverse('api-v2-award-list'))
     with CaptureQueriesContext(connection) as detail_context:
         detail_response = api_client.get(
-            reverse('award-detail', kwargs={'pk': award.pk}),
+            reverse('api-v2-award-detail', kwargs={'pk': award.pk}),
         )
 
     assert list_response.status_code == 200
@@ -112,7 +112,7 @@ def test_award_recipient_query_count_is_row_count_independent(
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('award-recipients', kwargs={'pk': award.pk}),
+            reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
         )
 
     assert response.status_code == 200

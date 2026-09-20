@@ -67,7 +67,7 @@ def test_story_arc_list_returns_paginated_results(api_client, language):
     """The list endpoint is anon-readable and paginated."""
     story_arc = _create_story_arc(language)
 
-    response = api_client.get(reverse('story-arc-list'))
+    response = api_client.get(reverse('api-v2-story-arc-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -90,7 +90,7 @@ def test_story_arc_detail_returns_expected_payload(
     story.story_arc.add(story_arc)
 
     response = api_client.get(
-        reverse('story-arc-detail', kwargs={'pk': story_arc.pk}),
+        reverse('api-v2-story-arc-detail', kwargs={'pk': story_arc.pk}),
     )
 
     assert response.status_code == 200
@@ -120,7 +120,7 @@ def test_story_arc_list_applies_filter_query_params(
     _create_story_arc(language, name='Secret Wars')
 
     response = api_client.get(
-        reverse('story-arc-list'),
+        reverse('api-v2-story-arc-list'),
         {'name': 'crisis'},
     )
 
@@ -141,9 +141,9 @@ def test_story_arc_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('story-arc-list'))
+    list_response = api_client.get(reverse('api-v2-story-arc-list'))
     detail_response = api_client.get(
-        reverse('story-arc-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-story-arc-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -159,14 +159,14 @@ def test_story_arc_list_returns_304_for_if_modified_since(
     """List responses support Last-Modified cache validation."""
     _create_story_arc(language)
 
-    response = authenticated_client.get(reverse('story-arc-list'))
+    response = authenticated_client.get(reverse('api-v2-story-arc-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('story-arc-list'),
+        reverse('api-v2-story-arc-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -182,7 +182,7 @@ def test_story_arc_detail_returns_304_for_if_none_match(
     story_arc = _create_story_arc(language)
 
     response = authenticated_client.get(
-        reverse('story-arc-detail', kwargs={'pk': story_arc.pk}),
+        reverse('api-v2-story-arc-detail', kwargs={'pk': story_arc.pk}),
     )
 
     assert response.status_code == 200
@@ -190,7 +190,7 @@ def test_story_arc_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('story-arc-detail', kwargs={'pk': story_arc.pk}),
+        reverse('api-v2-story-arc-detail', kwargs={'pk': story_arc.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

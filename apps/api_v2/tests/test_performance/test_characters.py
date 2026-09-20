@@ -136,7 +136,7 @@ def test_character_list_query_count(api_client, db):
     )
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('character-list'))
+        response = api_client.get(reverse('api-v2-character-list'))
 
     assert response.status_code == 200
     assert len(context) == 6
@@ -170,7 +170,7 @@ def test_character_detail_query_count(api_client, db):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('character-detail', kwargs={'pk': character.pk}),
+            reverse('api-v2-character-detail', kwargs={'pk': character.pk}),
         )
 
     assert response.status_code == 200

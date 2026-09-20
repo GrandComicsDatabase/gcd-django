@@ -105,7 +105,7 @@ def test_series_list_returns_paginated_results(
     _create_issue(series, sort_code=30, deleted=True)
     series.keywords.add('alpha')
 
-    response = api_client.get(reverse('series-list'))
+    response = api_client.get(reverse('api-v2-series-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -143,7 +143,7 @@ def test_series_detail_returns_expected_payload(
     series.keywords.add('alpha', 'beta')
 
     response = api_client.get(
-        reverse('series-detail', kwargs={'pk': series.pk}),
+        reverse('api-v2-series-detail', kwargs={'pk': series.pk}),
     )
 
     assert response.status_code == 200
@@ -229,7 +229,7 @@ def test_series_list_applies_filter_query_params(
     )
 
     response = api_client.get(
-        reverse('series-list'),
+        reverse('api-v2-series-list'),
         {
             'name': 'batman',
             'country': country.code,
@@ -270,9 +270,9 @@ def test_series_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('series-list'))
+    list_response = api_client.get(reverse('api-v2-series-list'))
     detail_response = api_client.get(
-        reverse('series-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-series-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -286,14 +286,14 @@ def test_series_list_returns_304_for_if_modified_since(
     series,
 ):
     """List responses support Last-Modified cache validation."""
-    response = authenticated_client.get(reverse('series-list'))
+    response = authenticated_client.get(reverse('api-v2-series-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('series-list'),
+        reverse('api-v2-series-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -307,7 +307,7 @@ def test_series_detail_returns_304_for_if_none_match(
 ):
     """Detail responses support ETag cache validation."""
     response = authenticated_client.get(
-        reverse('series-detail', kwargs={'pk': series.pk}),
+        reverse('api-v2-series-detail', kwargs={'pk': series.pk}),
     )
 
     assert response.status_code == 200
@@ -315,7 +315,7 @@ def test_series_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('series-detail', kwargs={'pk': series.pk}),
+        reverse('api-v2-series-detail', kwargs={'pk': series.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

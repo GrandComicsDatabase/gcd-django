@@ -88,7 +88,7 @@ def test_character_list_returns_paginated_results(api_client, db):
     )
     character.keywords.add('alpha')
 
-    response = api_client.get(reverse('character-list'))
+    response = api_client.get(reverse('api-v2-character-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -165,7 +165,7 @@ def test_character_detail_returns_expected_payload(
     character.keywords.add('alpha', 'beta')
 
     response = authenticated_client.get(
-        reverse('character-detail', kwargs={'pk': character.pk}),
+        reverse('api-v2-character-detail', kwargs={'pk': character.pk}),
     )
 
     assert response.status_code == 200
@@ -248,7 +248,7 @@ def test_character_list_applies_filter_query_params(
     )
 
     response = authenticated_client.get(
-        reverse('character-list'),
+        reverse('api-v2-character-list'),
         {
             'name': 'spider',
             'year_first_published__gte': '1960',
@@ -295,9 +295,9 @@ def test_character_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = authenticated_client.get(reverse('character-list'))
+    list_response = authenticated_client.get(reverse('api-v2-character-list'))
     detail_response = authenticated_client.get(
-        reverse('character-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-character-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -330,14 +330,14 @@ def test_character_list_returns_304_for_if_modified_since(
         universe=universe,
     )
 
-    response = authenticated_client.get(reverse('character-list'))
+    response = authenticated_client.get(reverse('api-v2-character-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('character-list'),
+        reverse('api-v2-character-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -370,7 +370,7 @@ def test_character_detail_returns_304_for_if_none_match(
     )
 
     response = authenticated_client.get(
-        reverse('character-detail', kwargs={'pk': character.pk}),
+        reverse('api-v2-character-detail', kwargs={'pk': character.pk}),
     )
 
     assert response.status_code == 200
@@ -378,7 +378,7 @@ def test_character_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('character-detail', kwargs={'pk': character.pk}),
+        reverse('api-v2-character-detail', kwargs={'pk': character.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

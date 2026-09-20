@@ -28,7 +28,7 @@ def test_publisher_list_query_count(api_client, country):
     second.keywords.add('beta')
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('publisher-list'))
+        response = api_client.get(reverse('api-v2-publisher-list'))
 
     assert response.status_code == 200
     assert len(context) == 4
@@ -40,7 +40,7 @@ def test_publisher_detail_query_count(api_client, publisher):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('publisher-detail', kwargs={'pk': publisher.pk}),
+            reverse('api-v2-publisher-detail', kwargs={'pk': publisher.pk}),
         )
 
     assert response.status_code == 200

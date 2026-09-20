@@ -63,7 +63,7 @@ def test_series_list_query_count(api_client, publisher, country, language):
     _create_issue(second, sort_code=20)
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('series-list'))
+        response = api_client.get(reverse('api-v2-series-list'))
 
     assert response.status_code == 200
     assert len(context) == 4
@@ -76,7 +76,7 @@ def test_series_detail_query_count(api_client, series):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('series-detail', kwargs={'pk': series.pk}),
+            reverse('api-v2-series-detail', kwargs={'pk': series.pk}),
         )
 
     assert response.status_code == 200

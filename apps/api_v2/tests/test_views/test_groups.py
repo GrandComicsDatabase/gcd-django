@@ -88,7 +88,7 @@ def test_group_list_returns_paginated_results(api_client, db):
     )
     group.keywords.add('alpha')
 
-    response = api_client.get(reverse('group-list'))
+    response = api_client.get(reverse('api-v2-group-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -162,7 +162,7 @@ def test_group_detail_returns_expected_payload(authenticated_client, db):
     group.keywords.add('alpha', 'beta')
 
     response = authenticated_client.get(
-        reverse('group-detail', kwargs={'pk': group.pk}),
+        reverse('api-v2-group-detail', kwargs={'pk': group.pk}),
     )
 
     assert response.status_code == 200
@@ -242,7 +242,7 @@ def test_group_list_applies_filter_query_params(authenticated_client, db):
     )
 
     response = authenticated_client.get(
-        reverse('group-list'),
+        reverse('api-v2-group-list'),
         {
             'name': 'x-men',
             'year_first_published__gte': '1960',
@@ -289,9 +289,9 @@ def test_group_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = authenticated_client.get(reverse('group-list'))
+    list_response = authenticated_client.get(reverse('api-v2-group-list'))
     detail_response = authenticated_client.get(
-        reverse('group-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-group-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -324,14 +324,14 @@ def test_group_list_returns_304_for_if_modified_since(
         universe=universe,
     )
 
-    response = authenticated_client.get(reverse('group-list'))
+    response = authenticated_client.get(reverse('api-v2-group-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('group-list'),
+        reverse('api-v2-group-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -364,7 +364,7 @@ def test_group_detail_returns_304_for_if_none_match(
     )
 
     response = authenticated_client.get(
-        reverse('group-detail', kwargs={'pk': group.pk}),
+        reverse('api-v2-group-detail', kwargs={'pk': group.pk}),
     )
 
     assert response.status_code == 200
@@ -372,7 +372,7 @@ def test_group_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('group-detail', kwargs={'pk': group.pk}),
+        reverse('api-v2-group-detail', kwargs={'pk': group.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

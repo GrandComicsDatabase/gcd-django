@@ -24,7 +24,7 @@ def test_publisher_list_returns_paginated_results(api_client, publisher):
     """The list endpoint is anon-readable and paginated."""
     publisher.keywords.add('alpha')
 
-    response = api_client.get(reverse('publisher-list'))
+    response = api_client.get(reverse('api-v2-publisher-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -46,7 +46,7 @@ def test_publisher_detail_returns_expected_payload(api_client, publisher):
     publisher.keywords.add('alpha', 'beta')
 
     response = api_client.get(
-        reverse('publisher-detail', kwargs={'pk': publisher.pk}),
+        reverse('api-v2-publisher-detail', kwargs={'pk': publisher.pk}),
     )
 
     assert response.status_code == 200
@@ -80,7 +80,7 @@ def test_publisher_list_applies_filter_query_params(
     )
 
     response = api_client.get(
-        reverse('publisher-list'),
+        reverse('api-v2-publisher-list'),
         {'name': 'marvel', 'country': country.code},
     )
 
@@ -105,9 +105,9 @@ def test_publisher_endpoints_hide_soft_deleted_records(api_client, country):
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('publisher-list'))
+    list_response = api_client.get(reverse('api-v2-publisher-list'))
     detail_response = api_client.get(
-        reverse('publisher-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-publisher-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -121,14 +121,14 @@ def test_publisher_list_returns_304_for_if_modified_since(
     publisher,
 ):
     """List responses support Last-Modified cache validation."""
-    response = authenticated_client.get(reverse('publisher-list'))
+    response = authenticated_client.get(reverse('api-v2-publisher-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('publisher-list'),
+        reverse('api-v2-publisher-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -142,7 +142,7 @@ def test_publisher_detail_returns_304_for_if_none_match(
 ):
     """Detail responses support ETag cache validation."""
     response = authenticated_client.get(
-        reverse('publisher-detail', kwargs={'pk': publisher.pk}),
+        reverse('api-v2-publisher-detail', kwargs={'pk': publisher.pk}),
     )
 
     assert response.status_code == 200
@@ -150,7 +150,7 @@ def test_publisher_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('publisher-detail', kwargs={'pk': publisher.pk}),
+        reverse('api-v2-publisher-detail', kwargs={'pk': publisher.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

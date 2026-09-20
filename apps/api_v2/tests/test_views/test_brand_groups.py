@@ -53,7 +53,7 @@ def test_brand_group_list_returns_paginated_results(
     """The list endpoint is anonymous, paginated, and trimmed."""
     brand_group = _create_brand_group(publisher=publisher)
 
-    response = api_client.get(reverse('brand-group-list'))
+    response = api_client.get(reverse('api-v2-brand-group-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -100,7 +100,7 @@ def test_brand_group_detail_returns_expected_payload(
 
     response = authenticated_client.get(
         reverse(
-            'brand-group-detail',
+            'api-v2-brand-group-detail',
             kwargs={'pk': brand_group.pk},
         ),
     )
@@ -150,7 +150,7 @@ def test_brand_group_list_applies_filter_query_params(
     )
 
     response = authenticated_client.get(
-        reverse('brand-group-list'),
+        reverse('api-v2-brand-group-list'),
         {
             'name': 'marvel',
             'parent': str(publisher.pk),
@@ -179,10 +179,10 @@ def test_brand_group_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('brand-group-list'))
+    list_response = api_client.get(reverse('api-v2-brand-group-list'))
     detail_response = api_client.get(
         reverse(
-            'brand-group-detail',
+            'api-v2-brand-group-detail',
             kwargs={'pk': deleted.pk},
         ),
     )
@@ -200,14 +200,14 @@ def test_brand_group_list_returns_304_for_if_modified_since(
     """List responses support Last-Modified cache validation."""
     _create_brand_group(publisher=publisher)
 
-    response = authenticated_client.get(reverse('brand-group-list'))
+    response = authenticated_client.get(reverse('api-v2-brand-group-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('brand-group-list'),
+        reverse('api-v2-brand-group-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -224,7 +224,7 @@ def test_brand_group_detail_returns_304_for_if_none_match(
 
     response = authenticated_client.get(
         reverse(
-            'brand-group-detail',
+            'api-v2-brand-group-detail',
             kwargs={'pk': brand_group.pk},
         ),
     )
@@ -235,7 +235,7 @@ def test_brand_group_detail_returns_304_for_if_none_match(
 
     cached_response = authenticated_client.get(
         reverse(
-            'brand-group-detail',
+            'api-v2-brand-group-detail',
             kwargs={'pk': brand_group.pk},
         ),
         HTTP_IF_NONE_MATCH=response['ETag'],

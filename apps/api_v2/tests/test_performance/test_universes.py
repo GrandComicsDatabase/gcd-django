@@ -60,7 +60,7 @@ def test_universe_list_query_count(api_client, db):
     )
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('universe-list'))
+        response = api_client.get(reverse('api-v2-universe-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -79,7 +79,7 @@ def test_universe_detail_query_count(api_client, db):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('universe-detail', kwargs={'pk': universe.pk}),
+            reverse('api-v2-universe-detail', kwargs={'pk': universe.pk}),
         )
 
     assert response.status_code == 200

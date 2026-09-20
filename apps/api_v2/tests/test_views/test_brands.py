@@ -42,7 +42,7 @@ def test_brand_list_returns_paginated_results(api_client, db):
     """The list endpoint is anonymous, paginated, and trimmed."""
     brand = _create_brand(generic=True)
 
-    response = api_client.get(reverse('brand-list'))
+    response = api_client.get(reverse('api-v2-brand-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -120,7 +120,7 @@ def test_brand_detail_returns_expected_payload(
     )
 
     response = authenticated_client.get(
-        reverse('brand-detail', kwargs={'pk': brand.pk}),
+        reverse('api-v2-brand-detail', kwargs={'pk': brand.pk}),
     )
 
     assert response.status_code == 200
@@ -175,7 +175,7 @@ def test_brand_list_applies_distinct_relationship_filters(
     _create_brand(name='Different Brand', year_began=1940)
 
     response = authenticated_client.get(
-        reverse('brand-list'),
+        reverse('api-v2-brand-list'),
         {
             'name': 'marvel',
             'generic': 'true',
@@ -196,9 +196,9 @@ def test_brand_endpoints_hide_soft_deleted_records(api_client, db):
     visible = _create_brand(name='Visible Brand')
     deleted = _create_brand(name='Deleted Brand', deleted=True)
 
-    list_response = api_client.get(reverse('brand-list'))
+    list_response = api_client.get(reverse('api-v2-brand-list'))
     detail_response = api_client.get(
-        reverse('brand-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-brand-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -213,14 +213,14 @@ def test_brand_list_returns_304_for_if_modified_since(
     """List responses support Last-Modified cache validation."""
     _create_brand()
 
-    response = authenticated_client.get(reverse('brand-list'))
+    response = authenticated_client.get(reverse('api-v2-brand-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('brand-list'),
+        reverse('api-v2-brand-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -235,7 +235,7 @@ def test_brand_detail_returns_304_for_if_none_match(
     brand = _create_brand()
 
     response = authenticated_client.get(
-        reverse('brand-detail', kwargs={'pk': brand.pk}),
+        reverse('api-v2-brand-detail', kwargs={'pk': brand.pk}),
     )
 
     assert response.status_code == 200
@@ -243,7 +243,7 @@ def test_brand_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('brand-detail', kwargs={'pk': brand.pk}),
+        reverse('api-v2-brand-detail', kwargs={'pk': brand.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

@@ -64,7 +64,7 @@ def test_story_arc_list_query_count(api_client, language):
     _create_story_arc(language, name='Secret Wars')
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('story-arc-list'))
+        response = api_client.get(reverse('api-v2-story-arc-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -78,7 +78,7 @@ def test_story_arc_detail_query_count(api_client, issue, language):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('story-arc-detail', kwargs={'pk': story_arc.pk}),
+            reverse('api-v2-story-arc-detail', kwargs={'pk': story_arc.pk}),
         )
 
     assert response.status_code == 200
