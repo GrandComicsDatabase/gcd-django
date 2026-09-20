@@ -4,6 +4,7 @@
 """Shared django-filter helpers for v2 endpoints."""
 
 import django_filters
+from django import forms
 from django_filters.constants import EMPTY_VALUES
 
 from apps.stddata.models import Language
@@ -18,6 +19,12 @@ TIMESTAMP_FILTER_FIELDS = (
     'created__lt',
     'created__lte',
 )
+
+
+class IntegerFilter(django_filters.Filter):
+    """Filter integer database identifiers without accepting decimals."""
+
+    field_class = forms.IntegerField
 
 
 def _request_filter_cache(request):

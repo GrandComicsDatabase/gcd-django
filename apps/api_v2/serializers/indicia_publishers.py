@@ -3,8 +3,10 @@
 
 """Serializers for v2 indicia publisher endpoints."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import IdNameReferenceSerializer
 from apps.gcd.models import IndiciaPublisher
 
 
@@ -34,6 +36,7 @@ class IndiciaPublisherListSerializer(serializers.ModelSerializer):
             'modified',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer)
     def get_parent(self, obj):
         """Return the minimal nested parent Publisher reference."""
         return {

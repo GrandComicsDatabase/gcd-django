@@ -4,8 +4,10 @@
 """Serializers for v2 story-arc endpoints."""
 
 from django.db.models import Prefetch
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import StoryArcMembershipSerializer
 from apps.gcd.models import Reprint, StoryArc
 
 
@@ -81,6 +83,7 @@ class StoryArcSerializer(StoryArcListSerializer):
             'keywords',
         )
 
+    @extend_schema_field(StoryArcMembershipSerializer(many=True))
     def get_stories(self, obj):
         """Return ordered primary story memberships for the story arc."""
         return [
@@ -93,6 +96,7 @@ class StoryArcSerializer(StoryArcListSerializer):
             for story in _primary_stories(obj)
         ]
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_keywords(self, obj):
         """Return story-arc keywords when storage exists for them."""
         del obj

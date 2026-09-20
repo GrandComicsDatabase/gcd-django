@@ -4,8 +4,17 @@
 """Serializers for v2 story endpoints."""
 
 from django.core.exceptions import ObjectDoesNotExist
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import (
+    IdNameReferenceSerializer,
+    IssueDescriptorReferenceSerializer,
+    LegacyTextCreditsSerializer,
+    StoryCharacterAppearanceSerializer,
+    StoryCreditSerializer,
+    StoryReprintReferenceSerializer,
+)
 from apps.api_v2.utils.credits import collect_story_credit_entries
 from apps.gcd.models import FeatureLogo, FeatureNameDetail, Story
 
@@ -91,6 +100,7 @@ class StoryListSerializer(serializers.ModelSerializer):
             'modified',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer)
     def get_type(self, obj):
         """Return the minimal nested story type reference."""
         return {
@@ -98,6 +108,7 @@ class StoryListSerializer(serializers.ModelSerializer):
             'name': obj.type.name,
         }
 
+    @extend_schema_field(IssueDescriptorReferenceSerializer)
     def get_issue(self, obj):
         """Return the minimal nested issue reference."""
         return {
@@ -122,6 +133,7 @@ class FeatureObjectSerializer(serializers.ModelSerializer):
             'feature_type',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer(allow_null=True))
     def get_feature_type(self, obj):
         """Return the minimal nested feature type reference."""
         if obj.feature.feature_type_id is None:
@@ -136,7 +148,7 @@ class FeatureObjectSerializer(serializers.ModelSerializer):
         }
 
 
-class FeatureLogoSerializer(serializers.ModelSerializer):
+class StoryFeatureLogoSerializer(serializers.ModelSerializer):
     """Serialize trimmed feature-logo references for story detail."""
 
     class Meta:
@@ -190,6 +202,7 @@ class StorySerializer(StoryListSerializer):
             'reprint_targets',
         )
 
+    @extend_schema_field(FeatureObjectSerializer(many=True))
     def get_feature_object(self, obj):
         """Return selected feature names with parent Feature identities."""
         feature_names = getattr(obj, 'active_feature_name_list', None)
@@ -204,6 +217,7 @@ class StorySerializer(StoryListSerializer):
             )
         return FeatureObjectSerializer(feature_names, many=True).data
 
+    @extend_schema_field(StoryFeatureLogoSerializer(many=True))
     def get_feature_logo(self, obj):
         """Return structured feature-logo references for the story."""
         logos = getattr(obj, 'active_feature_logo_list', None)
@@ -212,8 +226,9 @@ class StorySerializer(StoryListSerializer):
                 'sort_name',
                 'id',
             )
-        return FeatureLogoSerializer(logos, many=True).data
+        return StoryFeatureLogoSerializer(logos, many=True).data
 
+    @extend_schema_field(StoryCreditSerializer(many=True))
     def get_credits(self, obj):
         """Return structured creator credits for the story."""
         return collect_story_credit_entries(
@@ -221,6 +236,7 @@ class StorySerializer(StoryListSerializer):
             prefetched_attr='active_credit_list',
         )
 
+    @extend_schema_field(StoryCharacterAppearanceSerializer(many=True))
     def get_characters(self, obj):
         """Return structured character appearances for the story."""
         appearances = getattr(obj, 'active_character_list', None)
@@ -248,6 +264,7 @@ class StorySerializer(StoryListSerializer):
             for appearance in appearances
         ]
 
+    @extend_schema_field(LegacyTextCreditsSerializer)
     def get_text_credits(self, obj):
         """Return legacy plain-text credit fields grouped by role."""
         return {
@@ -255,6 +272,7 @@ class StorySerializer(StoryListSerializer):
             for credit_field in LEGACY_CREDIT_FIELDS
         }
 
+    @extend_schema_field(StoryReprintReferenceSerializer(many=True))
     def get_reprint_origins(self, obj):
         """Return reprints of source material into this story."""
         reprints = getattr(obj, 'active_reprint_origin_list', None)
@@ -267,6 +285,7 @@ class StorySerializer(StoryListSerializer):
             )
         return [_reprint_reference(reprint) for reprint in reprints]
 
+    @extend_schema_field(StoryReprintReferenceSerializer(many=True))
     def get_reprint_targets(self, obj):
         """Return reprints whose target includes this story."""
         reprints = getattr(obj, 'active_reprint_target_list', None)

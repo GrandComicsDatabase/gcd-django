@@ -108,10 +108,9 @@ class V2DeltaPageNumberPagination(V2PageNumberPagination):
         """Document that delta pages may omit an exact count."""
         paginated = super().get_paginated_response_schema(schema)
         paginated['properties']['count'] = {
-            'anyOf': [
-                {'type': 'integer', 'example': 123},
-                {'type': 'null'},
-            ],
+            'type': 'integer',
+            'nullable': True,
+            'example': 123,
             'description': (
                 'Exact total result count. Delta-style sync responses may '
                 'return null to avoid an expensive count.'

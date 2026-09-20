@@ -7,6 +7,7 @@ import django_filters
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import Universe
@@ -23,7 +24,7 @@ class UniverseFilterSet(TimestampFilterSet):
         field_name='designation',
         lookup_expr='icontains',
     )
-    multiverse = django_filters.NumberFilter(field_name='verse_id')
+    multiverse = IntegerFilter(field_name='verse_id')
 
     class Meta:
         """FilterSet metadata for universe filtering."""

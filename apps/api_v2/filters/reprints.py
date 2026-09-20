@@ -3,10 +3,9 @@
 
 """django-filter configuration for v2 reprint endpoints."""
 
-import django_filters
-
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import Reprint
@@ -15,14 +14,14 @@ from apps.gcd.models import Reprint
 class ReprintFilterSet(TimestampFilterSet):
     """Filters for reprint list endpoints."""
 
-    origin_issue = django_filters.NumberFilter(field_name='origin_issue_id')
-    target_issue = django_filters.NumberFilter(field_name='target_issue_id')
-    origin_story = django_filters.NumberFilter(field_name='origin_id')
-    target_story = django_filters.NumberFilter(field_name='target_id')
-    origin_issue__series = django_filters.NumberFilter(
+    origin_issue = IntegerFilter(field_name='origin_issue_id')
+    target_issue = IntegerFilter(field_name='target_issue_id')
+    origin_story = IntegerFilter(field_name='origin_id')
+    target_story = IntegerFilter(field_name='target_id')
+    origin_issue__series = IntegerFilter(
         field_name='origin_issue__series_id',
     )
-    target_issue__series = django_filters.NumberFilter(
+    target_issue__series = IntegerFilter(
         field_name='target_issue__series_id',
     )
 

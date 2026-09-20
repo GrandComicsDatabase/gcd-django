@@ -3,8 +3,13 @@
 
 """Serializers for v2 reprint endpoints."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import (
+    ReprintIssueReferenceSerializer,
+    StoryReferenceSerializer,
+)
 from apps.gcd.models import Reprint
 
 
@@ -50,18 +55,22 @@ class ReprintSerializer(serializers.ModelSerializer):
             'modified',
         )
 
+    @extend_schema_field(StoryReferenceSerializer(allow_null=True))
     def get_origin_story(self, obj):
         """Return the nullable origin story reference."""
         return _story_reference(obj.origin)
 
+    @extend_schema_field(ReprintIssueReferenceSerializer)
     def get_origin_issue(self, obj):
         """Return the origin issue reference."""
         return _issue_reference(obj.origin_issue)
 
+    @extend_schema_field(StoryReferenceSerializer(allow_null=True))
     def get_target_story(self, obj):
         """Return the nullable target story reference."""
         return _story_reference(obj.target)
 
+    @extend_schema_field(ReprintIssueReferenceSerializer)
     def get_target_issue(self, obj):
         """Return the target issue reference."""
         return _issue_reference(obj.target_issue)

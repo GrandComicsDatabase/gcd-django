@@ -39,6 +39,14 @@ from apps.api_v2.throttling import (
     V2TokenUserRateThrottle,
 )
 
+V2_SCHEMA_DESCRIPTION = """Grand Comics Database public read-only API.
+
+Authentication is optional. Anonymous clients are limited to 30 requests per
+hour. Authenticated clients using Basic, Token, or session authentication are
+limited to 2,000 requests per day. Obtain a token by posting a username and
+password to `/api/v2/auth/token/`.
+"""
+
 
 class V2CrossCuttingViewMixin:
     """Pin auth, permission and throttling for cross-cutting v2 views."""
@@ -87,6 +95,9 @@ urlpatterns = [
                     'apps.api_v2.utils.spectacular.v2_endpoints_only',
                 ],
                 'TITLE': 'GCD API v2',
+                'DESCRIPTION': V2_SCHEMA_DESCRIPTION,
+                'VERSION': '2.0.0',
+                'COMPONENT_SPLIT_REQUEST': True,
             },
         ),
         name='api-v2-schema',

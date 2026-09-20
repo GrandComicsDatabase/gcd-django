@@ -3,8 +3,13 @@
 
 """Serializers for v2 creator endpoints."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import (
+    IdNameReferenceSerializer,
+    PartialDateSerializer,
+)
 from apps.gcd.models import (
     Creator,
     CreatorNameDetail,
@@ -85,7 +90,7 @@ class CreatorAwardSerializer(serializers.Serializer):
     """Serialize trimmed received-award rows."""
 
     id = serializers.IntegerField()
-    award = serializers.DictField(allow_null=True)
+    award = IdNameReferenceSerializer(allow_null=True)
     name = serializers.CharField()
     year = serializers.IntegerField(allow_null=True)
 
@@ -117,10 +122,12 @@ class BaseCreatorSerializer(serializers.ModelSerializer):
             'modified',
         )
 
+    @extend_schema_field(PartialDateSerializer(allow_null=True))
     def get_birth_date(self, obj):
         """Return the creator birth date in locked partial-date form."""
         return serialize_partial_date(obj.birth_date)
 
+    @extend_schema_field(PartialDateSerializer(allow_null=True))
     def get_death_date(self, obj):
         """Return the creator death date in locked partial-date form."""
         return serialize_partial_date(obj.death_date)
@@ -146,6 +153,7 @@ class CreatorSerializer(BaseCreatorSerializer):
             'awards',
         )
 
+    @extend_schema_field(CreatorNameDetailSerializer(many=True))
     def get_name_details(self, obj):
         """Return ordered non-deleted alternate names for the creator."""
         name_details = getattr(obj, 'active_name_detail_list', None)
@@ -156,6 +164,7 @@ class CreatorSerializer(BaseCreatorSerializer):
             )
         return CreatorNameDetailSerializer(name_details, many=True).data
 
+    @extend_schema_field(CreatorSignatureSerializer(many=True))
     def get_signatures(self, obj):
         """Return ordered non-deleted signature rows for the creator."""
         signatures = getattr(obj, 'active_signature_list', None)
@@ -166,6 +175,7 @@ class CreatorSerializer(BaseCreatorSerializer):
             )
         return CreatorSignatureSerializer(signatures, many=True).data
 
+    @extend_schema_field(CreatorAwardSerializer(many=True))
     def get_awards(self, obj):
         """Return ordered non-deleted received-award rows for the creator."""
         awards = getattr(obj, 'active_award_list', None)

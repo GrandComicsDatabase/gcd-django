@@ -3,8 +3,10 @@
 
 """Serializers for v2 issue endpoints."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import IdNameReferenceSerializer
 from apps.api_v2.utils.credits import collect_credit_strings
 from apps.gcd.models import Issue, Story
 
@@ -65,7 +67,7 @@ def _cover_url(issue):
     return f'{cover.get_base_url()}/w400/{cover.id}.jpg'
 
 
-class StorySerializer(serializers.ModelSerializer):
+class IssueStorySerializer(serializers.ModelSerializer):
     """Serialize nested stories on issue detail responses."""
 
     type = serializers.SerializerMethodField()
@@ -107,6 +109,7 @@ class StorySerializer(serializers.ModelSerializer):
             'keywords',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer)
     def get_type(self, obj):
         """Return the minimal nested story type reference."""
         return {
@@ -114,6 +117,7 @@ class StorySerializer(serializers.ModelSerializer):
             'name': obj.type.name,
         }
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_script(self, obj):
         """Return story script credits as plain-text entries."""
         return collect_credit_strings(
@@ -122,6 +126,7 @@ class StorySerializer(serializers.ModelSerializer):
             prefetched_attr='active_credit_list',
         )
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_pencils(self, obj):
         """Return story pencil credits as plain-text entries."""
         return collect_credit_strings(
@@ -130,6 +135,7 @@ class StorySerializer(serializers.ModelSerializer):
             prefetched_attr='active_credit_list',
         )
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_inks(self, obj):
         """Return story ink credits as plain-text entries."""
         return collect_credit_strings(
@@ -138,6 +144,7 @@ class StorySerializer(serializers.ModelSerializer):
             prefetched_attr='active_credit_list',
         )
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_colors(self, obj):
         """Return story color credits as plain-text entries."""
         return collect_credit_strings(
@@ -146,6 +153,7 @@ class StorySerializer(serializers.ModelSerializer):
             prefetched_attr='active_credit_list',
         )
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_letters(self, obj):
         """Return story lettering credits as plain-text entries."""
         return collect_credit_strings(
@@ -154,6 +162,7 @@ class StorySerializer(serializers.ModelSerializer):
             prefetched_attr='active_credit_list',
         )
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_editing(self, obj):
         """Return story editing credits as plain-text entries."""
         return collect_credit_strings(
@@ -172,7 +181,7 @@ class IssueListSerializer(serializers.ModelSerializer):
     indicia_publisher = serializers.SerializerMethodField()
     brand_emblems = serializers.SerializerMethodField()
     variant_of = serializers.IntegerField(
-        source='variant_of_id', read_only=True
+        source='variant_of_id', read_only=True, allow_null=True
     )
     keywords = serializers.SlugRelatedField(
         many=True,
@@ -213,6 +222,7 @@ class IssueListSerializer(serializers.ModelSerializer):
             'cover_url',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer)
     def get_series(self, obj):
         """Return the minimal nested series reference."""
         return {
@@ -220,10 +230,11 @@ class IssueListSerializer(serializers.ModelSerializer):
             'name': obj.series.name,
         }
 
-    def get_descriptor(self, obj):
+    def get_descriptor(self, obj) -> str:
         """Return the full issue descriptor."""
         return _full_descriptor(obj)
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
     def get_editing_credits(self, obj):
         """Return issue editing credits as plain-text entries."""
         return collect_credit_strings(
@@ -232,6 +243,7 @@ class IssueListSerializer(serializers.ModelSerializer):
             prefetched_attr='active_credit_list',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer(allow_null=True))
     def get_indicia_publisher(self, obj):
         """Return the minimal nested indicia publisher reference."""
         if obj.indicia_publisher_id is None:
@@ -241,6 +253,7 @@ class IssueListSerializer(serializers.ModelSerializer):
             'name': obj.indicia_publisher.name,
         }
 
+    @extend_schema_field(IdNameReferenceSerializer(many=True))
     def get_brand_emblems(self, obj):
         """Return nested brand emblem references sorted by name."""
         return [
@@ -251,7 +264,7 @@ class IssueListSerializer(serializers.ModelSerializer):
             )
         ]
 
-    def get_cover_url(self, obj):
+    def get_cover_url(self, obj) -> str:
         """Return the first available cover URL."""
         return _cover_url(obj)
 
@@ -266,9 +279,10 @@ class IssueDetailSerializer(IssueListSerializer):
 
         fields = IssueListSerializer.Meta.fields + ('stories',)
 
+    @extend_schema_field(IssueStorySerializer(many=True))
     def get_stories(self, obj):
         """Return nested active stories for the issue detail response."""
         stories = getattr(obj, 'active_story_list', None)
         if stories is None:
             stories = obj.active_stories().order_by('sequence_number', 'id')
-        return StorySerializer(stories, many=True).data
+        return IssueStorySerializer(stories, many=True).data

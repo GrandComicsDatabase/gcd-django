@@ -3,8 +3,10 @@
 
 """Serializers for v2 group endpoints."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import IdNameReferenceSerializer
 from apps.gcd.models import Group, GroupMembership, GroupNameDetail
 
 
@@ -64,6 +66,7 @@ class GroupSerializer(serializers.ModelSerializer):
             'modified',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer(allow_null=True))
     def get_universe(self, obj):
         """Return the minimal nested universe reference."""
         if obj.universe_id is None:
@@ -73,6 +76,7 @@ class GroupSerializer(serializers.ModelSerializer):
             'name': obj.universe.display_name,
         }
 
+    @extend_schema_field(GroupNameDetailSerializer(many=True))
     def get_name_details(self, obj):
         """Return ordered non-deleted alternate names for the group."""
         name_details = getattr(obj, 'active_name_detail_list', None)
@@ -83,6 +87,7 @@ class GroupSerializer(serializers.ModelSerializer):
             )
         return GroupNameDetailSerializer(name_details, many=True).data
 
+    @extend_schema_field(GroupMemberSerializer(many=True))
     def get_members(self, obj):
         """Return unique trimmed character references for the group."""
         memberships = getattr(obj, 'active_member_link_list', None)

@@ -7,6 +7,7 @@ import django_filters
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     LanguageCodeFilter,
     TimestampFilterSet,
 )
@@ -29,7 +30,7 @@ class CharacterFilterSet(TimestampFilterSet):
         lookup_expr='lte',
     )
     language = LanguageCodeFilter(field_name='language')
-    universe = django_filters.NumberFilter(field_name='universe_id')
+    universe = IntegerFilter(field_name='universe_id')
 
     class Meta:
         """FilterSet metadata for character filtering."""
