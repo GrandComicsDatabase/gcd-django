@@ -21,9 +21,11 @@ Edit Covers :: {{ issue }}
   <button><input class="btn-blue-editing" type="submit" value="Add variant issue with new cover"></button>
 </form>
     {% endif %}
+    {% if not issue.variant_of or issue.variant_cover_status > 1 %}
 <form action="{% url 'upload_cover' issue_id=issue.id %}" method="GET">
   <button><input class="btn-blue-editing" type="submit" value="Add additional cover (dust jacket, flip cover)"></button>
 </form>
+    {% endif %}
   {% endif %}
 
 <div>

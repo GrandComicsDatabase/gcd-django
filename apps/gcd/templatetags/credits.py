@@ -173,7 +173,7 @@ def show_credit(story, credit, tailwind=False, bare_value=False):
                                                        character_string,
                                                        tailwind=tailwind)
 
-            if story.feature or story.feature_object.count():
+            if story.feature or story.feature_name.count():
                 feature_string = story.show_feature_as_text()
                 search = icu.StringSearch(target.lower(),
                                           feature_string.lower(),
@@ -185,8 +185,8 @@ def show_credit(story, credit, tailwind=False, bare_value=False):
         return formatted_credit
     elif credit == 'genre':
         genres = story.genre.lower()
-        for feature in story.feature_object.all():
-            for genre in feature.genre.split(';'):
+        for feature in story.feature_name.all():
+            for genre in feature.feature.genre.split(';'):
                 genre = genre.strip()
                 if genre not in genres:
                     if genres == '':

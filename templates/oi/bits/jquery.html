@@ -15,3 +15,6 @@ document.write(unescape("%3Cscript src='{% static "js/details-element-polyfill.j
 }
 {% endif %}
 </script>
+{# Detect Cloudflare challenges returned to AJAX form controls. #}
+<script type="text/javascript"
+        src="{% static 'js/cloudflare_challenge.js' %}"></script>

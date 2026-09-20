@@ -405,9 +405,6 @@ $(function() {
         migrate_button.removeClass('btn-blue-disabled px-2 py-1');
         migrate_button.addClass('btn-blue-editing');
     });
-
-    // Add brand emblem images
-    $("#id_brand").msDropDown({addToWidth: $("#id_brand").addToOptionWidth()});
 });
 
 $(document).on('change', 'input[type=checkbox]', function () {

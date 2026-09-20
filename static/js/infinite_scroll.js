@@ -20,9 +20,9 @@ const attachInfiniteScroll = (sentinel, scrollElement, baseUrl, addUrl, directio
 
     if (!end && bottomEntry.intersectionRatio > 0) {
       if (direction < 0){
-        var url = `${baseUrl}${addUrl}-${counter + 1}`;
+        var url = `${baseUrl}${addUrl}-${counter + 1}/`;
       } else {
-        var url = `${baseUrl}${addUrl}${counter + 1}`;
+        var url = `${baseUrl}${addUrl}${counter + 1}/`;
       }
       let req = await fetch(url);
 
@@ -43,4 +43,3 @@ const attachInfiniteScroll = (sentinel, scrollElement, baseUrl, addUrl, directio
   })
   observer.observe(sentinel);
 };
-

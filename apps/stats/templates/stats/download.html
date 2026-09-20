@@ -3,13 +3,6 @@
 
 {% block title %}GCD Data Dumps{% endblock %}
 
-{% block css %}
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/gcd/default.css" %}"/>
-<link rel="stylesheet" type="text/css"
-      href="{% static "css/oi/default.css" %}"/>
-{% endblock %}
-
 {% block view_body %}
 
 <h2> Data License </h2>
@@ -22,24 +15,24 @@ license.  Private data use is not restricted.
 </p>
 <p>
 For details, please read the following Board Resolutions:
-<ul>
+<ul class="object-page-link-list ps-8 columns-1">
   <li> <a href="http://docs.comics.org/wiki/GCD_Board_Votes_-_2009#Data_License_and_proper_credit_in_derived_works">Data License (Creative Commons 3.0 Unported) and crediting guidelines</a>
   <li> <a href="http://docs.comics.org/wiki/GCD_Board_Votes_-_2010#Data_Distribution_Policy">Data distribution policy</a>
   <li> <a href="https://www.comics.org/voting/ballot/316/">Upgrade Data License to CC BY-SA 4.0</a>
 </ul>
 
 <h2>Technical and Licensing Contact Information</h2>
-<dl class="tech_contact">
+<dl class="object-page-link-list columns-1">
   <dt> <a href="mailto:contact@comics.org">contact@comics.org</a>
-  <dd> All questions about licensing and the crediting guidelines, including
+  <dd class="ps-8"> All questions about licensing and the crediting guidelines, including
        requests for alternate arrangements.
   <dt> <a href="http://groups.google.com/group/gcd-tech">gcd-tech</a>
-  <dd> A mailing list you may join to ask technical questions and keep up with
+  <dd class="ps-8"> A mailing list you may join to ask technical questions and keep up with
        the details of GCD technical work.  Please do not ask licensing / legal
        questions on this list.  It gets moderate traffic, and has public archives.
   <dt> 
 <a href="http://groups.google.com/group/gcd-tech-announce/">gcd-tech-announce</a>
-  <dd> A low-traffic announcement-only list to which you may subscribe to be
+  <dd class="ps-8"> A low-traffic announcement-only list to which you may subscribe to be
        notified of major changes in the publicly available data or its structure.
        This is the official notification channel for all clients of the data-
        changes to the dumps will not be announced on the site as they are not
@@ -72,7 +65,7 @@ If you are interested in automating a different dump format, please join
 <p>
 Data last updated:
 </p>
-<ul>
+<ul class="object-page-link-list ps-8 columns-1">
 {% for name, timestamp in timestamps %}
   <li> {{ name }}: <span class="important">{{ timestamp }}</span>
 {% endfor %}
@@ -81,9 +74,11 @@ Data last updated:
   {% csrf_token %}
   <p>
     <label for="purpose">{{ form.purpose.label }}</label>
-    {{ form.purpose }}
+    <div class="ps-4">
+        {{ form.purpose }}
+    </div>
     <label for="usage">{{ form.usage.label }}</label>
-    <div class="wide_form">
+    <div class="ps-8" >
         {{ form.usage }}
     </div>
 {% if not forms.is_valid %}
@@ -93,14 +88,16 @@ Data last updated:
     {{ form.non_field_errors }}
   {% endif %}
 {% endif %}
+<div class="ps-4">
     {{ form.accept_license }}
-    <label for="accept_license" class="instructions">
+    <label for="accept_license">
       {{ form.accept_license.label }}
     </label>
   </p>
-  <input type="submit" name="mysqldump" value="Download MySQL Dump">
-  <input type="submit" name="name-value" value="Download Name-Value Dump">
-  <input type="submit" name="sqlite" value="Download SQLite Dump">
+</div>
+  <button><input class="btn-blue-editing" type="submit" name="mysqldump" value="Download MySQL Dump"></button>
+  <button><input class="btn-blue-editing" type="submit" name="name-value" value="Download Name-Value Dump"></button>
+  <button><input class="btn-blue-editing" type="submit" name="sqlite" value="Download SQLite Dump"></button>
 </form>
 {% endblock %}
 

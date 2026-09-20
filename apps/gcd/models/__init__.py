@@ -18,7 +18,7 @@ from .story import StoryType, Story, CreditType, StoryCredit, BiblioEntry,\
                    STORY_TYPES, OLD_TYPES, NON_OPTIONAL_TYPES, CREDIT_TYPES, \
                    DEPRECATED_TYPES, CORE_TYPES, AD_TYPES
 from .feature import (Feature, FeatureLogo, FeatureType, FeatureRelation,
-                      FeatureRelationType)
+                      FeatureRelationType, FeatureNameDetail)
 from .character import (Character, CharacterNameDetail, CharacterRelationType,
                         CharacterRelation, Group, GroupNameDetail,
                         GroupRelation, GroupRelationType, GroupMembership,
@@ -26,7 +26,7 @@ from .character import (Character, CharacterNameDetail, CharacterRelationType,
 from .cover import Cover
 from .reprint import Reprint
 from .seriesbond import SeriesBondType, SeriesBond, BOND_TRACKING, \
-                        SUBNUMBER_TRACKING, MERGE_TRACKING
+                        SUBNUMBER_TRACKING, MERGE_TRACKING, REBOOT_TRACKING
 from .image import ImageType, Image
 from .creator import CreatorArtInfluence, Creator, CreatorDegree, \
                     CreatorNameDetail, CreatorSignature, CreatorSchool,\

@@ -24,7 +24,7 @@ from apps.gcd.models import Publisher, IndiciaPublisher, Brand, BrandGroup, \
                             Character, Group, CharacterRelation, \
                             GroupRelation, GroupMembership, Universe, \
                             INDEXED, SeriesBond, BOND_TRACKING, \
-                            SUBNUMBER_TRACKING, MERGE_TRACKING
+                            SUBNUMBER_TRACKING, MERGE_TRACKING, REBOOT_TRACKING
 from apps.gcd.views.covers import get_image_tag
 
 register = template.Library()
@@ -230,7 +230,9 @@ def show_series_tracking(series):
         if srbond.bond.bond_type.id == SUBNUMBER_TRACKING:
             tracking_line += '<li> subnumbering continues '
         elif srbond.bond.bond_type.id in MERGE_TRACKING:
-            tracking_line += '<li> merged '
+            tracking_line += '<li> merges '
+        elif srbond.bond.bond_type.id in REBOOT_TRACKING:
+            tracking_line += '<li> reboots '
         else:
             tracking_line += '<li> numbering continues '
         if (srbond.near_issue != srbond.near_issue_default):

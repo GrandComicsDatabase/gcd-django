@@ -4,9 +4,13 @@
 import mock
 import pytest
 
-from apps.gcd.models import Publisher, Series, Issue, Story, INDEXED
-from apps.oi.models import StoryRevision
-from apps.stddata.models import Country, Language
+from apps.gcd.models import (
+    Publisher, Series, Issue, Story, StoryCredit, StoryCharacter, StoryGroup,
+    Creator, CreatorNameDetail, CreditType, Character, CharacterNameDetail,
+    Group, GroupNameDetail, INDEXED)
+from apps.oi.models import (
+    StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision)
+from apps.stddata.models import Country, Language, Script
 from apps.stats.models import CountStats
 
 UPDATE_ALL = 'apps.stats.models.CountStats.objects.update_all_counts'
@@ -320,3 +324,104 @@ def test_delete_story(any_edit_story_rev, any_added_story, is_comics, old_status
                                         language=rev.issue.series.language))
     updater_mock.assert_has_calls(expected_calls, any_order=True)
     assert updater_mock.call_count == len(expected_calls)
+
+
+@pytest.mark.django_db
+def test_delete_story_resets_related_revisions(
+        any_added_story_rev, any_edit_story_rev, any_editing_changeset,
+        any_language):
+    story = any_edit_story_rev.story
+    approved_changeset = any_added_story_rev.changeset
+
+    creator = Creator.objects.create(
+      gcd_official_name='Test Creator', birth_province='', birth_city='',
+      death_province='', death_city='', bio='', notes='')
+    script = Script.objects.create(code='Tst', number=999,
+                                   name='Test Script')
+    creator_name = CreatorNameDetail.objects.create(
+      name='Test Creator', creator=creator, is_official_name=True,
+      in_script=script)
+    credit_type = CreditType.objects.create(name='test credit', sort_code=999)
+    credit = StoryCredit.objects.create(
+      story=story, creator=creator_name, credit_type=credit_type,
+      signed_as='', credited_as='', sourced_by='', credit_name='')
+    StoryCreditRevision.objects.create(
+      changeset=approved_changeset, story_revision=any_added_story_rev,
+      story_credit=credit, creator=creator_name, credit_type=credit_type)
+    credit_revision = StoryCreditRevision.clone(
+      credit, any_editing_changeset, story_revision=any_edit_story_rev)
+    credit_revision.uncertain = True
+    credit_revision.save()
+    added_credit_revision = StoryCreditRevision.objects.create(
+      changeset=any_editing_changeset, story_revision=any_edit_story_rev,
+      creator=creator_name, credit_type=credit_type)
+
+    character = Character.objects.create(
+      name='Test Character', disambiguation='', language=any_language,
+      description='', notes='')
+    character_name = CharacterNameDetail.objects.create(
+      name='Test Character', character=character, is_official_name=True)
+    group = Group.objects.create(
+      name='Test Group', disambiguation='', language=any_language,
+      description='', notes='')
+    group_name = GroupNameDetail.objects.create(
+      name='Test Group', group=group, is_official_name=True)
+
+    story_character = StoryCharacter.objects.create(
+      story=story, character=character_name, notes='original character notes')
+    story_character.group_name.add(group_name)
+    previous_character_revision = StoryCharacterRevision.objects.create(
+      changeset=approved_changeset, story_revision=any_added_story_rev,
+      story_character=story_character, character=character_name,
+      notes='original character notes')
+    previous_character_revision.group_name.add(group_name)
+    character_revision = StoryCharacterRevision.clone(
+      story_character, any_editing_changeset,
+      story_revision=any_edit_story_rev)
+    character_revision.notes = 'changed character notes'
+    character_revision.save()
+    character_revision.group_name.clear()
+    added_character_revision = StoryCharacterRevision.objects.create(
+      changeset=any_editing_changeset, story_revision=any_edit_story_rev,
+      character=character_name)
+
+    story_group = StoryGroup.objects.create(
+      story=story, group_name=group_name, notes='original group notes')
+    StoryGroupRevision.objects.create(
+      changeset=approved_changeset, story_revision=any_added_story_rev,
+      story_group=story_group, group_name=group_name,
+      notes='original group notes')
+    group_revision = StoryGroupRevision.clone(
+      story_group, any_editing_changeset, story_revision=any_edit_story_rev)
+    group_revision.notes = 'changed group notes'
+    group_revision.save()
+    added_group_revision = StoryGroupRevision.objects.create(
+      changeset=any_editing_changeset, story_revision=any_edit_story_rev,
+      group_name=group_name)
+
+    any_edit_story_rev.toggle_deleted()
+
+    credit_revision.refresh_from_db()
+    character_revision.refresh_from_db()
+    group_revision.refresh_from_db()
+    assert credit_revision.deleted is True
+    assert character_revision.deleted is True
+    assert group_revision.deleted is True
+
+    any_edit_story_rev._pre_delete({})
+    any_edit_story_rev._reset_values()
+
+    for revision in (added_credit_revision, added_character_revision,
+                     added_group_revision):
+        assert not type(revision).objects.filter(pk=revision.pk).exists()
+
+    credit_revision.refresh_from_db()
+    character_revision.refresh_from_db()
+    group_revision.refresh_from_db()
+    assert credit_revision.deleted is True
+    assert character_revision.deleted is True
+    assert group_revision.deleted is True
+    assert credit_revision.uncertain is False
+    assert character_revision.notes == 'original character notes'
+    assert list(character_revision.group_name.all()) == [group_name]
+    assert group_revision.notes == 'original group notes'

@@ -5,6 +5,7 @@ from haystack.forms import FacetedSearchForm
 from haystack.views import search_view_factory
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
      GcdSearchQuerySet
+from apps.gcd.views.health import health
 
 from apps.gcd import views as gcd_views
 import apps.gcd.views.search
@@ -25,6 +26,7 @@ urlpatterns = [
     # or else it will never be used because the shorter form will always match.
     ###########################################################################
 
+    path('health/', health, name='health'),
     path('', gcd_views.index, name='home'),
     path('search/', gcd_views.search.search, name='basic_search'),
     path('search/advanced/', gcd_views.search.advanced_search,
@@ -420,8 +422,12 @@ urlpatterns = [
      gcd_views.search.feature_by_name, name='feature_by_name'),
     path('feature/search/',
          gcd_views.search.feature_search_hx, name='feature_search_hx'),
+    path('feature_name/<int:feature_name_id>/issues/',
+      gcd_views.details.feature_name_issues, name='feature_name_issues'),
     path('feature_logo/<int:feature_logo_id>/issues/',
-      gcd_views.details.feature_logo_issuelist_by_id, name='feature_logo_issuelist_by_id'),
+      gcd_views.details.feature_logo_issues, name='feature_logo_issues'),
+    path('feature_logo/<int:feature_logo_id>/feature/<int:feature_id>/issues/',
+      gcd_views.details.feature_logo_feature_issues, name='feature_logo_feature_issues'),
     path('feature_logo/<int:feature_logo_id>/sequences/',
       gcd_views.details.feature_logo_sequences, name='feature_logo_sequences'),
     path('feature_logo/<int:feature_logo_id>/',

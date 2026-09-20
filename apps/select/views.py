@@ -23,7 +23,8 @@ from taggit.models import Tag
 
 from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             Creator, CreatorNameDetail, CreatorSignature, \
-                            Feature, FeatureLogo, IndiciaPrinter, School, \
+                            Feature, FeatureNameDetail, FeatureLogo, \
+                            IndiciaPrinter, School, \
                             Character, CharacterNameDetail, Group, \
                             GroupNameDetail, Universe, StoryArc, Brand, \
                             BrandGroup, \
@@ -31,6 +32,10 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
 from apps.stddata.models import Country, Language
 from apps.gcd.templatetags.credits import get_native_language_name
 from apps.gcd.views import paginate_response
+from apps.gcd.models.issue import IssuePublisherTable
+from apps.gcd.models.publisher import PublisherSearchTable
+from apps.gcd.models.series import SeriesPublisherTable
+from apps.gcd.models.story import StoryTable
 from apps.indexer.views import render_error
 from apps.select.forms import get_select_cache_form, get_select_search_form
 
@@ -72,7 +77,8 @@ def get_select_data(request, select_key):
 
 
 def get_select_forms(request, initial, data, publisher=False,
-                     series=False, issue=False, story=False, cover=False):
+                     series=False, issue=False, story=False, cover=False,
+                     exclude_issue_id=None):
     if issue:
         cached_issues = get_cached_issues(request)
     else:
@@ -98,7 +104,8 @@ def get_select_forms(request, initial, data, publisher=False,
 
     cache_form = get_select_cache_form(cached_issues=cached_issues,
                                        cached_stories=cached_stories,
-                                       cached_covers=cached_covers)()
+                                       cached_covers=cached_covers,
+                                       exclude_issue_id=exclude_issue_id)()
 
     return search_form, cache_form
 
@@ -167,12 +174,14 @@ def process_select_search(request, select_key):
     series = data.get('series', False)
     issue = data.get('issue', False)
     story = data.get('story', False)
+    cover = data.get('cover', False)
     if 'search_series' in request.GET:
         issue = False
     search_form = get_select_search_form(search_publisher=publisher,
                                          search_series=series,
                                          search_issue=issue,
-                                         search_story=story)(request.GET)
+                                         search_story=story,
+                                         search_cover=cover)(request.GET)
     if not search_form.is_valid():
         return HttpResponseRedirect(
           urlresolvers.reverse('select_object',
@@ -185,23 +194,28 @@ def process_select_search(request, select_key):
     else:
         select_issue = False
 
+    publisher_name = cd.get('publisher') or '?'
+    series_name = cd.get('series') or ''
+    number = cd.get('number') or ''
+    year = cd.get('year') or ''
+
     if 'search_story' in request.GET or 'search_cover' in request.GET:
         search = Story.objects.filter(
-          issue__number=cd['number'],
+          issue__number=number,
           deleted=False,
-          issue__series__name__icontains=cd['series'],
-          issue__series__publisher__name__icontains=cd['publisher'])
-        publisher = cd['publisher'] if cd['publisher'] else '?'
-        if cd['year']:
-            search = search.filter(issue__series__year_began=cd['year'])
-            heading = '%s (%s, %d series) #%s' % (cd['series'],
-                                                  publisher,
-                                                  cd['year'],
-                                                  cd['number'])
+          issue__series__name__icontains=series_name,
+          issue__series__publisher__name__icontains=cd['publisher']) \
+            .select_related('issue__series__publisher', 'type')
+        if year:
+            search = search.filter(issue__series__year_began=year)
+            heading = '%s (%s, %d series) #%s' % (series_name,
+                                                  publisher_name,
+                                                  year,
+                                                  number)
         else:
-            heading = '%s (%s, ? series) #%s' % (cd['series'],
-                                                 publisher,
-                                                 cd['number'])
+            heading = '%s (%s, ? series) #%s' % (series_name,
+                                                 publisher_name,
+                                                 number)
         if cd['sequence_number']:
             search = search.filter(sequence_number=cd['sequence_number'])
             heading += ', seq.# ' + str(cd['sequence_number'])
@@ -213,70 +227,85 @@ def process_select_search(request, select_key):
         else:
             base_name = 'stor'
             plural_suffix = 'y,ies'
-        template = 'gcd/search/content_list.html'
         heading = 'Search for: ' + heading
         search = search.order_by("issue__series__name",
                                  "issue__series__year_began",
                                  "issue__key_date",
                                  "sequence_number")
+        table_format = StoryTable
+        order_by = 'issue'
+        select_target = 'story'
     elif 'search_issue' in request.GET:
         search = Issue.objects.filter(
-          number=cd['number'],
+          number=number,
           deleted=False,
-          series__name__icontains=cd['series'],
-          series__publisher__name__icontains=cd['publisher'])
-        publisher = cd['publisher'] if cd['publisher'] else '?'
-        if cd['year']:
-            search = search.filter(series__year_began=cd['year'])
-            heading = '%s (%s, %d series) #%s' % (cd['series'], publisher,
-                                                  cd['year'], cd['number'])
+          series__name__icontains=series_name,
+          series__publisher__name__icontains=cd['publisher']) \
+            .select_related('series__publisher')
+        if year:
+            search = search.filter(series__year_began=year)
+            heading = '%s (%s, %d series) #%s' % (series_name, publisher_name,
+                                                  year, number)
         else:
-            heading = '%s (%s, ? series) #%s' % (cd['series'], publisher,
-                                                 cd['number'])
+            heading = '%s (%s, ? series) #%s' % (series_name, publisher_name,
+                                                 number)
         heading = 'matching search for: ' + heading
-        template = 'gcd/search/issue_list.html'
         base_name = 'issue'
         plural_suffix = 's'
         search = search.order_by("series__name", "series__year_began",
                                  "key_date")
+        table_format = IssuePublisherTable
+        order_by = 'issue'
+        select_target = 'issue'
     elif 'search_series' in request.GET:
         search = Series.objects.filter(
           deleted=False,
-          name__icontains=cd['series'],
-          publisher__name__icontains=cd['publisher'])
-        heading = 'Series search for: ' + cd['series']
-        if cd['year']:
-            search = search.filter(year_began=cd['year'])
-            heading = '%s (%s, %d series)' % (cd['series'], publisher,
-                                              cd['year'])
-        template = 'gcd/search/series_list.html'
+          name__icontains=series_name,
+          publisher__name__icontains=cd['publisher']) \
+            .select_related('publisher', 'country', 'language')
+        heading = 'Series search for: ' + series_name
+        if year:
+            search = search.filter(year_began=year)
+            heading = '%s (%s, %d series)' % (series_name, publisher_name,
+                                              year)
         base_name = 'series'
         plural_suffix = ''
         search = search.order_by("name")
+        table_format = SeriesPublisherTable
+        order_by = 'name'
+        select_target = 'series'
     elif 'search_publisher' in request.GET:
         search = Publisher.objects.filter(deleted=False,
-                                          name__icontains=cd['publisher'])
+                                          name__icontains=cd['publisher']) \
+            .select_related('country')
         heading = 'matching search for: ' + cd['publisher']
-        template = 'gcd/search/publisher_list.html'
         base_name = 'publisher'
         plural_suffix = 's'
         search = search.order_by("name")
+        table_format = PublisherSearchTable
+        order_by = 'name'
+        select_target = 'publisher'
 
+    from apps.gcd.views.details import generic_sortable_list
+    table = table_format(
+        search,
+        template_name='gcd/bits/tw_sortable_table.html',
+        order_by=order_by)
     context = {
       'item_name': base_name,
       'plural_suffix': plural_suffix,
-      'items': search,
       'heading': heading,
       'select_key': select_key,
-      'select_issue': select_issue,
+      'select_target': select_target,
+      'select_issue': select_issue and select_target == 'story',
       'no_bulk_edit': True,
-      'query_string': request.META['QUERY_STRING'],
-      'publisher': cd['publisher'] if cd['publisher'] else '',
-      'series': cd['series'] if 'series' in cd and cd['series'] else '',
-      'year': cd['year'] if 'year' in cd and cd['year'] else '',
-      'number': cd['number'] if 'number' in cd and cd['number'] else ''
+      'publisher': cd.get('publisher') or '',
+      'series': series_name,
+      'year': year,
+      'number': number
     }
-    return paginate_response(request, search, template, context)
+    return generic_sortable_list(
+        request, search, table, 'gcd/search/tw_list_sortable.html', context)
 
 
 @permission_required('indexer.can_reserve')
@@ -297,6 +326,9 @@ def select_object(request, select_key):
         issue = data.get('issue', False)
         story = data.get('story', False)
         cover = data.get('cover', False)
+        exclude_issue_id = data.get('exclude_issue_id')
+        disabled_choice_title = data.get('disabled_choice_title', '')
+        disabled_choice_help = data.get('disabled_choice_help', '')
         search_form, cache_form = get_select_forms(request,
                                                    initial,
                                                    request_data,
@@ -304,12 +336,16 @@ def select_object(request, select_key):
                                                    series=series,
                                                    issue=issue,
                                                    story=story,
-                                                   cover=cover)
+                                                   cover=cover,
+                                                   exclude_issue_id=(
+                                                     exclude_issue_id))
         haystack_form = FacetedSearchForm()
         return render(request, 'select/select_object.html',
                       {'heading': data['heading'],
                        'select_key': select_key,
                        'cache_form': cache_form,
+                       'disabled_choice_title': disabled_choice_title,
+                       'disabled_choice_help': disabled_choice_help,
                        'search_form': search_form,
                        'haystack_form': haystack_form,
                        'publisher': publisher,
@@ -623,6 +659,36 @@ class FeatureAutocomplete(LoginRequiredMixin,
         return qs
 
 
+class FeatureNameAutocomplete(LoginRequiredMixin,
+                              autocomplete.Select2QuerySetView):
+    def get_queryset(self, interactive=True):
+        qs = FeatureNameDetail.objects.filter(deleted=False)
+
+        language = self.forwarded.get('language_code', None)
+        type = self.forwarded.get('type', None)
+
+        if language and language not in ['zxx', 'und']:
+            qs = qs.filter(feature__language__code__in=[language, 'zxx'])
+
+        if type:
+            type = int(type)
+            if type == STORY_TYPES['letters_page']:
+                qs = qs.filter(feature__feature_type__id=2)
+            else:
+                qs = qs.exclude(feature__feature_type__id=2)
+            if type == STORY_TYPES['in-house column']:
+                qs = qs.filter(feature__feature_type__id=4)
+            else:
+                qs = qs.exclude(feature__feature_type__id=4)
+            if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
+                qs = qs.exclude(feature__feature_type__id=3)
+
+        qs = _filter_and_sort(qs, self.q, parent_disambiguation='feature',
+                              interactive=interactive)
+
+        return qs
+
+
 class FeatureLogoAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):
     def get_result_label(self, feature_logo):
@@ -643,18 +709,19 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
         type = self.forwarded.get('type', None)
 
         if language and language not in ['zxx', 'und']:
-            qs = qs.filter(feature__language__code__in=[language, 'zxx'])
+            qs = qs.filter(feature_name__feature__language__code__in=[language,
+                                                                      'zxx'])
 
         if type:
             type = int(type)
             if type == STORY_TYPES['cover']:
                 qs = FeatureLogo.objects.none()
             elif type == STORY_TYPES['letters_page']:
-                qs = qs.filter(feature__feature_type__id=2)
+                qs = qs.filter(feature_name__feature__feature_type__id=2)
             else:
-                qs = qs.exclude(feature__feature_type__id=2)
+                qs = qs.exclude(feature_name__feature__feature_type__id=2)
             if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
-                qs = qs.exclude(feature__feature_type__id=3)
+                qs = qs.exclude(feature_name__feature__feature_type__id=3)
 
         qs = _filter_and_sort(qs, self.q)
 
@@ -1008,6 +1075,7 @@ class IssueFilter(CommonFilter):
         else:
             collections = None
         story_type_filter = kwargs.pop('story_type_filter', None)
+        language_filter = kwargs.pop('language_filter', None)
         super(IssueFilter, self).__init__(*args, **kwargs)
         if collections:
             qs = Collection.objects.filter(id__in=collections)
@@ -1016,6 +1084,8 @@ class IssueFilter(CommonFilter):
             self.form.fields.pop('collection')
         if not story_type_filter:
             self.form.fields.pop('story_type')
+        if not language_filter:
+            self.form.fields.pop('language')
 
 
 class CoverFilter(CommonFilter):
@@ -1059,6 +1129,12 @@ class SequenceFilter(CommonFilter):
         model = Issue
         fields = ['country', 'language', 'publisher', 'story_type']
 
+    def __init__(self, *args, **kwargs):
+        language_filter = kwargs.pop('language_filter', None)
+        super(SequenceFilter, self).__init__(*args, **kwargs)
+        if not language_filter:
+            self.form.fields.pop('language')
+
 
 class KeywordUsedFilter(FilterSet):
     content_type = ModelChoiceFilter(field_name='content_type',
@@ -1098,7 +1174,8 @@ def filter_series(request, series):
     return filter
 
 
-def filter_issues(request, issues, story_type_filter=False):
+def filter_issues(request, issues, story_type_filter=False,
+                  language_filter=True):
     if settings.MYCOMICS and request.user.is_authenticated:
         collections = request.user.collector.collections.all()\
                              .order_by('name').values_list('id', flat=True)
@@ -1110,9 +1187,16 @@ def filter_issues(request, issues, story_type_filter=False):
                          language='series__language',
                          publisher='series__publisher',
                          collections=collections,
-                         story_type_filter=story_type_filter
+                         story_type_filter=story_type_filter,
+                         language_filter=language_filter
                          )
-    return filter
+    issues = filter.qs
+    if not issues:
+        filter.form.fields.pop('publisher', None)
+        filter.form.fields.pop('country', None)
+        filter.form.fields.pop('language', None)
+
+    return filter, issues
 
 
 def filter_covers(request, covers):
@@ -1124,13 +1208,20 @@ def filter_covers(request, covers):
     return filter
 
 
-def filter_sequences(request, sequences):
+def filter_sequences(request, sequences, language_filter=True):
     filter = SequenceFilter(request.GET,
                             queryset=sequences,
                             country='issue__series__country',
                             language='issue__series__language',
-                            publisher='issue__series__publisher')
-    return filter
+                            publisher='issue__series__publisher',
+                            language_filter=language_filter)
+    sequences = filter.qs
+    if not sequences:
+        filter.form.fields.pop('publisher', None)
+        filter.form.fields.pop('country', None)
+        filter.form.fields.pop('language', None)
+
+    return filter, sequences
 
 
 def filter_facets(request, things, fields, size=100):

@@ -60,6 +60,7 @@ class Feature(GcdData):
     feature_type = models.ForeignKey(FeatureType, on_delete=models.CASCADE)
     year_first_published = models.IntegerField(db_index=True, null=True)
     year_first_published_uncertain = models.BooleanField(default=False)
+    description = models.TextField()
     notes = models.TextField()
     external_link = models.ManyToManyField(ExternalLink)
     keywords = TaggableManager()
@@ -71,10 +72,19 @@ class Feature(GcdData):
                bool(self.to_related_feature.all().exists())
 
     def active_logos(self):
-        return self.featurelogo_set.filter(deleted=False)
+        return FeatureLogo.objects.filter(feature_name__feature=self,
+                                          deleted=False)
 
     def active_stories(self):
-        return self.story_set.filter(deleted=False)
+        from apps.gcd.models import Story
+        return Story.objects.filter(deleted=False,
+                                    feature_name__feature_id=self.id)
+
+    def active_names(self):
+        return self.feature_names.filter(deleted=False)
+
+    def official_name(self):
+        return self.active_names().get(is_official_name=True)
 
     def translated_from(self):
         try:
@@ -124,6 +134,40 @@ class Feature(GcdData):
         return base_name
 
 
+class FeatureNameDetail(GcdData):
+    class Meta:
+        app_label = 'gcd'
+        db_table = 'gcd_feature_detail_name'
+        ordering = ('sort_name', 'feature__year_first_published')
+
+    feature = models.ForeignKey(Feature, on_delete=models.CASCADE,
+                                related_name='feature_names')
+    name = models.CharField(max_length=255, db_index=True)
+    sort_name = models.CharField(max_length=255, db_index=True,
+                                 default='')
+    is_official_name = models.BooleanField(default=False)
+
+    def get_absolute_url(self):
+        return urlresolvers.reverse(
+                'show_feature',
+                kwargs={'feature_id': self.feature_id})
+
+    def name_with_disambiguation(self):
+        extra = ''
+        if self.feature.disambiguation:
+            extra = ' [%s]' % self.feature.disambiguation
+        base_name = str('%s%s' % (self.name, extra))
+        if self.feature.feature_type.id != 1:
+            base_name += ' [%s]' % self.feature.feature_type.name[0]
+        return base_name
+
+    def __str__(self):
+        if self.feature.name == self.name:
+            return str(self.feature)
+        else:
+            return '%s - %s' % (str(self.feature), self.name)
+
+
 class FeatureLogo(GcdData):
     """
     Logos of features.
@@ -137,6 +181,9 @@ class FeatureLogo(GcdData):
 
     feature = models.ManyToManyField(Feature,
                                      db_table='gcd_feature_logo_2_feature')
+    feature_name = models.ManyToManyField(
+      FeatureNameDetail,
+      db_table='gcd_feature_logo_2_feature_name')
     name = models.CharField(max_length=255, db_index=True)
     sort_name = models.CharField(max_length=255, db_index=True)
     generic = models.BooleanField(default=False)
@@ -333,6 +380,29 @@ class FeatureLogoTable(tables.Table):
                                 attrs={'td': {'class':
                                               TW_COLUMN_ALIGN_RIGHT}})
 
+    def __init__(self, *args, **kwargs):
+        self.feature_id = kwargs.pop('feature_id')
+        super(FeatureLogoTable, self).__init__(*args, **kwargs)
+
+    def order_year_began(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'year_began',
+                                       'sort_name')
+        return (query_set, True)
+
+    def order_year_ended(self, query_set, is_descending):
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'year_ended',
+                                       'sort_name')
+        return (query_set, True)
+
+    def render_issue_count(self, record):
+        url = urlresolvers.reverse(
+            'feature_logo_feature_issues',
+            kwargs={'feature_id': self.feature_id,
+                    'feature_logo_id': record.id})
+        return mark_safe('<a href="%s">%s</a>' % (url,
+                                                  record.issue_count))
     def render_logo(self, record):
         if not settings.FAKE_IMAGES and record.logo:
             return mark_safe('<a href="%s"><img src="%s"></a>' %

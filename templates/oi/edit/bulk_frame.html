@@ -7,12 +7,6 @@
 Changing {{ object_name }}
 {% endblock %}
 
-{% block css_raw %}
-{% comment %} this css doesn't like compressing {% endcomment %}
-<link rel="stylesheet" type="text/css"
-      href="{% static 'jquery/css/msdropdown/dd.css' %}"/>
-{% endblock %}
-
 {% block view_body %}
 {% include "oi/bits/jquery.html" %}
 

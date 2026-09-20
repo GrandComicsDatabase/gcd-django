@@ -142,7 +142,15 @@ def field_value(revision, field):
         if brand_emblems:
             brand_emblems = brand_emblems[:-2]
         return mark_safe(brand_emblems)
-    elif field in ['feature_object', 'feature_logo']:
+    elif (field in ['feature', 'feature_name'] and
+          revision._meta.model_name == 'featurelogorevision'):
+        features = ''
+        for feature in value.all():
+            features += absolute_url(feature) + '; '
+        if features:
+            features = features[:-2]
+        return mark_safe(features)
+    elif field in ['feature_object', 'feature_name', 'feature_logo']:
         first = True
         features = ''
         for feature in value.all():
@@ -150,7 +158,7 @@ def field_value(revision, field):
                 first = False
             else:
                 features += '; '
-            if field == 'feature_object':
+            if field in ['feature_object', 'feature_name']:
                 features += '<a href="%s">%s</a>' % (
                   feature.get_absolute_url(),
                   esc(feature.name_with_disambiguation()))
@@ -309,23 +317,6 @@ def field_value(revision, field):
     elif field == 'creator_name':
         creator_names = "; ".join(value.all().values_list('name', flat=True))
         return creator_names
-    elif field == 'feature_object':
-        features = "; ".join(value.all().values_list('name', flat=True))
-        return features
-    elif field == 'feature_logo':
-        features = "; ".join(value.all().values_list('name', flat=True))
-        return features
-    elif field == 'indicia_printer':
-        features = "; ".join(value.all().values_list('name', flat=True))
-        return features
-    elif (field == 'feature' and
-          revision._meta.model_name == 'featurelogorevision'):
-        features = ''
-        for feature in value.all():
-            features += absolute_url(feature) + '; '
-        if features:
-            features = features[:-2]
-        return mark_safe(features)
     elif (field == 'name' and
           revision._meta.model_name == 'creatorsignaturerevision'):
         if revision.source:
@@ -354,8 +345,8 @@ def _compare_string_genre(revision):
     """
     genres = getattr(revision, "genre").lower()
     from_feature = ''
-    for feature in revision.feature_object.filter(deleted=False):
-        for genre in feature.genre.split(';'):
+    for feature in revision.feature_name.filter(deleted=False):
+        for genre in feature.feature.genre.split(';'):
             genre = genre.strip()
             if genre not in genres and genre not in from_feature:
                 if from_feature == '':

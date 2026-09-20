@@ -407,7 +407,7 @@ PUBLISHER_HELP_TEXTS = {
         '"https://", for example "https://www.example.com" not '
         '"www.example.com"', }
 
-PRINTER_HELP_TEXTS = PUBLISHER_HELP_TEXTS
+PRINTER_HELP_TEXTS = PUBLISHER_HELP_TEXTS.copy()
 PRINTER_HELP_TEXTS.update({
     'year_began':
         'The first year in which the printer was active with comics.',
@@ -726,8 +726,7 @@ def _get_comments_form_field():
         widget=forms.Textarea(attrs={'class': 'w-full lg:w-4/5',
                                      'rows': 5}), required=False,
         help_text='Information about the changes submitted. Will not be '
-                  'displayed, but is stored in the change history. '
-                  'Note that emojis are currently not supported.')
+                  'displayed, but is stored in the change history.')
 
 
 def _clean_keywords(cleaned_data):

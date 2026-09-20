@@ -57,6 +57,8 @@ from apps.gcd.views.details import (  # noqa: F401
 from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
 from apps.gcd.views.search import do_advanced_search, used_search
 from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM
+from apps.gcd.models.reprint import INTERNAL_REPRINT_ERROR, \
+                                    validate_reprint_issue_ids
 from apps.oi.templatetags.editing import show_revision_short
 from apps.select.views import store_select_data, get_cached_stories, \
                               get_cached_covers
@@ -116,6 +118,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            GroupMembershipRevisionForm,
                            CharacterRevisionFormSet,
                            GroupRevisionFormSet,
+                           FeatureRevisionFormSet,
                            ReceivedAwardRevisionForm,
                            CreatorNonComicWorkRevisionForm,
                            CreatorRelationRevisionForm,
@@ -229,6 +232,10 @@ WORKFLOW_ACTION_LABELS = {
     'approve': APPROVE,
     'disapprove': SEND_BACK_TO_INDEXER,
 }
+INTERNAL_REPRINT_SELECT_TITLE = \
+  'Cannot select because reprint links must connect different issues.'
+INTERNAL_REPRINT_SELECT_HELP = \
+  'Current issue; cannot select for a reprint link.'
 
 ##############################################################################
 # Helper functions
@@ -751,6 +758,13 @@ def submit(request, id):
                       comment_text
         else:
             comment = ''
+        compare_url = settings.SITE_URL.rstrip('/') + urlresolvers.reverse(
+          'compare', kwargs={'id': changeset.id})
+        if (hasattr(changeset.approver, 'indexer') and
+                changeset.approver.indexer.collapse_compare_view):
+            # The compare route currently has no query parameters. If any are
+            # added later, merge this parameter instead of appending another ?.
+            compare_url += '?collapse=1'
         email_body = """
 Hello from the %s!
 
@@ -766,8 +780,7 @@ thanks,
                      str(changeset),
                      str(changeset.indexer.indexer),
                      comment,
-                     settings.SITE_URL.rstrip('/') + urlresolvers.reverse(
-                       'compare', kwargs={'id': changeset.id}),
+                     compare_url,
                      settings.SITE_NAME,
                      settings.SITE_URL)
 
@@ -3271,13 +3284,13 @@ def compare_issues_copy(request, issue_revision_id, issue_id):
 @permission_required('indexer.can_reserve')
 def add_generic(request, model_name,
                 object_url='', object_name=None,
-                initial={}, cancel='', save_kwargs={}):
+                initial={}, cancel='', save_kwargs={},
+                extra_forms=None):
     """
     Add a new object through the Online Indexer interface.
 
-    This view handles the creation of new objects that do not have extra
-    forms (such as publishers, features, etc.) through a revision/changeset
-    workflow.
+    This view handles the creation of new objects through a
+    revision/changeset workflow.
 
     It requires the user to have the 'indexer.can_reserve' permission and
     checks if the user can reserve another item.
@@ -3294,6 +3307,9 @@ def add_generic(request, model_name,
         cancel (str, optional): URL to redirect to on cancel. Defaults to ''.
         save_kwargs (dict, optional): Additional keyword arguments to pass to
             the save_added_revision method. Defaults to {}.
+        extra_forms (dict, optional): Extra forms/formsets to validate and
+            process, keyed by template context name. Values are form/formset
+            classes (instantiated with POST data). Defaults to None.
 
     Returns:
         HttpResponse:
@@ -3305,12 +3321,15 @@ def add_generic(request, model_name,
 
     Notes:
         - Creates a new Changeset with OPEN state when form is valid
-        - Uses get_revision_form to dynamically get the appropriate form
-          class
+        - Uses get_revision_form to dynamically get the appropriate form class
+        - Optionally validates and processes extra forms/formsets
         - Object name and URL are auto-generated if not provided
     """
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
+
+    if extra_forms is None:
+        extra_forms = {}
 
     if request.method == 'POST' and 'cancel' in request.POST:
         if cancel:
@@ -3320,12 +3339,24 @@ def add_generic(request, model_name,
     form = get_revision_form(model_name=model_name,
                              user=request.user)(request.POST or None,
                                                 initial=initial)
-    if form.is_valid():
+
+    instantiated_extra_forms = {}
+    for extra_form_name, extra_form in extra_forms.items():
+        instantiated_extra_forms[extra_form_name] = extra_form(
+          request.POST or None)
+
+    valid = form.is_valid()
+    for extra_form in instantiated_extra_forms.values():
+        valid = extra_form.is_valid() and valid
+
+    if valid:
         changeset = Changeset(indexer=request.user, state=states.OPEN,
                               change_type=CTYPES[model_name])
         changeset.save()
         revision = form.save(commit=False)
         revision.save_added_revision(changeset=changeset, **save_kwargs)
+        if instantiated_extra_forms:
+            revision.process_extra_forms(instantiated_extra_forms)
         return submit(request, changeset.id)
     else:
         if not object_name:
@@ -3333,18 +3364,28 @@ def add_generic(request, model_name,
         if not object_url:
             object_url = urlresolvers.reverse('add_%s' % model_name)
 
+        context = {
+          'object_name': object_name,
+          'object_url': object_url,
+          'action_label': 'Submit New',
+          'form': form,
+        }
+        context.update(instantiated_extra_forms)
+
         return oi_render(
           request, 'oi/edit/add_frame.html',
-          {
-            'object_name': object_name,
-            'object_url': object_url,
-            'action_label': 'Submit New',
-            'form': form,
-          })
+          context)
 
 
 def add_feature(request):
-    return add_generic(request, 'feature')
+    feature_names_formset = FeatureRevisionFormSet
+    external_link_formset = ExternalLinkRevisionFormSet
+
+    return add_generic(request, 'feature',
+                       extra_forms={'feature_names_formset':
+                                    feature_names_formset,
+                                    'external_link_formset':
+                                    external_link_formset})
 
 
 @permission_required('indexer.can_reserve')
@@ -4487,6 +4528,15 @@ def reserve_reprint(request, changeset_id, reprint_id):
       'edit_reprint', kwargs={'id': revision.id, 'which_side': which_side}))
 
 
+def _reprint_select_exclusion(issue_id):
+    """Return reprint-specific metadata for the generic object selector."""
+    return {
+        'exclude_issue_id': issue_id,
+        'disabled_choice_title': INTERNAL_REPRINT_SELECT_TITLE,
+        'disabled_choice_help': INTERNAL_REPRINT_SELECT_HELP,
+    }
+
+
 @permission_required('indexer.can_reserve')
 def edit_reprint(request, id, which_side=None):
     reprint_revision = get_object_or_404(ReprintRevision, id=id)
@@ -4697,6 +4747,12 @@ def edit_reprint(request, id, which_side=None):
         story_revision_id = None
         heading = 'Select story/issue for the reprint link with %s' \
                   % (esc(issue))
+    if story_revision:
+        exclude_issue_id = story_revision.issue_id
+    elif story:
+        exclude_issue_id = story.issue_id
+    else:
+        exclude_issue_id = issue.id
     data = {'story_id': story_id,
             'story_revision_id': story_revision_id,
             'issue_id': issue_id,
@@ -4711,6 +4767,7 @@ def edit_reprint(request, id, which_side=None):
             'which_side': which_side,
             'cancel': urlresolvers.reverse('edit',
                                            kwargs={'id': changeset.id})}
+    data.update(_reprint_select_exclusion(exclude_issue_id))
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse(
       'select_object', kwargs={'select_key': select_key}))
@@ -4722,9 +4779,11 @@ def add_reprint(request, changeset_id,
     if story_id:
         story = get_object_or_404(StoryRevision, id=story_id,
                                   changeset__id=changeset_id)
+        exclude_issue_id = story.issue_id
     else:
         issue = get_object_or_404(IssueRevision, id=issue_id,
                                   changeset__id=changeset_id)
+        exclude_issue_id = issue.issue_id
     if reprint_note:
         publisher, series, year, number, volume = \
             parse_reprint(unquote(reprint_note).split(';')[0])
@@ -4749,6 +4808,7 @@ def add_reprint(request, changeset_id,
             'return': 'confirm_reprint',
             'cancel': urlresolvers.reverse('edit',
                                            kwargs={'id': changeset_id})}
+    data.update(_reprint_select_exclusion(exclude_issue_id))
     select_key = store_select_data(request, None, data)
     return HttpResponseRedirect(urlresolvers.reverse(
       'select_object', kwargs={'select_key': select_key}))
@@ -4980,6 +5040,16 @@ def confirm_reprint(request, data, object_type, selected_id):
         selected_story = None
         selected_issue = get_object_or_404(Issue, id=selected_id)
 
+    # A selector opened before deployment may lack this optional UX metadata;
+    # save-time model validation remains the authoritative fallback.
+    current_issue_id = data.get('exclude_issue_id')
+    selected_issue_id = (selected_story.issue_id if selected_story
+                         else selected_issue.id)
+    try:
+        validate_reprint_issue_ids(current_issue_id, selected_issue_id)
+    except ValueError as error:
+        return render_error(request, str(error), redirect=False)
+
     if 'reprint_revision_id' in data:
         reprint_revision = get_object_or_404(ReprintRevision,
                                              id=data['reprint_revision_id'])
@@ -5038,12 +5108,12 @@ def save_reprint(request, reprint_revision_id, changeset_id,
     target = None
     target_revision = None
     target_issue = None
+    story_revision = None
 
     if story_revision_id:
         story_revision = StoryRevision.objects.get(id=story_revision_id)
         if 'reprint_notes' in request.POST:
             story_revision.reprint_notes = request.POST['reprint_notes']
-        story_revision.save()
         if story_revision.story:
             story_one_id = story_revision.story.id
             story_revision_id = None
@@ -5076,7 +5146,8 @@ def save_reprint(request, reprint_revision_id, changeset_id,
             target_issue = Issue.objects.get(id=issue_two_id)
 
     notes = request.POST['reprint_link_notes']
-    if revision:
+    is_new_revision = revision is None
+    if not is_new_revision:
         revision.origin = origin
         revision.origin_revision = origin_revision
         revision.origin_issue = origin_issue
@@ -5084,7 +5155,6 @@ def save_reprint(request, reprint_revision_id, changeset_id,
         revision.target_revision = target_revision
         revision.target_issue = target_issue
         revision.notes = notes
-        revision.save()
     else:
         revision = ReprintRevision(origin=origin,
                                    origin_revision=origin_revision,
@@ -5093,11 +5163,23 @@ def save_reprint(request, reprint_revision_id, changeset_id,
                                    target_revision=target_revision,
                                    target_issue=target_issue,
                                    notes=notes)
+
+    try:
+        revision.validate_reprint_link()
+    except ValueError as error:
+        return render_error(request, str(error), redirect=False)
+
+    if story_revision:
+        story_revision.save()
+
+    if is_new_revision:
         revision.save_added_revision(changeset=changeset)
         if request.POST['direction'] == 'from':
             request.session['which_side'] = 'origin'
         else:
             request.session['which_side'] = 'target'
+    else:
+        revision.save()
 
     if request.POST['comments'].strip():
         revision.comments.create(commenter=request.user,
@@ -5352,6 +5434,16 @@ def move_issue(request, issue_revision_id, series_id):
           'edit', kwargs={'id': issue_revision.changeset.id}))
 
 
+def _story_move_creates_internal_reprint(story, new_issue):
+    if not story.story_id or not new_issue.issue_id:
+        return False
+    return Reprint.objects.filter(
+        Q(target_id=story.story_id,
+          origin_issue_id=new_issue.issue_id) |
+        Q(origin_id=story.story_id,
+          target_issue_id=new_issue.issue_id)).exists()
+
+
 @permission_required('indexer.can_reserve')
 def move_story_revision(request, id):
     """ move story revision between two issue revisions """
@@ -5368,6 +5460,9 @@ def move_story_revision(request, id):
         return _cant_get(request)
 
     new_issue = story.changeset.issuerevisions.exclude(issue=story.issue).get()
+    if _story_move_creates_internal_reprint(story, new_issue):
+        return render_error(
+            request, INTERNAL_REPRINT_ERROR, redirect=False)
     story.issue = new_issue.issue
 
     # In a two issue changeset (so far) one cannot add/edit reprints, but
@@ -6542,6 +6637,10 @@ def compare(request, id):
         group_name_revisions = changeset.groupnamedetailrevisions.all()
         for group_name_revision in group_name_revisions:
             revisions_before.append(group_name_revision)
+    elif changeset.change_type == CTYPES['feature']:
+        feature_name_revisions = changeset.featurenamedetailrevisions.all()
+        for feature_name_revision in feature_name_revisions:
+            revisions_before.append(feature_name_revision)
     for revision_before in revisions_before:
         revision_before.compare_changes()
     for revision_after in revisions_after:

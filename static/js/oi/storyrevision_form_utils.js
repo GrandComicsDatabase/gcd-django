@@ -93,7 +93,7 @@ $(document).on('change', 'input[type=checkbox]', function () {
 $('input[type=checkbox]').change()
 
 $(document).ready(function() {
-    const featureSelect = document.getElementById('id_feature_object');
+    const featureSelect = document.getElementById('id_feature_name');
     const genresContainer = document.getElementById('feature-genres');
 
     // Use jQuery to listen for select2 change event as the page already uses it
