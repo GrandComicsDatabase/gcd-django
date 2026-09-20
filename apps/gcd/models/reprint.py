@@ -8,6 +8,16 @@ from .story import Story
 from .issue import Issue
 
 
+INTERNAL_REPRINT_ERROR = 'Reprint links must connect different issues.'
+
+
+def validate_reprint_issue_ids(origin_issue_id, target_issue_id):
+    """Reject a reprint link whose endpoints belong to the same issue."""
+    if (origin_issue_id is not None and
+            origin_issue_id == target_issue_id):
+        raise ValueError(INTERNAL_REPRINT_ERROR)
+
+
 class Reprint(GcdLink):
     class Meta:
         app_label = 'gcd'
@@ -52,6 +62,9 @@ class Reprint(GcdLink):
             if (update_fields is not None and
                     'target_issue' not in update_fields):
                 update_fields.append('target_issue')
+
+        validate_reprint_issue_ids(self.origin_issue_id,
+                                   self.target_issue_id)
 
         if update_fields is not None:
             kwargs['update_fields'] = update_fields
