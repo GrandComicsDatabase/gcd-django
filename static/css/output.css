@@ -1541,6 +1541,10 @@ a:hover {
   height: 100vh;
 }
 
+.min-h-screen {
+  min-height: 100vh;
+}
+
 .max-h-24 {
   max-height: 6rem;
 }

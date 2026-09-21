@@ -19,7 +19,7 @@
 </head>
 
 <body>
-<div {% if preview %} class="bg-preview" {% endif %}>
+<div class="flex flex-col min-h-screen{% if preview %} bg-preview{% endif %}">
 {% if BETA %}
   {% include "gcd/bits/beta_banner.html" %}
 {% endif %}
@@ -35,7 +35,7 @@
 {% block body %}{% endblock %}
 
 {% block fine_print %}
-  <div class="text-sm text-gray-700 bg-gray-200 px-2 py-1">
+  <div class="text-sm text-gray-700 bg-gray-200 px-2 py-1 mt-auto">
   {% include "gcd/fine_print.html" %}
   </div>
 {% endblock %}
