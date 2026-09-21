@@ -1091,17 +1091,13 @@ def series_by_name(request, series_name='', sort=ORDER_ALPHA,
                                things=things, template=template,
                                table_inline=table_inline)
     else:
-        # Search issue titles separately: joining every issue to its series
-        # multiplies rows before DISTINCT and sorting on full catalog dumps.
-        matching_series = Issue.objects.filter(
-            title__icontains=series_name).order_by().values('series_id')
-        q_obj = Q(name__icontains=series_name) | Q(pk__in=matching_series)
         things = Series.objects.exclude(deleted=True)
         if series_name:
-            # Filters, pagination and table rendering evaluate separate querysets.
-            # Resolve the text search once per request, then reuse its IDs.
-            matching_ids = list(things.filter(q_obj).order_by()
-                                .values_list('pk', flat=True))
+            # Resolve the text search once per request by fetching matching IDs separately.
+            # This avoids a slow OR query with a subquery in MySQL.
+            series_ids_by_name = things.filter(name__icontains=series_name).values_list('pk', flat=True)
+            series_ids_by_issue = Issue.objects.filter(title__icontains=series_name).values_list('series_id', flat=True).distinct()
+            matching_ids = set(series_ids_by_name) | set(series_ids_by_issue)
             things = things.filter(pk__in=matching_ids)
         things = things.select_related('publisher__country', 'publication_type',
                                        'first_issue', 'last_issue')
