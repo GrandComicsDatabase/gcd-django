@@ -363,27 +363,43 @@ class Series(GcdData):
         return ' ?' if flag else ''
 
     def display_publication_dates(self):
+        # Catalog dumps can omit an issue referenced by these cached pointers.
+        # Fall back to the series years, just as for an unknown issue date.
+        first_date = ''
+        last_date = ''
+        if self.issue_count:
+            try:
+                if self.first_issue is not None:
+                    first_date = self.first_issue.publication_date
+            except Issue.DoesNotExist:
+                pass
+            if self.issue_count > 1 and not self.is_current:
+                try:
+                    if self.last_issue is not None:
+                        last_date = self.last_issue.publication_date
+                except Issue.DoesNotExist:
+                    pass
         if not self.issue_count:
             return '%s%s' % (str(self.year_began),
                              self._date_uncertain(self.year_began_uncertain))
         elif self.issue_count == 1:
-            if self.first_issue.publication_date:
-                return self.first_issue.publication_date
+            if first_date:
+                return first_date
             else:
                 return '%s%s' % (str(self.year_began),
                                  self._date_uncertain(
                                    self.year_began_uncertain))
         else:
-            if self.first_issue.publication_date:
-                date = '%s - ' % self.first_issue.publication_date
+            if first_date:
+                date = '%s - ' % first_date
             else:
                 date = '%s%s - ' % (self.year_began,
                                     self._date_uncertain(
                                       self.year_began_uncertain))
             if self.is_current:
                 date += 'present'
-            elif self.last_issue.publication_date:
-                date += self.last_issue.publication_date
+            elif last_date:
+                date += last_date
             elif self.year_ended:
                 date += '%s%s' % (str(self.year_ended),
                                   self._date_uncertain(

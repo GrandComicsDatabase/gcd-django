@@ -55,46 +55,50 @@ def index(request):
                      'fb_feed'):
         template_vars[template] = '%s/%s.html' % (base_path, template)
 
-    today = datetime.today()
-    day = '%0.2d' % (today).day
-    month = '%0.2d' % (today).month
-    creators = Creator.objects.filter(birth_date__day__lte=day,
-                                      birth_date__month=month,
-                                      deleted=False)\
-                              .exclude(birth_date__day='')\
-                              .exclude(birth_date__month__lte='')\
-                              .exclude(bio='').order_by('-birth_date__month',
-                                                        '-birth_date__day',
-                                                        'sort_name')[:100]
-    creators = list(creators.values_list('id', flat=True))
-    if len(creators) < 100:
-        creators_2 = Creator.objects.filter(birth_date__month__lt=month,
-                                            deleted=False)\
-                                    .exclude(birth_date__day='')\
-                                    .exclude(birth_date__month__lte='')\
-                                    .exclude(bio='')\
-                                    .order_by('-birth_date__month',
-                                              '-birth_date__day',
-                                              'sort_name')[:100]
-        creators.extend(list(creators_2.values_list('id', flat=True)))
-    creators = Creator.objects.filter(id__in=creators)\
-                      .annotate(issue_count=Count(
-                        'creator_names__storycredit__story__issue',
-                        filter=Q(creator_names__storycredit__story__from_all_reprints=None),
-                        distinct=True))\
-                      .filter(issue_count__gt=10)\
-                      .order_by('-birth_date__month',
-                                '-birth_date__day',
-                                'sort_name').select_related('birth_date')
-    creators_count = len(creators)
-    end_listed = 10
-    if creators_count > 9:
-        creator_last = creators[9]
-        for i in range(end_listed, creators_count):
-            if creators[i].birth_date.month != creator_last.birth_date.month or \
-            creators[i].birth_date.day != creator_last.birth_date.day:
-                end_listed = i
-                break
+    creators = []
+    end_listed = 0
+    # The timeline is only rendered when managed content is enabled.
+    if settings.USE_TEMPLATESADMIN:
+        today = datetime.today()
+        day = '%0.2d' % (today).day
+        month = '%0.2d' % (today).month
+        creators = Creator.objects.filter(birth_date__day__lte=day,
+                                          birth_date__month=month,
+                                          deleted=False)\
+                                  .exclude(birth_date__day='')\
+                                  .exclude(birth_date__month__lte='')\
+                                  .exclude(bio='').order_by('-birth_date__month',
+                                                            '-birth_date__day',
+                                                            'sort_name')[:100]
+        creators = list(creators.values_list('id', flat=True))
+        if len(creators) < 100:
+            creators_2 = Creator.objects.filter(birth_date__month__lt=month,
+                                                deleted=False)\
+                                        .exclude(birth_date__day='')\
+                                        .exclude(birth_date__month__lte='')\
+                                        .exclude(bio='')\
+                                        .order_by('-birth_date__month',
+                                                  '-birth_date__day',
+                                                  'sort_name')[:100]
+            creators.extend(list(creators_2.values_list('id', flat=True)))
+        creators = Creator.objects.filter(id__in=creators)\
+                          .annotate(issue_count=Count(
+                            'creator_names__storycredit__story__issue',
+                            filter=Q(creator_names__storycredit__story__from_all_reprints=None),
+                            distinct=True))\
+                          .filter(issue_count__gt=10)\
+                          .order_by('-birth_date__month',
+                                    '-birth_date__day',
+                                    'sort_name').select_related('birth_date')
+        creators_count = len(creators)
+        end_listed = 10
+        if creators_count > 9:
+            creator_last = creators[9]
+            for i in range(end_listed, creators_count):
+                if creators[i].birth_date.month != creator_last.birth_date.month or \
+                creators[i].birth_date.day != creator_last.birth_date.day:
+                    end_listed = i
+                    break
 
     template_vars.update({
         'stats': stats,

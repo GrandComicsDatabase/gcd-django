@@ -1091,10 +1091,23 @@ def series_by_name(request, series_name='', sort=ORDER_ALPHA,
                                things=things, template=template,
                                table_inline=table_inline)
     else:
-        q_obj = Q(name__icontains=series_name) | \
-                Q(issue__title__icontains=series_name)
-        return generic_by_name(request, series_name, q_obj, sort,
-                               Series, template, table_inline=table_inline)
+        # Search issue titles separately: joining every issue to its series
+        # multiplies rows before DISTINCT and sorting on full catalog dumps.
+        matching_series = Issue.objects.filter(
+            title__icontains=series_name).order_by().values('series_id')
+        q_obj = Q(name__icontains=series_name) | Q(pk__in=matching_series)
+        things = Series.objects.exclude(deleted=True)
+        if series_name:
+            # Filters, pagination and table rendering evaluate separate querysets.
+            # Resolve the text search once per request, then reuse its IDs.
+            matching_ids = list(things.filter(q_obj).order_by()
+                                .values_list('pk', flat=True))
+            things = things.filter(pk__in=matching_ids)
+        things = things.select_related('publisher__country', 'publication_type',
+                                       'first_issue', 'last_issue')
+        return generic_by_name(request, series_name, None, sort,
+                               Series, template, things=things,
+                               table_inline=table_inline)
 
 
 def series_and_issue(request, series_name, issue_nr, sort=ORDER_ALPHA):
