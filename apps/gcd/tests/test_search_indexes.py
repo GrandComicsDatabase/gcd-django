@@ -3,8 +3,9 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from apps.gcd.models import Universe
+from apps.gcd.models import CREDIT_TYPES, Universe
 from apps.gcd.search_indexes import CreatorIndex, StoryIndex
+from apps.gcd.templatetags.credits import search_creator_credit
 
 
 def test_creator_index_handles_missing_birth_date():
@@ -56,3 +57,16 @@ def test_story_index_uses_legacy_characters_for_missing_universe():
 
     assert StoryIndex().prepare_characters(story) == 'Legacy Character'
     show_characters.assert_called_once_with()
+
+
+def test_search_creator_credit_excludes_missing_creator_names():
+    """Orphaned credits do not abort search document template rendering."""
+    active_credits = Mock()
+    active_credits.filter.return_value = []
+    issue = SimpleNamespace(active_credits=active_credits)
+
+    assert search_creator_credit(issue, 'editing') == ''
+    active_credits.filter.assert_called_once_with(
+        credit_type_id=CREDIT_TYPES['editing'],
+        creator__creator__isnull=False,
+    )
