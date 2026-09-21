@@ -63,7 +63,7 @@ def test_issue_list_query_count(api_client, series):
     Cover.objects.create(issue=second)
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('issue-list'))
+        response = api_client.get(reverse('api-v2-issue-list'))
 
     assert response.status_code == 200
     assert len(context) == 8
@@ -103,7 +103,7 @@ def test_issue_detail_query_count(api_client, issue):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('issue-detail', kwargs={'pk': issue.pk}),
+            reverse('api-v2-issue-detail', kwargs={'pk': issue.pk}),
         )
 
     assert response.status_code == 200
@@ -132,7 +132,7 @@ def test_issue_list_variant_cover_query_count(api_client, series):
     Cover.objects.create(issue=base)
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('issue-list'))
+        response = api_client.get(reverse('api-v2-issue-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 3

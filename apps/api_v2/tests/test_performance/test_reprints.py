@@ -97,7 +97,7 @@ def test_reprint_list_query_count(api_client, issue):
     _create_reprint(origin, second_target)
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('reprint-list'))
+        response = api_client.get(reverse('api-v2-reprint-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -116,7 +116,7 @@ def test_reprint_detail_query_count(api_client, issue):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('reprint-detail', kwargs={'pk': reprint.pk}),
+            reverse('api-v2-reprint-detail', kwargs={'pk': reprint.pk}),
         )
 
     assert response.status_code == 200

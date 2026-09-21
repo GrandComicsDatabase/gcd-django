@@ -292,7 +292,7 @@ def test_story_list_returns_paginated_results(api_client, issue):
     """The list endpoint is anon-readable and paginated."""
     story = _create_story(issue, title='Lead Story', sequence_number=1)
 
-    response = api_client.get(reverse('story-list'))
+    response = api_client.get(reverse('api-v2-story-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -373,7 +373,9 @@ def test_story_detail_returns_expected_payload(api_client, issue):
         issue_level_target,
     ) = _add_story_detail_relations(story)
 
-    response = api_client.get(reverse('story-detail', kwargs={'pk': story.pk}))
+    response = api_client.get(
+        reverse('api-v2-story-detail', kwargs={'pk': story.pk})
+    )
 
     assert response.status_code == 200
     assert response.data['id'] == story.pk
@@ -550,7 +552,7 @@ def test_story_list_applies_filter_query_params(api_client, issue, publisher):
     )
 
     response = api_client.get(
-        reverse('story-list'),
+        reverse('api-v2-story-list'),
         {
             'title': 'lead',
             'type': str(comic_story.pk),
@@ -599,7 +601,7 @@ def test_story_list_filters_by_linked_feature_genre(api_client, issue):
     )
 
     response = api_client.get(
-        reverse('story-list'),
+        reverse('api-v2-story-list'),
         {'genre': 'superhero'},
     )
 
@@ -618,9 +620,9 @@ def test_story_endpoints_hide_soft_deleted_records(api_client, issue):
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('story-list'))
+    list_response = api_client.get(reverse('api-v2-story-list'))
     detail_response = api_client.get(
-        reverse('story-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-story-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -636,14 +638,14 @@ def test_story_list_returns_304_for_if_modified_since(
     """List responses support Last-Modified cache validation."""
     _create_story(issue, title='Lead Story', sequence_number=1)
 
-    response = authenticated_client.get(reverse('story-list'))
+    response = authenticated_client.get(reverse('api-v2-story-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('story-list'),
+        reverse('api-v2-story-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -659,7 +661,7 @@ def test_story_detail_returns_304_for_if_none_match(
     story = _create_story(issue, title='Lead Story', sequence_number=1)
 
     response = authenticated_client.get(
-        reverse('story-detail', kwargs={'pk': story.pk}),
+        reverse('api-v2-story-detail', kwargs={'pk': story.pk}),
     )
 
     assert response.status_code == 200
@@ -667,7 +669,7 @@ def test_story_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('story-detail', kwargs={'pk': story.pk}),
+        reverse('api-v2-story-detail', kwargs={'pk': story.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

@@ -46,7 +46,7 @@ def test_indicia_printer_list_query_count(api_client, country):
     )
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('indicia-printer-list'))
+        response = api_client.get(reverse('api-v2-indicia-printer-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -65,7 +65,7 @@ def test_indicia_printer_detail_query_count(api_client, country):
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
             reverse(
-                'indicia-printer-detail',
+                'api-v2-indicia-printer-detail',
                 kwargs={'pk': indicia_printer.pk},
             ),
         )

@@ -31,31 +31,43 @@ from apps.api_v2.views.story_arcs import StoryArcViewSet
 from apps.api_v2.views.universes import UniverseViewSet
 
 router = V2APIRouter()
-router.register('awards', AwardViewSet, basename='award')
-router.register('brand-groups', BrandGroupViewSet, basename='brand-group')
-router.register('brands', BrandViewSet, basename='brand')
-router.register('characters', CharacterViewSet, basename='character')
-router.register('creators', CreatorViewSet, basename='creator')
-router.register('features', FeatureViewSet, basename='feature')
-router.register('groups', GroupViewSet, basename='group')
+router.register('awards', AwardViewSet, basename='api-v2-award')
+router.register(
+    'brand-groups',
+    BrandGroupViewSet,
+    basename='api-v2-brand-group',
+)
+router.register('brands', BrandViewSet, basename='api-v2-brand')
+router.register('characters', CharacterViewSet, basename='api-v2-character')
+router.register('creators', CreatorViewSet, basename='api-v2-creator')
+router.register('features', FeatureViewSet, basename='api-v2-feature')
+router.register('groups', GroupViewSet, basename='api-v2-group')
 router.register(
     'indicia-printers',
     IndiciaPrinterViewSet,
-    basename='indicia-printer',
+    basename='api-v2-indicia-printer',
 )
 router.register(
     'indicia-publishers',
     IndiciaPublisherViewSet,
-    basename='indicia-publisher',
+    basename='api-v2-indicia-publisher',
 )
-router.register('issues', IssueViewSet, basename='issue')
-router.register('publishers', PublisherViewSet, basename='publisher')
-router.register('reprints', ReprintViewSet, basename='reprint')
-router.register('series', SeriesViewSet, basename='series')
-router.register('series-bonds', SeriesBondViewSet, basename='series-bond')
-router.register('story-arcs', StoryArcViewSet, basename='story-arc')
-router.register('stories', StoryViewSet, basename='story')
-router.register('universes', UniverseViewSet, basename='universe')
+router.register('issues', IssueViewSet, basename='api-v2-issue')
+router.register('publishers', PublisherViewSet, basename='api-v2-publisher')
+router.register('reprints', ReprintViewSet, basename='api-v2-reprint')
+router.register('series', SeriesViewSet, basename='api-v2-series')
+router.register(
+    'series-bonds',
+    SeriesBondViewSet,
+    basename='api-v2-series-bond',
+)
+router.register(
+    'story-arcs',
+    StoryArcViewSet,
+    basename='api-v2-story-arc',
+)
+router.register('stories', StoryViewSet, basename='api-v2-story')
+router.register('universes', UniverseViewSet, basename='api-v2-universe')
 
 urlpatterns = [
     path('', include(router.urls)),

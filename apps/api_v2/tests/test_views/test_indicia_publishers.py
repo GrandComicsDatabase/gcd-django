@@ -54,7 +54,7 @@ def test_indicia_publisher_list_returns_paginated_results(
         country=country,
     )
 
-    response = api_client.get(reverse('indicia-publisher-list'))
+    response = api_client.get(reverse('api-v2-indicia-publisher-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -95,7 +95,7 @@ def test_indicia_publisher_detail_returns_expected_payload(
 
     response = authenticated_client.get(
         reverse(
-            'indicia-publisher-detail',
+            'api-v2-indicia-publisher-detail',
             kwargs={'pk': indicia_publisher.pk},
         ),
     )
@@ -147,7 +147,7 @@ def test_indicia_publisher_list_applies_filter_query_params(
     )
 
     response = authenticated_client.get(
-        reverse('indicia-publisher-list'),
+        reverse('api-v2-indicia-publisher-list'),
         {
             'name': 'marvel',
             'parent': str(publisher.pk),
@@ -181,10 +181,10 @@ def test_indicia_publisher_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('indicia-publisher-list'))
+    list_response = api_client.get(reverse('api-v2-indicia-publisher-list'))
     detail_response = api_client.get(
         reverse(
-            'indicia-publisher-detail',
+            'api-v2-indicia-publisher-detail',
             kwargs={'pk': deleted.pk},
         ),
     )
@@ -206,14 +206,16 @@ def test_indicia_publisher_list_returns_304_for_if_modified_since(
         country=country,
     )
 
-    response = authenticated_client.get(reverse('indicia-publisher-list'))
+    response = authenticated_client.get(
+        reverse('api-v2-indicia-publisher-list')
+    )
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('indicia-publisher-list'),
+        reverse('api-v2-indicia-publisher-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -234,7 +236,7 @@ def test_indicia_publisher_detail_returns_304_for_if_none_match(
 
     response = authenticated_client.get(
         reverse(
-            'indicia-publisher-detail',
+            'api-v2-indicia-publisher-detail',
             kwargs={'pk': indicia_publisher.pk},
         ),
     )
@@ -245,7 +247,7 @@ def test_indicia_publisher_detail_returns_304_for_if_none_match(
 
     cached_response = authenticated_client.get(
         reverse(
-            'indicia-publisher-detail',
+            'api-v2-indicia-publisher-detail',
             kwargs={'pk': indicia_publisher.pk},
         ),
         HTTP_IF_NONE_MATCH=response['ETag'],

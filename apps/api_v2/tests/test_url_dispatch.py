@@ -100,24 +100,24 @@ def _assert_v2_api_policy(view_cls):
 
 
 SPRINT_2_ROUTE_SPECS = (
-    ('universe-list', '/api/v2/universes/'),
-    ('group-list', '/api/v2/groups/'),
-    ('character-list', '/api/v2/characters/'),
-    ('creator-list', '/api/v2/creators/'),
+    ('api-v2-universe-list', '/api/v2/universes/'),
+    ('api-v2-group-list', '/api/v2/groups/'),
+    ('api-v2-character-list', '/api/v2/characters/'),
+    ('api-v2-creator-list', '/api/v2/creators/'),
 )
 SPRINT_3_ROUTE_SPECS = (
-    ('story-list', '/api/v2/stories/'),
-    ('reprint-list', '/api/v2/reprints/'),
-    ('story-arc-list', '/api/v2/story-arcs/'),
+    ('api-v2-story-list', '/api/v2/stories/'),
+    ('api-v2-reprint-list', '/api/v2/reprints/'),
+    ('api-v2-story-arc-list', '/api/v2/story-arcs/'),
 )
 SPRINT_4_ROUTE_SPECS = (
-    ('award-list', '/api/v2/awards/'),
-    ('brand-group-list', '/api/v2/brand-groups/'),
-    ('brand-list', '/api/v2/brands/'),
-    ('feature-list', '/api/v2/features/'),
-    ('indicia-publisher-list', '/api/v2/indicia-publishers/'),
-    ('indicia-printer-list', '/api/v2/indicia-printers/'),
-    ('series-bond-list', '/api/v2/series-bonds/'),
+    ('api-v2-award-list', '/api/v2/awards/'),
+    ('api-v2-brand-group-list', '/api/v2/brand-groups/'),
+    ('api-v2-brand-list', '/api/v2/brands/'),
+    ('api-v2-feature-list', '/api/v2/features/'),
+    ('api-v2-indicia-publisher-list', '/api/v2/indicia-publishers/'),
+    ('api-v2-indicia-printer-list', '/api/v2/indicia-printers/'),
+    ('api-v2-series-bond-list', '/api/v2/series-bonds/'),
 )
 
 
@@ -199,6 +199,51 @@ def test_api_root_uses_v2_policy_on_my_surface(restore_v2_urlconf):
     _reload_v2_urlconf()
 
     _assert_v2_api_policy(resolve('/api/v2/').func.cls)
+
+
+@override_settings(MYCOMICS=False)
+def test_v1_and_v2_router_names_are_isolated(restore_v2_urlconf):
+    """Each API version reverses its own router names and paths."""
+    _reload_v2_urlconf()
+
+    assert reverse('series-detail', kwargs={'pk': 10814}) == (
+        '/api/series/10814/'
+    )
+    assert reverse('issue-detail', kwargs={'pk': 42}) == '/api/issue/42/'
+    assert reverse('publisher-detail', kwargs={'pk': 7}) == (
+        '/api/publisher/7/'
+    )
+    assert reverse('api-v2-series-detail', kwargs={'pk': 10814}) == (
+        '/api/v2/series/10814/'
+    )
+    assert reverse('api-v2-issue-detail', kwargs={'pk': 42}) == (
+        '/api/v2/issues/42/'
+    )
+    assert reverse('api-v2-publisher-detail', kwargs={'pk': 7}) == (
+        '/api/v2/publishers/7/'
+    )
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_v1_series_response_keeps_v1_hyperlinks(
+    api_client,
+    series,
+    issue,
+    restore_v2_urlconf,
+):
+    """Mounting v2 must not change hyperlinks emitted by the v1 API."""
+    _reload_v2_urlconf()
+
+    response = api_client.get(f'/api/series/{series.pk}/')
+
+    assert response.status_code == 200
+    assert response.data['api_url'] == (
+        f'http://testserver/api/series/{series.pk}/'
+    )
+    assert response.data['active_issues'] == [
+        f'http://testserver/api/issue/{issue.pk}/',
+    ]
 
 
 @override_settings(MYCOMICS=False)

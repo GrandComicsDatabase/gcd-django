@@ -37,7 +37,7 @@ def test_brand_group_list_query_count(api_client, publisher):
     _create_brand_group(publisher=publisher, name='Beta Group')
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('brand-group-list'))
+        response = api_client.get(reverse('api-v2-brand-group-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -58,7 +58,7 @@ def test_brand_group_detail_query_count_is_emblem_count_independent(
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
             reverse(
-                'brand-group-detail',
+                'api-v2-brand-group-detail',
                 kwargs={'pk': brand_group.pk},
             ),
         )

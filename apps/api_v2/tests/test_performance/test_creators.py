@@ -138,7 +138,7 @@ def test_creator_list_query_count(api_client, db):
     )
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('creator-list'))
+        response = api_client.get(reverse('api-v2-creator-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -157,7 +157,7 @@ def test_creator_detail_query_count(api_client, db):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('creator-detail', kwargs={'pk': creator.pk}),
+            reverse('api-v2-creator-detail', kwargs={'pk': creator.pk}),
         )
 
     assert response.status_code == 200

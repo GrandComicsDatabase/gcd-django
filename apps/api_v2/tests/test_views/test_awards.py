@@ -56,9 +56,9 @@ def test_award_list_and_detail_return_expected_contract(api_client):
         notes='Award notes',
     )
 
-    list_response = api_client.get(reverse('award-list'))
+    list_response = api_client.get(reverse('api-v2-award-list'))
     detail_response = api_client.get(
-        reverse('award-detail', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-detail', kwargs={'pk': award.pk}),
     )
 
     assert list_response.status_code == 200
@@ -76,7 +76,7 @@ def test_award_list_applies_name_filter(api_client):
     matching = Award.objects.create(name='Eisner Awards', notes='')
     Award.objects.create(name='Harvey Awards', notes='')
 
-    response = api_client.get(reverse('award-list'), {'name': 'eisner'})
+    response = api_client.get(reverse('api-v2-award-list'), {'name': 'eisner'})
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -92,9 +92,9 @@ def test_award_endpoints_hide_soft_deleted_awards(api_client):
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('award-list'))
+    list_response = api_client.get(reverse('api-v2-award-list'))
     detail_response = api_client.get(
-        reverse('award-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-award-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -133,7 +133,7 @@ def test_award_recipients_are_paginated_and_hide_deleted_rows(api_client):
     )
 
     response = api_client.get(
-        reverse('award-recipients', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
         {'page_size': 1},
     )
 
@@ -171,7 +171,7 @@ def test_award_recipient_serializer_receives_view_context(
     )
 
     response = api_client.get(
-        reverse('award-recipients', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
     )
 
     assert response.status_code == 200
@@ -201,7 +201,7 @@ def test_award_recipients_apply_type_and_year_filters(api_client, issue):
     )
 
     response = api_client.get(
-        reverse('award-recipients', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
         {
             'recipient_type': 'creator',
             'award_year': '1989',
@@ -218,7 +218,7 @@ def test_award_recipients_reject_unknown_recipient_type(api_client):
     award = Award.objects.create(name='Eisner Awards', notes='')
 
     response = api_client.get(
-        reverse('award-recipients', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
         {'recipient_type': 'publisher'},
     )
 
@@ -233,9 +233,9 @@ def test_award_and_recipient_routes_support_conditional_requests(api_client):
         recipient=_create_creator('Jane Doe'),
     )
 
-    list_response = api_client.get(reverse('award-list'))
+    list_response = api_client.get(reverse('api-v2-award-list'))
     recipient_response = api_client.get(
-        reverse('award-recipients', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
     )
 
     assert list_response.status_code == 200
@@ -247,11 +247,11 @@ def test_award_and_recipient_routes_support_conditional_requests(api_client):
     assert 'Last-Modified' in recipient_response
 
     cached_list = api_client.get(
-        reverse('award-list'),
+        reverse('api-v2-award-list'),
         HTTP_IF_NONE_MATCH=list_response['ETag'],
     )
     cached_recipients = api_client.get(
-        reverse('award-recipients', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
         HTTP_IF_NONE_MATCH=recipient_response['ETag'],
     )
 
@@ -264,7 +264,7 @@ def test_empty_award_recipient_page_supports_etag(api_client):
     award = Award.objects.create(name='Empty Award', notes='')
 
     response = api_client.get(
-        reverse('award-recipients', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
     )
 
     assert response.status_code == 200
@@ -273,7 +273,7 @@ def test_empty_award_recipient_page_supports_etag(api_client):
     assert 'ETag' in response
 
     cached_response = api_client.get(
-        reverse('award-recipients', kwargs={'pk': award.pk}),
+        reverse('api-v2-award-recipients', kwargs={'pk': award.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

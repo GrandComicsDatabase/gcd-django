@@ -63,7 +63,7 @@ def test_indicia_printer_list_returns_paginated_results(
         country=country,
     )
 
-    response = api_client.get(reverse('indicia-printer-list'))
+    response = api_client.get(reverse('api-v2-indicia-printer-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -103,7 +103,7 @@ def test_indicia_printer_detail_returns_expected_payload(
 
     response = authenticated_client.get(
         reverse(
-            'indicia-printer-detail',
+            'api-v2-indicia-printer-detail',
             kwargs={'pk': indicia_printer.pk},
         ),
     )
@@ -153,7 +153,7 @@ def test_indicia_printer_list_applies_filter_query_params(
     )
 
     response = authenticated_client.get(
-        reverse('indicia-printer-list'),
+        reverse('api-v2-indicia-printer-list'),
         {
             'name': 'quebecor',
             'parent': str(printer.pk),
@@ -186,10 +186,10 @@ def test_indicia_printer_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('indicia-printer-list'))
+    list_response = api_client.get(reverse('api-v2-indicia-printer-list'))
     detail_response = api_client.get(
         reverse(
-            'indicia-printer-detail',
+            'api-v2-indicia-printer-detail',
             kwargs={'pk': deleted.pk},
         ),
     )
@@ -211,14 +211,14 @@ def test_indicia_printer_list_returns_304_for_if_modified_since(
         country=country,
     )
 
-    response = authenticated_client.get(reverse('indicia-printer-list'))
+    response = authenticated_client.get(reverse('api-v2-indicia-printer-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('indicia-printer-list'),
+        reverse('api-v2-indicia-printer-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -239,7 +239,7 @@ def test_indicia_printer_detail_returns_304_for_if_none_match(
 
     response = authenticated_client.get(
         reverse(
-            'indicia-printer-detail',
+            'api-v2-indicia-printer-detail',
             kwargs={'pk': indicia_printer.pk},
         ),
     )
@@ -250,7 +250,7 @@ def test_indicia_printer_detail_returns_304_for_if_none_match(
 
     cached_response = authenticated_client.get(
         reverse(
-            'indicia-printer-detail',
+            'api-v2-indicia-printer-detail',
             kwargs={'pk': indicia_printer.pk},
         ),
         HTTP_IF_NONE_MATCH=response['ETag'],

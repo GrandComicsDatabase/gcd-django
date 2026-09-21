@@ -76,7 +76,7 @@ def test_issue_list_returns_paginated_results(
     issue.keywords.add('alpha')
     cover = Cover.objects.create(issue=issue)
 
-    response = api_client.get(reverse('issue-list'))
+    response = api_client.get(reverse('api-v2-issue-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -161,7 +161,7 @@ def test_issue_detail_returns_expected_payload(
     story.keywords.add('story-alpha')
 
     response = api_client.get(
-        reverse('issue-detail', kwargs={'pk': issue.pk}),
+        reverse('api-v2-issue-detail', kwargs={'pk': issue.pk}),
     )
 
     assert response.status_code == 200
@@ -211,7 +211,7 @@ def test_issue_list_applies_filter_query_params(api_client, issue, publisher):
     )
 
     response = api_client.get(
-        reverse('issue-list'),
+        reverse('api-v2-issue-list'),
         {
             'series': str(issue.series.pk),
             'number': '1',
@@ -239,7 +239,7 @@ def test_issue_list_applies_on_sale_iso_week_query_param(api_client, issue):
     )
 
     response = api_client.get(
-        reverse('issue-list'),
+        reverse('api-v2-issue-list'),
         {'on_sale_iso_week': '2025-W12'},
     )
 
@@ -251,7 +251,7 @@ def test_issue_list_applies_on_sale_iso_week_query_param(api_client, issue):
 def test_issue_list_rejects_invalid_on_sale_iso_week(api_client, db):
     """Malformed ISO-week values return a validation error."""
     response = api_client.get(
-        reverse('issue-list'),
+        reverse('api-v2-issue-list'),
         {'on_sale_iso_week': '2025-12'},
     )
 
@@ -311,7 +311,7 @@ def test_issue_list_uses_variant_base_cover_url(api_client, issue):
     variant.variant_cover_status = 1
     variant.save()
 
-    response = api_client.get(reverse('issue-list'))
+    response = api_client.get(reverse('api-v2-issue-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 2
@@ -386,9 +386,9 @@ def test_issue_endpoints_hide_soft_deleted_records(api_client, issue):
         deleted=True,
     )
 
-    list_response = api_client.get(reverse('issue-list'))
+    list_response = api_client.get(reverse('api-v2-issue-list'))
     detail_response = api_client.get(
-        reverse('issue-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-issue-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -402,14 +402,14 @@ def test_issue_list_returns_304_for_if_modified_since(
     issue,
 ):
     """List responses support Last-Modified cache validation."""
-    response = authenticated_client.get(reverse('issue-list'))
+    response = authenticated_client.get(reverse('api-v2-issue-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('issue-list'),
+        reverse('api-v2-issue-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -423,7 +423,7 @@ def test_issue_detail_returns_304_for_if_none_match(
 ):
     """Detail responses support ETag cache validation."""
     response = authenticated_client.get(
-        reverse('issue-detail', kwargs={'pk': issue.pk}),
+        reverse('api-v2-issue-detail', kwargs={'pk': issue.pk}),
     )
 
     assert response.status_code == 200
@@ -431,7 +431,7 @@ def test_issue_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('issue-detail', kwargs={'pk': issue.pk}),
+        reverse('api-v2-issue-detail', kwargs={'pk': issue.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

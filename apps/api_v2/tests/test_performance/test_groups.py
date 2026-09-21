@@ -136,7 +136,7 @@ def test_group_list_query_count(api_client, db):
     )
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('group-list'))
+        response = api_client.get(reverse('api-v2-group-list'))
 
     assert response.status_code == 200
     assert len(context) == 6
@@ -170,7 +170,7 @@ def test_group_detail_query_count(api_client, db):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('group-detail', kwargs={'pk': group.pk}),
+            reverse('api-v2-group-detail', kwargs={'pk': group.pk}),
         )
 
     assert response.status_code == 200

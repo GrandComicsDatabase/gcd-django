@@ -91,7 +91,7 @@ def test_reprint_list_returns_paginated_results(api_client, issue):
     )
     reprint = _create_reprint(origin, target)
 
-    response = api_client.get(reverse('reprint-list'))
+    response = api_client.get(reverse('api-v2-reprint-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -157,7 +157,7 @@ def test_reprint_detail_returns_expected_payload(api_client, issue):
     reprint = _create_reprint(origin, target)
 
     response = api_client.get(
-        reverse('reprint-detail', kwargs={'pk': reprint.pk}),
+        reverse('api-v2-reprint-detail', kwargs={'pk': reprint.pk}),
     )
 
     assert response.status_code == 200
@@ -199,7 +199,7 @@ def test_reprint_detail_handles_issue_level_null_story(api_client, issue):
     )
 
     response = api_client.get(
-        reverse('reprint-detail', kwargs={'pk': reprint.pk}),
+        reverse('api-v2-reprint-detail', kwargs={'pk': reprint.pk}),
     )
 
     assert response.status_code == 200
@@ -228,7 +228,7 @@ def test_reprint_list_applies_filter_query_params(api_client, issue):
     _create_reprint(origin, other_target)
 
     response = api_client.get(
-        reverse('reprint-list'),
+        reverse('api-v2-reprint-list'),
         {
             'origin_issue': str(issue.pk),
             'target_issue': str(target_issue.pk),
@@ -258,14 +258,14 @@ def test_reprint_list_returns_304_for_if_modified_since(
     )
     _create_reprint(origin, target)
 
-    response = authenticated_client.get(reverse('reprint-list'))
+    response = authenticated_client.get(reverse('api-v2-reprint-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('reprint-list'),
+        reverse('api-v2-reprint-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -288,7 +288,7 @@ def test_reprint_detail_returns_304_for_if_none_match(
     reprint = _create_reprint(origin, target)
 
     response = authenticated_client.get(
-        reverse('reprint-detail', kwargs={'pk': reprint.pk}),
+        reverse('api-v2-reprint-detail', kwargs={'pk': reprint.pk}),
     )
 
     assert response.status_code == 200
@@ -296,7 +296,7 @@ def test_reprint_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('reprint-detail', kwargs={'pk': reprint.pk}),
+        reverse('api-v2-reprint-detail', kwargs={'pk': reprint.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 

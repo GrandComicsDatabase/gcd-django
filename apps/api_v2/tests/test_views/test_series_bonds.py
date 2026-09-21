@@ -71,7 +71,7 @@ def test_series_bond_list_returns_paginated_results(api_client, series, issue):
     """The list endpoint is anonymous, paginated, and trimmed."""
     bond, target, _target_issue, _bond_type = _create_bond(series, issue)
 
-    response = api_client.get(reverse('series-bond-list'))
+    response = api_client.get(reverse('api-v2-series-bond-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -95,7 +95,7 @@ def test_series_bond_detail_returns_expected_payload(
     bond, target, target_issue, bond_type = _create_bond(series, issue)
 
     response = authenticated_client.get(
-        reverse('series-bond-detail', kwargs={'pk': bond.pk}),
+        reverse('api-v2-series-bond-detail', kwargs={'pk': bond.pk}),
     )
 
     assert response.status_code == 200
@@ -134,7 +134,7 @@ def test_series_bond_list_applies_filter_query_params(
     bond, target, target_issue, bond_type = _create_bond(series, issue)
 
     response = api_client.get(
-        reverse('series-bond-list'),
+        reverse('api-v2-series-bond-list'),
         {
             'origin': str(series.pk),
             'origin_issue': str(issue.pk),
@@ -157,14 +157,14 @@ def test_series_bond_list_returns_304_for_if_modified_since(
     """List responses support Last-Modified cache validation."""
     _create_bond(series, issue)
 
-    response = authenticated_client.get(reverse('series-bond-list'))
+    response = authenticated_client.get(reverse('api-v2-series-bond-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('series-bond-list'),
+        reverse('api-v2-series-bond-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -181,7 +181,7 @@ def test_series_bond_detail_returns_304_for_if_none_match(
     bond, _target, _target_issue, _bond_type = _create_bond(series, issue)
 
     response = authenticated_client.get(
-        reverse('series-bond-detail', kwargs={'pk': bond.pk}),
+        reverse('api-v2-series-bond-detail', kwargs={'pk': bond.pk}),
     )
 
     assert response.status_code == 200
@@ -189,7 +189,7 @@ def test_series_bond_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('series-bond-detail', kwargs={'pk': bond.pk}),
+        reverse('api-v2-series-bond-detail', kwargs={'pk': bond.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 
@@ -209,9 +209,9 @@ def test_series_bond_reserved_state_is_never_exposed(
         reserved=True,
     )
 
-    list_response = api_client.get(reverse('series-bond-list'))
+    list_response = api_client.get(reverse('api-v2-series-bond-list'))
     detail_response = api_client.get(
-        reverse('series-bond-detail', kwargs={'pk': bond.pk}),
+        reverse('api-v2-series-bond-detail', kwargs={'pk': bond.pk}),
     )
 
     assert list_response.status_code == 200

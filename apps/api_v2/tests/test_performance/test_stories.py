@@ -272,7 +272,7 @@ def test_story_list_query_count(api_client, issue):
     _create_story(issue, title='Backup Story', sequence_number=2)
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('story-list'))
+        response = api_client.get(reverse('api-v2-story-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -285,7 +285,7 @@ def test_story_detail_query_count(api_client, issue):
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('story-detail', kwargs={'pk': story.pk}),
+            reverse('api-v2-story-detail', kwargs={'pk': story.pk}),
         )
 
     assert response.status_code == 200

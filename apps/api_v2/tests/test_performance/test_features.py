@@ -90,7 +90,7 @@ def test_feature_list_query_count(api_client, language):
     )
 
     with CaptureQueriesContext(connection) as context:
-        response = api_client.get(reverse('feature-list'))
+        response = api_client.get(reverse('api-v2-feature-list'))
 
     assert response.status_code == 200
     assert len(context) == 3
@@ -117,7 +117,7 @@ def test_feature_detail_query_count_is_relationship_count_independent(
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(
-            reverse('feature-detail', kwargs={'pk': feature.pk}),
+            reverse('api-v2-feature-detail', kwargs={'pk': feature.pk}),
         )
 
     assert response.status_code == 200

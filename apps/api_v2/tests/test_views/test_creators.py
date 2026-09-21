@@ -100,7 +100,7 @@ def test_creator_list_returns_paginated_results(api_client, db):
         birth_country=usa,
     )
 
-    response = api_client.get(reverse('creator-list'))
+    response = api_client.get(reverse('api-v2-creator-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -133,7 +133,7 @@ def test_creator_list_handles_unknown_year_markers(api_client, db):
         birth_date=_create_date(year='????'),
     )
 
-    response = api_client.get(reverse('creator-list'))
+    response = api_client.get(reverse('api-v2-creator-list'))
 
     assert response.status_code == 200
     assert response.data['count'] == 1
@@ -199,7 +199,7 @@ def test_creator_detail_returns_expected_payload(
     )
 
     response = authenticated_client.get(
-        reverse('creator-detail', kwargs={'pk': creator.pk}),
+        reverse('api-v2-creator-detail', kwargs={'pk': creator.pk}),
     )
 
     assert response.status_code == 200
@@ -270,7 +270,7 @@ def test_creator_list_applies_filter_query_params(
     )
 
     response = authenticated_client.get(
-        reverse('creator-list'),
+        reverse('api-v2-creator-list'),
         {
             'name': 'kub',
             'birth_country': 'us',
@@ -306,7 +306,7 @@ def test_creator_list_filters_uncertain_partial_years(
     )
 
     response = authenticated_client.get(
-        reverse('creator-list'),
+        reverse('api-v2-creator-list'),
         {
             'death_date__gte': '2000',
             'death_date__lte': '2009-12-31',
@@ -327,7 +327,7 @@ def test_creator_list_rejects_invalid_partial_date(
 ):
     """Malformed partial-date values return a validation error."""
     response = authenticated_client.get(
-        reverse('creator-list'),
+        reverse('api-v2-creator-list'),
         {'birth_date__gte': '1940-13'},
     )
 
@@ -355,9 +355,9 @@ def test_creator_endpoints_hide_soft_deleted_records(
         deleted=True,
     )
 
-    list_response = authenticated_client.get(reverse('creator-list'))
+    list_response = authenticated_client.get(reverse('api-v2-creator-list'))
     detail_response = authenticated_client.get(
-        reverse('creator-detail', kwargs={'pk': deleted.pk}),
+        reverse('api-v2-creator-detail', kwargs={'pk': deleted.pk}),
     )
 
     assert list_response.status_code == 200
@@ -376,14 +376,14 @@ def test_creator_list_returns_304_for_if_modified_since(
         sort_name='Kubert, Joe',
     )
 
-    response = authenticated_client.get(reverse('creator-list'))
+    response = authenticated_client.get(reverse('api-v2-creator-list'))
 
     assert response.status_code == 200
     assert 'Last-Modified' in response
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('creator-list'),
+        reverse('api-v2-creator-list'),
         HTTP_IF_MODIFIED_SINCE=response['Last-Modified'],
     )
 
@@ -402,7 +402,7 @@ def test_creator_detail_returns_304_for_if_none_match(
     )
 
     response = authenticated_client.get(
-        reverse('creator-detail', kwargs={'pk': creator.pk}),
+        reverse('api-v2-creator-detail', kwargs={'pk': creator.pk}),
     )
 
     assert response.status_code == 200
@@ -410,7 +410,7 @@ def test_creator_detail_returns_304_for_if_none_match(
     assert 'ETag' in response
 
     cached_response = authenticated_client.get(
-        reverse('creator-detail', kwargs={'pk': creator.pk}),
+        reverse('api-v2-creator-detail', kwargs={'pk': creator.pk}),
         HTTP_IF_NONE_MATCH=response['ETag'],
     )
 
