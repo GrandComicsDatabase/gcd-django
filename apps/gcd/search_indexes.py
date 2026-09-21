@@ -304,7 +304,10 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return return_val
 
     def prepare_characters(self, obj):
-        return obj.show_characters_as_text()
+        try:
+            return obj.show_characters_as_text()
+        except Universe.DoesNotExist:
+            return obj.characters
 
     def prepare_sort_title(self, obj):
         return obj.show_title(True)

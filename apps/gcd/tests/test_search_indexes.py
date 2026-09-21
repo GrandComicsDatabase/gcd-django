@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+from apps.gcd.models import Universe
 from apps.gcd.search_indexes import CreatorIndex, StoryIndex
 
 
@@ -43,3 +44,15 @@ def test_story_index_excludes_credits_with_missing_creator_names():
         credit_type__name='editing',
         creator__creator__isnull=False,
     )
+
+
+def test_story_index_uses_legacy_characters_for_missing_universe():
+    """Dangling universe references do not abort a full index rebuild."""
+    show_characters = Mock(side_effect=Universe.DoesNotExist)
+    story = SimpleNamespace(
+        characters='Legacy Character',
+        show_characters_as_text=show_characters,
+    )
+
+    assert StoryIndex().prepare_characters(story) == 'Legacy Character'
+    show_characters.assert_called_once_with()
