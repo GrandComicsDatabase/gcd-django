@@ -3,8 +3,10 @@
 
 """Serializers for v2 Brand endpoints."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import IdNameReferenceSerializer
 from apps.gcd.models import Brand, BrandGroup, BrandUse
 
 
@@ -19,6 +21,7 @@ class BrandGroupReferenceSerializer(serializers.ModelSerializer):
         model = BrandGroup
         fields = ('id', 'name', 'parent')
 
+    @extend_schema_field(IdNameReferenceSerializer)
     def get_parent(self, obj):
         """Return the minimal nested parent Publisher reference."""
         return {
@@ -48,6 +51,7 @@ class BrandUseSerializer(serializers.ModelSerializer):
             'modified',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer)
     def get_publisher(self, obj):
         """Return the minimal nested Publisher reference."""
         return {
@@ -103,6 +107,7 @@ class BrandSerializer(BrandListSerializer):
             'uses',
         )
 
+    @extend_schema_field(BrandGroupReferenceSerializer(many=True))
     def get_groups(self, obj):
         """Return ordered active Brand Group references."""
         groups = getattr(obj, 'active_brand_group_list', None)
@@ -117,6 +122,7 @@ class BrandSerializer(BrandListSerializer):
             )
         return BrandGroupReferenceSerializer(groups, many=True).data
 
+    @extend_schema_field(BrandUseSerializer(many=True))
     def get_uses(self, obj):
         """Return ordered Brand Uses tied to active Publishers."""
         uses = getattr(obj, 'active_brand_use_list', None)

@@ -8,6 +8,7 @@ from django.db.models import Q
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import Story
@@ -20,10 +21,10 @@ class StoryFilterSet(TimestampFilterSet):
         field_name='title',
         lookup_expr='icontains',
     )
-    type = django_filters.NumberFilter(field_name='type_id')
+    type = IntegerFilter(field_name='type_id')
     genre = django_filters.CharFilter(method='filter_genre')
-    issue = django_filters.NumberFilter(field_name='issue_id')
-    issue__series = django_filters.NumberFilter(
+    issue = IntegerFilter(field_name='issue_id')
+    issue__series = IntegerFilter(
         field_name='issue__series_id',
     )
 

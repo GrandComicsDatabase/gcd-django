@@ -7,6 +7,7 @@ import django_filters
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import Brand
@@ -20,8 +21,8 @@ class BrandFilterSet(TimestampFilterSet):
         lookup_expr='icontains',
     )
     generic = django_filters.BooleanFilter(field_name='generic')
-    group = django_filters.NumberFilter(method='filter_group')
-    publisher = django_filters.NumberFilter(method='filter_publisher')
+    group = IntegerFilter(field_name='id', method='filter_group')
+    publisher = IntegerFilter(field_name='id', method='filter_publisher')
 
     def filter_group(self, queryset, name, value):
         """Filter by an active Brand Group without duplicate rows."""

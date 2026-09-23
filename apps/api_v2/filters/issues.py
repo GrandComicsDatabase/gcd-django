@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import Issue
@@ -42,7 +43,7 @@ def validate_iso_week(value):
 class IssueFilterSet(TimestampFilterSet):
     """Filters for issue list endpoints."""
 
-    series = django_filters.NumberFilter(field_name='series_id')
+    series = IntegerFilter(field_name='series_id')
     variant_of = django_filters.BooleanFilter(method='filter_variant_of')
     key_date__gt = django_filters.CharFilter(
         field_name='key_date',

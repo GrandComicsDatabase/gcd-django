@@ -3,9 +3,21 @@
 
 """Serializers for v2 brand group endpoints."""
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from apps.api_v2.serializers.schema_types import IdNameReferenceSerializer
 from apps.gcd.models import BrandGroup
+
+
+class BrandGroupEmblemReferenceSerializer(serializers.Serializer):
+    """Describe an active Brand emblem in a Brand Group response."""
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    generic = serializers.BooleanField()
+    year_began = serializers.IntegerField()
+    year_ended = serializers.IntegerField()
 
 
 class BrandGroupListSerializer(serializers.ModelSerializer):
@@ -28,6 +40,7 @@ class BrandGroupListSerializer(serializers.ModelSerializer):
             'modified',
         )
 
+    @extend_schema_field(IdNameReferenceSerializer)
     def get_parent(self, obj):
         """Return the minimal nested parent Publisher reference."""
         return {
@@ -62,6 +75,7 @@ class BrandGroupSerializer(BrandGroupListSerializer):
             'emblems',
         )
 
+    @extend_schema_field(BrandGroupEmblemReferenceSerializer(many=True))
     def get_emblems(self, obj):
         """Return ordered active Brand emblems for this group."""
         emblems = getattr(obj, 'active_brand_group_emblem_list', None)

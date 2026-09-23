@@ -7,6 +7,7 @@ import django_filters
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     LanguageCodeFilter,
     TimestampFilterSet,
 )
@@ -22,8 +23,8 @@ class SeriesFilterSet(TimestampFilterSet):
     )
     country = django_filters.CharFilter(field_name='country__code')
     language = LanguageCodeFilter(field_name='language')
-    publisher = django_filters.NumberFilter(field_name='publisher_id')
-    publication_type = django_filters.NumberFilter(
+    publisher = IntegerFilter(field_name='publisher_id')
+    publication_type = IntegerFilter(
         field_name='publication_type_id',
     )
 

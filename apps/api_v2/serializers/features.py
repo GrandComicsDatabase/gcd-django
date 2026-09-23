@@ -120,6 +120,7 @@ class FeatureListSerializer(serializers.ModelSerializer):
             'modified',
         )
 
+    @extend_schema_field(FeatureTypeReferenceSerializer)
     def get_feature_type(self, obj):
         """Return the nested Feature Type reference."""
         return _feature_type_reference(obj.feature_type)
@@ -161,6 +162,7 @@ class FeatureSerializer(FeatureListSerializer):
             )
         return FeatureNameDetailSerializer(name_details, many=True).data
 
+    @extend_schema_field(FeatureLogoSerializer(many=True))
     def get_logos(self, obj):
         """Return ordered active Feature Logos."""
         name_details = getattr(obj, 'active_name_detail_list', None)
@@ -186,6 +188,7 @@ class FeatureSerializer(FeatureListSerializer):
             )
         return FeatureLogoSerializer(logos, many=True).data
 
+    @extend_schema_field(NormalizedFeatureRelationSerializer(many=True))
     def get_relations(self, obj):
         """Return one normalized collection for both relation directions."""
         outgoing = getattr(obj, 'outgoing_feature_relation_list', None)

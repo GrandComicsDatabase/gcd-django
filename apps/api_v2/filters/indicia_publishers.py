@@ -7,6 +7,7 @@ import django_filters
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import IndiciaPublisher
@@ -19,7 +20,7 @@ class IndiciaPublisherFilterSet(TimestampFilterSet):
         field_name='name',
         lookup_expr='icontains',
     )
-    parent = django_filters.NumberFilter(field_name='parent_id')
+    parent = IntegerFilter(field_name='parent_id')
     country = django_filters.CharFilter(field_name='country__code')
     is_surrogate = django_filters.BooleanFilter(field_name='is_surrogate')
 

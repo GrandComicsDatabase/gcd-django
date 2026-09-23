@@ -8,6 +8,7 @@ from django.db.models import Q
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    IntegerFilter,
     LanguageCodeFilter,
     TimestampFilterSet,
 )
@@ -20,7 +21,7 @@ class FeatureFilterSet(TimestampFilterSet):
     name = django_filters.CharFilter(
         method='filter_name',
     )
-    feature_type = django_filters.NumberFilter(field_name='feature_type_id')
+    feature_type = IntegerFilter(field_name='feature_type_id')
     language = LanguageCodeFilter(field_name='language')
     genre = django_filters.CharFilter(
         field_name='genre',
