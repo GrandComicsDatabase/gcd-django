@@ -41,10 +41,11 @@ from apps.api_v2.throttling import (
 
 V2_SCHEMA_DESCRIPTION = """Grand Comics Database public read-only API.
 
-Authentication is optional. Anonymous clients are limited to 30 requests per
-hour. Authenticated clients using Basic, Token, or session authentication are
-limited to 2,000 requests per day. Obtain a token by posting a username and
-password to `/api/v2/auth/token/`.
+Authentication is optional while the API is in development. Anonymous
+clients are limited to 30 requests per hour. 
+Authenticated clients using Basic, Token, or session authentication are,
+as of this writing, limited to 2,000 requests per day. Obtain a token by
+posting a username and password to `/api/v2/auth/token/`.
 """
 
 
