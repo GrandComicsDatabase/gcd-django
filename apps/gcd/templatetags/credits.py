@@ -865,7 +865,7 @@ def show_reprints(story, bare_value=False):
     if story.reprint_notes:
         for string in split_reprint_string(story.reprint_notes):
             string = string.strip()
-            reprint += '<li> ' + render_markdown(string) + ' </li>'
+            reprint += '<li> ' + render_markdown_inline(string) + ' </li>'
 
     if reprint != '':
         if bare_value:
