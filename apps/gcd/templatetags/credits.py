@@ -319,7 +319,7 @@ def __format_credit(story, credit, computed_value='', tailwind=False,
         values = split_reprint_string(credit_value)
         credit_value = '<ul>'
         for value in values:
-            credit_value += '<li>' + render_markdown(value)
+            credit_value += '<li>' + render_markdown_inline(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
         model_name = story._meta.model_name
