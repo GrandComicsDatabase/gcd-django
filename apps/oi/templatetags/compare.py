@@ -186,7 +186,7 @@ def field_value(revision, field):
         if value.strip() != '':
             for string in split_reprint_string(value):
                 string = string.strip()
-                reprint += '<li> ' + render_markdown(string) + ' </li>'
+                reprint += '<li> ' + render_markdown_inline(string) + ' </li>'
             if reprint != '':
                 reprint = '<ul>' + reprint + '</ul>'
         return mark_safe(reprint)
