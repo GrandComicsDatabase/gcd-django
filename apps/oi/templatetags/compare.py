@@ -14,7 +14,7 @@ from apps.gcd.templatetags.display import absolute_url, \
 from apps.gcd.templatetags.credits import format_page_count, \
                                           split_reprint_string
 
-from apps.gcd.markdown_extension import render_markdown
+from apps.gcd.markdown_extension import render_markdown, render_markdown_inline
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
