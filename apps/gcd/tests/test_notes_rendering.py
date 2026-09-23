@@ -20,8 +20,8 @@ from apps.gcd.models.publisher import (
     BrandGroupEmblemTable, BrandEmblemPublisherTable, BrandEmblemGroupTable)
 from apps.gcd.models.story import character_notes
 from apps.gcd.templatetags.credits import (
-    generate_reprint_link, generate_reprint_link_sequence,
-    split_reprint_string)
+    follow_reprint_link, generate_reprint_link, generate_reprint_link_sequence,
+    show_credit, show_reprints, split_reprint_string)
 from apps.gcd.templatetags.display import show_series_tracking
 from apps.gcd.views.details import show_group_membership
 from apps.oi.models import StoryCharacterRevision
@@ -183,6 +183,52 @@ def test_reprint_link_notes_and_semicolon_compatibility():
     rendered = field_value(revision, 'reprint_notes')
     assert '<strong>A</strong>' in rendered
     assert '<em>B</em>' in rendered
+
+
+@pytest.mark.parametrize('surface', [
+    'credit', 'original_credit', 'story', 'comparison', 'from', 'to'])
+def test_reprint_note_lists_stay_compact(surface):
+    source = ('from **First** [reference](https://example.org/source)'
+              '\n\nNext paragraph; in *Second* & more')
+    if surface in ('credit', 'original_credit', 'comparison'):
+        field = ('reprint_original_notes' if surface == 'original_credit'
+                 else 'reprint_notes')
+        record = SimpleNamespace(**{field: source})
+        if surface == 'comparison':
+            rendered = field_value(record, field)
+        else:
+            rendered = show_credit(record, field, bare_value=True)[1]
+    elif surface == 'story':
+        record = Mock(reprint_notes=source, type_id=0)
+        # Empty relations isolate textual notes without touching a database.
+        for manager in (record.from_all_reprints, record.to_all_reprints):
+            manager.select_related.return_value.order_by.return_value = []
+        rendered = show_reprints(record, bare_value=True)
+    else:
+        endpoint = Mock(reprint_notes=source)
+        endpoint.from_reprints.all.return_value = []
+        endpoint.to_reprints.all.return_value = []
+        reprint = SimpleNamespace(origin=endpoint, target=endpoint)
+        rendered = follow_reprint_link(reprint, surface)
+
+    # bare_value returns list items for the caller's ul.
+    if surface != 'story':
+        assert '<ul>' in rendered
+    assert '<li>' in rendered
+    # Check the calling surfaces, not just the inline renderer in isolation.
+    assert '<p' not in rendered
+    assert 'pt-4' not in rendered
+    if surface != 'to':
+        assert '<strong>First</strong>' in rendered
+        assert 'href="https://example.org/source"' in rendered
+        assert '</a><br>Next paragraph' in rendered
+    if surface != 'from':
+        assert '<em>Second</em> &amp; more' in rendered
+    if surface in ('from', 'to'):
+        assert ('<em>Second</em>' if surface == 'from'
+                else '<strong>First</strong>') not in rendered
+    else:
+        assert rendered.count('<li>') == 2
 
 
 def test_bond_notes_render_in_tracking():

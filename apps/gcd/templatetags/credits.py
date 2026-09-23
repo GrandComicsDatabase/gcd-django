@@ -812,7 +812,7 @@ def follow_reprint_link(reprint, direction, level=0):
             for string in split_reprint_string(reprint.origin.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('from '):
-                    reprint_note += ('<li> ' + render_markdown(string) +
+                    reprint_note += ('<li> ' + render_markdown_inline(string) +
                                      ' </li>')
     else:
         if type(reprint.target) is Story:
@@ -829,7 +829,7 @@ def follow_reprint_link(reprint, direction, level=0):
             for string in split_reprint_string(reprint.target.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('in '):
-                    reprint_note += ('<li> ' + render_markdown(string) +
+                    reprint_note += ('<li> ' + render_markdown_inline(string) +
                                      ' </li>')
 
     if reprint_note != '':
