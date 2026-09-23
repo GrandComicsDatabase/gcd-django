@@ -26,7 +26,7 @@
           </ul>
         {% if creator_signature.notes %}
         <dt>Notes
-        <dd>{{ creator_signature.notes|urlizetrunc:75|linebreaksbr }}
+        <dd>{% include "gcd/bits/notes.html" with value=creator_signature.notes only %}
         {% endif %}
         {% with creator_signature.data_source.all as data_sources %}
         {% include "gcd/bits/show_sources.html" %}

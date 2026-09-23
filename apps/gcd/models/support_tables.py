@@ -5,12 +5,24 @@ import django_tables2 as tables
 TW_COLUMN_ALIGN_RIGHT = 'px-2 sm:text-right text-left'
 
 
+class MarkdownColumn(tables.TemplateColumn):
+    """Display rich text while exporting the original editable source."""
+
+    def __init__(self, **kwargs):
+        super().__init__(template_name='gcd/bits/rich_text.html', **kwargs)
+
+    def value(self, value, **kwargs):
+        # TemplateColumn otherwise strips rendered HTML, losing link targets.
+        return value
+
+
 def render_publisher(value, addon=''):
     from apps.gcd.templatetags.display import absolute_url
     from apps.gcd.templatetags.credits import show_country_info
     display_publisher = "<img class='pe-1 inline' %s>" % (
         show_country_info(value.country))
-    return mark_safe(display_publisher) + absolute_url(value) + mark_safe(addon)
+    return (mark_safe(display_publisher) + absolute_url(value) +
+            mark_safe(addon))
 
 
 class DailyChangesTable(tables.Table):

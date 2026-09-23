@@ -152,7 +152,7 @@
   {% if series.has_tracking %}
 <h3> Tracking: </h3>
     {% if series.tracking_notes %}
-      {{ series.tracking_notes|linebreaksbr }}
+      {% include "gcd/bits/notes.html" with value=series.tracking_notes only %}
     {% endif %}
   <ul class="object-page-link-list columns-1">
     {{ series|show_series_tracking }}
@@ -160,7 +160,7 @@
   {% endif %}
   {% if series.notes %}
 <h3 class="mt-2">Notes:</h3>
-    {{ series.notes|render_markdown }}
+    {% include "gcd/bits/notes.html" with value=series.notes only %}
   {% endif %}
   {% if series.active_issues.count %}
 

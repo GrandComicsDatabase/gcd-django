@@ -24,7 +24,7 @@
   {% endif %}
   {% if received_award.notes %}
     <dt>Notes:
-    <dd>{{ received_award.notes|urlizetrunc:75|linebreaksbr }}
+    <dd>{% include "gcd/bits/notes.html" with value=received_award.notes only %}
   {% endif %}
   {% with received_award.data_source.all as data_sources %}
     {% include "gcd/bits/show_sources.html" %}

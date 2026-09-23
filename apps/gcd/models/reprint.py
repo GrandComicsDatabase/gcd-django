@@ -115,7 +115,9 @@ class Reprint(GcdLink):
                         esc(issue.full_name())))
 
         if self.notes:
-            reprint = '%s [%s]' % (reprint, esc(self.notes))
+            from apps.gcd.markdown_extension import render_markdown_inline
+            reprint = '%s [%s]' % (
+                reprint, render_markdown_inline(self.notes))
         return mark_safe(reprint)
 
     def __str__(self):

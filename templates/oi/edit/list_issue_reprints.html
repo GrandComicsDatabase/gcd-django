@@ -90,7 +90,7 @@
 <h3>Current reprint notes:</h3>
 <ul>
     {% for reprint in story_revision.reprint_notes|split_reprint_string %}
-  <li>{{ reprint }}
+  <li>{% include "gcd/bits/notes.html" with value=reprint only %}
       {% if not story_revision.deleted %}
     <form class="inline" method="GET"
           action="{% url "add_story_reprint" story_id=story_revision.id changeset_id=changeset.id reprint_note=reprint %}">

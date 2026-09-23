@@ -29,7 +29,7 @@
   {% endif %}
   {% if received_award.notes %}
             <li><span class="font-bold">Notes:</span>
-            {{ received_award.notes|urlizetrunc:75|linebreaksbr }}</li>
+            {% include "gcd/bits/notes.html" with value=received_award.notes only %}</li>
   {% endif %}
   {% with received_award.data_source.all as data_sources %}
     {% include "gcd/bits/show_sources.html" %}

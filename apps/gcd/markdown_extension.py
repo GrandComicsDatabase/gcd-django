@@ -1,18 +1,128 @@
+from html import escape
+from html.parser import HTMLParser
+
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 from markdown.inlinepatterns import InlineProcessor
+from markdown.postprocessors import Postprocessor
 from xml.etree.ElementTree import Element
 
-from apps.gcd.models import Issue, Story
+import markdown
+import nh3
+
+from django.conf import settings
+from django.utils.safestring import mark_safe
+
+
+MARKDOWN_CLASSES = {
+    'p': 'pt-4',
+    'ul': 'list-disc list-outside ps-8',
+    'ol': 'list-decimal list-outside ps-8',
+}
+BLOCK_TAGS = {
+    'blockquote', 'dd', 'div', 'dl', 'dt', 'h1', 'h2', 'h3', 'h4', 'h5',
+    'h6', 'hr', 'li', 'ol', 'p', 'pre', 'ul', 'table', 'thead', 'tbody',
+    'tfoot', 'tr', 'td', 'th', 'caption',
+}
+HTML_CLEANER = nh3.Cleaner(
+    tags=BLOCK_TAGS | {'a', 'abbr', 'b', 'br', 'code', 'del', 'em', 'i',
+                       'img', 's', 'span', 'strong', 'sub', 'sup'},
+    attributes={'a': {'href', 'title'}, 'abbr': {'title'},
+                'img': {'src', 'alt', 'title', 'width', 'height'},
+                'td': {'colspan', 'rowspan'},
+                'th': {'colspan', 'rowspan', 'scope'}},
+    allowed_classes={tag: set(classes.split())
+                     for tag, classes in MARKDOWN_CLASSES.items()},
+    url_schemes={'http', 'https', 'mailto'})
+
+
+def render_markdown(value):
+    """Return safe block HTML without changing stored or exported source."""
+    if not value:
+        return ''
+    html = markdown.markdown(
+        str(value), extensions=settings.MARKDOWNX_MARKDOWN_EXTENSIONS,
+        extension_configs=getattr(
+            settings, 'MARKDOWNX_MARKDOWN_EXTENSION_CONFIGS', {}))
+    # Safety must not depend on a deployment retaining the preview extension.
+    return mark_safe(HTML_CLEANER.clean(html))
+
+
+class InlineMarkdownParser(HTMLParser):
+    """Keep link/formatting markup, with line boundaries instead of blocks."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+        self.lists = []
+
+    def boundary(self):
+        if self.parts and self.parts[-1] != '<br>':
+            self.parts.append('<br>')
+
+    def handle_starttag(self, tag, attrs):
+        if tag in BLOCK_TAGS:
+            self.boundary()
+            if tag in {'ol', 'ul'}:
+                self.lists.append(0 if tag == 'ol' else None)
+            if tag == 'li':
+                if self.lists and self.lists[-1] is not None:
+                    self.lists[-1] += 1
+                    self.parts.append('%s. ' % self.lists[-1])
+                else:
+                    self.parts.append('• ')
+        else:
+            self.parts.append(self.get_starttag_text())
+
+    def handle_endtag(self, tag):
+        if tag in BLOCK_TAGS:
+            self.boundary()
+            if tag in {'ol', 'ul'} and self.lists:
+                self.lists.pop()
+        else:
+            self.parts.append('</%s>' % tag)
+
+    def handle_data(self, data):
+        # Markdown's HTML formatting newlines are not additional visual breaks.
+        if data.strip() or '\n' not in data:
+            self.parts.append(escape(data))
+
+
+def render_markdown_inline(value):
+    """Render an annotation inside phrasing content, never block elements.
+
+    Full detail views use render_markdown. Compact annotations retain links
+    and emphasis, but represent paragraphs and list items as separate lines.
+    """
+    parser = InlineMarkdownParser()
+    parser.feed(render_markdown(value))
+    parser.close()
+    while parser.parts and parser.parts[-1] == '<br>':
+        parser.parts.pop()
+    return mark_safe(''.join(parser.parts))
+
+
+class SafeHTMLExtension(Extension):
+    """Sanitize after Markdown has restored raw HTML and generated links."""
+
+    def extendMarkdown(self, md):
+        md.postprocessors.register(SafeHTMLPostprocessor(md), 'safe_html', 0)
+
+
+class SafeHTMLPostprocessor(Postprocessor):
+    def run(self, text):
+        return HTML_CLEANER.clean(text)
+
 
 GCD_REFERENCE_RE = r'\[gcd_link_([^\]]+)\]\((\d+)\)'
 GCD_REFERENCE_LINK_NAME_RE = r'\[gcd_link_name_([^\]]+)\]\((\d+)\)\{([^\}]+)\}'
 
 # Regular expression for matching URLs
 URL_RE = r'(?<!\]\()(https?:\/\/[^\s\)\]\}]+)'
+
 
 class URLInlineProcessor(InlineProcessor):
     """Process URLs and convert them to links."""
@@ -35,6 +145,7 @@ class URLExtension(Extension):
 class GCDReferenceInlineProcessor(InlineProcessor):
     """Process [gcd_link_object](id) references and convert to links."""
     def handleMatch(self, m, data):
+        from apps.gcd.models import Issue, Story
         from apps.oi.views import DISPLAY_CLASSES
         # Check if the regex match has two or three groups
         if len(m.groups()) == 3:
@@ -140,11 +251,7 @@ class TailwindExtension(Extension):
 class TailwindTreeProcessor(Treeprocessor):
     """Walk the root node and modify any discovered tag"""
 
-    classes = {
-        "p": "pt-4",
-        "ul": "list-disc list-outside ps-8",
-        "ol": "list-decimal list-outside ps-8",
-    }
+    classes = MARKDOWN_CLASSES
 
     def run(self, root):
         # Keep track of which tags we've already seen

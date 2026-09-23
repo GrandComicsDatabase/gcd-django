@@ -2,14 +2,15 @@
 
 
 from django import forms
+from markdownx.widgets import MarkdownxWidget
 
 from .support import (
-    _get_comments_form_field, _set_help_labels, _clean_keywords,
+    _get_comments_form_field, _set_help_labels,
     SERIES_HELP_LINKS, SERIES_HELP_TEXTS, GENERIC_ERROR_MESSAGE,
     KeywordBaseForm)
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field, HTML
+from crispy_forms.layout import Layout, Field
 from .custom_layout_object import Formset, BaseField
 
 from apps.oi.models import (
@@ -39,8 +40,8 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
                 super(RuntimeAddSeriesRevisionForm, self).__init__(*args,
                                                                    **kwargs)
                 self.fields['is_singleton'].help_text += \
-                  ' Series notes for an added singleton series will be '\
-                  'copied to the added issue.'
+                    ' Series notes for an added singleton series will be '\
+                    'copied to the added issue.'
 
             if can_request:
                 reservation_requested = forms.BooleanField(
@@ -73,8 +74,8 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
                 self.fields['language'].empty_label = None
                 if revision.added:
                     self.fields['is_singleton'].help_text += \
-                      ' Series notes for an added singleton series will be '\
-                      'copied to the added issue.'
+                        ' Series notes for an added singleton series will be '\
+                        'copied to the added issue.'
 
             if user.has_perm('indexer.can_approve'):
                 move_to_publisher_with_id = forms.IntegerField(
@@ -118,8 +119,8 @@ class SeriesRevisionForm(KeywordBaseForm):
             'binding': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'publishing_format': forms.TextInput(attrs={'class':
                                                         'w-full lg:w-4/5'}),
-            'tracking_notes': forms.Textarea(attrs={'class': 'w-full lg:w-4/5',
-                                                    'rows': '3'}),
+            'tracking_notes': MarkdownxWidget(
+                attrs={'class': 'w-full lg:w-4/5', 'rows': '3'}),
         }
         labels = {
             'has_isbn': 'Has ISBN',

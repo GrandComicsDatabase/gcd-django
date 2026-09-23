@@ -74,13 +74,13 @@
             {{ story|show_credit:"first_line" }}
             {{ story|show_credit:"feature_logo" }}
             {{ story|show_credit:"genre" }}
-            {{ story.show_characters|linebreaksbr }}
+            {{ story.show_characters }}
             {% if story.universe.exists %}
             {{ story.show_universe }}
             {% endif %}
             {{ story|show_credit:"synopsis"|linebreaksbr }}
             {{ story|show_credit:"show_awards" }}
-            {{ story|show_reprints|linebreaksbr }}
+            {{ story|show_reprints }}
             {{ story|show_credit:"keywords" }}
         </dl>
         {% endif %}
@@ -98,7 +98,7 @@
 
         {% if story.notes %}
         <h3 class="notes_header"> Indexer Notes </h3>
-        <p>{{ story.notes|urlizetrunc:75|linebreaksbr }}</p>
+        <div>{% include "gcd/bits/notes.html" with value=story.notes only %}</div>
         {% endif %}
       {% endif %} <!-- shown_types -->
 

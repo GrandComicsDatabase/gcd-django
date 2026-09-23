@@ -95,11 +95,11 @@ GCD :: Character :: {{ character.name }}
 </table>
 {% if character.description %}
 <h3 class="mt-2">Description:</h3>
-{{ character.description|render_markdown }}
+{% include "gcd/bits/rich_text.html" with value=character.description only %}
 {% endif %}
 {% if character.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ character.notes|render_markdown }}
+{% include "gcd/bits/notes.html" with value=character.notes only %}
 {% endif %}
 {% endblock %}
 
@@ -166,7 +166,7 @@ GCD :: Character :: {{ character.name }}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0 }}</a>
       {% if relation.notes %}
-      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
       {% endif %}
   </li>
     {% endwith %}
@@ -183,7 +183,7 @@ GCD :: Character :: {{ character.name }}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_character_relation' character_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_character' character_id=relation_info.0.id %}">{{ relation_info.0.translation_descriptor }}</a>
       {% if relation.notes %}
-      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
       {% endif %}
   </li>
     {% endwith %}
@@ -199,7 +199,7 @@ GCD :: Character :: {{ character.name }}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_character' character_id=relation.to_character.id %}">{{ relation.to_character.descriptor }}</a>
     {% if relation.notes %}
-    <br><strong>Notes: </strong>{{ relation.notes }}
+    {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
     {% endif %}
   </li>
   {% endfor %}
@@ -216,7 +216,7 @@ GCD :: Character :: {{ character.name }}
     <br>
     <a href="{% url 'show_group_membership' group_membership_id=membership.id %}">{{ membership.display_years }} ({{ membership.membership_type }}</a>)
     {% if membership.notes %}
-    <br><strong>Notes: </strong>{{ membership.notes }}
+    {% include "gcd/bits/notes.html" with value=membership.notes label="Notes:" only %}
     {% endif %}
   </li>
   {% endfor %}

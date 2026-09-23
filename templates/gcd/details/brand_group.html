@@ -54,7 +54,7 @@ GCD :: Publisher's Brand Group :: {{ brand.name }}
 {% endif %}
 {% if brand.notes %}
         <dt> Notes:
-        <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
+        <dd> {% include "gcd/bits/notes.html" with value=brand.notes only %}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
       </dl>
@@ -117,7 +117,7 @@ GCD :: Publisher's Brand Group :: {{ brand.name }}
     <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }} </td>
     <td> {{ brand.year_ended|default:"" }} </td>
-    <td> {{ brand.notes }} </td>
+    <td> {% include "gcd/bits/notes.html" with value=brand.notes only %} </td>
   </tr>
 {% endfor %}
 </table>

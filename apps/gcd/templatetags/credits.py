@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 import icu
 
-import markdown as md
-
 from django import template
 from django.conf import settings
-from django.template.defaultfilters import stringfilter
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from django.utils.safestring import mark_safe
@@ -16,10 +13,8 @@ from apps.stddata.models import Country, Language
 from apps.gcd.models.story import AD_TYPES, Story
 from apps.gcd.models.support import GENRES
 from apps.gcd.models import STORY_TYPES, CREDIT_TYPES
-from apps.gcd.markdown_extension import TailwindExtension, \
-                                        GCDFieldExtension, \
-                                        GCDFieldLinkNameExtension, \
-                                        URLExtension
+from apps.gcd.markdown_extension import (
+    render_markdown, render_markdown_inline)
 
 
 register = template.Library()
@@ -324,7 +319,7 @@ def __format_credit(story, credit, computed_value='', tailwind=False,
         values = split_reprint_string(credit_value)
         credit_value = '<ul>'
         for value in values:
-            credit_value += '<li>' + esc(value)
+            credit_value += '<li>' + render_markdown(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
         model_name = story._meta.model_name
@@ -489,16 +484,7 @@ def show_cover_letterer_credit(story):
     return show_creator_credit(story, 'letters')
 
 
-@register.filter()
-@stringfilter
-def render_markdown(value):
-    return mark_safe(md.markdown(value,
-                                 extensions=['nl2br',
-                                             'md_in_html',
-                                             TailwindExtension(),
-                                             GCDFieldLinkNameExtension(),
-                                             GCDFieldExtension(),
-                                             URLExtension()]))
+register.filter('render_markdown', render_markdown)
 
 
 def __format_keywords(keywords, join_on='; ', model_name='story', url=True):
@@ -647,7 +633,7 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
         link += " (" + esc(issue.publication_date) + ")"
     link += '</a>'
     if notes:
-        link = '%s [%s]' % (link, esc(notes))
+        link = '%s [%s]' % (link, render_markdown_inline(notes))
     if li and not only_number:
         return '<li> ' + link
     else:
@@ -682,7 +668,7 @@ def generate_reprint_link_sequence(story, issue, from_to, notes=None, li=True,
         link = "%s (%s)" % (link, esc(issue.publication_date))
     link += '</a>'
     if notes:
-        link = '%s [%s]' % (link, esc(notes))
+        link = '%s [%s]' % (link, render_markdown_inline(notes))
     if li and not only_number:
         return '<li> ' + link
     else:
@@ -826,7 +812,8 @@ def follow_reprint_link(reprint, direction, level=0):
             for string in split_reprint_string(reprint.origin.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('from '):
-                    reprint_note += '<li> ' + esc(string) + ' </li>'
+                    reprint_note += ('<li> ' + render_markdown(string) +
+                                     ' </li>')
     else:
         if type(reprint.target) is Story:
             further_reprints = reprint.target.to_all_reprints\
@@ -842,7 +829,8 @@ def follow_reprint_link(reprint, direction, level=0):
             for string in split_reprint_string(reprint.target.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('in '):
-                    reprint_note += '<li> ' + esc(string) + ' </li>'
+                    reprint_note += ('<li> ' + render_markdown(string) +
+                                     ' </li>')
 
     if reprint_note != '':
         reprint_note = 'which is reprinted<ul>%s</ul>' % reprint_note
@@ -877,7 +865,7 @@ def show_reprints(story, bare_value=False):
     if story.reprint_notes:
         for string in split_reprint_string(story.reprint_notes):
             string = string.strip()
-            reprint += '<li> ' + esc(string) + ' </li>'
+            reprint += '<li> ' + render_markdown(string) + ' </li>'
 
     if reprint != '':
         if bare_value:
@@ -886,8 +874,8 @@ def show_reprints(story, bare_value=False):
         return mark_safe('<dt class="credit_tag">' +
                          '<span class="credit_label">' + label +
                          '</span></dt>' + '<dd class="credit_def">' +
-                         '<span class="credit_value">' +
-                         '<ul>' + reprint + '</ul></span></dd>')
+                         '<div class="credit_value">' +
+                         '<ul>' + reprint + '</ul></div></dd>')
     else:
         return ""
 

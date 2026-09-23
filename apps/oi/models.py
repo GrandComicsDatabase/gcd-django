@@ -5512,7 +5512,11 @@ class StoryCharacterRevision(Revision):
 
     def show_notes(self):
         from apps.gcd.models.story import character_notes
-        return character_notes(self)
+        return character_notes(self, html=True)
+
+    def show_note_flags(self):
+        from apps.gcd.models.story import character_notes
+        return character_notes(self, html=True, include_notes=False)
 
     def _imps_for(self, field_name):
         # imps already come from StoryRevision, since is_changed is True there
