@@ -1,0 +1,76 @@
+{% extends "gcd/keywords/base.html" %}
+
+{% block title %}GCD :: Keyword {{ keyword.name }}{% endblock %}
+
+{% block keyword_body %}
+<p class="my-4">
+  <a href="{{ back_url }}">Back to results</a>
+</p>
+<header class="kw-heading">
+  <div class="kw-heading-main">
+    <h1>{{ keyword.name }}</h1>
+    <span class="kw-badge">Read-only</span>
+  </div>
+</header>
+<dl class="mb-4">
+  <dt class="font-bold">ID</dt>
+  <dd>{{ keyword.pk }}</dd>
+  <dt class="font-bold">Slug</dt>
+  <dd>{{ keyword.slug }}</dd>
+  <dt class="font-bold">Usages</dt>
+  <dd>{{ usage_count }}</dd>
+</dl>
+<h2 class="text-xl font-bold mb-2">Usage by object type</h2>
+<p class="mb-2">Counts include all associated object types.</p>
+<div class="kw-table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Object type</th>
+        <th scope="col" class="kw-number">Usages</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for group in usage_groups %}
+        <tr>
+          <td>{{ group.content_type__app_label }} / {{ group.content_type__model }}</td>
+          <td class="kw-number">{{ group.total }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="2" class="p-2">This keyword is not currently used.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<h2 class="text-xl font-bold mt-4 mb-2">Associated catalog objects</h2>
+<p>Links refer to this exact keyword ID. Private collection objects are not listed.</p>
+<ul class="my-4">
+  {% for usage in usages %}
+    <li>
+      {{ usage.type }}:
+      {% if usage.url %}
+        <a href="{{ usage.url }}">{{ usage.label }}</a>
+      {% else %}
+        {{ usage.label }}
+      {% endif %}
+    </li>
+  {% empty %}
+    <li>No associated catalog objects.</li>
+  {% endfor %}
+</ul>
+{% if objects_page.has_other_pages %}
+  <nav aria-label="Associated object pages" class="flex gap-4 my-4">
+    {% if objects_page.has_previous %}
+      <a href="?{{ navigation_query }}&amp;objects_page={{ objects_page.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span>Page {{ objects_page.number }} of {{ objects_page.paginator.num_pages }}</span>
+    {% if objects_page.has_next %}
+      <a href="?{{ navigation_query }}&amp;objects_page={{ objects_page.next_page_number }}">Next</a>
+    {% endif %}
+  </nav>
+{% endif %}
+<h2 class="text-xl font-bold mt-4 mb-2">Classification</h2>
+<p>Categories, parent/child relationships and aliases are planned for a later stage and cannot be edited in this preview.</p>
+{% endblock %}

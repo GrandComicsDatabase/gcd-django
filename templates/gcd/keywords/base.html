@@ -1,0 +1,13 @@
+{% extends "gcd/tw_base_view.html" %}
+{% load static %}
+
+{% block css_raw %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/keyword-manager.css' %}">
+{% endblock %}
+
+{% block view_body %}
+<main class="kw-manager">
+  {% block keyword_body %}{% endblock %}
+</main>
+{% endblock %}
