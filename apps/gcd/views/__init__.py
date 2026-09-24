@@ -57,7 +57,7 @@ def index(request):
 
     creators = []
     end_listed = 0
-    # The timeline is only rendered when managed content is enabled.
+    # The timeline is only rendered when USE_TEMPLATESADMIN is enabled.
     if settings.USE_TEMPLATESADMIN:
         today = datetime.today()
         day = '%0.2d' % (today).day
