@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-01-31 15:46+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2021-02-22 23:10+0000\n"
 "Last-Translator: b'Donald Dale Milne <dondmilne@att.net>'\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: it\n"
@@ -29,7 +29,7 @@ msgstr "Codice di lavorazione"
 
 #: apps/gcd/templatetags/credits.py:290
 msgid "First Line of Dialogue or Text"
-msgstr "Prima riga di dialogo o testo"
+msgstr "Prima riga del dialogo o testo"
 
 #: apps/gcd/templatetags/credits.py:298
 msgid "Reprinted"
@@ -61,7 +61,7 @@ msgstr "Accedi"
 #: apps/indexer/templates/indexer/password_reset_form.html:5
 #: apps/indexer/templates/indexer/password_reset_form.html:9
 msgid "Password reset"
-msgstr "Reimpostazione password"
+msgstr "Reimpostazione della password"
 
 #: apps/indexer/templates/indexer/password_reset_confirm.html:11
 msgid "Enter new password"
@@ -97,7 +97,7 @@ msgstr "Il link per la reimpostazione della password non era valido, forse perch
 
 #: apps/indexer/templates/indexer/password_reset_done.html:5
 msgid "Password reset successful"
-msgstr "Reimpostazione password riuscita"
+msgstr "Reimpostazione della password riuscita"
 
 #: apps/indexer/templates/indexer/password_reset_done.html:9
 msgid "Password reset sent"
@@ -174,28 +174,28 @@ msgstr "Elemento <b>%s</b> rimosso da %s"
 
 #: apps/mycomics/views.py:418
 msgid "Item moved between collections"
-msgstr "Elemento spostato tra collezioni"
+msgstr "Elemento spostato tra le collezioni"
 
 #: apps/mycomics/views.py:425
 #, python-format
 msgid ""
 "Item status for own/want differed from default of new collection <b>%s</b> "
 "and was changed."
-msgstr "Lo stato posseduto/desiderato dell'elemento differiva dal valore predefinito della nuova collezione <b>%s</b> ed è stato modificato."
+msgstr "Lo stato posseduto/desiderato dell'elemento differiva da quello predefinito della nuova collezione <b>%s</b> ed è stato modificato."
 
 #: apps/mycomics/views.py:435 apps/mycomics/views.py:457
 #, python-format
 msgid ""
 "Item status is set to for sale due to default of new collection <b>%s</b>."
-msgstr "Lo stato dell'elemento è impostato su «in vendita» a causa del valore predefinito della nuova collezione <b>%s</b>."
+msgstr "Lo stato dell'elemento è stato impostato su «in vendita» in base al valore predefinito della nuova collezione <b>%s</b>."
 
 #: apps/mycomics/views.py:444
 msgid "Item copied between collections"
-msgstr "Elemento copiato tra collezioni"
+msgstr "Elemento copiato tra le collezioni"
 
 #: apps/mycomics/views.py:448
 msgid "Own/want default for new collection differs from item status."
-msgstr "Il valore predefinito posseduto/desiderato della nuova collezione differisce dallo stato dell'elemento."
+msgstr "Lo stato predefinito posseduto/desiderato della nuova collezione differisce dallo stato dell'elemento."
 
 #: apps/mycomics/views.py:462 apps/mycomics/views.py:464
 msgid "Item unchanged"
@@ -480,7 +480,7 @@ msgstr "Pagine"
 #: templates/gcd/bits/issue_data.html:16
 #: templates/gcd/bits/tw_issue_data.html:36
 msgid "Indicia Frequency"
-msgstr "Periodicità dichiarata nel colophon"
+msgstr "Periodicità indicata nel colophon"
 
 #: templates/gcd/bits/issue_data.html:20
 #: templates/gcd/bits/tw_issue_data.html:40
@@ -637,7 +637,7 @@ msgstr ""
 
 #: templates/gcd/bits/tw_front_page_content.html:66 templates/gcd/index.html:59
 msgid "Disclaimer"
-msgstr "Limitazioni di responsabilità"
+msgstr "Avvertenze"
 
 #: templates/gcd/bits/tw_front_page_content.html:69 templates/gcd/index.html:63
 msgid ""
@@ -680,21 +680,20 @@ msgstr "Elimina immagine marchio dell'editore"
 msgid "Add Publisher's Brand Image"
 msgstr "Aggiungi immagine marchio dell'editore"
 
-#. Feature indica una serie narrativa o rubrica, distinta dalla testata editoriale.
 #: templates/gcd/details/feature_logo.html:63
 #: templates/gcd/details/tw_feature_logo.html:68
 msgid "Replace Feature Logo Scan"
-msgstr "Sostituisci scansione del logo della serie/rubrica"
+msgstr "Sostituisci scansione del logo della testata"
 
 #: templates/gcd/details/feature_logo.html:67
 #: templates/gcd/details/tw_feature_logo.html:72
 msgid "Delete Feature Logo Scan"
-msgstr "Elimina scansione del logo della serie/rubrica"
+msgstr "Elimina scansione del logo della testata"
 
 #: templates/gcd/details/feature_logo.html:75
 #: templates/gcd/details/tw_feature_logo.html:80
 msgid "Add Feature Logo Scan"
-msgstr "Aggiungi scansione del logo della serie/rubrica"
+msgstr "Aggiungi scansione del logo della testata"
 
 #: templates/gcd/details/issue.html:204
 msgid "Edit with another issue"
