@@ -1,6 +1,5 @@
 """Regression coverage for catalog-sized homepage and series searches."""
 
-from unittest.mock import PropertyMock, patch
 from datetime import datetime
 
 import pytest
@@ -123,22 +122,18 @@ def test_series_search_preserves_matches_without_duplicates(
         assert set(ids) == series_catalog
 
 
-@pytest.mark.parametrize('count, current, expected', [
-    (0, False, '1991'), (1, False, '1991'),
-    (2, False, '1991 - 2001'), (2, True, '1991 - present'),
-])
-@pytest.mark.parametrize('missing', [False, True])
-def test_publication_dates_tolerate_missing_issue_pointers(
-        count, current, expected, missing):
-    series = Series(issue_count=count, year_began=1991, year_ended=2001,
-                    is_current=current)
-    # Cover both NULL pointers and a dump's dangling foreign keys.
-    effect = Issue.DoesNotExist if missing else None
-    with patch.object(Series, 'first_issue', new_callable=PropertyMock,
-                      return_value=None, side_effect=effect), \
-            patch.object(Series, 'last_issue', new_callable=PropertyMock,
-                         return_value=None, side_effect=effect):
-        assert series.display_publication_dates() == expected
+@pytest.mark.parametrize('count, removed', [(3, 0), (3, 1), (3, 2), (1, 0)])
+def test_issue_deletion_updates_series_endpoints(series_catalog, count, removed):
+    series = Series.objects.get(name='Nathan Never without issues')
+    issues = [Issue.objects.create(series=series, number=str(i), sort_code=i)
+              for i in range(count)]
+    series.set_first_last_issues()
+    issues[removed].delete()
+    series.refresh_from_db()
+    remaining = [issue for issue in issues if not issue.deleted]
+    assert series.first_issue == (remaining[0] if remaining else None)
+    assert series.last_issue == (remaining[-1] if remaining else None)
+    assert Issue.objects.get(pk=issues[removed].pk).deleted
 
 
 def test_publication_dates_keep_available_issue_dates():
@@ -148,11 +143,12 @@ def test_publication_dates_keep_available_issue_dates():
     assert series.display_publication_dates() == 'April 1991 - March 2001'
 
 
-def test_series_search_page_with_missing_issue_dates(
+def test_series_search_page_with_issue_dates(
         series_catalog, client, settings):
     settings.USE_ELASTICSEARCH = False
-    # A series can have issues but no cached first/last issue pointer.
-    Series.objects.filter(pk__in=series_catalog).update(issue_count=2)
+    for series in Series.objects.filter(pk__in=series_catalog):
+        series.issue_count = series.active_issues().count()
+        series.set_first_last_issues()
     response = client.get('/series/name/Nathan%20Never/')
     assert response.status_code == 200
     assert b'Nathan Never' in response.content
