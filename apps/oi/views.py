@@ -1426,17 +1426,8 @@ def approve(request, id):
         return render_error(
           request, 'Only REVIEWING changes with an approver can be approved.')
 
-    # This second check protects production data if a persisted revision was
-    # changed after submission or bypassed the normal editing form entirely.
-    invalid_revisions = validate_changeset_revisions(changeset, request)
-    if invalid_revisions:
-        instruction = format_html(
-          _('Do not select <strong>{approve}</strong> or edit these '
-            'revisions. Select <strong>{send_back}</strong> and describe '
-            'the required correction in the comment. Affected revisions:'),
-          approve=APPROVE, send_back=SEND_BACK_TO_INDEXER)
-        return _invalid_revision_response(
-          request, invalid_revisions, instruction)
+    # Administrators may intentionally make backend corrections that the
+    # editing forms cannot express. Validate at submission, not approval.
 
     comment_text = request.POST['comments'].strip()
     changeset.approve(notes=comment_text)

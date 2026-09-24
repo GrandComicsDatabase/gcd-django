@@ -4,12 +4,12 @@ from django.contrib.auth.models import Permission, User
 from django.http import HttpResponse
 from django.test import RequestFactory
 
-from apps.gcd.models import CreditType, Feature, FeatureType, StoryType, \
-                            CREDIT_TYPES, STORY_TYPES
+from apps.gcd.models import CreditType, Feature, FeatureNameDetail, \
+                            FeatureType, StoryType, CREDIT_TYPES, STORY_TYPES
 from apps.indexer.models import Indexer
 from apps.oi import states
 from apps.oi.models import Changeset, CTYPES, IssueRevision, RevisionLock
-from apps.oi.views import (APPROVE, SEND_BACK_TO_INDEXER, approve, disapprove,
+from apps.oi.views import (SEND_BACK_TO_INDEXER, approve, disapprove,
                            submit, validate_changeset_revisions)
 
 
@@ -52,8 +52,12 @@ def _add_feature_object(story_revision, language):
       language=language,
       feature_type=feature_type,
       notes='')
-    story_revision.feature_object.add(feature)
-    return feature
+    # The editing form uses feature names after the Feature migration.
+    feature_name = FeatureNameDetail.objects.create(
+      feature=feature, name=feature.name, sort_name=feature.sort_name,
+      is_official_name=True)
+    story_revision.feature_name.add(feature_name)
+    return feature_name
 
 
 def _put_in_review(changeset, editor, *locked_objects):
@@ -89,7 +93,7 @@ def test_submission_validation_skips_unchanged_invalid_story(
       any_edit_story_rev, any_edit_story_rev.issue.series.language)
     # Give the prior revision the same legacy-invalid combination so the
     # cloned sequence is present in the changeset but was not edited.
-    any_edit_story_rev.previous().feature_object.add(feature)
+    any_edit_story_rev.previous().feature_name.add(feature)
 
     invalid = validate_changeset_revisions(
       any_edit_story_rev.changeset, _request_for(any_indexer))
@@ -154,8 +158,7 @@ def test_submit_allows_corrected_changeset(any_edit_story_rev,
     assert changeset.state == states.PENDING
 
 
-def test_approve_keeps_invalid_changeset_in_review(any_edit_story_rev,
-                                                   any_editor):
+def test_approve_allows_backend_corrections(any_edit_story_rev, any_editor):
     changeset = any_edit_story_rev.changeset
     changeset.change_type = CTYPES['issue']
     issue_revision = IssueRevision.clone(
@@ -170,13 +173,37 @@ def test_approve_keeps_invalid_changeset_in_review(any_edit_story_rev,
     changeset.refresh_from_db()
     issue_revision.refresh_from_db()
     any_edit_story_rev.refresh_from_db()
-    assert response.status_code == 200
-    assert changeset.state == states.REVIEWING
-    assert issue_revision.committed is not True
-    assert any_edit_story_rev.committed is not True
-    assert b'invalid issue or sequence data' in response.content
-    assert str(APPROVE).encode() in response.content
-    assert str(SEND_BACK_TO_INDEXER).encode() in response.content
+    # Form-invalid persisted data represents an intentional administrative
+    # correction made after submission; approval must still commit it.
+    assert response.status_code == 302
+    assert changeset.state == states.APPROVED
+    assert issue_revision.committed is True
+    assert any_edit_story_rev.committed is True
+    any_edit_story_rev.story.refresh_from_db()
+    assert any_edit_story_rev.story.feature_name.exists()
+
+
+@pytest.mark.parametrize('characters', [
+    '  Superman [Clark Kent]; Lois Lane  ',
+    'Justice League [Superman [Clark Kent]; Batman [Bruce Wayne]]',
+    'Ren\u00e9e Montoya; Question [Vic Sage] (cameo)',
+])
+def test_repeated_submission_validation_preserves_characters(
+        any_edit_story_rev, any_indexer, characters):
+    any_edit_story_rev.characters = characters
+    any_edit_story_rev.save()
+    story = any_edit_story_rev.story
+    original_characters = story.characters
+
+    # Include whitespace that form cleaning normalizes in memory, and check
+    # database values after each pass rather than just the caller's instance.
+    for _ in range(3):
+        assert validate_changeset_revisions(
+          any_edit_story_rev.changeset, _request_for(any_indexer)) == []
+        any_edit_story_rev.refresh_from_db()
+        story.refresh_from_db()
+        assert any_edit_story_rev.characters == characters
+        assert story.characters == original_characters
 
 
 def test_approve_allows_corrected_changeset(any_edit_story_rev, any_editor):
