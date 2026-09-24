@@ -37,12 +37,14 @@
     {% include 'oi/bits/comments.html' %}
   {% endwith %}
 
+    <div class="editing-actions">
     <button class="btn-blue-editing inline" type="submit" name="save">Save And Continue Editing</button>
     <button class="btn-blue-editing inline" type="submit" name="save_return">Save And Return To Changeset</button>
     <button class="btn-blue-editing inline" type="submit" name="cancel_return">Return To Changeset Without Saving</button>
   {% if revision.source_name == 'story' and revision.old_credits %}
     <button class="btn-blue-editing inline" type="submit" name="save_migrate">Save And Migrate Credits</button>
   {% endif %}
+    </div>
   </form>
 </div>
 {% endblock %}

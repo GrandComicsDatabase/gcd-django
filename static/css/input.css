@@ -44,6 +44,16 @@
     @apply font-bold py-1 px-4 rounded;
   }
 
+  .editing-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+    display: flex;
+    flex-wrap: wrap;
+    background: white;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .btn-blue-editing {
     @apply font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline;
 
