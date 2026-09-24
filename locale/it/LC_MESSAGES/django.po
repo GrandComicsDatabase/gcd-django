@@ -1,3 +1,4 @@
+# Italian translations for the GCD website.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
@@ -7,14 +8,14 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-01-31 15:46+0000\n"
-"PO-Revision-Date: 2021-02-22 23:10+0000\n"
-"Last-Translator: b'Donald Dale Milne <dondmilne@att.net>'\n"
+"PO-Revision-Date: 2026-09-22 23:10+0000\n"
+"Last-Translator: b'Simone Nardi'\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translated-Using: django-rosetta 0.9.5\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: apps/gcd/models/story.py:1194 apps/gcd/templatetags/credits.py:611
 msgid "page"
@@ -24,11 +25,11 @@ msgstr[1] "pagine"
 
 #: apps/gcd/templatetags/credits.py:286
 msgid "Job Number"
-msgstr "Numero di lavoro"
+msgstr "Codice di lavorazione"
 
 #: apps/gcd/templatetags/credits.py:290
 msgid "First Line of Dialogue or Text"
-msgstr "Prima riga di dialogo o testo"
+msgstr "Prima riga del dialogo o testo"
 
 #: apps/gcd/templatetags/credits.py:298
 msgid "Reprinted"
@@ -60,7 +61,7 @@ msgstr "Accedi"
 #: apps/indexer/templates/indexer/password_reset_form.html:5
 #: apps/indexer/templates/indexer/password_reset_form.html:9
 msgid "Password reset"
-msgstr "Reimpostazione password"
+msgstr "Reimpostazione della password"
 
 #: apps/indexer/templates/indexer/password_reset_confirm.html:11
 msgid "Enter new password"
@@ -96,7 +97,7 @@ msgstr "Il link per la reimpostazione della password non era valido, forse perch
 
 #: apps/indexer/templates/indexer/password_reset_done.html:5
 msgid "Password reset successful"
-msgstr "Reimpostazione password riuscita"
+msgstr "Reimpostazione della password riuscita"
 
 #: apps/indexer/templates/indexer/password_reset_done.html:9
 msgid "Password reset sent"
@@ -155,7 +156,7 @@ msgstr "sceneggiatura"
 
 #: apps/inducks/templatetags/flatfile.py:110
 msgid "plot"
-msgstr "trama"
+msgstr "soggetto"
 
 #: apps/mycomics/views.py:229
 msgid "Collection saved."
@@ -173,28 +174,28 @@ msgstr "Elemento <b>%s</b> rimosso da %s"
 
 #: apps/mycomics/views.py:418
 msgid "Item moved between collections"
-msgstr "Elemento spostato tra collezioni"
+msgstr "Elemento spostato tra le collezioni"
 
 #: apps/mycomics/views.py:425
 #, python-format
 msgid ""
 "Item status for own/want differed from default of new collection <b>%s</b> "
 "and was changed."
-msgstr "Lo stato posseduto/desiderato dell'elemento differiva dal valore predefinito della nuova collezione <b>%s</b> ed è stato modificato."
+msgstr "Lo stato posseduto/desiderato dell'elemento differiva da quello predefinito della nuova collezione <b>%s</b> ed è stato modificato."
 
 #: apps/mycomics/views.py:435 apps/mycomics/views.py:457
 #, python-format
 msgid ""
 "Item status is set to for sale due to default of new collection <b>%s</b>."
-msgstr "Lo stato dell'elemento è impostato su «in vendita» a causa del valore predefinito della nuova collezione <b>%s</b>."
+msgstr "Lo stato dell'elemento è stato impostato su «in vendita» in base al valore predefinito della nuova collezione <b>%s</b>."
 
 #: apps/mycomics/views.py:444
 msgid "Item copied between collections"
-msgstr "Elemento copiato tra collezioni"
+msgstr "Elemento copiato tra le collezioni"
 
 #: apps/mycomics/views.py:448
 msgid "Own/want default for new collection differs from item status."
-msgstr "Il valore predefinito posseduto/desiderato della nuova collezione differisce dallo stato dell'elemento."
+msgstr "Lo stato predefinito posseduto/desiderato della nuova collezione differisce dallo stato dell'elemento."
 
 #: apps/mycomics/views.py:462 apps/mycomics/views.py:464
 msgid "Item unchanged"
@@ -479,7 +480,7 @@ msgstr "Pagine"
 #: templates/gcd/bits/issue_data.html:16
 #: templates/gcd/bits/tw_issue_data.html:36
 msgid "Indicia Frequency"
-msgstr "Periodicità indicata"
+msgstr "Periodicità indicata nel colophon"
 
 #: templates/gcd/bits/issue_data.html:20
 #: templates/gcd/bits/tw_issue_data.html:40
@@ -494,7 +495,7 @@ msgstr "Fascia d'età indicata dall'editore"
 #: templates/gcd/bits/issue_data.html:29
 #: templates/gcd/bits/tw_issue_data.html:49
 msgid "Indicia&nbsp;/&nbsp;Colophon Publisher"
-msgstr "Editore in indicia&nbsp;/&nbsp;colophon"
+msgstr "Editore indicato nel colophon"
 
 #: templates/gcd/bits/issue_data.html:32
 #: templates/gcd/bits/tw_issue_data.html:52
@@ -555,10 +556,10 @@ msgid ""
 msgstr ""
 "\n"
 "Tutte le parti del <a href=\"http://www.comics.org/\" "
-"rel=\"cc:attributionURL\">the %(site_name)s</a>&trade;, salvo dove diversamente "
+"rel=\"cc:attributionURL\">%(site_name)s</a>&trade;, salvo dove diversamente "
 "specificato, sono protette da copyright di GCD e sono concesse in licenza "
 "<a rel=\"license\" "
-"href=\"http://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons "
+"href=\"https://creativecommons.org/licenses/by-sa/4.0/\">Creative Commons "
 "Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)</a>. Questo include "
 "ma non è necessariamente limitato al nostro schema del database e al formato "
 "di distribuzione dei dati.\n"
@@ -622,15 +623,21 @@ msgid ""
 "  "
 msgstr ""
 "\n"
-"Prova ad effettuare una <a class=\"link-no-visited font-bold\" "
-"href=\"%(search_url)s\">ricerca</a> oppure usa <a class=\"link-no-visited "
+"Il <b>Grand Comics Database (GCD)</b> è un'organizzazione senza scopo di lucro "
+"che opera su Internet grazie a volontari di tutto il mondo, impegnati nella "
+"creazione di un database aperto dedicato a tutti i fumetti pubblicati su carta "
+"nel mondo.</p>\n"
+"  <p>Prova la <a class=\"link-no-visited font-bold\" "
+"href=\"%(search_url)s\">nostra ricerca</a>, usa <a class=\"link-no-visited "
 "font-bold\" href=\"https://my.comics.org/\">my.comics.org</a> "
-"per monitorare e gestire la tua collezione di fumetti. "
+"per tenere traccia della tua collezione di fumetti e gestirla, oppure scopri "
+"come puoi <a class=\"link-no-visited font-bold\" "
+"href=\"#how_to_contribute\">contribuire</a>.\n"
 "  "
 
 #: templates/gcd/bits/tw_front_page_content.html:66 templates/gcd/index.html:59
 msgid "Disclaimer"
-msgstr "Limitazioni di responsabilità"
+msgstr "Avvertenze"
 
 #: templates/gcd/bits/tw_front_page_content.html:69 templates/gcd/index.html:63
 msgid ""
@@ -640,7 +647,7 @@ msgid ""
 msgstr ""
 "Il Grand Comics Database Project (GCD) è un progetto internazionale di "
 "volontariato senza scopo di lucro, con l'obiettivo di catalogare tutti i "
-"fumetti per la libera consultazione di studenti, storici, ricercatori e "
+"fumetti per la libera consultazione di studiosi, storici, ricercatori e "
 "appassionati. "
 
 #: templates/gcd/bits/tw_front_page_content.html:72 templates/gcd/index.html:66
@@ -655,7 +662,7 @@ msgstr ""
 
 #: templates/gcd/bits/tw_front_page_content.html:75 templates/gcd/index.html:69
 msgid "Viewer discretion is advised."
-msgstr "Si consiglia discrezionalità durante la visualizzazione dei contenuti."
+msgstr "Si raccomanda cautela nella consultazione dei contenuti."
 
 #: templates/gcd/bits/tw_front_page_content.html:78 templates/gcd/index.html:72
 msgid "The Grand Comics Database Team"
@@ -752,15 +759,15 @@ msgstr "per nazione"
 
 #: templates/gcd/index.html:167 templates/gcd/tw_index.html:82
 msgid "Last Updated Language Issues"
-msgstr "Ultime pubblicazioni aggiornate in italiano"
+msgstr "Ultimi numeri aggiornati in italiano"
 
 #: templates/gcd/index.html:177 templates/gcd/tw_index.html:90
 msgid "Statistics for Language Comics"
-msgstr "Statistiche sui fumetti italiani"
+msgstr "Statistiche sui fumetti in italiano"
 
 #: templates/gcd/index.html:188 templates/gcd/tw_index.html:101
 msgid "Last Updated Issues"
-msgstr "Ultime pubblicazioni inserite"
+msgstr "Ultimi numeri aggiornati"
 
 #: templates/gcd/index.html:198 templates/gcd/tw_index.html:109
 msgid "Statistics"
@@ -831,7 +838,7 @@ msgstr "Cerca nella collezione"
 
 #: templates/mycomics/bits/indexing_links.html:9
 msgid "Unindexed Issues"
-msgstr "Pubblicazioni non indicizzate"
+msgstr "Numeri non indicizzati"
 
 #: templates/mycomics/bits/indexing_links.html:12
 msgid "Needed Covers"
@@ -991,7 +998,7 @@ msgstr "Luogo di acquisto: "
 
 #: templates/mycomics/collection_item.html:144
 msgid "Grade: "
-msgstr "Condizione: "
+msgstr "Stato di conservazione: "
 
 #: templates/mycomics/collection_item.html:147
 #: templates/mycomics/reading_order_item.html:101
@@ -1036,7 +1043,7 @@ msgstr "Dettagli della collezione"
 
 #: templates/mycomics/collection_series.html:13
 msgid "Issues"
-msgstr "Pubblicazioni"
+msgstr "Numeri"
 
 #: templates/mycomics/collection_subscriptions.html:12
 #: templates/mycomics/collection_subscriptions.html:29
@@ -1050,7 +1057,7 @@ msgstr "Vuoi annullare la sottoscrizione dalla serie <b>"
 
 #: templates/mycomics/collection_subscriptions.html:58
 msgid "Pull"
-msgstr "Prenota"
+msgstr "Recupera nuovi numeri"
 
 #: templates/mycomics/collections.html:13
 #: templates/mycomics/collections.html:32
