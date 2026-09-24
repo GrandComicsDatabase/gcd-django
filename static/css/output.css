@@ -841,7 +841,12 @@ a:hover {
   display: flex;
   flex-wrap: wrap;
   background: white;
-  padding-bottom: env(safe-area-inset-bottom);
+  border-top-width: 1px;
+  --tw-border-opacity: 1;
+  border-color: rgb(229 231 235 / var(--tw-border-opacity));
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
 }
 
 .btn-blue-editing {

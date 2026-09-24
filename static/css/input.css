@@ -51,7 +51,8 @@
     display: flex;
     flex-wrap: wrap;
     background: white;
-    padding-bottom: env(safe-area-inset-bottom);
+    @apply border-t border-gray-200 py-2;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
   }
 
   .btn-blue-editing {
