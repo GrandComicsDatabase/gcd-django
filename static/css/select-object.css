@@ -1,0 +1,140 @@
+/* Compact selector using the keyword manager palette and controls. */
+.kw-manager.object-selector {
+  max-width: 1400px;
+  padding: 12px 16px 100px;
+  font-size: 14px;
+}
+.object-selector .kw-heading { margin-bottom: 4px; }
+.object-selector h1 { font-size: 22px; }
+.object-selector .select-context { margin: 0 0 8px; color: #64748b; overflow-wrap: anywhere; }
+.object-selector .kw-filters {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  gap: 8px;
+  border-radius: 6px;
+}
+.object-selector .kw-filters label { margin-bottom: 2px; font-size: 12px; }
+.object-selector .kw-filters input, .object-selector .kw-filters select {
+  height: 34px;
+  padding: 4px 8px;
+  line-height: 24px;
+}
+.object-selector .kw-button { min-height: 34px; padding: 4px 12px; font-size: 13px; }
+.object-selector .select-panel { min-width: 0; }
+.object-selector summary { padding: 4px 0; color: #3636b8; font-size: 13px; cursor: pointer; }
+.object-selector summary:focus-visible { outline: 3px solid #6666ee; outline-offset: 3px; }
+.object-selector .select-panel-body { padding: 6px 0; }
+.object-selector .select-fields { margin-bottom: 6px; }
+.object-selector .select-id-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.object-selector .select-id-grid .kw-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  flex: 1 1 300px;
+  gap: 2px 8px;
+  margin: 0;
+}
+.object-selector .select-id-grid .kw-note { grid-column: 1 / -1; }
+.object-selector .kw-filters .kw-note { margin: 2px 0 0; font-size: 12px; }
+.object-selector .select-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.object-selector .select-footer {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 50;
+  padding: 8px max(16px, calc((100vw - 1368px) / 2));
+  background: #fff;
+  border-top: 1px solid #dbe1ea;
+  box-shadow: 0 -2px 8px #1e293b12;
+}
+.object-selector .select-footer [data-cache-copy] { order: -2; }
+.object-selector .select-footer [data-cache-count] { order: -1; font-size: 13px; color: #64748b; }
+.object-selector .select-footer > form { margin-left: auto; }
+.object-selector section { margin: 10px 0; }
+.object-selector .select-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.object-selector h3 { margin: 0; font-size: 14px; font-weight: 650; }
+.object-selector .select-group-heading { margin-top: 8px; }
+.object-selector [data-cache-order-help], .object-selector [data-cache-order-status] {
+  margin: 2px 0;
+  font-size: 12px;
+  color: #64748b;
+}
+.object-selector [data-cache-order-status]:empty { display: none; }
+.object-selector table { margin-top: 4px; border: 1px solid #dbe1ea; }
+.object-selector table th { letter-spacing: 0; text-transform: none; }
+.object-selector table th, .object-selector table td { padding: 4px 8px; vertical-align: middle; }
+.object-selector table col:first-child { width: 7rem !important; }
+.object-selector table col:nth-child(2) { width: 3.5rem !important; }
+.object-selector input[type="checkbox"] { width: 16px; height: 16px; accent-color: #4545ce; cursor: pointer; }
+.object-selector table .select-checkbox-cell { text-align: center; vertical-align: middle; }
+.object-selector .select-checkbox-cell input[type="checkbox"] { display: block; margin: 0 auto; }
+.object-selector .select-danger-zone {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid #fecaca;
+}
+.object-selector .select-danger-zone [name="clear_cache"] { color: #b91c1c; }
+.object-selector .select-danger-zone [name="clear_cache"]:hover { background: #fef2f2; }
+.object-selector .select-cache-row { padding: 4px 8px; border-bottom: 1px solid #e2e8f0; }
+.object-selector .cache-description { display: inline; margin: 0; overflow-wrap: anywhere; }
+.object-selector .btn-blue-editing, .object-selector .btn-blue-disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  margin: 0 4px 0 0;
+  padding: 2px 8px;
+  border: 1px solid #d0d7e2;
+  border-radius: 4px;
+  background: #fff;
+  color: #3636b8;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 22px;
+  cursor: pointer;
+}
+.object-selector .btn-blue-editing:hover { background: #f0f0ff; }
+.object-selector [name="clear_cache"],
+.object-selector [data-cache-select-all] { border-color: transparent; background: transparent; font-weight: 400; }
+.object-selector [data-cache-copy] { background: #4545ce; border-color: #4545ce; color: #fff; }
+.object-selector [data-cache-copy]:hover { background: #3535ad; }
+.object-selector button:disabled { opacity: .45; cursor: not-allowed; }
+.object-selector button[hidden] { display: none; }
+.object-selector .errorlist { margin: 4px 0; color: #b91c1c; font-size: 12px; }
+@media (max-width: 600px) {
+  .kw-manager.object-selector { padding: 10px 4px 140px; }
+  .object-selector .kw-filters > div { flex-basis: 120px; }
+  .object-selector .kw-filters > .kw-search-field { flex-basis: 100%; }
+  .object-selector .kw-filters > .kw-actions { flex: 0 0 auto; }
+  .object-selector table col:first-child { width: 5rem !important; }
+  .object-selector table col:nth-child(2) { width: 3rem !important; }
+  .object-selector table th, .object-selector table td { padding: 4px; }
+  .object-selector table [data-cache-select-all] { padding: 2px; }
+  .object-selector .select-footer { padding: 8px; gap: 4px; }
+}
+.object-selector .select-fields label { display: inline; }
+.object-selector .select-fields input { margin-top: 2px; }
+.object-selector .select-required { color: #64748b; font-size: 11px; }
+/* Search forms share one area; opening one never moves the other toggles. */
+.object-selector .select-tools { display: block; }
+.object-selector .select-search-toggles { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.object-selector .select-search-toggles button {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #3636b8;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.object-selector .select-search-toggles button::before { content: '\25B8'; margin-right: 6px; }
+.object-selector .select-search-toggles button[aria-expanded="true"]::before { content: '\25BE'; }
+.object-selector .select-panel-body[hidden] { display: none; }

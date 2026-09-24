@@ -1,0 +1,13 @@
+{% if choice.kind == 'issue' or not can_copy_multiple %}
+<form action="{% url 'select_object' select_key=select_key %}" method="POST" class="inline">
+  {% csrf_token %}
+  <input type="hidden" name="object_choice" value="{{ radio.data.value }}">
+  <button class="{% if radio.data.value in cache_form.disabled_choices %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline py-1 px-2"
+    type="submit" name="select_object"
+    {% if radio.data.value in cache_form.disabled_choices %}disabled aria-describedby="{{ choice.help_id }}" title="{{ disabled_choice_title }}"{% endif %}>Copy</button>
+</form>
+{% endif %}
+<span class="cache-description" style="user-select: text;">{{ radio.choice_label }}</span>
+{% if radio.data.value in cache_form.disabled_choices %}
+<small id="{{ choice.help_id }}"><em>({{ disabled_choice_help }})</em></small>
+{% endif %}

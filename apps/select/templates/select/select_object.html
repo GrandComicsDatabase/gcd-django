@@ -1,114 +1,179 @@
 {% extends "oi/base_view.html" %}
+{% load static %}
 
-{% load credits %}
-{% load display %}
+{% block css_raw %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/keyword-manager.css' %}">
+<link rel="stylesheet" href="{% static 'css/select-object.css' %}">
+{% endblock %}
 
 {% block view_body %}
-  {{ heading }}
-Search for {{ target }} by entering the relevant information here:
+<main class="kw-manager object-selector">
+  <header class="kw-heading">
+    <h1>Select {{ target|default:"an object" }}</h1>
+  </header>
+  {% if heading %}<div class="select-context">{{ heading|striptags }}</div>{% endif %}
 
-<form method="get" action="{% url 'select_object_search_haystack' select_key=select_key %}">
-  <p>
-    <label for="id_q">Search for:</label>
-    {{ haystack_form.q }}
-    <select name="search_object" size="1">
-      <option value="all"> All </option>
-  {% if story %}
-      <option value="story"> Story </option>
-  {% endif %}
-  {% if issue %}
-      <option value="issue"> Issue </option>
-  {% endif %}
-  {% if series %}
-      <option value="series"> Series </option>
-  {% endif %}
-  {% if publisher %}
-      <option value="publisher"> Publisher </option>
-  {% endif %}
-    </select>
-    <btn class="btn-blue-editing inline"><input type="submit" value="Search"></btn>
-  </p>
-</form>
-
-<form action="{% url 'select_object_search' select_key=select_key %}" method="GET">
-  <table class="select_search">
-    <tr>
-  {% for field in search_form.visible_fields %}
-      <th>{{ field.label_tag }}</th>
-  {% endfor %}
-    </tr>
-  {% if search_form.errors %}
-    <tr>
-    {% for field in search_form %}
-      <td>{{ field.errors }}</td>
-    {% endfor %}
-    </tr>
-  {% endif %}
-    <tr>
-  {% for field in search_form %}
-      <td>{{ field }}</td>
-  {% endfor %}
-    </tr>
-  </table>
-  {% if story %}
-<button class="btn-blue-editing inline" type="submit" name="search_story">Search For Stories</button>
-  {%endif %}
-  {% if story or cover %}
-<button class="btn-blue-editing inline" type="submit" name="search_cover">Search For Covers</button>
-  {% endif %}
-  {% if issue %}
-<button class="btn-blue-editing inline" type="submit" name="search_issue">Search For Issues</button>
-  {% endif %}
-  {% if series %}
-<button class="btn-blue-editing inline" type="submit" name="search_series">Search For Series</button>
-  {% endif %}
-  {% if publisher %}
-<button class="btn-blue-editing inline" type="submit" name="search_publisher">Search For Publisher</button>
-  {% endif %}
-</form>
-
-  {% if cache_form.visible_fields %}
-or select from the data cache:
-    {% for radio in cache_form.object_choice %}
-<form action="{% url 'select_object' select_key=select_key %}" method="POST">
+  <div class="select-tools">
+    <details class="select-panel">
+      <summary>Search the catalog</summary>
+      <div class="select-panel-body">
+        <form class="kw-filters" method="get" action="{% url 'select_object_search_haystack' select_key=select_key %}">
+          <div class="kw-search-field">
+            <label for="id_q">Search terms</label>
+            {{ haystack_form.q }}
+          </div>
+          <div>
+            <label for="search-object">Object type</label>
+            <select id="search-object" name="search_object">
+              <option value="all">All available types</option>
+              {% if story %}<option value="story">Story</option>{% endif %}
+              {% if issue %}<option value="issue">Issue</option>{% endif %}
+              {% if series %}<option value="series">Series</option>{% endif %}
+              {% if publisher %}<option value="publisher">Publisher</option>{% endif %}
+            </select>
+          </div>
+          <div class="kw-actions"><button class="kw-button kw-button-primary" type="submit">Search</button></div>
+        </form>
+      </div>
+    </details>
+    <details class="select-panel"{% if search_form.errors %} open{% endif %}>
+      <summary>Publication details</summary>
+      <form class="select-panel-body" action="{% url 'select_object_search' select_key=select_key %}" method="get">
+        {{ search_form.non_field_errors }}
+        {% for field in search_form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
+        <div class="kw-filters select-fields">
+          {% for field in search_form.visible_fields %}
+          <div>
+            {{ field.label_tag }}{% if field.field.required %}<span class="select-required"> (required)</span>{% endif %}
+            {{ field }}
+            {{ field.errors }}
+            {% if field.help_text %}<p class="kw-note">{{ field.help_text }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="select-actions">
+          {% if story %}<button class="kw-button" type="submit" name="search_story">Find stories</button>{% endif %}
+          {% if story or cover %}<button class="kw-button" type="submit" name="search_cover">Find covers</button>{% endif %}
+          {% if issue %}<button class="kw-button" type="submit" name="search_issue">Find issues</button>{% endif %}
+          {% if series %}<button class="kw-button" type="submit" name="search_series">Find series</button>{% endif %}
+          {% if publisher %}<button class="kw-button" type="submit" name="search_publisher">Find publishers</button>{% endif %}
+        </div>
+      </form>
+    </details>
+    {% if story or issue %}
+    <details class="select-panel">
+      <summary>Select by ID</summary>
+      <div class="select-panel-body select-id-grid">
+        {% if issue %}
+        <form class="kw-filters" action="{% url 'select_object' select_key=select_key %}" method="post">
+          {% csrf_token %}
+          <div>
+            <label for="entered-issue-id">Issue ID</label>
+            <input id="entered-issue-id" type="text" inputmode="numeric" pattern="[0-9]+" name="entered_issue_id" required aria-describedby="issue-id-help">
+          </div>
+          <div class="kw-actions"><button class="kw-button" type="submit">Select Issue</button></div>
+          <p id="issue-id-help" class="kw-note">From the URL: /issue/<strong>12345</strong>/</p>
+        </form>
+        {% endif %}
+        {% if story %}
+        <form class="kw-filters" action="{% url 'select_object' select_key=select_key %}" method="post">
+          {% csrf_token %}
+          <div>
+            <label for="entered-story-id">Story ID</label>
+            <input id="entered-story-id" type="text" inputmode="numeric" pattern="[0-9]+" name="entered_story_id" required aria-describedby="story-id-help">
+          </div>
+          <div class="kw-actions"><button class="kw-button" type="submit">Select Story</button></div>
+          <p id="story-id-help" class="kw-note">From the contents link: /issue/12345/#<strong>67890</strong></p>
+        </form>
+        {% endif %}
+      </div>
+    </details>
+    {% endif %}
+  </div>
+  {% if show_cache %}
+  <section class="my-4" aria-label="Remembered objects">
+    <form id="cache-selection" action="{% url 'select_object' select_key=select_key %}" method="POST">
       {% csrf_token %}
-<button
-  class="{% if radio.data.value in cache_form.disabled_choices %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline py-1 px-2"
-  type="submit" name="select_object"
-  {% if radio.data.value in cache_form.disabled_choices %}
-  disabled
-  aria-describedby="disabled-choice-{{ forloop.counter }}"
-  title="{{ disabled_choice_title }}"
-  {% endif %}>Select</button>
- <input type="hidden" name="object_choice" value="{{ radio.data.value }}">
-      {{ radio.choice_label }}
-      {% if radio.data.value in cache_form.disabled_choices %}
-        <small id="disabled-choice-{{ forloop.counter }}"><em>
-        ({{ disabled_choice_help }})</em></small>
+    </form>
+    {% for group in cache_groups %}
+      {% if group.choices %}
+        <div class="select-group-heading">
+          <h3>{{ group.label }} ({{ group.choices|length }}/{{ cache_size }})</h3>
+        </div>
+        {% if group.kind == 'story' or group.kind == 'cover' %}
+        <p data-cache-order-help="{{ group.kind }}" hidden>Drag a {{ group.kind }} row to reorder it. Order is saved automatically.</p>
+        <p data-cache-order-status="{{ group.kind }}" role="status" aria-live="polite"></p>
+        <table style="table-layout: fixed; overflow-wrap: anywhere;" class="w-full text-left" id="cached-{{ group.label|lower }}">
+          <colgroup><col style="width: 10rem;"><col style="width: 4rem;"><col></colgroup>
+          <thead><tr class="bg-blue-100">
+            <th scope="col"><button type="button" class="btn-blue-editing" data-cache-select-all="{{ group.kind }}" hidden>Select all</button></th>
+            <th scope="col">Order</th>
+            <th scope="col">{{ group.kind|capfirst }}</th>
+          </tr></thead>
+          <tbody data-cache-list="{{ group.kind }}">
+          {% for choice in group.choices %}
+            {% with radio=choice.radio %}
+            <tr data-cache-item="{{ radio.data.value }}" class="hover:bg-blue-50 cursor-move">
+              <td class="select-checkbox-cell"><input type="checkbox" name="{% if group.kind == 'cover' %}selected_covers{% else %}cached_objects{% endif %}" value="{{ radio.data.value }}" form="cache-selection"
+                aria-label="Select {{ radio.choice_label|striptags }}"
+                {% if group.kind == 'cover' and radio.data.value in cache_form.disabled_choices %}disabled{% endif %}></td>
+              <td data-cache-position>{{ forloop.counter }}</td>
+              <td>{% include 'select/cache_row_actions.html' %}</td>
+            </tr>
+            {% endwith %}
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+          {% for choice in group.choices %}
+            {% with radio=choice.radio %}
+            <div class="select-cache-row">
+              {% include 'select/cache_row_actions.html' %}
+            </div>
+            {% endwith %}
+          {% endfor %}
+        {% endif %}
       {% endif %}
-</form>
     {% endfor %}
-  {% endif %}
-  {% if story or issue %}
-    {% if issue %}
-<form action="{% url 'select_object' select_key=select_key %}" method="POST">
-      {% csrf_token %}
-or enter the id of an issue (from its url: www.comics.org/issue/&lt;issue_id&gt;)
-<button class="btn-blue-editing inline"><input type="submit" value="Select Issue"></button>
-  <input title="Enter the id of the issue from its url: www.comics.org/issue/&lt;issue_id&gt;" type="text" name="entered_issue_id" size="7"></input>
-</form>
+    {% if not cache_choices %}
+    <p>No remembered objects are available for this selection.</p>
     {% endif %}
-    {% if story %}
-<form action="{% url 'select_object' select_key=select_key %}" method="POST">
-      {% csrf_token %}
-or enter the id of a story (from its url in the table contents: www.comics.org/issue/&lt;issue_id&gt;/#&lt;story_id&gt;)
-  <button class="btn-blue-editing inline"><input type="submit" value="Select Story"></button>
-  <input title="Enter the id of the story from its url: www.comics.org/issue/&lt;issue_id&gt;/#&lt;story_id&gt;" type="text" name="entered_story_id" size="7"></input>
-</form>
+    {% if has_cached_objects %}
+    <div class="select-danger-zone" role="group" aria-label="Clear remembered objects">
+      {% for group in cache_groups %}
+        {% if group.choices %}
+        <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+          {% csrf_token %}
+          <button type="submit" class="btn-blue-editing" name="clear_cache" value="{{ group.kind }}"
+            onclick="return confirm('Clear all remembered {{ group.label|lower }}?');">Clear {{ group.kind }} cache</button>
+        </form>
+        {% endif %}
+      {% endfor %}
+      <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+        {% csrf_token %}
+        <button class="btn-blue-editing" name="clear_cache" value="all" type="submit"
+          onclick="return confirm('Clear all remembered issues, stories and covers?');">Clear all remembered objects</button>
+      </form>
+    </div>
     {% endif %}
+  </section>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js" defer></script>
+  <script src="{% static 'js/select_cache.js' %}" defer></script>
   {% endif %}
-<form action="{% url 'select_object' select_key=select_key %}" method="POST">
-  {% csrf_token %}
-  <button class="btn-blue-editing inline"><input type="submit" name="cancel" value="Cancel"></input></button>
-</form>
+  <div id="selection-actions" class="select-actions select-footer" aria-label="Selection actions">
+    {% if show_cache and cache_choices %}
+    <button type="submit" form="cache-selection" class="btn-blue-editing" name="remove_selected_cached_objects" value="all" data-cache-remove>Delete selected</button>
+    <span data-cache-count role="status" aria-live="polite" style="margin-right: 0.75rem;"></span>
+    {% endif %}
+    {% if show_cache and cache_choices and can_copy_multiple %}
+    <button type="submit" form="cache-selection" class="btn-blue-editing" name="copy_selected_cached_objects" value="story" data-cache-copy>Copy selected</button>
+    {% endif %}
+    <form action="{% url 'select_object' select_key=select_key %}" method="POST" class="inline">
+      {% csrf_token %}
+      <button class="btn-blue-editing inline" type="submit" name="cancel" value="Cancel">Cancel</button>
+    </form>
+  </div>
+</main>
+<script src="{% static 'js/select_search_panels.js' %}" defer></script>
 {% endblock %}
