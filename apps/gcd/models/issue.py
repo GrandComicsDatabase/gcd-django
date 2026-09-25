@@ -193,6 +193,11 @@ class Issue(GcdData):
     # is very small.  But syncdb produces an int(11).
     is_indexed = models.IntegerField(default=0, db_index=True)
 
+    def delete(self):
+        super().delete()
+        # Revision statistics later save the cached parent instance.
+        self.series.set_first_last_issues()
+
     @property
     def indicia_image(self):
         img = Image.objects.filter(
