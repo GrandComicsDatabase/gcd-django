@@ -26,7 +26,7 @@ Adding {{ object_name }}
     {{ form.as_table }}
   {% endif %}
   </table>
-  <div class="editing-actions">
+  <div class="sticky bottom-0 z-50 flex flex-wrap border-t border-gray-200 bg-white pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
   <button class="btn-blue-editing inline" type="submit" name="add">{{ action_label}} {{ object_name }}</button>
 {% if alternative_action %}
   <button class="btn-blue-editing inline" type="submit" name="{{ alternative_action }}">{{ alternative_label }}</button>

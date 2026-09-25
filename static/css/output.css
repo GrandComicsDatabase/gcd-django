@@ -834,21 +834,6 @@ a:hover {
   font-weight: 700;
 }
 
-.editing-actions {
-  position: sticky;
-  bottom: 0;
-  z-index: 50;
-  display: flex;
-  flex-wrap: wrap;
-  background: white;
-  border-top-width: 1px;
-  --tw-border-opacity: 1;
-  border-color: rgb(229 231 235 / var(--tw-border-opacity));
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
-}
-
 .btn-blue-editing {
   margin-inline-end: 0.25rem;
   margin-top: 0.25rem;
@@ -1302,6 +1287,14 @@ a:hover {
 
 .relative {
   position: relative;
+}
+
+.sticky {
+  position: sticky;
+}
+
+.bottom-0 {
+  bottom: 0px;
 }
 
 .left-0 {
@@ -1990,6 +1983,10 @@ a:hover {
   border-inline-start-width: 2px;
 }
 
+.border-t {
+  border-top-width: 1px;
+}
+
 .border-dashed {
   border-style: dashed;
 }
@@ -2267,6 +2264,10 @@ a:hover {
   padding-bottom: 0.5rem;
 }
 
+.pb-\[calc\(0\.5rem\+env\(safe-area-inset-bottom\)\)\] {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+}
+
 .pe-1 {
   padding-inline-end: 0.25rem;
 }
@@ -2297,6 +2298,10 @@ a:hover {
 
 .ps-8 {
   padding-inline-start: 2rem;
+}
+
+.pt-2 {
+  padding-top: 0.5rem;
 }
 
 .pt-4 {
