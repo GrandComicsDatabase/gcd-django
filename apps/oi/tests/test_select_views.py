@@ -73,7 +73,7 @@ def test_publisher_selector_renders_selection_column(any_added_publisher,
 
     body = response.content.decode()
     assert 'Selection' in body
-    assert 'Select this publisher' in body
+    assert 'Select This Publisher' in body
     assert 'publisher_%d' % any_added_publisher.id in body
 
 
