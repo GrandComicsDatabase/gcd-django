@@ -361,7 +361,10 @@ def select_object(request, select_key):
                                 ('issue', 'Issues')]]
         for index, choice in enumerate(cache_choices, 1):
             choice['help_id'] = 'disabled-choice-%d' % index
-        return render(request, 'select/select_object.html',
+        can_copy_multiple = data.get('return') == '_selected_copy_sequence'
+        template = ('select/select_cached_sequences.html' if can_copy_multiple
+                    else 'select/select_object.html')
+        return render(request, template,
                       {'heading': data['heading'],
                        'select_key': select_key,
                        'cache_form': cache_form,
@@ -372,8 +375,7 @@ def select_object(request, select_key):
                            for key in ('cached_issues', 'cached_stories',
                                        'cached_covers')),
                        'show_cache': issue or story or cover,
-                       'can_copy_multiple': (
-                           data.get('return') == '_selected_copy_sequence'),
+                       'can_copy_multiple': can_copy_multiple,
                        'disabled_choice_title': disabled_choice_title,
                        'disabled_choice_help': disabled_choice_help,
                        'search_form': search_form,

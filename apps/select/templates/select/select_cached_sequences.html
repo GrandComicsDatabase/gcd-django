@@ -1,0 +1,190 @@
+{% extends "oi/base_view.html" %}
+{% load static %}
+
+{% block view_body %}
+  <main class="mx-auto max-w-screen-2xl px-1 pt-3 pb-36 text-sm text-gray-800 sm:px-4 sm:pb-28
+    [&_button:disabled]:cursor-not-allowed [&_button:disabled]:opacity-50
+    [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2
+    [&_a:focus-visible]:outline-gcd [&_button:focus-visible]:outline
+    [&_button:focus-visible]:outline-2 [&_button:focus-visible]:outline-gcd">
+    <header class="mb-1 flex flex-wrap items-center justify-between gap-4">
+      <h1 class="break-words">Select {{ target|default:"an object" }}</h1>
+    </header>
+    {% if heading %}<div class="mb-2 break-words text-gray-500">{{ heading|striptags }}</div>{% endif %}
+
+    <div data-select-tools>
+      <details class="min-w-0">
+        <summary class="cursor-pointer py-1 text-sm text-link-gcd focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gcd">Search the catalog</summary>
+        <div data-select-panel-body class="py-1.5 [&[hidden]]:hidden">
+          <form class="mb-2 flex flex-wrap items-end gap-2 rounded-md border border-gray-200 bg-gray-50
+            px-2.5 py-2 [&_label]:mb-0.5 [&_label]:block [&_label]:text-xs [&_label]:font-semibold
+            [&_input]:block [&_input]:h-9 [&_input]:w-full [&_select]:block [&_select]:h-9
+            [&_select]:w-full" method="get" action="{% url 'select_object_search_haystack' select_key=select_key %}">
+            <div class="min-w-0 grow-[2] basis-full sm:basis-64">
+              <label for="id_q">Search terms</label>
+              {{ haystack_form.q }}
+            </div>
+            <div class="min-w-0 flex-1 basis-32">
+              <label for="search-object">Object type</label>
+              <select id="search-object" name="search_object">
+                <option value="all">All available types</option>
+                {% if story %}<option value="story">Story</option>{% endif %}
+                {% if issue %}<option value="issue">Issue</option>{% endif %}
+                {% if series %}<option value="series">Series</option>{% endif %}
+                {% if publisher %}<option value="publisher">Publisher</option>{% endif %}
+              </select>
+            </div>
+            <div class="flex flex-none items-center gap-3"><button class="btn-blue-editing inline" type="submit">Search</button></div>
+          </form>
+        </div>
+      </details>
+      <details class="min-w-0"{% if search_form.errors %} open{% endif %}>
+        <summary class="cursor-pointer py-1 text-sm text-link-gcd focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gcd">Publication details</summary>
+        <form data-select-panel-body class="py-1.5 [&[hidden]]:hidden" action="{% url 'select_object_search' select_key=select_key %}" method="get">
+          {{ search_form.non_field_errors }}
+          {% for field in search_form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
+          <div class="mb-1.5 flex flex-wrap items-end gap-2 rounded-md border border-gray-200 bg-gray-50
+            px-2.5 py-2 [&_label]:text-xs [&_label]:font-semibold [&_input]:mt-0.5 [&_input]:block
+            [&_input]:h-9 [&_input]:w-full">
+            {% for field in search_form.visible_fields %}
+              <div class="min-w-0 flex-1 basis-32">
+                {{ field.label_tag }}{% if field.field.required %}<span class="text-xs text-gray-500"> (required)</span>{% endif %}
+                {{ field }}
+                {{ field.errors }}
+                {% if field.help_text %}<p class="mt-0.5 text-xs text-gray-500">{{ field.help_text }}</p>{% endif %}
+              </div>
+            {% endfor %}
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            {% if story %}<button class="btn-blue-editing inline" type="submit" name="search_story">Find stories</button>{% endif %}
+            {% if story or cover %}<button class="btn-blue-editing inline" type="submit" name="search_cover">Find covers</button>{% endif %}
+            {% if issue %}<button class="btn-blue-editing inline" type="submit" name="search_issue">Find issues</button>{% endif %}
+            {% if series %}<button class="btn-blue-editing inline" type="submit" name="search_series">Find series</button>{% endif %}
+            {% if publisher %}<button class="btn-blue-editing inline" type="submit" name="search_publisher">Find publishers</button>{% endif %}
+          </div>
+        </form>
+      </details>
+      {% if story or issue %}
+        <details class="min-w-0">
+          <summary class="cursor-pointer py-1 text-sm text-link-gcd focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gcd">Select by ID</summary>
+          <div data-select-panel-body class="flex flex-wrap gap-2 py-1.5 [&[hidden]]:hidden">
+            {% if issue %}
+              <form class="grid flex-1 basis-72 grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-0.5
+                rounded-md border border-gray-200 bg-gray-50 px-2.5 py-2 [&_label]:block
+                [&_label]:text-xs [&_label]:font-semibold [&_input]:h-9 [&_input]:w-full" action="{% url 'select_object' select_key=select_key %}" method="post">
+                {% csrf_token %}
+                <div>
+                  <label for="entered-issue-id">Issue ID</label>
+                  <input id="entered-issue-id" type="text" inputmode="numeric" pattern="[0-9]+" name="entered_issue_id" required aria-describedby="issue-id-help">
+                </div>
+                <div class="flex flex-none items-center gap-3"><button class="btn-blue-editing inline" type="submit">Select Issue</button></div>
+                <p id="issue-id-help" class="col-span-2 mt-0.5 text-xs text-gray-500">From the URL: /issue/<strong>12345</strong>/</p>
+              </form>
+            {% endif %}
+            {% if story %}
+              <form class="grid flex-1 basis-72 grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-0.5
+                rounded-md border border-gray-200 bg-gray-50 px-2.5 py-2 [&_label]:block
+                [&_label]:text-xs [&_label]:font-semibold [&_input]:h-9 [&_input]:w-full" action="{% url 'select_object' select_key=select_key %}" method="post">
+                {% csrf_token %}
+                <div>
+                  <label for="entered-story-id">Story ID</label>
+                  <input id="entered-story-id" type="text" inputmode="numeric" pattern="[0-9]+" name="entered_story_id" required aria-describedby="story-id-help">
+                </div>
+                <div class="flex flex-none items-center gap-3"><button class="btn-blue-editing inline" type="submit">Select Story</button></div>
+                <p id="story-id-help" class="col-span-2 mt-0.5 text-xs text-gray-500">From the contents link: /issue/12345/#<strong>67890</strong></p>
+              </form>
+            {% endif %}
+          </div>
+        </details>
+      {% endif %}
+    </div>
+    {% if show_cache %}
+      <section class="my-2.5" aria-label="Remembered objects">
+        <form id="cache-selection" action="{% url 'select_object' select_key=select_key %}" method="POST">
+          {% csrf_token %}
+        </form>
+        {% for group in cache_groups %}
+          {% if group.choices %}
+            <div class="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <h3 class="text-sm font-semibold">{{ group.label }} ({{ group.choices|length }}/{{ cache_size }})</h3>
+            </div>
+            {% if group.kind == 'story' or group.kind == 'cover' %}
+              <p class="my-0.5 text-xs text-gray-500" data-cache-order-help="{{ group.kind }}" hidden>Drag a {{ group.kind }} row to reorder it. Order is saved automatically.</p>
+              <p class="my-0.5 text-xs text-gray-500 empty:hidden" data-cache-order-status="{{ group.kind }}" role="status" aria-live="polite"></p>
+              <table class="mt-1 w-full table-fixed break-words border border-gray-200 bg-white text-left
+                [&_th]:p-1 [&_th]:align-middle [&_td]:border-b [&_td]:border-gray-200 [&_td]:p-1
+                [&_td]:align-middle sm:[&_th]:px-2 sm:[&_td]:px-2" id="cached-{{ group.label|lower }}">
+                <colgroup><col class="w-20 sm:w-28"><col class="w-12 sm:w-14"><col></colgroup>
+                <thead>
+                  <tr class="bg-blue-100">
+                    <th scope="col"><button type="button" class="btn-blue-editing [&[hidden]]:hidden" data-cache-select-all="{{ group.kind }}" hidden>Select all</button></th>
+                    <th scope="col">Order</th>
+                    <th scope="col">{{ group.kind|capfirst }}</th>
+                  </tr>
+                </thead>
+                <tbody data-cache-list="{{ group.kind }}">
+                  {% for choice in group.choices %}
+                    {% with radio=choice.radio %}
+                      <tr data-cache-item="{{ radio.data.value }}" class="hover:bg-blue-50 cursor-move">
+                        <td class="text-center"><input class="mx-auto block h-4 w-4 cursor-pointer text-blue-600" type="checkbox" name="{% if group.kind == 'cover' %}selected_covers{% else %}cached_objects{% endif %}" value="{{ radio.data.value }}" form="cache-selection"
+                          aria-label="Select {{ radio.choice_label|striptags }}"
+                          {% if group.kind == 'cover' and radio.data.value in cache_form.disabled_choices %}disabled{% endif %}></td>
+                        <td data-cache-position>{{ forloop.counter }}</td>
+                        <td>{% include 'select/cache_row_actions.html' %}</td>
+                      </tr>
+                    {% endwith %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              {% for choice in group.choices %}
+                {% with radio=choice.radio %}
+                  <div class="border-b border-gray-200 px-2 py-1">
+                    {% include 'select/cache_row_actions.html' %}
+                  </div>
+                {% endwith %}
+              {% endfor %}
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+        {% if not cache_choices %}
+          <p>No remembered objects are available for this selection.</p>
+        {% endif %}
+        {% if has_cached_objects %}
+          <div class="mt-4 flex flex-wrap gap-x-3 gap-y-1 border-t border-red-200 pt-2" role="group" aria-label="Clear remembered objects">
+            {% for group in cache_groups %}
+              {% if group.choices %}
+                <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+                  {% csrf_token %}
+                  <button type="submit" class="rounded px-2 py-1 text-xs text-red-700 hover:bg-red-50" name="clear_cache" value="{{ group.kind }}"
+                    onclick="return confirm('Clear all remembered {{ group.label|lower }}?');">Clear {{ group.kind }} cache</button>
+                </form>
+              {% endif %}
+            {% endfor %}
+            <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+              {% csrf_token %}
+              <button class="rounded px-2 py-1 text-xs text-red-700 hover:bg-red-50" name="clear_cache" value="all" type="submit"
+                onclick="return confirm('Clear all remembered issues, stories and covers?');">Clear all remembered objects</button>
+            </form>
+          </div>
+        {% endif %}
+      </section>
+      <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js" defer></script>
+      <script src="{% static 'js/select_cache.js' %}" defer></script>
+    {% endif %}
+    <div id="selection-actions" class="fixed inset-x-0 bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white p-2 shadow-lg sm:gap-2 sm:px-4" aria-label="Selection actions">
+      {% if show_cache and cache_choices %}
+        <button type="submit" form="cache-selection" class="btn-blue-editing" name="remove_selected_cached_objects" value="all" data-cache-remove>Delete selected</button>
+        <span data-cache-count role="status" aria-live="polite" class="-order-1 mr-3 text-sm text-gray-500"></span>
+      {% endif %}
+      {% if show_cache and cache_choices and can_copy_multiple %}
+        <button type="submit" form="cache-selection" class="btn-blue-editing order-first" name="copy_selected_cached_objects" value="story" data-cache-copy>Copy selected</button>
+      {% endif %}
+      <form action="{% url 'select_object' select_key=select_key %}" method="POST" class="ml-auto inline">
+        {% csrf_token %}
+        <button class="btn-blue-editing inline" type="submit" name="cancel" value="Cancel">Cancel</button>
+      </form>
+    </div>
+  </main>
+  <script src="{% static 'js/select_search_panels.js' %}" defer></script>
+{% endblock %}

@@ -230,9 +230,7 @@ def test_clear_cache_also_clears_saved_order():
     assert 'cached_covers_order' not in request.session
 
 
-@pytest.mark.parametrize('allow_copy', [False, True])
-def test_cache_sections_render_with_bulk_removal_and_danger_zone(
-        allow_copy):
+def test_cache_sections_render_with_bulk_removal_and_danger_zone():
     cache_form = forms.Form()
     cache_form.fields['object_choice'] = forms.ChoiceField(
         widget=forms.RadioSelect,
@@ -246,17 +244,19 @@ def test_cache_sections_render_with_bulk_removal_and_danger_zone(
     store_select_data(request, 'test', {
         'story': True, 'heading': 'Select a story', 'target': 'a story',
         'disabled_choice_help': 'Current issue',
-        'return': '_selected_copy_sequence' if allow_copy else 'confirm_reprint',
+        'return': '_selected_copy_sequence',
     })
     with patch('apps.select.views.get_select_forms',
                return_value=(forms.Form(), cache_form)), \
             patch('apps.select.views.render', return_value=HttpResponse()) as render:
         select_object.__wrapped__(request, 'test')
-    html = render_to_string('select/select_object.html', render.call_args.args[2])
+    template = render.call_args.args[1]
+    html = render_to_string(template, render.call_args.args[2])
     last_table_position = html.rindex('</table>')
     clear_cache_position = html.index('aria-label="Clear remembered objects"')
     selection_actions_position = html.index('id="selection-actions"')
 
+    assert template == 'select/select_cached_sequences.html'
     assert 'Stories (1/10)' in html
     assert 'An unsupported object' not in html
     assert 'Covers (1/10)' in html
@@ -267,27 +267,59 @@ def test_cache_sections_render_with_bulk_removal_and_danger_zone(
     assert 'id="cache-heading"' not in html
     assert html.count('type="checkbox"') == 2
     assert last_table_position < clear_cache_position < selection_actions_position
-    assert ('aria-describedby="disabled-choice-2"' in html) is not allow_copy
+    assert 'aria-describedby="disabled-choice-2"' not in html
     assert 'id="cache-selection"' in html
     assert 'form="cache-selection"' in html
     assert '>Select all</button>' in html
     assert 'Select all covers' not in html
     assert 'data-cache-clear' not in html
-    assert ('data-cache-copy' in html) is allow_copy
+    assert 'data-cache-copy' in html
     assert 'type="checkbox" name="selected_covers" value="cover_2"' in html
     assert 'name="selected_cover"' not in html
     assert '<th scope="col">Order</th>' in html
     assert '<th scope="col">Story</th>' in html
     assert html.index('Covers (1/10)') < html.index('Stories (1/10)')
-    assert ('>Select</button>' in html) is not allow_copy
+    assert '>Select</button>' not in html
     assert '>Delete</button>' not in html
     assert 'data-cache-list="cover"' in html
     assert '<th scope="col">Cover</th>' in html
     assert 'Drag a cover row to reorder it. Order is saved automatically.' in html
-    assert html.count('name="select_object"') == (0 if allow_copy else 2)
+    assert 'name="select_object"' not in html
     assert html.count('<colgroup>') == 2
     assert 'Delete selected stories' not in html
     assert html.index('data-cache-remove') > html.index('</section>')
+
+
+def test_reprint_selection_keeps_original_selector():
+    cache_form = forms.Form()
+    cache_form.fields['object_choice'] = forms.ChoiceField(
+        widget=forms.RadioSelect,
+        choices=[('story_1', 'Current issue'), ('cover_2', 'Other issue')])
+    cache_form.disabled_choices = ('story_1',)
+    request = RequestFactory().get('/select_object/test/')
+    request.user = SimpleNamespace(indexer=SimpleNamespace(cache_size=10))
+    request.session = {}
+    store_select_data(request, 'test', {
+        'story': True, 'issue': True,
+        'heading': 'Select story/issue for the reprint link',
+        'target': 'a story or issue', 'return': 'confirm_reprint',
+    })
+    with patch('apps.select.views.get_select_forms',
+               return_value=(forms.Form(), cache_form)), \
+            patch('apps.select.views.render', return_value=HttpResponse()) as render:
+        select_object.__wrapped__(request, 'test')
+    template = render.call_args.args[1]
+    html = render_to_string(template, render.call_args.args[2])
+
+    assert template == 'select/select_object.html'
+    assert 'name="select_object"' in html
+    assert 'name="object_choice" value="cover_2"' in html
+    assert 'aria-describedby="disabled-choice-1"' in html
+    assert 'name="entered_issue_id"' in html
+    assert 'name="entered_story_id"' in html
+    assert 'data-cache-copy' not in html
+    assert 'data-cache-list' not in html
+    assert 'id="selection-actions"' not in html
 
 
 def test_bulk_copy_is_rejected_in_single_target_workflows():
