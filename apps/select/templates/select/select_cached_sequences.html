@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block view_body %}
-  <main class="mx-auto max-w-screen-2xl px-1 pt-3 pb-36 text-sm text-gray-800 sm:px-4 sm:pb-28
+  <main class="mx-auto max-w-screen-2xl px-1 pt-3 text-sm text-gray-800 sm:px-4
     [&_button:disabled]:cursor-not-allowed [&_button:disabled]:opacity-50
     [&_a:focus-visible]:outline [&_a:focus-visible]:outline-2
     [&_a:focus-visible]:outline-gcd [&_button:focus-visible]:outline
@@ -172,7 +172,7 @@
       <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js" defer></script>
       <script src="{% static 'js/select_cache.js' %}" defer></script>
     {% endif %}
-    <div id="selection-actions" class="fixed inset-x-0 bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white p-2 shadow-lg sm:gap-2 sm:px-4" aria-label="Selection actions">
+    <div id="selection-actions" class="sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2 sm:px-4" aria-label="Selection actions">
       {% if show_cache and cache_choices %}
         <button type="submit" form="cache-selection" class="btn-blue-editing" name="remove_selected_cached_objects" value="all" data-cache-remove>Delete selected</button>
         <span data-cache-count role="status" aria-live="polite" class="-order-1 mr-3 text-sm text-gray-500"></span>

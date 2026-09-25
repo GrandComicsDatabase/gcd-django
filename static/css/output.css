@@ -1289,6 +1289,10 @@ a:hover {
   position: relative;
 }
 
+.sticky {
+  position: sticky;
+}
+
 .inset-x-0 {
   left: 0px;
   right: 0px;
@@ -2422,6 +2426,10 @@ a:hover {
 
 .pb-36 {
   padding-bottom: 9rem;
+}
+
+.pb-\[calc\(0\.5rem\+env\(safe-area-inset-bottom\)\)\] {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
 }
 
 .pe-1 {
