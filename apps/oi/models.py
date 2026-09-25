@@ -4416,9 +4416,7 @@ class IssueRevision(Revision):
             # contributes +1 to its series issue_count), or vice-versa.
             # Adjust the cached counts of the affected series.
 
-            variants = Issue.objects.filter(variant_of=self.issue,
-                                            deleted=False)
-
+            variants = self.issue.variant_set.filter(deleted=False)
             for variant in variants:
                 # 1. Variant left behind:
                 # Goes from Standard -> Cross-Series (+1)
