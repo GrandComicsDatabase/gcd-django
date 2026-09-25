@@ -159,7 +159,7 @@ def process_select_search_haystack(request, select_key):
                                                               context=context)
     else:
         return HttpResponseRedirect(
-          urlresolvers.reverse('select_object',
+          urlresolvers.reverse(data.get('selection_view', 'select_object'),
                                kwargs={'select_key': select_key})
           + '?' + request.META['QUERY_STRING'])
 
@@ -184,7 +184,7 @@ def process_select_search(request, select_key):
                                          search_cover=cover)(request.GET)
     if not search_form.is_valid():
         return HttpResponseRedirect(
-          urlresolvers.reverse('select_object',
+          urlresolvers.reverse(data.get('selection_view', 'select_object'),
                                kwargs={'select_key': select_key})
           + '?' + request.META['QUERY_STRING'])
     cd = search_form.cleaned_data
@@ -310,10 +310,34 @@ def process_select_search(request, select_key):
 
 @permission_required('indexer.can_reserve')
 def select_object(request, select_key):
+    return _select_object(request, select_key)
+
+
+@permission_required('indexer.can_reserve')
+def select_multiple_sequences(request, select_key):
+    return _select_object(request, select_key, multiple_sequences=True)
+
+
+def _select_object(request, select_key, multiple_sequences=False):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
         return _cant_get_key(request)
+    if (not multiple_sequences and
+            data.get('selection_view') == 'select_multiple_sequences'):
+        if request.method == 'GET':
+            destination = urlresolvers.reverse(
+                'select_multiple_sequences', kwargs={'select_key': select_key})
+            query = request.META.get('QUERY_STRING', '')
+            return HttpResponseRedirect(
+                destination + ('?' + query if query else ''))
+        return _select_object(request, select_key, multiple_sequences=True)
+    if multiple_sequences and (data.get('issue') or data.get('publisher') or
+                               data.get('series') or not (
+                                   data.get('story') or data.get('cover'))):
+        return HttpResponseBadRequest('This selection requires sequences only.')
+    selection_view = ('select_multiple_sequences' if multiple_sequences
+                      else 'select_object')
     if request.method == 'GET':
         if 'refine_search' in request.GET or 'search_issue' in request.GET:
             request_data = request.GET
@@ -352,17 +376,17 @@ def select_object(request, select_key):
                     'kind': kind,
                 })
         cache_choices.sort(key=lambda choice: {
-            'cover': 0, 'story': 1, 'issue': 2}[choice['kind']])
+            'story': 0, 'cover': 1, 'issue': 2}[choice['kind']])
         cache_groups = [
             {'kind': kind, 'label': label,
              'choices': [choice for choice in cache_choices
                          if choice['kind'] == kind]}
-            for kind, label in [('cover', 'Covers'), ('story', 'Stories'),
+            for kind, label in [('story', 'Stories'), ('cover', 'Covers'),
                                 ('issue', 'Issues')]]
         for index, choice in enumerate(cache_choices, 1):
             choice['help_id'] = 'disabled-choice-%d' % index
         can_copy_multiple = data.get('return') == '_selected_copy_sequence'
-        template = ('select/select_cached_sequences.html' if can_copy_multiple
+        template = ('select/select_cached_sequences.html' if multiple_sequences
                     else 'select/select_object.html')
         return render(request, template,
                       {'heading': data['heading'],
@@ -449,7 +473,7 @@ def select_object(request, select_key):
                                     if pk not in ids]
             _sync_cached_order(request, key)
         return HttpResponseRedirect(urlresolvers.reverse(
-            'select_object', kwargs={'select_key': select_key}))
+            selection_view, kwargs={'select_key': select_key}))
     elif 'clear_cache' in request.POST or 'remove_cached_object' in request.POST:
         cache_keys = {'issue': 'cached_issues', 'story': 'cached_stories',
                       'cover': 'cached_covers'}
@@ -475,7 +499,7 @@ def select_object(request, select_key):
                 pk for pk in request.session.get(key, []) if pk != object_id]
             _sync_cached_order(request, key)
         return HttpResponseRedirect(urlresolvers.reverse(
-            'select_object', kwargs={'select_key': select_key}))
+            selection_view, kwargs={'select_key': select_key}))
     elif 'select_object' in request.POST:
         try:
             choice = request.POST['object_choice']

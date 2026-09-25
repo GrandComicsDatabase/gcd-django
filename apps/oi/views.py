@@ -5129,12 +5129,13 @@ def copy_sequence(request, issue_revision_id, story_id=None,
                 'heading': mark_safe('<h2>%s</h2>' % heading),
                 'target': 'a story',
                 'return': '_selected_copy_sequence',
+                'selection_view': 'select_multiple_sequences',
                 'sequence_number': sequence_number,
                 'cancel': urlresolvers.reverse('edit', kwargs={
                             'id': issue_revision.changeset_id})}
         select_key = store_select_data(request, None, data)
-        return HttpResponseRedirect(urlresolvers.reverse('select_object',
-                                    kwargs={'select_key': select_key}))
+        return HttpResponseRedirect(urlresolvers.reverse(
+            'select_multiple_sequences', kwargs={'select_key': select_key}))
     else:
         issue_revision = get_object_or_404(IssueRevision, id=issue_revision_id)
         if 'cancel' in request.POST:

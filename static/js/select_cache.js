@@ -21,7 +21,7 @@
         toggles.forEach(toggle => {
             const inputs = toggleInputs(toggle);
             toggle.hidden = false;
-            toggle.textContent = inputs.some(input => input.checked) ? 'Clear selection' : 'Select all';
+            toggle.textContent = inputs.some(input => input.checked) ? 'Clear Selection' : 'Select All';
             toggle.disabled = submitting || saving || needsReload || !inputs.length;
         });
         if (remove) remove.disabled = submitting || saving || needsReload || (selected === 0 && !hasCover());
@@ -76,12 +76,8 @@
 
     function updateControls() {
         update();
-        groups.forEach(({list, sortable}) => {
-            const rows = Array.from(list.children);
+        groups.forEach(({sortable}) => {
             if (sortable) sortable.option('disabled', saving || needsReload);
-            rows.forEach((row, index) => {
-                row.querySelector('[data-cache-position]').textContent = index + 1;
-            });
         });
     }
 
@@ -93,7 +89,6 @@
         saving = true;
         activeStatus = status;
         section.setAttribute('aria-busy', 'true');
-        status.textContent = 'Saving order…';
         updateControls();
         const body = new URLSearchParams();
         body.set('csrfmiddlewaretoken', form.querySelector('[name="csrfmiddlewaretoken"]').value);
@@ -119,7 +114,7 @@
             const reload = document.createElement('button');
             reload.type = 'button';
             reload.className = 'btn-blue-editing';
-            reload.textContent = 'Reload cache';
+            reload.textContent = 'Reload Cache';
             reload.addEventListener('click', () => window.location.reload());
             status.appendChild(reload);
         } finally {

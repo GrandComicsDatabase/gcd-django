@@ -36,7 +36,7 @@
         </tbody>
       </table>
     {% endif %}
-    <form method="POST" action="{% url 'select_object' select_key=select_key %}" id="confirm-bulk-copy">
+    <form method="POST" action="{% url 'select_multiple_sequences' select_key=select_key %}" id="confirm-bulk-copy">
       {% csrf_token %}
       <input type="hidden" name="copy_batch" value="{{ copy_batch }}">
       <input type="hidden" name="confirm_bulk_copy" value="1">
@@ -52,8 +52,8 @@
       {% endif %}
       <p><label><input type="checkbox" name="copy_credit_info" {% if copy_credit_info %}checked{% endif %}> Copy credits with credited/signed qualifiers</label></p>
       <p><label><input type="checkbox" name="copy_characters" {% if copy_characters %}checked{% endif %}> Copy characters</label></p>
-      <button type="submit" class="btn-blue-editing" id="copy-batch-submit">{% if needs_main_cover %}Review copy{% else %}Confirm copy of {{ stories|length }} {{ label }}{% endif %}</button>
-      <a class="btn-blue-editing" href="{% url 'select_object' select_key=select_key %}">Back to selection</a>
+      <button type="submit" class="btn-blue-editing" id="copy-batch-submit">{% if needs_main_cover %}Review Copy{% else %}Confirm Copy of {{ stories|length }} {{ label|title }}{% endif %}</button>
+      <a class="btn-blue-editing" href="{% url 'select_multiple_sequences' select_key=select_key %}">Back to Selection</a>
     </form>
     <script>
       const copyForm = document.getElementById('confirm-bulk-copy');
@@ -68,7 +68,7 @@
       });
       window.addEventListener('pageshow', () => {
         copySubmit.disabled = false;
-        copySubmit.textContent = '{% if needs_main_cover %}Review copy{% else %}Confirm copy of {{ stories|length }} {{ label }}{% endif %}';
+        copySubmit.textContent = '{% if needs_main_cover %}Review Copy{% else %}Confirm Copy of {{ stories|length }} {{ label|title }}{% endif %}';
       });
     </script>
   {% else %}

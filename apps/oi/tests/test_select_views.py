@@ -17,7 +17,8 @@ from apps.gcd.models.series import SeriesPublisherTable
 from apps.gcd.models.story import StoryTable
 from apps.select.views import (_process_caching, cache_content,
                                get_cached_covers, process_select_search,
-                               select_object, store_select_data)
+                               select_multiple_sequences, select_object,
+                               store_select_data)
 
 
 def selector_request(params, user):
@@ -230,7 +231,7 @@ def test_clear_cache_also_clears_saved_order():
     assert 'cached_covers_order' not in request.session
 
 
-def test_cache_sections_render_with_bulk_removal_and_danger_zone():
+def test_sequence_sections_render_with_bulk_removal_and_shared_styles():
     cache_form = forms.Form()
     cache_form.fields['object_choice'] = forms.ChoiceField(
         widget=forms.RadioSelect,
@@ -249,7 +250,7 @@ def test_cache_sections_render_with_bulk_removal_and_danger_zone():
     with patch('apps.select.views.get_select_forms',
                return_value=(forms.Form(), cache_form)), \
             patch('apps.select.views.render', return_value=HttpResponse()) as render:
-        select_object.__wrapped__(request, 'test')
+        select_multiple_sequences.__wrapped__(request, 'test')
     template = render.call_args.args[1]
     html = render_to_string(template, render.call_args.args[2])
     last_table_position = html.rindex('</table>')
@@ -260,9 +261,9 @@ def test_cache_sections_render_with_bulk_removal_and_danger_zone():
     assert 'Stories (1/10)' in html
     assert 'An unsupported object' not in html
     assert 'Covers (1/10)' in html
-    assert 'Clear all remembered objects' in html
-    assert 'Clear story cache' in html
-    assert 'Clear cover cache' in html
+    assert 'Clear All Remembered Objects' in html
+    assert 'Clear Story Cache' in html
+    assert 'Clear Cover Cache' in html
     assert 'name="remove_cached_object"' not in html
     assert 'id="cache-heading"' not in html
     assert html.count('type="checkbox"') == 2
@@ -270,15 +271,15 @@ def test_cache_sections_render_with_bulk_removal_and_danger_zone():
     assert 'aria-describedby="disabled-choice-2"' not in html
     assert 'id="cache-selection"' in html
     assert 'form="cache-selection"' in html
-    assert '>Select all</button>' in html
+    assert '>Select All</button>' in html
     assert 'Select all covers' not in html
     assert 'data-cache-clear' not in html
     assert 'data-cache-copy' in html
     assert 'type="checkbox" name="selected_covers" value="cover_2"' in html
     assert 'name="selected_cover"' not in html
-    assert '<th scope="col">Order</th>' in html
+    assert '<th scope="col">Order</th>' not in html
     assert '<th scope="col">Story</th>' in html
-    assert html.index('Covers (1/10)') < html.index('Stories (1/10)')
+    assert html.index('Stories (1/10)') < html.index('Covers (1/10)')
     assert '>Select</button>' not in html
     assert '>Delete</button>' not in html
     assert 'data-cache-list="cover"' in html
@@ -288,6 +289,100 @@ def test_cache_sections_render_with_bulk_removal_and_danger_zone():
     assert html.count('<colgroup>') == 2
     assert 'Delete selected stories' not in html
     assert html.index('data-cache-remove') > html.index('</section>')
+
+
+@pytest.mark.parametrize('command', [
+    {'clear_cache': 'story'},
+    {'remove_selected_cached_objects': 'story', 'cached_objects': ['story_1']},
+])
+def test_multiple_sequences_cache_commands_return_to_dedicated_view(command):
+    from django.urls import resolve, reverse
+
+    url = reverse('select_multiple_sequences', kwargs={'select_key': 'test'})
+    assert resolve(url).func == select_multiple_sequences
+    request = RequestFactory().post(url, command)
+    request.session = {'cached_stories': [1]}
+    store_select_data(request, 'test', {'story': True})
+    response = select_multiple_sequences.__wrapped__(request, 'test')
+    assert response.status_code == 302
+    assert response.url == url
+    assert not request.session.get('cached_stories')
+
+
+def test_search_refinement_returns_to_multiple_sequences_with_query():
+    request = RequestFactory().get('/select_object/test/', {
+        'refine_search': '1', 'series': 'Example'})
+    request.session = {}
+    store_select_data(request, 'test', {
+        'story': True, 'selection_view': 'select_multiple_sequences'})
+    response = select_object.__wrapped__(request, 'test')
+    assert response.url == (
+        '/select_multiple_sequences/test/?refine_search=1&series=Example')
+
+
+def test_multiple_sequences_rejects_reprint_story_or_issue_selection():
+    request = RequestFactory().get('/select_multiple_sequences/test/')
+    request.session = {}
+    store_select_data(request, 'test', {
+        'story': True, 'issue': True, 'return': 'confirm_reprint'})
+    response = select_multiple_sequences.__wrapped__(request, 'test')
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize('view', [select_object, select_multiple_sequences])
+def test_sequence_search_result_reaches_copy_confirmation(view):
+    request = RequestFactory().post('/select_object/test/', {
+        'search_select': '1', 'object_choice': 'story_42'})
+    request.session = {}
+    data = {'story': True, 'return': '_selected_copy_sequence',
+            'selection_view': 'select_multiple_sequences'}
+    store_select_data(request, 'test', data)
+    with patch('apps.oi.views._selected_copy_sequence',
+               return_value=HttpResponse('confirmation')) as callback:
+        response = view.__wrapped__(request, 'test')
+    assert response.content == b'confirmation'
+    callback.assert_called_once_with(request, data, 'story', '42')
+
+
+@pytest.mark.parametrize('command', [
+    {'copy_selected_cached_objects': 'story', 'cached_objects': ['story_42']},
+    {'confirm_bulk_copy': '1', 'copy_batch': 'signed confirmation'},
+])
+def test_multiple_sequences_dispatches_bulk_selection_and_confirmation(command):
+    request = RequestFactory().post('/select_multiple_sequences/test/', command)
+    request.session = {}
+    data = {'story': True, 'return': '_selected_copy_sequence'}
+    store_select_data(request, 'test', data)
+    with patch('apps.oi.views.copy_cached_sequences',
+               return_value=HttpResponse('copy response')) as callback:
+        response = select_multiple_sequences.__wrapped__(request, 'test')
+    assert response.content == b'copy response'
+    callback.assert_called_once_with(request, data, 'test')
+
+
+@pytest.mark.parametrize('cover', [False, True])
+def test_copy_sequence_starts_at_dedicated_selector(cover):
+    from apps.oi.views import copy_sequence
+    from apps.select.views import get_select_data
+
+    request = RequestFactory().get('/copy_sequence/')
+    request.user = SimpleNamespace(id=1)
+    request.session = {}
+    issue = SimpleNamespace(id=20, changeset_id=10)
+    changeset = SimpleNamespace(indexer=request.user)
+    with patch('apps.oi.views.IssueRevision.objects.select_for_update'), \
+            patch('apps.oi.views.get_object_or_404', return_value=issue), \
+            patch('apps.oi.views.Changeset.objects.select_for_update') as locked:
+        locked.return_value.get.return_value = changeset
+        response = copy_sequence.__wrapped__.__wrapped__(
+            request, 20, sequence_number=1, cover=cover)
+    assert response.status_code == 302
+    assert response.url.startswith('/select_multiple_sequences/')
+    key = response.url.rstrip('/').rsplit('/', 1)[1]
+    data = get_select_data(request, key)
+    assert data['selection_view'] == 'select_multiple_sequences'
+    assert data['cover'] == cover
+    assert data['story'] != cover
 
 
 def test_reprint_selection_keeps_original_selector():

@@ -14,7 +14,7 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = [
-            'cursor-pointer border-0 bg-transparent py-1 text-sm text-link-gcd',
+            'cursor-pointer border-0 bg-transparent py-1 text-link-gcd',
             "before:mr-1.5 before:content-['▸'] aria-expanded:before:content-['▾']",
             'focus-visible:outline focus-visible:outline-2',
             'focus-visible:outline-offset-2 focus-visible:outline-gcd',
