@@ -1093,14 +1093,21 @@ def series_by_name(request, series_name='', sort=ORDER_ALPHA,
     else:
         things = Series.objects.exclude(deleted=True)
         if series_name:
-            # Resolve the text search once per request by fetching matching IDs separately.
+            # Resolve the text search once per request by fetching matching IDs
+            # separately.
             # This avoids a slow OR query with a subquery in MySQL.
-            series_ids_by_name = things.filter(name__icontains=series_name).values_list('pk', flat=True)
-            series_ids_by_issue = Issue.objects.filter(title__icontains=series_name).values_list('series_id', flat=True).distinct()
+            series_ids_by_name = things.filter(name__icontains=series_name)\
+                                       .values_list('pk', flat=True)
+            series_ids_by_issue = Issue.objects\
+                                       .filter(title__icontains=series_name)\
+                                       .values_list('series_id', flat=True)\
+                                       .distinct()
             matching_ids = set(series_ids_by_name) | set(series_ids_by_issue)
             things = things.filter(pk__in=matching_ids)
-        things = things.select_related('publisher__country', 'publication_type',
-                                       'first_issue', 'last_issue')
+        things = things.select_related('publisher__country',
+                                       'publication_type',
+                                       'first_issue',
+                                       'last_issue')
         return generic_by_name(request, series_name, None, sort,
                                Series, template, things=things,
                                table_inline=table_inline)
