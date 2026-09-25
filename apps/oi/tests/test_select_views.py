@@ -253,18 +253,20 @@ def test_cache_sections_render_with_bulk_removal_and_danger_zone(
             patch('apps.select.views.render', return_value=HttpResponse()) as render:
         select_object.__wrapped__(request, 'test')
     html = render_to_string('select/select_object.html', render.call_args.args[2])
+    last_table_position = html.rindex('</table>')
+    clear_cache_position = html.index('aria-label="Clear remembered objects"')
+    selection_actions_position = html.index('id="selection-actions"')
+
     assert 'Stories (1/10)' in html
     assert 'An unsupported object' not in html
     assert 'Covers (1/10)' in html
-    assert 'class="select-group-heading"' in html
     assert 'Clear all remembered objects' in html
     assert 'Clear story cache' in html
     assert 'Clear cover cache' in html
     assert 'name="remove_cached_object"' not in html
     assert 'id="cache-heading"' not in html
-    assert html.count('class="select-checkbox-cell"') == 2
-    assert html.index('select-danger-zone') > html.rindex('</table>')
-    assert html.index('select-danger-zone') < html.index('id="selection-actions"')
+    assert html.count('type="checkbox"') == 2
+    assert last_table_position < clear_cache_position < selection_actions_position
     assert ('aria-describedby="disabled-choice-2"' in html) is not allow_copy
     assert 'id="cache-selection"' in html
     assert 'form="cache-selection"' in html
@@ -277,7 +279,7 @@ def test_cache_sections_render_with_bulk_removal_and_danger_zone(
     assert '<th scope="col">Order</th>' in html
     assert '<th scope="col">Story</th>' in html
     assert html.index('Covers (1/10)') < html.index('Stories (1/10)')
-    assert ('>Copy</button>' in html) is not allow_copy
+    assert ('>Select</button>' in html) is not allow_copy
     assert '>Delete</button>' not in html
     assert 'data-cache-list="cover"' in html
     assert '<th scope="col">Cover</th>' in html
