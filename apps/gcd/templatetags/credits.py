@@ -2,6 +2,7 @@
 import icu
 
 from django import template
+from django.template.defaultfilters import linebreaksbr
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
@@ -13,8 +14,7 @@ from apps.stddata.models import Country, Language
 from apps.gcd.models.story import AD_TYPES, Story
 from apps.gcd.models.support import GENRES
 from apps.gcd.models import STORY_TYPES, CREDIT_TYPES
-from apps.gcd.markdown_extension import (
-    render_markdown, render_markdown_inline)
+from apps.gcd.markdown_extension import render_markdown
 
 
 register = template.Library()
@@ -319,7 +319,7 @@ def __format_credit(story, credit, computed_value='', tailwind=False,
         values = split_reprint_string(credit_value)
         credit_value = '<ul>'
         for value in values:
-            credit_value += '<li>' + render_markdown_inline(value)
+            credit_value += '<li>' + esc(value)
         credit_value += '</ul>'
     elif credit == 'keywords':
         model_name = story._meta.model_name
@@ -633,7 +633,7 @@ def generate_reprint_link(issue, from_to, notes=None, li=True,
         link += " (" + esc(issue.publication_date) + ")"
     link += '</a>'
     if notes:
-        link = '%s [%s]' % (link, render_markdown_inline(notes))
+        link = '%s [%s]' % (link, esc(notes))
     if li and not only_number:
         return '<li> ' + link
     else:
@@ -668,7 +668,7 @@ def generate_reprint_link_sequence(story, issue, from_to, notes=None, li=True,
         link = "%s (%s)" % (link, esc(issue.publication_date))
     link += '</a>'
     if notes:
-        link = '%s [%s]' % (link, render_markdown_inline(notes))
+        link = '%s [%s]' % (link, esc(notes))
     if li and not only_number:
         return '<li> ' + link
     else:
@@ -812,7 +812,7 @@ def follow_reprint_link(reprint, direction, level=0):
             for string in split_reprint_string(reprint.origin.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('from '):
-                    reprint_note += ('<li> ' + render_markdown_inline(string) +
+                    reprint_note += ('<li> ' + linebreaksbr(esc(string)) +
                                      ' </li>')
     else:
         if type(reprint.target) is Story:
@@ -829,7 +829,7 @@ def follow_reprint_link(reprint, direction, level=0):
             for string in split_reprint_string(reprint.target.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('in '):
-                    reprint_note += ('<li> ' + render_markdown_inline(string) +
+                    reprint_note += ('<li> ' + linebreaksbr(esc(string)) +
                                      ' </li>')
 
     if reprint_note != '':
@@ -865,7 +865,7 @@ def show_reprints(story, bare_value=False):
     if story.reprint_notes:
         for string in split_reprint_string(story.reprint_notes):
             string = string.strip()
-            reprint += '<li> ' + render_markdown_inline(string) + ' </li>'
+            reprint += '<li> ' + linebreaksbr(esc(string)) + ' </li>'
 
     if reprint != '':
         if bare_value:

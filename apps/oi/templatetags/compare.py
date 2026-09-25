@@ -1,4 +1,5 @@
 from django import template
+from django.template.defaultfilters import linebreaksbr
 from diff_match_patch import diff_match_patch
 from django.conf import settings
 from django.template.defaultfilters import yesno, urlize, \
@@ -14,7 +15,7 @@ from apps.gcd.templatetags.display import absolute_url, \
 from apps.gcd.templatetags.credits import format_page_count, \
                                           split_reprint_string
 
-from apps.gcd.markdown_extension import render_markdown, render_markdown_inline
+from apps.gcd.markdown_extension import render_markdown
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
@@ -186,7 +187,7 @@ def field_value(revision, field):
         if value.strip() != '':
             for string in split_reprint_string(value):
                 string = string.strip()
-                reprint += '<li> ' + render_markdown_inline(string) + ' </li>'
+                reprint += '<li> ' + linebreaksbr(esc(string)) + ' </li>'
             if reprint != '':
                 reprint = '<ul>' + reprint + '</ul>'
         return mark_safe(reprint)

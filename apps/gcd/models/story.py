@@ -12,7 +12,6 @@ from taggit.managers import TaggableManager
 import django_tables2 as tables
 
 from apps.stddata.models import Language
-from apps.gcd.markdown_extension import render_markdown_inline
 from django.template.defaultfilters import linebreaksbr
 
 from .gcddata import GcdData, GcdLink
@@ -111,7 +110,7 @@ def show_title(story, use_first_line=False):
     return story.title
 
 
-def character_notes(character, html=False, include_notes=True):
+def character_notes(character, html=False):
     notes = []
     if character.is_flashback:
         notes.append('flashback')
@@ -126,9 +125,9 @@ def character_notes(character, html=False, include_notes=True):
     if character.role:
         note += ' (%s)' % (esc(character.role) if html else character.role)
 
-    if include_notes and character.notes:
-        value = render_markdown_inline(character.notes) if html \
-            else character.notes
+    if character.notes:
+        # Short appearance annotations are plain text, even in HTML views.
+        value = esc(character.notes) if html else character.notes
         note += ' (%s)' % value
 
     return mark_safe(note) if html else note
@@ -370,7 +369,7 @@ def show_characters(story, url=True, css_style=True, compare=False,
                                group_universe_name if
                                group_universe_name else '',
                                ' (%s)' %
-                               render_markdown_inline(group.notes)
+                               esc(group.notes)
                                if group.notes else '')
         else:
             characters += '%s%s%s [' % (group.group_name.name,
@@ -649,9 +648,6 @@ class StoryCharacter(GcdData):
 
     def show_notes(self):
         return character_notes(self, html=True)
-
-    def show_note_flags(self):
-        return character_notes(self, html=True, include_notes=False)
 
     def __str__(self):
         return "%s: %s" % (self.story, self.character)

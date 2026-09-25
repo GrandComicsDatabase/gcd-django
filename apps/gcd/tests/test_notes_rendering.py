@@ -10,11 +10,11 @@ from django.urls import reverse
 from django.test import RequestFactory, override_settings
 from markdownx.utils import markdownify
 
-from apps.gcd.markdown_extension import render_markdown, render_markdown_inline
+from apps.gcd.markdown_extension import render_markdown
 from apps.stddata.models import Country, Language
 from apps.gcd.models import (
     Character, CharacterNameDetail, Group, GroupMembership, GroupNameDetail,
-    Issue, Publisher, Series, Story, StoryType)
+    Issue, Publisher, Reprint, Series, Story, StoryType)
 from apps.gcd.models.character import GroupMembershipType
 from apps.gcd.models.publisher import (
     BrandGroupEmblemTable, BrandEmblemPublisherTable, BrandEmblemGroupTable)
@@ -71,17 +71,6 @@ def test_display_sanitizes_without_preview_extension():
     assert 'onerror' not in rendered
 
 
-@pytest.mark.parametrize('source, expected', [
-    ('**one** *two*', '<strong>one</strong> <em>two</em>'),
-    ('first\n\nsecond', 'first<br>second'),
-    ('- first\n- second', '• first<br>• second'),
-    ('1. first\n2. second', '1. first<br>2. second'),
-    ('<div>one</div><div>two &amp; three</div>', 'one<br>two &amp; three'),
-])
-def test_inline_annotations_contain_no_blocks(source, expected):
-    assert render_markdown_inline(source) == expected
-
-
 @pytest.mark.parametrize('source', [
     '<blockquote><p>Legacy <em>quotation</em></p></blockquote>',
     '<table><tbody><tr><th scope="col">Heading</th>'
@@ -94,20 +83,20 @@ def test_legacy_html_uses_the_same_display_and_preview_policy(source):
     assert render_markdown(render_markdown(source)) == render_markdown(source)
 
 
-def test_appearance_template_preserves_blocks():
+def test_appearance_template_preserves_plain_text():
     appearance = StoryCharacterRevision(
-        notes='First paragraph\n\nSecond paragraph\n\n- item')
+        notes='**Literal** [reference](https://example.org) <b>text</b>')
     # The list template needs only a display name/link, not a persisted story.
     row = SimpleNamespace(
         character=SimpleNamespace(
             name='Hero', get_absolute_url='/character/1/'),
-        notes=appearance.notes, show_note_flags=appearance.show_note_flags())
+        show_notes=appearance.show_notes())
     rendered = render_to_string('gcd/bits/tw_character_list.html', {
         'character_list': [(row, [], None)]})
-    assert '<p>First paragraph</p>' in rendered
-    assert '<p class="pt-4">Second paragraph</p>' in rendered
-    assert '<li>item</li>' in rendered
-    assert '<div class="flex"><p' not in rendered
+    assert '**Literal** [reference](https://example.org)' in rendered
+    assert '&lt;b&gt;text&lt;/b&gt;' in rendered
+    assert '<strong>' not in rendered
+    assert '<p' not in rendered
 
 
 def test_gcd_links_and_missing_references():
@@ -125,6 +114,30 @@ def test_gcd_links_and_missing_references():
                side_effect=Http404):
         assert 'No corresponding GCD object found' in render_markdown(
             '[gcd_link_group](123)')
+
+
+def test_group_appearance_template_preserves_plain_text():
+    group = SimpleNamespace(
+        group_name=SimpleNamespace(
+            name='Team', group=SimpleNamespace(get_absolute_url='/group/1/')),
+        notes='**Literal** <b>text</b>')
+    rendered = render_to_string('gcd/bits/tw_story_characters.html', {
+        'characters': ([(group, None, [])], [])})
+    assert '(**Literal** &lt;b&gt;text&lt;/b&gt;)' in rendered
+    assert '<strong>' not in rendered
+
+
+def test_reprint_comparison_preserves_plain_text():
+    issue = Mock()
+    issue.get_absolute_url.return_value = '/issue/1/'
+    issue.full_name.return_value = 'Example #1'
+    reprint = SimpleNamespace(
+        origin_issue=issue, target_issue=issue, target=None,
+        notes='**Literal** [link](https://example.org) <b>text</b>')
+    rendered = Reprint.get_compare_string(reprint, issue)
+    assert '**Literal** [link](https://example.org) &lt;b&gt;text&lt;/b&gt;' \
+        in rendered
+    assert '<strong>' not in rendered
 
 
 @pytest.mark.parametrize('table_class', [
@@ -154,7 +167,8 @@ def test_appearance_notes_keep_plain_text_contract():
     text = character_notes(character)
     assert SOURCE in text
     html = character_notes(character, html=True)
-    assert '<strong>Membership note</strong>' in html
+    assert SOURCE in html
+    assert '<strong>' not in html
     assert '&lt;b&gt;role&lt;/b&gt;' in html
     assert '(flashback)' in html
     assert character.notes == SOURCE
@@ -162,7 +176,8 @@ def test_appearance_notes_keep_plain_text_contract():
 
 def test_revision_appearance_notes_match_published_display():
     revision = StoryCharacterRevision(notes=SOURCE)
-    assert '<strong>Membership note</strong>' in revision.show_notes()
+    assert SOURCE in revision.show_notes()
+    assert '<strong>' not in revision.show_notes()
     assert SOURCE in revision.show_character_notes()
 
 
@@ -175,21 +190,22 @@ def test_reprint_link_notes_and_semicolon_compatibility():
     for rendered in (generate_reprint_link(issue, 'from', notes=SOURCE),
                      generate_reprint_link_sequence(
                          story, issue, 'in', notes=SOURCE)):
-        assert '[<strong>Membership note</strong>' in rendered
-        assert 'href="https://example.org/source"' in rendered
+        assert '[' + SOURCE + ']' in rendered
+        assert '<strong>' not in rendered
+        assert 'href="https://example.org/source"' not in rendered
     assert split_reprint_string('from A (x; y); in **B** [z; w]') == [
         'from A (x; y)', 'in **B** [z; w]']
     revision = SimpleNamespace(reprint_notes='from **A**; in *B*')
     rendered = field_value(revision, 'reprint_notes')
-    assert '<strong>A</strong>' in rendered
-    assert '<em>B</em>' in rendered
+    assert 'from **A**' in rendered
+    assert 'in *B*' in rendered
 
 
 @pytest.mark.parametrize('surface', [
     'credit', 'original_credit', 'story', 'comparison', 'from', 'to'])
-def test_reprint_note_lists_stay_compact(surface):
+def test_reprint_note_lists_stay_plain_text(surface):
     source = ('from **First** [reference](https://example.org/source)'
-              '\n\nNext paragraph; in *Second* & more')
+              '\n\nNext paragraph; in *Second* & <b>more</b>')
     if surface in ('credit', 'original_credit', 'comparison'):
         field = ('reprint_original_notes' if surface == 'original_credit'
                  else 'reprint_notes')
@@ -215,18 +231,21 @@ def test_reprint_note_lists_stay_compact(surface):
     if surface != 'story':
         assert '<ul>' in rendered
     assert '<li>' in rendered
-    # Check the calling surfaces, not just the inline renderer in isolation.
+    # Short annotations must not interpret Markdown or user-supplied HTML.
     assert '<p' not in rendered
     assert 'pt-4' not in rendered
+    assert '<strong>' not in rendered
+    assert '<em>' not in rendered
+    assert '<b>' not in rendered
+    assert '<a ' not in rendered
     if surface != 'to':
-        assert '<strong>First</strong>' in rendered
-        assert 'href="https://example.org/source"' in rendered
-        assert '</a><br>Next paragraph' in rendered
+        assert '**First** [reference](https://example.org/source)' in rendered
+        assert 'Next paragraph' in rendered
     if surface != 'from':
-        assert '<em>Second</em> &amp; more' in rendered
+        assert '*Second* &amp; &lt;b&gt;more&lt;/b&gt;' in rendered
     if surface in ('from', 'to'):
-        assert ('<em>Second</em>' if surface == 'from'
-                else '<strong>First</strong>') not in rendered
+        assert ('*Second*' if surface == 'from'
+                else '**First**') not in rendered
     else:
         assert rendered.count('<li>') == 2
 

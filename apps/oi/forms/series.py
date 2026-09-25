@@ -40,8 +40,8 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
                 super(RuntimeAddSeriesRevisionForm, self).__init__(*args,
                                                                    **kwargs)
                 self.fields['is_singleton'].help_text += \
-                    ' Series notes for an added singleton series will be '\
-                    'copied to the added issue.'
+                  ' Series notes for an added singleton series will be '\
+                  'copied to the added issue.'
 
             if can_request:
                 reservation_requested = forms.BooleanField(
@@ -74,8 +74,8 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
                 self.fields['language'].empty_label = None
                 if revision.added:
                     self.fields['is_singleton'].help_text += \
-                        ' Series notes for an added singleton series will be '\
-                        'copied to the added issue.'
+                      ' Series notes for an added singleton series will be '\
+                      'copied to the added issue.'
 
             if user.has_perm('indexer.can_approve'):
                 move_to_publisher_with_id = forms.IntegerField(

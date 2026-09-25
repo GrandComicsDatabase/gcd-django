@@ -10,7 +10,7 @@
 {% if character.2 %}
     <div class="flex"><i>({{ character.2.universe_name }})</i></div>
 {% endif %}
-    <div>{{ character.0.show_note_flags }}{% include "gcd/bits/rich_text.html" with value=character.0.notes only %}</div>
+    <div class="flex">{{ character.0.show_notes }}</div>
   </div>
 </li>
 {% endfor %}
