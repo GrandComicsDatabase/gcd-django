@@ -225,7 +225,7 @@ REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
 
 SUBMIT_CHANGES_FOR_APPROVAL = gettext_lazy('Submit Changes For Approval')
 APPROVE = gettext_lazy('Approve')
-SEND_BACK_TO_INDEXER = gettext_lazy('Send Back to Indexer')
+SEND_BACK_TO_INDEXER = gettext_lazy('Send Back To Indexer')
 
 WORKFLOW_ACTION_LABELS = {
     'submit': SUBMIT_CHANGES_FOR_APPROVAL,
