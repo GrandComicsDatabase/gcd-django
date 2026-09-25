@@ -223,18 +223,14 @@ def test_cant_upload_variants_active_revisions(any_series):
 
 def test_delete():
     with mock.patch('%s.save' % ISSUE_PATH), \
-            mock.patch('%s.first_issue_series_set' % ISSUE_PATH) as first, \
-            mock.patch('%s.last_issue_series_set' % ISSUE_PATH) as last:
-        first.count.return_value = 0
-        last.count.return_value = 0
+            mock.patch('%s.series' % ISSUE_PATH) as series:
         i = Issue()
 
         i.delete()
 
         assert i.deleted is True
         i.save.assert_called_once_with()
-        first.count.assert_called_once_with()
-        last.count.assert_called_once_with()
+        series.set_first_last_issues.assert_called_once_with()
 
 
 @pytest.fixture

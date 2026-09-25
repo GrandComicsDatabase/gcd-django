@@ -129,6 +129,8 @@ def test_issue_deletion_updates_series_endpoints(series_catalog, count, removed)
               for i in range(count)]
     series.set_first_last_issues()
     issues[removed].delete()
+    # A later save of the cached parent must not restore stale endpoints.
+    issues[removed].series.save()
     series.refresh_from_db()
     remaining = [issue for issue in issues if not issue.deleted]
     assert series.first_issue == (remaining[0] if remaining else None)

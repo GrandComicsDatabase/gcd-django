@@ -196,16 +196,7 @@ class Issue(GcdData):
     def delete(self):
         super().delete()
         # Revision statistics later save the cached parent instance.
-        if self.first_issue_series_set.count():
-            for series in self.first_issue_series_set.all():
-                if series.pk == self.series_id:
-                    series = self.series
-                series.set_first_last_issues()
-        if self.last_issue_series_set.count():
-            for series in self.last_issue_series_set.all():
-                if series.pk == self.series_id:
-                    series = self.series
-                series.set_first_last_issues()
+        self.series.set_first_last_issues()
 
     @property
     def indicia_image(self):
