@@ -175,10 +175,10 @@ class KeywordManagementTests(SimpleTestCase):
         self.assertIn('/keywords/manage/12/?q=London&amp;origin=duplicates', html)
         self.assertIn('/keywords/manage/13/?q=London&amp;origin=duplicates', html)
         self.assertIn('LONDON', html)
-        self.assertIn('href="/static/css/keyword-manager.css"', html)
-        self.assertIn('<main class="kw-manager">', html)
-        self.assertIn('class="kw-filters"', html)
-        self.assertIn('class="kw-duplicate-group"', html)
+        self.assertNotIn('keyword-manager.css', html)
+        self.assertNotIn('kw-', html)
+        self.assertIn('How matching works', html)
+        self.assertIn('Search groups', html)
 
     def test_missing_and_deleted_objects_do_not_expose_labels_or_links(self):
         for obj in (None, SimpleNamespace(deleted=True)):

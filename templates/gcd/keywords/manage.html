@@ -3,82 +3,82 @@
 
 {% block title %}GCD :: Keyword management{% endblock %}
 
+{% block keyword_heading %}Keyword management{% endblock %}
+
+{% block keyword_actions %}
+  <a class="btn-blue-editing" href="{% url 'keyword_manage_duplicates' %}">Review possible duplicates</a>
+{% endblock %}
+
 {% block keyword_body %}
-<header class="kw-heading">
-  <div class="kw-heading-main">
-    <h1>Keyword management</h1>
-    <span class="kw-badge">Read-only</span>
+  <p class="mb-4 text-gray-700">Browse keywords and their associated catalog objects, including unused keywords.</p>
+  <form method="get" class="flex flex-wrap items-center gap-4 rounded border bg-gray-200 p-2 mb-4">
+    <div class="w-full sm:w-auto">
+      <label for="keyword-query" class="block font-bold">Name contains</label>
+      <input id="keyword-query" type="search" name="q" value="{{ query }}" class="w-full rounded">
+    </div>
+    <div>
+      <label for="keyword-usage" class="block font-bold">Usage</label>
+      <select id="keyword-usage" name="usage" class="w-full rounded">
+        <option value="">All keywords</option>
+        <option value="used"{% if usage == 'used' %} selected{% endif %}>Used</option>
+        <option value="unused"{% if usage == 'unused' %} selected{% endif %}>Unused</option>
+      </select>
+    </div>
+    <div>
+      <label for="keyword-sort" class="block font-bold">Order by</label>
+      <select id="keyword-sort" name="sort" class="w-full rounded">
+        <option value="name"{% if sort == 'name' %} selected{% endif %}>Name A–Z</option>
+        <option value="-name"{% if sort == '-name' %} selected{% endif %}>Name Z–A</option>
+        <option value="-usage"{% if sort == '-usage' %} selected{% endif %}>Most used</option>
+        <option value="usage"{% if sort == 'usage' %} selected{% endif %}>Least used</option>
+      </select>
+    </div>
+    <div class="flex flex-wrap items-center gap-4">
+      <button type="submit" class="btn-blue-editing">Search</button>
+      <a class="btn-blue-editing" href="{% url 'keyword_manage' %}">Reset</a>
+    </div>
+  </form>
+  <div class="flex flex-wrap justify-between gap-4 mb-2">
+    <p>
+      <strong>{{ page_obj.paginator.count|intcomma }}</strong> keyword{{ page_obj.paginator.count|pluralize }} found
+    </p>
+    <p class="text-sm text-gray-700">Usage counts include all associated object types.</p>
   </div>
-  <a class="kw-button" href="{% url 'keyword_manage_duplicates' %}">Review possible duplicates</a>
-</header>
-<p class="kw-intro">Browse keywords and their associated catalog objects, including unused keywords.</p>
-<form method="get" class="kw-filters">
-  <div class="kw-search-field">
-    <label for="keyword-query" class="block font-bold">Name contains</label>
-    <input id="keyword-query" type="search" name="q" value="{{ query }}" class="border rounded p-2">
-  </div>
-  <div>
-    <label for="keyword-usage" class="block font-bold">Usage</label>
-    <select id="keyword-usage" name="usage" class="border rounded p-2">
-      <option value="">All keywords</option>
-      <option value="used"{% if usage == 'used' %} selected{% endif %}>Used</option>
-      <option value="unused"{% if usage == 'unused' %} selected{% endif %}>Unused</option>
-    </select>
-  </div>
-  <div>
-    <label for="keyword-sort" class="block font-bold">Order by</label>
-    <select id="keyword-sort" name="sort" class="border rounded p-2">
-      <option value="name"{% if sort == 'name' %} selected{% endif %}>Name A–Z</option>
-      <option value="-name"{% if sort == '-name' %} selected{% endif %}>Name Z–A</option>
-      <option value="-usage"{% if sort == '-usage' %} selected{% endif %}>Most used</option>
-      <option value="usage"{% if sort == 'usage' %} selected{% endif %}>Least used</option>
-    </select>
-  </div>
-  <div class="kw-actions">
-    <button type="submit" class="kw-button kw-button-primary">Search</button>
-    <a class="kw-button" href="{% url 'keyword_manage' %}">Reset</a>
-  </div>
-</form>
-<div class="kw-summary">
-  <p>
-  <strong>{{ page_obj.paginator.count|intcomma }}</strong> keyword{{ page_obj.paginator.count|pluralize }} found</p>
-  <p class="kw-note">Usage counts include all associated object types.</p>
-</div>
-<div class="kw-table-wrap">
-  <table class="w-full border-collapse">
-    <thead>
-      <tr class="border-b text-left">
-        <th scope="col" class="kw-id">ID</th>
-        <th scope="col" class="p-2">Keyword</th>
-        <th scope="col" class="kw-number">Usages</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for keyword in page_obj %}
-        <tr class="border-b">
-          <td class="kw-id">{{ keyword.pk }}</td>
-          <td class="p-2">
-            <a href="{% url 'keyword_manage_detail' keyword.pk %}?{{ detail_query }}">{{ keyword.name }}</a>
-          </td>
-          <td class="kw-number">{{ keyword.usage_count|intcomma }}</td>
+  <div class="overflow-y-auto">
+    <table class="w-full border-collapse">
+      <thead class="bg-blue-100">
+        <tr class="border-y border-gray-200 text-left">
+          <th scope="col" class="p-2 text-left text-gray-700">ID</th>
+          <th scope="col" class="p-2 text-left">Keyword</th>
+          <th scope="col" class="p-2 text-right">Usages</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="3" class="p-2">No keywords match these filters.</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
-{% if page_obj.has_other_pages %}
-  <nav aria-label="Keyword pages" class="flex gap-4 my-4">
-    {% if page_obj.has_previous %}
-      <a href="?q={{ query|urlencode }}&amp;usage={{ usage|urlencode }}&amp;page={{ page_obj.previous_page_number }}&amp;sort={{ sort|urlencode }}">Previous</a>
-    {% endif %}
-    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}
-      <a href="?q={{ query|urlencode }}&amp;usage={{ usage|urlencode }}&amp;page={{ page_obj.next_page_number }}&amp;sort={{ sort|urlencode }}">Next</a>
-    {% endif %}
-  </nav>
-{% endif %}
+      </thead>
+      <tbody>
+        {% for keyword in page_obj %}
+          <tr class="border-y border-gray-200">
+            <td class="p-2 text-left text-gray-700">{{ keyword.pk }}</td>
+            <td class="p-2">
+              <a href="{% url 'keyword_manage_detail' keyword.pk %}?{{ detail_query }}">{{ keyword.name }}</a>
+            </td>
+            <td class="p-2 text-right">{{ keyword.usage_count|intcomma }}</td>
+          </tr>
+        {% empty %}
+          <tr class="border-y border-gray-200">
+            <td colspan="3" class="p-2">No keywords match these filters.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page_obj.has_other_pages %}
+    <nav aria-label="Keyword pages" class="flex flex-wrap items-center gap-4 my-2">
+      {% if page_obj.has_previous %}
+        <a href="?q={{ query|urlencode }}&amp;usage={{ usage|urlencode }}&amp;page={{ page_obj.previous_page_number }}&amp;sort={{ sort|urlencode }}">Previous</a>
+      {% endif %}
+      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?q={{ query|urlencode }}&amp;usage={{ usage|urlencode }}&amp;page={{ page_obj.next_page_number }}&amp;sort={{ sort|urlencode }}">Next</a>
+      {% endif %}
+    </nav>
+  {% endif %}
 {% endblock %}
