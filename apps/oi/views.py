@@ -353,7 +353,10 @@ def validate_changeset_revisions(changeset, request):
     invalid = []
     revisions = list(changeset.issuerevisions.filter(deleted=False))
     revisions.extend(changeset.storyrevisions.filter(deleted=False))
+    page_count_sum = 0
     for revision in revisions:
+        if type(revision) is StoryRevision and revision.page_count is not None:
+            page_count_sum += revision.page_count
         # A changeset can contain cloned sequences that the indexer did not
         # edit. Recompute comparison state so legacy data in those untouched
         # sequences does not become part of the indexer's required work.
@@ -363,6 +366,13 @@ def validate_changeset_revisions(changeset, request):
         messages = validate_revision_for_transition(revision, request)
         if messages:
             invalid.append((revision, messages))
+    if changeset.change_type == CTYPES['issue']:
+        issue = changeset.issuerevisions.first()
+        if page_count_sum > 0 and page_count_sum > issue.page_count:
+            invalid.append((issue,
+                            ['Sum of the page count of all sequences is %d, '
+                             'which exceeds the issue page count of %d.' % (
+                              page_count_sum, issue.page_count)]))
     return invalid
 
 
