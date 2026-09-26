@@ -24,6 +24,8 @@ BLOCK_TAGS = {
     'h6', 'hr', 'li', 'ol', 'p', 'pre', 'ul', 'table', 'thead', 'tbody',
     'tfoot', 'tr', 'td', 'th', 'caption',
 }
+# Display and Markdownx previews share this allowlist. See
+# docs/markdown-sanitization.md for its scope and compatibility effects.
 HTML_CLEANER = nh3.Cleaner(
     tags=BLOCK_TAGS | {'a', 'abbr', 'b', 'br', 'code', 'del', 'em', 'i',
                        'img', 's', 'span', 'strong', 'sub', 'sup'},
