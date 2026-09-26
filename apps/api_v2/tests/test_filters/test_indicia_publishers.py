@@ -137,6 +137,19 @@ def test_indicia_publisher_filter_matches_exact_fields(
     assert list(queryset) == [matching]
 
 
+def test_indicia_publisher_filter_rejects_invalid_surrogate_boolean():
+    """Malformed surrogate values fail validation instead of being ignored."""
+    filterset = IndiciaPublisherFilterSet(
+        {'is_surrogate': 'not-a-boolean'},
+        queryset=IndiciaPublisher.objects.all(),
+    )
+
+    assert filterset.is_valid() is False
+    assert filterset.errors == {
+        'is_surrogate': ['Enter either true or false.'],
+    }
+
+
 def test_indicia_publisher_filter_matches_modified_range(
     publisher,
     country,
