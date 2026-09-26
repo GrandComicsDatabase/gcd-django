@@ -25,21 +25,19 @@
           {% if sequence_number == None %}at the end of the issue.{% elif sequence_number < 0 %}at the beginning of the issue.{% else %}starting at sequence {{ sequence_number }}.{% endif %}
         {% endif %}
       </p>
-      <table class="w-full text-left my-3">
-        <thead>
-          <tr><th>Position</th><th>Copy as</th><th>Source</th></tr>
-        </thead>
-        <tbody>
-          {% for row in preview_rows %}
-            <tr><td>{{ row.position }}</td><td>{{ row.copy_type }}</td><td>{{ row.story|show_story_short }} in {{ row.story.issue }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
     {% endif %}
     <form method="POST" action="{% url 'select_multiple_sequences' select_key=select_key %}" id="confirm-bulk-copy">
       {% csrf_token %}
       <input type="hidden" name="copy_batch" value="{{ copy_batch }}">
       <input type="hidden" name="confirm_bulk_copy" value="1">
+      <input type="hidden" name="per_sequence_options" value="1">
+      {% if stories|length > 1 %}
+        <fieldset class="my-3">
+          <legend>Options for All Sequences</legend>
+          <p><label><input type="checkbox" id="copy-all-credit-info"> Copy credits with credited/signed qualifiers for all sequences</label></p>
+          <p><label><input type="checkbox" id="copy-all-characters"> Copy characters for all sequences</label></p>
+        </fieldset>
+      {% endif %}
       {% if needs_main_cover %}
         {% if copy_plan_changed %}<p role="alert">The destination has changed. Nothing has been copied.</p>{% endif %}
         <fieldset>
@@ -50,14 +48,43 @@
           {% endfor %}
         </fieldset>
       {% endif %}
-      <p><label><input type="checkbox" name="copy_credit_info" {% if copy_credit_info %}checked{% endif %}> Copy credits with credited/signed qualifiers</label></p>
-      <p><label><input type="checkbox" name="copy_characters" {% if copy_characters %}checked{% endif %}> Copy characters</label></p>
-      <button type="submit" class="btn-blue-editing" id="copy-batch-submit">{% if needs_main_cover %}Review Copy{% else %}Confirm Copy of {{ stories|length }} {{ label|title }}{% endif %}</button>
-      <a class="btn-blue-editing" href="{% url 'select_multiple_sequences' select_key=select_key %}">Back to Selection</a>
+      {% for row in preview_rows %}
+        <fieldset class="my-3">
+          <legend id="toc_{{ row.story.id }}">{{ row.story|show_story_short }} in {{ row.story.issue }}</legend>
+          {% if not needs_main_cover %}<p>Position {{ row.position }} — Copy as {{ row.copy_type }}</p>{% endif %}
+          <p><label><input type="checkbox" name="copy_credit_info_ids" value="{{ row.story.id }}" {% if row.copy_credit_info %}checked{% endif %}> Copy credits with credited/signed qualifiers</label></p>
+          <p><label><input type="checkbox" name="copy_characters_ids" value="{{ row.story.id }}" {% if row.copy_characters %}checked{% endif %}> Copy characters</label></p>
+          {% with story=row.story preview=1 %}
+            {% include "gcd/details/tw_single_story.html" %}
+          {% endwith %}
+        </fieldset>
+      {% endfor %}
+      <div class="sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2 sm:px-4" aria-label="Copy actions">
+        <button type="submit" class="btn-blue-editing" id="copy-batch-submit">{% if needs_main_cover %}Review Copy{% else %}Confirm Copy of {{ stories|length }} {{ label|title }}{% endif %}</button>
+        <a class="btn-blue-editing" href="{% url 'select_multiple_sequences' select_key=select_key %}">Back to Selection</a>
+      </div>
     </form>
     <script>
       const copyForm = document.getElementById('confirm-bulk-copy');
       const copySubmit = document.getElementById('copy-batch-submit');
+      const optionGroups = [
+        ['copy-all-credit-info', 'copy_credit_info_ids'],
+        ['copy-all-characters', 'copy_characters_ids'],
+      ].filter(([id]) => document.getElementById(id)).map(([id, name]) => {
+        const all = document.getElementById(id);
+        const items = Array.from(copyForm.querySelectorAll(`input[name="${name}"]`));
+        const sync = () => {
+          const checked = items.filter(item => item.checked).length;
+          all.checked = items.length > 0 && checked === items.length;
+        };
+        all.addEventListener('change', () => {
+          items.forEach(item => { item.checked = all.checked; });
+          sync();
+        });
+        items.forEach(item => item.addEventListener('change', sync));
+        sync();
+        return sync;
+      });
       copyForm.addEventListener('submit', (event) => {
         if (copySubmit.disabled) {
           event.preventDefault();
@@ -67,6 +94,7 @@
         copySubmit.textContent = 'Copying…';
       });
       window.addEventListener('pageshow', () => {
+        optionGroups.forEach(sync => sync());
         copySubmit.disabled = false;
         copySubmit.textContent = '{% if needs_main_cover %}Review Copy{% else %}Confirm Copy of {{ stories|length }} {{ label|title }}{% endif %}';
       });

@@ -9,6 +9,9 @@ from django.core.cache.backends.locmem import LocMemCache
 from django.http import HttpResponse
 from django.test import RequestFactory
 from django.template.loader import get_template
+from django.template import Context
+from django.template.loader_tags import BlockNode
+from django.urls import reverse
 
 from apps.gcd.models import STORY_TYPES
 from apps.oi import states
@@ -47,7 +50,7 @@ def copy_context():
             return queryset
         stack.enter_context(patch('apps.oi.views.Story.objects.filter', side_effect=filter_sources))
         copier = stack.enter_context(patch('apps.oi.views.StoryRevision.copied_revision'))
-        copier.side_effect = lambda *a, **kw: MagicMock(sequence_number=99)
+        copier.side_effect = lambda *a, **kw: MagicMock(id=200, sequence_number=99)
         render = stack.enter_context(patch('apps.oi.views.oi_render', return_value=HttpResponse()))
         yield SimpleNamespace(user=user, issue=issue, data=data, sources=sources,
                               existing=existing, receipts=receipts, copier=copier,
@@ -318,7 +321,7 @@ def test_existing_cover_keeps_zero_and_reprint_uses_insertion_point(copy_context
     preview = cover_preview(c)
     assert preview['cover_mode'] == 'reprint'
     assert preview['cover_position'] == 1
-    created = MagicMock(sequence_number=99)
+    created = MagicMock(id=200, sequence_number=99)
     c.copier.side_effect = None
     c.copier.return_value = created
     response = copy_cached_sequences.__wrapped__(request_for(c, {
@@ -360,3 +363,118 @@ def test_reprint_at_end_uses_end_position(copy_context):
     preview = cover_preview(c)
     assert preview['cover_mode'] == 'reprint'
     assert preview['cover_position'] == 2
+
+
+@pytest.mark.parametrize('with_cover', [False, True])
+def test_individual_copy_options_override_batch_options(copy_context, with_cover):
+    c = copy_context
+    if with_cover:
+        c.sources[1].type_id = STORY_TYPES['cover']
+        c.existing[0].type_id = STORY_TYPES['cover']
+    token = confirmation(c)
+    post = {'confirm_bulk_copy': '1', 'copy_batch': token,
+            'per_sequence_options': '1',
+            'copy_credit_info_ids': ['8', '999'],
+            'copy_characters_ids': ['7'],
+            'copy_credit_info': 'on', 'copy_characters': 'on'}
+    if with_cover:
+        # A newly detected cover requires a placement review first.
+        copy_cached_sequences.__wrapped__(request_for(c, post), c.data, 'batch')
+        preview = c.render.call_args.args[2]
+        assert [(r['story'].id, r['copy_credit_info'], r['copy_characters'])
+                for r in preview['preview_rows']] == [(8, True, False), (7, False, True)]
+        post['copy_batch'] = preview['copy_batch']
+        c.copier.assert_not_called()
+    response = copy_cached_sequences.__wrapped__(request_for(c, post), c.data, 'batch')
+    assert response.status_code == 302
+    assert [(call.args[0].id, call.kwargs['copy_credit_info'],
+             call.kwargs['copy_characters']) for call in c.copier.call_args_list] == [
+                 (8, True, False), (7, False, True)]
+
+
+def test_individual_options_can_all_be_unchecked(copy_context):
+    c = copy_context
+    response = copy_cached_sequences.__wrapped__(request_for(c, {
+        'confirm_bulk_copy': '1', 'copy_batch': confirmation(c),
+        'per_sequence_options': '1', 'copy_credit_info': 'on',
+        'copy_characters': 'on'}), c.data, 'batch')
+    assert response.status_code == 302
+    assert all(not call.kwargs['copy_credit_info'] and
+               not call.kwargs['copy_characters']
+               for call in c.copier.call_args_list)
+
+
+def test_main_cover_review_preserves_options_by_source_id(copy_context):
+    c = copy_context
+    c.sources[:] = [SimpleNamespace(id=pk, type_id=STORY_TYPES['cover'])
+                    for pk in [7, 8]]
+    request = request_for(c, {'copy_selected_cached_objects': 'cover',
+                             'selected_covers': ['cover_7', 'cover_8']})
+    request.session['cached_covers'] = [7, 8]
+    copy_cached_sequences.__wrapped__(request, c.data, 'batch')
+    preview = c.render.call_args.args[2]
+    assert preview['needs_main_cover']
+    post = {'confirm_bulk_copy': '1', 'copy_batch': preview['copy_batch'],
+            'main_cover': '8', 'per_sequence_options': '1',
+            'copy_credit_info_ids': ['7'], 'copy_characters_ids': ['8']}
+    copy_cached_sequences.__wrapped__(request_for(c, post), c.data, 'batch')
+    preview = c.render.call_args.args[2]
+    assert not preview['needs_main_cover']
+    assert [(r['story'].id, r['copy_credit_info'], r['copy_characters'])
+            for r in preview['preview_rows']] == [(8, False, True), (7, True, False)]
+    c.copier.assert_not_called()
+    post['copy_batch'] = preview['copy_batch']
+    assert copy_cached_sequences.__wrapped__(
+        request_for(c, post), c.data, 'batch').status_code == 302
+    assert [(call.args[0].id, call.kwargs['copy_credit_info'],
+             call.kwargs['copy_characters']) for call in c.copier.call_args_list] == [
+                 (8, False, True), (7, True, False)]
+
+
+@pytest.mark.parametrize('kind, existing_cover', [
+    ('story', False), ('cover', False), ('cover', True),
+])
+def test_single_selection_opens_copied_sequence_editor(
+        copy_context, kind, existing_cover):
+    c = copy_context
+    c.sources[:] = c.sources[:1]
+    if kind == 'cover':
+        c.sources[0].type_id = STORY_TYPES['cover']
+    if existing_cover:
+        c.existing[0].type_id = STORY_TYPES['cover']
+    request = request_for(c, {'copy_selected_cached_objects': kind,
+                             'cached_objects': [kind + '_7']})
+    request.session['cached_covers'] = [7]
+    copy_cached_sequences.__wrapped__(request, c.data, 'batch')
+    preview = c.render.call_args.args[2]
+    response = copy_cached_sequences.__wrapped__(request_for(c, {
+        'confirm_bulk_copy': '1', 'copy_batch': preview['copy_batch'],
+        'per_sequence_options': '1', 'copy_characters_ids': ['7'],
+    }), c.data, 'batch')
+    assert response.url == reverse('edit_revision', kwargs={
+        'model_name': 'story', 'id': 200})
+    c.copier.assert_called_once()
+    assert c.copier.call_args.kwargs['copy_characters'] is True
+
+
+def test_multiple_selection_still_returns_to_changeset(copy_context):
+    c = copy_context
+    response = copy_cached_sequences.__wrapped__(request_for(c, {
+        'confirm_bulk_copy': '1', 'copy_batch': confirmation(c),
+    }), c.data, 'batch')
+    assert response.url == reverse('edit', kwargs={'id': 10})
+
+
+@pytest.mark.parametrize('count', [1, 2])
+def test_global_copy_controls_only_render_for_multiple_sequences(count):
+    template = get_template('oi/edit/confirm_copy_sequence.html').template
+    body = next(block for block in template.nodelist.get_nodes_by_type(BlockNode)
+                if block.name == 'view_body')
+    context = Context({
+        'bulk_copy': True, 'stories': [None] * count, 'select_key': 'batch',
+        'label': 'stories', 'preview_rows': [],
+    })
+    with context.bind_template(template):
+        html = body.nodelist.render(context)
+    assert ('id="copy-all-credit-info"' in html) is (count > 1)
+    assert ('id="copy-all-characters"' in html) is (count > 1)

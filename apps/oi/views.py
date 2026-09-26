@@ -5035,6 +5035,16 @@ def copy_cached_sequences(request, data, select_key):
         s.id for s in stories if s.id not in cover_ids]
     stories = [by_id[pk] for pk in ordered_ids]
     payload['ids'] = ordered_ids
+    # Individual choices take precedence over the legacy batch-wide options.
+    per_sequence = 'per_sequence_options' in request.POST
+    copy_options = {
+        story.id: {
+            option: (str(story.id) in request.POST.getlist(option + '_ids')
+                     if per_sequence else option in request.POST)
+            for option in ('copy_credit_info', 'copy_characters')
+        }
+        for story in stories
+    }
     if not confirming or changed or needs_main or main_changed:
         if not confirming:
             cache.set(batch_key, 'ready', timeout=3600)
@@ -5046,6 +5056,7 @@ def copy_cached_sequences(request, data, select_key):
             position = (0 if is_main else placement['insertion'] + index)
             preview_rows.append({
                 'story': story, 'position': position,
+                **copy_options[story.id],
                 'copy_type': ('cover' if is_main else
                               'cover reprint (on interior page)' if story.id in cover_ids
                               else story.type.name),
@@ -5073,8 +5084,7 @@ def copy_cached_sequences(request, data, select_key):
     insertion = placement['insertion']
     copied = [StoryRevision.copied_revision(
         story, changeset, issue_revision=issue_revision,
-        copy_credit_info='copy_credit_info' in request.POST,
-        copy_characters='copy_characters' in request.POST) for story in stories]
+        **copy_options[story.id]) for story in stories]
     if placement['cover_mode'] == 'main':
         ordered = [copied[0]] + existing[:insertion] + copied[1:] + existing[insertion:]
     else:
@@ -5084,6 +5094,9 @@ def copy_cached_sequences(request, data, select_key):
             revision.sequence_number = sequence
             revision.save()
     transaction.on_commit(lambda: cache.set(batch_key, 'done', timeout=3600))
+    if len(copied) == 1:
+        return HttpResponseRedirect(urlresolvers.reverse(
+            'edit_revision', kwargs={'model_name': 'story', 'id': copied[0].id}))
     return HttpResponseRedirect(destination)
 
 
