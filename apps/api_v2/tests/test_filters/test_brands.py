@@ -96,6 +96,19 @@ def test_brand_filter_matches_generic_and_exact_years():
     assert list(queryset) == [matching]
 
 
+def test_brand_filter_rejects_invalid_generic_boolean():
+    """Malformed generic values fail validation instead of being ignored."""
+    filterset = BrandFilterSet(
+        {'generic': 'not-a-boolean'},
+        queryset=Brand.objects.all(),
+    )
+
+    assert filterset.is_valid() is False
+    assert filterset.errors == {
+        'generic': ['Enter either true or false.'],
+    }
+
+
 def test_brand_relationship_filters_return_distinct_results(
     publisher,
     country,

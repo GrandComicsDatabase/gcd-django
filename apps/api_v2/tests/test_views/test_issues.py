@@ -261,6 +261,19 @@ def test_issue_list_rejects_invalid_on_sale_iso_week(api_client, db):
     }
 
 
+def test_issue_list_rejects_invalid_variant_boolean(api_client, db):
+    """Malformed variant values return a validation error."""
+    response = api_client.get(
+        reverse('api-v2-issue-list'),
+        {'variant_of': 'not-a-boolean'},
+    )
+
+    assert response.status_code == 400
+    assert response.data == {
+        'variant_of': ['Enter either true or false.'],
+    }
+
+
 def test_issue_schema_documents_on_sale_iso_week_examples(api_client, db):
     """The issue schema documents both range and ISO-week query styles."""
     response = api_client.get(
