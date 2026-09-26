@@ -11,6 +11,7 @@ suite pass.
 | Django | 5.2 LTS | Supported framework family |
 | MySQL | `>=8.0` | Supported minimum |
 | Elasticsearch | `>7.0,<8.0` | Supported dependency range |
+| Redis | `7.4` | Optional queued search-update service |
 
 The core environment deliberately disables Elasticsearch. Search-enabled
 environments use the existing Elasticsearch 7 client and custom Elasticsearch 7
@@ -23,6 +24,8 @@ Haystack backend within the supported range above.
   pass migrations, system checks, and the test suite.
 - Elasticsearch must remain within the 7.x dependency range already declared
   in `requirements.txt`.
+- Redis 7.4 is limited to the optional local search profile and the existing
+  `django-rq`/`haystack-rqueue` integration.
 - Patch updates must pass dependency installation, migrations, Django system
   checks, and the published smoke tests before they are accepted.
 - Minor and major upgrades require an explicit compatibility review.
@@ -34,4 +37,6 @@ Haystack backend within the supported range above.
 - MySQL 8.0: https://dev.mysql.com/doc/refman/8.0/en/
 - Elasticsearch 7.17:
   https://www.elastic.co/guide/en/elasticsearch/reference/7.17/index.html
+- Redis Open Source version management:
+  https://redis.io/docs/latest/operate/oss_and_stack/install/version-mgmt/
 - Ubuntu: https://ubuntu.com/about/release-cycle

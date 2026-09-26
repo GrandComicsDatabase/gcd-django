@@ -220,7 +220,10 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
 
     def _prepare_credit(self, obj, field):
         return_val = [(val.strip()) for val in getattr(obj, field).split(';')]
-        credits = obj.active_credits.filter(credit_type__name=field)
+        credits = obj.active_credits.filter(
+            credit_type__name=field,
+            creator__creator__isnull=False,
+        )
         if credits:
             if return_val == ['']:
                 return_val = [val.creator.display_credit(val, url=False)
@@ -255,7 +258,10 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return_val.extend([(val.strip()) for val in
                           getattr(obj.issue, 'editing').split(';')])
 
-        credits = obj.active_credits.filter(credit_type__name='editing')
+        credits = obj.active_credits.filter(
+            credit_type__name='editing',
+            creator__creator__isnull=False,
+        )
         if credits:
             if return_val == ['']:
                 return_val = [val.creator.display_credit(val, url=False)
@@ -265,7 +271,10 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
                                                               url=False)
                                    for val in credits])
 
-        credits = obj.issue.active_credits.filter(credit_type__name='editing')
+        credits = obj.issue.active_credits.filter(
+            credit_type__name='editing',
+            creator__creator__isnull=False,
+        )
         if credits:
             if return_val == ['']:
                 return_val = [val.creator.display_credit(val, url=False)
@@ -295,7 +304,10 @@ class StoryIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
             return return_val
 
     def prepare_characters(self, obj):
-        return obj.show_characters_as_text()
+        try:
+            return obj.show_characters_as_text()
+        except Universe.DoesNotExist:
+            return obj.characters
 
     def prepare_sort_title(self, obj):
         return obj.show_title(True)
@@ -705,15 +717,17 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return obj.gcd_official_name
 
     def prepare_year(self, obj):
-        if obj.birth_date.year and '?' not in obj.birth_date.year:
-            return int(obj.birth_date.year)
+        birth_year = getattr(obj.birth_date, 'year', None)
+        if birth_year and '?' not in birth_year:
+            return int(birth_year)
         else:
             return 9999
 
     def prepare_date(self, obj):
-        if obj.birth_date.year:
+        birth_year = getattr(obj.birth_date, 'year', None)
+        if birth_year:
             try:
-                return date(int(obj.birth_date.year), 1, 1)
+                return date(int(birth_year), 1, 1)
             except ValueError:
                 return None
         else:
