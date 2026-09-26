@@ -6,12 +6,19 @@ from haystack.views import search_view_factory
 from apps.gcd.views.search_haystack import PaginatedFacetedSearchView, \
      GcdSearchQuerySet
 from apps.gcd.views.health import health
+from apps.gcd.views.keyword_management import (
+    keyword_detail, keyword_duplicates, keyword_list)
 
 from apps.gcd import views as gcd_views
 import apps.gcd.views.search
 import apps.gcd.views.redirect
 
 urlpatterns = [
+    path('keywords/manage/', keyword_list, name='keyword_manage'),
+    path('keywords/manage/duplicates/', keyword_duplicates,
+         name='keyword_manage_duplicates'),
+    path('keywords/manage/<int:pk>/', keyword_detail,
+         name='keyword_manage_detail'),
     ###########################################################################
     # GCD URLs.
     #
