@@ -55,7 +55,7 @@ GCD :: Indicia Printer :: {{ indicia_printer.name }}
 {% endif %}
 {% if indicia_printer.notes %}
         <dt> Notes:
-        <dd> {{ indicia_printer.notes|urlizetrunc:75|linebreaksbr }}
+        <dd> {% include "gcd/bits/notes.html" with value=indicia_printer.notes only %}
 {% endif %}
 {{ indicia_printer|show_credit:'keywords' }}
       </dl>

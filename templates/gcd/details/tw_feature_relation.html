@@ -27,7 +27,7 @@ GCD :: Feature Relation :: {{ feature_relation.from_relation }} - {{ feature_rel
             </li>
   {% if feature_relation.notes %}
             <li><span class="font-bold">Notes:</span>
-            {{ feature_relation.notes|urlizetrunc:75|linebreaksbr }}</li>
+            {% include "gcd/bits/notes.html" with value=feature_relation.notes only %}</li>
   {% endif %}
           </ul>
         </div>

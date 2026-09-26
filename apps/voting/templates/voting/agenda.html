@@ -30,7 +30,7 @@
       <td> Open </td>
       <td> {{ item.name }} </td>
       <td> {{ item.owner.indexer }} </td>
-      <td> {{ item.notes|linebreaksbr }} </td>
+      <td> {% include "gcd/bits/notes.html" with value=item.notes only %} </td>
     </tr>
   {% endfor %}
 
@@ -39,7 +39,7 @@
       <td> Pending </td>
       <td> {{ item.name }} </td>
       <td> {{ item.owner.indexer }} </td>
-      <td> {{ item.notes|linebreaksbr }} </td>
+      <td> {% include "gcd/bits/notes.html" with value=item.notes only %} </td>
     </tr>
   {% endfor %}
   </table>

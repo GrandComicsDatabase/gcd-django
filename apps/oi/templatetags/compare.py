@@ -1,7 +1,8 @@
 from django import template
+from django.template.defaultfilters import linebreaksbr
 from diff_match_patch import diff_match_patch
 from django.conf import settings
-from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
+from django.template.defaultfilters import yesno, urlize, \
                                            pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -12,8 +13,9 @@ from apps.gcd.templatetags.display import absolute_url, \
                                           sum_page_counts, show_barcode, \
                                           show_isbn
 from apps.gcd.templatetags.credits import format_page_count, \
-                                          split_reprint_string, \
-                                          render_markdown
+                                          split_reprint_string
+
+from apps.gcd.markdown_extension import render_markdown
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
@@ -24,7 +26,8 @@ from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
 
-MARKDOWN_FIELDS = {'notes', 'description', 'bio'}
+MARKDOWN_FIELDS = {'notes', 'description', 'bio', 'tracking_notes',
+                   'publication_notes'}
 
 
 def valid_barcode(barcode):
@@ -178,13 +181,13 @@ def field_value(revision, field):
                 esc(story_arc.name))
         return mark_safe(story_arcs)
     elif field in ['tracking_notes', 'publication_notes']:
-        return linebreaksbr(value)
+        return value
     elif field == 'reprint_notes':
         reprint = ''
         if value.strip() != '':
             for string in split_reprint_string(value):
                 string = string.strip()
-                reprint += '<li> ' + esc(string) + ' </li>'
+                reprint += '<li> ' + linebreaksbr(esc(string)) + ' </li>'
             if reprint != '':
                 reprint = '<ul>' + reprint + '</ul>'
         return mark_safe(reprint)
@@ -594,11 +597,12 @@ def compare_current_reprints(object_type, changeset):
           .filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True)
 
-        kept_target = object_type.source.target_reprint_revisions\
-          .filter(changeset__modified__lte=changeset.modified)\
-          .exclude(changeset=changeset)\
-          .filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True)
+        kept_target = (
+            object_type.source.target_reprint_revisions
+            .filter(changeset__modified__lte=changeset.modified)
+            .exclude(changeset=changeset)
+            .filter(changeset__state=states.APPROVED)
+            .exclude(deleted=True))
         if type(object_type) is IssueRevision:
             kept_origin = kept_origin.filter(origin=None, origin_revision=None)
             kept_target = kept_target.filter(target=None, target_revision=None)

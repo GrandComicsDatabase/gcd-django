@@ -27,7 +27,7 @@
             </li>
   {% if group_relation.notes %}
             <li><span class="font-bold">Notes:</span>
-            {{ group_relation.notes|urlizetrunc:75|linebreaksbr }}</li>
+            {% include "gcd/bits/notes.html" with value=group_relation.notes only %}</li>
   {% endif %}
           </ul>
         </div>

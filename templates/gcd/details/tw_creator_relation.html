@@ -31,7 +31,7 @@
   {% endif %}
   {% if creator_relation.notes %}
             <li><span class="font-bold">Notes:</span>
-            {{ creator_relation.notes|urlizetrunc:75|linebreaksbr }}
+            {% include "gcd/bits/notes.html" with value=creator_relation.notes only %}
   {% endif %}
   {% with creator_relation.data_source.all as data_sources %}
             {% include "gcd/bits/show_sources.html" %}

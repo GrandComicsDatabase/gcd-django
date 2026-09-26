@@ -13,6 +13,7 @@ from django.template.defaultfilters import title
 from apps.oi import states
 from apps.oi.models import CTYPES
 from apps.gcd.templatetags.credits import show_page_count
+from apps.gcd.markdown_extension import render_markdown
 from apps.gcd.models import Creator, CreatorMembership, ReceivedAward, \
                                     CreatorArtInfluence, CreatorNonComicWork, \
                                     CreatorDegree, CreatorRelation, \
@@ -247,8 +248,8 @@ def show_series_tracking(series):
 
         if srbond.bond.notes:
             tracking_line += (
-                '<dl class="bond_notes"><dt>Note:</dt><dd>%s</dl>' %
-                srbond.bond.notes)
+                '<dl class="bond_notes"><dt>Note:</dt><dd>%s</dd></dl>' %
+                render_markdown(srbond.bond.notes))
         elif has_interior_notes:
             # Put in a blank dl to make the spacing uniform.
             tracking_line += '<dl></dl>'

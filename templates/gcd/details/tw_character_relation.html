@@ -27,7 +27,7 @@
             </li>
   {% if character_relation.notes %}
             <li><span class="font-bold">Notes:</span>
-            {{ character_relation.notes|urlizetrunc:75|linebreaksbr }}</li>
+            {% include "gcd/bits/notes.html" with value=character_relation.notes only %}</li>
   {% endif %}
           </ul>
         </div>

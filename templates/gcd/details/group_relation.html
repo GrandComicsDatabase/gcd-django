@@ -29,7 +29,7 @@
   {% endif %}
   {% if group_relation.notes %}
     <dt>Notes:
-    <dd>{{ group_relation.notes|urlizetrunc:75|linebreaksbr }}
+    <dd>{% include "gcd/bits/notes.html" with value=group_relation.notes only %}
   {% endif %}
 </dl>
 {% endblock content %}

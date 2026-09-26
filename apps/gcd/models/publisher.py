@@ -17,7 +17,7 @@ from apps.stddata.models import Country
 from .gcddata import GcdData, GcdLink
 from .image import Image
 from .support_tables import render_publisher, TW_COLUMN_ALIGN_RIGHT, \
-                            DailyChangesTable
+                            DailyChangesTable, MarkdownColumn
 from .datasource import ExternalLink
 
 
@@ -579,7 +579,7 @@ class BrandGroupSearchTable(IndiciaPublisherSearchTable):
 
 
 class BrandGroupEmblemTable(BrandGroupSearchTable):
-    notes = tables.Column(orderable=False)
+    notes = MarkdownColumn(orderable=False)
 
 
 class BrandGroupPublisherTable(BrandGroupSearchTable):
@@ -640,7 +640,7 @@ class BrandEmblemPublisherTable(BrandEmblemSearchTable):
     group = tables.Column(accessor='emblem__group',
                           verbose_name="Publisher's Brand Group(s)",
                           orderable=False)
-    notes = tables.Column(orderable=False)
+    notes = MarkdownColumn(orderable=False)
     emblem = tables.Column(accessor='emblem__emblem',
                            verbose_name="Emblem",
                            orderable=False)
@@ -684,7 +684,7 @@ class BrandEmblemPublisherTable(BrandEmblemSearchTable):
 
 class BrandEmblemGroupTable(BrandEmblemSearchTable):
     group = None
-    notes = tables.Column(orderable=False)
+    notes = MarkdownColumn(orderable=False)
 
     class Meta:
         fields = ('emblem', 'name', 'year_began', 'year_ended', 'issue_count',

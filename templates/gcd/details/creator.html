@@ -49,7 +49,7 @@
             <p><strong>Biography:</strong> {{ creator.bio|linebreaksbr }}</p>
   {% endif %}
   {% if creator.notes %}
-            <p><strong>Notes:</strong> {{ creator.notes|urlizetrunc:75|linebreaksbr }}</p>
+            {% include "gcd/bits/notes.html" with value=creator.notes label="Notes:" only %}
   {% endif %}
             <p>
             <ul style="columns: 2;">
@@ -156,7 +156,7 @@
           ?
         {% endif %}
         {% if school.notes %}
-              <p><strong>Notes: </strong>{{ school.notes }}</p>
+              {% include "gcd/bits/notes.html" with value=school.notes label="Notes:" only %}
         {% endif %}
             </li>
       {% endfor %}
@@ -170,12 +170,12 @@
           <ol>
     {% for degree in creator.active_degrees %}
           <li>
-            <p><a href="{{ degree.get_absolute_url }}">{{ degree.degree }}, {{ degree.school.school_name }}</a>
+            <a href="{{ degree.get_absolute_url }}">{{ degree.degree }}, {{ degree.school.school_name }}</a>
       {% if degree.degree_year or degree.degree_year_uncertain %}
         in {{ degree.degree_year }}{% if degree.degree_year_uncertain %}?{% endif %}
       {% endif %}
       {% if degree.notes %}
-            <p><strong>Notes: </strong>{{ degree.notes }}</p>
+            {% include "gcd/bits/notes.html" with value=degree.notes label="Notes:" only %}
       {% endif %}
           </li>
     {% endfor %}
@@ -295,15 +295,15 @@
           <ol>
     {% for membership in creator.active_memberships %}
             <li>
-              <p><a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
+              <div><a href="{{ membership.get_absolute_url }}">{{ membership.organization_name }}</a>
               <strong>Type</strong>: {{ membership.membership_type.type }}
 	      {% if membership.display_years %}
 	      <strong>Duration:</strong> {{ membership.display_years }}
 	      {% endif %}
       {% if membership.notes %}
-              <br><strong>Notes: </strong>{{ membership.notes }}
+              {% include "gcd/bits/notes.html" with value=membership.notes label="Notes:" only %}
       {% endif %}
-              </p>
+              </div>
             </li>
     {% endfor %}
           </ol>
@@ -316,7 +316,7 @@
           <ol>
     {% for ncw in creator.active_non_comic_works %}
             <li>
-              <p><strong>Publication Title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
+              <div><strong>Publication Title</strong>: <a href="{{ ncw.get_absolute_url }}">{{ ncw.publication_title }}</a>
               ({{ ncw.work_type.type }}) - <strong>Role:</strong> {{ ncw.work_role.role_name }}
               {% if ncw.display_years %}
 	      - <strong>Year{{ ncw.noncomicworkyears.all|pluralize }}:</strong> {{ ncw.display_years }}
@@ -328,9 +328,9 @@
               <br><strong>Work Title:</strong> {{ ncw.work_title }}
       {% endif %}
       {% if ncw.notes %}
-              <br><strong>Notes: </strong>{{ ncw.notes }}
+              {% include "gcd/bits/notes.html" with value=ncw.notes label="Notes:" only %}
       {% endif %}
-              </p>
+              </div>
             </li>
     {% endfor %}
           </ol>
@@ -354,7 +354,7 @@
           {% endfor %}
         {% endif %}
         {% if relation.notes %}
-          <br><strong>Notes: </strong>{{ relation.notes }}
+          {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
         {% endif %}
         </li>
       {% endwith %}

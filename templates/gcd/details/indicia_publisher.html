@@ -62,7 +62,7 @@ GCD :: Indicia / Colophon Publisher :: {{ indicia_publisher.name }}
 {% endif %}
 {% if indicia_publisher.notes %}
         <dt> Notes:
-        <dd> {{ indicia_publisher.notes|urlizetrunc:75|linebreaksbr }}
+        <dd> {% include "gcd/bits/notes.html" with value=indicia_publisher.notes only %}
 {% endif %}
 {{ indicia_publisher|show_credit:'keywords' }}
       </dl>

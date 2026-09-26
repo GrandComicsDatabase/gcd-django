@@ -113,11 +113,11 @@ GCD :: Feature :: {{ feature.name }}
 {% block content %}
 {% if feature.description %}
 <h3 class="mt-2">Description:</h3>
-{{ feature.description|render_markdown }}
+{% include "gcd/bits/rich_text.html" with value=feature.description only %}
 {% endif %}
 {% if feature.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ feature.notes|render_markdown }}
+{% include "gcd/bits/notes.html" with value=feature.notes only %}
 {% endif %}
 {% if page.object_list.count %}
 <hr>
