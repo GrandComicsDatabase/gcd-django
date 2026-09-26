@@ -16,6 +16,7 @@
   {% with changeset.comments as comments %}
   {% include 'oi/bits/comments.html' %}
   {% endwith %}
+  <div class="sticky bottom-0 z-50 flex flex-wrap border-t border-gray-200 bg-white pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
   {% if revision.source_label == "story" %}
 <button class="btn-blue-editing inline" type="submit" name="save">Save And Continue Editing</button>
 <button class="btn-blue-editing inline" type="submit" name="save_return">Save And Return To Issue</button>
@@ -30,4 +31,5 @@
   {% endif %}
 <button class="btn-blue-editing inline" type="submit" name="discard">Discard All Changes</button>
   {% endif %}
+  </div>
 </form>

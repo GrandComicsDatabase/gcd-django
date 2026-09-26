@@ -1289,6 +1289,14 @@ a:hover {
   position: relative;
 }
 
+.sticky {
+  position: sticky;
+}
+
+.bottom-0 {
+  bottom: 0px;
+}
+
 .left-0 {
   left: 0px;
 }
@@ -1979,6 +1987,10 @@ a:hover {
   border-inline-start-width: 2px;
 }
 
+.border-t {
+  border-top-width: 1px;
+}
+
 .border-dashed {
   border-style: dashed;
 }
@@ -2256,6 +2268,10 @@ a:hover {
   padding-bottom: 0.5rem;
 }
 
+.pb-\[calc\(0\.5rem\+env\(safe-area-inset-bottom\)\)\] {
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+}
+
 .pe-1 {
   padding-inline-end: 0.25rem;
 }
@@ -2286,6 +2302,10 @@ a:hover {
 
 .ps-8 {
   padding-inline-start: 2rem;
+}
+
+.pt-2 {
+  padding-top: 0.5rem;
 }
 
 .pt-4 {
