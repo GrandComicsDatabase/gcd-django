@@ -1,40 +1,135 @@
 {% extends "oi/base_view.html" %}
-
-{% load credits %}
-
+{% load credits display %}
 {% block view_body %}
-<h2>Confirm to copy the following story into {{ issue_revision }}:
-</h2>
-<div class="edit">
-  {% if story_revision %}
-  <form id="confirm" action="{% url "confirm_copy_story_revision" story_revision_id=story.revision.id issue_revision_id=issue_revision.id %}" method="POST">
+  {% if bulk_copy %}
+    <h2>Copy {{ stories|length }} {{ label }} into {{ issue_revision }}</h2>
   {% else %}
-  <form id="confirm" action="{% url "confirm_copy_story" story_id=story.id issue_revision_id=issue_revision.id sequence_number=sequence_number %}" method="POST">
+    <h2>Confirm to copy the following story into {{ issue_revision }}:</h2>
   {% endif %}
-  {% csrf_token %}
-  <table class="[&_th]:text-right [&_th]:font-normal">
-    <tr> 
-      <th><label>
-      Copy credits with credited/signed/etc. qualifiers:
-      </label> </th>
-      <td><input type="checkbox" name="copy_credit_info" value=True></td>
-    </tr> 
-    <tr>
-      <th><label>
-      Copy characters:
-      </label> </th> 
-      <td><input type="checkbox" name="copy_characters" value=True></td>
-    </tr>
-  </table>
-  
-
-  {% with 1 as preview %}
-  <div id="story_data">
-    {% include "gcd/details/tw_single_story.html" %}
-  </div>
-  {% endwith %}
-  <button><input class="btn-blue-editing" type="submit" name="confirm" value="Confirm Copy"></button>
-  <button><input class="btn-blue-editing" type="submit" name="cancel" value="Cancel"></button>
-  </form>
-</div>
+  {% if not needs_main_cover %}
+    {% if copy_plan_changed %}
+      <p role="alert">The copy destination or confirmation has changed. Review the updated placement and confirm again. Nothing has been copied.</p>
+    {% endif %}
+    {% if cover_mode == 'main' %}
+      <p>Copy as main cover at position 0.</p>
+    {% elif cover_mode == 'reprint' %}
+      <p>This issue already has a cover. Copy as cover reprint (on interior page) at position {{ cover_position }}. The main cover stays in place.</p>
+    {% endif %}
+  {% endif %}
+  {% if bulk_copy %}
+    {% if not needs_main_cover %}
+      <p>The objects will be copied in the order shown below,
+        {% if cover_mode == 'main' %}with the main cover at position 0. The remaining objects follow the chosen insertion point.
+        {% elif cover_mode == 'reprint' %}starting at position {{ cover_position }}, with cover reprints before the selected stories.
+        {% else %}
+          {% if sequence_number == None %}at the end of the issue.{% elif sequence_number < 0 %}at the beginning of the issue.{% else %}starting at sequence {{ sequence_number }}.{% endif %}
+        {% endif %}
+      </p>
+    {% endif %}
+    <form method="POST" action="{% url 'select_multiple_sequences' select_key=select_key %}" id="confirm-bulk-copy">
+      {% csrf_token %}
+      <input type="hidden" name="copy_batch" value="{{ copy_batch }}">
+      <input type="hidden" name="confirm_bulk_copy" value="1">
+      <input type="hidden" name="per_sequence_options" value="1">
+      {% if stories|length > 1 %}
+        <fieldset class="my-3">
+          <legend>Options for All Sequences</legend>
+          <p><label><input type="checkbox" id="copy-all-credit-info"> Copy credits with credited/signed qualifiers for all sequences</label></p>
+          <p><label><input type="checkbox" id="copy-all-characters"> Copy characters for all sequences</label></p>
+        </fieldset>
+      {% endif %}
+      {% if needs_main_cover %}
+        {% if copy_plan_changed %}<p role="alert">The destination has changed. Nothing has been copied.</p>{% endif %}
+        <fieldset>
+          <legend>Choose the main cover</legend>
+          <p>This issue has no main cover. Choose one for position 0; the other selected covers will become cover reprints.</p>
+          {% for cover in cover_choices %}
+            <p><label><input type="radio" name="main_cover" value="{{ cover.id }}" required> {{ cover|show_story_short }} in {{ cover.issue }}</label></p>
+          {% endfor %}
+        </fieldset>
+      {% endif %}
+      {% for row in preview_rows %}
+        <fieldset class="my-3">
+          <legend id="toc_{{ row.story.id }}">{{ row.story|show_story_short }} in {{ row.story.issue }}</legend>
+          {% if not needs_main_cover %}<p>Position {{ row.position }} — Copy as {{ row.copy_type }}</p>{% endif %}
+          <p><label><input type="checkbox" name="copy_credit_info_ids" value="{{ row.story.id }}" {% if row.copy_credit_info %}checked{% endif %}> Copy credits with credited/signed qualifiers</label></p>
+          <p><label><input type="checkbox" name="copy_characters_ids" value="{{ row.story.id }}" {% if row.copy_characters %}checked{% endif %}> Copy characters</label></p>
+          {% with story=row.story preview=1 %}
+            {% include "gcd/details/tw_single_story.html" %}
+          {% endwith %}
+        </fieldset>
+      {% endfor %}
+      <div class="sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2 sm:px-4" aria-label="Copy actions">
+        <button type="submit" class="btn-blue-editing" id="copy-batch-submit">{% if needs_main_cover %}Review Copy{% else %}Confirm Copy of {{ stories|length }} {{ label|title }}{% endif %}</button>
+        <a class="btn-blue-editing" href="{% url 'select_multiple_sequences' select_key=select_key %}">Back to Selection</a>
+      </div>
+    </form>
+    <script>
+      const copyForm = document.getElementById('confirm-bulk-copy');
+      const copySubmit = document.getElementById('copy-batch-submit');
+      const optionGroups = [
+        ['copy-all-credit-info', 'copy_credit_info_ids'],
+        ['copy-all-characters', 'copy_characters_ids'],
+      ].filter(([id]) => document.getElementById(id)).map(([id, name]) => {
+        const all = document.getElementById(id);
+        const items = Array.from(copyForm.querySelectorAll(`input[name="${name}"]`));
+        const sync = () => {
+          const checked = items.filter(item => item.checked).length;
+          all.checked = items.length > 0 && checked === items.length;
+        };
+        all.addEventListener('change', () => {
+          items.forEach(item => { item.checked = all.checked; });
+          sync();
+        });
+        items.forEach(item => item.addEventListener('change', sync));
+        sync();
+        return sync;
+      });
+      copyForm.addEventListener('submit', (event) => {
+        if (copySubmit.disabled) {
+          event.preventDefault();
+          return;
+        }
+        copySubmit.disabled = true;
+        copySubmit.textContent = 'Copying…';
+      });
+      window.addEventListener('pageshow', () => {
+        optionGroups.forEach(sync => sync());
+        copySubmit.disabled = false;
+        copySubmit.textContent = '{% if needs_main_cover %}Review Copy{% else %}Confirm Copy of {{ stories|length }} {{ label|title }}{% endif %}';
+      });
+    </script>
+  {% else %}
+    <div class="edit">
+      {% if story_revision %}
+        <form id="confirm" action="{% url "confirm_copy_story_revision" story_revision_id=story.revision.id issue_revision_id=issue_revision.id %}" method="POST">
+      {% else %}
+        <form id="confirm" action="{% url "confirm_copy_story" story_id=story.id issue_revision_id=issue_revision.id sequence_number=sequence_number %}" method="POST">
+      {% endif %}
+        {% csrf_token %}
+        {% if cover_mode %}<input type="hidden" name="cover_plan" value="{{ cover_plan }}">{% endif %}
+        <table class="[&_th]:text-right [&_th]:font-normal">
+          <tr>
+            <th><label>
+              Copy credits with credited/signed/etc. qualifiers:
+            </label></th>
+            <td><input type="checkbox" name="copy_credit_info" value=True {% if copy_credit_info %}checked{% endif %}></td>
+          </tr>
+          <tr>
+            <th><label>
+              Copy characters:
+            </label></th>
+            <td><input type="checkbox" name="copy_characters" value=True {% if copy_characters %}checked{% endif %}></td>
+          </tr>
+        </table>
+        {% with 1 as preview %}
+          <div id="story_data">
+            {% include "gcd/details/tw_single_story.html" %}
+          </div>
+        {% endwith %}
+        <button><input class="btn-blue-editing" type="submit" name="confirm" value="Confirm Copy"></button>
+        <button><input class="btn-blue-editing" type="submit" name="cancel" value="Cancel"></button>
+      </form>
+    </div>
+  {% endif %}
 {% endblock %}

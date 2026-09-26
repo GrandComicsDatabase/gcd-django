@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Value, IntegerField, F
 import django.urls as urlresolvers
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
@@ -159,7 +159,7 @@ def process_select_search_haystack(request, select_key):
                                                               context=context)
     else:
         return HttpResponseRedirect(
-          urlresolvers.reverse('select_object',
+          urlresolvers.reverse(data.get('selection_view', 'select_object'),
                                kwargs={'select_key': select_key})
           + '?' + request.META['QUERY_STRING'])
 
@@ -184,7 +184,7 @@ def process_select_search(request, select_key):
                                          search_cover=cover)(request.GET)
     if not search_form.is_valid():
         return HttpResponseRedirect(
-          urlresolvers.reverse('select_object',
+          urlresolvers.reverse(data.get('selection_view', 'select_object'),
                                kwargs={'select_key': select_key})
           + '?' + request.META['QUERY_STRING'])
     cd = search_form.cleaned_data
@@ -310,10 +310,34 @@ def process_select_search(request, select_key):
 
 @permission_required('indexer.can_reserve')
 def select_object(request, select_key):
+    return _select_object(request, select_key)
+
+
+@permission_required('indexer.can_reserve')
+def select_multiple_sequences(request, select_key):
+    return _select_object(request, select_key, multiple_sequences=True)
+
+
+def _select_object(request, select_key, multiple_sequences=False):
     try:
         data = get_select_data(request, select_key)
     except KeyError:
         return _cant_get_key(request)
+    if (not multiple_sequences and
+            data.get('selection_view') == 'select_multiple_sequences'):
+        if request.method == 'GET':
+            destination = urlresolvers.reverse(
+                'select_multiple_sequences', kwargs={'select_key': select_key})
+            query = request.META.get('QUERY_STRING', '')
+            return HttpResponseRedirect(
+                destination + ('?' + query if query else ''))
+        return _select_object(request, select_key, multiple_sequences=True)
+    if multiple_sequences and (data.get('issue') or data.get('publisher') or
+                               data.get('series') or not (
+                                   data.get('story') or data.get('cover'))):
+        return HttpResponseBadRequest('This selection requires sequences only.')
+    selection_view = ('select_multiple_sequences' if multiple_sequences
+                      else 'select_object')
     if request.method == 'GET':
         if 'refine_search' in request.GET or 'search_issue' in request.GET:
             request_data = request.GET
@@ -340,10 +364,42 @@ def select_object(request, select_key):
                                                    exclude_issue_id=(
                                                      exclude_issue_id))
         haystack_form = FacetedSearchForm()
-        return render(request, 'select/select_object.html',
+        cache_choices = []
+        if 'object_choice' in cache_form.fields:
+            radios = list(cache_form['object_choice'])
+            for radio in radios:
+                kind = radio.data['value'].split('_')[0]
+                if kind not in ('cover', 'story', 'issue'):
+                    continue
+                cache_choices.append({
+                    'radio': radio,
+                    'kind': kind,
+                })
+        cache_choices.sort(key=lambda choice: {
+            'story': 0, 'cover': 1, 'issue': 2}[choice['kind']])
+        cache_groups = [
+            {'kind': kind, 'label': label,
+             'choices': [choice for choice in cache_choices
+                         if choice['kind'] == kind]}
+            for kind, label in [('story', 'Stories'), ('cover', 'Covers'),
+                                ('issue', 'Issues')]]
+        for index, choice in enumerate(cache_choices, 1):
+            choice['help_id'] = 'disabled-choice-%d' % index
+        can_copy_multiple = data.get('return') == '_selected_copy_sequence'
+        template = ('select/select_cached_sequences.html' if multiple_sequences
+                    else 'select/select_object.html')
+        return render(request, template,
                       {'heading': data['heading'],
                        'select_key': select_key,
                        'cache_form': cache_form,
+                       'cache_choices': cache_choices,
+                       'cache_groups': cache_groups,
+                       'cache_size': request.user.indexer.cache_size,
+                       'has_cached_objects': any(request.session.get(key)
+                           for key in ('cached_issues', 'cached_stories',
+                                       'cached_covers')),
+                       'show_cache': issue or story or cover,
+                       'can_copy_multiple': can_copy_multiple,
                        'disabled_choice_title': disabled_choice_title,
                        'disabled_choice_help': disabled_choice_help,
                        'search_form': search_form,
@@ -358,6 +414,92 @@ def select_object(request, select_key):
 
     if 'cancel' in request.POST:
         return HttpResponseRedirect(data['cancel'])
+    elif 'reorder_cached_objects' in request.POST:
+        kind = request.POST['reorder_cached_objects']
+        getters = {'story': get_cached_stories, 'cover': get_cached_covers}
+        if kind not in getters or not (
+                data.get('story') or (kind == 'cover' and data.get('cover'))):
+            return JsonResponse({'error': 'This category cannot be reordered.'},
+                                status=400)
+        choices = request.POST.getlist('ordered_objects')
+        try:
+            parts = [choice.split('_') for choice in choices]
+            ids = [int(pk) for category, pk in parts if category == kind]
+        except ValueError:
+            return JsonResponse({'error': 'Invalid cache order.'}, status=400)
+        if (len(ids) != len(choices) or len(set(ids)) != len(ids)
+                or not ids or any(pk <= 0 for pk in ids)):
+            return JsonResponse({'error': 'Invalid cache order.'}, status=400)
+        current = [obj.id for obj in getters[kind](request) or []]
+        if set(ids) != set(current):
+            return JsonResponse({
+                'error': 'The cache changed. Reload the page before reordering.'},
+                status=409)
+        key = 'cached_stories' if kind == 'story' else 'cached_covers'
+        request.session[key + '_order'] = ids
+        return JsonResponse({'saved': True})
+    elif ('copy_selected_cached_objects' in request.POST or
+          'confirm_bulk_copy' in request.POST):
+        if data.get('return') != '_selected_copy_sequence':
+            return HttpResponseBadRequest(
+                'This selection does not support copying.')
+        from apps.oi.views import copy_cached_sequences
+        return copy_cached_sequences(request, data, select_key)
+    elif 'remove_selected_cached_objects' in request.POST:
+        cache_keys = {'issue': 'cached_issues', 'story': 'cached_stories',
+                      'cover': 'cached_covers'}
+        kind = request.POST['remove_selected_cached_objects']
+        choices = request.POST.getlist('cached_objects')
+        if kind in ('all', 'cover'):
+            choices += request.POST.getlist('selected_covers')
+        if kind not in (*cache_keys, 'all') or not choices:
+            return HttpResponseBadRequest('Select cached objects to remove.')
+        selected_ids = {}
+        for choice in choices:
+            try:
+                choice_kind, object_id = choice.split('_')
+                object_id = int(object_id)
+            except ValueError:
+                return HttpResponseBadRequest('Invalid cached object.')
+            if (choice_kind not in cache_keys or object_id <= 0 or
+                    (kind != 'all' and choice_kind != kind)):
+                return HttpResponseBadRequest('Invalid cache category or object.')
+            selected_ids.setdefault(choice_kind, set()).add(object_id)
+        # Validate the whole selection before changing the session. Repeated
+        # submissions are harmless: removing an absent ID has no effect.
+        for choice_kind, ids in selected_ids.items():
+            key = cache_keys[choice_kind]
+            request.session[key] = [pk for pk in request.session.get(key, [])
+                                    if pk not in ids]
+            _sync_cached_order(request, key)
+        return HttpResponseRedirect(urlresolvers.reverse(
+            selection_view, kwargs={'select_key': select_key}))
+    elif 'clear_cache' in request.POST or 'remove_cached_object' in request.POST:
+        cache_keys = {'issue': 'cached_issues', 'story': 'cached_stories',
+                      'cover': 'cached_covers'}
+        if 'clear_cache' in request.POST:
+            kind = request.POST['clear_cache']
+            if kind == 'all':
+                for key in cache_keys.values():
+                    request.session.pop(key, None)
+                    request.session.pop(key + '_order', None)
+            elif kind in cache_keys:
+                request.session.pop(cache_keys[kind], None)
+                request.session.pop(cache_keys[kind] + '_order', None)
+            else:
+                return HttpResponseBadRequest('Unknown cache category.')
+        else:
+            try:
+                kind, object_id = request.POST['remove_cached_object'].split('_')
+                key = cache_keys[kind]
+                object_id = int(object_id)
+            except (ValueError, KeyError):
+                return HttpResponseBadRequest('Invalid cached object.')
+            request.session[key] = [
+                pk for pk in request.session.get(key, []) if pk != object_id]
+            _sync_cached_order(request, key)
+        return HttpResponseRedirect(urlresolvers.reverse(
+            selection_view, kwargs={'select_key': select_key}))
     elif 'select_object' in request.POST:
         try:
             choice = request.POST['object_choice']
@@ -400,8 +542,28 @@ def select_object(request, select_key):
     return return_function(request, data, object_type, selected_id)
 
 
+def _get_unique_cached_ids(request, key):
+    cached_ids = request.session.get(key, [])
+    unique_ids = list(dict.fromkeys(cached_ids or []))
+    if unique_ids != cached_ids:
+        request.session[key] = unique_ids
+    return unique_ids
+
+
+def get_ordered_cached_ids(request, key):
+    """Display order is independent of the oldest-first eviction queue."""
+    ids = _get_unique_cached_ids(request, key)
+    saved_order = request.session.get(key + '_order', [])
+    return list(dict.fromkeys([pk for pk in saved_order if pk in ids] + ids))
+
+
+def _sync_cached_order(request, key):
+    if key + '_order' in request.session:
+        request.session[key + '_order'] = get_ordered_cached_ids(request, key)
+
+
 def get_cached_issues(request):
-    cached_issues_list = request.session.get('cached_issues', None)
+    cached_issues_list = _get_unique_cached_ids(request, 'cached_issues')
     if cached_issues_list:
         cached_issues = []
         for i in range(len(cached_issues_list)):
@@ -432,27 +594,23 @@ def _process_cached_stories(cached_stories_list):
 
 
 def get_cached_stories(request):
-    cached_stories_list = request.session.get('cached_stories', None)
+    cached_stories_list = get_ordered_cached_ids(request, 'cached_stories')
     return _process_cached_stories(cached_stories_list)
 
 
 def get_cached_covers(request):
-    cached_covers_list = request.session.get('cached_covers', None)
+    cached_covers_list = get_ordered_cached_ids(request, 'cached_covers')
     return _process_cached_stories(cached_covers_list)
 
 
 def _process_caching(cached_list, object_id, cache_size):
     """
-    Doing the caching. Limit of three might become a user option.
+    Remember each object once, refreshing its position when remembered again.
     """
-    if not cached_list:
-        cached_list = [object_id, ]
-    elif len(cached_list) < cache_size:
-        cached_list.append(object_id)
-    else:
-        cached_list.pop(0)
-        cached_list.append(object_id)
-    return cached_list
+    cached_list = list(dict.fromkeys(cached_list or []))
+    cached_list = [pk for pk in cached_list if pk != object_id]
+    cached_list.append(object_id)
+    return cached_list[-cache_size:] if cache_size > 0 else []
 
 
 @permission_required('indexer.can_reserve')
@@ -461,6 +619,10 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
     Store an issue_id, story_id, or cover_id in the session.
     """
     cache_size = request.user.indexer.cache_size
+    # Older profile forms allowed non-positive limits. Do not silently empty
+    # the cache when such an account remembers its next object.
+    if cache_size is None or cache_size < 1:
+        cache_size = 3
 
     if issue_id:
         cached_issues = request.session.get('cached_issues', None)
@@ -472,6 +634,7 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
         request.session['cached_stories'] = _process_caching(cached_stories,
                                                              story_id,
                                                              cache_size)
+        _sync_cached_order(request, 'cached_stories')
         return HttpResponseRedirect(request.META['HTTP_REFERER'] + '#%s' %
                                     story_id)
     if cover_story_id:
@@ -479,6 +642,7 @@ def cache_content(request, issue_id=None, story_id=None, cover_story_id=None):
         request.session['cached_covers'] = _process_caching(cached_covers,
                                                             cover_story_id,
                                                             cache_size)
+        _sync_cached_order(request, 'cached_covers')
     return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 

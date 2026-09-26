@@ -1,3 +1,5 @@
+from datetime import date
+
 from django import forms
 from django.forms.widgets import HiddenInput, RadioSelect
 from django.utils.html import conditional_escape as esc
@@ -55,7 +57,8 @@ def get_select_search_form(search_publisher=False, search_series=False,
         if search_series or search_issue or search_story or search_cover:
             series = forms.CharField(label='Series', required=False)
             year = forms.IntegerField(label='Series year', required=False,
-                                      min_value=1800, max_value=2025)
+                                      min_value=1800,
+                                      max_value=date.today().year)
         if search_issue or search_story or search_cover:
             number = forms.CharField(label='Issue Number',
                                      required=True)
