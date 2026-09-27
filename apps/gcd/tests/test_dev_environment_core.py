@@ -79,8 +79,8 @@ def test_compose_healthchecks_quote_credentials_and_remain_readable():
     ]
 
 
-def test_development_image_uses_the_supported_python_line():
-    """The Docker image is built from the supported Python release line."""
+def test_development_image_uses_python_and_pinned_tailwind():
+    """The web image contains Python and the standalone Tailwind toolchain."""
     dockerfile = _read_project_file('Dockerfile.dev')
 
     assert dockerfile.startswith('FROM python:3.13-slim-bookworm')
@@ -88,6 +88,9 @@ def test_development_image_uses_the_supported_python_line():
     assert 'default-libmysqlclient-dev' in dockerfile
     assert 'git' in dockerfile
     assert 'libicu-dev' in dockerfile
+    assert 'ARG TAILWINDCSS_VERSION=4.3.3' in dockerfile
+    assert 'tailwindcss-linux-${tailwind_arch}' in dockerfile
+    assert 'tailwindcss --help' in dockerfile
 
 
 def test_dev_launcher_documents_supported_commands():
@@ -98,6 +101,8 @@ def test_dev_launcher_documents_supported_commands():
     assert './bin/dev up' in result.stdout
     assert './bin/dev setup' in result.stdout
     assert './bin/dev setup --dump ~/Downloads/current.zip' in result.stdout
+    assert './bin/dev css' in result.stdout
+    assert './bin/dev css-watch' in result.stdout
     assert '--runtime native' in result.stdout
     assert 'reset --yes' in result.stdout
 

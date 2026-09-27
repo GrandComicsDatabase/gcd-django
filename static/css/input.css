@@ -1,21 +1,61 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss" source(none);
+@plugin "@tailwindcss/forms";
+
+/* Keep source discovery deterministic and avoid parsing Python at build time. */
+@source "../../templates";
+@source "../../apps/indexer/templates";
+@source "../../apps/oi/templates";
+@source "../../apps/select/templates";
+@source "../../apps/stats/templates";
+@source "../../apps/voting/templates";
+
+@theme {
+  --color-normal: #0a0a0a;
+  --color-normal-gcd: #0a0a0a;
+  --color-gcd: #66e;
+  --color-link-gcd: #2727eb;
+  --color-index-status-edit: #e77;
+  --color-index-status-in-queue: #ea7;
+  --color-my-comics: #a9302a;
+  --color-preview: #ffe944;
+  --color-visited-gcd: #551a8b;
+  --breakpoint-xs: 30rem;
+}
 
 @layer base {
+  /* Preserve the v3 default border color after the v4 Preflight change. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    @apply border-gray-200;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-gray-400;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    @apply cursor-pointer;
+  }
+
+  dialog {
+    @apply m-auto;
+  }
+
   h1 {
-    font-size: theme('fontSize.2xl');
-    font-weight: bold;
+    @apply text-2xl font-bold;
   }
 
   h2 {
-    font-size: theme('fontSize.xl');
-    font-weight: bold;
+    @apply text-xl font-bold;
   }
 
   h3 {
-    font-size: theme('fontSize.lg');
-    font-weight: bold;
+    @apply text-lg font-bold;
   }
 
   a {
@@ -37,7 +77,7 @@
   }
 
   .navigation-bar-box-link {
-    @apply link-with-text-color px-2 hover:bg-blue-300 hover:no-underline border border-gray-400
+    @apply text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400
   }
 
   .btn {
@@ -108,12 +148,12 @@
   }
 
   .editing {
-    @apply [&_tr]:flex [&_tr]:flex-col [&_tr]:sm:table-row [&_th]:text-left [&_th]:sm:text-right [&_th]:font-normal [&_th]:pe-2 [&_th]:align-top [&_th]:sm:w-44;
+    @apply [&_tr]:flex [&_tr]:flex-col sm:[&_tr]:table-row [&_th]:text-left sm:[&_th]:text-right [&_th]:font-normal [&_th]:pe-2 [&_th]:align-top sm:[&_th]:w-44;
   }
 
   .sortable_listing {
     tr {
-      @apply hover:bg-blue-50 flex flex-col mb-4 sm:table-row border border-gray-200 max-sm:w-1/2 max-sm:float-left max-sm:odd:clear-left;
+      @apply hover:bg-blue-50 flex flex-col mb-4 sm:table-row border border-gray-200 max-sm:w-1/2 max-sm:float-left odd:max-sm:clear-left;
     }
 
     td {
@@ -139,21 +179,11 @@
 
   /* Keep verification visible while preserving unsaved form fields. */
   .cloudflare_challenge_notice {
-    position: fixed;
-    z-index: 50;
-    top: 0;
-    right: 0;
-    left: 0;
-    padding: 0.75rem 1rem;
-    background-color: #fef3c7;
-    border-bottom: 1px solid #854d0e;
-    color: #713f12;
-    text-align: center;
+    @apply fixed z-50 top-0 right-0 left-0 py-3 px-4 bg-amber-100 border-b border-yellow-800 text-yellow-900 text-center;
   }
 
   .cloudflare_challenge_notice a {
-    font-weight: bold;
-    text-decoration: underline;
+    @apply font-bold underline;
   }
 
   .added {
@@ -178,12 +208,7 @@
 }
 
 html {
-  background-color: white;
-  font-size: 14px;
-
-  @screen sm {
-    font-size: 15px;
-  }
+  @apply bg-white text-[14px] sm:text-[15px];
 }
 
 @layer components {

@@ -1,6 +1,6 @@
 {% if user.is_authenticated %}
 <div class="bg-blue-200 pe-1 sm:pe-2">
- <ul class="flex flex-wrap [&_a]:px-2 [&_a]:py-1 [&_a]:block [&_a]:hover:no-underline [&>li]:font-bold [&_a]:text-black">
+ <ul class="flex flex-wrap [&_a]:px-2 [&_a]:py-1 [&_a]:block hover:[&_a]:no-underline [&>li]:font-bold [&_a]:text-black">
   <li class=""><a class="[&:not(:hover)]:text-white bg-black hover:bg-blue-400" href="https://docs.comics.org/wiki/Formatting_Documentation">Help</a> </li>
   <li><a class="hover:bg-blue-400 {% if queue_name == 'editing' %}bg-blue-400{% endif %}" href="{% url 'editing' %}">Editing</a> </li>
   <li><a class="hover:bg-blue-400 {% if queue_name == 'pending' %}bg-blue-400{% endif %}" href="{% url 'pending' %}">Pending</a> </li>

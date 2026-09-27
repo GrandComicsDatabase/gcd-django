@@ -24,6 +24,8 @@ Commands:
                       loading a manually downloaded GCD catalog dump
   down                Stop the Docker stack (native has nothing to stop)
   test [pytest args]  Run the test suite
+  css                 Build CSS with the pinned Tailwind toolchain
+  css-watch           Rebuild Tailwind CSS when source files change
   shell               Open a Django development shell
   manage <args>       Run a Django management command
   doctor              Check the selected development environment
@@ -36,6 +38,8 @@ Examples:
   ./bin/dev setup
   ./bin/dev setup --dump ~/Downloads/current.zip
   ./bin/dev test apps/gcd/tests
+  ./bin/dev css
+  ./bin/dev css-watch
   ./bin/dev manage createsuperuser
   ./bin/dev --runtime native up
 EOF
@@ -370,6 +374,28 @@ case "$command" in
       compose run --rm --no-deps -e MYSQL_USER=root -e MYSQL_PASSWORD="$MYSQL_ROOT_PASSWORD" web python -m pytest "$@"
     else
       require_native_python; native_environment; "$PYTHON_BIN" -m pytest "$@"
+    fi ;;
+  css)
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; compose build web
+      compose run --rm --no-deps web tailwindcss -i static/css/input.css -o static/css/output.css
+    else
+      command -v tailwindcss >/dev/null 2>&1 || {
+        echo "tailwindcss is required to build CSS without Docker." >&2
+        exit 1
+      }
+      tailwindcss -i static/css/input.css -o static/css/output.css
+    fi ;;
+  css-watch)
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; compose build web
+      compose run --rm --no-deps web tailwindcss -i static/css/input.css -o static/css/output.css --watch
+    else
+      command -v tailwindcss >/dev/null 2>&1 || {
+        echo "tailwindcss is required to watch CSS without Docker." >&2
+        exit 1
+      }
+      tailwindcss -i static/css/input.css -o static/css/output.css --watch
     fi ;;
   shell)
     if [[ "$runtime" == "docker" ]]; then

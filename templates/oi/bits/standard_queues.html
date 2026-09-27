@@ -37,7 +37,7 @@
     <th> Actions </th>
   </tr>
       {% for changeset in section.changesets %}
-  <tr class="hover:bg-blue-50 [&>td]:px-0.5 [&>td]:sm:px-1.5 border border-gray-200">
+  <tr class="hover:bg-blue-50 [&>td]:px-0.5 sm:[&>td]:px-1.5 border border-gray-200">
         {% if perms.indexer.can_approve or queue_name == 'editing' %}
           {% if queue_name == 'pending' and section.object_name == 'Issues' %}
     <td class="max-lg:hidden text-right">

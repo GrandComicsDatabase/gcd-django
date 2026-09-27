@@ -3,6 +3,9 @@ FROM python:3.13-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
+ARG TAILWINDCSS_VERSION=4.3.3
+ARG TARGETARCH
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
@@ -13,6 +16,18 @@ RUN apt-get update \
         libicu-dev \
         pkg-config \
     && rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+    case "$TARGETARCH" in \
+        amd64) tailwind_arch=x64 ;; \
+        arm64) tailwind_arch=arm64 ;; \
+        *) echo "Unsupported Tailwind architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac; \
+    python -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' \
+        "https://github.com/tailwindlabs/tailwindcss/releases/download/v${TAILWINDCSS_VERSION}/tailwindcss-linux-${tailwind_arch}" \
+        /usr/local/bin/tailwindcss; \
+    chmod +x /usr/local/bin/tailwindcss; \
+    tailwindcss --help >/dev/null
 
 WORKDIR /workspace
 

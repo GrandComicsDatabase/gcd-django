@@ -79,10 +79,16 @@ Useful commands:
 ./bin/dev doctor
 ./bin/dev setup
 ./bin/dev test
+./bin/dev css
+./bin/dev css-watch
 ./bin/dev manage createsuperuser
 ./bin/dev logs web
 ./bin/dev down
 ```
+
+`css` and `css-watch` run the pinned standalone Tailwind CSS v4 executable
+inside the `web` container. Source files and `static/css/output.css` use the
+existing project bind mount.
 
 To change local ports or development-only credentials, copy `.env.example` to
 `.env` and edit literal `KEY=VALUE` entries. Shell expressions are deliberately

@@ -38,6 +38,26 @@ We use the GitHub code review system for discussing code changes.
 Pull requests are welcome, but you might want to poke the mailing list if
 no one seems to be paying attention.
 
+## Building Tailwind CSS
+
+The standalone Tailwind CSS toolchain is pinned in `Dockerfile.dev`. With the
+supported Docker environment, rebuild the committed stylesheet without
+installing Node.js on the host:
+
+```sh
+./bin/dev css
+```
+
+Use `./bin/dev css-watch` while editing templates or `static/css/input.css`.
+The `tailwindcss` executable is installed inside the `web` image. Only the
+source checkout and generated `static/css/output.css` pass through the bind
+mount. Docker-free environments can install the same standalone Tailwind
+version and use the command shown in `bin/dev`.
+
+Tailwind scans the Django templates explicitly. Classes that Python assembles
+at runtime are listed in `templates/gcd/tailwind_generated_classes.html`, so
+the CSS build does not need to parse Python source files.
+
 ## Branches
 
 ### `master`
