@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_safe
+from django.views.decorators.vary import vary_on_headers
 from taggit.models import Tag, TaggedItem
 
 
@@ -93,6 +94,7 @@ def keyword_duplicates(request):
 @require_safe
 @never_cache
 @login_required
+@vary_on_headers('HX-Request', 'HX-History-Restore-Request')
 def keyword_list(request):
     query = request.GET.get('q', '').strip()
     usage = request.GET.get('usage', '')
@@ -113,7 +115,9 @@ def keyword_list(request):
     page = Paginator(
         keywords.order_by(*SORTS[sort]), KEYWORDS_PER_PAGE
     ).get_page(request.GET.get('page'))
-    return render(request, 'gcd/keywords/manage.html', {
+    template = ('gcd/keywords/partials/results.html' if inline_request(request)
+                else 'gcd/keywords/manage.html')
+    return render(request, template, {
         'page_obj': page,
         'query': query,
         'usage': usage,
@@ -127,6 +131,7 @@ def keyword_list(request):
 @require_safe
 @never_cache
 @login_required
+@vary_on_headers('HX-Request', 'HX-History-Restore-Request')
 def keyword_detail(request, pk):
     keyword = get_object_or_404(Tag, pk=pk)
     usage_groups = list(
@@ -147,7 +152,11 @@ def keyword_detail(request, pk):
               if request.GET.get('origin') == 'duplicates'
               else 'keyword_manage')
     state = navigation_state(request)
-    return render(request, 'gcd/keywords/detail.html', {
+    inline = inline_request(request)
+    template = ('gcd/keywords/partials/detail.html' if inline
+                else 'gcd/keywords/detail.html')
+    return render(request, template, {
+        'detail_inline': inline,
         'keyword': keyword,
         'usage_groups': usage_groups,
         'usage_count': sum(group['total'] for group in usage_groups),
@@ -156,3 +165,9 @@ def keyword_detail(request, pk):
         'objects_page': objects_page,
         'usages': usages,
     })
+
+
+def inline_request(request):
+    """History cache misses must receive a complete navigable document."""
+    return (request.headers.get('HX-Request') == 'true' and
+            request.headers.get('HX-History-Restore-Request') != 'true')

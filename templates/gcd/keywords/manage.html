@@ -1,5 +1,11 @@
 {% extends "gcd/keywords/base.html" %}
-{% load humanize %}
+{% load static %}
+
+{% block css_raw %}
+  {{ block.super }}
+  <script src="{% static 'js/htmx_2_0_8.min.js' %}" defer></script>
+  <script src="{% static 'js/keyword_filters.js' %}" defer></script>
+{% endblock %}
 
 {% block title %}GCD :: Keyword management{% endblock %}
 
@@ -11,7 +17,10 @@
 
 {% block keyword_body %}
   <p class="mb-4 text-gray-700">Browse keywords and their associated catalog objects, including unused keywords.</p>
-  <form method="get" class="flex flex-wrap items-center gap-4 rounded border bg-gray-200 p-2 mb-4">
+  <form id="keyword-filters" method="get" action="{% url 'keyword_manage' %}"
+        hx-get="{% url 'keyword_manage' %}" hx-target="#keyword-results"
+        hx-trigger="submit, input changed delay:300ms from:#keyword-query, change from:#keyword-usage, change from:#keyword-sort"
+        hx-push-url="true" hx-sync="this:replace" class="flex flex-wrap items-center gap-4 rounded border bg-gray-200 p-2 mb-4">
     <div class="w-full sm:w-auto">
       <label for="keyword-query" class="block font-bold">Name contains</label>
       <input id="keyword-query" type="search" name="q" value="{{ query }}" class="w-full rounded">
@@ -35,50 +44,13 @@
     </div>
     <div class="flex flex-wrap items-center gap-4">
       <button type="submit" class="btn-blue-editing">Search</button>
-      <a class="btn-blue-editing" href="{% url 'keyword_manage' %}">Reset</a>
+      <a id="keyword-reset" class="btn-blue-editing" href="{% url 'keyword_manage' %}" hx-get="{% url 'keyword_manage' %}" hx-target="#keyword-results" hx-push-url="true" hx-sync="#keyword-filters:replace" hx-params="none">Reset</a>
     </div>
   </form>
-  <div class="flex flex-wrap justify-between gap-4 mb-2">
-    <p>
-      <strong>{{ page_obj.paginator.count|intcomma }}</strong> keyword{{ page_obj.paginator.count|pluralize }} found
-    </p>
-    <p class="text-sm text-gray-700">Usage counts include all associated object types.</p>
-  </div>
-  <div class="overflow-y-auto">
-    <table class="w-full border-collapse">
-      <thead class="bg-blue-100">
-        <tr class="border-y border-gray-200 text-left">
-          <th scope="col" class="p-2 text-left text-gray-700">ID</th>
-          <th scope="col" class="p-2 text-left">Keyword</th>
-          <th scope="col" class="p-2 text-right">Usages</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for keyword in page_obj %}
-          <tr class="border-y border-gray-200">
-            <td class="p-2 text-left text-gray-700">{{ keyword.pk }}</td>
-            <td class="p-2">
-              <a href="{% url 'keyword_manage_detail' keyword.pk %}?{{ detail_query }}">{{ keyword.name }}</a>
-            </td>
-            <td class="p-2 text-right">{{ keyword.usage_count|intcomma }}</td>
-          </tr>
-        {% empty %}
-          <tr class="border-y border-gray-200">
-            <td colspan="3" class="p-2">No keywords match these filters.</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% if page_obj.has_other_pages %}
-    <nav aria-label="Keyword pages" class="flex flex-wrap items-center gap-4 my-2">
-      {% if page_obj.has_previous %}
-        <a href="?q={{ query|urlencode }}&amp;usage={{ usage|urlencode }}&amp;page={{ page_obj.previous_page_number }}&amp;sort={{ sort|urlencode }}">Previous</a>
-      {% endif %}
-      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-      {% if page_obj.has_next %}
-        <a href="?q={{ query|urlencode }}&amp;usage={{ usage|urlencode }}&amp;page={{ page_obj.next_page_number }}&amp;sort={{ sort|urlencode }}">Next</a>
-      {% endif %}
-    </nav>
-  {% endif %}
+  <p id="keyword-request-status" role="status" aria-live="polite"></p>
+  <section id="keyword-detail" hidden aria-label="Keyword details"
+           class="rounded border border-gray-200 bg-white p-2 mb-4"></section>
+  <section id="keyword-results" aria-label="Keyword results">
+    {% include 'gcd/keywords/partials/results.html' %}
+  </section>
 {% endblock %}

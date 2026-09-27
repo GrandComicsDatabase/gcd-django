@@ -133,7 +133,8 @@ class KeywordManagementTests(SimpleTestCase):
                          normalized_name('\u00c9COLE'))
         self.assertEqual(normalized_name('Stra\u00dfe'),
                          normalized_name('STRASSE'))
-        self.assertNotEqual(normalized_name('Caf\u00e9'), normalized_name('Cafe'))
+        self.assertNotEqual(normalized_name('Caf\u00e9'),
+                            normalized_name('Cafe'))
         self.assertNotEqual(normalized_name('New  York'),
                             normalized_name('New York'))
         self.assertNotEqual(normalized_name('U.K.'), normalized_name('UK'))
@@ -154,7 +155,8 @@ class KeywordManagementTests(SimpleTestCase):
         module = 'apps.gcd.views.keyword_management'
         for sort, expected in (('-usage', ('-usage_count', 'name', 'pk')),
                                ('invalid', ('name', 'pk'))):
-            with self.subTest(sort=sort), patch(module + '.Tag.objects') as tags, \
+            with self.subTest(sort=sort), \
+                    patch(module + '.Tag.objects') as tags, \
                     patch(module + '.render', return_value=HttpResponse()):
                 annotated = tags.all.return_value.annotate.return_value
                 annotated.order_by.return_value = []
@@ -172,8 +174,10 @@ class KeywordManagementTests(SimpleTestCase):
             'page_obj': page, 'query': 'London',
             'detail_query': 'q=London&origin=duplicates&page=2',
         })
-        self.assertIn('/keywords/manage/12/?q=London&amp;origin=duplicates', html)
-        self.assertIn('/keywords/manage/13/?q=London&amp;origin=duplicates', html)
+        self.assertIn('/keywords/manage/12/?q=London&amp;origin=duplicates',
+                      html)
+        self.assertIn('/keywords/manage/13/?q=London&amp;origin=duplicates',
+                      html)
         self.assertIn('LONDON', html)
         self.assertNotIn('keyword-manager.css', html)
         self.assertNotIn('kw-', html)
@@ -187,7 +191,8 @@ class KeywordManagementTests(SimpleTestCase):
                     content_object=obj,
                     content_type=SimpleNamespace(model='story'))
                 self.assertEqual(catalog_usage(item), {
-                    'label': 'Unavailable object', 'url': None, 'type': 'story',
+                    'label': 'Unavailable object', 'url': None,
+                    'type': 'story',
                 })
 
     def test_catalog_object_without_url_is_still_displayed(self):
@@ -197,11 +202,90 @@ class KeywordManagementTests(SimpleTestCase):
             'label': 'Catalog object', 'url': None, 'type': 'story',
         })
 
+    def test_live_search_returns_fragment_but_history_returns_full_page(self):
+        module = 'apps.gcd.views.keyword_management'
+        for inline, restore, template in (
+                (False, False, 'gcd/keywords/manage.html'),
+                (True, False, 'gcd/keywords/partials/results.html'),
+                (True, True, 'gcd/keywords/manage.html')):
+            with self.subTest(inline=inline, restore=restore), \
+                    patch(module + '.Tag.objects') as tags, \
+                    patch(module + '.render',
+                          return_value=HttpResponse()) as render:
+                annotated = tags.all.return_value.annotate.return_value
+                annotated.order_by.return_value = []
+                request = self.request()
+                if inline:
+                    request.META['HTTP_HX_REQUEST'] = 'true'
+                if restore:
+                    request.META['HTTP_HX_HISTORY_RESTORE_REQUEST'] = 'true'
+                response = keyword_list(request)
+                self.assertEqual(render.call_args.args[1], template)
+                self.assertIn('HX-Request', response['Vary'])
+                self.assertIn('HX-History-Restore-Request', response['Vary'])
+                self.assertIn('no-store', response['Cache-Control'])
+
+    def test_inline_details_keep_catalog_privacy_and_history_fallback(self):
+        module = 'apps.gcd.views.keyword_management'
+        for restore, template in (
+                (False, 'gcd/keywords/partials/detail.html'),
+                (True, 'gcd/keywords/detail.html')):
+            with self.subTest(restore=restore), \
+                    patch(module + '.get_object_or_404',
+                          return_value=SimpleNamespace(pk=12)), \
+                    patch(module + '.TaggedItem.objects') as items, \
+                    patch(module + '.render',
+                          return_value=HttpResponse()) as render:
+                groups = items.filter.return_value.values.return_value
+                groups.annotate.return_value.order_by.return_value = []
+                associations = items.filter.return_value.order_by.return_value
+                associations.count.return_value = 0
+                request = self.request()
+                request.META['HTTP_HX_REQUEST'] = 'true'
+                if restore:
+                    request.META['HTTP_HX_HISTORY_RESTORE_REQUEST'] = 'true'
+                response = keyword_detail(request, 12)
+                self.assertEqual(render.call_args.args[1], template)
+                items.filter.assert_any_call(tag_id=12,
+                                             content_type__app_label='gcd')
+                self.assertIn('HX-Request', response['Vary'])
+
+    def test_inline_detail_pagination_uses_detail_url_and_escapes_name(self):
+        html = self.render_page('gcd/keywords/partials/detail.html', {
+            'keyword': SimpleNamespace(pk=12, name='<script>x</script>',
+                                       slug='example'),
+            'usage_groups': [], 'usage_count': 26, 'detail_inline': True,
+            'objects_page': Paginator(list(range(26)), 25).get_page(1),
+            'navigation_query': 'q=London&page=3', 'usages': [],
+        })
+        self.assertIn('&lt;script&gt;x&lt;/script&gt;', html)
+        self.assertNotIn('<script>x</script>', html)
+        self.assertIn('/keywords/manage/12/?q=London&amp;page=3'
+                      '&amp;objects_page=2', html)
+        self.assertIn('hx-target="#keyword-detail"', html)
+        self.assertNotIn('<html', html)
+
+    def test_live_search_keeps_full_page_links_and_tailwind(self):
+        html = self.render_page('gcd/keywords/manage.html', {
+            'page_obj': Paginator([
+                SimpleNamespace(pk=12, name='London', usage_count=0)
+            ], 50).get_page(1),
+            'query': '', 'usage': '', 'sort': 'name',
+        })
+        self.assertIn('js/htmx_2_0_8.min.js', html)
+        self.assertIn('js/keyword_filters.js', html)
+        self.assertIn('hx-target="#keyword-results"', html)
+        self.assertIn('href="/keywords/manage/12/?"', html)
+        self.assertIn('type="submit" class="btn-blue-editing"', html)
+        self.assertIn('bg-blue-100', html)
+        self.assertNotIn('keyword-manager.css', html)
+
     def test_duplicate_counts_are_limited_to_the_current_page(self):
         module = 'apps.gcd.views.keyword_management'
         rows = [(n, f'Place {n // 2}') for n in range(42)]
         with patch(module + '.Tag.objects') as tags, \
-                patch(module + '.render', return_value=HttpResponse()) as render:
+                patch(module + '.render',
+                      return_value=HttpResponse()) as render:
             names = tags.order_by.return_value.values_list.return_value
             names.iterator.return_value = iter(rows)
             counted = tags.filter.return_value.annotate.return_value
