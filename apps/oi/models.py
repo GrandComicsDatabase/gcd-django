@@ -4591,10 +4591,12 @@ class IssueRevision(Revision):
             old_credits = ''
             for credit in credits:
                 credit = credit.strip()
+                if not credit:
+                    continue
                 save_credit = credit
                 credit = credit.replace('  ', ' ')
                 if credit.strip()[-1] == '?':
-                    credit = credit[:-1]
+                    credit = credit[:-1].strip()
                     uncertain = True
                 else:
                     uncertain = False
@@ -4605,8 +4607,7 @@ class IssueRevision(Revision):
                     end_note = note.find(')')
                     remainder_note = note[end_note+1:].strip()
                     note = note[:end_note].strip()
-                    save_credit = credit
-                    credit = credit[:credit.find('(')-1]
+                    credit = credit[:credit.find('(')].strip()
                     if note in ['credited', 'kreditert']:
                         is_credited = True
                         note = ''
@@ -6578,12 +6579,14 @@ class StoryRevision(Revision):
                 old_credits = ''
                 for credit in credits:
                     credit = credit.strip()
+                    if not credit:
+                        continue
                     if credit in ['Typeset', 'Computer']:
                         credit = 'typeset'
                     save_credit = credit
                     credit = credit.replace('  ', ' ')
                     if credit[-1] == '?':
-                        credit = credit[:-1]
+                        credit = credit[:-1].strip()
                         uncertain = True
                     else:
                         uncertain = False
@@ -6597,9 +6600,8 @@ class StoryRevision(Revision):
                         end_note = note.find(')')
                         remainder_note = note[end_note+1:].strip()
                         note = note[:end_note].strip()
-                        save_credit = credit
-                        credit = credit[:credit.find('(')-1].strip()
-                        if credit[-1] == '?':
+                        credit = credit[:credit.find('(')].strip()
+                        if credit.endswith('?'):
                             credit = credit[:-1].strip()
                             uncertain = True
                         if note in ['credited', 'kreditert']:
@@ -6643,7 +6645,7 @@ class StoryRevision(Revision):
                         value = value.strip().strip(']')
                         if is_signed:
                             signed_as = value
-                            credit = credit[:credit.find('[')-1]
+                            credit = credit[:credit.find('[')].strip()
                         else:
                             credit = value
                             ghost_possible = True
@@ -6692,17 +6694,17 @@ class StoryRevision(Revision):
         self.forwarded = {'language_code': series.language.code,
                           'type': self.type_id}
         self.q = feature
+        # Autocomplete includes substrings; automatic migration must only
+        # accept a unique full name, including when resolving translations.
         feature_name = FeatureNameAutocomplete.get_queryset(
-          self, interactive=False)
-        if feature_name.count() > 1:
-            feature_name = feature_name.filter(name=feature)
+          self, interactive=False).filter(name=feature)
         if feature_name.count() == 1:
             self.feature_name.add(feature_name.get())
             return True
         if feature_name.count() == 0:
             self.forwarded = {'type': self.type_id}
             feature_name = FeatureNameAutocomplete.get_queryset(
-              self, interactive=False)
+              self, interactive=False).filter(name=feature)
             if feature_name.count() == 1:
                 feature_other_language = feature_name.get().feature
                 translations = feature_other_language.translations().filter(
