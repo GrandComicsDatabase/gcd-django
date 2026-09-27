@@ -8,6 +8,8 @@
 @source "../../apps/select/templates";
 @source "../../apps/stats/templates";
 @source "../../apps/voting/templates";
+@source "../../static/js/select_cache.js";
+@source "../../static/js/select_search_panels.js";
 
 @theme {
   --color-normal: #0a0a0a;
