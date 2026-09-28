@@ -483,7 +483,12 @@ def generic_by_name(request, name, q_obj, sort,
             filter, things = filter_sequences(request, things)
 
             table = MatchedSearchStoryTable(
-                things, attrs={'class': 'sortable_listing'},
+                things, attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex ' \
+                    '[:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row ' \
+                    '[:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 ' \
+                    'max-sm:[:where(&)_tr]:float-left ' \
+                    'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 ' \
+                    '[:where(&)_td]:pe-2'},
                 template_name='gcd/bits/tw_sortable_table.html',
                 target=target,
                 order_by=(order_by))
@@ -503,11 +508,21 @@ def generic_by_name(request, name, q_obj, sort,
 
             if credit == 'title':
                 table = HaystackStoryTable(
-                  things, attrs={'class': 'sortable_listing'},
+                  things, attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex ' \
+                      '[:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row ' \
+                      '[:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2' \
+                      ' max-sm:[:where(&)_tr]:float-left ' \
+                      'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 ' \
+                      '[:where(&)_td]:pe-2'},
                   template_name='gcd/bits/tw_sortable_table.html',)
             else:
                 table = HaystackMatchedStoryTable(
-                  things, attrs={'class': 'sortable_listing'},
+                  things, attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex ' \
+                      '[:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row ' \
+                      '[:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2' \
+                      ' max-sm:[:where(&)_tr]:float-left ' \
+                      'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 ' \
+                      '[:where(&)_td]:pe-2'},
                   template_name='gcd/bits/tw_sortable_table.html',
                   target=unquote_plus(credit))
 

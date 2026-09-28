@@ -16,7 +16,7 @@
   <form action="" method="POST">
     {% csrf_token %}
     {% bootstrap_form form %}
-    <input type="submit" class="btn btn-primary" name="{% trans 'Submit' %}" value="{% trans 'Submit' %}">
+    <input type="submit" class="btn btn-primary font-bold py-1 px-4 rounded" name="{% trans 'Submit' %}" value="{% trans 'Submit' %}">
   </form>
 
 {% endblock %}

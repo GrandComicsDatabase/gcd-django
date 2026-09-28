@@ -14,11 +14,11 @@ GCD :: Compare :: {{ changeset_type|title }} :: {{ revision }}
 {{ changeset|header_link }}
 </h1>
 <p>
-Highlighted fields represent <span class="added border border-gray-400 p-1">added</span>,
-<span class="changed border border-gray-400 p-1">changed</span>, and
-<span class="deleted border border-gray-400 p-1">deleted</span> data.
+Highlighted fields represent <span class="added border border-gray-400 p-1 bg-green-400">added</span>,
+<span class="changed border border-gray-400 p-1 bg-yellow-400">changed</span>, and
+<span class="deleted border border-gray-400 p-1 bg-red-400">deleted</span> data.
 {% if changeset.state != states.APPROVED and not revision.deleted %}
-<a class="new_window" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview changes</a>
+<a class="new_window bg-[size:12px] bg-right pr-4" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview changes</a>
 {% endif %}
 {% if changeset_type == 'issue' %}
   {% if changeset.storyrevisions.count and not revision.deleted %}
@@ -50,7 +50,7 @@ The above sequence was moved from the following issue.
       {{ revision }}
 </h2>
         {% if changeset.state != states.APPROVED and not revision.deleted %}
-<a class="new_window" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview changes</a>
+<a class="new_window bg-[size:12px] bg-right pr-4" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview changes</a>
         {% endif %}
       {{ revision.compare_changes|default:'' }}
       {% include 'oi/bits/compare_issue.html' %}
@@ -64,9 +64,9 @@ The above sequence was moved from the following issue.
   {% if changeset_type == 'series' %}
     {% if revision.previous and revision.publisher != revision.previous.publisher %}
     <div class="edit">
-    <h2> Series moved from <span class="comparison_highlight">{{ revision.previous.publisher }}</span> to <span class="comparison_highlight">{{ revision.publisher }}</span> </h2>
+    <h2> Series moved from <span class="comparison_highlight bg-yellow-400 p-1">{{ revision.previous.publisher }}</span> to <span class="comparison_highlight bg-yellow-400 p-1">{{ revision.publisher }}</span> </h2>
 
-The <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:revision.series.brand_info_counts.unknown }} set</span> brands and <span class="comparison_highlight">{{ revision.series.issue_count|sub_int:revision.series.indicia_publisher_info_counts.unknown }} set</span> indicia publishers of the {{ revision.series.issue_count }} issues of this series will be <span class="comparison_highlight">reset</span> unless they exist under the identical name at the new publisher.
+The <span class="comparison_highlight bg-yellow-400 p-1">{{ revision.series.issue_count|sub_int:revision.series.brand_info_counts.unknown }} set</span> brands and <span class="comparison_highlight bg-yellow-400 p-1">{{ revision.series.issue_count|sub_int:revision.series.indicia_publisher_info_counts.unknown }} set</span> indicia publishers of the {{ revision.series.issue_count }} issues of this series will be <span class="comparison_highlight bg-yellow-400 p-1">reset</span> unless they exist under the identical name at the new publisher.
     </div>
     {% endif %}
   {% endif %}

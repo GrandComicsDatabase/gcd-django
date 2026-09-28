@@ -113,7 +113,7 @@
             status.textContent = 'Unable to confirm the saved order. Reload the cache before continuing. ';
             const reload = document.createElement('button');
             reload.type = 'button';
-            reload.className = 'btn-blue-editing';
+            reload.className = 'btn-blue-editing font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline hover:bg-stone-400';
             reload.textContent = 'Reload Cache';
             reload.addEventListener('click', () => window.location.reload());
             status.appendChild(reload);

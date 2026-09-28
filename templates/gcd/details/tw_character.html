@@ -54,7 +54,7 @@ GCD :: Character :: {{ character.name }}
             </tr>
 {% endif %}
           </table>  
-          <ul class="object-page-link-list">
+          <ul class="object-page-link-list list-disc sm:columns-2 list-outside ps-4 [:where(&)_li]:pr-2">
             <li><a href='{% url "character_creators" character_id=character.id %}'>Creator List</a></li>
             <li><a href='{% url "character_creator_names" character_id=character.id %}'>Creator Name List</a></li>
             <li><a href='{% url "character_issues" character_id=character.id %}'>Issue List</a></li>
@@ -80,7 +80,7 @@ GCD :: Character :: {{ character.name }}
           </ol>
       {% if additional_names %}
         <h3>Additional Names:</h3>
-          <ol class="ps-6 object-page-numbered-list">
+          <ol class="ps-6 object-page-numbered-list ms-2 list-decimal grid sm:grid-cols-2 [:where(&)_li]:pr-4">
         {% for name in additional_names %}
             <li class="break-inside-avoid-column">
               <a href='{% url "character_name_issues" character_name_id=name.id %}'>{{ name.name }}</a>
@@ -108,9 +108,9 @@ GCD :: Character :: {{ character.name }}
     {% include "gcd/bits/tw_status_banner.html" %}
   {% endwith %}
   {% if request.user.is_authenticated %}
-  <btn class="btn btn-blue-editing"><a href="{% url 'add_character_relation' character_id=character.id %}">
+  <btn class="btn btn-blue-editing font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center"><a href="{% url 'add_character_relation' character_id=character.id %}">
     Add Character Relation</a></btn>
-  <btn class="btn btn-blue-editing"><a href="{% url 'add_group_membership' character_id=character.id %}">
+  <btn class="btn btn-blue-editing font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center"><a href="{% url 'add_group_membership' character_id=character.id %}">
     Add Group Membership</a></btn>
   {% endif %}
 {% endblock %}
@@ -160,7 +160,7 @@ GCD :: Character :: {{ character.name }}
 {% if character.active_relations_own %}
 <hr>
 <h3>Relations:</h3>
-<ol class="object-page-numbered-list list-disc">
+<ol class="object-page-numbered-list list-disc ms-2 list-decimal grid sm:grid-cols-2 ps-4 [:where(&)_li]:pr-4">
   {% for relation in character.active_relations_own %}
     {% with relation_info=relation|pre_process_relation:character %}
   <li class="break-inside-avoid-column">
@@ -177,7 +177,7 @@ GCD :: Character :: {{ character.name }}
 {% if character.active_translations %}
 <hr>
 <h3>Translations:</h3>
-<ol class="object-page-numbered-list">
+<ol class="object-page-numbered-list ms-2 list-decimal grid sm:grid-cols-2 ps-4 [:where(&)_li]:pr-4">
   {% for relation in character.active_translations %}
     {% with relation_info=relation|pre_process_relation:character %}
   <li class="break-inside-avoid-column">
@@ -194,7 +194,7 @@ GCD :: Character :: {{ character.name }}
 {% if character.active_alternate_universe_versions %}
 <hr>
 <h3>Alternate Universe Version:</h3>
-<ol class="object-page-numbered-list">
+<ol class="object-page-numbered-list ms-2 list-decimal grid sm:grid-cols-2 ps-4 [:where(&)_li]:pr-4">
   {% for relation in character.active_alternate_universe_versions %}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_character' character_id=relation.to_character.id %}">{{ relation.to_character.descriptor }}</a>
@@ -209,7 +209,7 @@ GCD :: Character :: {{ character.name }}
 {% if character.active_memberships %}
 <hr>
 <h3>Group Memberships:</h3>
-<ol class="object-page-numbered-list">
+<ol class="object-page-numbered-list ms-2 list-decimal grid sm:grid-cols-2 ps-4 [:where(&)_li]:pr-4">
   {% for membership in character.active_memberships %}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_group' group_id=membership.group.id %}">{{ membership.group.descriptor }}</a>

@@ -43,17 +43,17 @@
     {% if request.user.collector == collection.collector %}
       <div class="btn-group pull-right">
         <a href="{% url "view_collection_series" collection.id %}">
-          <button type="button" class="btn btn-primary">{% trans "Series" %}
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Series" %}
         </button></a>
         <a href="{% url "export_collection" collection.id %}">
-          <button type="button" class="btn" style="display: inline-block;">
+          <button type="button" class="btn font-bold py-1 px-4 rounded" style="display: inline-block;">
           <span class="glyphicon glyphicon-download"></span>
         </button></a>
         <a href="{% url "subscriptions_collection" collection.id %}">
-          <button type="button" class="btn btn-primary">{% trans "Subscriptions" %}
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Subscriptions" %}
         </button></a>
         <a href="{% url "edit_collection" collection.id %}">
-          <button type="button" class="btn btn-primary">{% trans "Edit" %}
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Edit" %}
         </button></a>
       </div>
     {% else %} / {{ collection.collector.user.indexer }}
@@ -67,11 +67,11 @@
       <div class="list-group">
         <form method="get">
             {% bootstrap_form filter.form %}
-            <input style="width: 100%;" class="btn btn-primary" type="submit" />
+            <input style="width: 100%;" class="btn btn-primary font-bold py-1 px-4 rounded" type="submit" />
         </form>
       </div>
       <a href="{% url 'edit_collection_items' collection.id %}?{{ extra_query_string }}">
-        <button type="button" class="btn btn-primary">{% trans "Edit Shown Items" %}
+        <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Edit Shown Items" %}
       </button></a>
       <h3>{% trans "Collections" %}:</h3>
       <div class="list-group">

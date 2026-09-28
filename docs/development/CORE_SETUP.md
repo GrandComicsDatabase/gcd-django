@@ -90,6 +90,12 @@ Useful commands:
 inside the `web` container. Source files and `static/css/output.css` use the
 existing project bind mount.
 
+Utility names are discovered directly in templates, Python HTML producers,
+and JavaScript. Python files are scanned as plain text, not imported or executed.
+Use complete utility names in every branch (never interpolate a partial class
+name). No safelist or generated-class inventory needs to be maintained. The
+forum app, tests, and migrations are excluded from source discovery.
+
 To change local ports or development-only credentials, copy `.env.example` to
 `.env` and edit literal `KEY=VALUE` entries. Shell expressions are deliberately
 not evaluated. Do not use production credentials in this file.

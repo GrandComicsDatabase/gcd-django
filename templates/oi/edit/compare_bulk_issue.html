@@ -29,13 +29,13 @@ This bulk change considers the following issues, the search terms used are given
 {% if changeset.state == states.APPROVED %}
   <td> {% if issue.posterior %}<a href="{% url 'compare' id=issue.posterior.changeset.id %}?collapse=1"> Next Change ({{ issue.posterior.changeset.modified|date:"Y-m-d" }}) {% endif %} </a>
 {% endif %}
-  <td> <a class="new_window" href="{% url 'preview_revision' model_name=model_name id=issue.id %}" target=_blank>Preview</a>
+  <td> <a class="new_window bg-[size:12px] bg-right pr-4" href="{% url 'preview_revision' model_name=model_name id=issue.id %}" target=_blank>Preview</a>
 </tr>
 {% endfor %}
 </table>
 
 <p>
-The following highlighted fields are <span class="comparison_highlight">changed</span> for all issues.  Keep in mind that some fields might not have been editable due to the presence of different values in the considered issues. Note that the un-changed values shown are from {{ revision.issue }} and might be different for other issues involved.
+The following highlighted fields are <span class="comparison_highlight bg-yellow-400 p-1">changed</span> for all issues.  Keep in mind that some fields might not have been editable due to the presence of different values in the considered issues. Note that the un-changed values shown are from {{ revision.issue }} and might be different for other issues involved.
 </p>
 
 {% with 1 as no_prev_link %}

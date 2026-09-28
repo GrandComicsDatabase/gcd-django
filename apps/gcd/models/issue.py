@@ -871,10 +871,20 @@ class ReadingOrderItemCoverTable(IssueCoverTable):
             confirm_text = "Remove <b>%s</b> from Reading List <b>%s</b> ??" %\
                            (esc(record.issue.full_name()),
                             esc(self.reading_order.name))
-            return mark_safe('<btn class="btn-blue-editing inline-block w-24">'
+            return mark_safe('<btn class="btn-blue-editing inline-block w-24 font-normal ' \
+                'me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black ' \
+                'text-sm text-center py-1 px-2 rounded cursor-pointer ' \
+                'hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black ' \
+                '[:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline ' \
+                '[:where(&)_a]:text-center">'
                              '<a href="%s">%s Edit</a></btn>'
                              % (mark_safe(edit_link), edit_icon_in_button)) + \
-                mark_safe('<btn class="btn-blue-editing inline-block w-24" '
+                mark_safe('<btn class="btn-blue-editing inline-block w-24 font-normal' \
+                    ' me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black' \
+                    ' text-sm text-center py-1 px-2 rounded cursor-pointer ' \
+                    'hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black ' \
+                    '[:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black ' \
+                    '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center" '
                           'hx-headers=\'{"X-CSRFToken": "%s"}\' '
                           'hx-post="%s" '
                           'hx-confirm="%s">%s Remove</btn>'

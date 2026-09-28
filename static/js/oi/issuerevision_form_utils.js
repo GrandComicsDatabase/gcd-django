@@ -402,8 +402,8 @@ $(function() {
     editingField.bind('input', function () {
         var migrate_button = $("[name='save_migrate']");
         migrate_button.removeAttr("disabled");
-        migrate_button.removeClass('btn-blue-disabled px-2 py-1');
-        migrate_button.addClass('btn-blue-editing');
+        migrate_button.removeClass('btn-blue-disabled bg-stone-100 text-gray-500');
+        migrate_button.addClass('btn-blue-editing bg-stone-200 text-black cursor-pointer hover:no-underline hover:bg-stone-400');
     });
 });
 

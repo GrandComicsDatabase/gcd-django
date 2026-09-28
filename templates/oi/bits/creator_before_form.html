@@ -103,7 +103,7 @@
 <span class="helptext"> All known names for a creator can be recorded, where we record various types of name. In particular pen name for any known signature, alias, etc., or the full name separated into the name(s) given at birth and the family name. For alphabetical sorting we use the sort name, which often is 'family name, given name', by default it is the same as 'name'.</span>
         <br><br>
 </div>
-    <table class="editing">
+    <table class="editing [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row [:where(&)_th]:text-left sm:[:where(&)_th]:text-right [:where(&)_th]:font-normal [:where(&)_th]:pe-2 [:where(&)_th]:align-top sm:[:where(&)_th]:w-44">
     {{ birth_date_form }}
     {{ death_date_form }}
     </table>

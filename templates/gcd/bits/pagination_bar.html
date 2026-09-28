@@ -9,9 +9,9 @@
     <li>
       {% if a_page %}
         {% if a_page == alpha_page %}
-      <span class="btn btn-default btn-sm btn-selected">{{ a_page }}</span>
+      <span class="btn btn-default btn-sm btn-selected font-bold py-1 px-4 rounded">{{ a_page }}</span>
         {% else %}
-      <a class="btn btn-default btn-sm" href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
+      <a class="btn btn-default btn-sm font-bold py-1 px-4 rounded" href="?page=a_{{ a_page.number }}">{{ a_page }}</a>
         {% endif %}
       {% else %}
       <a>...</a>
@@ -25,22 +25,22 @@
   {% spaceless %}
     <li>
   {% if page.has_previous %}
-      <a class="btn btn-default btn-sm" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
+      <a class="btn btn-default btn-sm font-bold py-1 px-4 rounded" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.previous_page_number }}">&#5176;</a>
   {% else %}
-      <span class="btn btn-default btn-sm" style="text-decoration: none">&#5176;</span>
+      <span class="btn btn-default btn-sm font-bold py-1 px-4 rounded" style="text-decoration: none">&#5176;</span>
   {% endif %} <!-- has_previous -->
     </li>
   {% for number in page.page_range %}
     <li>
     {% if number == page.number %}
-      <span class="btn btn-default btn-sm btn-selected" style="text-decoration: none">{{ number }}</span>
+      <span class="btn btn-default btn-sm btn-selected font-bold py-1 px-4 rounded" style="text-decoration: none">{{ number }}</span>
     {% else %}
-    {% if not number %}<span class="btn btn-default btn-sm"> ... {# literally dots #}</span>
+    {% if not number %}<span class="btn btn-default btn-sm font-bold py-1 px-4 rounded"> ... {# literally dots #}</span>
       {% else %}{# pagelink num #}
         {% if extra_string %}
-      <a class="btn btn-default btn-sm" href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
+      <a class="btn btn-default btn-sm font-bold py-1 px-4 rounded" href="?{{ extra_string }}&amp;page={{ number }}">{{ number }}</a>
         {% else %}
-      <a class="btn btn-default btn-sm" href="?page={{ number }}">{{ number }}</a>
+      <a class="btn btn-default btn-sm font-bold py-1 px-4 rounded" href="?page={{ number }}">{{ number }}</a>
         {% endif %}
       {% endif %}
     {% endif %}
@@ -48,14 +48,14 @@
   {% endfor %}
     <li>
   {% if page.has_next %}
-    <a class="btn btn-default btn-sm" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
+    <a class="btn btn-default btn-sm font-bold py-1 px-4 rounded" href="?{% if extra_string %}{{ extra_string }}&amp;{% endif %}page={{ page.next_page_number }}">&#5171;</a>
   {% else %}
-      <span class="btn btn-default btn-sm" style="text-decoration: none">&#5171;</span>
+      <span class="btn btn-default btn-sm font-bold py-1 px-4 rounded" style="text-decoration: none">&#5171;</span>
   {% endif %} <!-- has_next -->
     </li>
   {% endspaceless %}
 {% else %}
-    <li> <span class="btn btn-default btn-sm" style="text-decoration: none">{{ page.number }}</span> </li>
+    <li> <span class="btn btn-default btn-sm font-bold py-1 px-4 rounded" style="text-decoration: none">{{ page.number }}</span> </li>
 {% endif %}
     <li>
       <form method="GET" style="display:inline">

@@ -8,7 +8,7 @@
 {% for form in formset.forms %}
 <tr class="{% cycle 'row1' 'row2' %} formset_row-{{ formset.prefix }} {% if form.no_delete %}no_delete{% endif %}">
   <td colspan="2">
-    <table class="editing">
+    <table class="editing [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row [:where(&)_th]:text-left sm:[:where(&)_th]:text-right [:where(&)_th]:font-normal [:where(&)_th]:pe-2 [:where(&)_th]:align-top sm:[:where(&)_th]:w-44">
         {% comment %}
         If we want to use crispy for the forms of the formset, use:
         {% crispy form form.helper %}

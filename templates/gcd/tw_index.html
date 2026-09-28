@@ -20,34 +20,34 @@
 {% block nav_bar %}
   {{ block.super }}
 <nav class="grid auto-cols-max grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 justify-center bg-blue-100 px-2 sm:px-4 py-1 [&>div]:text-center [&>div]:font-bold">
-  <div><a href="https://docs.comics.org/wiki/General_FAQ" class="link-with-text-color">{% trans "About the GCD" %}</a></div>
-  <div class="max-lg:hidden"><a class="link-with-text-color" href="{% url 'contact_form' %} ">{% trans "Contact Us" %}</a></div>
-  <div><a href="https://docs.comics.org/wiki/Search_Tutorial" class="link-with-text-color">{% trans "How to Search" %}</a></div>
+  <div><a href="https://docs.comics.org/wiki/General_FAQ" class="link-with-text-color text-black visited:text-black">{% trans "About the GCD" %}</a></div>
+  <div class="max-lg:hidden"><a class="link-with-text-color text-black visited:text-black" href="{% url 'contact_form' %} ">{% trans "Contact Us" %}</a></div>
+  <div><a href="https://docs.comics.org/wiki/Search_Tutorial" class="link-with-text-color text-black visited:text-black">{% trans "How to Search" %}</a></div>
   <div class="max-md:hidden"><a href="https://docs.comics.org/wiki/How_To_Contribute_FAQ"
-      class="link-with-text-color">{% trans "How to Help" %}</a></div>
-  <div><a class="link-with-text-color" href="{% url "covers_today" %}">{% trans "Today's Covers" %}</a></div>
-  <div class="max-lg:hidden"><a class="link-with-text-color" href="{% url "changes_today" %}">{% trans "Today's Changes" %}</a></div>
-  <div><a class="link-with-text-color" href="{% url "on_sale_this_week" %}">{% trans "On-sale Weekly" %}</a></div>
-  <div class="max-lg:hidden"><a class="link-with-text-color" href="{% url "on_sale_this_month" %}">{% trans "On-sale Monthly" %}</a></div>
+      class="link-with-text-color text-black visited:text-black">{% trans "How to Help" %}</a></div>
+  <div><a class="link-with-text-color text-black visited:text-black" href="{% url "covers_today" %}">{% trans "Today's Covers" %}</a></div>
+  <div class="max-lg:hidden"><a class="link-with-text-color text-black visited:text-black" href="{% url "changes_today" %}">{% trans "Today's Changes" %}</a></div>
+  <div><a class="link-with-text-color text-black visited:text-black" href="{% url "on_sale_this_week" %}">{% trans "On-sale Weekly" %}</a></div>
+  <div class="max-lg:hidden"><a class="link-with-text-color text-black visited:text-black" href="{% url "on_sale_this_month" %}">{% trans "On-sale Monthly" %}</a></div>
 </nav>
 <ul class="sm:hidden ps-1 columns-2 [&>li]:text-center">
   {% if language and language.code != 'en' %}
-  <li><a class="link-no-visited" href="{% url 'home' %}">English start page</a></li>
+  <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}">English start page</a></li>
   {% endif %}
   {% if language.code != 'de' %}
-  <li><a class="link-no-visited" href="{% url 'home' %}?lang=de">Deutsche Startseite</a></li>
+  <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=de">Deutsche Startseite</a></li>
   {% endif %}
   {% if language.code != 'it' %}
-  <li><a class="link-no-visited" href="{% url 'home' %}?lang=it">Homepage italiana</a></li>
+  <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=it">Homepage italiana</a></li>
   {% endif %}
   {% if language.code != 'nl' %}
-  <li><a class="link-no-visited" href="{% url 'home' %}?lang=nl">Nederlandse startpagina</a></li>
+  <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=nl">Nederlandse startpagina</a></li>
   {% endif %}
   {% if language.code != 'pt' %}
-  <li><a class="link-no-visited" href="{% url 'home' %}?lang=pt">Página inicial em português</a></li>
+  <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=pt">Página inicial em português</a></li>
   {% endif %}
   {% if language.code != 'sv' %}
-  <li><a class="link-no-visited" href="{% url 'home' %}?lang=sv">Svensk startsida</a></li>
+  <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=sv">Svensk startsida</a></li>
   {% endif %}
 </ul>
 {% endblock %}
@@ -64,27 +64,27 @@
       {% endif %}
         <ul class="ps-1">
           {% if language and language.code != 'en' %}
-          <li><a class="link-no-visited" href="{% url 'home' %}">English start page</a></li>
+          <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}">English start page</a></li>
           {% endif %}
           {% if language.code != 'de' %}
-          <li><a class="link-no-visited" href="{% url 'home' %}?lang=de">Deutsche Startseite</a></li>
+          <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=de">Deutsche Startseite</a></li>
           {% endif %}
           {% if language.code != 'it' %}
-          <li><a class="link-no-visited" href="{% url 'home' %}?lang=it">Homepage in italiano</a></li>
+          <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=it">Homepage in italiano</a></li>
           {% endif %}
           {% if language.code != 'nl' %}
-          <li><a class="link-no-visited" href="{% url 'home' %}?lang=nl">Nederlandse startpagina</a></li>
+          <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=nl">Nederlandse startpagina</a></li>
           {% endif %}
           {% if language.code != 'pt' %}
-          <li><a class="link-no-visited" href="{% url 'home' %}?lang=pt">Página inicial em português</a></li>
+          <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=pt">Página inicial em português</a></li>
           {% endif %}
           {% if language.code != 'sv' %}
-          <li><a class="link-no-visited" href="{% url 'home' %}?lang=sv">Svensk startsida</a></li>
+          <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url 'home' %}?lang=sv">Svensk startsida</a></li>
           {% endif %}
           </ul>
         {% if language %}
         <div>
-          <div class="label-gcd-blue">
+          <div class="label-gcd-blue bg-stone-600 text-white rounded px-2 py-1 font-bold">
             {% trans "Last Updated Language Issues" %}
           </div>
             <div class="ps-1">
@@ -92,7 +92,7 @@
             </div>
         </div>
         <div>
-          <div class="label-gcd-blue">
+          <div class="label-gcd-blue bg-stone-600 text-white rounded px-2 py-1 font-bold">
             {% trans "Statistics for Language Comics" %}
           </div>
           <div class="ps-1">
@@ -103,7 +103,7 @@
         </div>
         {% endif %}
         <div>
-          <div class="label-gcd-blue">
+          <div class="label-gcd-blue bg-stone-600 text-white rounded px-2 py-1 font-bold">
             {% trans "Last Updated Issues" %}
           </div>
           <div class="ps-1">
@@ -111,7 +111,7 @@
           </div>
         </div>
         <div>
-          <div class="label-gcd-blue">
+          <div class="label-gcd-blue bg-stone-600 text-white rounded px-2 py-1 font-bold">
             {% trans "Statistics" %}
           </div>
           <div class="ps-1">
@@ -119,12 +119,12 @@
               {{ stat.count|intcomma }} {% trans stat.name %}<br>
             {% endfor %}
           </div>
-          <div class="label-gcd-blue">
+          <div class="label-gcd-blue bg-stone-600 text-white rounded px-2 py-1 font-bold">
             {% trans "International Statistics" %}
           </div> 
             <ul class="ps-1">
-            <li><a class="link-no-visited" href="{% url "international_stats_language" %}">{% trans "by Language" %}</a>
-            <li><a class="link-no-visited" href="{% url "international_stats_country" %}">{% trans "by Country" %}</a>
+            <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url "international_stats_language" %}">{% trans "by Language" %}</a>
+            <li><a class="link-no-visited text-link-gcd visited:text-link-gcd" href="{% url "international_stats_country" %}">{% trans "by Country" %}</a>
             </ul>
         </div>
       </div>

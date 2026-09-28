@@ -3,9 +3,9 @@
   <div>
   {% if prev_issue %}
     {% if description %}
-    <a class="navigation-bar-box-link py-1 rounded-s-lg" href="{% url 'change_history' model_name='issue' id=prev_issue.id %}">&#5176; {% trans "Previous Issue" %}</a>
+    <a class="navigation-bar-box-link py-1 rounded-s-lg text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400" href="{% url 'change_history' model_name='issue' id=prev_issue.id %}">&#5176; {% trans "Previous Issue" %}</a>
     {% else %}
-    <a class="navigation-bar-box-link py-1 rounded-s-lg" href="{{ prev_issue.get_absolute_url }}{{ extra }}{% querystring issue_detail=None %}">&#5176; {% trans "Previous Issue" %}</a>
+    <a class="navigation-bar-box-link py-1 rounded-s-lg text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400" href="{{ prev_issue.get_absolute_url }}{{ extra }}{% querystring issue_detail=None %}">&#5176; {% trans "Previous Issue" %}</a>
     {% endif %}
   {% endif %}
     <form class="inline max-sm:hidden" method="GET"
@@ -21,13 +21,13 @@
         </option>
     {% endfor %}
       </select>
-      <input type="submit" class="navigation-bar-box-link rounded" value="{% trans 'Go' %}"/>
+      <input type="submit" class="navigation-bar-box-link rounded text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400" value="{% trans 'Go' %}"/>
     </form>
   {% if next_issue %}
     {% if description %}
-    <a class="link-with-text-color navigation-bar-box-link py-1 rounded-e-lg" href="{% url 'change_history' model_name='issue' id=next_issue.id %}">{% trans "Next Issue" %} &#5171;</a>
+    <a class="link-with-text-color navigation-bar-box-link py-1 rounded-e-lg text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400" href="{% url 'change_history' model_name='issue' id=next_issue.id %}">{% trans "Next Issue" %} &#5171;</a>
     {% else %}
-    <a class="link-with-text-color navigation-bar-box-link py-1 rounded-e-lg" href="{{ next_issue.get_absolute_url }}{{ extra }}{% querystring issue_detail=None %}">{% trans "Next Issue" %} &#5171;</a>
+    <a class="link-with-text-color navigation-bar-box-link py-1 rounded-e-lg text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400" href="{{ next_issue.get_absolute_url }}{{ extra }}{% querystring issue_detail=None %}">{% trans "Next Issue" %} &#5171;</a>
     {% endif %}
   {% endif %}
   </div>

@@ -42,7 +42,7 @@
         <div class="form-group">
           <input type="search" class="form-control" placeholder="Search..." name="q">
         </div>
-        <button type="submit" class="btn btn-default"><i class="glyphicon glyphicon-search"></i></button>
+        <button type="submit" class="btn btn-default font-bold py-1 px-4 rounded"><i class="glyphicon glyphicon-search"></i></button>
       </form>
       {% endspaceless %}
       <ul class="nav navbar-nav navbar-right">
@@ -53,13 +53,13 @@
           <form action="{% url 'logout' %}" method="POST">
          {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <button type="submit" class="btn btn-default navbar-btn" style="display: inline;">{% trans 'Log Out' %}
+            <button type="submit" class="btn btn-default navbar-btn font-bold py-1 px-4 rounded" style="display: inline;">{% trans 'Log Out' %}
             </button>
            </form>
           {% else %}
           <form action="{% url 'home' %}" method="POST">
          {% csrf_token %}
-            <button type="submit" class="btn btn-default navbar-btn" style="display: inline;">{% trans 'Log In' %}
+            <button type="submit" class="btn btn-default navbar-btn font-bold py-1 px-4 rounded" style="display: inline;">{% trans 'Log In' %}
             </button>
            </form>
           {% endif %}

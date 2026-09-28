@@ -13,7 +13,7 @@ Statistics by {{ type }}, ordered by number of
   <form class="inline" method="get"
         action="{% if type == 'language' %}{% url 'international_stats_language' %}{% else %}{% url 'international_stats_country' %}{% endif %}">
     {{ form }}
-    <button class="btn btn-blue ml-1 mb-1 h-8">
+    <button class="btn btn-blue ml-1 mb-1 h-8 font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">
     <input type="submit" name="submit" value="Reorder">
     </button>
   </form>
@@ -21,7 +21,7 @@ Statistics by {{ type }}, ordered by number of
 <div class="flex flex-wrap">
   {% for object, stats_for_object in stats %}
   <div class="w-full sm:w-1/2 px-1">
-    <div class="text-lg label-gcd-blue">
+    <div class="text-lg label-gcd-blue bg-stone-600 text-white rounded px-2 py-1 font-bold">
         Statistics for comics {% if type == 'country' %} published {% endif %} in
         <a class="text-white visited:text-white underline"
            href="{% url 'process_advanced_search' %}?target=series&method=icontains&logic=False&order1=series&order2=date&order3=&{{ type }}={{ object.code }}">

@@ -40,7 +40,7 @@
   Backed by the largest comic database on the planet, my.comics.org allows you to track your comic collection.
   </p>
   {% if form.errors %}
-    <div class="alert alert-danger">
+    <div class="alert alert-danger text-red-400 font-bold">
       {% trans "Your username and password didn't match. Please try again." %}
     </div>
   {% endif %}
@@ -48,7 +48,7 @@
     {% csrf_token %}
     <input name="username" type="text" class="form-control" placeholder="{% trans 'email' %}" required autofocus>
     <input name="password" type="password" class="form-control" placeholder="{% trans 'password' %}" required>
-    <button class="btn btn-lg btn-primary btn-block" type="submit">{% trans 'Login' %}</button>
+    <button class="btn btn-lg btn-primary btn-block font-bold py-1 px-4 rounded" type="submit">{% trans 'Login' %}</button>
     {% if next %}
     <input type="hidden" name="next" value="{{ next }}" />
     {% else %}

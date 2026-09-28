@@ -43,7 +43,7 @@
     {% if request.user.collector == reading_order.collector %}
       <div class="btn-group pull-right">
         <a href="{% url 'edit_reading_order' reading_order.id %}">
-          <button type="button" class="btn btn-primary">{% trans "Edit" %}
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Edit" %}
         </button></a>
       </div>
     {% else %} / {{ reading_order.collector.user.indexer }}

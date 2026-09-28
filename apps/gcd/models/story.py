@@ -1188,7 +1188,7 @@ class Story(GcdData):
             universes += absolute_url(universe) + '; '
         if universes:
             universes = universes[:-2]
-        label = '<span class="field-name-label">Universe:</span>'
+        label = '<span class="field-name-label font-bold pe-1 align-top">Universe:</span>'
         return mark_safe(label + universes)
 
     def show_title(self, use_first_line=False):

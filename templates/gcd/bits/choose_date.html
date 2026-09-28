@@ -1,7 +1,7 @@
 {% load i18n %}
 
 <div class="h-8 flex">
-  <a class="rounded-s-lg flex items-center justify-center h-8 navigation-bar-box-link" href="{{ choose_url_before }}">&#5176;
+  <a class="rounded-s-lg flex items-center justify-center h-8 navigation-bar-box-link text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400" href="{{ choose_url_before }}">&#5176;
   {% if daily %}
     {% trans "day before" %}
   {% elif yearly %}
@@ -43,7 +43,7 @@
       <input class="px-2 py-0 h-7 bg-blue-100 border border-gray-400 hover:bg-blue-300 me-1 rounded" type="submit" value="{% trans 'Go' %}">
     </form>
   {% if choose_url_after %}
-  <a class="rounded-e-lg flex items-center justify-center h-8 navigation-bar-box-link" href="{{ choose_url_after }}">
+  <a class="rounded-e-lg flex items-center justify-center h-8 navigation-bar-box-link text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400" href="{{ choose_url_after }}">
     {% if daily %}
       {% trans "day after" %}
     {% elif yearly %}

@@ -10,17 +10,17 @@
     {% if request.user.collector == collection.collector %}
       <div class="btn-group pull-right">
         <a href="{% url "view_collection" collection.id %}">
-          <button type="button" class="btn btn-primary">{% trans "Issues" %}
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Issues" %}
         </button></a>
         <a href="{% url "export_collection" collection.id %}">
-          <button type="button" class="btn" style="display: inline-block;">
+          <button type="button" class="btn font-bold py-1 px-4 rounded" style="display: inline-block;">
           <span class="glyphicon glyphicon-download"></span>
         </button></a>
         <a href="{% url "subscriptions_collection" collection.id %}">
-          <button type="button" class="btn btn-primary">{% trans "Subscriptions" %}
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Subscriptions" %}
         </button></a>
         <a href="{% url "edit_collection" collection.id %}">
-          <button type="button" class="btn btn-primary">{% trans "Edit" %}
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Edit" %}
         </button></a>
       </div>
     {% else %} / {{ collection.collector.user.indexer }}

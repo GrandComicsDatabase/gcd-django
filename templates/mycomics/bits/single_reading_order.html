@@ -14,10 +14,10 @@
   {% endif %}
     </div>
     <div class="btn-group pull-right">
-      <a class="btn btn-primary btn-sm" href="{% url 'edit_reading_order' reading_order.id %}">
+      <a class="btn btn-primary btn-sm font-bold py-1 px-4 rounded" href="{% url 'edit_reading_order' reading_order.id %}">
         <span class="glyphicon glyphicon-pencil"></span>
       </a>
-      <button type="button" class="btn btn-primary btn-sm"
+      <button type="button" class="btn btn-primary btn-sm font-bold py-1 px-4 rounded"
               onclick="remove_reading_order({{ reading_order.id }}, '{{ reading_order.name|escapejs }}', {{ reading_order.items.count }})">
         <span class="glyphicon glyphicon-remove"></span>
       </button>

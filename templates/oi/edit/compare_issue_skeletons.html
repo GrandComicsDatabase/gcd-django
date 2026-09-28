@@ -15,7 +15,7 @@ Reviewing :: {{ revision }}
 This change adds to {{ revision.series|absolute_url }}
 published by {{ revision.series.publisher|absolute_url }}
 after issue
-<span class="changed p-1">{{ changeset.ordered_issue_revisions.0.after }}</span>
+<span class="changed p-1 bg-yellow-400">{{ changeset.ordered_issue_revisions.0.after }}</span>
 {% if changeset.issuerevisions.count > 1 %}
 the following issues (links open in new windows):
 <table>
@@ -34,7 +34,7 @@ the following issues (links open in new windows):
   <td> {{ issue.volume }}
   <td> {{ issue.number }}
   <td> {{ issue.display_number }}
-  <td> <a class="new_window" href="{% url "preview_revision" model_name=model_name id=issue.id %}" target=_blank>Preview</a>
+  <td> <a class="new_window bg-[size:12px] bg-right pr-4" href="{% url "preview_revision" model_name=model_name id=issue.id %}" target=_blank>Preview</a>
     {% if changeset.state == states.APPROVED %}
   <td> {% if issue.posterior %}<a href="{% url "compare" id=issue.posterior.changeset.id %}?collapse=1"> Next Change ({{ issue.posterior.modified|date:"Y-m-d" }}) {% endif %} </a>
     {% endif %}
@@ -48,13 +48,13 @@ that publication date, key date and notes will always be blank.
 </p>
 {% else %}
 the following issue:
-<a class="new_window" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview</a>
+<a class="new_window bg-[size:12px] bg-right pr-4" href="{% url "preview_revision" model_name=model_name id=revision.id %}" target=_blank>Preview</a>
 {% endif %}
 {% if revision.variant_of %}
   {% include 'oi/bits/compare_variant_issue.html' %}
 {% else %}
 <p>
-Highlighted fields represent <span class="added p-1">added</span> data.
+Highlighted fields represent <span class="added p-1 bg-green-400">added</span> data.
 </p>
 {% endif %}
 

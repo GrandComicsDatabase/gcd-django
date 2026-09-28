@@ -36,7 +36,7 @@ GCD :: Group Universe :: {{ group.name }} - {{ universe_name }}
             </tr>
 {% endif %}
           </table>
-          <ul class="object-page-link-list">
+          <ul class="object-page-link-list list-disc sm:columns-2 list-outside ps-4 [:where(&)_li]:pr-2">
             <li><a href='{% url "group_origin_universe_creators" group_id=group.id universe_id=universe_id %}'>Creator List</a></li>
             <li><a href='{% url "group_origin_universe_creator_names" group_id=group.id universe_id=universe_id %}'>Creator Name List</a></li>
             <li><a href='{% url "group_origin_universe_issues" group_id=group.id universe_id=universe_id %}'>Issue List</a></li>
@@ -51,7 +51,7 @@ GCD :: Group Universe :: {{ group.name }} - {{ universe_name }}
           </ol>
           {% if additional_names %}
             <h3>Additional Names:</h3>
-            <ol class="ps-6 object-page-numbered-list">
+            <ol class="ps-6 object-page-numbered-list ms-2 list-decimal grid sm:grid-cols-2 [:where(&)_li]:pr-4">
             {% for name in additional_names %}
               <li class="break-inside-avoid-column">
                 <a href='{% url "group_name_origin_universe_issues" group_name_id=name.id universe_id=universe_id %}'>{{ name.name }}</a>

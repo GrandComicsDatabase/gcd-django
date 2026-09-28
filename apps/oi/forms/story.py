@@ -176,7 +176,12 @@ def get_story_revision_form(revision=None, user=None,
             super(RuntimeStoryRevisionForm, self).__init__(*args, **kwargs)
             if revision and revision.feature != '':
                 self.fields['feature'].label = \
-                  '<btn class="btn-blue-editing inline">' \
+                  '<btn class="btn-blue-editing inline font-normal me-1 ' \
+                      'mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black ' \
+                      'text-sm text-center py-1 px-2 rounded cursor-pointer ' \
+                      'hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black ' \
+                      '[:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black ' \
+                      '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center">' \
                   '<input type="submit" name="save_migrate_feature"' \
                   ' value="Migrate"></btn></td> Feature'
 
@@ -353,7 +358,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
       label='<button hx-get="/select/creator/by_detail/" type="button" '
             'hx-vals="js:{\'name_detail_id\': getSelectValue(event)}" '
             'hx-on:htmx:after-request="setSelectValue(event)" '
-            'hx-swap="none" class="mx-0 btn-blue-editing inline">To Official'
+            'hx-swap="none" class="mx-0 btn-blue-editing inline font-normal' \
+                ' mt-1 mb-1 max-sm:mt-1 max-sm:mb-1 bg-stone-200 text-black ' \
+                'text-sm text-center py-1 px-2 rounded cursor-pointer ' \
+                'hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black ' \
+                '[:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline ' \
+                '[:where(&)_a]:text-center">To Official'
             '</button> Creator'
     )
 
@@ -769,7 +779,12 @@ class StoryRevisionForm(KeywordBaseForm):
                                                characters_start-1]])
         field_list.append(HTML(
           '<tr><th><input type="submit" name="save_and_set_universe"'
-          ' class="mx-0 btn-blue-editing inline"'
+          ' class="mx-0 btn-blue-editing inline font-normal mt-1 mb-1 ' \
+              'max-sm:mt-1 max-sm:mb-1 bg-stone-200 text-black text-sm ' \
+              'text-center py-1 px-2 rounded cursor-pointer hover:no-underline ' \
+              'hover:bg-stone-400 [:where(&)_a]:text-black [:where(&)_a]:block ' \
+              '[:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline ' \
+              '[:where(&)_a]:text-center"'
           ' value="Set Character Universe"></th>'
           '<td>Set the above universe for the characters below that '
           'do not already have an assigned universe.</td></tr>'))
@@ -794,22 +809,38 @@ class StoryRevisionForm(KeywordBaseForm):
             character_order_html += '<input type="submit" ' \
               'name="edit_appearance_order"' \
               ' value="Save And Edit Appearance Order" ' \
-              'class="m-0 btn-blue-editing inline"/>'
+              'class="m-0 btn-blue-editing inline font-normal bg-stone-200 ' \
+                  'text-black text-sm text-center py-1 px-2 rounded ' \
+                  'cursor-pointer hover:no-underline hover:bg-stone-400 ' \
+                  '[:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black ' \
+                  '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center"/>'
         else:
             character_order_html += '<input type="submit" ' \
               'name="create_appearance_order"' \
               ' value="Save And Create Appearance Order" ' \
-              'class="m-0 btn-blue-editing inline"/>'
+              'class="m-0 btn-blue-editing inline font-normal bg-stone-200 ' \
+                  'text-black text-sm text-center py-1 px-2 rounded ' \
+                  'cursor-pointer hover:no-underline hover:bg-stone-400 ' \
+                  '[:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black ' \
+                  '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center"/>'
         if has_importance_order:
             character_order_html += '<input type="submit" ' \
               'name="edit_importance_order"' \
               ' value="Save And Edit Importance Order" ' \
-              'class="m-0 btn-blue-editing inline"/>'
+              'class="m-0 btn-blue-editing inline font-normal bg-stone-200 ' \
+                  'text-black text-sm text-center py-1 px-2 rounded ' \
+                  'cursor-pointer hover:no-underline hover:bg-stone-400 ' \
+                  '[:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black ' \
+                  '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center"/>'
         else:
             character_order_html += '<input type="submit" ' \
               'name="create_importance_order"' \
               ' value="Save And Create Importance Order" ' \
-              'class="m-0 btn-blue-editing inline"/>'
+              'class="m-0 btn-blue-editing inline font-normal bg-stone-200 ' \
+                  'text-black text-sm text-center py-1 px-2 rounded ' \
+                  'cursor-pointer hover:no-underline hover:bg-stone-400 ' \
+                  '[:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black ' \
+                  '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center"/>'
         field_list.append(HTML(character_order_html + '</td>'))
         characters_end = len(field_list)
         field_list.extend([BaseField(Field(field,
@@ -834,7 +865,10 @@ class StoryRevisionForm(KeywordBaseForm):
                   ),
               template='oi/bits/tab-bar.html',
             ),
-              HTML('<table class="editing">'),
+              HTML('<table class="editing [:where(&)_tr]:flex [:where(&)_tr]:flex-col ' \
+                  'sm:[:where(&)_tr]:table-row [:where(&)_th]:text-left sm:[:where(&)_th]:text-right ' \
+                  '[:where(&)_th]:font-normal [:where(&)_th]:pe-2 [:where(&)_th]:align-top ' \
+                  'sm:[:where(&)_th]:w-44">'),
               *(f for f in field_list[-2:]),
               HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS

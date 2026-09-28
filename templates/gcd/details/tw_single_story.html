@@ -112,7 +112,7 @@
     <div id="character-tabs-{{ story.id }}">
         {% if has_orders %}
       <div class="flex flex-wrap items-center">
-        <div class="field-name-label mb-0">Characters:</div> Ordered by:
+        <div class="field-name-label mb-0 font-bold pe-1 align-top">Characters:</div> Ordered by:
         <input checked class="sr-only" type="radio" name="character-tabs-{{ story.id }}" id="character-tab-1-{{ story.id }}" data-panel="1">
         <label for="character-tab-1-{{ story.id }}" class="cursor-pointer inline-block rounded hover:bg-blue-400 px-2 mx-1 py-1 bg-blue-100" data-character-tab-label>Name </label>
 
@@ -127,7 +127,7 @@
           {% endif %}
       </div>
         {% else %}
-      <div class="field-name-label">Characters:</div>
+      <div class="field-name-label font-bold pe-1 align-top">Characters:</div>
         {% endif %}
 
       <div class="">
@@ -154,8 +154,8 @@
     <dl>
       {{ story|show_credit_description_list:"synopsis"|linebreaksbr }}
       {% if story.active_awards %}
-      <dt class="field-name-label">Awards:</dt>
-      <dd><ul class="object-page-link-list columns-1">{{ story|show_credit_bare_value:"show_awards" }}</ul></dd>
+      <dt class="field-name-label font-bold pe-1 align-top">Awards:</dt>
+      <dd><ul class="object-page-link-list columns-1 list-disc list-outside ps-4 [:where(&)_li]:pr-2">{{ story|show_credit_bare_value:"show_awards" }}</ul></dd>
       {% endif %}
       {% if story.has_reprints %}
         {% if story.reprint_count > request.user.indexer.reprint_threshold|default:5 %}
@@ -165,9 +165,9 @@
           {% endif %}
             <summary class="list-none"> 
               {% include 'gcd/bits/svg_details.html' %}
-            <span class="btn-blue btn">Reprints ({{ story.reprint_count }})</span>
+            <span class="btn-blue btn font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">Reprints ({{ story.reprint_count }})</span>
           </summary>
-          <dd><ul class="object-page-link-list columns-1 [&_ul]:columns-1 [&_ul]:object-page-link-list ">{{ story|show_reprints:True|linebreaksbr }}</ul></dd>
+          <dd><ul class="object-page-link-list columns-1 [&_ul]:columns-1 [&_ul]:list-disc [&_ul]:list-outside [&_ul]:ps-4 list-disc list-outside ps-4 [:where(&)_li]:pr-2">{{ story|show_reprints:True|linebreaksbr }}</ul></dd>
         </details>
       {% endif %}
     </dl>
@@ -181,7 +181,7 @@
       <li>{{ story.biblioentry|show_credit_tw_inline:"doi" }}</li>
     </ul>
     {% if story.biblioentry.abstract %}
-    <div class="field-name-label">Abstract:</div>
+    <div class="field-name-label font-bold pe-1 align-top">Abstract:</div>
         {{ story.biblioentry.abstract|linebreaksbr }}
     {% endif %}
   </div>

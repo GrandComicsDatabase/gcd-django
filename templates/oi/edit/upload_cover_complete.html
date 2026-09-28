@@ -42,7 +42,7 @@ This cover upload has been successfully submitted and is awaiting approval by an
   <div class="ps-2">
   {% if blank_issues %}
 Issues missing covers
-    <ul class="object-page-link-list columns-1 ps-8">
+    <ul class="object-page-link-list columns-1 ps-8 list-disc list-outside [:where(&)_li]:pr-2">
     {% for issue in blank_issues %}
       <li><a href="{% url 'upload_cover' issue_id=issue.id %}">{{ issue.short_name }}</a>
       </li>
@@ -50,7 +50,7 @@ Issues missing covers
     </ul>
   {% endif %}
   {% if marked_covers %}
-    <ul class="object-page-link-list columns-1 ps-8">
+    <ul class="object-page-link-list columns-1 ps-8 list-disc list-outside [:where(&)_li]:pr-2">
     Covers marked for replacement
     {% for cover in marked_covers %}
       <li><a href="{{ cover.get_status_url }}">{{ cover.issue.short_name }}</a>
@@ -59,7 +59,7 @@ Issues missing covers
     </ul>
   {% endif %}
   Add a variant cover
-    <ul class="object-page-link-list columns-1 ps-8">
+    <ul class="object-page-link-list columns-1 ps-8 list-disc list-outside [:where(&)_li]:pr-2">
       <li><a href="{% url 'upload_variant' issue_id=issue.id %}">{{ issue.short_name }}</a>
       </li>
     </ul>

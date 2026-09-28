@@ -4,7 +4,7 @@
 {% block nav_bar %}
   {{ block.super }}
   <div id="cloudflare_challenge_notice"
-       class="cloudflare_challenge_notice hidden" role="alert">
+       class="cloudflare_challenge_notice hidden fixed z-50 top-0 right-0 left-0 py-3 px-4 bg-amber-100 border-b border-yellow-800 text-yellow-900 text-center [:where(&)_a]:font-bold [:where(&)_a]:underline" role="alert">
     {% blocktranslate trimmed %}
       Cloudflare verification is required.
       <a href="/" target="_blank" rel="noopener">

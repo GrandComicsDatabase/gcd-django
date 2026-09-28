@@ -19,8 +19,8 @@
           <p class="removal_warning" style="display: none"><span class="glyphicon glyphicon-exclamation-sign warning-sign"></span> {% trans "This location is selected for some of your items." %}</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.removal_warning').hide()">{% trans "Cancel" %}</button>
-          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url 'delete_location' %}'+selected_location">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-default font-bold py-1 px-4 rounded" data-dismiss="modal" onclick="$('.removal_warning').hide()">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded" onclick="window.location.href='{% url 'delete_location' %}'+selected_location">{% trans "Confirm" %}</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -37,8 +37,8 @@
           <p class="removal_warning" style="display: none"><span class="glyphicon glyphicon-exclamation-sign warning-sign"></span> {% trans "This location is selected for some of your items." %}</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal" onclick="$('.removal_warning').hide()">{% trans "Cancel" %}</button>
-          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url "delete_purchase_location" %}'+selected_location">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-default font-bold py-1 px-4 rounded" data-dismiss="modal" onclick="$('.removal_warning').hide()">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded" onclick="window.location.href='{% url "delete_purchase_location" %}'+selected_location">{% trans "Confirm" %}</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -57,8 +57,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
-          <button type="button" class="btn btn-primary" onclick="$('#editLocation').submit()">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-default font-bold py-1 px-4 rounded" data-dismiss="modal">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded" onclick="$('#editLocation').submit()">{% trans "Confirm" %}</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -77,8 +77,8 @@
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
-          <button type="button" class="btn btn-primary" onclick="$('#editPurchaseLocation').submit()">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-default font-bold py-1 px-4 rounded" data-dismiss="modal">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded" onclick="$('#editPurchaseLocation').submit()">{% trans "Confirm" %}</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -125,12 +125,12 @@
       <form action="." method="POST">
         {% csrf_token %}
         {% bootstrap_form settings_form %}
-        <input type="submit" class="btn btn-primary" name="{% trans "Submit" %}" value="{% trans "Submit" %}">
+        <input type="submit" class="btn btn-primary font-bold py-1 px-4 rounded" name="{% trans "Submit" %}" value="{% trans "Submit" %}">
       </form>
     </div>
     <div class="col-md-6">
           <h2>{% trans "Locations" %}
-            <button class="btn btn-primary pull-right" type="button"
+            <button class="btn btn-primary pull-right font-bold py-1 px-4 rounded" type="button"
                     data-toggle="modal" href="#edit-location" onclick="set_location_for_edit(document.forms['editLocation'])">
               {% trans "Add" %}
             </button>
@@ -139,11 +139,11 @@
         {% for location in locations %}
           <li class="list-group-item">{{ location.name }}
               <span class="pull-right">
-                <button type="button" class="btn btn-primary btn-xs"
+                <button type="button" class="btn btn-primary btn-xs font-bold py-1 px-4 rounded"
                         data-toggle="modal" href="#edit-location"
                         onclick="set_location_for_edit(document.forms['editLocation'], {{ location.id }}, locations)">
                   {% trans "Edit" %}</button>
-                <button type="button" class="btn {% if location.items.all %}btn-warning{% else %}btn-primary{% endif %} btn-xs"
+                <button type="button" class="btn font-bold py-1 px-4 rounded {% if location.items.all %}btn-warning{% else %}btn-primary{% endif %} btn-xs"
                         data-toggle="modal" href="#remove-location" onclick="selected_location={{ location.id }}
                     {% if location.items.all %}; $('.removal_warning').show(){% endif %}">
                   {% trans "Delete" %}</button>
@@ -153,7 +153,7 @@
       </ul>
       <hr>
           <h2>{% trans "Purchase Locations" %}
-            <button class="btn btn-primary pull-right" type="button"
+            <button class="btn btn-primary pull-right font-bold py-1 px-4 rounded" type="button"
                     data-toggle="modal" href="#edit-purchase-location" onclick="set_location_for_edit(document.forms['editPurchaseLocation'])">
               {% trans "Add" %}
             </button>
@@ -162,11 +162,11 @@
         {% for plocation in purchase_locations %}
           <li class="list-group-item">{{ plocation.name }}
               <span class="pull-right">
-                <button type="button" class="btn btn-primary btn-xs"
+                <button type="button" class="btn btn-primary btn-xs font-bold py-1 px-4 rounded"
                         data-toggle="modal" href="#edit-purchase-location"
                         onclick="set_location_for_edit(document.forms['editPurchaseLocation'], {{ plocation.id }}, purchase_locations)">
                   {% trans "Edit" %}</button>
-                <button type="button" class="btn {% if plocation.items.all %}btn-warning{% else %}btn-primary{% endif %} btn-xs"
+                <button type="button" class="btn font-bold py-1 px-4 rounded {% if plocation.items.all %}btn-warning{% else %}btn-primary{% endif %} btn-xs"
                         data-toggle="modal" href="#remove-purchase-location" onclick="selected_location={{ plocation.id }}
                     {% if plocation.items.all %}; $('.removal_warning').show(){% endif %}">
                   {% trans "Delete" %}</button>

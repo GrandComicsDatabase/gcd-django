@@ -52,7 +52,7 @@ Should be changed so that we have consistent display. Currently only the search 
 {% if filter %}
 <form method="get">
 {{ filter.form }}
-<button class="btn btn-blue ml-1 mt-1 h-8">Filter Results</button>
+<button class="btn btn-blue ml-1 mt-1 h-8 font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">Filter Results</button>
 </form>
 {% endif %}
 {% if filter_form %}
@@ -85,7 +85,7 @@ Should be changed so that we have consistent display. Currently only the search 
       </div>
     </div>
   {% endfor %}
-  <button class="btn btn-blue ml-1 mt-1 h-8">Filter Results</button>
+  <button class="btn btn-blue ml-1 mt-1 h-8 font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">Filter Results</button>
 </form>
 {% endif %}
 {% if filter_form %}

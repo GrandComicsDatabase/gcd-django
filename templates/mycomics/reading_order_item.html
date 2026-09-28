@@ -20,8 +20,8 @@
               {% bootstrap_form item_form %}
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
-            <input type="submit" class="btn btn-primary" name="submit" value="{% trans "Submit" %}">
+            <button type="button" class="btn btn-default font-bold py-1 px-4 rounded" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <input type="submit" class="btn btn-primary font-bold py-1 px-4 rounded" name="submit" value="{% trans "Submit" %}">
           </div>
         </form>
       </div><!-- /.modal-content -->
@@ -59,10 +59,10 @@
   <div class="page-header middle-header">
     <h1>{{ item.issue.full_name_with_link }}
     {% if item_after %}
-    <a href="{% url 'view_reading_order_item' item_id=item_after.id reading_order_id=reading_order.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-right"></span></button></a>
+    <a href="{% url 'view_reading_order_item' item_id=item_after.id reading_order_id=reading_order.id %}"><button type="button" class="btn btn-default pull-right font-bold py-1 px-4 rounded" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-right"></span></button></a>
     {% endif %}
     {% if item_before %}
-    <a href="{% url 'view_reading_order_item' item_id=item_before.id reading_order_id=reading_order.id %}"><button type="button" class="btn btn-default pull-right" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-left"></span></button></a>
+    <a href="{% url 'view_reading_order_item' item_id=item_before.id reading_order_id=reading_order.id %}"><button type="button" class="btn btn-default pull-right font-bold py-1 px-4 rounded" data-dismiss="modal"><span class="glyphicon glyphicon-chevron-left"></span></button></a>
     {% endif %}
     </h1>
     <h4>In: <a href="{% url 'view_reading_order' reading_order.id %}?page={{ page }}">{{ reading_order.name }}</a>
@@ -74,10 +74,10 @@
           <a href="{% url 'view_reading_order_item' item_id=other_reading_order.id reading_order_id=other_reading_order.reading_order.id %}">{{ other_reading_order.reading_order.name }}</a>
         {% endfor %}
       {% endif %}
-      <button type="button" class="btn btn-primary pull-right"
+      <button type="button" class="btn btn-primary pull-right font-bold py-1 px-4 rounded"
               data-toggle="modal" href="#edit-item">{% trans "Edit" %}
       </button>
-      <button type="button" class="btn btn-primary pull-right" onclick="remove_issue('{% url 'delete_reading_order_item' item.id reading_order.id %}');"
+      <button type="button" class="btn btn-primary pull-right font-bold py-1 px-4 rounded" onclick="remove_issue('{% url 'delete_reading_order_item' item.id reading_order.id %}');"
               id="remove-item" data-toggle="modal" data-issue="{{ item.issue.full_name }}" data-reading_order="{{ reading_order.name }}">{% trans "Delete from reading order" %}
       </button>
     {% else %} / {{ collection.collector.user.indexer }}

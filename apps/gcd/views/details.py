@@ -405,7 +405,10 @@ def creator_sequences(request, creator_id, series_id=None,
         'filter_form': filter.form
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
+    table = StoryTable(stories, attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col ' \
+        '[:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 ' \
+        'max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left ' \
+        'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                        template_name=TW_SORT_TABLE_TEMPLATE,
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
@@ -465,7 +468,14 @@ def creator_characters(request, creator_id, country=None):
     characters = filter.qs
     context['filter_form'] = filter.form
     table = CreatorCharacterTable(characters,
-                                  attrs={'class': 'sortable_listing'},
+                                  attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50' \
+                                      ' [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4' \
+                                      ' sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                      '[:where(&)_tr]:border-gray-200 ' \
+                                      'max-sm:[:where(&)_tr]:w-1/2 ' \
+                                      'max-sm:[:where(&)_tr]:float-left ' \
+                                      'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                      '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                   creator=creator,
                                   template_name=TW_SORT_TABLE_TEMPLATE,
                                   order_by=('name'))
@@ -590,7 +600,10 @@ def creator_features(request, creator_id, country=None, language=None):
                                language='language')
     features = filter.qs
     context['filter_form'] = filter.form
-    table = CreatorFeatureTable(features, attrs={'class': 'sortable_listing'},
+    table = CreatorFeatureTable(features, attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col ' \
+        '[:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 ' \
+        'max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left ' \
+        'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                 creator=creator,
                                 template_name=TW_SORT_TABLE_TEMPLATE,
                                 order_by=('name'))
@@ -624,7 +637,10 @@ def creator_overview(request, creator_id):
         'heading': 'overview for creator %s' % (creator)
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = CoverIssueStoryTable(issues, attrs={'class': 'sortable_listing'},
+    table = CoverIssueStoryTable(issues, attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col ' \
+        '[:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 ' \
+        'max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left ' \
+        'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                  template_name=TW_SORT_TABLE_TEMPLATE,
                                  order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context, 50)
@@ -1018,7 +1034,14 @@ def cover_checklist_by_id(request, creator_id, series_id=None,
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = CoverIssuePublisherTable(issues,
-                                     attrs={'class': 'sortable_listing'},
+                                     attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50' \
+                                         ' [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4' \
+                                         ' sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                         '[:where(&)_tr]:border-gray-200 ' \
+                                         'max-sm:[:where(&)_tr]:w-1/2 ' \
+                                         'max-sm:[:where(&)_tr]:float-left ' \
+                                         'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                         '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                      template_name=TW_SORT_TABLE_TEMPLATE,
                                      order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
@@ -2156,7 +2179,13 @@ def indicia_printer_issues(request, indicia_printer_id):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = IssuePublisherTable(issues,
-                                attrs={'class': 'sortable_listing'},
+                                attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                                    '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                                    'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                    '[:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2' \
+                                    ' max-sm:[:where(&)_tr]:float-left ' \
+                                    'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                    '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                 template_name=TW_SORT_TABLE_TEMPLATE,
                                 order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
@@ -2295,7 +2324,14 @@ def series_overview(request, series_id):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = CoverIssueStoryTable(issues,
-                                 attrs={'class': 'sortable_listing'},
+                                 attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                                     '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                                     'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                     '[:where(&)_tr]:border-gray-200 ' \
+                                     'max-sm:[:where(&)_tr]:w-1/2 ' \
+                                     'max-sm:[:where(&)_tr]:float-left ' \
+                                     'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                     '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                  template_name=TW_SORT_TABLE_TEMPLATE,
                                  order_by=('issues'))
     return generic_sortable_list(request, issues, table, template, context, 50)
@@ -2648,7 +2684,13 @@ def keywords(request, keyword=''):
     if not keyword:
         context['heading'] = ''
     table = KeywordsTable(keywords,
-                          attrs={'class': 'sortable_listing'},
+                          attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                              '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                              'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                              '[:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 ' \
+                              'max-sm:[:where(&)_tr]:float-left ' \
+                              'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                              '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                           template_name=TW_SORT_TABLE_TEMPLATE,
                           order_by=('keywords'))
     return generic_sortable_list(request, keywords, table, template, context)
@@ -2730,7 +2772,13 @@ def keyword(request, keyword, model_name=''):
                                    content_type=content_types)
         objs = filter.qs
         table = KeywordTable(objs,
-                             attrs={'class': 'sortable_listing'},
+                             attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                                 '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                                 'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                 '[:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 ' \
+                                 'max-sm:[:where(&)_tr]:float-left ' \
+                                 'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                 '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                              template_name=TW_SORT_TABLE_TEMPLATE,
                              order_by=('name'))
         object_type = 'object'
@@ -3340,10 +3388,16 @@ def on_sale_weekly(request, year=None, week=None, variant=True):
         switch_name = 'Show With Variants'
 
     switch_link = '<div class="flex"><div class="mt-1 flex-1"><a href="%s">' \
-                  '<button class="btn btn-blue">%s</button></a></div>' % (
+                  '<button class="btn btn-blue font-bold py-1 px-4 rounded ' \
+                      'bg-blue-500 text-white hover:bg-blue-700 ' \
+                      '[:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white ' \
+                      '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">%s</button></a></div>' % (
                     switch_url, switch_name)
     cross_link = '<div class="mt-1"><a href="%s">' \
-                 '<button class="btn btn-blue">Switch to Monthly</button>' \
+                 '<button class="btn btn-blue font-bold py-1 px-4 rounded ' \
+                     'bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white' \
+                     ' [:where(&)_a:where(:visited)]:text-white ' \
+                     '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">Switch to Monthly</button>' \
                  '</a></div></div>' % (
                    context['cross_link'])
     context['result_disclaimer'] = mark_safe(switch_link + cross_link)
@@ -3453,10 +3507,16 @@ def on_sale_monthly(request, year=None, month=None, variant=True):
         switch_name = 'Show With Variants'
 
     switch_link = '<div class="flex"><div class="mt-1 flex-1"><a href="%s">' \
-                  '<button class="btn btn-blue">%s</button></a></div>' % (
+                  '<button class="btn btn-blue font-bold py-1 px-4 rounded ' \
+                      'bg-blue-500 text-white hover:bg-blue-700 ' \
+                      '[:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white ' \
+                      '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">%s</button></a></div>' % (
                     switch_url, switch_name)
     cross_link = '<div class="mt-1"><a href="%s">' \
-                 '<button class="btn btn-blue">Switch to Weekly</button>' \
+                 '<button class="btn btn-blue font-bold py-1 px-4 rounded ' \
+                     'bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white' \
+                     ' [:where(&)_a:where(:visited)]:text-white ' \
+                     '[@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">Switch to Weekly</button>' \
                  '</a></div></div>' % (
                    context['cross_link'])
 
@@ -3732,7 +3792,13 @@ def feature_name_issues(request, feature_name_id, universe_id=None):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = IssueTable(issues,
-                       attrs={'class': 'sortable_listing'},
+                       attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                           '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                           'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                           '[:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 ' \
+                           'max-sm:[:where(&)_tr]:float-left ' \
+                           'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1' \
+                           ' [:where(&)_td]:pe-2'},
                        template_name=TW_SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
@@ -3770,7 +3836,14 @@ def feature_overview(request, feature_id):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = CoverIssueStoryTable(issues,
-                                 attrs={'class': 'sortable_listing'},
+                                 attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                                     '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                                     'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                     '[:where(&)_tr]:border-gray-200 ' \
+                                     'max-sm:[:where(&)_tr]:w-1/2 ' \
+                                     'max-sm:[:where(&)_tr]:float-left ' \
+                                     'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                     '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                  template_name=TW_SORT_TABLE_TEMPLATE,
                                  order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context, 50)
@@ -3800,7 +3873,14 @@ def feature_characters(request, feature_id):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = FeatureCharacterTable(characters,
-                                  attrs={'class': 'sortable_listing'},
+                                  attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50' \
+                                      ' [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4' \
+                                      ' sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                      '[:where(&)_tr]:border-gray-200 ' \
+                                      'max-sm:[:where(&)_tr]:w-1/2 ' \
+                                      'max-sm:[:where(&)_tr]:float-left ' \
+                                      'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                      '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                   feature=feature,
                                   template_name=TW_SORT_TABLE_TEMPLATE,
                                   order_by=('name'))
@@ -3879,7 +3959,14 @@ def feature_covers(request, feature_id):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = CoverIssuePublisherTable(issues,
-                                     attrs={'class': 'sortable_listing'},
+                                     attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50' \
+                                         ' [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4' \
+                                         ' sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                         '[:where(&)_tr]:border-gray-200 ' \
+                                         'max-sm:[:where(&)_tr]:w-1/2 ' \
+                                         'max-sm:[:where(&)_tr]:float-left ' \
+                                         'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                         '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                      template_name=TW_SORT_TABLE_TEMPLATE,
                                      order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
@@ -3923,7 +4010,13 @@ def feature_logo_sequences(request, feature_logo_id, country=None):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = StoryTable(stories,
-                       attrs={'class': 'sortable_listing'},
+                       attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                           '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                           'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                           '[:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 ' \
+                           'max-sm:[:where(&)_tr]:float-left ' \
+                           'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1' \
+                           ' [:where(&)_td]:pe-2'},
                        template_name=TW_SORT_TABLE_TEMPLATE,
                        order_by=('issue'))
     return generic_sortable_list(request, stories, table, template, context)
@@ -4800,7 +4893,13 @@ def character_sequences(request, character_id, universe_id=None):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = StoryTable(stories,
-                       attrs={'class': 'sortable_listing'},
+                       attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                           '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                           'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                           '[:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 ' \
+                           'max-sm:[:where(&)_tr]:float-left ' \
+                           'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1' \
+                           ' [:where(&)_td]:pe-2'},
                        template_name=TW_SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, stories, table, template, context)
@@ -4914,7 +5013,13 @@ def character_name_issues(request, character_name_id, universe_id=None):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = IssueTable(issues,
-                       attrs={'class': 'sortable_listing'},
+                       attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                           '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                           'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                           '[:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 ' \
+                           'max-sm:[:where(&)_tr]:float-left ' \
+                           'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1' \
+                           ' [:where(&)_td]:pe-2'},
                        template_name=TW_SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
@@ -5252,7 +5357,13 @@ def group_name_issues(request, group_name_id, universe_id=None):
     }
     template = 'gcd/search/tw_list_sortable.html'
     table = IssueTable(issues,
-                       attrs={'class': 'sortable_listing'},
+                       attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 ' \
+                           '[:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 ' \
+                           'sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                           '[:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 ' \
+                           'max-sm:[:where(&)_tr]:float-left ' \
+                           'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1' \
+                           ' [:where(&)_td]:pe-2'},
                        template_name=TW_SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, issues, table, template, context)
@@ -5439,7 +5550,14 @@ def group_creators(request, group_id, creator_names=False, universe_id=None):
     template = 'gcd/search/tw_list_sortable.html'
     if creator_names:
         table = GenericCreatorNameTable(creators,
-                                        attrs={'class': 'sortable_listing'},
+                                        attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50' \
+                                            ' [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4' \
+                                            ' sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                            '[:where(&)_tr]:border-gray-200 ' \
+                                            'max-sm:[:where(&)_tr]:w-1/2 ' \
+                                            'max-sm:[:where(&)_tr]:float-left ' \
+                                            'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                            '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                         object=group,
                                         resolve_name='group',
                                         template_name=TW_SORT_TABLE_TEMPLATE,
@@ -5447,7 +5565,14 @@ def group_creators(request, group_id, creator_names=False, universe_id=None):
                                         universe_id=link_universe_id)
     else:
         table = GenericCreatorTable(creators,
-                                    attrs={'class': 'sortable_listing'},
+                                    attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50' \
+                                        ' [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4' \
+                                        ' sm:[:where(&)_tr]:table-row [:where(&)_tr]:border ' \
+                                        '[:where(&)_tr]:border-gray-200 ' \
+                                        'max-sm:[:where(&)_tr]:w-1/2 ' \
+                                        'max-sm:[:where(&)_tr]:float-left ' \
+                                        'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left ' \
+                                        '[:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                                     object=group,
                                     resolve_name='group',
                                     template_name=TW_SORT_TABLE_TEMPLATE,
@@ -5487,7 +5612,10 @@ def group_sequences(request, group_id, country=None, universe_id=None):
         'heading': heading
     }
     template = 'gcd/search/tw_list_sortable.html'
-    table = StoryTable(stories, attrs={'class': 'sortable_listing'},
+    table = StoryTable(stories, attrs={'class': 'sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col ' \
+        '[:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 ' \
+        'max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left ' \
+        'max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2'},
                        template_name=TW_SORT_TABLE_TEMPLATE,
                        order_by=('publication_date'))
     return generic_sortable_list(request, stories, table, template, context)

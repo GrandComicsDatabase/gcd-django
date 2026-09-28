@@ -41,26 +41,32 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
         css_width = 150
         size = 'medium'
 
-    if css_width:
-        img_class += ' w-[%spx]' % css_width
-    else:
-        img_class += ' w-[%spx]' % width
+    # Keep complete utilities in the actual producer so Tailwind can discover
+    # every supported size without a separate class inventory.
+    width_classes = {
+        100: 'w-[100px]',
+        150: 'w-[150px]',
+        200: 'w-[200px]',
+        400: 'w-[400px]',
+    }
+    img_class += ' ' + width_classes[css_width or width]
 
     if zoom_level in [1.5, ZOOM_MEDIUM]:
         img_class += ' min-w-[100px] sm:min-w-[150px]'
 
-    no_cover_url = '<img class="border-2" src="' + settings.STATIC_URL
+    no_cover_url = '<img src="' + settings.STATIC_URL
+    placeholder_class = 'border-2 ' + img_class
     if cover is None:
         if not can_have_cover:
             return mark_safe(no_cover_url + 'img/noupload_' + size + '.png" '
-                             + 'alt="No image"' + 'class="' + img_class + '">')
+                             + 'alt="No image" class="' + placeholder_class + '">')
         return mark_safe(no_cover_url + 'img/nocover_' + size + '.png" '
-                         + 'alt="No image yet"' + 'class="' + img_class + '">')
+                         + 'alt="No image yet" class="' + placeholder_class + '">')
 
     if cover.limit_display and zoom_level != ZOOM_SMALL:
         # TODO: Make 'cannot display due to...' image and use here
         return mark_safe(no_cover_url + 'img/nocover_' + size + '.png" '
-                         + 'alt="No image yet"' + 'class="' + img_class + '">')
+                         + 'alt="No image yet" class="' + placeholder_class + '">')
 
     if title:
         add_info = ' title="%s" alt="%s" ' % (esc(title), esc(alt_text))

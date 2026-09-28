@@ -11,7 +11,7 @@
       {% endif %}
     {% endfor %}
 </ul>
-<p>The compare of the following issue record for the <span class="added_highlight">new variant</span> is against the <span class="comparison_highlight">current issue data of the base issue</span>.</p>
+<p>The compare of the following issue record for the <span class="added_highlight">new variant</span> is against the <span class="comparison_highlight bg-yellow-400 p-1">current issue data of the base issue</span>.</p>
     {% if revision.variant_of.active_variants %}
    <p>Existing variants are</p>
       <ul>
@@ -21,5 +21,5 @@
       </ul>
     {% endif %}
   {% endif %}
-This is a <span class="comparison_highlight">variant of {{ revision.variant_of|absolute_url }}</span>.
+This is a <span class="comparison_highlight bg-yellow-400 p-1">variant of {{ revision.variant_of|absolute_url }}</span>.
 </p>

@@ -9,6 +9,6 @@ To send an e-mail to us, please enter your name, email, and message and press su
 <table>
 {{ form.as_table }}
 </table>
-<button class="btn btn-blue"> <input type="submit" value="Submit"></button>
+<button class="btn btn-blue font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline"> <input type="submit" value="Submit"></button>
 </form>
 {% endblock %}

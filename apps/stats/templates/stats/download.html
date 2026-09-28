@@ -15,14 +15,14 @@ license.  Private data use is not restricted.
 </p>
 <p>
 For details, please read the following Board Resolutions:
-<ul class="object-page-link-list ps-8 columns-1">
+<ul class="object-page-link-list ps-8 columns-1 list-disc list-outside [:where(&)_li]:pr-2">
   <li> <a href="http://docs.comics.org/wiki/GCD_Board_Votes_-_2009#Data_License_and_proper_credit_in_derived_works">Data License (Creative Commons 3.0 Unported) and crediting guidelines</a>
   <li> <a href="http://docs.comics.org/wiki/GCD_Board_Votes_-_2010#Data_Distribution_Policy">Data distribution policy</a>
   <li> <a href="https://www.comics.org/voting/ballot/316/">Upgrade Data License to CC BY-SA 4.0</a>
 </ul>
 
 <h2>Technical and Licensing Contact Information</h2>
-<dl class="object-page-link-list columns-1">
+<dl class="object-page-link-list columns-1 list-disc list-outside ps-4 [:where(&)_li]:pr-2">
   <dt> <a href="mailto:contact@comics.org">contact@comics.org</a>
   <dd class="ps-8"> All questions about licensing and the crediting guidelines, including
        requests for alternate arrangements.
@@ -65,7 +65,7 @@ If you are interested in automating a different dump format, please join
 <p>
 Data last updated:
 </p>
-<ul class="object-page-link-list ps-8 columns-1">
+<ul class="object-page-link-list ps-8 columns-1 list-disc list-outside [:where(&)_li]:pr-2">
 {% for name, timestamp in timestamps %}
   <li> {{ name }}: <span class="important">{{ timestamp }}</span>
 {% endfor %}
@@ -95,9 +95,9 @@ Data last updated:
     </label>
   </p>
 </div>
-  <button><input class="btn-blue-editing" type="submit" name="mysqldump" value="Download MySQL Dump"></button>
-  <button><input class="btn-blue-editing" type="submit" name="name-value" value="Download Name-Value Dump"></button>
-  <button><input class="btn-blue-editing" type="submit" name="sqlite" value="Download SQLite Dump"></button>
+  <button><input class="btn-blue-editing font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center" type="submit" name="mysqldump" value="Download MySQL Dump"></button>
+  <button><input class="btn-blue-editing font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center" type="submit" name="name-value" value="Download Name-Value Dump"></button>
+  <button><input class="btn-blue-editing font-normal block me-1 mt-1 mb-1 max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center py-1 px-2 rounded cursor-pointer hover:no-underline hover:bg-stone-400 [:where(&)_a]:text-black [:where(&)_a]:block [:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline [:where(&)_a]:text-center" type="submit" name="sqlite" value="Download SQLite Dump"></button>
 </form>
 {% endblock %}
 

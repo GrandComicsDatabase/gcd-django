@@ -3,12 +3,12 @@
 {% block view_body %}
 {% include "indexer/login_form.html" %}
 <div class="mt-2">
-  <btn class="btn btn-blue">
+  <btn class="btn btn-blue font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">
     <a href="{% url "forgot_password" %}">Forgot Password?</a>
   </btn>
 </div>
 <div class="mt-2">
-  <btn class="btn btn-blue">
+  <btn class="btn btn-blue font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">
     <a href="{% url "register" %}">Sign Up for a New Account</a>
   </btn>
 </div>

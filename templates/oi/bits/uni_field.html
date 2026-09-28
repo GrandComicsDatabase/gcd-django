@@ -6,7 +6,7 @@
 {% else %}
 {% comment %}        {% if form_show_errors %}
             {% for error in field.errors %}
-                <p id="error_{{ forloop.counter }}_{{ field.auto_id }}" class="errorlist">
+                <p id="error_{{ forloop.counter }}_{{ field.auto_id }}" class="errorlist text-red-400 font-bold">
                     {{ error }}
                 </p>
             {% endfor %}

@@ -35,8 +35,8 @@
           <p>{% trans "Do you want to remove this collection?" %}</p>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
-          <button type="button" class="btn btn-primary" onclick="window.location.href='{% url "delete_collection" %}'+selected_collection">{% trans "Confirm" %}</button>
+          <button type="button" class="btn btn-default font-bold py-1 px-4 rounded" data-dismiss="modal">{% trans "Cancel" %}</button>
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded" onclick="window.location.href='{% url "delete_collection" %}'+selected_collection">{% trans "Confirm" %}</button>
         </div>
       </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
@@ -74,9 +74,9 @@
             {% endblocktrans %}
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "Cancel" %}</button>
-            <input type="submit" class="btn btn-primary" name="import_my_issues_base_only" value="{% trans "Import No Variants" %}">
-	    <input type="submit" class="btn btn-primary" name="import_my_issues" value="{% trans "Import" %}">
+            <button type="button" class="btn btn-default font-bold py-1 px-4 rounded" data-dismiss="modal">{% trans "Cancel" %}</button>
+            <input type="submit" class="btn btn-primary font-bold py-1 px-4 rounded" name="import_my_issues_base_only" value="{% trans "Import No Variants" %}">
+	    <input type="submit" class="btn btn-primary font-bold py-1 px-4 rounded" name="import_my_issues" value="{% trans "Import" %}">
           </div>
         </form>
       </div><!-- /.modal-content -->
@@ -88,11 +88,11 @@
   {% bootstrap_messages %}
   <div class="page-header middle-header">
     <h1>{% trans "Collections List" %}
-      <button type="button" class="btn btn-primary pull-right"
+      <button type="button" class="btn btn-primary pull-right font-bold py-1 px-4 rounded"
               data-toggle="modal" href="#import-items">{% trans "Import" %}
       </button>
       <a href="{% url "add_collection" %}">
-        <button type="button" class="btn btn-primary pull-right">{% trans "Add New" %}
+        <button type="button" class="btn btn-primary pull-right font-bold py-1 px-4 rounded">{% trans "Add New" %}
       </button></a>
     </h1>
   </div>

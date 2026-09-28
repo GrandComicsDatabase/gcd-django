@@ -20,7 +20,7 @@
   <div class="flex justify-end"> <!-- editing -->
     <div class="mt-1">
   {% if not MYCOMICS %}
-      <div class="max-md:hidden flex label-gcd-blue">Editing</div>
+      <div class="max-md:hidden flex label-gcd-blue bg-stone-600 text-white rounded px-2 py-1 font-bold">Editing</div>
   {% endif %}
       <div class="md:hidden h-8">
         <button class="mobile-editing-menu-button {% if MYCOMICS %} bg-my-comics {% else %} bg-gcd {% endif %} rounded w-9 py-0.5 ps-1 right-1 {{ absolute }}">
@@ -37,14 +37,14 @@
     {% if not preview or preview and object.source or preview and object.revision.source %}
       {% if preview %}
         {% if object.source %}
-        <a class="link-with-text-color" href="{% url 'change_history' model_name=model_name id=object.source.id %}">
+        <a class="link-with-text-color text-black visited:text-black" href="{% url 'change_history' model_name=model_name id=object.source.id %}">
         {% elif object.revision.source %}
-        <a class="link-with-text-color" href="{% url 'change_history' model_name=model_name id=object.id %}">
+        <a class="link-with-text-color text-black visited:text-black" href="{% url 'change_history' model_name=model_name id=object.id %}">
         {% endif %}
       {% else %}
-        <a class="link-with-text-color " href="{% url 'change_history' model_name=model_name id=object.id %}">
+        <a class="link-with-text-color text-black visited:text-black" href="{% url 'change_history' model_name=model_name id=object.id %}">
       {% endif %}
-          <btn class="btn btn-blue mt-1 block text-center font-bold px-2 py-1 text-base mx-0">
+          <btn class="btn btn-blue mt-1 block text-center font-bold px-2 py-1 text-base mx-0 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">
             View Change History
           </btn>
         </a>

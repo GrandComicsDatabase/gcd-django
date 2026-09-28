@@ -43,7 +43,7 @@ GCD :: Universe :: {{ universe.name }}
 
 {% block content %}
 <hr>
-<ul class="object-page-link-list">
+<ul class="object-page-link-list list-disc sm:columns-2 list-outside ps-4 [:where(&)_li]:pr-2">
   <li><a href='{% url "universe_characters" universe_id=universe.id %}'>Characters from this universe</a></li>
   <li><a href='{% url "universe_groups" universe_id=universe.id %}'>Groups from this universe</a></li>
   <li><a href='{% url "universe_issues" universe_id=universe.id %}'>Issues in this universe</a></li>

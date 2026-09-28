@@ -6,7 +6,7 @@
   <li>Ongoing series can be <a href="{% url "subscriptions_collection" request.user.collector.default_have_collection.id|default:1 %}">subscribed</a> to a collection. You can pull issues added to the database since the last time you did such a pull.</li>
   <li>You can add a comic several times to a collection, e.g. if you have several copies, or if you want a second copy.</li>
   <li>A collection has several settings which control what additional information can be stored about a comic in that collection. You can store the following information
-  <ul class="object-page-link-list">
+  <ul class="object-page-link-list list-disc sm:columns-2 list-outside ps-4 [:where(&)_li]:pr-2">
     <li>condition, where several grade systems are available</li>
     <li>date of acquistion or sale</li>
     <li>is owned vs. is wanted</li>

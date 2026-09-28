@@ -55,7 +55,7 @@ def header_link(changeset):
     elif changeset.change_type == CTYPES['series']:
         if revision.previous() and (revision.previous().publisher !=
                                     revision.publisher):
-            publisher_string = '<span class="comparison_highlight">%s</span>'\
+            publisher_string = '<span class="comparison_highlight bg-yellow-400 p-1">%s</span>'\
               % absolute_url(revision.publisher)
         else:
             publisher_string = absolute_url(revision.publisher)

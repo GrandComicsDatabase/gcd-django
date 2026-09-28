@@ -25,7 +25,7 @@ GCD :: Multiverse :: {{ multiverse.name }}
       <th> First Published </th>
     </tr>
   </thead>
-  <tbody class="sortable_listing">
+  <tbody class="sortable_listing [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2">
   {% for universe in multiverse.active_universes %}
     <tr>
       <td> <a href ="{{ universe.get_absolute_url }}">{{ universe.name }}</a> </td>

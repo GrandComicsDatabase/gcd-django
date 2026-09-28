@@ -14,7 +14,7 @@
   <div class="flex flex-wrap">
   {% for issue in series.active_issues %}
     <div class="border {{ issue|collection_status:request.user }} {{ issue_status_width }} text-center ms-[1px] mt-[1px] hover:bg-blue-400">
-      <a class="block hover:no-underline link-with-text-color font-bold" href="{{ issue.get_absolute_url }}">{{ issue.full_descriptor }}</a> </td>
+      <a class="block hover:no-underline link-with-text-color font-bold text-black visited:text-black" href="{{ issue.get_absolute_url }}">{{ issue.full_descriptor }}</a> </td>
     </div>
   {% endfor %}
   </div>

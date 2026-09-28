@@ -269,7 +269,7 @@ def show_credit_description_list(story, credit):
             raise
         else:
             return ''
-    return mark_safe('<dt class="field-name-label">' + label +
+    return mark_safe('<dt class="field-name-label font-bold pe-1 align-top">' + label +
                      ':</dt><dd>' + value + '</dd>')
 
 
@@ -343,7 +343,7 @@ def __format_credit(story, credit, computed_value='', tailwind=False,
     else:  # This takes care of escaping the database entries we display
         credit_value = esc(credit_value)
     if tailwind:
-        return mark_safe('<span class="field-name-label">' + label +
+        return mark_safe('<span class="field-name-label font-bold pe-1 align-top">' + label +
                          ':</span>' + credit_value)
     elif bare_value:
         return label, credit_value
@@ -911,7 +911,8 @@ def show_reprints_for_issue(issue):
         label = _('Parts of this issue are reprinted') + ': '
 
         return mark_safe(label + '<ul class="object-page-link-list columns-1'
-                         ' [&_ul]:columns-1 [&_ul]:object-page-link-list">'
+                         ' [&_ul]:columns-1 [&_ul]:list-disc [&_ul]:list-outside'
+                         ' [&_ul]:ps-4 list-disc list-outside ps-4 [:where(&)_li]:pr-2">'
                          + reprint + '</ul>')
     else:
         return ""

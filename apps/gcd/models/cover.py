@@ -108,7 +108,7 @@ def calculate_row_class(**kwargs):
     row_attrs = 'w-[154px] md:w-[204px] shadow-md p-[2px] flex flex-col'
     record = kwargs.get("record", None)
     if record and record.marked:
-        row_attrs += ' cover-is-marked'
+        row_attrs += ' cover-is-marked bg-stone-300'
 
     return row_attrs
 
@@ -171,7 +171,12 @@ class CoverIssuePublisherEditTable(IssuePublisherTable):
     def render_edit_cover(self, value):
         link = urlresolvers.reverse("edit_covers",
                                     kwargs={'issue_id': value.id})
-        return mark_safe('<btn class="btn-blue-editing">'
+        return mark_safe('<btn class="btn-blue-editing font-normal block me-1 mt-1 mb-1 ' \
+            'max-sm:m-1 sm:mx-1 bg-stone-200 text-black text-sm text-center ' \
+            'py-1 px-2 rounded cursor-pointer hover:no-underline ' \
+            'hover:bg-stone-400 [:where(&)_a]:text-black [:where(&)_a]:block ' \
+            '[:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline ' \
+            '[:where(&)_a]:text-center">'
                          '<a href="%s">%s</a></btn>' % (link,
                                                         'Add / Replace Cover'))
 

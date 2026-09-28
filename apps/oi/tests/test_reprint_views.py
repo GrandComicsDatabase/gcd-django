@@ -202,8 +202,11 @@ def test_select_object_disables_cached_objects_from_current_issue(
     assert len(parser.buttons) == 3
     for counter, button in enumerate(parser.buttons, start=1):
         help_id = 'disabled-choice-%d' % counter
-        assert set(button['class'].split()) == {
-            'btn-blue-disabled', 'inline', 'py-1', 'px-2'}
+        classes = set(button['class'].split())
+        assert {'btn-blue-disabled', 'inline', 'py-1', 'px-2',
+                'bg-stone-100', 'text-gray-500'} <= classes
+        assert 'cursor-pointer' not in classes
+        assert 'bg-stone-200' not in classes
         assert button['type'] == 'submit'
         assert 'disabled' in button
         assert button['aria-describedby'] == help_id

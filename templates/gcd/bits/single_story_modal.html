@@ -9,7 +9,7 @@
     <div class="flex flex-wrap justify-between">
     <div class="flex-l" style="max-width:200px;">
       <a href="{{ story.issue.get_absolute_url }}">{{ image_tag }}</a>
-      <button _="on click trigger closeModal" class="btn btn-blue mt-1">Close</button>
+      <button _="on click trigger closeModal" class="btn btn-blue mt-1 font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">Close</button>
     </div>
     <div class="justify-end" style="max-width:550px;">
 {% endif %}
@@ -20,7 +20,7 @@
     </div>
   </div>
 {% else %}
-    <button _="on click trigger closeModal" class="btn btn-blue">Close</button>
+    <button _="on click trigger closeModal" class="btn btn-blue font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">Close</button>
 {% endif %}
   </div>
 </div>

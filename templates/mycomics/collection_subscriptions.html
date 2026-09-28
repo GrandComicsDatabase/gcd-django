@@ -55,7 +55,7 @@
     {% if request.user.collector == collection.collector %}
       <div class="btn-group pull-right">
         <a href="{% url "subscribed_into_collection" collection.id %}">
-          <button type="button" class="btn btn-primary">{% trans "Pull" %}
+          <button type="button" class="btn btn-primary font-bold py-1 px-4 rounded">{% trans "Pull" %}
         </button></a>
       </div>
     {% endif %}

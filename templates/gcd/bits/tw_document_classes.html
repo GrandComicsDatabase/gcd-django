@@ -1,0 +1,29 @@
+{% comment %}
+Document defaults expressed as Tailwind utilities. :where() keeps defaults
+below local utility classes without introducing custom CSS rules.
+The errorlist and markdownx-preview hooks are emitted by third-party widgets.
+{% endcomment %}
+bg-white text-[14px] sm:text-[15px]
+[:where(&,&_*)]:border-gray-200
+[:where(&,&_*)::before]:border-gray-200
+[:where(&,&_*)::after]:border-gray-200
+[:where(&,&_*)::backdrop]:border-gray-200
+[:where(&_input)::file-selector-button]:border-gray-200
+[:where(&_input)::placeholder]:text-gray-400
+[:where(&_textarea)::placeholder]:text-gray-400
+[:where(&)_input:where([type=checkbox],[type=radio])]:border-gray-500
+[:where(&_button:not(:disabled))]:cursor-pointer
+[:where(&_[role=button]:not(:disabled))]:cursor-pointer
+[:where(&_dialog)]:m-auto
+[:where(&_h1)]:text-2xl [:where(&_h1)]:font-bold
+[:where(&_h2)]:text-xl [:where(&_h2)]:font-bold
+[:where(&_h3)]:text-lg [:where(&_h3)]:font-bold
+[:where(&_a)]:text-link-gcd
+[:where(&_a:visited)]:text-visited-gcd
+[:where(&_a:hover)]:underline
+[:where(&_.errorlist)]:text-red-400 [:where(&_.errorlist)]:font-bold
+[:where(&_.markdownx-preview)]:bg-stone-200
+[:where(&_.markdownx-preview)]:w-full lg:[:where(&_.markdownx-preview)]:w-4/5
+[:where(&)_:is([type=text],[type=email],[type=url],[type=password],[type=number],[type=date],[type=datetime-local],[type=month],[type=search],[type=tel],[type=time],[type=week],[multiple],textarea,select)]:py-[0.2em]
+[:where(&)_:is([type=text],[type=email],[type=url],[type=password],[type=number],[type=date],[type=datetime-local],[type=month],[type=search],[type=tel],[type=time],[type=week],[multiple],textarea,select)]:ps-[0.5rem]
+[:where(&)_:is([type=text],[type=email],[type=url],[type=password],[type=number],[type=date],[type=datetime-local],[type=month],[type=search],[type=tel],[type=time],[type=week],[multiple],textarea,select)]:border-gray-500

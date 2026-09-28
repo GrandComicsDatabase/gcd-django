@@ -21,14 +21,14 @@
 <nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
   {% for section in data %}
     {% if section.count %}
-    <a class="font-bold px-1 link-with-text-color hover:bg-blue-400 hover:no-underline"
+    <a class="font-bold px-1 link-with-text-color hover:bg-blue-400 hover:no-underline text-black visited:text-black"
        href="#{{ section.object_name }}">
       {{ section.object_name }} ({{ section.count }})
     </a>
     {% endif %}
   {% endfor %}
   {% if all_images %}
-  <a class="font-bold px-1 link-with-text-color hover:bg-blue-400 hover:no-underline" href="#Images">Images</a>
+  <a class="font-bold px-1 link-with-text-color hover:bg-blue-400 hover:no-underline text-black visited:text-black" href="#Images">Images</a>
   {% endif %}
 </nav>
 {% endblock %}
@@ -42,8 +42,8 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
   {% endif %}
 
   {% if creators %}
-<table class="sortable_listing mb-2">
-  <tr class="sortable_heading">
+<table class="sortable_listing mb-2 [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2">
+  <tr class="sortable_heading bg-blue-100 md:top-0 [:where(&)_tr]:align-top [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row">
     <th> Creator ({{ creators.count }}) </th>
     <th> Change History </th>
   </tr>
@@ -66,8 +66,8 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 
   {% if brand_groups %}
 <a id="{{ brand_groups.object_name }}"></a>
-<table class="sortable_listing mb-2">
-  <tr class="sortable_heading">
+<table class="sortable_listing mb-2 [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2">
+  <tr class="sortable_heading bg-blue-100 md:top-0 [:where(&)_tr]:align-top [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row">
     <th> Brand Group  ({{ brand_groups.count }}) </th>
     <th colspan="2"> Parent </th>
     <th> #&nbsp;Issues </th>
@@ -93,8 +93,8 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 
   {% if brands %}
 <a id="{{ brands.object_name }}"></a>
-<table class="sortable_listing mb-2">
-  <tr class="sortable_heading">
+<table class="sortable_listing mb-2 [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2">
+  <tr class="sortable_heading bg-blue-100 md:top-0 [:where(&)_tr]:align-top [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row">
     <th> Brand  ({{ brands.count }}) </th>
     <th> Group </th>
     <th> #&nbsp;Issues </th>
@@ -124,8 +124,8 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 
   {% if indicia_publishers %}
 <a id="{{ indicia_publishers.object_name }}"></a>
-<table class="sortable_listing mb-2">
-  <tr class="sortable_heading">
+<table class="sortable_listing mb-2 [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2">
+  <tr class="sortable_heading bg-blue-100 md:top-0 [:where(&)_tr]:align-top [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row">
     <th> Indicia Publisher  ({{ indicia_publishers.count }}) </th>
     <th colspan="2"> Parent </th>
     <th> #&nbsp;Issues </th>
@@ -159,8 +159,8 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 
   {% if series_bonds %}
 <a id="{{ series_bonds.object_name }}"></a>
-<table class="sortable_listing mb-2">
-  <tr class="sortable_heading">
+<table class="sortable_listing mb-2 [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2">
+  <tr class="sortable_heading bg-blue-100 md:top-0 [:where(&)_tr]:align-top [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row">
     <th> Numbering From </th>
     <th> Continues In </th>
     <th> Change History </th>
@@ -203,8 +203,8 @@ Switch to <a href="{{ other_url }}">{% if 'my' in choose_url_before %} all chang
 
   {% if all_images %}
 <a id="Images"></a>
-<table class="sortable_listing mb-2">
-  <tr class="sortable_heading">
+<table class="sortable_listing mb-2 [@media(hover:hover)]:[:where(&)_tr:where(:hover)]:bg-blue-50 [:where(&)_tr]:flex [:where(&)_tr]:flex-col [:where(&)_tr]:mb-4 sm:[:where(&)_tr]:table-row [:where(&)_tr]:border [:where(&)_tr]:border-gray-200 max-sm:[:where(&)_tr]:w-1/2 max-sm:[:where(&)_tr]:float-left max-sm:[:where(&)_tr:where(:nth-child(odd))]:clear-left [:where(&)_td]:ps-1 [:where(&)_td]:pe-2">
+  <tr class="sortable_heading bg-blue-100 md:top-0 [:where(&)_tr]:align-top [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row">
     <th> Image </th>
     <th> Change History </th>
   </tr>

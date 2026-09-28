@@ -455,7 +455,7 @@ def changed_story_list(changeset):
                           (story_revision.sequence_number,
                            ", ".join(story_changed_list))
         if output != '':
-            output = '<ul class="object-page-link-list">%s</ul>' % output
+            output = '<ul class="object-page-link-list list-disc sm:columns-2 list-outside ps-4 [:where(&)_li]:pr-2">%s</ul>' % output
     return mark_safe(output)
 
 

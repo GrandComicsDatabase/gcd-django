@@ -48,15 +48,23 @@ installing Node.js on the host:
 ./bin/dev css
 ```
 
-Use `./bin/dev css-watch` while editing templates or `static/css/input.css`.
+Use `./bin/dev css-watch` while editing templates, Python HTML producers,
+JavaScript, or `static/css/input.css`.
 The `tailwindcss` executable is installed inside the `web` image. Only the
 source checkout and generated `static/css/output.css` pass through the bind
 mount. Docker-free environments can install the same standalone Tailwind
 version and use the command shown in `bin/dev`.
 
-Tailwind scans the Django templates explicitly. Classes that Python assembles
-at runtime are listed in `templates/gcd/tailwind_generated_classes.html`, so
-the CSS build does not need to parse Python source files.
+Tailwind discovers complete utility names directly in Django templates, Python
+HTML producers, and JavaScript. This is plain-text scanning: Python is neither
+parsed nor executed during the CSS build. The forum app, tests, and migrations
+are excluded. There is no manual class inventory to synchronize.
+
+Always select between complete class names (for example, `w-[100px]` and
+`w-[200px]`); do not construct a utility by interpolating part of its name.
+Styling lives in markup as Tailwind utilities, including shared document
+defaults in `templates/gcd/bits/tw_document_classes.html`. The CSS entry point
+contains only Tailwind imports, source configuration, and theme tokens.
 
 ## Branches
 

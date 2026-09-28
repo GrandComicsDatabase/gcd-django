@@ -1,9 +1,9 @@
 {% load display %}
 
 {% if revision.issue and revision.issue.has_covers %}
-<a class="new_window" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>
+<a class="new_window bg-[size:12px] bg-right pr-4" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>
   {% if revision.deleted %}
-<span class="comparison_highlight">Note that the cover will be deleted on approval and might need to be saved before that.</span>
+<span class="comparison_highlight bg-yellow-400 p-1">Note that the cover will be deleted on approval and might need to be saved before that.</span>
   {% endif %}
 {% endif %}
 {% if user == revision.changeset.indexer %}
@@ -12,9 +12,9 @@
   {% endif %}
 {% endif %}
 {% if revision.previous and revision.series != revision.previous.series %}
-<h2> Issue moved from <span class="comparison_highlight">{{ revision.previous.series.full_name }}</span> to <span class="comparison_highlight"><a href="{{ revision.series.get_absolute_url }}">{{ revision.series.full_name }}</a></span> </h2>
+<h2> Issue moved from <span class="comparison_highlight bg-yellow-400 p-1">{{ revision.previous.series.full_name }}</span> to <span class="comparison_highlight bg-yellow-400 p-1"><a href="{{ revision.series.get_absolute_url }}">{{ revision.series.full_name }}</a></span> </h2>
   {% if revision.changeset.state == states.REVIEWING %}
-After approval the <span class="comparison_highlight">approver needs to check the sort order</span> of the series this issue is moved to.
+After approval the <span class="comparison_highlight bg-yellow-400 p-1">approver needs to check the sort order</span> of the series this issue is moved to.
   {% endif %}
 {% endif %}
 <p>

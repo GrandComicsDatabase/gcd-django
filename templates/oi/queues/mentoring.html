@@ -24,12 +24,12 @@ GCD :: Mentoring New Indexers
       <td>
         <form class="my-1" method="POST" action="{% url "mentor_not_new" user_id=indexer.id %}">
           {% csrf_token %}
-          <btn class="block btn btn-blue"><input type="submit" name="mentor_not_new"
+          <btn class="block btn btn-blue font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline"><input type="submit" name="mentor_not_new"
                 value="Understands Indexing - Release as Full Indexer"></input></btn>
         </form>
         <form class="mb-1" action="{% url "unmentor" user_id=indexer.id %}" method="POST">
           {% csrf_token %}
-          <btn class="block btn btn-blue"><input type="submit" value="Indexer Inactive - Return to Unmentored Status"></btn>
+          <btn class="block btn btn-blue font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline"><input type="submit" value="Indexer Inactive - Return to Unmentored Status"></btn>
         </form>
       </td>
     </tr>

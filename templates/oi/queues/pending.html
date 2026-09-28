@@ -10,7 +10,7 @@ GCD :: Changes Pending Review
 <nav class="flex items-center justify-between flex-wrap bg-blue-100 px-1 lg:px-2">
   {% for section in data %}
     {% if section.changesets.count %}
-    <a class="font-bold px-1 link-with-text-color hover:bg-blue-400 hover:no-underline" href="#{{ section.object_name }}">
+    <a class="font-bold px-1 link-with-text-color hover:bg-blue-400 hover:no-underline text-black visited:text-black" href="#{{ section.object_name }}">
       {{ section.object_name }} ({{ section.changesets.count }})
     </a>
     {% endif %}

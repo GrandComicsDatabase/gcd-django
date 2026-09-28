@@ -2,7 +2,7 @@
 {% load static %}
 {{ form.management_form|crispy }}
 
-                <td colspan="2"><table class="editing">
+                <td colspan="2"><table class="editing [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row [:where(&)_th]:text-left sm:[:where(&)_th]:text-right [:where(&)_th]:font-normal [:where(&)_th]:pe-2 [:where(&)_th]:align-top sm:[:where(&)_th]:w-44">
                 {{ form.non_field_errors }} 
                 {% for field in form.visible_fields %}
                     {# Include the hidden fields in the form #}

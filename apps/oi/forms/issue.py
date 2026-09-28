@@ -112,10 +112,15 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             position = self.helper['editing'].slice[0].positions[0]
             if revision and revision.old_credits():
                 disabled = ''
-                css_class = 'class="m-0 btn-blue-editing inline"'
+                css_class = 'class="m-0 btn-blue-editing inline font-normal ' \
+                    'bg-stone-200 text-black text-sm text-center py-1 px-2 ' \
+                    'rounded cursor-pointer hover:no-underline ' \
+                    'hover:bg-stone-400 [:where(&)_a]:text-black [:where(&)_a]:block ' \
+                    '[:where(&)_a:where(:visited)]:text-black [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline ' \
+                    '[:where(&)_a]:text-center"'
             else:
                 disabled = 'disabled'
-                css_class = 'class="btn-blue-disabled m-0 py-1 px-2 inline"'
+                css_class = 'class="btn-blue-disabled m-0 py-1 px-2 inline font-normal bg-stone-100 text-gray-500 text-sm text-center rounded"'
             self.helper.layout[position].append(
               HTML('<th></th><td><input type="submit" name="save_migrate"'
                    ' value="Save And Migrate Editing" %s %s/></td>' % (

@@ -424,12 +424,12 @@ def diff_list(prev_rev, revision, field):
                 if di[1].find('/">') >= 0 and di[0] != 0:
                     pos = di[1].find('/">') + len('/">')
                     if di[0] == 1:
-                        di = (2, di[1][:pos] + "<span class='added'>"
+                        di = (2, di[1][:pos] + "<span class='added bg-green-400'>"
                               + di[1][pos:])
                         splitted_link = False
                         splitted_signature_link = False
                     else:
-                        di = (-2, di[1][:pos] + "<span class='deleted'>"
+                        di = (-2, di[1][:pos] + "<span class='deleted bg-red-400'>"
                               + di[1][pos:])
                 elif di[1].find('/">') >= 0 and di[0] == 0:
                     splitted_link = False
@@ -484,7 +484,7 @@ def show_diff(diff_list, change):
             if op == 0:
                 compare_string += esc(data)
             elif op == -1:
-                compare_string += span_tag % ("deleted", esc(data))
+                compare_string += span_tag % ("deleted bg-red-400", esc(data))
             elif op == -2:
                 compare_string += esc(data) + '</span>'
             elif op == -3:
@@ -494,7 +494,7 @@ def show_diff(diff_list, change):
             if op == 0:
                 compare_string += esc(data)
             elif op == 1:
-                compare_string += span_tag % ("added", esc(data))
+                compare_string += span_tag % ("added bg-green-400", esc(data))
             elif op == 2:
                 compare_string += esc(data) + '</span>'
             elif op == 3:
@@ -522,7 +522,7 @@ def show_diff_markdown(diff_list, change):
                 plain_parts.append(data)
             elif op == -1:
                 highlighted_parts.append(
-                    "<span class='deleted'>%s</span>" % esc(data))
+                    "<span class='deleted bg-red-400'>%s</span>" % esc(data))
                 plain_parts.append(data)
             elif op in (-2, -3):
                 highlighted_parts.append(esc(data))
@@ -534,7 +534,7 @@ def show_diff_markdown(diff_list, change):
                 plain_parts.append(data)
             elif op == 1:
                 highlighted_parts.append(
-                    "<span class='added'>%s</span>" % esc(data))
+                    "<span class='added bg-green-400'>%s</span>" % esc(data))
                 plain_parts.append(data)
             elif op in (2, 3):
                 highlighted_parts.append(esc(data))
@@ -632,9 +632,9 @@ def compare_current_reprints(object_type, changeset):
             else:
                 do_compare = True
                 if reprint.previous_revision is None:
-                    action = " <span class='added'>[ADDED]</span>"
+                    action = " <span class='added bg-green-400'>[ADDED]</span>"
                 elif reprint.deleted:
-                    action = " <span class='deleted'>[DELETED]</span>"
+                    action = " <span class='deleted bg-red-400'>[DELETED]</span>"
                 else:
                     action = ""
             reprint_string = '%s<li>%s%s</li>' % (

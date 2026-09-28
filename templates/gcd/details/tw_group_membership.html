@@ -32,7 +32,7 @@
             {{ group_membership.notes|urlizetrunc:75|linebreaksbr }}</li>
   {% endif %}
           </ul>
-          <ul class="object-page-link-list">
+          <ul class="object-page-link-list list-disc sm:columns-2 list-outside ps-4 [:where(&)_li]:pr-2">
             <li><a href="{% url 'character_issues_group' character_id=group_membership.character.id group_id=group_membership.group.id %}">Issue List</a></li>
           </ul>
         </div>
