@@ -8,7 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Value, IntegerField, F
 import django.urls as urlresolvers
-from django.http import HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseBadRequest, HttpResponseRedirect, \
+                        JsonResponse
 from django.conf import settings
 from django.shortcuts import render
 from django.utils.datastructures import MultiValueDictKeyError
@@ -31,7 +32,6 @@ from apps.gcd.models import Publisher, Series, Issue, Story, StoryType, \
                             STORY_TYPES, DEPRECATED_TYPES, CORE_TYPES
 from apps.stddata.models import Country, Language
 from apps.gcd.templatetags.credits import get_native_language_name
-from apps.gcd.views import paginate_response
 from apps.gcd.models.issue import IssuePublisherTable
 from apps.gcd.models.publisher import PublisherSearchTable
 from apps.gcd.models.series import SeriesPublisherTable
@@ -335,7 +335,8 @@ def _select_object(request, select_key, multiple_sequences=False):
     if multiple_sequences and (data.get('issue') or data.get('publisher') or
                                data.get('series') or not (
                                    data.get('story') or data.get('cover'))):
-        return HttpResponseBadRequest('This selection requires sequences only.')
+        return HttpResponseBadRequest('This selection requires sequences '
+                                      'only.')
     selection_view = ('select_multiple_sequences' if multiple_sequences
                       else 'select_object')
     if request.method == 'GET':
@@ -395,9 +396,10 @@ def _select_object(request, select_key, multiple_sequences=False):
                        'cache_choices': cache_choices,
                        'cache_groups': cache_groups,
                        'cache_size': request.user.indexer.cache_size,
-                       'has_cached_objects': any(request.session.get(key)
-                           for key in ('cached_issues', 'cached_stories',
-                                       'cached_covers')),
+                       'has_cached_objects': any(
+                          request.session.get(key)
+                          for key in ('cached_issues', 'cached_stories',
+                                      'cached_covers')),
                        'show_cache': issue or story or cover,
                        'can_copy_multiple': can_copy_multiple,
                        'disabled_choice_title': disabled_choice_title,
@@ -419,7 +421,8 @@ def _select_object(request, select_key, multiple_sequences=False):
         getters = {'story': get_cached_stories, 'cover': get_cached_covers}
         if kind not in getters or not (
                 data.get('story') or (kind == 'cover' and data.get('cover'))):
-            return JsonResponse({'error': 'This category cannot be reordered.'},
+            return JsonResponse({'error':
+                                 'This category cannot be reordered.'},
                                 status=400)
         choices = request.POST.getlist('ordered_objects')
         try:
@@ -433,7 +436,8 @@ def _select_object(request, select_key, multiple_sequences=False):
         current = [obj.id for obj in getters[kind](request) or []]
         if set(ids) != set(current):
             return JsonResponse({
-                'error': 'The cache changed. Reload the page before reordering.'},
+                'error':
+                'The cache changed. Reload the page before reordering.'},
                 status=409)
         key = 'cached_stories' if kind == 'story' else 'cached_covers'
         request.session[key + '_order'] = ids
@@ -463,7 +467,8 @@ def _select_object(request, select_key, multiple_sequences=False):
                 return HttpResponseBadRequest('Invalid cached object.')
             if (choice_kind not in cache_keys or object_id <= 0 or
                     (kind != 'all' and choice_kind != kind)):
-                return HttpResponseBadRequest('Invalid cache category or object.')
+                return HttpResponseBadRequest('Invalid cache category or '
+                                              'object.')
             selected_ids.setdefault(choice_kind, set()).add(object_id)
         # Validate the whole selection before changing the session. Repeated
         # submissions are harmless: removing an absent ID has no effect.
@@ -474,7 +479,8 @@ def _select_object(request, select_key, multiple_sequences=False):
             _sync_cached_order(request, key)
         return HttpResponseRedirect(urlresolvers.reverse(
             selection_view, kwargs={'select_key': select_key}))
-    elif 'clear_cache' in request.POST or 'remove_cached_object' in request.POST:
+    elif 'clear_cache' in request.POST or \
+         'remove_cached_object' in request.POST:
         cache_keys = {'issue': 'cached_issues', 'story': 'cached_stories',
                       'cover': 'cached_covers'}
         if 'clear_cache' in request.POST:
@@ -490,7 +496,8 @@ def _select_object(request, select_key, multiple_sequences=False):
                 return HttpResponseBadRequest('Unknown cache category.')
         else:
             try:
-                kind, object_id = request.POST['remove_cached_object'].split('_')
+                kind, object_id = request.POST['remove_cached_object']\
+                                         .split('_')
                 key = cache_keys[kind]
                 object_id = int(object_id)
             except (ValueError, KeyError):
@@ -689,7 +696,7 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
             if qs_match:
                 if chrono_sort:
                     qs_contains = qs_contains.exclude(Q(**{'%s' % field:
-                                                           query}))
+                                                            query}))
                     qs_match = qs_match.annotate(chrono=F(chrono_sort))\
                                        .annotate(qs_order=Value(1,
                                                  IntegerField()))
