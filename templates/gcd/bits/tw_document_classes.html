@@ -20,7 +20,7 @@ bg-white text-[14px] sm:text-[15px]
 [:where(&_h3)]:text-lg [:where(&_h3)]:font-bold
 [:where(&_a)]:text-link-gcd
 [:where(&_a:visited)]:text-visited-gcd
-[:where(&_a:hover)]:underline
+[@media(hover:hover)]:[:where(&_a:hover)]:underline
 [:where(&_.errorlist)]:text-red-400 [:where(&_.errorlist)]:font-bold
 [:where(&_.markdownx-preview)]:bg-stone-200
 [:where(&_.markdownx-preview)]:w-full lg:[:where(&_.markdownx-preview)]:w-4/5

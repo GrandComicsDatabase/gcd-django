@@ -2099,9 +2099,6 @@
   :where(.\[\:where\(\&_a\)\]\:text-link-gcd a) {
     color: var(--color-link-gcd);
   }
-  :where(.\[\:where\(\&_a\:hover\)\]\:underline a:hover) {
-    text-decoration-line: underline;
-  }
   :where(.\[\:where\(\&_a\:visited\)\]\:text-visited-gcd a:visited) {
     color: var(--color-visited-gcd);
   }
@@ -2264,6 +2261,9 @@
     border-color: var(--color-gray-200);
   }
   @media (hover:hover) {
+    :where(.\[\@media\(hover\:hover\)\]\:\[\:where\(\&_a\:hover\)\]\:underline a:hover) {
+      text-decoration-line: underline;
+    }
     :where(.\[\@media\(hover\:hover\)\]\:\[\:where\(\&\)_a\:where\(\:hover\)\]\:no-underline) a:where(:hover) {
       text-decoration-line: none;
     }

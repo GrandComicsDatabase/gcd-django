@@ -88,3 +88,25 @@ def test_document_defaults_are_real_markup_and_locally_overridable():
     assert 'bg-white' in classes
     assert '[:where(&_h1)]:text-2xl' in classes
     assert_compiled(*classes)
+
+
+def test_document_link_hover_is_guarded_by_device_capability():
+    html = render_to_string('gcd/tw_base.html')
+    _, attrs = Elements(html).elements[0]
+    utility = '[@media(hover:hover)]:[:where(&_a:hover)]:underline'
+    assert utility in dict(attrs)['class'].split()
+    css = (ROOT / 'static/css/output.css').read_text()
+    selector = '.' + re.sub(r'([^a-zA-Z0-9_-])', r'\\\1', utility)
+    # Check the compiled rule's enclosing blocks, not just its class name.
+    position = css.index(':where(' + selector + ' a:hover)')
+    blocks = []
+    start = 0
+    for match in re.finditer(r'[{}]', css[:position]):
+        if match.group() == '{':
+            blocks.append(css[start:match.start()].strip())
+        else:
+            blocks.pop()
+        start = match.end()
+    assert any(re.fullmatch(r'@media\s*\(hover:\s*hover\)', block)
+               for block in blocks)
+    assert '[:where(&_a:hover)]:underline' not in dict(attrs)['class'].split()

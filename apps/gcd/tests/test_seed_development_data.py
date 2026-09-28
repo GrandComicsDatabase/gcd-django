@@ -25,8 +25,10 @@ from apps.oi.models import ChangesetComment, SeriesRevision
 from apps.stats.models import CountStats
 
 
-def test_seed_development_data_is_idempotent_and_initializes_stats(db):
+def test_seed_development_data_is_idempotent_and_initializes_stats(
+        db, settings, tmp_path):
     """Contributors can rerun setup without duplicating accounts or statistics."""
+    settings.MEDIA_ROOT = str(tmp_path)
     call_command('seed_development_data')
 
     seeded_comment = ChangesetComment.objects.get(text__contains='[GCD DEV]')
