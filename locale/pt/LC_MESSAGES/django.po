@@ -1,3 +1,4 @@
+# Portuguese translations for the GCD website.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
@@ -14,7 +15,6 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Translated-Using: django-rosetta 0.9.7\n"
 
 #: apps/gcd/models/story.py:1194 apps/gcd/templatetags/credits.py:611
 msgid "page"

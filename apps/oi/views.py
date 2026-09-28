@@ -2,21 +2,28 @@
 
 
 import re
+from uuid import UUID, uuid4
 import sys
 import glob
+from copy import copy
 import PIL.Image as pyImage
 from urllib.parse import unquote
 
-from django.forms import HiddenInput, MultipleHiddenInput
+from django.forms import (CheckboxInput, FileField, HiddenInput,
+                          ModelChoiceField, MultipleHiddenInput)
 import django.urls as urlresolvers
 from django.conf import settings
 from django.urls import reverse, NoReverseMatch
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseBadRequest, HttpResponseRedirect, QueryDict
+from django.core import signing
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db import transaction, IntegrityError
 from django.db.models import Min, Max, Count, F, Q
 from django.db.models.fields import Field
-from django.utils.html import mark_safe, conditional_escape as esc
+from django.utils.html import (mark_safe, conditional_escape as esc,
+                               format_html, format_html_join)
+from django.utils.translation import gettext as _, gettext_lazy
 
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, permission_required
@@ -57,7 +64,7 @@ from apps.gcd.models.reprint import INTERNAL_REPRINT_ERROR, \
                                     validate_reprint_issue_ids
 from apps.oi.templatetags.editing import show_revision_short
 from apps.select.views import store_select_data, get_cached_stories, \
-                              get_cached_covers
+                              get_cached_covers, get_ordered_cached_ids
 
 from apps.oi.models import (
     Changeset, BrandGroupRevision, BrandRevision, BrandUseRevision,
@@ -219,6 +226,15 @@ REACHED_CHANGE_LIMIT = 'You have reached your limit of open changes.  You ' \
   'If you are an experienced indexer and frequently hit ' \
   'your reservation limit please contact us.'
 
+SUBMIT_CHANGES_FOR_APPROVAL = gettext_lazy('Submit Changes For Approval')
+APPROVE = gettext_lazy('Approve')
+SEND_BACK_TO_INDEXER = gettext_lazy('Send Back To Indexer')
+
+WORKFLOW_ACTION_LABELS = {
+    'submit': SUBMIT_CHANGES_FOR_APPROVAL,
+    'approve': APPROVE,
+    'disapprove': SEND_BACK_TO_INDEXER,
+}
 INTERNAL_REPRINT_SELECT_TITLE = \
   'Cannot select because reprint links must connect different issues.'
 INTERNAL_REPRINT_SELECT_HELP = \
@@ -227,6 +243,141 @@ INTERNAL_REPRINT_SELECT_HELP = \
 ##############################################################################
 # Helper functions
 ##############################################################################
+
+
+def _value_for_post(value):
+    if hasattr(value, 'pk'):
+        return value.pk
+    return value
+
+
+def _add_form_data(data, form):
+    """Serialize an unbound form's current values as browser-like POST data."""
+    for name, field in form.fields.items():
+        if isinstance(field, FileField):
+            # Omitting a file input preserves the file already on the instance.
+            continue
+
+        key = form.add_prefix(name)
+        value = form[name].value()
+
+        # A select without an empty choice submits its first option even when
+        # the unbound BoundField has no explicit initial value.
+        if value is None and isinstance(field, ModelChoiceField) and \
+           not getattr(field.widget, 'allow_multiple_selected', False) and \
+           field.empty_label is None:
+            first_choice = field.queryset.first()
+            if first_choice is not None:
+                value = first_choice.pk
+
+        if getattr(field.widget, 'allow_multiple_selected', False) or \
+           isinstance(value, (list, tuple)) or hasattr(value, 'all'):
+            # An empty multi-select is omitted from browser POST data; posting
+            # one empty value makes Django reject it as an invalid choice.
+            if value is None or value == '':
+                values = []
+            elif hasattr(value, 'all'):
+                values = value.all()
+            elif isinstance(value, (list, tuple)):
+                values = value
+            else:
+                values = [value]
+            data.setlist(key, [str(_value_for_post(item))
+                               for item in values])
+        elif isinstance(field.widget, CheckboxInput):
+            if value:
+                data[key] = 'on'
+        else:
+            value = _value_for_post(value)
+            data[key] = '' if value is None else str(value)
+
+
+def _add_formset_data(data, formset):
+    prefix = formset.prefix
+    data['%s-TOTAL_FORMS' % prefix] = str(formset.total_form_count())
+    data['%s-INITIAL_FORMS' % prefix] = str(formset.initial_form_count())
+    data['%s-MIN_NUM_FORMS' % prefix] = str(formset.min_num)
+    data['%s-MAX_NUM_FORMS' % prefix] = str(formset.max_num)
+    for form in formset.forms:
+        _add_form_data(data, form)
+
+
+def _validation_messages(form, extra_forms):
+    messages = []
+    for errors in form.errors.values():
+        messages.extend(str(error) for error in errors)
+    for formset in extra_forms.values():
+        if formset is None:
+            continue
+        for errors in formset.errors:
+            for field_errors in errors.values():
+                messages.extend(str(error) for error in field_errors)
+        messages.extend(str(error) for error in formset.non_form_errors())
+    return list(dict.fromkeys(messages))
+
+
+def validate_revision_for_transition(revision, request):
+    """Run the editing form and formset validators against saved values."""
+    # extra_forms() reads request.POST, so use request copies rather than
+    # replacing the data submitted to the workflow action itself.
+    unbound_request = copy(request)
+    unbound_request.POST = QueryDict()
+
+    form_class = get_revision_form(revision, user=request.user)
+    unbound_form = form_class(instance=revision)
+    unbound_extra_forms = revision.extra_forms(unbound_request)
+
+    data = QueryDict('', mutable=True)
+    _add_form_data(data, unbound_form)
+    for formset in unbound_extra_forms.values():
+        if formset is not None:
+            _add_formset_data(data, formset)
+
+    bound_request = copy(request)
+    bound_request.POST = data
+    form = form_class(data, instance=revision)
+    extra_forms = revision.extra_forms(bound_request)
+
+    # Evaluate every formset even if the main form fails so the indexer sees
+    # all persisted-data errors in one pass.
+    valid = form.is_valid()
+    for formset in extra_forms.values():
+        if formset is not None:
+            if not formset.is_valid():
+                valid = False
+
+    if valid:
+        return []
+    return _validation_messages(form, extra_forms)
+
+
+def validate_changeset_revisions(changeset, request):
+    """Return invalid changed issue/story revisions and their errors."""
+    invalid = []
+    revisions = list(changeset.issuerevisions.filter(deleted=False))
+    revisions.extend(changeset.storyrevisions.filter(deleted=False))
+    page_count_sum = 0
+    for revision in revisions:
+        if type(revision) is StoryRevision and revision.page_count is not None:
+            page_count_sum += revision.page_count
+        # A changeset can contain cloned sequences that the indexer did not
+        # edit. Recompute comparison state so legacy data in those untouched
+        # sequences does not become part of the indexer's required work.
+        revision.compare_changes()
+        if not revision.is_changed:
+            continue
+        messages = validate_revision_for_transition(revision, request)
+        if messages:
+            invalid.append((revision, messages))
+    if changeset.change_type == CTYPES['issue'] and page_count_sum > 0:
+        issue = changeset.issuerevisions.first()
+        if (issue is not None and issue.page_count is not None and
+                page_count_sum > issue.page_count):
+            invalid.append((issue,
+                            ['Sum of the page count of all sequences is %d, '
+                             'which exceeds the issue page count of %d.' % (
+                              page_count_sum, issue.page_count)]))
+    return invalid
 
 
 def _cant_get(request):
@@ -238,6 +389,7 @@ def _cant_get(request):
 
 def oi_render(request, template_name, context={}):
     context['EDITING'] = True
+    context['workflow_action_labels'] = WORKFLOW_ACTION_LABELS
     return render(request, template_name, context)
 
 ##############################################################################
@@ -553,6 +705,27 @@ def _display_edit_form(request, changeset, form, revision=None,
     return response
 
 
+def _invalid_revision_response(request, invalid_revisions, instruction):
+    """Render links to revisions that must be corrected before an action."""
+    error_items = []
+    for revision, messages in invalid_revisions:
+        error_items.append((
+          urlresolvers.reverse(
+            'edit_revision',
+            kwargs={'model_name': revision.source_name,
+                    'id': revision.id}),
+          str(revision),
+          '; '.join(messages)))
+    errors = format_html_join(
+      '', '<li><a href="{}">{}</a>: {}</li>', error_items)
+    return oi_render(
+      request, 'indexer/error.html',
+      {'error_text': format_html(
+        '{} {}<ul>{}</ul>',
+        _('This change still contains invalid issue or sequence data.'),
+        instruction, errors)})
+
+
 @permission_required('indexer.can_reserve')
 def submit(request, id):
     """
@@ -566,6 +739,18 @@ def submit(request, id):
         return oi_render(
           request, 'indexer/error.html',
           {'error_text': 'A change may only be submitted by its author.'})
+
+    # Revalidate saved values because migrations and other non-form code paths
+    # can modify a revision after its edit form was last submitted.
+    invalid_revisions = validate_changeset_revisions(changeset, request)
+    if invalid_revisions:
+        instruction = format_html(
+          _('Correct and save the revisions, then select '
+            '<strong>{submit}</strong>. Affected revisions:'),
+          submit=SUBMIT_CHANGES_FOR_APPROVAL)
+        return _invalid_revision_response(
+          request, invalid_revisions, instruction)
+
     comment_text = request.POST['comments'].strip()
     if comment_text == '' and changeset.approver is None and \
        changeset.comments.count() == 1:
@@ -1255,6 +1440,9 @@ def approve(request, id):
         return render_error(
           request, 'Only REVIEWING changes with an approver can be approved.')
 
+    # Administrators may intentionally make backend corrections that the
+    # editing forms cannot express. Validate at submission, not approval.
+
     comment_text = request.POST['comments'].strip()
     changeset.approve(notes=comment_text)
     email_comments = '.'
@@ -1444,10 +1632,12 @@ def disapprove(request, id):
 
     comment_text = request.POST['comments'].strip()
     if not comment_text:
-        return render_error(request,
-                            'You must explain why you are disapproving this '
-                            'change.  Please press the "back" button and use '
-                            'the comments field for the explanation.')
+        return render_error(
+          request,
+          format_html(
+            _('Enter an explanation in the comment field before selecting '
+              '<strong>{send_back}</strong>.'),
+            send_back=SEND_BACK_TO_INDEXER))
 
     changeset.disapprove(notes=comment_text)
 
@@ -4679,6 +4869,248 @@ def select_internal_object(request, id, changeset_id, which_side,
                       'which_side': which_side})
 
 
+def _copy_placement(existing, position, has_cover):
+    insertion = len(existing) if position is None else next(
+        (i for i, revision in enumerate(existing)
+         if revision.sequence_number >= max(0, position)), len(existing))
+    cover_indexes = [i for i, revision in enumerate(existing)
+                     if revision.type_id == STORY_TYPES['cover']]
+    mode = None
+    if has_cover:
+        mode = 'reprint' if cover_indexes else 'main'
+        if cover_indexes:
+            # A copied interior cover must never displace the main cover.
+            insertion = max(insertion, max(cover_indexes) + 1)
+    return {
+        'cover_mode': mode,
+        'cover_position': 0 if mode == 'main' else insertion,
+        'insertion': insertion,
+        'state': [[r.id, r.type_id, r.sequence_number] for r in existing]
+                 if has_cover else None,
+    }
+
+
+def _single_copy_context(request, issue_revision, story, position,
+                         placement=None, changed=False):
+    if placement is None:
+        placement = _copy_placement(list(issue_revision.active_stories()),
+                                    position,
+                                    story.type_id == STORY_TYPES['cover'])
+    token = signing.dumps({
+        'issue_revision_id': issue_revision.id, 'story_id': story.id,
+        'position': position, 'placement': placement,
+    }, salt='single-cover-copy')
+    return {
+        'issue_revision': issue_revision, 'story': story,
+        'sequence_number': position, **placement,
+        'cover_plan': token, 'copy_plan_changed': changed,
+        'copy_credit_info': 'copy_credit_info' in request.POST,
+        'copy_characters': 'copy_characters' in request.POST,
+    }
+
+
+@transaction.atomic
+def copy_cached_sequences(request, data, select_key):
+    """Preview or atomically copy selected covers and stories."""
+    issue_revision = get_object_or_404(
+        IssueRevision.objects.select_for_update(), id=data['issue_revision_id'])
+    changeset = Changeset.objects.select_for_update().get(
+        id=issue_revision.changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(
+            request, 'Only the reservation holder may copy stories.')
+    destination = urlresolvers.reverse('edit', kwargs={'id': changeset.id})
+    if changeset.state not in (states.OPEN, states.REVIEWING):
+        return render_error(
+            request, 'This changeset is no longer open for editing.')
+
+    confirming = 'confirm_bulk_copy' in request.POST
+    if confirming:
+        try:
+            payload = signing.loads(request.POST.get('copy_batch', ''),
+                                    salt='copy-cached-sequences', max_age=3600)
+        except signing.BadSignature:
+            return HttpResponseBadRequest(
+                'The copy confirmation expired or is invalid. '
+                'Select the objects again.')
+        if (payload.get('select_key') != select_key or
+                payload.get('issue_revision_id') != issue_revision.id):
+            return HttpResponseBadRequest('Invalid copy destination.')
+        try:
+            operation_id = UUID(payload['operation_id']).hex
+        except (KeyError, ValueError, TypeError, AttributeError):
+            return HttpResponseBadRequest(
+                'The copy confirmation is outdated or invalid. Select the objects again.')
+        batch_key = 'story-copy:%s:%s' % (issue_revision.id, operation_id)
+        batch_state = cache.get(batch_key)
+        if batch_state == 'done':
+            return HttpResponseRedirect(destination)
+        if batch_state != 'ready':
+            return HttpResponseBadRequest(
+                'This copy confirmation has expired or has already been submitted. '
+                'Check the issue before starting another copy.')
+        kind, selected_ids = payload['kind'], payload['ids']
+    else:
+        kind = request.POST['copy_selected_cached_objects']
+        choices = request.POST.getlist('cached_objects')
+        cover_choices = (request.POST.getlist('selected_covers') +
+                         request.POST.getlist('selected_cover'))
+        if kind not in ('story', 'cover'):
+            return HttpResponseBadRequest('Invalid selection category.')
+        selected = set()
+        for choice in choices:
+            try:
+                choice_kind, object_id = choice.split('_')
+                object_id = int(object_id)
+            except ValueError:
+                return HttpResponseBadRequest('Invalid cached object.')
+            if choice_kind != kind or object_id <= 0:
+                return HttpResponseBadRequest('Invalid selection category.')
+            selected.add(object_id)
+        cached_ids = get_ordered_cached_ids(request, 'cached_%s' % (
+            'stories' if kind == 'story' else 'covers'))
+        if not selected.issubset(set(cached_ids)):
+            return HttpResponseBadRequest('A selected object is no longer cached.')
+        story_ids = [pk for pk in cached_ids if pk in selected] if kind == 'story' else []
+        covers = set(selected) if kind == 'cover' else set()
+        for choice in cover_choices:
+            if not choice:
+                continue
+            try:
+                category, pk = choice.split('_')
+                pk = int(pk)
+            except ValueError:
+                return HttpResponseBadRequest('Invalid cover selection.')
+            if category != 'cover' or pk <= 0:
+                return HttpResponseBadRequest('Invalid cover selection.')
+            covers.add(pk)
+        cached_covers = get_ordered_cached_ids(request, 'cached_covers')
+        if not covers.issubset(set(cached_covers)):
+            return HttpResponseBadRequest('A selected cover is no longer cached.')
+        cover_ids = [pk for pk in cached_covers if pk in covers]
+        if covers.intersection(story_ids):
+            return HttpResponseBadRequest('The same object cannot be selected twice.')
+        selected_ids = cover_ids + story_ids
+        if not selected_ids:
+            return HttpResponseBadRequest('Select objects to copy.')
+        kind = 'mixed' if cover_ids and story_ids else 'cover' if cover_ids else 'story'
+        payload = {'select_key': select_key,
+                   'operation_id': uuid4().hex,
+                   'issue_revision_id': issue_revision.id,
+                   'kind': kind, 'ids': selected_ids, 'cover_ids': cover_ids}
+        batch_key = 'story-copy:%s:%s' % (issue_revision.id, payload['operation_id'])
+
+    cover_ids = payload.get('cover_ids', [])
+    if not cover_ids and payload.get('cover_id'):
+        cover_ids = [payload['cover_id']]
+    if kind == 'cover' and not cover_ids:
+        cover_ids = selected_ids[:]
+    if (kind not in ('story', 'cover', 'mixed') or
+            (kind != 'cover' and not data.get('story')) or
+            (cover_ids and not (data.get('story') or data.get('cover')))):
+        return HttpResponseBadRequest('This selection cannot be copied here.')
+    sources = Story.objects.filter(id__in=selected_ids, deleted=False)
+    if confirming:
+        sources = sources.select_for_update()
+    by_id = {story.id: story for story in sources}
+    if len(by_id) != len(selected_ids):
+        return HttpResponseBadRequest(
+            'A selected object is no longer available. Select the objects again.')
+    stories = [by_id[pk] for pk in selected_ids]
+    actual_covers = [s.id for s in stories if s.type_id == STORY_TYPES['cover']]
+    if any(pk not in actual_covers for pk in cover_ids):
+        return HttpResponseBadRequest('A selected cover is no longer a cover.')
+    cover_ids = actual_covers
+    payload['cover_ids'] = cover_ids
+    existing = list(issue_revision.active_stories())
+    placement = _copy_placement(existing, data.get('sequence_number'), bool(cover_ids))
+    changed = bool(confirming and cover_ids and payload.get('placement') != placement)
+    main_id = payload.get('main_cover_id')
+    if 'main_cover' in request.POST:
+        try:
+            main_id = int(request.POST['main_cover'])
+        except ValueError:
+            return HttpResponseBadRequest('Choose a selected cover as the main cover.')
+        if main_id not in cover_ids:
+            return HttpResponseBadRequest('The main cover must be one of the selected covers.')
+    if placement['cover_mode'] == 'main' and len(cover_ids) == 1:
+        main_id = cover_ids[0]
+    if placement['cover_mode'] != 'main':
+        main_id = None
+    needs_main = placement['cover_mode'] == 'main' and main_id is None
+    main_changed = main_id != payload.get('main_cover_id')
+    # Preserve cache order for reprints and stories; only the explicitly
+    # chosen main cover moves to the front of the copy operation.
+    ordered_ids = ([main_id] if main_id else []) + [
+        pk for pk in cover_ids if pk != main_id] + [
+        s.id for s in stories if s.id not in cover_ids]
+    stories = [by_id[pk] for pk in ordered_ids]
+    payload['ids'] = ordered_ids
+    # Individual choices take precedence over the legacy batch-wide options.
+    per_sequence = 'per_sequence_options' in request.POST
+    copy_options = {
+        story.id: {
+            option: (str(story.id) in request.POST.getlist(option + '_ids')
+                     if per_sequence else option in request.POST)
+            for option in ('copy_credit_info', 'copy_characters')
+        }
+        for story in stories
+    }
+    if not confirming or changed or needs_main or main_changed:
+        if not confirming:
+            cache.set(batch_key, 'ready', timeout=3600)
+        payload['placement'] = placement
+        payload['main_cover_id'] = main_id
+        preview_rows = []
+        for index, story in enumerate(stories):
+            is_main = story.id == main_id
+            position = (0 if is_main else placement['insertion'] + index)
+            preview_rows.append({
+                'story': story, 'position': position,
+                **copy_options[story.id],
+                'copy_type': ('cover' if is_main else
+                              'cover reprint (on interior page)' if story.id in cover_ids
+                              else story.type.name),
+            })
+        return oi_render(request, 'oi/edit/confirm_copy_sequence.html', {
+            'bulk_copy': True,
+            'issue_revision': issue_revision, 'stories': stories,
+            'kind': kind, 'label': 'objects' if cover_ids else 'stories',
+            'has_cover': bool(cover_ids), 'needs_main_cover': needs_main,
+            'cover_choices': [by_id[pk] for pk in cover_ids],
+            'preview_rows': preview_rows,
+            **placement, 'copy_plan_changed': changed,
+            'copy_credit_info': 'copy_credit_info' in request.POST,
+            'copy_characters': 'copy_characters' in request.POST,
+            'select_key': select_key, 'sequence_number': data['sequence_number'],
+            'copy_batch': signing.dumps(payload, salt='copy-cached-sequences'),
+        })
+
+    # Consume the temporary permission before writing, while holding the
+    # destination row lock. Missing/evicted cache entries must never authorize
+    # another copy. A failed copy requires a fresh selection.
+    if not cache.delete(batch_key):
+        return HttpResponseBadRequest(
+            'The copy confirmation expired. Select the objects again.')
+    insertion = placement['insertion']
+    copied = [StoryRevision.copied_revision(
+        story, changeset, issue_revision=issue_revision,
+        **copy_options[story.id]) for story in stories]
+    if placement['cover_mode'] == 'main':
+        ordered = [copied[0]] + existing[:insertion] + copied[1:] + existing[insertion:]
+    else:
+        ordered = existing[:insertion] + copied + existing[insertion:]
+    for sequence, revision in enumerate(ordered):
+        if revision.sequence_number != sequence:
+            revision.sequence_number = sequence
+            revision.save()
+    transaction.on_commit(lambda: cache.set(batch_key, 'done', timeout=3600))
+    if len(copied) == 1:
+        return HttpResponseRedirect(urlresolvers.reverse(
+            'edit_revision', kwargs={'model_name': 'story', 'id': copied[0].id}))
+    return HttpResponseRedirect(destination)
+
+
 def _selected_copy_sequence(request, data, object_type, selected_id):
     if request.method != 'POST':
         return _cant_get(request)
@@ -4689,18 +5121,19 @@ def _selected_copy_sequence(request, data, object_type, selected_id):
                                        id=data['issue_revision_id'])
     story = get_object_or_404(Story, id=selected_id)
     return oi_render(request, 'oi/edit/confirm_copy_sequence.html',
-                     {
-                      'issue_revision': issue_revision,
-                      'story': story,
-                      'sequence_number': data['sequence_number'],
-                     })
+                     _single_copy_context(request, issue_revision, story,
+                                          data['sequence_number']))
 
 
 @permission_required('indexer.can_reserve')
+@transaction.atomic
 def copy_sequence(request, issue_revision_id, story_id=None,
                   sequence_number=None, cover=False):
-    issue_revision = get_object_or_404(IssueRevision, id=issue_revision_id)
-    if request.user != issue_revision.changeset.indexer:
+    issue_revision = get_object_or_404(
+        IssueRevision.objects.select_for_update(), id=issue_revision_id)
+    changeset = Changeset.objects.select_for_update().get(
+        id=issue_revision.changeset_id)
+    if request.user != changeset.indexer:
         return render_error(
           request,
           'Only the reservation holder may access this page.')
@@ -4720,18 +5153,36 @@ def copy_sequence(request, issue_revision_id, story_id=None,
                 'heading': mark_safe('<h2>%s</h2>' % heading),
                 'target': 'a story',
                 'return': '_selected_copy_sequence',
+                'selection_view': 'select_multiple_sequences',
                 'sequence_number': sequence_number,
                 'cancel': urlresolvers.reverse('edit', kwargs={
                             'id': issue_revision.changeset_id})}
         select_key = store_select_data(request, None, data)
-        return HttpResponseRedirect(urlresolvers.reverse('select_object',
-                                    kwargs={'select_key': select_key}))
+        return HttpResponseRedirect(urlresolvers.reverse(
+            'select_multiple_sequences', kwargs={'select_key': select_key}))
     else:
         issue_revision = get_object_or_404(IssueRevision, id=issue_revision_id)
         if 'cancel' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit', kwargs={'id': issue_revision.changeset_id}))
-        story = get_object_or_404(Story, id=story_id)
+        story = get_object_or_404(Story.objects.select_for_update(),
+                                 id=story_id, deleted=False)
+        existing = list(issue_revision.active_stories())
+        placement = _copy_placement(existing, sequence_number,
+                                    story.type_id == STORY_TYPES['cover'])
+        if placement['cover_mode'] or request.POST.get('cover_plan'):
+            try:
+                prior = signing.loads(request.POST.get('cover_plan', ''),
+                                      salt='single-cover-copy', max_age=3600)
+            except signing.BadSignature:
+                prior = {}
+            if prior != {'issue_revision_id': issue_revision.id,
+                         'story_id': story.id, 'position': sequence_number,
+                         'placement': placement}:
+                return oi_render(request, 'oi/edit/confirm_copy_sequence.html',
+                                 _single_copy_context(
+                                     request, issue_revision, story,
+                                     sequence_number, placement, changed=True))
         copy_credit_info = request.POST.get('copy_credit_info', False)
         copy_characters = request.POST.get('copy_characters', False)
         story_revision = StoryRevision.copied_revision(
@@ -4739,7 +5190,15 @@ def copy_sequence(request, issue_revision_id, story_id=None,
           copy_credit_info=copy_credit_info, copy_characters=copy_characters)
         # sequence number should be determined in add_story
         # but this routine could be called differently as well
-        if sequence_number is not None:
+        if placement['cover_mode']:
+            insertion = (0 if placement['cover_mode'] == 'main'
+                         else placement['insertion'])
+            ordered = existing[:insertion] + [story_revision] + existing[insertion:]
+            for sequence, revision in enumerate(ordered):
+                if revision.sequence_number != sequence:
+                    revision.sequence_number = sequence
+                    revision.save()
+        elif sequence_number is not None:
             story_revision.sequence_number = sequence_number
             story_revision.save()
             stories = issue_revision.active_stories()\

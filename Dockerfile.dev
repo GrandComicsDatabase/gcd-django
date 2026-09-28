@@ -8,6 +8,7 @@ RUN apt-get update \
         build-essential \
         default-libmysqlclient-dev \
         default-mysql-client \
+        gettext \
         git \
         libicu-dev \
         pkg-config \

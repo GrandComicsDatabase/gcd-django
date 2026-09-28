@@ -35,8 +35,7 @@ Covers Pending for Approval
         {% if cover.changeset.indexer != user %}
       <form action="{% url 'process' id=cover.changeset.id %}" method="POST">
           {% csrf_token %}
-        <button class="w-full">
-          <input class="w-full btn-blue-editing" type="submit" id="assign_{{ cover.changeset.id }}" name="assign" value="Assign"/>
+        <button class="w-full btn-blue-editing mx-0" type="submit" id="assign_{{ cover.changeset.id }}" name="assign">Assign
         </button>
         <input type="hidden" name="comments" value=""/>
       </form>

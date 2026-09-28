@@ -574,8 +574,11 @@ def test_post_save_no_gallery_change(patch_for_move, has_gallery, count):
     # Parametrize on the two different ways the new series gallery can change.
     i.active_covers.return_value.count.return_value = count
     new.has_gallery = has_gallery
-
-    rev._post_save_object({})
+    with mock.patch.object(
+        Issue,
+        'variant_set',
+    ):
+        rev._post_save_object({})
 
     old.set_first_last_issues.assert_called_once_with()
     new.set_first_last_issues.assert_called_once_with()
@@ -601,7 +604,11 @@ def test_post_save_new_gains_gallery(patch_for_move):
     old.has_gallery = True
     old.scan_count.return_value = 1
 
-    rev._post_save_object({})
+    with mock.patch.object(
+        Issue,
+        'variant_set',
+    ):
+        rev._post_save_object({})
 
     old.set_first_last_issues.assert_called_once_with()
     new.set_first_last_issues.assert_called_once_with()
@@ -625,7 +632,11 @@ def test_post_save_old_loses_gallery(patch_for_move, has_gallery, count):
     new.has_gallery = has_gallery
     i.active_covers.return_value.count.return_value = count
 
-    rev._post_save_object({})
+    with mock.patch.object(
+        Issue,
+        'variant_set',
+    ):
+        rev._post_save_object({})
 
     old.set_first_last_issues.assert_called_once_with()
     new.set_first_last_issues.assert_called_once_with()

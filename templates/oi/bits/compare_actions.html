@@ -6,7 +6,7 @@
   </div>
 {% if user == changeset.indexer %}
   {% if changeset.state == states.OPEN %}
-  <button class="btn-blue-editing inline" type="submit" name="submit">Submit changes for Approval
+  <button class="btn-blue-editing inline" type="submit" name="submit">{{ workflow_action_labels.submit }}
   </button>
   {% endif %}
   {% if changeset.state == states.REVIEWING or changeset.state == states.OPEN %}
@@ -39,12 +39,12 @@
 
 {% if changeset.state == states.REVIEWING or changeset.state == states.DISCUSSED %}
   {% if user == changeset.approver %}
-  <button class="btn-blue-editing inline" type="submit" name="approve">Approve</button>
+  <button class="btn-blue-editing inline" type="submit" name="approve">{{ workflow_action_labels.approve }}</button>
     {% if changeset.state != states.DISCUSSED %}
   <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
     {% endif %}
     {% if changeset.editable %}
-  <button class="btn-blue-editing inline" type="submit" name="disapprove">Send Back to Indexer</button>
+  <button class="btn-blue-editing inline" type="submit" name="disapprove">{{ workflow_action_labels.disapprove }}</button>
     {% endif %}
   <button class="btn-blue-editing inline" type="submit" name="cancel">Reject Permanently</button>
   {% else %}
@@ -59,4 +59,3 @@
 
 <button class="btn-blue-editing inline" type="submit" name="add_comment">Add Comment</button>
 </form>
-

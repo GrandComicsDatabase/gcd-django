@@ -6,6 +6,9 @@ module.exports = {
             './templates/**/**/*.html',
             './apps/indexer/templates/indexer/*.html',
             './apps/indexer/templates/indexer/bits/*.html',
+            './apps/select/templates/select/*.html',
+            './static/js/select_cache.js',
+            './static/js/select_search_panels.js',
 	    './apps/voting/templates/voting/*.html',
             './apps/gcd/markdown_extension.py',],
   theme: {
