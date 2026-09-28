@@ -244,6 +244,76 @@ def test_series_list_applies_filter_query_params(
     assert response.data['results'][0]['id'] == matching.pk
 
 
+def test_series_search_paginates_in_stable_relevance_order(
+    api_client,
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """Ranked search stays deterministic across page boundaries."""
+    exact = _create_series(
+        country=country,
+        language=language,
+        name='Batman',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1940,
+    )
+    prefix = _create_series(
+        country=country,
+        language=language,
+        name='Batman Adventures',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1992,
+    )
+    token_prefix = _create_series(
+        country=country,
+        language=language,
+        name='The Batman Chronicles',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1995,
+    )
+    substring = _create_series(
+        country=country,
+        language=language,
+        name='Combatman',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1962,
+    )
+    url = reverse('api-v2-series-list')
+
+    first_page = api_client.get(
+        url,
+        {'search': 'batman', 'page_size': 2},
+    )
+    repeated_first_page = api_client.get(
+        url,
+        {'search': 'batman', 'page_size': 2},
+    )
+    second_page = api_client.get(
+        url,
+        {'search': 'batman', 'page_size': 2, 'page': 2},
+    )
+
+    assert first_page.status_code == 200
+    assert repeated_first_page.status_code == 200
+    assert second_page.status_code == 200
+    assert first_page.data['count'] == 4
+    assert [result['id'] for result in first_page.data['results']] == [
+        exact.pk,
+        prefix.pk,
+    ]
+    assert repeated_first_page.data['results'] == first_page.data['results']
+    assert [result['id'] for result in second_page.data['results']] == [
+        token_prefix.pk,
+        substring.pk,
+    ]
+
+
 def test_series_endpoints_hide_soft_deleted_records(
     api_client,
     country,
