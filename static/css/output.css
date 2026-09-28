@@ -1293,11 +1293,6 @@ a:hover {
   position: sticky;
 }
 
-.inset-x-0 {
-  left: 0px;
-  right: 0px;
-}
-
 .bottom-0 {
   bottom: 0px;
 }
@@ -1461,6 +1456,10 @@ a:hover {
   margin-bottom: 0.5rem;
 }
 
+.mb-3 {
+  margin-bottom: 0.75rem;
+}
+
 .mb-4 {
   margin-bottom: 1rem;
 }
@@ -1617,10 +1616,6 @@ a:hover {
   width: 2.5rem;
 }
 
-.w-12 {
-  width: 3rem;
-}
-
 .w-16 {
   width: 4rem;
 }
@@ -1769,10 +1764,6 @@ a:hover {
 
 .max-w-none {
   max-width: none;
-}
-
-.max-w-screen-2xl {
-  max-width: 1536px;
 }
 
 .flex-1 {
@@ -2161,11 +2152,6 @@ a:hover {
   border-color: rgb(251 146 60 / var(--tw-border-opacity));
 }
 
-.border-red-200 {
-  --tw-border-opacity: 1;
-  border-color: rgb(254 202 202 / var(--tw-border-opacity));
-}
-
 .\!bg-white {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity)) !important;
@@ -2404,6 +2390,11 @@ a:hover {
   padding-bottom: 0.5rem;
 }
 
+.py-5 {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
+
 .\!pb-4 {
   padding-bottom: 1rem !important;
 }
@@ -2426,10 +2417,6 @@ a:hover {
 
 .pb-2 {
   padding-bottom: 0.5rem;
-}
-
-.pb-36 {
-  padding-bottom: 9rem;
 }
 
 .pb-\[calc\(0\.5rem\+env\(safe-area-inset-bottom\)\)\] {
@@ -2544,11 +2531,6 @@ a:hover {
   line-height: 1.75rem;
 }
 
-.text-xs {
-  font-size: 0.75rem;
-  line-height: 1rem;
-}
-
 .\!font-semibold {
   font-weight: 600 !important;
 }
@@ -2624,11 +2606,6 @@ a:hover {
 .text-gray-700 {
   --tw-text-opacity: 1;
   color: rgb(55 65 81 / var(--tw-text-opacity));
-}
-
-.text-gray-800 {
-  --tw-text-opacity: 1;
-  color: rgb(31 41 55 / var(--tw-text-opacity));
 }
 
 .text-gray-900 {
@@ -2903,11 +2880,6 @@ select {
   background-color: rgb(248 113 113 / var(--tw-bg-opacity));
 }
 
-.hover\:bg-red-50:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(254 242 242 / var(--tw-bg-opacity));
-}
-
 .hover\:bg-red-900:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(127 29 29 / var(--tw-bg-opacity));
@@ -3122,10 +3094,6 @@ select {
     width: 33.333333%;
   }
 
-  .sm\:w-14 {
-    width: 3.5rem;
-  }
-
   .sm\:w-24 {
     width: 6rem;
   }
@@ -3249,10 +3217,6 @@ select {
 
   .sm\:\!pt-6 {
     padding-top: 1.5rem !important;
-  }
-
-  .sm\:pb-28 {
-    padding-bottom: 7rem;
   }
 
   .sm\:pe-1 {
@@ -3622,11 +3586,6 @@ select {
 
 .\[\&_label\]\:block label {
   display: block;
-}
-
-.\[\&_label\]\:text-xs label {
-  font-size: 0.75rem;
-  line-height: 1rem;
 }
 
 .\[\&_label\]\:font-semibold label {
