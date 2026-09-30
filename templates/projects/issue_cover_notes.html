@@ -12,23 +12,20 @@
       href="{% static "css/projects/default.css" %}"/>
 {% endblock %}
 
-{% block body %}
+{% block view_body %}
 
-{% include "gcd/bits/search_bar.html" %}
 <div>
-<h1 class="item_id search_id">
-<div class="left">
+<h1 class="bg-blue-100 px-1">
   {{ heading }}: {{ search_item }}
-</div>
 </h1>
 
 <!-- this section ripped off from search/list_header.html -->
-<div class="item_id">
-  <div class="left" class="item_data">
+<div class="flex items-center justify-between flex-wrap bg-blue-100 px-1">
+  <div class="flex-1 font-bold">
   Displaying {{ page.start_index }} to {{ page.end_index }} of {{ paginator.count }} {{ item_name }}{{ paginator.count|pluralize:plural_suffix }} with identical issue and cover notes.
   </div>
   {% with query_string as extra_string %}
-  {% include "gcd/bits/pagination_bar.html" %}
+  {% include "gcd/bits/tw_pagination_bar.html" %}
   {% endwith %}
 </div>
 </div>
@@ -54,7 +51,7 @@
     <th width="40%"> Issue </th>
   </tr>
 {% for issue in items %}
-  <tr class="{% cycle 'listing_even' 'listing_odd' as row_classes %}">
+  <tr class="{% cycle 'bg-white' 'bg-stone-200' as row_classes %}">
     <td class="listing_publisher first_row last_row">
       {{ issue.series.publisher|absolute_url }}
     </td>
@@ -72,8 +69,6 @@
   </tr>
 {% endfor %}
 </table>
-
-{% include "gcd/bits/search_bar.html" %}
 
 {% endblock %}
 

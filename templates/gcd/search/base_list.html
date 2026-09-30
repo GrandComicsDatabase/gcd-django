@@ -14,7 +14,7 @@
 {% block view_body %}
 
   {% if select_key and not multiple_selects %}
-<div class='left'>
+<div class="float-left">
 <p>
 <form action="{% url 'select_object' select_key=select_key %}" method="POST">
   {% csrf_token %}
@@ -35,8 +35,8 @@
 </p>
 </div>
   {% endif %}
-<div style="clear: both;"></div>
-<div class="left">
+<div class="clear-both"></div>
+<div class="float-left">
   {% block list_contents %}{% endblock %}
 </div>
 

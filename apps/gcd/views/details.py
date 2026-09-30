@@ -3452,7 +3452,13 @@ def do_on_sale_monthly(request, year=None, month=None):
                                             kwargs={
                                               'year': date_after.year,
                                               'month': date_after.month})
-    oldest = Issue.objects.exclude(on_sale_date='').order_by('on_sale_date')[0]
+    # Partial dates can have an unknown year (e.g. '????-05-??').
+    oldest = Issue.objects.filter(
+        deleted=False, on_sale_date__gte='0001-',
+        on_sale_date__regex=r'^[0-9]{4}-'
+    ).order_by('on_sale_date').values_list('on_sale_date', flat=True).first()
+    current_year = date.today().year
+    oldest_year = min(int(oldest[:4]), current_year) if oldest else current_year
 
     cross_link = urlresolvers.reverse("on_sale_weekly",
                                       kwargs={'year': start_date.year,
@@ -3461,7 +3467,7 @@ def do_on_sale_monthly(request, year=None, month=None):
 
     vars = {
         'items': issues_on_sale,
-        'years': range(date.today().year, int(oldest.on_sale_date[:4]), -1),
+        'years': range(current_year, oldest_year - 1, -1),
         'heading': heading,
         'choose_url': choose_url,
         'choose_url_after': choose_url_after,
