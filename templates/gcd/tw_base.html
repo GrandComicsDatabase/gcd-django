@@ -34,11 +34,12 @@
 
 {% block body %}{% endblock %}
 
-{% block fine_print %}
-  <div class="text-sm text-gray-700 bg-gray-200 px-2 py-1 mt-auto">
-  {% include "gcd/fine_print.html" %}
+<div class="mt-auto">
+  {% block bottom_nav_bar %}{% endblock %}
+  <div class="text-sm text-gray-700 bg-gray-200 px-2 py-1">
+    {% include "gcd/fine_print.html" %}
   </div>
-{% endblock %}
+</div>
 </div>
 {% block footer %}{% endblock %}
 </body>

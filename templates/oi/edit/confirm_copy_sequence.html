@@ -61,7 +61,7 @@
       {% endfor %}
       <div class="sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2 sm:px-4" aria-label="Copy actions">
         <button type="submit" class="btn-blue-editing" id="copy-batch-submit">{% if needs_main_cover %}Review Copy{% else %}Confirm Copy of {{ stories|length }} {{ label|title }}{% endif %}</button>
-        <a class="btn-blue-editing" href="{% url 'select_multiple_sequences' select_key=select_key %}">Back to Selection</a>
+        <a class="btn-blue-editing visited:text-black" href="{% url 'select_multiple_sequences' select_key=select_key %}">Back to Selection</a>
       </div>
     </form>
     <script>
