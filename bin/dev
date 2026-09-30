@@ -24,6 +24,7 @@ Commands:
                       loading a manually downloaded GCD catalog dump
   down                Stop the Docker stack (native has nothing to stop)
   test [pytest args]  Run the test suite
+  wiki                Generate the user guide at http://localhost:8000/wiki/
   shell               Open a Django development shell
   manage <args>       Run a Django management command
   doctor              Check the selected development environment
@@ -370,6 +371,21 @@ case "$command" in
       compose run --rm --no-deps -e MYSQL_USER=root -e MYSQL_PASSWORD="$MYSQL_ROOT_PASSWORD" web python -m pytest "$@"
     else
       require_native_python; native_environment; "$PYTHON_BIN" -m pytest "$@"
+    fi ;;
+  wiki)
+    if [[ "$runtime" == "docker" ]]; then
+      require_docker; prepare_docker_application
+      compose run --rm --no-deps \
+        -e MYSQL_DATABASE=gcd_wiki \
+        -e MYSQL_USER=root \
+        -e MYSQL_PASSWORD="$MYSQL_ROOT_PASSWORD" \
+        web sh -c 'python -m pytest tests/wiki --browser chromium --output /tmp/wiki-test-results -p no:cacheprovider -q && python -m mkdocs build -f docs/mkdocs.yml'
+    else
+      require_native_python; native_environment
+      cd "$PROJECT_ROOT"
+      "$PYTHON_BIN" -m pytest tests/wiki --browser chromium \
+        --output /tmp/wiki-test-results -p no:cacheprovider -q
+      "$PYTHON_BIN" -m mkdocs build -f docs/mkdocs.yml
     fi ;;
   shell)
     if [[ "$runtime" == "docker" ]]; then

@@ -1,0 +1,13 @@
+site_name: GCD User Guide
+site_description: Tutorials for searching and exploring the Grand Comics Database
+docs_dir: wiki
+site_dir: ../site
+strict: true
+theme:
+  name: material
+  font: false
+markdown_extensions:
+  - toc:
+      toc_depth: 2
+nav:
+  - User guide: index.md

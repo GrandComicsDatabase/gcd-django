@@ -50,6 +50,8 @@ flake8==6.1.0
 mock
 pytest
 pytest-django
+pytest-playwright>=0.7,<1
+mkdocs-material>=9.6,<10
 ipython
 
 # These packages are primarily used in production for performance reasons.
