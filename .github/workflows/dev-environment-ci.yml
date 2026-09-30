@@ -109,6 +109,12 @@ jobs:
           ./bin/dev doctor
           curl --fail --silent --show-error http://127.0.0.1:8000/ -o /dev/null
 
+      - name: Verify Tailwind build and rendering
+        run: |
+          docker compose exec -T web tailwindcss -i static/css/input.css -o /tmp/gcd-tailwind.css
+          docker compose exec -T web cmp static/css/output.css /tmp/gcd-tailwind.css
+          docker compose exec -T web python -m pytest apps/gcd/tests/test_tailwind_rendering.py -q
+
       - name: Stop the core stack
         if: always()
         run: docker compose down --volumes

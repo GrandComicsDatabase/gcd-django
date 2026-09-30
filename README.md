@@ -50,10 +50,19 @@ installing Node.js on the host:
 
 Use `./bin/dev css-watch` while editing templates, Python HTML producers,
 JavaScript, or `static/css/input.css`.
+The watcher stays active even when an IDE closes its standard input; stop it
+with Ctrl-C. Run these commands from a Bash shell (including Git Bash or WSL
+on Windows). Git preserves LF endings for the launcher and generated CSS.
 The `tailwindcss` executable is installed inside the `web` image. Only the
 source checkout and generated `static/css/output.css` pass through the bind
 mount. Docker-free environments can install the same standalone Tailwind
 version and use the command shown in `bin/dev`.
+
+The compilation command remains:
+
+```sh
+tailwindcss -i static/css/input.css -o static/css/output.css
+```
 
 Tailwind discovers complete utility names directly in Django templates, Python
 HTML producers, and JavaScript. This is plain-text scanning: Python is neither
@@ -65,6 +74,9 @@ Always select between complete class names (for example, `w-[100px]` and
 Styling lives in markup as Tailwind utilities, including shared document
 defaults in `templates/gcd/bits/tw_document_classes.html`. The CSS entry point
 contains only Tailwind imports, source configuration, and theme tokens.
+
+Tailwind v4 requires Safari 16.4+, Chrome 111+, or Firefox 128+; see the
+[upstream upgrade guide](https://tailwindcss.com/docs/upgrade-guide#browser-requirements).
 
 ## Branches
 

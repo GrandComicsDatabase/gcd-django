@@ -12,7 +12,7 @@
       <span id="series_name"><a class="font-bold link-with-text-color hover:underline text-black visited:text-black" href="{{ issue.get_absolute_url }}">{{ issue.full_name }}</a></span>
     </h2>
     <div class="flex flex-wrap justify-between">
-      <div class="flex-l" style="max-width:200px;">
+      <div style="max-width:200px;">
         {{ issue.publication_date }}<br><a href="{{ issue.get_absolute_url }}">{{ image_tag }}</a>
         <br><p><button _="on click trigger closeModal" class="btn btn-blue font-bold py-1 px-4 rounded bg-blue-500 text-white hover:bg-blue-700 [:where(&)_a]:text-white [:where(&)_a:where(:visited)]:text-white [@media(hover:hover)]:[:where(&)_a:where(:hover)]:no-underline">Close</button></p>
       </div>

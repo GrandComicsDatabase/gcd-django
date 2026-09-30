@@ -3,7 +3,7 @@
 
 <div class="sm:justify-center"> 
     {% block table %}
-  <table class="border" {% if table.attrs %} {{ table.attrs.as_html }}{% endif %} >
+  <table {% render_attrs table.attrs class="border" %}>
     {% block table.thead %}
     {% if table.show_header %}
     <thead class="sortable_heading bg-blue-100 md:top-0 [:where(&)_tr]:align-top [:where(&)_tr]:flex [:where(&)_tr]:flex-col sm:[:where(&)_tr]:table-row {% if not table.not_sticky %}md:sticky{% endif %}">

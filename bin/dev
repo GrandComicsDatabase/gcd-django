@@ -389,13 +389,13 @@ case "$command" in
   css-watch)
     if [[ "$runtime" == "docker" ]]; then
       require_docker; compose build web
-      compose run --rm --no-deps web tailwindcss -i static/css/input.css -o static/css/output.css --watch
+      compose run --rm --no-deps web tailwindcss -i static/css/input.css -o static/css/output.css --watch=always
     else
       command -v tailwindcss >/dev/null 2>&1 || {
         echo "tailwindcss is required to watch CSS without Docker." >&2
         exit 1
       }
-      tailwindcss -i static/css/input.css -o static/css/output.css --watch
+      tailwindcss -i static/css/input.css -o static/css/output.css --watch=always
     fi ;;
   shell)
     if [[ "$runtime" == "docker" ]]; then
