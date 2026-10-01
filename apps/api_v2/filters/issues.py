@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
     IntegerFilter,
+    StrictBooleanFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import Issue
@@ -44,7 +45,7 @@ class IssueFilterSet(TimestampFilterSet):
     """Filters for issue list endpoints."""
 
     series = IntegerFilter(field_name='series_id')
-    variant_of = django_filters.BooleanFilter(method='filter_variant_of')
+    variant_of = StrictBooleanFilter(method='filter_variant_of')
     key_date__gt = django_filters.CharFilter(
         field_name='key_date',
         lookup_expr='gt',

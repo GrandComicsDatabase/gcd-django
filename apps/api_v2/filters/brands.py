@@ -8,6 +8,7 @@ import django_filters
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
     IntegerFilter,
+    StrictBooleanFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import Brand
@@ -20,7 +21,7 @@ class BrandFilterSet(TimestampFilterSet):
         field_name='name',
         lookup_expr='icontains',
     )
-    generic = django_filters.BooleanFilter(field_name='generic')
+    generic = StrictBooleanFilter(field_name='generic')
     group = IntegerFilter(field_name='id', method='filter_group')
     publisher = IntegerFilter(field_name='id', method='filter_publisher')
 

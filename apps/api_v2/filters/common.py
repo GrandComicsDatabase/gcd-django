@@ -5,6 +5,7 @@
 
 import django_filters
 from django import forms
+from django.core.exceptions import ValidationError
 from django_filters.constants import EMPTY_VALUES
 
 from apps.stddata.models import Language
@@ -25,6 +26,53 @@ class IntegerFilter(django_filters.Filter):
     """Filter integer database identifiers without accepting decimals."""
 
     field_class = forms.IntegerField
+
+
+class StrictBooleanWidget(django_filters.widgets.BooleanWidget):
+    """Preserve malformed values so the form field can reject them."""
+
+    def value_from_datadict(self, data, files, name):
+        """Return booleans for supported values and preserve invalid input."""
+        value = data.get(name)
+        if isinstance(value, str):
+            value = value.lower()
+        if value in (True, '1', 'true'):
+            return True
+        if value in (False, '0', 'false'):
+            return False
+        return value
+
+
+class StrictBooleanField(forms.NullBooleanField):
+    """Accept public Boolean spellings and reject every other value."""
+
+    default_error_messages = {
+        'invalid': 'Enter either true or false.',
+    }
+
+    def to_python(self, value):
+        """Convert supported values without treating invalid input as empty."""
+        if value in EMPTY_VALUES:
+            return None
+        if value in (True, '1', 'true', 'True'):
+            return True
+        if value in (False, '0', 'false', 'False'):
+            return False
+        raise ValidationError(
+            self.error_messages['invalid'],
+            code='invalid',
+        )
+
+
+class StrictBooleanFilter(django_filters.BooleanFilter):
+    """Boolean filter that reports malformed query parameters."""
+
+    field_class = StrictBooleanField
+
+    def __init__(self, *args, **kwargs):
+        """Use the strict widget unless the caller supplies another one."""
+        kwargs.setdefault('widget', StrictBooleanWidget)
+        super().__init__(*args, **kwargs)
 
 
 def _request_filter_cache(request):
