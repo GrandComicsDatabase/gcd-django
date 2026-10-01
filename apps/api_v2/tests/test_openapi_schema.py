@@ -245,3 +245,28 @@ def test_v2_schema_documents_foreign_key_filters_as_integers(
         }
         for parameter_name in parameter_names:
             assert parameters[parameter_name]['schema']['type'] == 'integer'
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
+def test_v2_schema_documents_ranked_series_search(
+    client,
+    restore_v2_urlconf,
+):
+    """The Series search contract and ordering are visible in API docs."""
+    schema = _schema(client)
+    parameters = {
+        parameter['name']: parameter
+        for parameter in schema['paths']['/api/v2/series/']['get'][
+            'parameters'
+        ]
+    }
+
+    assert parameters['search']['schema']['type'] == 'string'
+    description = parameters['search']['description'].lower()
+    assert 'accent-sensitive' in description
+    assert 'exact title' in description
+    assert 'title prefix' in description
+    assert 'token prefix' in description
+    assert 'substring' in description
+    assert 'sort_name, year_began, and id' in description
