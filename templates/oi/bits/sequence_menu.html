@@ -11,7 +11,6 @@
   <form method="POST" action="{% url 'toggle_delete_story_revision' id=story.id %}">{% csrf_token %}<button class="w-full rounded px-3 py-2 text-left text-normal-gcd visited:text-normal-gcd bg-index-status-edit hover:bg-red-400">Mark to delete</button></form>
   {% endif %}
   {% if story.moveable %}<form method="POST" action="{% url 'move_story_revision' id=story.id %}">{% csrf_token %}<button class="w-full rounded px-3 py-2 text-left hover:bg-gray-100">Move to other issue</button></form>{% endif %}
-  {% if story.old_credits %}<form method="POST" action="{% url 'migrate_story_revision' id=story.id %}">{% csrf_token %}<button class="w-full rounded px-3 py-2 text-left hover:bg-gray-100">Migrate Credits</button></form>{% endif %}
   {% else %}
   <form method="POST" action="{% url 'toggle_delete_story_revision' id=story.id %}">{% csrf_token %}<button class="w-full rounded px-3 py-2 text-left hover:bg-gray-100">Restore</button></form>
   {% endif %}

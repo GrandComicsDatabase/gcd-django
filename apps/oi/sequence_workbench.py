@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
@@ -57,6 +57,20 @@ def allowed_sequence_types(story):
     # Form construction normalizes genre in memory. Do not mutate the model
     # being saved just to obtain the choices for its type field.
     return get_story_revision_form(revision=copy(story)).base_fields['type'].queryset
+
+
+@permission_required('indexer.can_reserve', raise_exception=True)
+@require_POST
+@transaction.atomic
+def migrate_all_credits(request, id):
+    """Migrate active sequence credits together, using the existing converter."""
+    changeset = get_object_or_404(Changeset.objects.select_for_update(), pk=id)
+    if changeset.indexer_id != request.user.pk or changeset.state != states.OPEN:
+        return JsonResponse({'error': 'This changeset is not editable by you.'}, status=403)
+    for story in changeset.storyrevisions.filter(deleted=False):
+        if story.old_credits():
+            story.migrate_credits()
+    return redirect('edit', id=changeset.pk)
 
 
 @permission_required('indexer.can_reserve', raise_exception=True)

@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 from copy import deepcopy
 from decimal import Decimal
 
@@ -11,7 +12,7 @@ from apps.gcd.models import StoryType, CreditType
 from apps.oi import states
 from apps.oi.models import CTYPES, IssueRevision, StoryRevision
 from apps.oi.sequence_workbench import (
-    save_sequences, sequence_snapshot, snapshot_version,
+    migrate_all_credits, save_sequences, sequence_snapshot, snapshot_version,
     workbench_context,
 )
 
@@ -44,6 +45,67 @@ def post(changeset, user, data):
     request = RequestFactory().post('/sequences/', json.dumps(data), content_type='application/json')
     request.user = user
     return save_sequences(request, changeset.pk)
+
+
+def test_bulk_migration_only_active_legacy_credits(workbench):
+    changeset, issue, story, user = workbench
+    story.script = 'Legacy creator'
+    story.save()
+    deleted = StoryRevision.clone_revision(story, changeset, issue)
+    deleted.deleted = True
+    deleted.save()
+    clean = StoryRevision.clone_revision(story, changeset, issue)
+    for field in ('script', 'pencils', 'inks', 'colors', 'letters', 'editing'):
+        setattr(clean, field, '')
+    clean.save()
+    request = RequestFactory().post('/migrate/')
+    request.user = user
+    with patch.object(StoryRevision, 'migrate_credits', autospec=True) as migrate:
+        response = migrate_all_credits(request, changeset.pk)
+    assert response.status_code == 302
+    assert response.url == '/changeset/%s/edit/' % changeset.pk
+    assert [call.args[0].pk for call in migrate.call_args_list] == [story.pk]
+    html = render_to_string('oi/edit/issue_changeset.html', {
+        'changeset': changeset, 'user': user, 'CTYPES': CTYPES,
+        **workbench_context(changeset),
+    })
+    assert html.count('>Migrate credits</span>') == 1
+    assert '>Migrate all credits</span>' in html
+
+
+def test_bulk_migration_access_and_post_only(workbench, django_user_model):
+    changeset, issue, story, user = workbench
+    request = RequestFactory().get('/migrate/')
+    request.user = user
+    assert migrate_all_credits(request, changeset.pk).status_code == 405
+    request = RequestFactory().post('/migrate/')
+    other = django_user_model.objects.create_user('other-migration')
+    other.user_permissions.add(Permission.objects.get(codename='can_reserve'))
+    request.user = other
+    assert migrate_all_credits(request, changeset.pk).status_code == 403
+    request.user = user
+    changeset.state = states.PENDING
+    changeset.save()
+    assert migrate_all_credits(request, changeset.pk).status_code == 403
+
+
+def test_bulk_migration_rolls_back_on_failure(workbench):
+    changeset, issue, story, user = workbench
+    story.script = 'Legacy creator'
+    story.save()
+    request = RequestFactory().post('/migrate/')
+    request.user = user
+
+    def fail(revision):
+        revision.script = ''
+        revision.save()
+        raise ValueError('Migration failed')
+
+    with patch.object(StoryRevision, 'migrate_credits', autospec=True, side_effect=fail):
+        with pytest.raises(ValueError, match='Migration failed'):
+            migrate_all_credits(request, changeset.pk)
+    story.refresh_from_db()
+    assert story.script == 'Legacy creator'
 
 
 def test_edit_and_stale_draft_conflict(workbench):

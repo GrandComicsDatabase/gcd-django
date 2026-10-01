@@ -1680,8 +1680,8 @@ a:hover {
   width: 12px;
 }
 
-.w-\[15\%\] {
-  width: 15%;
+.w-\[13\%\] {
+  width: 13%;
 }
 
 .w-\[150px\] {
@@ -1692,8 +1692,8 @@ a:hover {
   width: 154px;
 }
 
-.w-\[20\%\] {
-  width: 20%;
+.w-\[18\%\] {
+  width: 18%;
 }
 
 .w-\[60px\] {
@@ -2704,6 +2704,11 @@ a:hover {
 .text-red-500 {
   --tw-text-opacity: 1;
   color: rgb(239 68 68 / var(--tw-text-opacity));
+}
+
+.text-red-600 {
+  --tw-text-opacity: 1;
+  color: rgb(220 38 38 / var(--tw-text-opacity));
 }
 
 .text-red-700 {

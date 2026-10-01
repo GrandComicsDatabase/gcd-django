@@ -46,4 +46,12 @@
       <span data-credit-status class="whitespace-nowrap text-sm" title="S: Script; P: Pencils; I: Inks; C: Colors; L: Letters; E: Editing. Green: complete; red: incomplete; gray background: marked No.">{{ story|show_credit_status }}</span>
     </span>
   </td>
+  <td class="w-full min-w-0 p-1 lg:w-auto">
+    {% if not story.deleted and story.old_credits %}
+    <form method="POST" action="{% url 'migrate_story_revision' id=story.id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn-blue-editing"><span class="text-red-600">Migrate credits</span></button>
+    </form>
+    {% endif %}
+  </td>
 </tr>

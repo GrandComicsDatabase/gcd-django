@@ -12,15 +12,16 @@
     </div>
     <div class="min-w-0">
       <table class="block w-full text-left text-sm lg:table lg:table-fixed">
-        <colgroup class="hidden lg:table-column-group"><col class="w-56"><col><col class="w-[20%]"><col class="w-[15%]"><col class="w-[7%]"><col class="w-[9%]"><col class="w-[8%]"></colgroup>
+        <colgroup class="hidden lg:table-column-group"><col class="w-56"><col><col class="w-[18%]"><col class="w-[13%]"><col class="w-[7%]"><col class="w-[9%]"><col class="w-[8%]"><col class="w-[8%]"></colgroup>
         <caption class="sr-only">Editable sequences for {{ issue_revision.full_name }}</caption>
         <thead class="hidden border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-600 lg:table-header-group"><tr>
           <th scope="col" class="min-w-0 p-1"><span class="sr-only">Sequence number and actions</span></th><th scope="col" class="min-w-0 p-1">Title</th><th scope="col" class="min-w-0 p-1">Feature</th><th scope="col" class="min-w-0 p-1">Type</th><th scope="col" class="min-w-0 p-1">Pages</th><th scope="col" class="min-w-0 p-1">Range</th><th scope="col" class="min-w-0 p-1">Creators</th>
+          <th scope="col" class="min-w-0 p-1"><span class="sr-only">Credit migration</span></th>
         </tr></thead>
         <tbody class="block lg:table-row-group">
         {% for story in issue_revision.ordered_story_revisions %}
           {% include "oi/bits/sequence_row.html" %}
-        {% empty %}<tr data-empty><td colspan="7" class="p-8 text-center text-gray-500">No sequences yet. Add a sequence or drop an import file below.</td></tr>{% endfor %}
+        {% empty %}<tr data-empty><td colspan="8" class="p-8 text-center text-gray-500">No sequences yet. Add a sequence or drop an import file below.</td></tr>{% endfor %}
         </tbody>
       </table>
     </div>
@@ -60,6 +61,10 @@
     </div>
   </section>
   {% endfor %}
+  <form method="POST" action="{% url 'migrate_all_sequence_credits' id=changeset.id %}">
+    {% csrf_token %}
+    <button type="submit" class="btn-blue-editing"><span class="text-red-600">Migrate all credits</span></button>
+  </form>
 </div>
 {% if changeset.change_type == CTYPES.variant_add or changeset.change_type == CTYPES.two_issues %}
   {% for cover in changeset.coverrevisions.all %}<div class="mt-2">{{ cover.cover|cover_image_tag:'1, moved_cover' }} Cover is moved from {{ cover.issue }}.<form action="{% url 'undo_move_cover' id=changeset.id cover_id=cover.id %}" method="POST">{% csrf_token %}<button class="btn-blue-editing">Undo Cover Move</button></form></div>{% endfor %}
