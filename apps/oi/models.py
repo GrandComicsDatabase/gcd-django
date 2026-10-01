@@ -6117,6 +6117,9 @@ class StoryRevision(Revision):
                                            fork=True, exclude={'keywords'})
         new_revision.issue = issue_revision.issue
         new_revision.sequence_number = issue_revision.next_sequence_number()
+        if new_revision.type_id == STORY_TYPES['cover']:
+            new_revision.type = StoryType.objects.get(
+                name='cover reprint (on interior page)')
         new_revision.save()
         credits = story_revision.story_credit_revisions.filter(deleted=False)
         if copy_credit_info:

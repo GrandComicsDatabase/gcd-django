@@ -1,9 +1,9 @@
 /** @type {import('tailwindcss').Config} */
-const colors = require('tailwindcss/colors')
 
 module.exports = {
-  content: ['./templates/*.html', './templates/**/*.html',
-            './templates/**/**/*.html',
+  content: ['./apps/select/templates/select/*.html', './static/js/select_cache.js', './static/js/select_search_panels.js', './templates/**/*.html',
+            './static/js/sequence_workbench.js',
+            './apps/oi/templatetags/compare.py',
             './apps/indexer/templates/indexer/*.html',
             './apps/indexer/templates/indexer/bits/*.html',
 	    './apps/voting/templates/voting/*.html',

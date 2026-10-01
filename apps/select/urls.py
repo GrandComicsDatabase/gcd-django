@@ -15,6 +15,8 @@ urlpatterns = [
       select_views.process_select_search_haystack, name='select_object_search_haystack'),
     path('select_object/<path:select_key>/', select_views.select_object,
       name='select_object'),
+    path('select_multiple_sequences/<path:select_key>/',
+      select_views.select_multiple_sequences, name='select_multiple_sequences'),
 
     path('select_objects/<path:select_key>/',
       select_views.process_multiple_selects, name='process_multiple_selects'),

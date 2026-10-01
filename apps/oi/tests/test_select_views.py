@@ -41,6 +41,10 @@ def selector_request(params, user):
 def test_database_selector_uses_sortable_table(
         select_type, search_param, search_fields, table_class, target,
         any_indexer):
+    if select_type == 'cover':
+        from apps.gcd.models import StoryType
+        StoryType.objects.get_or_create(pk=6, defaults={'name': 'cover',
+                                                       'sort_code': 6})
     data = {select_type: True}
     params = {'select_key': 'test', search_param: 'Search'}
     params.update(search_fields)
