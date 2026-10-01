@@ -1,11 +1,14 @@
 /** @type {import('tailwindcss').Config} */
 
 module.exports = {
-  content: ['./apps/select/templates/select/*.html', './static/js/select_cache.js', './static/js/select_search_panels.js', './templates/**/*.html',
+  content: ['./templates/**/*.html',
             './static/js/sequence_workbench.js',
             './apps/oi/templatetags/compare.py',
             './apps/indexer/templates/indexer/*.html',
             './apps/indexer/templates/indexer/bits/*.html',
+            './apps/select/templates/select/*.html',
+            './static/js/select_cache.js',
+            './static/js/select_search_panels.js',
 	    './apps/voting/templates/voting/*.html',
             './apps/gcd/markdown_extension.py',],
   theme: {
