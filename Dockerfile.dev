@@ -1,7 +1,8 @@
 FROM python:3.13-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -18,6 +19,8 @@ WORKDIR /workspace
 
 COPY requirements.txt ./
 RUN python -m pip install --upgrade pip "setuptools<81" \
-    && python -m pip install --no-cache-dir -r requirements.txt
+    && python -m pip install --no-cache-dir -r requirements.txt \
+    && python -m playwright install --with-deps --only-shell chromium \
+    && chmod -R a+rX /opt/playwright
 
 COPY . ./

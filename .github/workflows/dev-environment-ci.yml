@@ -68,6 +68,9 @@ jobs:
           python -m pip install --upgrade pip "setuptools<81"
           python -m pip install -r requirements.txt
 
+      - name: Install Chromium
+        run: python -m playwright install --with-deps --only-shell chromium
+
       - name: Run migrations
         run: python manage.py migrate --noinput
 
@@ -91,6 +94,21 @@ jobs:
           if [ -d apps/api_v2/tests ]; then
             python -m pytest apps/api_v2/tests/ -q
           fi
+
+      - name: Generate the user guide
+        run: |
+          python -m pytest tests/wiki --browser chromium \
+            --output /tmp/wiki-test-results -p no:cacheprovider -q
+          python -m mkdocs build -f docs/mkdocs.yml
+
+      - name: Upload the generated user guide
+        uses: actions/upload-artifact@v4
+        with:
+          name: user-wiki
+          path: |
+            site/
+            docs/wiki/
+          if-no-files-found: error
 
   compose-smoke:
     name: Docker Compose core setup

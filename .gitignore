@@ -26,3 +26,6 @@ settings_local.py
 # Local development environment
 .env
 .venv/
+
+# Generated user guide website
+/site/
