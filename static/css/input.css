@@ -1,20 +1,111 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v3 did not use cascade layers: keep every rule in one layer so
+   that specificity and source order decide, as before. */
+@layer theme, base;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/preflight.css" layer(base);
+@plugin "@tailwindcss/forms";
+
+@source "../../templates/**/*.html";
+@source "../../apps/indexer/templates/indexer/**/*.html";
+@source "../../apps/select/templates/select/*.html";
+@source "../../apps/voting/templates/voting/*.html";
+@source "../js/select_cache.js";
+@source "../js/select_search_panels.js";
+@source "../js/sequence_workbench.js";
+@source "../../apps/oi/templatetags/compare.py";
+@source "../../apps/gcd/templatetags/display.py";
+@source "../../apps/gcd/views/details.py";
+@source "../../apps/gcd/forms/search.py";
+@source "../../apps/oi/forms/publisher.py";
+@source "../../apps/oi/forms/story.py";
+@source "../../apps/gcd/markdown_extension.py";
+
+/* Classes composed at runtime, formerly kept in a local template file. */
+@source inline("min-w-[100px] sm:min-w-[150px] w-[200px] md:w-[200px] md:w-[204px] w-[150px] w-[154px] p-[2px] sm:w-[200px]");
+@source inline("border-2 basis-24 basis-48 basis-96");
+@source inline("gap-x-8 max-w-48 invisible [&>a]:visited:text-link-gcd rounded-full sm:text-right text-left opacity-0 ease-in-out delay-100 duration-300 absolute transition-opacity group-hover:opacity-100");
+@source inline("lg:w-64 text-right w-36 lg:w-44 text-red-700 w-3/4 w-full md:w-3/4 lg:w-3/4 lg:w-4/5 text-blue-900");
+@source inline("max-h-60 border-gray-500 italic list-[lower-alpha] align-top text-green-500 text-red-500 bg-stone-300");
+@source inline("mb-0.5 h-5 w-5 w-[100px] border-orange-400 bg-orange-400");
+
+/* Keep the Tailwind v3 hover behaviour on touch devices. */
+@custom-variant hover (&:hover);
+
+@theme {
+  --color-normal: #0a0a0a;
+  --color-normal-gcd: #0a0a0a;
+  --color-gcd: #66E;
+  --color-link-gcd: #2727eb;
+  --color-index-status-edit: #E77;
+  --color-index-status-in-queue: #EA7;
+  --color-my-comics: #A9302A;
+  --color-preview: #FFE944;
+  --color-visited-gcd: #551A8B;
+  --breakpoint-xs: 30rem;
+
+  /* Tailwind v3 values of the palette colours that v4 changes visibly.
+     Remove to adopt the v4 palette. */
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-cyan-400: #22d3ee;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-orange-400: #fb923c;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-yellow-300: #fde047;
+  --color-yellow-400: #facc15;
+}
+
+@layer base {
+  /* Tailwind v3 defaults for border color and button cursor. */
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Tailwind v3 Preflight kept the browser default padding of these elements. */
+  td,
+  th {
+    padding: 1px;
+  }
+
+  option {
+    padding: revert;
+  }
+
+  ::file-selector-button {
+    border: revert;
+    background-color: revert;
+    padding: revert;
+  }
+}
 
 @layer base {
   h1 {
-    font-size: theme('fontSize.2xl');
+    font-size: var(--text-2xl);
     font-weight: bold;
   }
 
   h2 {
-    font-size: theme('fontSize.xl');
+    font-size: var(--text-xl);
     font-weight: bold;
   }
 
   h3 {
-    font-size: theme('fontSize.lg');
+    font-size: var(--text-lg);
     font-weight: bold;
   }
 
@@ -23,7 +114,7 @@
   }
 }
 
-@layer components {
+@layer base {
   .link-with-text-color {
     @apply text-black visited:text-black
   }
@@ -37,7 +128,7 @@
   }
 
   .navigation-bar-box-link {
-    @apply link-with-text-color px-2 hover:bg-blue-300 hover:no-underline border border-gray-400
+    @apply text-black visited:text-black px-2 hover:bg-blue-300 hover:no-underline border border-gray-400
   }
 
   .btn {
@@ -181,12 +272,12 @@ html {
   background-color: white;
   font-size: 14px;
 
-  @screen sm {
+  @variant sm {
     font-size: 15px;
   }
 }
 
-@layer components {
+@layer base {
   .object-page-numbered-list {
     @apply ms-2 list-decimal grid sm:grid-cols-2 ps-4;
 
@@ -196,7 +287,7 @@ html {
   }
 }
 
-@layer components {
+@layer base {
   .object-page-link-list {
     @apply list-disc sm:columns-2 list-outside ps-4;
 
@@ -204,22 +295,29 @@ html {
       @apply pr-2;
     }
   }
+
+  @tailwind utilities source(none);
 }
 
-[type='text'],
-[type='email'],
-[type='url'],
-[type='password'],
-[type='number'],
-[type='date'],
-[type='datetime-local'],
-[type='month'],
-[type='search'],
-[type='tel'],
-[type='time'],
-[type='week'],
-[multiple],
-textarea,
-select {
-  @apply py-[0.2em] ps-[0.5rem] border-gray-500;
+@layer base {
+  /* Nested to outrank the forms plugin rules, which v4 emits last. */
+  html {
+    [type='text'],
+    [type='email'],
+    [type='url'],
+    [type='password'],
+    [type='number'],
+    [type='date'],
+    [type='datetime-local'],
+    [type='month'],
+    [type='search'],
+    [type='tel'],
+    [type='time'],
+    [type='week'],
+    [multiple],
+    textarea,
+    select {
+      @apply py-[0.2em] ps-[0.5rem] border-gray-500;
+    }
+  }
 }

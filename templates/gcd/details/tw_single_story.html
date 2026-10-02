@@ -159,15 +159,15 @@
       {% endif %}
       {% if story.has_reprints %}
         {% if story.reprint_count > request.user.indexer.reprint_threshold|default:5 %}
-        <details class="[&_svg]:open:rotate-90">
+        <details class="open:[&_svg]:rotate-90">
         {% else %}
-        <details class="[&_svg]:open:rotate-90" open="">
+        <details class="open:[&_svg]:rotate-90" open="">
           {% endif %}
             <summary class="list-none"> 
               {% include 'gcd/bits/svg_details.html' %}
             <span class="btn-blue btn">Reprints ({{ story.reprint_count }})</span>
           </summary>
-          <dd><ul class="object-page-link-list columns-1 [&_ul]:columns-1 [&_ul]:object-page-link-list ">{{ story|show_reprints:True|linebreaksbr }}</ul></dd>
+          <dd><ul class="object-page-link-list columns-1 [&_ul]:columns-1 [&_ul]:list-disc [&_ul]:list-outside [&_ul]:ps-4 ">{{ story|show_reprints:True|linebreaksbr }}</ul></dd>
         </details>
       {% endif %}
     </dl>
