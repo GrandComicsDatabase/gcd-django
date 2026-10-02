@@ -129,6 +129,32 @@ def test_submission_validation_accepts_empty_multiple_choice(
     assert invalid == []
 
 
+@pytest.mark.parametrize('page_count,uncertain,exceeds', [
+    (1, False, True), (100, False, False), (None, False, False),
+    (1, True, False),
+])
+def test_submission_validates_sequence_total_when_issue_revision_exists(
+        any_edit_story_rev, any_indexer, page_count, uncertain, exceeds):
+    changeset = any_edit_story_rev.changeset
+    changeset.change_type = CTYPES['issue']
+    changeset.save()
+    revision = IssueRevision.clone(any_edit_story_rev.issue, changeset=changeset)
+    revision.page_count = page_count
+    revision.page_count_uncertain = uncertain
+    revision.save()
+    any_edit_story_rev.page_count = 2
+    any_edit_story_rev.save()
+
+    invalid = validate_changeset_revisions(changeset, _request_for(any_indexer))
+
+    page_errors = [(obj, message) for obj, messages in invalid
+                   for message in messages
+                   if 'exceeds the issue page count' in message]
+    assert bool(page_errors) == exceeds
+    if exceeds:
+        assert page_errors[0][0] == revision
+
+
 def test_submit_keeps_invalid_changeset_open(any_edit_story_rev,
                                              any_indexer):
     changeset = any_edit_story_rev.changeset
