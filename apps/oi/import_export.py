@@ -10,6 +10,8 @@ from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
 import django.urls as urlresolvers
+from django.db import transaction
+from django.db.models import BooleanField
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
@@ -23,7 +25,8 @@ from apps.gcd.models import StoryType, Issue, Series, IndiciaPrinter, \
 from apps.gcd.models.support import GENRES
 from apps.oi.models import (
     Changeset, StoryRevision, IssueRevision, PreviewIssue, get_keywords,
-    on_sale_date_as_string, CTYPES)
+    on_sale_date_as_string, CTYPES, IssueCreditRevision, StoryCreditRevision,
+    StoryCharacterRevision, StoryGroupRevision)
 from apps.oi import states
 MIN_ISSUE_FIELDS = 10
 # MAX_ISSUE_FIELDS is set to 19 to allow import of exported issue lines, but
@@ -82,6 +85,94 @@ SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
                    'genre', 'characters', 'job_number', 'reprint_notes',
                    'synopsis', 'notes', 'keywords', 'first_line']
 
+# JSON and YAML files carry the linked data by id, so that an exported file
+# can be imported again without having to resolve ambiguous names.
+STRUCTURED_EXCLUDE = {'issue', 'series', 'variant_of', 'sequence_number',
+                      'variant_name', 'variant_cover_status'}
+# file key, revision class, active objects of story, of story revision
+STORY_RELATIONS = [('credits', StoryCreditRevision, 'active_credits',
+                    'story_credit_revisions'),
+                   ('appearing_characters', StoryCharacterRevision,
+                    'active_characters', 'story_character_revisions'),
+                   ('appearing_groups', StoryGroupRevision, 'active_groups',
+                    'story_group_revisions')]
+
+
+class StructuredImportError(Exception):
+    pass
+
+
+def _get_object(model, object_id):
+    objects = model.objects.filter(id=object_id)
+    if hasattr(model, 'deleted'):
+        objects = objects.filter(deleted=False)
+    related = objects.first()
+    if related is None:
+        raise StructuredImportError('%s with id %s does not exist.' % (
+          model._meta.verbose_name, esc(object_id)))
+    return related
+
+
+def _get_objects(model, object_ids):
+    return [_get_object(model, object_id) for object_id in object_ids or []]
+
+
+def _apply_structured_flags(parsed_data, fields, revision_class):
+    for name, field in revision_class._get_single_value_fields().items():
+        if isinstance(field, BooleanField) and name in fields:
+            parsed_data[name] = bool(fields[name])
+
+
+def _create_related_revisions(revision_class, entries, existing=(),
+                              **kwargs):
+    '''
+    Creates the revisions for linked data, e.g. credits or characters.
+    Existing revisions with the same values are kept, others are removed.
+    '''
+    existing = list(existing)
+    for entry in entries or []:
+        values = {}
+        for name, field in revision_class._get_single_value_fields().items():
+            if field.is_relation:
+                if entry.get(name + '_id') not in (None, ''):
+                    values[name] = _get_object(field.related_model,
+                                               entry[name + '_id'])
+                elif not field.null:
+                    raise StructuredImportError('%s_id is missing in %s.' % (
+                      name, esc(entry)))
+            elif name in entry:
+                values[name] = entry[name]
+        multi_values = {
+          name: _get_objects(field.related_model, entry.get(name + '_ids'))
+          for name, field in revision_class._get_multi_value_fields().items()}
+        match = [revision for revision in existing
+                 if all(getattr(revision, name) == value
+                        for name, value in values.items())]
+        if match:
+            existing.remove(match[0])
+            continue
+        revision = revision_class(**kwargs, **values)
+        revision.save()
+        for name, objects in multi_values.items():
+            getattr(revision, name).set(objects)
+    for revision in existing:
+        if revision.source:
+            revision.deleted = True
+            revision.save()
+        else:
+            revision.delete()
+
+
+def _add_structured_story_data(story_revision, story_data):
+    for name, field in StoryRevision._get_multi_value_fields().items():
+        if name + '_ids' in story_data:
+            getattr(story_revision, name).set(
+              _get_objects(field.related_model, story_data[name + '_ids']))
+    for key, revision_class, _, _ in STORY_RELATIONS:
+        _create_related_revisions(revision_class, story_data.get(key),
+                                  changeset=story_revision.changeset,
+                                  story_revision=story_revision)
+
 
 def _handle_import_error(request, return_url, error_text):
     response = render_error(
@@ -105,7 +196,12 @@ def _convert_upload_to_file(request, request_file):
     tmpfile = open(tmpfile_name, 'rb')
     request.tmpfile = tmpfile
     request.tmpfile_name = tmpfile_name
-    encoding = chardet.detect(tmpfile.read())['encoding']
+    content = tmpfile.read()
+    try:
+        content.decode('utf-8')
+        encoding = 'utf-8-sig'
+    except UnicodeDecodeError:
+        encoding = chardet.detect(content)['encoding']
     tmpfile = open(tmpfile_name, encoding=encoding)
     return tmpfile
 
@@ -259,8 +355,10 @@ def _process_sequence_data(request, sequence_fields, changeset):
                   'keywords']:
         parsed_data[field] = sequence_fields.get(field, '').strip()
 
-    if parsed_data['title'].startswith('[') and \
-       parsed_data['title'].endswith(']'):
+    if 'title_inferred' in sequence_fields:
+        parsed_data['title_inferred'] = bool(sequence_fields['title_inferred'])
+    elif parsed_data['title'].startswith('[') and \
+            parsed_data['title'].endswith(']'):
         parsed_data['title'] = parsed_data['title'][1:-1]
         parsed_data['title_inferred'] = True
     else:
@@ -291,6 +389,7 @@ def _process_sequence_data(request, sequence_fields, changeset):
             parsed_data['no_letters'] = True
     if not parsed_data['editing']:
         parsed_data['no_editing'] = True
+    _apply_structured_flags(parsed_data, sequence_fields, StoryRevision)
     return parsed_data, False
 
 
@@ -305,17 +404,23 @@ def _create_story_add(story_data, request, issue, changeset, running_number):
       issue=issue,
       **parsed_data)
     story_revision.save()
+    _add_structured_story_data(story_revision, story_data)
     return story_revision, False
 
 
 def _import_sequences_structured(request, issue, changeset, story_data,
                                  running_number):
-    for story in story_data:
-        response, failure = _create_story_add(story, request, issue,
-                                              changeset, running_number)
-        if failure:
-            return response
-        running_number += 1
+    try:
+        with transaction.atomic():
+            for story in story_data:
+                response, failure = _create_story_add(
+                  story, request, issue, changeset, running_number)
+                if failure:
+                    return response
+                running_number += 1
+    except StructuredImportError as error:
+        return _handle_import_error(request, urlresolvers.reverse(
+          'edit', kwargs={'id': changeset.id}), str(error))
     return HttpResponseRedirect(urlresolvers.reverse(
                                 'edit',
                                 kwargs={'id': changeset.id}))
@@ -410,6 +515,11 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
         _check_for_none(issue_fields.get('brand_emblem', '').strip())
     # if we have a brand, we need to find the corresponding brand emblems
     brand_array = []
+    if 'brand_emblem_ids' in issue_fields:
+        brand_array = _get_objects(
+          IssueRevision._meta.get_field('brand_emblem').related_model,
+          issue_fields['brand_emblem_ids'])
+        brand_name = ''
     for brand_emblem in brand_name.split(';'):
         parsed_data['brand_emblem'], failure = _find_publisher_object(
           request, changeset_url, brand_emblem.strip(),
@@ -417,7 +527,8 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
           "Brand", series.publisher)
         if failure:
             return parsed_data['brand_emblem'], True
-        brand_array.append(parsed_data['brand_emblem'])
+        if parsed_data['brand_emblem']:
+            brand_array.append(parsed_data['brand_emblem'])
     if brand_array:
         parsed_data['brand_emblem'] = brand_array
     else:
@@ -426,12 +537,17 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
     # indicia publisher has special no_-field, find the corresponding object
     indicia_publisher_name, parsed_data['indicia_pub_not_printed'] = \
         _check_for_none(issue_fields.get('indicia_publisher', '').strip())
-    parsed_data['indicia_publisher'], failure = _find_publisher_object(
-      request, changeset_url, indicia_publisher_name,
-      series.publisher.active_indicia_publishers(),
-      "Indicia publisher", series.publisher)
-    if failure:
-        return parsed_data['indicia_publisher'], True
+    if issue_fields.get('indicia_publisher_id') not in (None, ''):
+        parsed_data['indicia_publisher'] = _get_object(
+          IssueRevision._meta.get_field('indicia_publisher').related_model,
+          issue_fields['indicia_publisher_id'])
+    else:
+        parsed_data['indicia_publisher'], failure = _find_publisher_object(
+          request, changeset_url, indicia_publisher_name,
+          series.publisher.active_indicia_publishers(),
+          "Indicia publisher", series.publisher)
+        if failure:
+            return parsed_data['indicia_publisher'], True
 
     # check the key date for correct format
     parsed_data['key_date'] = issue_fields.get('key_date', '').strip()\
@@ -485,6 +601,10 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
         printer_name, parsed_data['indicia_printer_not_printed'] = \
             _check_for_none(issue_fields.get('indicia_printer', '').strip())
         printer_array = []
+        if 'indicia_printer_ids' in issue_fields:
+            printer_array = _get_objects(IndiciaPrinter,
+                                         issue_fields['indicia_printer_ids'])
+            printer_name = ''
         for printer in printer_name.split(';'):
             parsed_data['indicia_printer'], failure = _find_publisher_object(
               request, changeset_url, printer.strip(),
@@ -492,7 +612,8 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
               "Indicia Printer", None)
             if failure:
                 return parsed_data['indicia_printer'], True
-            printer_array.append(parsed_data['indicia_printer'])
+            if parsed_data['indicia_printer']:
+                printer_array.append(parsed_data['indicia_printer'])
         if printer_array:
             parsed_data['indicia_printer'] = printer_array
         else:
@@ -509,6 +630,7 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
                                 parsed_data['variant_cover_status']), True
         parsed_data['variant_cover_status'] = VCS_Codes[parsed_data[
                                               'variant_cover_status']]
+    _apply_structured_flags(parsed_data, issue_fields, IssueRevision)
     return parsed_data, False
 
 
@@ -590,6 +712,10 @@ def import_issues_to_series_structured(request, series_id, use_yaml=False):
                                                         series, series_url)
             if failure:
                 return issue_revision
+            _create_related_revisions(IssueCreditRevision,
+                                      issue_data.get('credits'),
+                                      changeset=issue_revision.changeset,
+                                      issue_revision=issue_revision)
             if issue_revision.variant_of:
                 if len(issue_data.get('story_set', [])) > 1:
                     error_text = 'Variant %s has more than one story.' % (
@@ -621,6 +747,7 @@ def import_issues_to_series_structured(request, series_id, use_yaml=False):
                       issue=None,
                       **parsed_data)
                     story_revision.save()
+                    _add_structured_story_data(story_revision, story_data)
         return HttpResponseRedirect(urlresolvers.reverse('editing'))
     else:
         return HttpResponseRedirect(
@@ -629,15 +756,17 @@ def import_issues_to_series_structured(request, series_id, use_yaml=False):
 
 @permission_required('indexer.can_reserve')
 def import_issues_to_series(request, series_id):
-    if request.method == 'POST' and 'json' in request.POST:
-        return import_issues_to_series_structured(request, series_id)
-    if request.method == 'POST' and 'yaml' in request.POST:
-        return import_issues_to_series_structured(request, series_id,
-                                                  use_yaml=True)
-
     series = get_object_or_404(Series, id=series_id)
     series_url = urlresolvers.reverse('add_issues',
                                       kwargs={'series_id': series.id})
+    if request.method == 'POST' and ('json' in request.POST or
+                                     'yaml' in request.POST):
+        try:
+            return import_issues_to_series_structured(
+              request, series_id, use_yaml='yaml' in request.POST)
+        except StructuredImportError as error:
+            return _handle_import_error(request, series_url, str(error))
+
     if request.method == 'POST' and 'file' in request.FILES:
         tmpfile = _convert_upload_to_file(request, request.FILES['file'])
         upload = csv.reader(tmpfile)
@@ -781,6 +910,12 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
             running_number = 0
             issue = Issue.objects.get(id=issue_id)
             if use_json or use_yaml:
+                if 'credits' in issue_data:
+                    _create_related_revisions(
+                      IssueCreditRevision, issue_data['credits'],
+                      existing=issue_revision.issue_credit_revisions.filter(
+                        deleted=False),
+                      changeset=changeset, issue_revision=issue_revision)
                 return _import_sequences_structured(
                   request, issue, changeset, issue_data.get('story_set'),
                   running_number)
@@ -798,6 +933,9 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
           request,
           'Could not find issue for id %s and changeset %s'
           % (issue_id, changeset_id))
+    except StructuredImportError as error:
+        return _handle_import_error(request, urlresolvers.reverse(
+          'edit', kwargs={'id': changeset.id}), str(error))
 
 
 @permission_required('indexer.can_reserve')
@@ -1023,4 +1161,83 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                                 content_type='text/tab-separated-values')
         response['Content-Disposition'] = 'attachment; filename="%s.tsv"' % \
                                           filename
+    return response
+
+
+def _label(related):
+    # the names are only for readability, the import uses the ids
+    return getattr(related, 'name', '') or str(related)
+
+
+def _structured_data(data_object, revision_class):
+    data = {}
+    for name, field in revision_class._get_single_value_fields().items():
+        if name in STRUCTURED_EXCLUDE:
+            continue
+        value = getattr(data_object, name)
+        if field.is_relation:
+            data[name] = _label(value) if value else ''
+            data[name + '_id'] = value.id if value else None
+        elif isinstance(value, Decimal):
+            data[name] = str(value)
+        else:
+            data[name] = '' if value is None else value
+    for name in revision_class._get_multi_value_fields():
+        objects = getattr(data_object, name).order_by('id')
+        data[name] = '; '.join(_label(related) for related in objects)
+        data[name + '_ids'] = [related.id for related in objects]
+    return data
+
+
+@permission_required('indexer.can_reserve')
+def export_issue_to_structured_file(request, issue_id, use_yaml=False,
+                                    revision=False):
+    if revision:
+        issue = get_object_or_404(IssueRevision, id=issue_id)
+        credits = issue.issue_credit_revisions.filter(deleted=False)
+        stories = issue.active_stories()
+    else:
+        issue = get_object_or_404(Issue, id=issue_id)
+        credits = issue.active_credits
+        stories = issue.active_stories().order_by('sequence_number')
+    data = _structured_data(issue, IssueRevision)
+    if revision:
+        data['on_sale_date'] = on_sale_date_as_string(issue)
+        data['keywords'] = issue.keywords
+    else:
+        data['on_sale_date'] = issue.on_sale_date
+        data['keywords'] = get_keywords(issue)
+    if issue.variant_of:
+        data['variant_name'] = issue.variant_name
+        data['variant_cover_status'] = VCS_Codes(
+          issue.variant_cover_status).name
+    data['credits'] = [_structured_data(credit, IssueCreditRevision)
+                       for credit in credits.order_by('id')]
+    data['story_set'] = []
+    for story in stories:
+        story_data = _structured_data(story, StoryRevision)
+        story_data['keywords'] = story.keywords if revision \
+            else get_keywords(story)
+        for key, revision_class, active, revisions in STORY_RELATIONS:
+            if revision:
+                objects = getattr(story, revisions).filter(deleted=False)
+            else:
+                objects = getattr(story, active)
+            story_data[key] = [_structured_data(related, revision_class)
+                               for related in objects.order_by('id')]
+        data['story_set'].append(story_data)
+
+    filename = str(issue).replace(' ', '_')
+    if use_yaml:
+        response = HttpResponse(
+          yaml.safe_dump(data, allow_unicode=True, sort_keys=False),
+          content_type='application/yaml; charset=utf-8')
+        response['Content-Disposition'] = \
+            'attachment; filename="%s.yaml"' % filename
+    else:
+        response = HttpResponse(
+          json.dumps(data, ensure_ascii=False, indent=2),
+          content_type='application/json; charset=utf-8')
+        response['Content-Disposition'] = \
+            'attachment; filename="%s.json"' % filename
     return response

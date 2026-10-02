@@ -399,8 +399,23 @@ Related Links
             class="hover:bg-stone-400" href="{% url 'export_issue' issue.id %}"
     {% endif %}
       ><span class="px-1">(TSV)</span></a>
-  {% endif %}
-  {% if not preview %}
+
+      <a
+    {% if preview %}
+            class="hover:bg-stone-400" href="{% url 'export_issue_revision_json' issue.revision.id %}"
+    {% else %}
+            class="hover:bg-stone-400" href="{% url 'export_issue_json' issue.id %}"
+    {% endif %}
+      ><span class="px-1">(JSON)</span></a>
+
+      <a
+    {% if preview %}
+            class="hover:bg-stone-400" href="{% url 'export_issue_revision_yaml' issue.revision.id %}"
+    {% else %}
+            class="hover:bg-stone-400" href="{% url 'export_issue_yaml' issue.id %}"
+    {% endif %}
+      ><span class="px-1">(YAML)</span></a>
+  {% elif not preview %}
       <a class="hover:bg-stone-400" href="/api{% url 'show_issue' issue.id %}?format=json"><span class="px-1">(JSON)</span></a>
   {% endif %}
     </div>
