@@ -9,8 +9,17 @@ module.exports = {
             './apps/select/templates/select/*.html',
             './static/js/select_cache.js',
             './static/js/select_search_panels.js',
+            './static/js/sequence_workbench.js',
+            './apps/oi/templatetags/compare.py',
+            './apps/gcd/templatetags/display.py',
+            './apps/gcd/views/details.py',
+            './apps/gcd/forms/search.py',
+            './apps/oi/forms/publisher.py',
+            './apps/oi/forms/story.py',
 	    './apps/voting/templates/voting/*.html',
             './apps/gcd/markdown_extension.py',],
+  // Rendered by third-party widgets (markdownx, crispy-forms tabs).
+  safelist: ['markdownx-preview', 'tab-pane'],
   theme: {
   extend: {
       colors: {
