@@ -40,8 +40,8 @@
 {% if other_revisions %}
 Select a sequence from the current changeset:
 <ul class="object-page-link-list columns-1 ps-8">
-{% for story in other_revisions %}
-  <li>{{ story }}: <a href="{% url 'compare_revisions_copy' story_revision_id=revision.id other_revision_id=story.id %}">{{ story }}</a></li>
+{% for story in other_revisions reversed %}
+  <li>sequence {{ story.sequence_number }}: <a href="{% url 'compare_revisions_copy' story_revision_id=revision.id other_revision_id=story.id %}">{{ story }}</a></li>
 {% endfor %}
 </ul>
 {% endif %}
