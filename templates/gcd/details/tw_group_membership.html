@@ -29,7 +29,7 @@
             </li>
   {% if group_membership.notes %}
             <li><span class="font-bold">Notes:</span>
-            {{ group_membership.notes|urlizetrunc:75|linebreaksbr }}</li>
+            {% include "gcd/bits/notes.html" with value=group_membership.notes only %}</li>
   {% endif %}
           </ul>
           <ul class="object-page-link-list">

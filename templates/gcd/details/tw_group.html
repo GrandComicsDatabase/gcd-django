@@ -92,11 +92,11 @@ GCD :: Group :: {{ group.name }}
 </table>
 {% if group.description %}
 <h3 class="mt-2">Description:</h3>
-{{ group.description|render_markdown }}
+{% include "gcd/bits/rich_text.html" with value=group.description only %}
 {% endif %}
 {% if group.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ group.notes|render_markdown }}
+{% include "gcd/bits/notes.html" with value=group.notes only %}
 {% endif %}
 {% endblock %}
 
@@ -163,7 +163,7 @@ GCD :: Group :: {{ group.name }}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_group_relation' group_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_group' group_id=relation_info.0.id %}">{{ relation_info.0.descriptor }}</a>
       {% if relation.notes %}
-      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
       {% endif %}
   </li>
     {% endwith %}
@@ -180,7 +180,7 @@ GCD :: Group :: {{ group.name }}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_group_relation' group_relation_id=relation.id %}">{{ relation_info.1 }}</a> - <a href="{% url 'show_group' group_id=relation_info.0.id %}">{{ relation_info.0.translation_descriptor }}</a>
       {% if relation.notes %}
-      <br><strong>Notes: </strong>{{ relation.notes }}
+      {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
       {% endif %}
   </li>
     {% endwith %}
@@ -196,7 +196,7 @@ GCD :: Group :: {{ group.name }}
   <li class="break-inside-avoid-column">
     <a href="{% url 'show_group' group_id=relation.to_group.id %}">{{ relation.to_group }}</a>
     {% if relation.notes %}
-    <br><strong>Notes: </strong>{{ relation.notes }}
+    {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
     {% endif %}
   </li>
   {% endfor %}
@@ -213,7 +213,7 @@ GCD :: Group :: {{ group.name }}
         <br>
         <a href="{% url 'show_group_membership' group_membership_id=member.id %}">{{ member.display_years }} ({{ member.membership_type }}</a>)
       {% if member.notes %}
-        <br><strong>Notes: </strong>{{ member.notes }}
+        {% include "gcd/bits/notes.html" with value=member.notes label="Notes:" only %}
       {% endif %}
       </li>
   {% endfor %}

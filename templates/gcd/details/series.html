@@ -141,7 +141,7 @@
 {% if series.has_tracking %}
             <div class="series_detail_header"> Tracking: </div>
   {% if series.tracking_notes %}
-            <div class="series_notes">{{ series.tracking_notes|linebreaksbr }}</div>
+            <div class="series_notes">{% include "gcd/bits/notes.html" with value=series.tracking_notes only %}</div>
   {% endif %}
             <ul class="series_detail_info">
               {{ series|show_series_tracking }}
@@ -149,7 +149,7 @@
 {% endif %}
 {% if series.notes %}
             <div class="series_detail_header"> Notes </div>
-            <div class="series_notes">{{ series.notes|urlizetrunc:75|linebreaksbr }}</div>
+            <div class="series_notes">{% include "gcd/bits/notes.html" with value=series.notes only %}</div>
 {% endif %}
           </div> <!-- series_notes -->
         </div> <!-- series_data -->

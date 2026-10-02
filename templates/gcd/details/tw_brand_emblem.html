@@ -73,7 +73,7 @@
 {% if not page.has_previous %}
   {% if brand.notes %}
   <h3 class="mt-2">Notes:</h3>
-    {{ brand.notes|render_markdown }}
+    {% include "gcd/bits/notes.html" with value=brand.notes only %}
   {% endif %}
   {% if brand.group.count %}
 <hr>
@@ -99,7 +99,7 @@
     <td> <a href="{{ use.publisher.get_absolute_url }}">{{ use.publisher }}</a> </td>
     <td> {{ use.year_began|default:"" }} </td>
     <td> {{ use.year_ended|default:"" }} </td>
-    <td> {{ use.notes }} </td>
+    <td> {% include "gcd/bits/notes.html" with value=use.notes only %} </td>
     <td class="px-2 sm:text-right text-left"> <a href="{{ use.get_absolute_url }}">{{ use.issue_count }}</a> </td>
       {% if user.is_authenticated and not MYCOMICS %}
     <td>
