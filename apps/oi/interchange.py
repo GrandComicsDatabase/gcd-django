@@ -1660,8 +1660,13 @@ class RecordWriter:
                          deleted=False)) for story in issue.active_stories()]
         else:
             credits = issue.active_credits
-            stories = [(story, story.active_credits) for story in
-                       issue.active_stories().order_by('sequence_number')]
+            stories = [(story, story.active_credits.select_related(
+                         'credit_type')) for story in
+                       issue.active_stories().select_related('type')
+                       .prefetch_related('feature_object', 'feature_name',
+                                         'feature_logo', 'story_arc',
+                                         'universe')
+                       .order_by('sequence_number')]
         record = self._record(issue, ISSUE_FIELDS, credits,
                               ISSUE_CREDIT_FIELDS, revision,
                               issue_scopes(self.series),
