@@ -1517,10 +1517,27 @@ def render_characters(resolver, group_rows, appearance_rows, free_text=''):
 
 
 def characters_text(story, resolver=None):
+    """
+    The characters of a sequence as text, with what the migration converts
+    of its free text, so that an import migrates it; what the migration
+    cannot convert stays free text.
+    """
     if resolver is None:
         series = story.issue.series
         resolver = Resolver(series.language, series)
-    return render_characters(resolver, *story_rows(story), story.characters)
+    group_rows, appearance_rows = story_rows(story)
+    free_text = story.characters
+    if free_text:
+        universes = list(story.universe.all())
+        groups, appearances, free_text, errors, unresolved = migrate_text(
+          free_text, resolver, plain_names=True,
+          reference_universe=universes[0] if len(universes) == 1 else None)
+        migrated_groups, migrated_appearances = resolved_rows(groups,
+                                                              appearances)
+        group_rows += migrated_groups
+        appearance_rows += migrated_appearances
+    return render_characters(resolver, group_rows, appearance_rows,
+                             free_text)
 
 
 def create_revisions(story_revision, groups, appearances):
