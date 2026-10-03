@@ -3,6 +3,8 @@ from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, mixins, generics
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from apps.api.serializers import SeriesSerializer, PublisherSerializer, \
                                  IssueSerializer, IssueOnlySerializer, \
                                  SeriesOverviewItemSerializer
@@ -10,6 +12,7 @@ from apps.api.serializers import SeriesSerializer, PublisherSerializer, \
 from apps.gcd.models import Series, Publisher, Issue, Cover
 from apps.gcd.models.issue import issues_for_iso_week
 from apps.gcd.models.story import Story
+from apps.oi.interchange import issue_record
 
 
 class ReadOnlyModelView(mixins.RetrieveModelMixin,
@@ -52,6 +55,14 @@ class IssueViewSet(ReadOnlyModelView):
     """
     queryset = Issue.objects.filter(deleted=False)
     serializer_class = IssueSerializer
+
+    @action(detail=True)
+    def record(self, request, pk=None):
+        """
+        The issue with its sequences as in the file export, linked data by
+        name and disambiguation, which can be imported again.
+        """
+        return Response(issue_record(self.get_object()))
 
 
 class IssuesList(generics.ListAPIView):

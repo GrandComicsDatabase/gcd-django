@@ -101,18 +101,27 @@ you must wait until those issues are approved.<br>
 
 <div>
   <p>
-Using the flat file import option below, you can add a number of issues at
-once by uploading a properly formatted CSV file. One issue per line.
+Using the file import option below, you can add a number of issues with their
+sequences at once, as CSV, TSV, JSON or YAML file in the format of the
+issue export.
   </p>
   <p>
-You can do standard issue adds, or add variants by giving the variant name and
-variant cover status at the end of the issue line. That means, the csv-line needs
-to have 21 fields (which can be empty), where the last two fields are the variant name and variant cover status.
-The variant cover status must be either "artwork difference", "only scan difference", or
-"no difference".
-</p>
-A variant add with status "artwork difference" can optionally
-be followed by a cover sequence.
+All four formats carry the same fields with the same values. CSV and TSV
+files start with a header row naming the columns, columns can be left out.
+Each issue is a row with "issue" in the first column, followed by one row
+with "sequence" for each of its sequences. Linked data is entered by name,
+with the disambiguation in braces if the name is not unique, e.g. the credit
+<i>Jane Doe {writer} (script) (credited)</i>. The characters are a tree of
+universes, groups and their members, e.g.
+<i>@Marvel: mainstream [&amp;X-Men [Wolverine (cameo); Rogue]; Logan]</i>.
+The characters <i>^ ; ( ) [ ] { }</i> in names and notes are escaped with a
+preceding <i>^</i>.
+  </p>
+  <p>
+A variant gives the number of its base issue in the column variant_of, the
+variant name, and the variant cover status, which is one of
+ARTWORK_DIFFERENCE, ONLY_SCAN_DIFFERENCE, or NO_DIFFERENCE.
+  </p>
 </div>
 <table class="border border-gray-300 mt-2">
   <tr class="max-sm:flex max-sm:flex-col border border-gray-300">
@@ -121,6 +130,9 @@ be followed by a cover sequence.
         {% csrf_token %}
       <td>
         Select file: <input type="file" name="file">
+      </td>
+      <td>
+        <button><input class="btn-blue-editing inline" type="submit" name="tab" value="Import Issues (TSV)"></button>
       </td>
       <td>
         <button><input class="btn-blue-editing inline" type="submit" name="csv" value="Import Issues (CSV)"></button>

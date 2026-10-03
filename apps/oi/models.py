@@ -350,8 +350,10 @@ class Changeset(models.Model):
                     self.characterorderrevisions.all(),)
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
-            if self.issuerevisions.all().count() == 1 and \
-               self.issuerevisions.get().variant_of:
+            # an added issue can come with its sequences, e.g. from a file
+            if self.issuerevisions.all().count() == 1 and (
+               self.issuerevisions.get().variant_of or
+               self.storyrevisions.exists()):
                 return (self.issuerevisions.all(),
                         self.issuecreditrevisions.all(),
                         self.storyrevisions.all(),

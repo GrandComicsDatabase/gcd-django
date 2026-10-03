@@ -657,3 +657,70 @@ def any_edit_story_rev(any_added_story, any_editing_changeset):
     rev = StoryRevision.clone(data_object=any_added_story,
                               changeset=any_editing_changeset)
     return rev
+
+
+@pytest.fixture
+def story_with_characters(any_added_story, any_language):
+    """
+    A story with the cases which are hard to represent as text: reserved
+    characters, numeric disambiguations, notes equal to a role or flag,
+    the same character twice, a group twice, a group universe without a
+    group, and free text.
+    """
+    from apps.gcd.models import (
+        Character, CharacterNameDetail, CharacterRole, Group,
+        GroupNameDetail, StoryCharacter, StoryGroup, Universe)
+
+    def universe(multiverse, name, designation):
+        return Universe.objects.create(multiverse=multiverse, name=name,
+                                       designation=designation,
+                                       description='', notes='')
+
+    def character(name, disambiguation):
+        character = Character.objects.create(
+          name=name, sort_name=name, disambiguation=disambiguation,
+          language=any_language, description='', notes='')
+        return CharacterNameDetail.objects.create(
+          name=name, sort_name=name, character=character,
+          is_official_name=True)
+
+    marvel = universe('Marvel', '', 'mainstream')
+    dc = universe('DC', '', 'mainstream')
+    alternate = universe('Test', 'Earth-2; [alt]', '(b)')
+    cameo = CharacterRole.objects.get_or_create(
+      name='cameo', defaults={'sort_code': 9999})[0]
+    group = Group.objects.create(name='The (Team)', sort_name='Team',
+                                 disambiguation='#1', language=any_language,
+                                 description='', notes='')
+    team = GroupNameDetail.objects.create(name='The (Team)', group=group,
+                                          is_official_name=True)
+    alias = GroupNameDetail.objects.create(name='Team; [B]', group=group)
+    jane = character('Doe; Jane', '711')
+    fan = character('#1 Fan', '#hash')
+    ben = character('&Ben {x} ^', 'Parker (Earth)')
+
+    story = any_added_story
+    StoryGroup.objects.create(story=story, group_name=team, universe=marvel,
+                              notes='as [guests]')
+    StoryGroup.objects.create(story=story, group_name=alias, universe=dc,
+                              notes='@home')
+
+    def appearance(name, groups=(), group_names=(), **values):
+        values = {'universe': None, 'group_universe': None, 'role': None,
+                  'notes': '', **values}
+        story_character = StoryCharacter.objects.create(
+          story=story, character=name, **values)
+        story_character.group.set(groups)
+        story_character.group_name.set(group_names)
+
+    appearance(jane, [group], universe=marvel, group_universe=marvel,
+               role=cameo, is_flashback=True, notes='cameo')
+    appearance(jane, is_death=True, notes='flashback')
+    appearance(fan, universe=alternate, group_universe=dc, notes='=no role')
+    appearance(ben, [group], [alias], group_universe=alternate,
+               notes='!x; (y)')
+    appearance(ben, [group], universe=dc, group_universe=marvel,
+               is_origin=True)
+    story.characters = 'Ben Parker (Flashback; Cameo)'
+    story.save()
+    return story

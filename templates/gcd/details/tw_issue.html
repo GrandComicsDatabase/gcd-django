@@ -380,46 +380,33 @@ Related Links
     </btn>
   </a>
   {% endif %} <!-- logged in -->
-  <btn class="btn btn-blue-editing hover:bg-stone-200">
-    <div class="flex justify-center">
-    Download:
   {% if user.is_authenticated %}
-      <a
+  <details class="[&_svg]:open:rotate-90">
+    <summary class="list-none">
+      <btn class="btn btn-blue-editing">
+        <svg class="inline rotate-0 transform transition-all duration-300" fill="none" height="16" width="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="6 3 12 9 6 15"></polyline>
+        </svg>
+        Download
+      </btn>
+    </summary>
     {% if preview %}
-            class="hover:bg-stone-400" href="{% url 'export_issue_revision_csv' issue.revision.id %}"
+    <a class="hover:no-underline" href="{% url 'export_issue_revision_csv' issue.revision.id %}"><btn class="btn btn-blue-editing">CSV</btn></a>
+    <a class="hover:no-underline" href="{% url 'export_issue_revision' issue.revision.id %}"><btn class="btn btn-blue-editing">TSV</btn></a>
+    <a class="hover:no-underline" href="{% url 'export_issue_revision_json' issue.revision.id %}"><btn class="btn btn-blue-editing">JSON</btn></a>
+    <a class="hover:no-underline" href="{% url 'export_issue_revision_yaml' issue.revision.id %}"><btn class="btn btn-blue-editing">YAML</btn></a>
     {% else %}
-            class="hover:bg-stone-400" href="{% url 'export_issue_csv' issue.id %}"
+    <a class="hover:no-underline" href="{% url 'export_issue_csv' issue.id %}"><btn class="btn btn-blue-editing">CSV</btn></a>
+    <a class="hover:no-underline" href="{% url 'export_issue' issue.id %}"><btn class="btn btn-blue-editing">TSV</btn></a>
+    <a class="hover:no-underline" href="{% url 'export_issue_json' issue.id %}"><btn class="btn btn-blue-editing">JSON</btn></a>
+    <a class="hover:no-underline" href="{% url 'export_issue_yaml' issue.id %}"><btn class="btn btn-blue-editing">YAML</btn></a>
     {% endif %}
-      ><span class="px-1">(CSV)</span></a>
-
-      <a
-    {% if preview %}
-            class="hover:bg-stone-400" href="{% url 'export_issue_revision' issue.revision.id %}"
-    {% else %}
-            class="hover:bg-stone-400" href="{% url 'export_issue' issue.id %}"
-    {% endif %}
-      ><span class="px-1">(TSV)</span></a>
-
-      <a
-    {% if preview %}
-            class="hover:bg-stone-400" href="{% url 'export_issue_revision_json' issue.revision.id %}"
-    {% else %}
-            class="hover:bg-stone-400" href="{% url 'export_issue_json' issue.id %}"
-    {% endif %}
-      ><span class="px-1">(JSON)</span></a>
-
-      <a
-    {% if preview %}
-            class="hover:bg-stone-400" href="{% url 'export_issue_revision_yaml' issue.revision.id %}"
-    {% else %}
-            class="hover:bg-stone-400" href="{% url 'export_issue_yaml' issue.id %}"
-    {% endif %}
-      ><span class="px-1">(YAML)</span></a>
+  </details>
   {% elif not preview %}
-      <a class="hover:bg-stone-400" href="/api{% url 'show_issue' issue.id %}?format=json"><span class="px-1">(JSON)</span></a>
+  <a class="hover:no-underline" href="/api{% url 'show_issue' issue.id %}record/?format=json">
+    <btn class="btn btn-blue-editing">Download (JSON)</btn>
+  </a>
   {% endif %}
-    </div>
-  </btn>
   <a class="hover:no-underline" href="http://errors.comics.org/enter_bug.cgi?product=GCD&amp;bug_file_loc={{ request.build_absolute_uri }}&amp;short_desc={{ issue|urlencode }}" target="_blank">
     <btn class="btn btn-blue-editing">
       Report Information <img class="inline w-[12px] mb-1" src="{% static 'img/gcd/icons/adwaita/external-link-symbolic.svg' %}">
