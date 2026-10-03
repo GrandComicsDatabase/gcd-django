@@ -951,12 +951,19 @@ def _save(request, form, revision, changeset=None, model_name=None):
                     revision.migrate_credits()
                 if revision.feature:
                     revision.migrate_feature()
+                if revision.characters:
+                    revision.migrate_characters()
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
         if 'save_migrate_feature' in request.POST:
             if revision.feature:
                 revision.migrate_feature()
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'edit_revision',
+              kwargs={'model_name': model_name, 'id': revision.id}))
+        if 'save_migrate_characters' in request.POST:
+            # the form converted the characters
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
@@ -1827,6 +1834,7 @@ def process_revision(request, id, model_name):
     if 'save' in request.POST or 'save_return' in request.POST \
        or 'save_migrate' in request.POST \
        or 'save_migrate_feature' in request.POST \
+       or 'save_migrate_characters' in request.POST \
        or 'save_and_set_universe' in request.POST \
        or 'edit_appearance_order' in request.POST \
        or 'create_appearance_order' in request.POST \
@@ -7816,6 +7824,9 @@ def migrate_story_revision(request, id):
 
     if story.feature:
         story.migrate_feature()
+
+    if story.characters:
+        story.migrate_characters()
 
     return HttpResponseRedirect(
       urlresolvers.reverse('edit_revision', kwargs={'model_name': 'story',
