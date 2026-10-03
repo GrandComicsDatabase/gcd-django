@@ -18,18 +18,20 @@ from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_POST
 
 from apps.indexer.views import render_error
-from apps.gcd.models import Issue, Series
+from apps.gcd.models import Issue, Series, Universe
 from apps.oi.models import (
     Changeset, StoryRevision, IssueRevision, CTYPES, IssueCreditRevision,
     StoryCreditRevision)
 from apps.oi import states
 from apps.oi.interchange import (
     CREDIT_FIELDS, ISSUE_CREDIT_FIELDS, ISSUE_FIELDS, STORY_FIELDS,
-    NotationError, RecordDecoder, RecordImporter, create_credits,
-    create_revisions, flat_rows, issue_record, read_flat_records, set_multi)
+    NotationError, RecordDecoder, RecordImporter, Resolver, check_text,
+    create_credits, create_revisions, flat_rows, issue_record,
+    read_flat_records, set_multi)
 
 
 class ImportFailure(Exception):
@@ -277,6 +279,25 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
     except ImportFailure as error:
         return _handle_import_error(request, changeset_url, str(error))
     return HttpResponseRedirect(changeset_url)
+
+
+@permission_required('indexer.can_reserve')
+@require_POST
+def check_characters(request, series_id):
+    """
+    The problems of the characters field of a sequence of the series while
+    it is typed, and the text the migration would save.
+    """
+    series = get_object_or_404(Series, id=series_id)
+    universes = Universe.objects.filter(
+      id__in=[value for value in request.POST.getlist('universe')
+              if value.isdigit()])
+    problems, text = check_text(
+      request.POST.get('characters', '').strip(),
+      Resolver(series.language, series),
+      universes.get() if universes.count() == 1 else None)
+    return render(request, 'oi/bits/characters_check.html',
+                  {'problems': problems, 'text': text})
 
 
 def _export_object(issue_id, revision):

@@ -3,6 +3,7 @@
 from django import forms
 from django.conf import settings
 from django.forms.models import inlineformset_factory
+from django.urls import reverse
 
 from dal import autocomplete, forward
 
@@ -186,6 +187,13 @@ def get_story_revision_form(revision=None, user=None,
                   '<input type="submit" name="save_migrate_characters"' \
                   ' value="Migrate"></btn></td> d) Characters'
             self.migrated_characters = ([], [])
+            self.unresolved_characters = []
+            # checked while it is typed, with the values of the form
+            self.fields['characters'].widget.attrs.update({
+              'hx-post': reverse('check_characters',
+                                 kwargs={'series_id': series.id}),
+              'hx-trigger': 'keyup changed delay:500ms',
+              'hx-target': '#characters-check'})
 
         def save(self, commit=True):
             instance = super(RuntimeStoryRevisionForm,
@@ -273,7 +281,7 @@ def get_story_revision_form(revision=None, user=None,
             # GCD shows characters: without the universe of a sequence with
             # one universe. Everything else stays text.
             universes = list(self.cleaned_data.get('universe') or [])
-            groups, appearances, remaining, errors = migrate_text(
+            groups, appearances, remaining, errors, unresolved = migrate_text(
               self.cleaned_data['characters'].strip(),
               Resolver(language, series),
               plain_names='save_migrate_characters' in self.data,
@@ -282,6 +290,8 @@ def get_story_revision_form(revision=None, user=None,
             if errors:
                 raise forms.ValidationError([str(error) for error in errors])
             self.migrated_characters = (groups, appearances)
+            # why items written as GCD shows them stayed text
+            self.unresolved_characters = unresolved
             return remaining
 
         def clean_type(self):
@@ -805,6 +815,8 @@ class StoryRevisionForm(KeywordBaseForm):
         field_list.append(Formset('characters_formset'))
         field_list.append(Field(fields[characters_start],
                                 template='oi/bits/uni_field.html'))
+        field_list.append(HTML(
+          '<tr><th></th><td id="characters-check"></td></tr>'))
         field_list.append(Formset('groups_formset'))
         has_appearance_order = False
         has_importance_order = False

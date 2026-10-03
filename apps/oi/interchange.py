@@ -44,7 +44,9 @@ The characters of a sequence are a tree written as text, universe -> group
 
 Qualifiers of a character: '@' universe, '&' group, '&&' group name, '&@'
 universe of the group, the flags 'flashback, origin, death', a role such
-as 'cameo', and a note. Of a group: '@' universe, a note, and '&' or '&&'
+as 'cameo', and a note. Flags and at most one role may share a qualifier,
+separated by commas or spaces, as in '(villain, death)'; any other text
+is a note. Of a group: '@' universe, a note, and '&' or '&&'
 if its members are linked to the group or to both group and group name,
 instead of the group name alone.
 
@@ -54,6 +56,7 @@ universe of the group, characters inside a character share its universe.
 '(@)' is no universe, '(&@)' a group universe equal to the universe. The
 free text escapes only ^ and the control characters.
 """
+import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from functools import reduce
@@ -670,12 +673,21 @@ SERIES_SCOPES = {
   FeatureLogo: 'story__issue', StoryArc: 'story__issue'}
 
 
-def _series_scopes(model, series):
+def _series_links(model, series):
+    """
+    The links of the objects to the series, a credit, an appearance, a
+    sequence or an issue, each as its model, the name of its field of the
+    object and the filters of an active link of the series.
+    """
     paths = SERIES_SCOPES[model]
-    # the link, a credit, an appearance, a sequence or an issue, is active
-    return [{path + '__series': series,
-             path.split('__')[0] + '__deleted': False}
-            for path in ((paths,) if isinstance(paths, str) else paths)]
+    links = []
+    for path in (paths,) if isinstance(paths, str) else paths:
+        link, *rest = path.split('__')
+        relation = model._meta.get_field(link)
+        links.append((relation.related_model, relation.field.name,
+                      {'__'.join(rest + ['series']): series,
+                       'deleted': False}))
+    return links
 
 
 def feature_types(story_type):
@@ -777,24 +789,42 @@ class Resolver:
                 self._by_id[Universe][universe.id] = universe
         return self._universes
 
-    def universe_named(self, name, reference=None):
+    def universes_named(self, name, reference=None):
         """
-        The universe with the name GCD shows, with or without multiverse,
-        preferably of the multiverse of the reference universe.
+        The universes with the name GCD shows, with or without multiverse,
+        in any case, preferably of the multiverse of the reference universe.
         """
         if self._universe_names is None:
-            self._universe_names = defaultdict(list)
+            # by lower case name
+            self._universe_names = defaultdict(dict)
             for label, universes in self._universe_index().items():
                 for universe in universes:
-                    self._universe_names[label].append(universe)
-                    self._universe_names[universe.universe_name()].append(
-                      universe)
-        candidates = self._universe_names.get(name, [])
+                    for text in (label, universe.universe_name(),
+                                 universe.name, universe.designation):
+                        if text:
+                            self._universe_names[text.lower()][
+                              universe.id] = universe
+        candidates = list(self._universe_names.get(name.lower(), {}).values())
         if len(candidates) > 1 and reference:
             candidates = [universe for universe in candidates
                           if universe.verse_id == reference.verse_id] or \
                          candidates
+        return candidates
+
+    def universe_named(self, name, reference=None):
+        candidates = self.universes_named(name, reference)
         return candidates[0] if len(candidates) == 1 else None
+
+    def multiverse_universes(self, name, reference=None):
+        """
+        The universes of the multiverse of the name, the reference universe
+        first.
+        """
+        universes = [universe for universes in self._universe_index().values()
+                     for universe in universes
+                     if universe.multiverse.lower() == name.lower()]
+        return sorted(universes, key=lambda universe: (
+          universe != reference, universe_label(universe)))
 
     def _by_object_id(self, model, object_id):
         if model is Universe:
@@ -804,15 +834,23 @@ class Resolver:
               id=object_id).first()
         return self._by_id[model][object_id]
 
-    def _candidates(self, model, label):
+    def _candidates(self, model, label, ignore_case=False):
+        """
+        The objects of the name, with ignore_case, for text written by hand,
+        those of the name in another case if none has it as written.
+        """
         if model is Universe:
             return self._universe_index().get(label, [])
         if label not in self._by_label[model]:
             # the database comparison ignores case and trailing spaces
-            self._by_label[model][label] = [
-              related for related in self._queryset(model).filter(name=label)
-              if related.name == label]
-        return self._by_label[model][label]
+            self._by_label[model][label] = list(
+              self._queryset(model).filter(name=label))
+        found = self._by_label[model][label]
+        exact = [related for related in found if related.name == label]
+        if exact or not ignore_case:
+            return exact
+        return [related for related in found
+                if related.name.lower() == label.lower()]
 
     def _in_scope(self, model, found, scope):
         key = (model, tuple(related.id for related in found),
@@ -825,17 +863,52 @@ class Resolver:
         return [related for related in found if related.id in
                 self._scopes[key]]
 
-    def kind_of(self, ref):
+    def _linked(self, model, found, link, name, filters):
         """
-        Whether a name without sigil is a group or a character, as GCD
-        shows groups without members.
+        The objects with an active link to the series, queried from the
+        links, which is much faster than from the objects.
         """
-        characters = self._candidates(CharacterNameDetail, ref.label)
-        groups = self._candidates(GroupNameDetail, ref.label)
-        if characters and groups:
-            raise NotationError('ambiguous', 'group or character',
-                                ref.position, ref.label)
-        return 'group' if groups else 'character'
+        key = (model, tuple(related.id for related in found), link, name)
+        if key not in self._scopes:
+            self._scopes[key] = set(link.objects.filter(
+              **{name + '__in': [related.id for related in found]},
+              **filters).order_by().values_list(name, flat=True))
+        return [related for related in found if related.id in
+                self._scopes[key]]
+
+    def kind_of(self, ref, with_members=False, reference=None):
+        """
+        Whether a name without sigil, written by hand, is a group or a
+        character, as GCD shows groups without members, or, with members,
+        also a universe. Returns the kind and the universe. A name of more
+        than one kind is ambiguous, the candidates are its readings; for the
+        name of a multiverse the candidates are its universes.
+        """
+        universes, multiverse = [], False
+        if with_members and ref.disambiguation is None and ref.id is None:
+            universes = self.universes_named(ref.label, reference)
+            if not universes:
+                universes = self.multiverse_universes(ref.label,
+                                                      reference)[:10]
+                multiverse = bool(universes)
+        kinds = ['universe'] if universes else []
+        readings = ['@' + escape(universe_label(universe))
+                    for universe in universes]
+        for kind, model, sigil in (('group', GroupNameDetail, '&'),
+                                   ('character', CharacterNameDetail, '')):
+            if self._candidates(model, ref.label, ignore_case=True):
+                kinds.append(kind)
+                readings.append(sigil + render_ref(ref.label,
+                                                   ref.disambiguation))
+        if kinds == ['universe'] and multiverse:
+            raise NotationError('not_found', 'a multiverse, not a universe',
+                                ref.position, ref.label, readings)
+        if len(readings) > 1:
+            raise NotationError('ambiguous', 'ambiguous ' + ' or '.join(kinds),
+                                ref.position, ref.label, readings)
+        if kinds == ['universe']:
+            return 'universe', universes[0]
+        return (kinds or ['character'])[0], None
 
     def roles(self):
         # the roles by lower case name, keywords of the notation
@@ -855,8 +928,13 @@ class Resolver:
         return role
 
     def resolve_ref(self, model, ref, any_disambiguation=False, scope=()):
+        """
+        any_disambiguation is set for text written by hand as GCD shows it,
+        which may also differ in case.
+        """
         if ref is None:
             return None
+        ignore_case = any_disambiguation
         has_disambiguation = 'disambiguation' in _field_names(
           _owner_model(model))
         if not has_disambiguation and ref.disambiguation:
@@ -869,7 +947,7 @@ class Resolver:
                 return related
             # no valid id, use the name without disambiguation
             any_disambiguation = ref.disambiguation is None
-        candidates = self._candidates(model, ref.label)
+        candidates = self._candidates(model, ref.label, ignore_case)
         found = candidates
         if ref.owner is not None:
             if model not in OWNERS:
@@ -898,9 +976,10 @@ class Resolver:
             found = [related for related in found
                      if official_name(model, related) == ref.label] or found
         if self.series_id and model in SERIES_SCOPES:
-            for filters in _series_scopes(model, self.series_id):
+            for link, name, filters in _series_links(model, self.series_id):
                 if len(found) > 1:
-                    found = self._in_scope(model, found, filters) or found
+                    found = self._linked(model, found, link, name,
+                                         filters) or found
         if len(found) == 1:
             return found[0]
         if found:
@@ -1009,9 +1088,10 @@ class CharactersReader:
     Strict for files: groups are marked with '&', universes with '@', and
     a missing universe is no universe. Tolerant for the free text of the
     editing form, which also reads characters as GCD shows them: an item
-    without '&' is a group if its name is only the name of a group, a
-    universe can be given by its name, and a missing universe is the
-    reference universe of the sequence.
+    without '&' is a group if its name is only the name of a group, an
+    item with members at the top a universe if its name is only the name
+    of a universe, a universe can be given by its name, and a missing
+    universe is the reference universe of the sequence.
     """
     def __init__(self, resolver, tolerant=False, reference_universe=None):
         self.resolver = resolver
@@ -1035,64 +1115,78 @@ class CharactersReader:
                 raise _syntax_error('a universe is written as '
                                     '"@multiverse: universe [...]" at the '
                                     'top', item.position, item.name.label)
-            ref = Ref(item.name.label, position=item.name.position)
-            for child in item.children:
-                if child.sigil == '@':
-                    raise _syntax_error('a universe in a universe',
-                                        child.position, child.name.label)
-                self._item(child, ref, characters)
+            self._universe(item, Ref(item.name.label,
+                                     position=item.name.position), characters)
             return
-        if item.sigil == '&' or not item.sigil and self.tolerant and \
-           self.resolver.kind_of(item.name) == 'group':
+        kind = 'group' if item.sigil == '&' else 'character'
+        if not item.sigil and self.tolerant:
+            kind, found = self.resolver.kind_of(
+              item.name, top and item.children is not None and
+              not item.qualifiers, self.reference_universe)
+            if kind == 'universe':
+                self._universe(item, Ref(universe_label(found), id=found.id,
+                                         position=item.name.position),
+                               characters)
+                return
+        if kind == 'group':
             self._group(item, universe, characters)
         else:
             self._appearance(item, universe, characters)
 
+    def _universe(self, item, ref, characters):
+        for child in item.children:
+            if child.sigil == '@':
+                raise _syntax_error('a universe in a universe',
+                                    child.position, child.name.label)
+            self._item(child, ref, characters)
+
     def _classify(self, kind, value, position, is_group):
+        """
+        The kinds and values of a qualifier, a role and flags may share one.
+        """
         if kind != 'text':
             if kind == 'group_universe' and value is None:
                 value = SAME
-            return kind, value
+            return [(kind, value)]
         text, plain = _text(value), _plain(value)
         if plain and not is_group:
-            flags = [flag.strip().lower() for flag in text.split(',')]
-            if all(flag in FLAGS for flag in flags) and \
-               len(set(flags)) == len(flags):
-                return 'flags', flags
-            role = self.resolver.role_named(text)
-            if role:
-                return 'role', role.name
+            keywords = keywords_of(text, self.resolver.roles())
+            if keywords:
+                role, flags = keywords
+                return ([('role', role.name)] if role else []) + \
+                    ([('flags', flags)] if flags else [])
         if plain and self.tolerant:
             universe = self.resolver.universe_named(text,
                                                     self.reference_universe)
             if universe:
-                return 'universe', Ref(universe_label(universe),
-                                       id=universe.id, position=position)
-        return 'notes', text
+                return [('universe', Ref(universe_label(universe),
+                                         id=universe.id, position=position))]
+        return [('notes', text)]
 
     def _qualifiers(self, item, is_group):
         values = {}
         kinds = ('universe', 'group', 'group_name', 'notes') if is_group \
             else ('universe', 'group', 'group_name', 'group_universe',
                   'flags', 'role', 'notes')
-        for kind, value, position in item.qualifiers:
-            raw = _render_qualifier(kind, value)
-            kind, value = self._classify(kind, value, position, is_group)
-            if kind not in kinds:
-                raise _syntax_error('qualifier not for a %s' % (
-                                    'group' if is_group else 'character'),
-                                    position, raw)
-            if kind in ('group', 'group_name'):
-                if is_group != (value is None):
-                    raise _syntax_error(
-                      'a group links its members with "&" or "&&", a '
-                      'character names its groups', position, raw)
-                if not is_group:
-                    values.setdefault(kind + 's', []).append(value)
-                    continue
-            if kind in values:
-                raise _syntax_error('repeated qualifier', position, raw)
-            values[kind] = value
+        for qualifier_kind, qualifier, position in item.qualifiers:
+            raw = _render_qualifier(qualifier_kind, qualifier)
+            for kind, value in self._classify(qualifier_kind, qualifier,
+                                              position, is_group):
+                if kind not in kinds:
+                    raise _syntax_error('qualifier not for a %s' % (
+                                        'group' if is_group else 'character'),
+                                        position, raw)
+                if kind in ('group', 'group_name'):
+                    if is_group != (value is None):
+                        raise _syntax_error(
+                          'a group links its members with "&" or "&&", a '
+                          'character names its groups', position, raw)
+                    if not is_group:
+                        values.setdefault(kind + 's', []).append(value)
+                        continue
+                if kind in values:
+                    raise _syntax_error('repeated qualifier', position, raw)
+                values[kind] = value
         return values
 
     def _group(self, item, universe, characters):
@@ -1234,10 +1328,25 @@ def _members(group_rows, appearance_rows):
     return members
 
 
+def keywords_of(text, roles):
+    """
+    The role and the flags of a qualifier written with keywords only, such
+    as 'cameo', 'origin, death' or 'villain death', None for a note.
+    """
+    text = text.strip().lower()
+    if text in roles:
+        return roles[text], []
+    words = [word for word in re.split(r'[\s,]+', text) if word]
+    found = [roles[word] for word in words if word in roles]
+    flags = [word for word in words if word in FLAGS]
+    if not words or len(found) + len(flags) != len(words) or \
+       len(found) > 1 or len(set(flags)) != len(flags):
+        return None
+    return (found[0] if found else None), flags
+
+
 def _reads_as_keyword(text, roles):
-    flags = [flag.strip().lower() for flag in text.split(',')]
-    return (all(flag in FLAGS for flag in flags) and
-            len(set(flags)) == len(flags)) or text.strip().lower() in roles
+    return keywords_of(text, roles) is not None
 
 
 def _render_universe(universe):
@@ -1406,18 +1515,19 @@ def migrate_text(text, resolver, plain_names=False, reference_universe=None):
     remaining text again changes nothing.
 
     Returns the resolved groups and appearances, the remaining free text,
-    and the errors of the items written in the notation.
+    the errors of the items written in the notation, and why the other
+    items stayed text, such as an unknown or ambiguous name.
     """
-    groups, appearances, errors, remaining = [], [], [], []
+    groups, appearances, errors, remaining, unresolved = [], [], [], [], []
     tokens = tokens_of(text, tolerant=True)
     if _free_text_index(tokens) >= 0:
         # the field is written in the notation
         try:
             characters = read_characters(text, resolver)
             groups, appearances = resolver.resolve(characters)
-            return groups, appearances, characters.free_text, []
+            return groups, appearances, characters.free_text, [], []
         except NotationError as error:
-            return [], [], text, [error]
+            return [], [], text, [error], []
     strict = CharactersReader(resolver)
     tolerant = CharactersReader(resolver, tolerant=True,
                                 reference_universe=reference_universe)
@@ -1439,10 +1549,30 @@ def migrate_text(text, resolver, plain_names=False, reference_universe=None):
             groups += item_groups
             appearances += item_appearances
         except NotationError as error:
-            if notation:
-                errors.append(error)
+            (errors if notation else unresolved).append(error)
             remaining.append(raw)
-    return groups, appearances, '; '.join(remaining), errors
+    return groups, appearances, '; '.join(remaining), errors, unresolved
+
+
+def check_text(text, resolver, reference_universe=None):
+    """
+    Checks the characters field while it is typed: the brackets, the
+    separators and the escapes, then the items as the migration reads them.
+    Returns the problems and the text which the migration would save.
+    """
+    problems = []
+    try:
+        tokens, free_text = split_free_text(tokens_of(text))
+        split_items(tokens)
+    except NotationError as error:
+        problems.append(error)
+    groups, appearances, remaining, errors, unresolved = migrate_text(
+      text, resolver, plain_names=True, reference_universe=reference_universe)
+    for error in errors + unresolved:
+        if str(error) not in [str(problem) for problem in problems]:
+            problems.append(error)
+    return problems, render_characters(
+      resolver, *resolved_rows(groups, appearances), remaining)
 
 
 # issue records

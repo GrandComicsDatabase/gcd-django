@@ -12,6 +12,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory
+from django.urls import reverse
 
 from apps.gcd.models import (
     Character, CharacterNameDetail, CreditType, Creator, CreatorNameDetail,
@@ -20,7 +21,7 @@ from apps.indexer.models import Error
 from apps.stddata.models import Language, Script
 from apps.oi import import_export, states
 from apps.oi.interchange import (
-    Ref, Resolver, characters_text, issue_record, migrate_text,
+    Ref, Resolver, characters_text, check_text, issue_record, migrate_text,
     read_characters, render_characters, resolved_rows)
 from apps.oi.models import Changeset, IssueRevision, CTYPES
 
@@ -401,9 +402,9 @@ def test_characters_by_name_and_in_order(story_with_characters):
 def test_migrate_free_text(story_with_characters, any_language):
     resolver = Resolver(any_language)
     text = 'Spider-Man [Peter Parker]; #1 Fan (cameo); #1 Fan (Corpse, 2)'
-    assert migrate_text(text, resolver) == ([], [], text, [])
+    assert migrate_text(text, resolver) == ([], [], text, [], [])
 
-    groups, appearances, remaining, errors = migrate_text(
+    groups, appearances, remaining, errors, unresolved = migrate_text(
       text, resolver, plain_names=True)
     cameo, corpse = appearances
     assert cameo['character'].name == '#1 Fan'
@@ -411,6 +412,8 @@ def test_migrate_free_text(story_with_characters, any_language):
     assert corpse['notes'] == 'Corpse, 2'
     assert remaining == 'Spider-Man [Peter Parker]'
     assert errors == []
+    # why it stayed text
+    assert 'Spider-Man' in str(unresolved[0])
 
 
 @pytest.fixture
@@ -498,11 +501,11 @@ def test_migrate_gcd_text(legacy_story):
       'Flash (flashback, death)]; Superman [Clark] (Earth-2) (origin) '
       '(as Kal-El, once)')
 
-    groups, appearances, remaining, errors = migrate_text(
+    groups, appearances, remaining, errors, unresolved = migrate_text(
       text, Resolver(story.issue.series.language), plain_names=True,
       reference_universe=story.universe.get())
 
-    assert (remaining, errors) == ('', [])
+    assert (remaining, errors, unresolved) == ('', [], [])
     assert _state(groups, appearances, '') == _story_state(story)
 
 
@@ -513,7 +516,7 @@ def test_migrate_legacy_keeps_unresolved_entries(legacy_story):
             '(Earth-3); Zeta (a(b)); Justice League [Flash; Nobody]; '
             'Batman (cameo) (villain)')
 
-    groups, appearances, remaining, errors = migrate_text(
+    groups, appearances, remaining, errors, unresolved = migrate_text(
       text, resolver, plain_names=True)
 
     assert (groups, errors) == ([], [])
@@ -526,9 +529,97 @@ def test_migrate_legacy_keeps_unresolved_entries(legacy_story):
     assert remaining == (
       'Robin; Flash; Zeta (a(b)); Justice League [Flash; Nobody]; '
       'Batman (cameo) (villain)')
+    # and say why
+    assert [(error.kind, error.message) for error in unresolved] == [
+      ('ambiguous', 'ambiguous group or character'),
+      ('ambiguous', 'ambiguous character name detail'),
+      ('not_found', 'unknown character name detail'),
+      ('not_found', 'unknown character name detail'),
+      ('syntax', 'repeated qualifier')]
+    assert unresolved[0].candidates == ['&Robin', 'Robin']
     # migrating again changes nothing
-    assert migrate_text(remaining, resolver, plain_names=True) == (
+    assert migrate_text(remaining, resolver, plain_names=True)[:4] == (
       [], [], remaining, [])
+
+
+@pytest.mark.django_db
+def test_migrate_reads_text_written_by_hand(legacy_story):
+    """
+    Names in any case, a role and flags in one qualifier, a universe by
+    its name; the notation writes them back as GCD has them.
+    """
+    story = Story.objects.get(id=legacy_story.id)
+    resolver = Resolver(story.issue.series.language)
+    text = ('earth-2 [superman (guest, origin)]; justice league [batman '
+            '(flashback death)]; Clark (guest villain)')
+
+    groups, appearances, remaining, errors, unresolved = migrate_text(
+      text, resolver, plain_names=True)
+
+    assert (remaining, errors, unresolved) == ('', [], [])
+    (league,), (superman, batman, clark) = groups, appearances
+    assert (superman['character'].name, superman['universe'].name,
+            superman['role'].name, superman['is_origin']) == (
+      'Superman', 'Earth-2', 'guest', True)
+    assert league['group_name'].name == 'Justice League'
+    assert (batman['group_name'], batman['is_flashback'],
+            batman['is_death']) == ([league['group_name']], True, True)
+    # two roles are a note
+    assert (clark['role'], clark['notes']) == (None, 'guest villain')
+    assert '@DC: Earth-2 [Superman (origin) (guest)' in render_characters(
+      resolver, *resolved_rows(groups, appearances))
+
+
+@pytest.mark.django_db
+def test_migrate_tells_universe_group_and_character_apart(legacy_story):
+    resolver = Resolver(legacy_story.issue.series.language)
+    text = 'DC [Justice League [Batman]]; Robin [Superman]'
+
+    groups, appearances, remaining, errors, unresolved = migrate_text(
+      text, resolver, plain_names=True)
+
+    assert remaining == text
+    multiverse, robin = unresolved
+    assert (multiverse.message, multiverse.candidates) == (
+      'a multiverse, not a universe', ['@DC: Earth-1', '@DC: Earth-2'])
+    assert (robin.message, robin.candidates) == (
+      'ambiguous group or character', ['&Robin', 'Robin'])
+
+
+@pytest.mark.django_db
+def test_characters_are_checked_while_typed(legacy_story, importer, client):
+    series = legacy_story.issue.series
+    problems, text = check_text('justice league [batman (guest); Nobody',
+                                Resolver(series.language, series))
+    assert 'unbalanced bracket' in str(problems[0])
+    assert 'unknown character name detail "Nobody"' in str(problems[-1])
+
+    client.force_login(importer)
+    response = client.post(
+      reverse('check_characters', kwargs={'series_id': series.id}),
+      {'characters': 'superman (guest, origin); DC [Batman]'})
+
+    content = response.content.decode()
+    assert 'a multiverse, not a universe' in content
+    assert 'Migrate saves: <code>Superman (origin) (guest) ;; DC [Batman]' \
+        '</code>' in content
+
+
+@pytest.mark.django_db
+def test_note_of_keywords_stays_a_note(legacy_story):
+    story = Story.objects.get(id=legacy_story.id)
+    StoryCharacter.objects.filter(story=story, character__name='Clark') \
+        .update(notes='guest, death')
+    resolver = Resolver(story.issue.series.language)
+
+    text = characters_text(story, resolver)
+
+    assert 'Clark (^guest, death)' in text
+    clark, = [appearance for appearance in
+              resolver.resolve(read_characters(text, resolver))[1]
+              if appearance['character'].name == 'Clark']
+    assert (clark['notes'], clark['role'], clark['is_death']) == (
+      'guest, death', None, False)
 
 
 @pytest.mark.django_db
@@ -542,10 +633,10 @@ def test_migrate_reports_unresolved_notation(story_with_characters,
                                        character=duplicate)
     text = 'Doe^; Jane {711}; Nobody (@DC: mainstream); Ben Parker'
 
-    groups, appearances, remaining, errors = migrate_text(
+    groups, appearances, remaining, errors, unresolved = migrate_text(
       text, Resolver(any_language))
 
-    assert (groups, appearances, remaining) == ([], [], text)
+    assert (groups, appearances, remaining, unresolved) == ([], [], text, [])
     ambiguous, unknown = errors
     assert ambiguous.kind == 'ambiguous'
     assert len(ambiguous.candidates) == 2

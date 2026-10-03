@@ -2,8 +2,8 @@
 import pytest
 
 from apps.oi.interchange import (
-    NotationError, Ref, canonical_text, escape, parse_item, parse_items,
-    split_free_text, split_items, tokens_of)
+    NotationError, Ref, canonical_text, escape, keywords_of, parse_item,
+    parse_items, split_free_text, split_items, tokens_of)
 
 
 def text_of(tokens):
@@ -34,6 +34,17 @@ def test_note_read_as_keyword_has_an_escape(note, escaped):
     (kind, value, position), = item.qualifiers
     assert text_of(value) == note
     assert not plain(value)
+
+
+@pytest.mark.parametrize('text, keywords', [
+    ('Cameo', ('cameo', [])), ('Origin,Death', (None, ['origin', 'death'])),
+    ('villain, death', ('villain', ['death'])),
+    ('cameo flashback', ('cameo', ['flashback'])),
+    ('cameo, villain', None), ('death, death', None), ('Corpse, 2', None),
+    ('villain, introduction', None), (' ', None)])
+def test_role_and_flags_share_a_qualifier(text, keywords):
+    assert keywords_of(text, {'cameo': 'cameo', 'villain': 'villain'}) == \
+        keywords
 
 
 def test_anchor_id_and_disambiguation():

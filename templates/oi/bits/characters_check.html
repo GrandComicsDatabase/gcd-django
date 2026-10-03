@@ -1,0 +1,10 @@
+{% if problems %}
+<ul class="errorlist">
+  {% for problem in problems %}
+  <li>{{ problem }}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% if text %}
+<div>Migrate saves: <code>{{ text }}</code></div>
+{% endif %}
