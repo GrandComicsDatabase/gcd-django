@@ -2,8 +2,9 @@
 import pytest
 
 from apps.oi.interchange import (
-    NotationError, Ref, canonical_text, escape, keywords_of, parse_item,
-    parse_items, split_free_text, split_items, tokens_of)
+    LIST_RESERVED, REF_RESERVED, NotationError, Ref, canonical_text, escape,
+    keywords_of, parse_item, parse_items, parse_ref, render_ref,
+    split_free_text, split_items, tokens_of)
 
 
 def text_of(tokens):
@@ -45,6 +46,32 @@ def test_note_read_as_keyword_has_an_escape(note, escaped):
 def test_role_and_flags_share_a_qualifier(text, keywords):
     assert keywords_of(text, {'cameo': 'cameo', 'villain': 'villain'}) == \
         keywords
+
+
+@pytest.mark.parametrize('name, disambiguation, written', [
+    ('DC [circle and serifs]', '', 'DC [circle and serifs]'),
+    ('12 Evergreens (trees)', '', '12 Evergreens (trees)'),
+    ('@#*!', '', '@#*!'),
+    ('Salleck Publications; édition B.D.', '',
+     'Salleck Publications^; édition B.D.'),
+    ('Royal', 'U. S. Royal; adventure (co',
+     'Royal {U. S. Royal^; adventure (co}'),
+    ('a^b {c}', '', 'a^^b ^{c^}')])
+def test_lists_of_linked_objects_escape_little(name, disambiguation,
+                                                written):
+    assert render_ref(name, disambiguation, reserved=LIST_RESERVED) == \
+        written
+    item, = split_items(tokens_of(written), brackets={'{': '}'})
+    ref = parse_ref(item, 0, reserved=LIST_RESERVED)
+    assert (ref.label, ref.disambiguation or '') == (name, disambiguation)
+
+
+def test_single_linked_object_keeps_semicolons():
+    written = render_ref('A Seita C.R.L.; Geomais, Lda. (x)',
+                         reserved=REF_RESERVED)
+    assert written == 'A Seita C.R.L.; Geomais, Lda. (x)'
+    assert parse_ref(tokens_of(written), 0, reserved=REF_RESERVED).label == \
+        'A Seita C.R.L.; Geomais, Lda. (x)'
 
 
 def test_anchor_id_and_disambiguation():

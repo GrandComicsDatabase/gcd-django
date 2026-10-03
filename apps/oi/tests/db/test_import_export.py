@@ -587,6 +587,24 @@ def test_migrate_tells_universe_group_and_character_apart(legacy_story):
 
 
 @pytest.mark.django_db
+def test_civilian_identity_tells_names_apart(legacy_story, any_language):
+    other = Character.objects.create(
+      name='Batman', sort_name='Batman', disambiguation='other',
+      language=any_language, description='', notes='')
+    CharacterNameDetail.objects.create(name='Batman', sort_name='Batman',
+                                       character=other)
+    resolver = Resolver(legacy_story.issue.series.language)
+
+    groups, appearances, remaining, errors, unresolved = migrate_text(
+      'Batman [Bruce Wayne]; Batman', resolver, plain_names=True)
+
+    # the Batman of Bruce Wayne, Batman alone is ambiguous
+    batman, bruce = appearances
+    assert batman['character'].character.disambiguation == ''
+    assert remaining == 'Batman'
+
+
+@pytest.mark.django_db
 def test_characters_are_checked_while_typed(legacy_story, importer, client):
     series = legacy_story.issue.series
     problems, text = check_text('justice league [batman (guest); Nobody',

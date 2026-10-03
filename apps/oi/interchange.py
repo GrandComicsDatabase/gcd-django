@@ -32,7 +32,10 @@ the second anchor too, so that writing what was read gives the same text.
 Escapes: '^' before ^ ; ( ) [ ] { }, before a leading @ or &, before
 spaces at the start or the end, and ^n ^t ^r for newline, tab and carriage
 return. A qualifier is recognized by its sigil or as a keyword, a
-qualifier with an escape is never a keyword.
+qualifier with an escape is never a keyword. The fields which are lists of
+linked objects, such as brands or features, have no qualifiers and
+members: there only ^ ; { } are escaped, in a single linked object only
+^ { }.
 
 The characters of a sequence are a tree written as text, universe -> group
 -> character, followed by the free text of the field:
@@ -61,14 +64,22 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from functools import reduce
 
-from apps.gcd.models import (Brand, CharacterNameDetail, CharacterRole,
-                             CreatorNameDetail, CreatorSignature, Feature,
+from django.db.models import Q
+
+from apps.gcd.models import (Brand, CharacterNameDetail, CharacterRelation,
+                             CharacterRole, CreatorNameDetail,
+                             CreatorSignature, Feature,
                              FeatureLogo, FeatureNameDetail, Group,
                              GroupNameDetail, IndiciaPrinter,
                              IndiciaPublisher, StoryArc, Universe)
 from apps.gcd.models.story import STORY_TYPES
 
 RESERVED = '^;()[]{}'
+# a list of linked objects has no qualifiers and members, only the escape,
+# the anchors and the separator are reserved, a single linked object has no
+# separator either
+LIST_RESERVED = '^;{}'
+REF_RESERVED = '^{}'
 SIGILS = '@&'
 FLAGS = ('flashback', 'origin', 'death')
 FREE_TEXT_SEPARATOR = ';;'
@@ -82,6 +93,8 @@ DEFAULT_LINKS = ('group_name',)
 LINK_PATTERNS = [DEFAULT_LINKS, ('group',), LINKS]
 # '(&@)': the universe of the group is the universe of the character
 SAME = 'same'
+# 'alias of' and 'secret identity of', shown by GCD in square brackets
+IDENTITY_RELATION = 2
 
 
 class NotationError(Exception):
@@ -146,6 +159,9 @@ class AppearanceEntry:
     # the group name of the enclosing group and how the member is linked
     member_of: Ref = None
     member_links: tuple = ()
+    # the names of the characters inside or around, such as the civilian
+    # identity, preferably related characters
+    related: list = field(default_factory=list)
 
 
 @dataclass
@@ -173,12 +189,12 @@ def _escaped(char):
     return '^' + CONTROLS.get(char, char)
 
 
-def escape(text, keyword=False):
+def escape(text, keyword=False, reserved=RESERVED):
     """
     Escapes a name or a note. A keyword is a note which would read as a
     keyword, such as a role, it gets an escape.
     """
-    chars = [_escaped(char) if char in RESERVED or char in CONTROLS
+    chars = [_escaped(char) if char in reserved or char in CONTROLS
              else char for char in text]
     # the parser trims spaces and reads a leading @ or & as sigil
     start = len(text) - len(text.lstrip())
@@ -186,7 +202,7 @@ def escape(text, keyword=False):
     for index in list(range(start)) + list(range(max(end, start),
                                                  len(text))):
         chars[index] = _escaped(text[index])
-    if text and text[0] in SIGILS:
+    if text and text[0] in SIGILS and reserved == RESERVED:
         chars[0] = _escaped(text[0])
     if keyword and all(len(char) == 1 for char in chars):
         for index, char in enumerate(text):
@@ -220,17 +236,18 @@ def unescape_text(raw, position=None):
     return text
 
 
-def render_ref(label, disambiguation='', object_id=None, owner=None):
-    text = escape(label)
+def render_ref(label, disambiguation='', object_id=None, owner=None,
+               reserved=RESERVED):
+    text = escape(label, reserved=reserved)
     if object_id is not None:
         text += ' {#%d}' % object_id
     elif disambiguation or owner:
-        disambiguation = escape(disambiguation or '')
+        disambiguation = escape(disambiguation or '', reserved=reserved)
         if disambiguation.startswith('#'):
             disambiguation = '^' + disambiguation
         text += ' {%s}' % disambiguation
     if owner:
-        text += ' {%s}' % escape(owner)
+        text += ' {%s}' % escape(owner, reserved=reserved)
     return text
 
 
@@ -298,16 +315,24 @@ def _end(tokens):
     return tokens[-1][2] + (2 if tokens[-1][1] else 1)
 
 
-def _closing(tokens, start):
+def _brackets(reserved):
+    """
+    The brackets with a meaning, the others are text.
+    """
+    return {opening: closing for opening, closing in BRACKETS.items()
+            if opening in reserved}
+
+
+def _closing(tokens, start, brackets=BRACKETS):
     """
     The index of the bracket closing the one at start, -1 if none.
     """
     stack = []
     for index in range(start, len(tokens)):
         token = tokens[index]
-        if _is(token, BRACKETS):
-            stack.append(BRACKETS[token[0]])
-        elif _is(token, ')]}'):
+        if _is(token, brackets):
+            stack.append(brackets[token[0]])
+        elif _is(token, brackets.values()):
             if stack.pop() != token[0]:
                 return -1
             if not stack:
@@ -327,7 +352,7 @@ def _can_close(tokens, start, stack):
     return False
 
 
-def split_items(tokens, tolerant=False):
+def split_items(tokens, tolerant=False, brackets=BRACKETS):
     """
     Splits at the semicolons outside brackets, returns the stripped items.
     In tolerant mode, as in ParserCharacters, a semicolon in a bracket
@@ -339,9 +364,9 @@ def split_items(tokens, tolerant=False):
     stack = []
     start = 0
     for index, token in enumerate(tokens):
-        if _is(token, BRACKETS):
-            stack.append(BRACKETS[token[0]])
-        elif _is(token, ')]}'):
+        if _is(token, brackets):
+            stack.append(brackets[token[0]])
+        elif _is(token, brackets.values()):
             if stack and stack[-1] == token[0]:
                 stack.pop()
             elif not tolerant:
@@ -411,20 +436,20 @@ QUALIFIER_SIGILS = (('&@', 'group_universe'), ('&&', 'group_name'),
                     ('&', 'group'), ('@', 'universe'))
 
 
-def _check_escaped(tokens):
+def _check_escaped(tokens, reserved=RESERVED):
     for token in tokens:
-        if _is(token, RESERVED):
+        if _is(token, reserved):
             raise _syntax_error('unescaped reserved character', token[2],
                                 token[0])
 
 
-def _anchors_end(tokens, start):
+def _anchors_end(tokens, start, brackets=BRACKETS):
     """
     The index after the anchors starting at start.
     """
     end = start
     while end < len(tokens) and _is(tokens[end], '{'):
-        close = _closing(tokens, end)
+        close = _closing(tokens, end, brackets)
         if close < 0:
             raise _syntax_error('unbalanced bracket', tokens[end][2], '{')
         end = following = close + 1
@@ -436,31 +461,33 @@ def _anchors_end(tokens, start):
     return end
 
 
-def parse_ref(tokens, position, empty=False):
+def parse_ref(tokens, position, empty=False, reserved=RESERVED):
     """
-    A name with its anchors, None for no name if empty is allowed.
+    A name with its anchors, None for no name if empty is allowed. Only
+    the reserved characters need an escape.
     """
     tokens = _strip(tokens)
+    brackets = _brackets(reserved)
     brace = next((index for index, token in enumerate(tokens)
                   if _is(token, '{')), -1)
     anchors = []
     if brace >= 0:
-        if _anchors_end(tokens, brace) != len(tokens):
+        if _anchors_end(tokens, brace, brackets) != len(tokens):
             raise _syntax_error('the anchor {...} must end the name',
                                 tokens[brace][2], _text(tokens[brace:]))
         index = brace
         while index < len(tokens):
             if _is(tokens[index], '{'):
-                close = _closing(tokens, index)
+                close = _closing(tokens, index, brackets)
                 anchors.append(tokens[index + 1:close])
-                _check_escaped(anchors[-1])
+                _check_escaped(anchors[-1], reserved)
                 index = close
             index += 1
         if len(anchors) > 2:
             raise _syntax_error('more than two anchors', tokens[brace][2],
                                 _text(tokens[brace:]))
         tokens = _strip(tokens[:brace])
-    _check_escaped(tokens)
+    _check_escaped(tokens, reserved)
     label = _text(tokens)
     if not label:
         if empty and not anchors:
@@ -991,7 +1018,7 @@ class Resolver:
           'not_found', 'unknown %s' % model._meta.verbose_name, ref.position,
           ref.label, [_describe(model, related) for related in candidates])
 
-    def reference(self, model, related, scope=()):
+    def reference(self, model, related, scope=(), reserved=RESERVED):
         """
         The shortest reference which resolves back to the object: its name
         with its disambiguation, else also with the official name of its
@@ -999,13 +1026,15 @@ class Resolver:
         """
         label = label_of(model, related)
         disambiguation = disambiguation_of(model, related)
-        texts = [render_ref(label, disambiguation)]
+        texts = [render_ref(label, disambiguation, reserved=reserved)]
         if model in OWNERS:
             texts.append(render_ref(label, disambiguation,
-                                    owner=official_name(model, related)))
+                                    owner=official_name(model, related),
+                                    reserved=reserved))
         for text in texts:
             try:
-                if self.resolve_ref(model, parse_ref(tokens_of(text), 0),
+                if self.resolve_ref(model, parse_ref(tokens_of(text), 0,
+                                                     reserved=reserved),
                                     scope=scope) == related:
                     return text
             except NotationError:
@@ -1021,6 +1050,25 @@ class Resolver:
           'universe': universe,
           'notes': entry.notes}
 
+    def related_scope(self, labels):
+        """
+        The names of the characters which are an identity of a character of
+        one of the names, as GCD shows them in square brackets, such as
+        Two-Face [Harvey Dent].
+        """
+        key = ('related', tuple(sorted(labels)))
+        if key not in self._scopes:
+            named = set(self._queryset(CharacterNameDetail).filter(
+              name__in=labels).values_list('character_id', flat=True))
+            related = set()
+            for first, second in CharacterRelation.objects.filter(
+                  Q(from_character__in=named) | Q(to_character__in=named),
+                  relation_type_id=IDENTITY_RELATION) \
+                    .values_list('from_character_id', 'to_character_id'):
+                related.add(second if first in named else first)
+            self._scopes[key] = {'character__in': sorted(related)}
+        return self._scopes[key]
+
     def resolve_appearance(self, entry, any_disambiguation=False):
         # universe -> group -> character
         universe = self.resolve_ref(Universe, entry.universe)
@@ -1033,7 +1081,7 @@ class Resolver:
         group_names = [self.resolve_ref(GroupNameDetail, ref,
                                         any_disambiguation)
                        for ref in entry.group_names]
-        scope = ()
+        scope = []
         if entry.member_of:
             group_name = self.resolve_ref(GroupNameDetail, entry.member_of,
                                           any_disambiguation)
@@ -1041,7 +1089,9 @@ class Resolver:
                 groups.insert(0, group_name.group)
             if 'group_name' in entry.member_links:
                 group_names.insert(0, group_name)
-            scope = membership_scope(group_name)
+            scope.append(membership_scope(group_name))
+        if entry.related:
+            scope.append(self.related_scope(entry.related))
         return {
           'character': self.resolve_ref(CharacterNameDetail, entry.name,
                                         any_disambiguation, scope),
@@ -1223,7 +1273,9 @@ class CharactersReader:
                 raise _syntax_error('only characters inside a character',
                                     child.position,
                                     child.sigil + child.name.label)
-            self._appearance(child, entry.universe, characters)
+            inside = self._appearance(child, entry.universe, characters)
+            entry.related.append(child.name.label)
+            inside.related.append(item.name.label)
         return entry
 
 
@@ -1646,6 +1698,17 @@ MULTI_REFS = {'brand_emblem', 'indicia_printer', 'feature_object',
 NOTATION_FIELDS = SINGLE_REFS | MULTI_REFS | {'credits', 'characters'}
 
 
+def _reserved(name):
+    """
+    The reserved characters of the references of a field.
+    """
+    if name in MULTI_REFS:
+        return LIST_RESERVED
+    if name in SINGLE_REFS:
+        return REF_RESERVED
+    return RESERVED
+
+
 def _boolean_fields():
     from apps.oi.models import IssueRevision, StoryRevision
     from django.db.models import BooleanField
@@ -1711,7 +1774,8 @@ class RecordWriter:
         return self._credit_types
 
     def _ref(self, name, related, scope=()):
-        return self.resolver.reference(self.models[name], related, scope)
+        return self.resolver.reference(self.models[name], related, scope,
+                                       _reserved(name))
 
     def _credit(self, credit, fields):
         qualifiers = [credit.credit_type.name]
@@ -1906,8 +1970,9 @@ class RecordDecoder:
         return unescape_text(value, path) if self.flat else value
 
     def _refs(self, value):
-        return [parse_ref(item, item[0][2])
-                for item in split_items(tokens_of(value))]
+        return [parse_ref(item, item[0][2], reserved=LIST_RESERVED)
+                for item in split_items(tokens_of(value),
+                                        brackets=_brackets(LIST_RESERVED))]
 
     def _credit(self, tokens):
         item = parse_item(tokens, sigils=False)
@@ -2015,7 +2080,8 @@ class RecordDecoder:
         if name in SINGLE_REFS:
             if not value:
                 return None
-            return _located(parse_ref(tokens_of(value), 0), path)
+            return _located(parse_ref(tokens_of(value), 0,
+                                      reserved=REF_RESERVED), path)
         if name == 'page_count':
             return _decimal(value, path)
         return self._string(value, path)
