@@ -1,0 +1,72 @@
+{% extends "gcd/keywords/base.html" %}
+{% block title %}GCD :: Possible duplicate keywords{% endblock %}
+{% block keyword_navigation %}
+  <p class="my-2">
+    <a href="{% url 'keyword_manage' %}">Keyword management</a>
+  </p>
+{% endblock %}
+
+{% block keyword_heading %}Possible duplicate keywords{% endblock %}
+
+{% block keyword_body %}
+  <p class="mb-4 text-gray-700">Compare spelling variants and their usages. These are suggestions for review; nothing is merged automatically.</p>
+  <details class="mb-4 text-sm text-gray-700">
+    <summary class="cursor-pointer">How matching works</summary>
+    <p>
+      Names are compared ignoring case, surrounding whitespace and equivalent
+      Unicode spellings. Accents, punctuation and internal spaces are preserved.
+      A match does not prove that the keywords have the same meaning.
+    </p>
+  </details>
+  <form method="get" class="flex flex-wrap items-center gap-4 rounded border bg-gray-200 p-2 mb-4">
+    <div class="w-full sm:w-auto">
+      <label for="duplicate-query" class="block font-bold">Name contains</label>
+      <input id="duplicate-query" type="search" name="q" value="{{ query }}" class="w-full rounded">
+    </div>
+    <div class="flex flex-wrap items-center gap-4">
+      <button type="submit" class="btn-blue-editing">Search groups</button>
+      <a class="btn-blue-editing" href="{% url 'keyword_manage_duplicates' %}">Reset</a>
+    </div>
+  </form>
+  <p>{{ page_obj.paginator.count }} possible duplicate group{{ page_obj.paginator.count|pluralize }}. All variants in each matching group are shown.</p>
+  {% for group in page_obj %}
+    <section class="my-2">
+      <h2 class="text-xl font-bold mb-2">{{ group.key }}</h2>
+      <div class="overflow-y-auto">
+        <table class="w-full border-collapse">
+          <thead class="bg-blue-100">
+            <tr class="border-y border-gray-200">
+              <th scope="col" class="p-2 text-left text-gray-700">ID</th>
+              <th scope="col" class="p-2 text-left">Existing name</th>
+              <th scope="col" class="p-2 text-right">Usages</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for member in group.members %}
+              <tr class="border-y border-gray-200">
+                <td class="p-2 text-left text-gray-700">{{ member.pk }}</td>
+                <td class="p-2">
+                  <a href="{% url 'keyword_manage_detail' member.pk %}?{{ detail_query }}">{{ member.name }}</a>
+                </td>
+                <td class="p-2 text-right">{{ member.usage_count }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% empty %}
+    <p class="my-2">No possible duplicates match this search.</p>
+  {% endfor %}
+  {% if page_obj.has_other_pages %}
+    <nav aria-label="Duplicate group pages" class="flex flex-wrap items-center gap-4 my-2">
+      {% if page_obj.has_previous %}
+        <a href="?q={{ query|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>
+      {% endif %}
+      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?q={{ query|urlencode }}&amp;page={{ page_obj.next_page_number }}">Next</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,44 @@
+{% load humanize %}
+  <div class="flex flex-wrap justify-between gap-4 mb-2">
+    <p>
+      <strong>{{ page_obj.paginator.count|intcomma }}</strong> keyword{{ page_obj.paginator.count|pluralize }} found
+    </p>
+    <p class="text-sm text-gray-700">Usage counts include all associated object types.</p>
+  </div>
+  <div class="overflow-y-auto">
+    <table class="w-full border-collapse">
+      <thead class="bg-blue-100">
+        <tr class="border-y border-gray-200 text-left">
+          <th scope="col" class="p-2 text-left text-gray-700">ID</th>
+          <th scope="col" class="p-2 text-left">Keyword</th>
+          <th scope="col" class="p-2 text-right">Usages</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for keyword in page_obj %}
+          <tr class="border-y border-gray-200">
+            <td class="p-2 text-left text-gray-700">{{ keyword.pk }}</td>
+            <td class="p-2">
+              <a id="keyword-{{ keyword.pk }}" href="{% url 'keyword_manage_detail' keyword.pk %}?{{ detail_query }}" hx-get="{% url 'keyword_manage_detail' keyword.pk %}?{{ detail_query }}" hx-target="#keyword-detail" hx-push-url="false" hx-sync="#keyword-detail:replace" aria-controls="keyword-detail" aria-expanded="false">{{ keyword.name }}</a>
+            </td>
+            <td class="p-2 text-right">{{ keyword.usage_count|intcomma }}</td>
+          </tr>
+        {% empty %}
+          <tr class="border-y border-gray-200">
+            <td colspan="3" class="p-2">No keywords match these filters.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page_obj.has_other_pages %}
+    <nav hx-boost="true" hx-target="#keyword-results" hx-push-url="true" hx-sync="#keyword-filters:replace" aria-label="Keyword pages" class="flex flex-wrap items-center gap-4 my-2">
+      {% if page_obj.has_previous %}
+        <a href="?q={{ query|urlencode }}&amp;usage={{ usage|urlencode }}&amp;page={{ page_obj.previous_page_number }}&amp;sort={{ sort|urlencode }}">Previous</a>
+      {% endif %}
+      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}
+        <a href="?q={{ query|urlencode }}&amp;usage={{ usage|urlencode }}&amp;page={{ page_obj.next_page_number }}&amp;sort={{ sort|urlencode }}">Next</a>
+      {% endif %}
+    </nav>
+  {% endif %}

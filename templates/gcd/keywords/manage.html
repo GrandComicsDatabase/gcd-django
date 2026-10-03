@@ -1,0 +1,56 @@
+{% extends "gcd/keywords/base.html" %}
+{% load static %}
+
+{% block css_raw %}
+  {{ block.super }}
+  <script src="{% static 'js/htmx_2_0_8.min.js' %}" defer></script>
+  <script src="{% static 'js/keyword_filters.js' %}" defer></script>
+{% endblock %}
+
+{% block title %}GCD :: Keyword management{% endblock %}
+
+{% block keyword_heading %}Keyword management{% endblock %}
+
+{% block keyword_actions %}
+  <a class="btn-blue-editing" href="{% url 'keyword_manage_duplicates' %}">Review possible duplicates</a>
+{% endblock %}
+
+{% block keyword_body %}
+  <p class="mb-4 text-gray-700">Browse keywords and their associated catalog objects, including unused keywords.</p>
+  <form id="keyword-filters" method="get" action="{% url 'keyword_manage' %}"
+        hx-get="{% url 'keyword_manage' %}" hx-target="#keyword-results"
+        hx-trigger="submit, input changed delay:300ms from:#keyword-query, change from:#keyword-usage, change from:#keyword-sort"
+        hx-push-url="true" hx-sync="this:replace" class="flex flex-wrap items-center gap-4 rounded border bg-gray-200 p-2 mb-4">
+    <div class="w-full sm:w-auto">
+      <label for="keyword-query" class="block font-bold">Name contains</label>
+      <input id="keyword-query" type="search" name="q" value="{{ query }}" class="w-full rounded">
+    </div>
+    <div>
+      <label for="keyword-usage" class="block font-bold">Usage</label>
+      <select id="keyword-usage" name="usage" class="w-full rounded">
+        <option value="">All keywords</option>
+        <option value="used"{% if usage == 'used' %} selected{% endif %}>Used</option>
+        <option value="unused"{% if usage == 'unused' %} selected{% endif %}>Unused</option>
+      </select>
+    </div>
+    <div>
+      <label for="keyword-sort" class="block font-bold">Order by</label>
+      <select id="keyword-sort" name="sort" class="w-full rounded">
+        <option value="name"{% if sort == 'name' %} selected{% endif %}>Name A–Z</option>
+        <option value="-name"{% if sort == '-name' %} selected{% endif %}>Name Z–A</option>
+        <option value="-usage"{% if sort == '-usage' %} selected{% endif %}>Most used</option>
+        <option value="usage"{% if sort == 'usage' %} selected{% endif %}>Least used</option>
+      </select>
+    </div>
+    <div class="flex flex-wrap items-center gap-4">
+      <button type="submit" class="btn-blue-editing">Search</button>
+      <a id="keyword-reset" class="btn-blue-editing" href="{% url 'keyword_manage' %}" hx-get="{% url 'keyword_manage' %}" hx-target="#keyword-results" hx-push-url="true" hx-sync="#keyword-filters:replace" hx-params="none">Reset</a>
+    </div>
+  </form>
+  <p id="keyword-request-status" role="status" aria-live="polite"></p>
+  <section id="keyword-detail" hidden aria-label="Keyword details"
+           class="rounded border border-gray-200 bg-white p-2 mb-4"></section>
+  <section id="keyword-results" aria-label="Keyword results">
+    {% include 'gcd/keywords/partials/results.html' %}
+  </section>
+{% endblock %}
