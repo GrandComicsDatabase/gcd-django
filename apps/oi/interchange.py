@@ -1084,7 +1084,12 @@ class Resolver:
                   Q(from_character__in=named) | Q(to_character__in=named),
                   relation_type_id=IDENTITY_RELATION) \
                     .values_list('from_character_id', 'to_character_id'):
-                related.add(second if first in named else first)
+                # both, if both are named, as D-Man [Demolition-Man; Dennis
+                # Dunphy], two names of D-Man and his identity
+                if first in named:
+                    related.add(second)
+                if second in named:
+                    related.add(first)
             self._scopes[key] = {'character__in': sorted(related)}
         return self._scopes[key]
 
@@ -1658,6 +1663,22 @@ def _is_notation(tokens):
     return False
 
 
+def _once_per_character(appearances):
+    """
+    The appearances of an item written as GCD shows it, once for each
+    character and universe: the other names of a character in its square
+    brackets, as D-Man [Demolition-Man; Dennis Dunphy], are no appearances.
+    """
+    seen, once = set(), []
+    for appearance in appearances:
+        key = (appearance['character'].character_id,
+               appearance['universe'].id if appearance['universe'] else None)
+        if key not in seen:
+            seen.add(key)
+            once.append(appearance)
+    return once
+
+
 def migrate_text(text, resolver, plain_names=False, reference_universe=None):
     """
     Converts the resolvable items of the free text of the characters field.
@@ -1698,6 +1719,7 @@ def migrate_text(text, resolver, plain_names=False, reference_universe=None):
                 characters = tolerant.read([parse_item(item, tolerant=True)])
                 item_groups, item_appearances = resolver.resolve(
                   characters, any_disambiguation=True)
+                item_appearances = _once_per_character(item_appearances)
             groups += item_groups
             appearances += item_appearances
         except NotationError as error:

@@ -614,6 +614,54 @@ def test_migrate_free_text(story_with_characters, any_language):
     assert 'Spider-Man' in str(unresolved[0])
 
 
+@pytest.mark.django_db
+def test_migrate_two_names_and_the_identity_of_a_character(any_language):
+    """
+    D-Man [Demolition-Man; Demolition; Dennis Dunphy]: other names of one
+    character and his civilian identity, not the namesake of another
+    language with an identity of the same name.
+    """
+    from apps.gcd.models import CharacterRelation, CharacterRelationType
+    other_language = Language.objects.get_or_create(
+      code='XZY', name='Other Language')[0]
+    alias_of = CharacterRelationType.objects.get_or_create(
+      id=2, defaults={'type': 'alias of',
+                      'reverse_type': 'secret identity of'})[0]
+
+    def character(names, language=any_language):
+        related = Character.objects.create(
+          name=names[0], sort_name=names[0], language=language,
+          description='', notes='')
+        return [CharacterNameDetail.objects.create(
+                  name=name, sort_name=name, character=related,
+                  is_official_name=name == names[0]) for name in names]
+
+    d_man = character(['Demolition Man', 'D-Man', 'Demolition-Man',
+                       'Demolition'])
+    dennis = character(['Dennis Dunphy'])
+    for hero, civilian in (
+          (d_man, dennis),
+          (character(['Demolition Man', 'D-Man'], other_language),
+           character(['Dennis Dunphy'], other_language))):
+        CharacterRelation.objects.create(
+          from_character=hero[0].character,
+          to_character=civilian[0].character, relation_type=alias_of,
+          notes='')
+
+    resolver = Resolver(any_language)
+
+    groups, appearances, remaining, _, _ = migrate_text(
+      'D-Man [Demolition-Man; Demolition; Dennis Dunphy]', resolver,
+      plain_names=True)
+
+    assert remaining == ''
+    # the other names are no appearances
+    assert [appearance['character'] for appearance in appearances] == [
+      d_man[1], dennis[0]]
+    assert render_characters(resolver, *resolved_rows(
+      groups, appearances)) == 'D-Man [Dennis Dunphy]'
+
+
 @pytest.fixture
 def legacy_story(any_added_story, any_language):
     """
