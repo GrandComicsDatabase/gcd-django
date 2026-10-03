@@ -188,11 +188,12 @@ def get_story_revision_form(revision=None, user=None,
                   ' value="Migrate"></btn></td> d) Characters'
             self.migrated_characters = ([], [])
             self.unresolved_characters = []
-            # checked while it is typed, with the values of the form
+            # checked when the page is shown, e.g. after Migrate, telling
+            # why items stayed text, and while it is typed
             self.fields['characters'].widget.attrs.update({
               'hx-post': reverse('check_characters',
                                  kwargs={'series_id': series.id}),
-              'hx-trigger': 'keyup changed delay:500ms',
+              'hx-trigger': 'load, keyup changed delay:500ms',
               'hx-target': '#characters-check'})
 
         def save(self, commit=True):

@@ -951,6 +951,8 @@ def _save(request, form, revision, changeset=None, model_name=None):
                     revision.migrate_credits()
                 if revision.feature:
                     revision.migrate_feature()
+                if revision.characters:
+                    revision.migrate_characters()
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit_revision',
               kwargs={'model_name': model_name, 'id': revision.id}))
@@ -7822,6 +7824,9 @@ def migrate_story_revision(request, id):
 
     if story.feature:
         story.migrate_feature()
+
+    if story.characters:
+        story.migrate_characters()
 
     return HttpResponseRedirect(
       urlresolvers.reverse('edit_revision', kwargs={'model_name': 'story',

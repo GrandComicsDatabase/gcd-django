@@ -26,8 +26,10 @@ without disambiguation), then by preferences, in order: those of the
 field, such as the brands of the publisher of the series, the language
 of the series, the name which is the official name of its owner, the
 names used in the series. A reference is written as the shortest one
-which resolves back to the object: name and disambiguation, else with
-the second anchor too, so that writing what was read gives the same text.
+which resolves back to the object: the name alone if no other object of
+the name is in the scope and the language of the series, else name and
+disambiguation, else with the second anchor too, so that writing what was
+read gives the same text.
 
 Escapes: '^' before ^ ; ( ) [ ] { }, before a leading @ or &, before
 spaces at the start or the end, and ^n ^t ^r for newline, tab and carriage
@@ -278,18 +280,30 @@ def _text(tokens):
     return ''.join(token[0] for token in tokens)
 
 
+def _end(tokens):
+    """
+    The position after the tokens in the written text.
+    """
+    if not tokens:
+        return 0
+    return tokens[-1][2] + (2 if tokens[-1][1] else 1)
+
+
 def _raw(text, tokens):
     """
     The text of the tokens as written.
     """
     if not tokens:
         return ''
-    end = tokens[-1][2] + (2 if tokens[-1][1] else 1)
-    return text[tokens[0][2]:end]
+    return text[tokens[0][2]:_end(tokens)]
 
 
 def _is(token, chars):
     return not token[1] and token[0] in chars
+
+
+def _is_space(token):
+    return not token[1] and token[0].isspace()
 
 
 def _plain(tokens):
@@ -301,19 +315,11 @@ def _plain(tokens):
 
 def _strip(tokens):
     start, end = 0, len(tokens)
-    while start < end and not tokens[start][1] and \
-            tokens[start][0].isspace():
+    while start < end and _is_space(tokens[start]):
         start += 1
-    while end > start and not tokens[end - 1][1] and \
-            tokens[end - 1][0].isspace():
+    while end > start and _is_space(tokens[end - 1]):
         end -= 1
     return tokens[start:end]
-
-
-def _end(tokens):
-    if not tokens:
-        return 0
-    return tokens[-1][2] + (2 if tokens[-1][1] else 1)
 
 
 def _brackets(reserved):
@@ -454,8 +460,7 @@ def _anchors_end(tokens, start, brackets=BRACKETS):
         if close < 0:
             raise _syntax_error('unbalanced bracket', tokens[end][2], '{')
         end = following = close + 1
-        while following < len(tokens) and not tokens[following][1] and \
-                tokens[following][0].isspace():
+        while following < len(tokens) and _is_space(tokens[following]):
             following += 1
         if following < len(tokens) and _is(tokens[following], '{'):
             end = following
@@ -543,7 +548,7 @@ def parse_item(tokens, tolerant=False, sigils=True):
     index = end
     while index < len(tokens):
         token = tokens[index]
-        if not token[1] and token[0].isspace():
+        if _is_space(token):
             index += 1
             continue
         if _is(token, '(['):
@@ -582,14 +587,15 @@ def parse_items(text, tolerant=False, sigils=True):
                                     tolerant)]
 
 
+def _render_parsed(ref):
+    return render_ref(ref.label, ref.disambiguation, ref.id, ref.owner)
+
+
 def _render_qualifier(kind, value):
     if kind == 'text':
         return escape(_text(value), keyword=not _plain(value))
-    sigil = dict((kind, sigil) for sigil, kind in QUALIFIER_SIGILS)[kind]
-    if value is None:
-        return sigil
-    return sigil + render_ref(value.label, value.disambiguation, value.id,
-                              value.owner)
+    sigil = {kind: sigil for sigil, kind in QUALIFIER_SIGILS}[kind]
+    return sigil if value is None else sigil + _render_parsed(value)
 
 
 def render_item(item):
@@ -601,9 +607,7 @@ def render_item(item):
     if item.children is not None:
         parts.insert(item.children_at, ' [%s]' % '; '.join(
           render_item(child) for child in item.children))
-    return item.sigil + render_ref(item.name.label, item.name.disambiguation,
-                                   item.name.id, item.name.owner) + \
-        ''.join(parts)
+    return item.sigil + _render_parsed(item.name) + ''.join(parts)
 
 
 def canonical_text(text):
@@ -864,13 +868,14 @@ class Resolver:
 
     def _candidates(self, model, label, ignore_case=False):
         """
-        The objects of the name, with ignore_case, for text written by hand,
-        those of the name in another case if none has it as written.
+        The objects of the name, with ignore_case, for text written by hand
+        and files of format 1.0, those of the name in another case if none
+        has it as written.
         """
         if model is Universe:
             return self._universe_index().get(label, [])
         if label not in self._by_label[model]:
-            # the database comparison ignores case and trailing spaces
+            # the database comparison ignores case and accents
             self._by_label[model][label] = list(
               self._queryset(model).filter(name=label))
         found = self._by_label[model][label]
@@ -955,10 +960,12 @@ class Resolver:
                                 sorted(self.roles()))
         return role
 
-    def resolve_ref(self, model, ref, any_disambiguation=False, scope=()):
+    def resolve_ref(self, model, ref, any_disambiguation=False, scope=(),
+                    all_preferences=True):
         """
         any_disambiguation is set for text written by hand as GCD shows it,
-        which may also differ in case.
+        which may also differ in case. Without all_preferences the official
+        name and the names used in the series do not count.
         """
         if ref is None:
             return None
@@ -999,11 +1006,12 @@ class Resolver:
             found = [related for related in found
                      if getattr(_owner_object(model, related), 'language_id',
                                 None) == self.language_id] or found
-        if ref.owner is None and model in OWNERS and len(found) > 1:
+        if all_preferences and ref.owner is None and model in OWNERS and \
+           len(found) > 1:
             # preferably the name which is the official name of its owner
             found = [related for related in found
                      if official_name(model, related) == ref.label] or found
-        if self.series_id and model in SERIES_SCOPES:
+        if all_preferences and self.series_id and model in SERIES_SCOPES:
             for link, name, filters in _series_links(model, self.series_id):
                 if len(found) > 1:
                     found = self._linked(model, found, link, name,
@@ -1022,8 +1030,10 @@ class Resolver:
     def reference(self, model, related, scope=(), reserved=RESERVED):
         """
         The shortest reference which resolves back to the object: its name
-        with its disambiguation, else also with the official name of its
-        owner. A duplicate which no name tells apart gets the first.
+        alone, as GCD shows it, if no other object of the name is in the
+        scope and the language of the series, else with its disambiguation,
+        else also with the official name of its owner. A duplicate which no
+        name tells apart gets the first.
         """
         label = label_of(model, related)
         disambiguation = disambiguation_of(model, related)
@@ -1032,11 +1042,19 @@ class Resolver:
             texts.append(render_ref(label, disambiguation,
                                     owner=official_name(model, related),
                                     reserved=reserved))
-        for text in texts:
+        tries = [(text, True) for text in texts]
+        if disambiguation:
+            # a namesake of the same language needs the disambiguation, even
+            # if the official name or the names used in the series tell
+            # them apart
+            tries.insert(0, (render_ref(label, reserved=reserved), False))
+        for text, all_preferences in tries:
             try:
                 if self.resolve_ref(model, parse_ref(tokens_of(text), 0,
                                                      reserved=reserved),
-                                    scope=scope) == related:
+                                    scope=scope,
+                                    all_preferences=all_preferences) == \
+                   related:
                     return text
             except NotationError:
                 pass
@@ -1069,6 +1087,17 @@ class Resolver:
                 related.add(second if first in named else first)
             self._scopes[key] = {'character__in': sorted(related)}
         return self._scopes[key]
+
+    def identities(self, ids):
+        """
+        The pairs of a character and its civilian identity among the
+        characters of the ids, which GCD shows in square brackets, such as
+        Batman [Bruce Wayne].
+        """
+        return set(CharacterRelation.objects.filter(
+          relation_type_id=IDENTITY_RELATION, from_character__in=ids,
+          to_character__in=ids).values_list('from_character_id',
+                                            'to_character_id'))
 
     def resolve_appearance(self, entry, any_disambiguation=False):
         # universe -> group -> character
@@ -1406,7 +1435,39 @@ def _render_universe(universe):
     return escape(universe_label(universe)) if universe else ''
 
 
-def _render_appearance(row, universe, resolver, membership=None):
+def _identities(appearance_rows, assigned, resolver):
+    """
+    The civilian identities of each appearance, which GCD shows in square
+    brackets after it: the appearances, in its universe, of the characters
+    it is an alias of. Each appearance is written once: a member stays in
+    its group, an identity of several appearances goes to the first, and an
+    appearance with identities is not one itself.
+    """
+    pairs = resolver.identities(
+      {row.character.character_id for row in appearance_rows})
+    identities, nested = {}, set()
+    for number, row in enumerate(appearance_rows):
+        if number in nested:
+            continue
+        civilians = [
+          other for other, civilian in enumerate(appearance_rows)
+          if other != number and other not in assigned and
+          other not in nested and other not in identities and
+          _same(civilian.universe, row.universe) and
+          (row.character.character_id, civilian.character.character_id) in
+          pairs]
+        if civilians:
+            identities[number] = civilians
+            nested.update(civilians)
+    return identities
+
+
+def _render_appearance(row, universe, resolver, membership=None,
+                       civilians=(), identity_of=None):
+    """
+    The civilian identities follow the name in square brackets, the names
+    are those which the reader, with the same scopes, resolves back.
+    """
     qualifiers = []
     if not _same(row.universe, universe):
         qualifiers.append('@' + _render_universe(row.universe))
@@ -1434,9 +1495,20 @@ def _render_appearance(row, universe, resolver, membership=None):
     if row.notes:
         qualifiers.append(escape(row.notes, keyword=_reads_as_keyword(
           row.notes, resolver.roles())))
-    scope = membership_scope(membership[0].group_name) if membership else ()
-    return resolver.reference(CharacterNameDetail, row.character, scope) + \
-        ''.join(' (%s)' % qualifier for qualifier in qualifiers)
+    scope = []
+    if membership:
+        scope.append(membership_scope(membership[0].group_name))
+    if civilians:
+        scope.append(resolver.related_scope(
+          [civilian.character.name for civilian in civilians]))
+    if identity_of:
+        scope.append(resolver.related_scope([identity_of.character.name]))
+    text = resolver.reference(CharacterNameDetail, row.character, scope)
+    if civilians:
+        text += ' [%s]' % '; '.join(
+          _render_appearance(civilian, row.universe, resolver,
+                             identity_of=row) for civilian in civilians)
+    return text + ''.join(' (%s)' % qualifier for qualifier in qualifiers)
 
 
 def _render_group(group, links, members, resolver):
@@ -1449,8 +1521,9 @@ def _render_group(group, links, members, resolver):
         text += ' (%s)' % escape(group.notes)
     if members:
         text += ' [%s]' % '; '.join(
-          _render_appearance(row, group.universe, resolver, (group, links))
-          for row in members)
+          _render_appearance(row, group.universe, resolver, (group, links),
+                             civilians)
+          for row, civilians in members)
     return text
 
 
@@ -1478,29 +1551,38 @@ def _appearance_key(row):
 def render_characters(resolver, group_rows, appearance_rows, free_text=''):
     """
     The characters as text: the items of each universe, groups with their
-    members and then the other characters, each by sort name as GCD shows
-    them. The order depends only on the data, not on the order of creation,
-    so that the same data gives the same text. The names are the shortest
-    ones which the resolver, of the series, reads back.
+    members and then the other characters, each by sort name and with its
+    civilian identities as GCD shows them. The order depends only on the
+    data, not on the order of creation, so that the same data gives the
+    same text. The names are the shortest ones which the resolver, of the
+    series, reads back.
     """
     group_rows = sorted(group_rows, key=_group_key)
     appearance_rows = sorted(appearance_rows, key=_appearance_key)
     members = _members(group_rows, appearance_rows)
     assigned = {number for links, numbers in members for number in numbers}
+    identities = _identities(appearance_rows, assigned, resolver)
+    nested = {number for numbers in identities.values() for number in numbers}
+
+    def with_civilians(number):
+        return appearance_rows[number], [appearance_rows[other] for other in
+                                         identities.get(number, [])]
+
     blocks = defaultdict(list)
     universes = {}
     for group, (links, numbers) in zip(group_rows, members):
         key = group.universe.id if group.universe else None
         universes[key] = group.universe
         blocks[key].append(_render_group(
-          group, links, [appearance_rows[number] for number in numbers],
+          group, links, [with_civilians(number) for number in numbers],
           resolver))
     for number, row in enumerate(appearance_rows):
-        if number not in assigned:
+        if number not in assigned and number not in nested:
             key = row.universe.id if row.universe else None
             universes[key] = row.universe
-            blocks[key].append(_render_appearance(row, row.universe,
-                                                  resolver))
+            row, civilians = with_civilians(number)
+            blocks[key].append(_render_appearance(row, row.universe, resolver,
+                                                  civilians=civilians))
     items = []
     for key in sorted(blocks, key=lambda key: (
           key is not None, universe_label(universes[key]) if key else '',
@@ -1530,7 +1612,7 @@ def characters_text(story, resolver=None):
     free_text = story.characters
     if free_text:
         universes = list(story.universe.all())
-        groups, appearances, free_text, errors, unresolved = migrate_text(
+        groups, appearances, free_text, _, _ = migrate_text(
           free_text, resolver, plain_names=True,
           reference_universe=universes[0] if len(universes) == 1 else None)
         migrated_groups, migrated_appearances = resolved_rows(groups,
@@ -1940,9 +2022,14 @@ def _expect(value, kinds, path):
     return value
 
 
+def _at(path, offset):
+    # positions inside a value are offsets, counted from 1 for people
+    return '%s, position %d' % (path, (offset or 0) + 1)
+
+
 def _located(ref, path):
     if ref is not None and not isinstance(ref.position, str):
-        ref.position = '%s, position %d' % (path, (ref.position or 0) + 1)
+        ref.position = _at(path, ref.position)
     return ref
 
 
@@ -2049,7 +2136,7 @@ class RecordDecoder:
             if entry.signature and 'signature' not in fields:
                 raise NotationError('invalid', 'not for this credit', path,
                                     'signature')
-            entry.position = '%s, position %d' % (path, item[0][2] + 1)
+            entry.position = _at(path, item[0][2])
             entries.append(entry)
         return entries
 
@@ -2072,10 +2159,8 @@ class RecordDecoder:
                 values[name] = self._value(name, value, credit_fields,
                                            field_path)
             except NotationError as error:
-                # positions inside a value are offsets
                 if not isinstance(error.position, str):
-                    error.position = '%s, position %d' % (
-                      field_path, (error.position or 0) + 1)
+                    error.position = _at(field_path, error.position)
                 raise
         return values
 
@@ -2087,10 +2172,7 @@ class RecordDecoder:
         if name == 'credits':
             return self._credits(value, credit_fields, path)
         if name == 'characters':
-            tokens, free_text = split_free_text(tokens_of(value))
-            characters = CharactersReader(self.resolver).read(
-              [parse_item(item) for item in split_items(tokens)])
-            characters.free_text = free_text or ''
+            characters = read_characters(value, self.resolver)
             _relocate(characters, path)
             return characters
         if name in MULTI_REFS:
@@ -2130,6 +2212,11 @@ LEGACY_STORY_FIELDS = [
   'title', 'type', 'feature', 'page_count', 'script', 'pencils', 'inks',
   'colors', 'letters', 'editing', 'genre', 'characters', 'job_number',
   'reprint_notes', 'synopsis', 'notes', 'keywords', 'first_line']
+# the other keys of the JSON of the API, which the issue page offered for
+# download, GCD read it as format 1.0 and ignored them
+LEGACY_API_ISSUE_FIELDS = ['api_url', 'series_name', 'descriptor',
+                           'variant_of', 'series', 'cover']
+LEGACY_API_STORY_FIELDS = ['sequence_number']
 LEGACY_CREDITS = ['script', 'pencils', 'inks', 'colors', 'letters',
                   'editing']
 # the number of cells of a row, a variant in a series has two more
@@ -2162,12 +2249,23 @@ def _legacy_page_count(text):
 
 def is_legacy(issue, stories):
     """
-    Whether an issue of a JSON or YAML file is of format 1.0.
+    Whether an issue of a JSON or YAML file is of format 1.0, also as the
+    API gives it.
     """
     return RECORD not in issue and \
-        set(issue) <= set(LEGACY_ISSUE_FIELDS + ['story_set']) and \
-        all(isinstance(story, dict) and set(story) <= set(LEGACY_STORY_FIELDS)
+        set(issue) <= set(LEGACY_ISSUE_FIELDS + LEGACY_API_ISSUE_FIELDS +
+                          ['story_set']) and \
+        all(isinstance(story, dict) and
+            set(story) <= set(LEGACY_STORY_FIELDS + LEGACY_API_STORY_FIELDS)
             for story in stories)
+
+
+def is_legacy_rows(rows):
+    """
+    Whether the rows of a CSV or TSV file are of format 1.0, without header
+    row.
+    """
+    return bool(rows and rows[0] and rows[0][0] != RECORD)
 
 
 def legacy_values(raw, kind, flat):
@@ -2303,7 +2401,7 @@ def read_flat_records(rows, sequences_only=False, series=False):
     without header row is of format 1.0, as are its line numbers.
     """
     first = 2
-    if rows and rows[0] and rows[0][0] != RECORD:
+    if is_legacy_rows(rows):
         rows, first = legacy_rows(rows, sequences_only, series), 1
     if not rows or not rows[0] or rows[0][0] != RECORD:
         raise _syntax_error('the first row must be the header row, starting '
@@ -2353,9 +2451,11 @@ class RecordImporter:
         self.models = _ref_models()
         self.errors = []
 
-    def _resolve(self, name, ref, scope=()):
+    def _resolve(self, name, ref, scope=(), legacy=False):
+        # GCD found the names of format 1.0 in any case
         try:
             return self.resolver.resolve_ref(self.models[name], ref,
+                                             any_disambiguation=legacy,
                                              scope=scope)
         except NotationError as error:
             self.errors.append(error)
@@ -2374,8 +2474,8 @@ class RecordImporter:
             credits.append(values)
         return credits
 
-    def _multi(self, values, names, scopes={}):
-        return {name: [self._resolve(name, ref, scopes.get(name, ()))
+    def _multi(self, values, names, scopes, legacy=False):
+        return {name: [self._resolve(name, ref, scopes.get(name, ()), legacy)
                        for ref in values.pop(name)]
                 for name in names}
 
@@ -2384,15 +2484,21 @@ class RecordImporter:
             errors, self.errors = self.errors, []
             _raise_all(errors)
 
-    def issue(self, values):
+    def issue(self, values, legacy=False):
         """
         Returns field values, many-to-many values and credits of an issue.
+        An issue of format 1.0 leaves out the fields which the series does
+        not use, GCD read them unseen, and its names are found in any case.
         """
         from apps.gcd.models import VCS_Codes
         from apps.oi.models import on_sale_date_fields
         values = dict(values)
         for name in unused_fields(self.series):
-            if values.get(name):
+            if not values.get(name):
+                continue
+            if legacy:
+                values[name] = type(values[name])()
+            else:
                 self.errors.append(NotationError(
                   'invalid', 'the series does not use this field', name))
         scopes = issue_scopes(self.series)
@@ -2400,9 +2506,9 @@ class RecordImporter:
         credits = self._credits(values.pop('credits'))
         values['indicia_publisher'] = self._resolve(
           'indicia_publisher', values['indicia_publisher'],
-          scopes['indicia_publisher'])
+          scopes['indicia_publisher'], legacy)
         multi = self._multi(values, ['brand_emblem', 'indicia_printer'],
-                            scopes)
+                            scopes, legacy)
         status = values.pop('variant_cover_status') or \
             DEFAULT_VARIANT_COVER_STATUS
         if status not in VCS_Codes.__members__:
@@ -2421,10 +2527,11 @@ class RecordImporter:
               on_sale_date))
         return values, multi, credits
 
-    def story(self, values):
+    def story(self, values, legacy=False):
         """
         Returns field values, many-to-many values, credits and characters
-        of a sequence.
+        of a sequence. The type of a sequence of format 1.0 is found in any
+        case.
         """
         values = dict(values)
         credits = self._credits(values.pop('credits'))
@@ -2432,7 +2539,8 @@ class RecordImporter:
             self.errors.append(NotationError('invalid', 'missing type',
                                              'type'))
         else:
-            values['type'] = self._resolve('type', values['type'])
+            values['type'] = self._resolve('type', values['type'],
+                                           legacy=legacy)
         multi = self._multi(values, ['feature_object', 'feature_name',
                                      'story_arc', 'universe'],
                             story_scopes(values['type']))

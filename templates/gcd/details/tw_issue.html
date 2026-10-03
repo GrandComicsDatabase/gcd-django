@@ -403,7 +403,7 @@ Related Links
     {% endif %}
   </details>
   {% elif not preview %}
-  <a class="hover:no-underline" href="/api{% url 'show_issue' issue.id %}record/?format=json">
+  <a class="hover:no-underline" href="/api{% url 'show_issue' issue.id %}?format=json">
     <btn class="btn btn-blue-editing">Download (JSON)</btn>
   </a>
   {% endif %}

@@ -31,7 +31,8 @@ from apps.oi.interchange import (
     CREDIT_FIELDS, ISSUE_CREDIT_FIELDS, ISSUE_FIELDS, LEGACY_ISSUE_VALUES,
     RECORD, STORY_FIELDS, NotationError, RecordDecoder, RecordImporter,
     Resolver, check_text, create_credits, create_revisions, flat_rows,
-    is_legacy, issue_record, legacy_values, read_flat_records, set_multi)
+    is_legacy, is_legacy_rows, issue_record, legacy_values,
+    read_flat_records, set_multi, unused_fields)
 
 
 class ImportFailure(Exception):
@@ -61,6 +62,75 @@ def _read_upload(request_file):
         return content.decode(chardet.detect(content)['encoding'])
 
 
+def _read_flat(text, file_format, sequences_only, series):
+    # control characters in cells are escaped, any line break ends a row
+    if file_format == 'csv':
+        rows = list(csv.reader(io.StringIO(text, newline='')))
+    else:
+        # only line breaks end a row, the other separators of
+        # str.splitlines are text
+        rows = [line.split('\t') for line in re.split('\r\n|\n|\r', text)]
+    legacy = is_legacy_rows(rows)
+    decoder = RecordDecoder(flat=True)
+    return [
+      (decoder.decode(issue, ISSUE_FIELDS, ISSUE_CREDIT_FIELDS,
+                      'line %d' % line) if issue else None,
+       [decoder.decode(sequence, STORY_FIELDS, CREDIT_FIELDS,
+                       'line %d' % sequence_line)
+        for sequence, sequence_line in sequences],
+       legacy)
+      for issue, line, sequences in read_flat_records(rows, sequences_only,
+                                                      series)]
+
+
+def _issues_with_paths(data):
+    """
+    The issues of a JSON or YAML file: one issue, or several in issue_set.
+    """
+    if isinstance(data, dict) and 'issue_set' in data:
+        issues = data['issue_set']
+        paths = ['issue_set[%d]' % number for number in range(
+                 len(issues) if isinstance(issues, list) else 0)]
+    else:
+        issues, paths = [data], ['issue']
+    if not isinstance(issues, list) or not issues:
+        raise ImportFailure('The file contains no issue.')
+    return zip(issues, paths)
+
+
+def _read_structured(text, file_format, sequences_only):
+    try:
+        data = yaml.safe_load(text) if file_format == 'yaml' \
+               else json.loads(text)
+    except (yaml.YAMLError, json.JSONDecodeError) as error:
+        raise ImportFailure('Invalid %s format: %s' % (
+          file_format.upper(), error))
+    decoder = RecordDecoder(flat=False)
+    records = []
+    for issue, path in _issues_with_paths(data):
+        if not isinstance(issue, dict):
+            raise ImportFailure('%s is not an issue.' % path)
+        stories = issue.get('story_set') or []
+        if not isinstance(stories, list):
+            raise ImportFailure('%s.story_set is not a list.' % path)
+        legacy = is_legacy(issue, stories)
+        if legacy:
+            issue = legacy_values(issue, 'issue', flat=False)
+            stories = [legacy_values(story, 'sequence', flat=False)
+                       for story in stories]
+        elif issue.get(RECORD, 'issue') != 'issue':
+            raise ImportFailure('%s.%s is not "issue".' % (path, RECORD))
+        issue = {name: value for name, value in issue.items()
+                 if name != RECORD}
+        values = None if sequences_only else decoder.decode(
+          issue, ISSUE_FIELDS, ISSUE_CREDIT_FIELDS, path)
+        records.append((values, [
+          decoder.decode(story, STORY_FIELDS, CREDIT_FIELDS,
+                         '%s.story_set[%d]' % (path, number))
+          for number, story in enumerate(stories)], legacy))
+    return records
+
+
 def _read_records(request_file, file_format, sequences_only=False,
                   series=False):
     """
@@ -70,70 +140,8 @@ def _read_records(request_file, file_format, sequences_only=False,
     text = _read_upload(request_file)
     try:
         if file_format in ('csv', 'tsv'):
-            decoder = RecordDecoder(flat=True)
-            # control characters in cells are escaped, any line break ends
-            # a row
-            if file_format == 'csv':
-                rows = list(csv.reader(io.StringIO(text, newline='')))
-            else:
-                # only line breaks end a row, the other separators of
-                # str.splitlines are text
-                rows = [line.split('\t')
-                        for line in re.split('\r\n|\n|\r', text)]
-            # without header row
-            legacy = bool(rows and rows[0] and rows[0][0] != RECORD)
-            records = []
-            for issue, line, sequences in read_flat_records(
-                                            rows, sequences_only, series):
-                records.append((
-                  decoder.decode(issue, ISSUE_FIELDS, ISSUE_CREDIT_FIELDS,
-                                 'line %d' % line) if issue else None,
-                  [decoder.decode(sequence, STORY_FIELDS, CREDIT_FIELDS,
-                                  'line %d' % sequence_line)
-                   for sequence, sequence_line in sequences], legacy))
-            return records
-        decoder = RecordDecoder(flat=False)
-        try:
-            data = yaml.safe_load(text) if file_format == 'yaml' \
-                   else json.loads(text)
-        except (yaml.YAMLError, json.JSONDecodeError) as error:
-            raise ImportFailure('Invalid %s format: %s' % (
-              file_format.upper(), error))
-        if isinstance(data, dict) and 'issue_set' in data:
-            issues = data['issue_set']
-            paths = ['issue_set[%d]' % number for number in range(
-                     len(issues) if isinstance(issues, list) else 0)]
-        else:
-            issues = [data]
-            paths = ['issue']
-        if not isinstance(issues, list) or not issues:
-            raise ImportFailure('The file contains no issue.')
-        records = []
-        for issue, path in zip(issues, paths):
-            if not isinstance(issue, dict):
-                raise ImportFailure('%s is not an issue.' % path)
-            stories = issue.get('story_set') or []
-            if not isinstance(stories, list):
-                raise ImportFailure('%s.story_set is not a list.' % path)
-            legacy = is_legacy(issue, stories)
-            if legacy:
-                issue = legacy_values(issue, 'issue', flat=False)
-                stories = [legacy_values(story, 'sequence', flat=False)
-                           for story in stories]
-            elif issue.get(RECORD, 'issue') != 'issue':
-                raise ImportFailure('%s.%s is not "issue".' % (path, RECORD))
-            issue = {name: value for name, value in issue.items()
-                     if name != RECORD}
-            if sequences_only:
-                values = None
-            else:
-                values = decoder.decode(issue, ISSUE_FIELDS,
-                                        ISSUE_CREDIT_FIELDS, path)
-            records.append((values, [
-              decoder.decode(story, STORY_FIELDS, CREDIT_FIELDS,
-                             '%s.story_set[%d]' % (path, number))
-              for number, story in enumerate(stories)], legacy))
-        return records
+            return _read_flat(text, file_format, sequences_only, series)
+        return _read_structured(text, file_format, sequences_only)
     except NotationError as error:
         raise ImportFailure(str(error))
 
@@ -144,8 +152,8 @@ def _resolve(importer, records):
     """
     resolved = []
     for issue, stories, legacy in records:
-        resolved.append((importer.issue(issue) if issue else None,
-                         [importer.story(story) for story in stories],
+        resolved.append((importer.issue(issue, legacy) if issue else None,
+                         [importer.story(story, legacy) for story in stories],
                          legacy))
     try:
         importer.check()
@@ -170,22 +178,18 @@ def _create_stories(changeset, issue, stories, running_number):
 def _set_issue_values(issue_revision, values, multi, credits, legacy=False):
     """
     An issue of format 1.0 sets only its values, as GCD did, and leaves the
-    credits alone.
+    credits and the fields which the series does not use alone.
     """
     if legacy:
-        series = issue_revision.series
-        names = set(LEGACY_ISSUE_VALUES)
+        unused = unused_fields(issue_revision.series)
+        names = set(LEGACY_ISSUE_VALUES) - unused
         if values.get('year_on_sale') is None:
             names -= {'year_on_sale', 'month_on_sale', 'day_on_sale',
                       'on_sale_date_uncertain'}
-        if not series.has_issue_title:
-            names -= {'title', 'no_title'}
-        if not series.has_indicia_printer:
-            names.discard('indicia_printer_not_printed')
-            multi = {name: objects for name, objects in multi.items()
-                     if name != 'indicia_printer'}
         values = {name: value for name, value in values.items()
                   if name in names}
+        multi = {name: objects for name, objects in multi.items()
+                 if name not in unused}
     for name, value in values.items():
         setattr(issue_revision, name, value)
     issue_revision.save()
@@ -340,24 +344,24 @@ def _export_object(issue_id, revision):
     return get_object_or_404(Issue, id=issue_id)
 
 
+def _attachment(issue, content, content_type, extension):
+    response = HttpResponse(content,
+                            content_type=content_type + '; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="%s.%s"' % (
+      str(issue).replace(' ', '_'), extension)
+    return response
+
+
 @permission_required('indexer.can_reserve')
 def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     issue = _export_object(issue_id, revision)
     rows = flat_rows(issue_record(issue, revision=revision))
-    filename = str(issue).replace(' ', '_')
     if use_csv:
-        response = HttpResponse(content_type='text/csv; charset=utf-8')
-        response['Content-Disposition'] = 'attachment; filename="%s.csv"' % \
-                                          filename
-        csv.writer(response).writerows(rows)
-        return response
-    export = ''.join('\t'.join(row) + '\r\n' for row in rows)
-    response = HttpResponse(export.encode('utf-8'),
-                            content_type='text/tab-separated-values; '
-                                         'charset=utf-8')
-    response['Content-Disposition'] = 'attachment; filename="%s.tsv"' % \
-                                      filename
-    return response
+        text = io.StringIO()
+        csv.writer(text).writerows(rows)
+        return _attachment(issue, text.getvalue(), 'text/csv', 'csv')
+    return _attachment(issue, ''.join('\t'.join(row) + '\r\n' for row in rows),
+                       'text/tab-separated-values', 'tsv')
 
 
 @permission_required('indexer.can_reserve')
@@ -365,17 +369,9 @@ def export_issue_to_structured_file(request, issue_id, use_yaml=False,
                                     revision=False):
     issue = _export_object(issue_id, revision)
     data = issue_record(issue, revision=revision)
-    filename = str(issue).replace(' ', '_')
     if use_yaml:
-        response = HttpResponse(
-          yaml.safe_dump(data, allow_unicode=True, sort_keys=False),
-          content_type='application/yaml; charset=utf-8')
-        response['Content-Disposition'] = \
-            'attachment; filename="%s.yaml"' % filename
-    else:
-        response = HttpResponse(
-          json.dumps(data, ensure_ascii=False, indent=2),
-          content_type='application/json; charset=utf-8')
-        response['Content-Disposition'] = \
-            'attachment; filename="%s.json"' % filename
-    return response
+        return _attachment(
+          issue, yaml.safe_dump(data, allow_unicode=True, sort_keys=False),
+          'application/yaml', 'yaml')
+    return _attachment(issue, json.dumps(data, ensure_ascii=False, indent=2),
+                       'application/json', 'json')

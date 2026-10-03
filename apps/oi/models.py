@@ -6734,6 +6734,25 @@ class StoryRevision(Revision):
             setattr(self, 'feature', old_features)
             self.save()
 
+    def migrate_characters(self):
+        """
+        Converts the characters written as text into linked characters and
+        groups, as the Migrate button of the field, what does not resolve
+        stays text.
+        """
+        from apps.oi.interchange import (Resolver, create_revisions,
+                                         migrate_text)
+        series = self.issue.series if self.issue \
+            else self.my_issue_revision.series
+        universes = list(self.universe.all())
+        groups, appearances, remaining, _, _ = migrate_text(
+          self.characters, Resolver(series.language, series),
+          plain_names=True,
+          reference_universe=universes[0] if len(universes) == 1 else None)
+        create_revisions(self, groups, appearances)
+        self.characters = remaining
+        self.save()
+
     def deletable(self):
         if self.changeset.reprintrevisions \
                          .filter(origin=self.story).count() \

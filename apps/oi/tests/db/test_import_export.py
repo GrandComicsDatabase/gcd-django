@@ -15,8 +15,9 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 from apps.gcd.models import (
-    Character, CharacterNameDetail, CreditType, Creator, CreatorNameDetail,
-    CreatorSignature, Issue, Series, Story, StoryCharacter, StoryCredit)
+    Brand, Character, CharacterNameDetail, CreditType, Creator,
+    CreatorNameDetail, CreatorSignature, Group, GroupNameDetail, Issue,
+    Series, Story, StoryCharacter, StoryCredit)
 from apps.indexer.models import Error
 from apps.stddata.models import Language, Script
 from apps.oi import import_export, states
@@ -72,6 +73,34 @@ def credited_story(story_with_characters):
     return Story.objects.get(id=story.id)
 
 
+@pytest.fixture
+def namesakes(story_with_characters, any_language):
+    """
+    A namesake of the same language for the characters, groups and creator
+    of the story, so that their disambiguations are needed.
+    """
+    for name in CharacterNameDetail.objects.filter(
+          storycharacter__story=story_with_characters).distinct():
+        CharacterNameDetail.objects.create(
+          name=name.name, sort_name=name.name, is_official_name=True,
+          character=Character.objects.create(
+            name=name.name, sort_name=name.name, disambiguation='namesake',
+            language=any_language, description='', notes=''))
+    group = Group.objects.create(
+      name='The (Team)', sort_name='Team', disambiguation='namesake',
+      language=any_language, description='', notes='')
+    for name in ('The (Team)', 'Team; [B]'):
+        GroupNameDetail.objects.create(name=name, group=group,
+                                       is_official_name=name == group.name)
+    script = Script.objects.get_or_create(
+      id=Script.LATIN_PK,
+      defaults={'code': 'Latn', 'number': Script.LATIN_PK, 'name': 'Latin'})[0]
+    CreatorNameDetail.objects.create(
+      name='Jane Doe', in_script=script, creator=Creator.objects.create(
+        gcd_official_name='Jane Doe', sort_name='Doe, Jane', bio='',
+        disambiguation='namesake'))
+
+
 def _export(user, issue_id, file_format, revision=False):
     if file_format in ('csv', 'tsv'):
         return import_export.export_issue_to_file(
@@ -112,7 +141,7 @@ def _error_text(response):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('file_format', FORMATS)
-def test_issue_round_trip(importer, credited_story, file_format):
+def test_issue_round_trip(importer, credited_story, namesakes, file_format):
     issue = credited_story.issue
     exported = _export(importer, issue.id, file_format)
     assert b'{#' not in exported
@@ -137,7 +166,7 @@ LEGACY_ISSUE = ['7', '', '', 'None', 'May 2020', '2020-05.00', '',
                 '3.99 USD', '36?', 'None', '', 'legacy notes', '',
                 '2020-03-11?', '', '', '', '', '']
 LEGACY_STORIES = [
-  ['[Opening]', 'comic story', 'Legacy Feature', '12?', 'Jane Doe', 'None',
+  ['[Opening]', 'Comic Story', 'Legacy Feature', '12?', 'Jane Doe', 'None',
    '', '', '', '', '', 'Ben Parker; Somebody', '', '', '', 'first sequence',
    '', ''],
   ['', 'cover', '', '1', '', 'John Doe', '', '', '', '']]
@@ -191,6 +220,48 @@ def test_import_reads_format_1_0_as_before(importer, credited_story,
     assert not first.story_character_revisions.exists()
     assert (cover.pencils, cover.no_script, cover.no_letters,
             cover.no_editing) == ('John Doe', True, True, True)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('file_format', FORMATS)
+def test_format_1_0_skips_fields_not_used_by_the_series(
+      importer, credited_story, file_format):
+    # GCD read them unseen, the empty volume of the file set no_volume
+    issue = credited_story.issue
+    Series.objects.filter(id=issue.series_id).update(has_volume=False)
+    Issue.objects.filter(id=issue.id).update(volume='3', no_volume=False)
+    issue = Issue.objects.get(id=issue.id)
+
+    response, issue_revision = _import_into_new_changeset(
+      importer, issue, _legacy_file(file_format), file_format)
+
+    assert 'error' not in response['Location']
+    issue_revision.refresh_from_db()
+    assert (issue_revision.number, issue_revision.volume,
+            issue_revision.no_volume) == ('7', '3', False)
+
+
+@pytest.mark.django_db
+def test_import_reads_the_json_of_the_issue_page(importer,
+                                                 story_with_characters,
+                                                 client):
+    # the issue page offers the JSON of the API for download; GCD did not
+    # find names with a trailing space, as the brand of the fixture, either
+    issue = story_with_characters.issue
+    for brand in issue.brand_emblem.all():
+        Brand.objects.filter(id=brand.id).update(name=brand.name.strip())
+    content = client.get('/api/issue/%d/?format=json' % issue.id).content
+    assert b'"api_url"' in content
+
+    response, issue_revision = _import_into_new_changeset(
+      importer, issue, content, 'json')
+
+    location = response['Location']
+    assert 'error' not in location, _error_text(response)
+    story_revision = issue_revision.changeset.storyrevisions.get()
+    # the characters are text, as before
+    assert story_revision.characters
+    assert not story_revision.story_character_revisions.exists()
 
 
 @pytest.mark.django_db
@@ -296,7 +367,7 @@ def test_import_is_all_or_nothing(importer, credited_story, column, value,
 
 
 @pytest.mark.django_db
-def test_credits_text(credited_story):
+def test_credits_text(credited_story, namesakes):
     story, = [story for story in issue_record(credited_story.issue)[
                'story_set'] if 'credits' in story]
     assert story['credits'] == (
@@ -306,6 +377,30 @@ def test_credits_text(credited_story):
       'Jane Doe {^(writer^)} (pencils) (credited, signed) (as: as: me) '
       '(signed as: J.D., Jr. "kid") (signature: J. D. ^(1^)) '
       '(plot^; dialogue)')
+
+
+@pytest.mark.django_db
+def test_disambiguation_only_for_namesakes(any_language):
+    other_language = Language.objects.get_or_create(
+      code='XZY', name='Other Language')[0]
+
+    def character(name, disambiguation, language=any_language):
+        return CharacterNameDetail.objects.create(
+          name=name, sort_name=name, is_official_name=True,
+          character=Character.objects.create(
+            name=name, sort_name=name, disambiguation=disambiguation,
+            language=language, description='', notes=''))
+
+    bloch = character('Bloch', 'Dylan Dog')
+    groucho = character('Groucho', 'Dylan Dog')
+    character('Groucho', 'uit Dylan Dog', other_language)
+    xabaras = character('Xabaras', 'Dylan Dog')
+    character('Xabaras', 'Martin Mystère')
+    resolver = Resolver(language=any_language)
+
+    assert [resolver.reference(CharacterNameDetail, name)
+            for name in (bloch, groucho, xabaras)] == [
+      'Bloch', 'Groucho', 'Xabaras {Dylan Dog}']
 
 
 @pytest.mark.django_db
@@ -466,7 +561,7 @@ CHARACTERS = (
 
 
 @pytest.mark.django_db
-def test_characters_round_trip(story_with_characters):
+def test_characters_round_trip(story_with_characters, namesakes):
     story = Story.objects.get(id=story_with_characters.id)
     text = characters_text(story)
     assert text == CHARACTERS
@@ -610,6 +705,19 @@ def test_migrate_gcd_text(legacy_story):
 
     assert (remaining, errors, unresolved) == ('', [], [])
     assert _state(groups, appearances, '') == _story_state(story)
+
+
+@pytest.mark.django_db
+def test_export_writes_civilian_identities_as_gcd(legacy_story):
+    story = Story.objects.get(id=legacy_story.id)
+
+    text = characters_text(story)
+
+    # inside a group and outside, as GCD shows them
+    assert 'Batman [Bruce Wayne] (guest)' in text
+    assert 'Superman [Clark] (origin)' in text
+    characters = read_characters(text, _series_resolver(story))
+    assert _resolved_state(story, characters) == _story_state(story)
 
 
 @pytest.mark.django_db
@@ -797,12 +905,29 @@ def test_story_form_checks_and_migrates_characters(story_with_characters,
 
 
 @pytest.mark.django_db
-def test_api_record_is_the_export(client, credited_story):
-    issue = credited_story.issue
-    response = client.get('/api/issue/%d/record/?format=json' % issue.id)
+def test_migrate_of_the_changeset_page_migrates_characters(
+      story_with_characters, any_editing_changeset):
+    from apps.oi.models import StoryRevision
+    from apps.oi.views import migrate_story_revision
 
-    assert response.status_code == 200
-    assert response.json() == json.loads(json.dumps(issue_record(issue)))
+    revision = StoryRevision.clone(data_object=story_with_characters,
+                                   changeset=any_editing_changeset)
+    revision.characters = '#1 Fan (cameo); Nobody'
+    revision.save()
+    before = revision.story_character_revisions.count()
+    indexer = any_editing_changeset.indexer
+    indexer.user_permissions.add(
+      Permission.objects.get(codename='can_reserve'))
+    indexer = type(indexer).objects.get(id=indexer.id)
+
+    response = migrate_story_revision(_request(indexer, 'post'),
+                                      revision.id)
+
+    assert response['Location'].endswith('/story/revision/%d/edit/' %
+                                         revision.id)
+    revision.refresh_from_db()
+    assert revision.characters == 'Nobody'
+    assert revision.story_character_revisions.count() == before + 1
 
 
 @pytest.mark.django_db
@@ -856,7 +981,8 @@ def test_the_language_of_the_series_before_the_official_name(
 
     text = characters_text(story)
 
-    assert 'Twitch Williams {Spawn};' in text
+    # the namesake is of another language
+    assert 'Twitch Williams;' in text
     characters = read_characters(text, _series_resolver(story))
     assert _resolved_state(story, characters) == _story_state(story)
 
