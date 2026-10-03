@@ -131,6 +131,108 @@ def test_issue_round_trip(importer, credited_story, file_format):
     assert _load(reexported, file_format) == _load(exported, file_format)
 
 
+# a file of format 1.0: the issue, a sequence and a cover, in the columns
+# of GCD before this record
+LEGACY_ISSUE = ['7', '', '', 'None', 'May 2020', '2020-05.00', '',
+                '3.99 USD', '36?', 'None', '', 'legacy notes', '',
+                '2020-03-11?', '', '', '', '', '']
+LEGACY_STORIES = [
+  ['[Opening]', 'comic story', 'Legacy Feature', '12?', 'Jane Doe', 'None',
+   '', '', '', '', '', 'Ben Parker; Somebody', '', '', '', 'first sequence',
+   '', ''],
+  ['', 'cover', '', '1', '', 'John Doe', '', '', '', '']]
+
+
+def _legacy_file(file_format):
+    from apps.oi.interchange import LEGACY_ISSUE_FIELDS, LEGACY_STORY_FIELDS
+    if file_format in ('json', 'yaml'):
+        data = dict(zip(LEGACY_ISSUE_FIELDS, LEGACY_ISSUE))
+        data['story_set'] = [dict(zip(LEGACY_STORY_FIELDS, story))
+                             for story in LEGACY_STORIES]
+        if file_format == 'yaml':
+            return yaml.safe_dump(data).encode()
+        return json.dumps(data).encode()
+    rows = [LEGACY_ISSUE] + LEGACY_STORIES
+    if file_format == 'csv':
+        text = io.StringIO()
+        csv.writer(text).writerows(rows)
+        return text.getvalue().encode()
+    return ''.join('\t'.join(row) + '\r\n' for row in rows).encode()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('file_format', FORMATS)
+def test_import_reads_format_1_0_as_before(importer, credited_story,
+                                           file_format):
+    issue = credited_story.issue
+    response, issue_revision = _import_into_new_changeset(
+      importer, issue, _legacy_file(file_format), file_format)
+
+    assert 'error' not in response['Location']
+    issue_revision.refresh_from_db()
+    assert (issue_revision.number, issue_revision.no_volume,
+            issue_revision.no_brand, issue_revision.key_date,
+            issue_revision.page_count, issue_revision.page_count_uncertain,
+            issue_revision.no_editing, issue_revision.notes) == (
+      '7', True, True, '2020-05-00', Decimal(36), True, True, 'legacy notes')
+    assert (issue_revision.year_on_sale, issue_revision.month_on_sale,
+            issue_revision.day_on_sale,
+            issue_revision.on_sale_date_uncertain) == (2020, 3, 11, True)
+    first, cover = issue_revision.changeset.storyrevisions.order_by(
+      'sequence_number')
+    # credits, feature and characters are text, as before
+    assert (first.title, first.title_inferred, first.feature,
+            first.page_count, first.page_count_uncertain, first.script,
+            first.no_pencils, first.no_editing, first.characters,
+            first.notes) == (
+      'Opening', True, 'Legacy Feature', Decimal(12), True, 'Jane Doe', True,
+      True, 'Ben Parker; Somebody', 'first sequence')
+    assert not first.story_credit_revisions.exists()
+    assert not first.story_character_revisions.exists()
+    assert (cover.pencils, cover.no_script, cover.no_letters,
+            cover.no_editing) == ('John Doe', True, True, True)
+
+
+@pytest.mark.django_db
+def test_series_import_reads_format_1_0_variants(importer, credited_story):
+    issue = credited_story.issue
+    variant = [issue.number] + LEGACY_ISSUE[1:] + ['Sketch Cover',
+                                                   'artwork difference']
+    text = io.StringIO()
+    csv.writer(text).writerows([LEGACY_ISSUE, variant, LEGACY_STORIES[1]])
+
+    response = import_export.import_issues_to_series(
+      _request(importer, 'post', {
+        'file': SimpleUploadedFile('issues.csv', text.getvalue().encode()),
+        'csv': '1'}),
+      issue.series.id)
+
+    assert 'error' not in response['Location']
+    added, sketch = [changeset.issuerevisions.get() for changeset in
+                     Changeset.objects.filter(
+                       change_type=CTYPES['issue_add'], indexer=importer)
+                     .order_by('id')]
+    assert (added.number, added.variant_of) == ('7', None)
+    assert (sketch.variant_of, sketch.variant_name,
+            sketch.variant_cover_status) == (issue, 'Sketch Cover', 3)
+    # the cover after a variant is its sequence
+    assert sketch.changeset.storyrevisions.get().type.name == 'cover'
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('file_format', ['json', 'tsv'])
+def test_export_is_not_read_as_format_1_0(importer, credited_story,
+                                          file_format):
+    exported = _export(importer, credited_story.issue.id, file_format)
+    if file_format == 'json':
+        assert json.loads(exported)['record'] == 'issue'
+    response, issue_revision = _import_into_new_changeset(
+      importer, credited_story.issue, exported, file_format)
+    assert 'error' not in response['Location']
+    assert issue_revision.changeset.storyrevisions.get() \
+        .story_character_revisions.count() == 5
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize('file_format', FORMATS)
 def test_series_import_adds_issue_with_sequences(importer, credited_story,
@@ -224,14 +326,15 @@ def test_fields_not_used_by_the_series(importer, credited_story):
 
 
 @pytest.mark.django_db
-def test_import_needs_header(importer, credited_story):
+def test_rows_without_header_are_format_1_0(importer, credited_story):
     rows = _load(_export(importer, credited_story.issue.id, 'tsv'), 'tsv')
     content = '\r\n'.join('\t'.join(row) for row in rows[1:])
 
     response, issue_revision = _import_into_new_changeset(
       importer, credited_story.issue, content.encode('utf-8'), 'tsv')
 
-    assert 'the first row must be the header row' in _error_text(response)
+    assert 'at line 1: a row of issue of format 1.0, a file without header ' \
+        'row, has 10 to 19 cells' in _error_text(response)
 
 
 @pytest.mark.django_db

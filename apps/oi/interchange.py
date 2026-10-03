@@ -62,6 +62,7 @@ free text escapes only ^ and the control characters.
 import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from decimal import Decimal, InvalidOperation
 from functools import reduce
 
 from django.db.models import Q
@@ -1878,10 +1879,10 @@ class RecordWriter:
                                          'feature_logo', 'story_arc',
                                          'universe')
                        .order_by('sequence_number')]
-        record = self._record(issue, ISSUE_FIELDS, credits,
-                              ISSUE_CREDIT_FIELDS, revision,
-                              issue_scopes(self.series),
-                              unused_fields(self.series))
+        # the record tells this format from format 1.0 in JSON and YAML
+        record = {RECORD: 'issue', **self._record(
+          issue, ISSUE_FIELDS, credits, ISSUE_CREDIT_FIELDS, revision,
+          issue_scopes(self.series), unused_fields(self.series))}
         record['story_set'] = [
           self._record(story, STORY_FIELDS, story_credits, CREDIT_FIELDS,
                        revision, story_scopes(story.type,
@@ -2105,7 +2106,6 @@ class RecordDecoder:
 
 
 def _decimal(value, path):
-    from decimal import Decimal, InvalidOperation
     if value in (None, ''):
         return None
     try:
@@ -2114,12 +2114,197 @@ def _decimal(value, path):
         raise NotationError('invalid', 'not a number', path, str(value))
 
 
-def read_flat_records(rows, sequences_only=False):
+# Format 1.0, the files of GCD before this record, read as GCD read them.
+# Flat files have no header row and their columns in this order, JSON and
+# YAML the same names, an issue without the key 'record'. Credits, feature
+# and characters are text, 'None' marks a missing value, a title in square
+# brackets is inferred, a '?' marks an uncertain page count or on-sale date.
+
+LEGACY_ISSUE_FIELDS = [
+  'number', 'volume', 'indicia_publisher', 'brand_emblem',
+  'publication_date', 'key_date', 'indicia_frequency', 'price', 'page_count',
+  'editing', 'isbn', 'notes', 'barcode', 'on_sale_date', 'title',
+  'indicia_printer', 'rating', 'reprint_notes', 'keywords', 'variant_name',
+  'variant_cover_status']
+LEGACY_STORY_FIELDS = [
+  'title', 'type', 'feature', 'page_count', 'script', 'pencils', 'inks',
+  'colors', 'letters', 'editing', 'genre', 'characters', 'job_number',
+  'reprint_notes', 'synopsis', 'notes', 'keywords', 'first_line']
+LEGACY_CREDITS = ['script', 'pencils', 'inks', 'colors', 'letters',
+                  'editing']
+# the number of cells of a row, a variant in a series has two more
+LEGACY_CELLS = {'issue': tuple(range(10, 20)),
+                'sequence': tuple(range(10, 19))}
+LEGACY_VARIANT_CELLS = (21,)
+# the values of an issue which a file of format 1.0 sets
+LEGACY_ISSUE_VALUES = {
+  'number', 'volume', 'no_volume', 'indicia_publisher',
+  'indicia_pub_not_printed', 'no_brand', 'publication_date', 'key_date',
+  'indicia_frequency', 'no_indicia_frequency', 'price', 'page_count',
+  'page_count_uncertain', 'editing', 'no_editing', 'isbn', 'no_isbn',
+  'notes', 'barcode', 'no_barcode', 'year_on_sale', 'month_on_sale',
+  'day_on_sale', 'on_sale_date_uncertain', 'title', 'no_title',
+  'indicia_printer_not_printed', 'rating', 'no_rating', 'keywords'}
+
+
+def _legacy_page_count(text):
+    """
+    The page count and whether it is uncertain.
+    """
+    uncertain = '?' in text
+    text = text.split('?')[0].strip()
+    try:
+        Decimal(text)
+    except InvalidOperation:
+        return '', True
+    return text, uncertain
+
+
+def is_legacy(issue, stories):
+    """
+    Whether an issue of a JSON or YAML file is of format 1.0.
+    """
+    return RECORD not in issue and \
+        set(issue) <= set(LEGACY_ISSUE_FIELDS + ['story_set']) and \
+        all(isinstance(story, dict) and set(story) <= set(LEGACY_STORY_FIELDS)
+            for story in stories)
+
+
+def legacy_values(raw, kind, flat):
+    """
+    The values of an issue or a sequence of format 1.0 as raw values of
+    this record, those of a flat file as its cells.
+    """
+    raw = {name: '' if value is None else str(value).strip()
+           for name, value in raw.items()}
+    yes = YES if flat else True
+    text = escape_text if flat else str
+    values = {}
+
+    def missing(name, value):
+        if value.lower() == 'none':
+            values['no_' + name] = yes
+            return True
+        return False
+
+    page_count, uncertain = _legacy_page_count(raw.get('page_count', ''))
+    values['page_count'] = page_count
+    if kind == 'issue':
+        for name in ('number', 'publication_date', 'price', 'notes',
+                     'keywords', 'volume'):
+            values[name] = text(raw.get(name, ''))
+        if not raw.get('volume'):
+            values['no_volume'] = yes
+        for name in ('indicia_frequency', 'editing', 'isbn', 'barcode',
+                     'rating', 'title'):
+            if not missing(name, raw.get(name, '')):
+                values[name] = text(raw.get(name, ''))
+        publisher = raw.get('indicia_publisher', '')
+        if publisher.lower() == 'none':
+            values['indicia_pub_not_printed'] = yes
+        else:
+            values['indicia_publisher'] = escape(publisher,
+                                                 reserved=REF_RESERVED)
+        for name, flag in (('brand_emblem', 'no_brand'),
+                           ('indicia_printer', 'indicia_printer_not_printed')):
+            names = raw.get(name, '')
+            if names.lower() == 'none':
+                values[flag] = yes
+            else:
+                values[name] = '; '.join(
+                  escape(item.strip(), reserved=LIST_RESERVED)
+                  for item in names.split(';') if item.strip())
+        values['key_date'] = text(raw.get('key_date', '').replace('.', '-'))
+        on_sale_date = raw.get('on_sale_date', '')
+        if on_sale_date.endswith('?'):
+            values['on_sale_date_uncertain'] = yes
+            on_sale_date = on_sale_date[:-1].strip()
+        values['on_sale_date'] = text(on_sale_date)
+        if uncertain and page_count:
+            values['page_count_uncertain'] = yes
+        if raw.get('variant_name'):
+            values['variant_of'] = text(raw.get('number', ''))
+            values['variant_name'] = text(raw['variant_name'])
+            values['variant_cover_status'] = raw.get(
+              'variant_cover_status', '').upper().replace(' ', '_')
+    else:
+        title = raw.get('title', '')
+        if title.startswith('[') and title.endswith(']'):
+            title = title[1:-1]
+            values['title_inferred'] = yes
+        values['title'] = text(title)
+        values['type'] = escape(raw.get('type', ''), reserved=REF_RESERVED)
+        for name in ('feature', 'genre', 'job_number', 'reprint_notes',
+                     'synopsis', 'notes', 'keywords', 'first_line'):
+            values[name] = text(raw.get(name, ''))
+        if uncertain:
+            values['page_count_uncertain'] = yes
+        for name in LEGACY_CREDITS:
+            if not missing(name, raw.get(name, '')):
+                values[name] = text(raw.get(name, ''))
+        empty = [name for name in LEGACY_CREDITS if not values.get(name)]
+        cover = raw.get('type', '').lower() == 'cover'
+        for name in ('script', 'letters') if cover else ():
+            if name in empty:
+                values['no_' + name] = yes
+        if 'editing' in empty:
+            values['no_editing'] = yes
+        if raw.get('characters'):
+            values['characters'] = ';; ' + escape_text(raw['characters'])
+    return {name: value for name, value in values.items() if value}
+
+
+def legacy_rows(rows, sequences_only=False, series=False):
+    """
+    The rows of a flat file of format 1.0 as rows of this record, a header
+    row and a row for each row, empty rows stay empty. The first row is the
+    issue, the others its sequences; in a series each row is an issue, a
+    variant may be followed by its cover sequence.
+    """
+    records = []
+    variant = False
+    for number, row in enumerate(rows, 1):
+        if not any(row):
+            records.append(None)
+            continue
+        if sequences_only:
+            kind = 'sequence'
+        elif series:
+            kind = 'sequence' if variant and len(row) > 1 and \
+                row[1].strip().lower() == 'cover' else 'issue'
+        else:
+            kind = 'sequence' if any(records) else 'issue'
+        cells = LEGACY_CELLS[kind] + (LEGACY_VARIANT_CELLS if series and
+                                      kind == 'issue' else ())
+        if len(row) not in cells:
+            raise _syntax_error(
+              'a row of %s of format 1.0, a file without header row, has %d '
+              'to %d cells%s, not %d' % (
+                kind, cells[0], LEGACY_CELLS[kind][-1],
+                ' or %d for a variant' % LEGACY_VARIANT_CELLS[0]
+                if len(cells) > len(LEGACY_CELLS[kind]) else '', len(row)),
+              'line %d' % number)
+        raw = dict(zip(LEGACY_ISSUE_FIELDS if kind == 'issue'
+                       else LEGACY_STORY_FIELDS, row))
+        records.append((kind, legacy_values(raw, kind, flat=True)))
+        variant = kind == 'issue' and bool(raw.get('variant_name'))
+    columns = [column for column in COLUMNS[1:]
+               if any(column in record[1] for record in records if record)]
+    return [[RECORD] + columns] + [
+      [record[0]] + [record[1].get(column, '') for column in columns]
+      if record else [] for record in records]
+
+
+def read_flat_records(rows, sequences_only=False, series=False):
     """
     Rows of a flat file with a header row, returns the raw records with
     their sequences, as dicts of text cells. Columns can be left out.
-    With sequences_only the issue rows are ignored and not needed.
+    With sequences_only the issue rows are ignored and not needed. A file
+    without header row is of format 1.0, as are its line numbers.
     """
+    first = 2
+    if rows and rows[0] and rows[0][0] != RECORD:
+        rows, first = legacy_rows(rows, sequences_only, series), 1
     if not rows or not rows[0] or rows[0][0] != RECORD:
         raise _syntax_error('the first row must be the header row, starting '
                             'with "%s"' % RECORD, 'line 1')
@@ -2129,7 +2314,7 @@ def read_flat_records(rows, sequences_only=False):
         raise _syntax_error('unknown or repeated column', 'line 1',
                             ', '.join(unknown))
     records = []
-    for number, row in enumerate(rows[1:], 2):
+    for number, row in enumerate(rows[1:], first):
         if not any(row):
             continue
         if len(row) != len(header):

@@ -28,10 +28,10 @@ from apps.oi.models import (
     StoryCreditRevision)
 from apps.oi import states
 from apps.oi.interchange import (
-    CREDIT_FIELDS, ISSUE_CREDIT_FIELDS, ISSUE_FIELDS, STORY_FIELDS,
-    NotationError, RecordDecoder, RecordImporter, Resolver, check_text,
-    create_credits, create_revisions, flat_rows, issue_record,
-    read_flat_records, set_multi)
+    CREDIT_FIELDS, ISSUE_CREDIT_FIELDS, ISSUE_FIELDS, LEGACY_ISSUE_VALUES,
+    RECORD, STORY_FIELDS, NotationError, RecordDecoder, RecordImporter,
+    Resolver, check_text, create_credits, create_revisions, flat_rows,
+    is_legacy, issue_record, legacy_values, read_flat_records, set_multi)
 
 
 class ImportFailure(Exception):
@@ -61,10 +61,11 @@ def _read_upload(request_file):
         return content.decode(chardet.detect(content)['encoding'])
 
 
-def _read_records(request_file, file_format, sequences_only=False):
+def _read_records(request_file, file_format, sequences_only=False,
+                  series=False):
     """
-    Returns the decoded records of the file as a list of the issue values
-    and the list of sequence values.
+    Returns the decoded records of the file as a list of the issue values,
+    the list of sequence values and whether the issue is of format 1.0.
     """
     text = _read_upload(request_file)
     try:
@@ -79,15 +80,17 @@ def _read_records(request_file, file_format, sequences_only=False):
                 # str.splitlines are text
                 rows = [line.split('\t')
                         for line in re.split('\r\n|\n|\r', text)]
+            # without header row
+            legacy = bool(rows and rows[0] and rows[0][0] != RECORD)
             records = []
             for issue, line, sequences in read_flat_records(
-                                            rows, sequences_only):
+                                            rows, sequences_only, series):
                 records.append((
                   decoder.decode(issue, ISSUE_FIELDS, ISSUE_CREDIT_FIELDS,
                                  'line %d' % line) if issue else None,
                   [decoder.decode(sequence, STORY_FIELDS, CREDIT_FIELDS,
                                   'line %d' % sequence_line)
-                   for sequence, sequence_line in sequences]))
+                   for sequence, sequence_line in sequences], legacy))
             return records
         decoder = RecordDecoder(flat=False)
         try:
@@ -112,6 +115,15 @@ def _read_records(request_file, file_format, sequences_only=False):
             stories = issue.get('story_set') or []
             if not isinstance(stories, list):
                 raise ImportFailure('%s.story_set is not a list.' % path)
+            legacy = is_legacy(issue, stories)
+            if legacy:
+                issue = legacy_values(issue, 'issue', flat=False)
+                stories = [legacy_values(story, 'sequence', flat=False)
+                           for story in stories]
+            elif issue.get(RECORD, 'issue') != 'issue':
+                raise ImportFailure('%s.%s is not "issue".' % (path, RECORD))
+            issue = {name: value for name, value in issue.items()
+                     if name != RECORD}
             if sequences_only:
                 values = None
             else:
@@ -120,7 +132,7 @@ def _read_records(request_file, file_format, sequences_only=False):
             records.append((values, [
               decoder.decode(story, STORY_FIELDS, CREDIT_FIELDS,
                              '%s.story_set[%d]' % (path, number))
-              for number, story in enumerate(stories)]))
+              for number, story in enumerate(stories)], legacy))
         return records
     except NotationError as error:
         raise ImportFailure(str(error))
@@ -131,9 +143,10 @@ def _resolve(importer, records):
     Resolves all records before anything is created.
     """
     resolved = []
-    for issue, stories in records:
+    for issue, stories, legacy in records:
         resolved.append((importer.issue(issue) if issue else None,
-                         [importer.story(story) for story in stories]))
+                         [importer.story(story) for story in stories],
+                         legacy))
     try:
         importer.check()
     except NotationError as error:
@@ -154,11 +167,31 @@ def _create_stories(changeset, issue, stories, running_number):
         running_number += 1
 
 
-def _set_issue_values(issue_revision, values, multi, credits):
+def _set_issue_values(issue_revision, values, multi, credits, legacy=False):
+    """
+    An issue of format 1.0 sets only its values, as GCD did, and leaves the
+    credits alone.
+    """
+    if legacy:
+        series = issue_revision.series
+        names = set(LEGACY_ISSUE_VALUES)
+        if values.get('year_on_sale') is None:
+            names -= {'year_on_sale', 'month_on_sale', 'day_on_sale',
+                      'on_sale_date_uncertain'}
+        if not series.has_issue_title:
+            names -= {'title', 'no_title'}
+        if not series.has_indicia_printer:
+            names.discard('indicia_printer_not_printed')
+            multi = {name: objects for name, objects in multi.items()
+                     if name != 'indicia_printer'}
+        values = {name: value for name, value in values.items()
+                  if name in names}
     for name, value in values.items():
         setattr(issue_revision, name, value)
     issue_revision.save()
     set_multi(issue_revision, multi)
+    if legacy:
+        return
     for credit in issue_revision.issue_credit_revisions.filter(deleted=False):
         if credit.source:
             credit.deleted = True
@@ -188,12 +221,13 @@ def import_issues_to_series(request, series_id):
         return HttpResponseRedirect(
           urlresolvers.reverse('show_series', kwargs={'series_id': series.id}))
     try:
-        records = _read_records(request.FILES['file'], _file_format(request))
+        records = _read_records(request.FILES['file'], _file_format(request),
+                                series=True)
         bases = [_base_issue(series, issue) if issue['variant_of'] else None
-                 for issue, stories in records]
+                 for issue, stories, legacy in records]
         resolved = _resolve(RecordImporter(series), records)
         with transaction.atomic():
-            for base, (issue, stories) in zip(bases, resolved):
+            for base, (issue, stories, legacy) in zip(bases, resolved):
                 values, multi, credits = issue
                 if base:
                     variants = base.variant_set.order_by('-sort_code')
@@ -242,10 +276,10 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
                                 _file_format(request))
         if len(records) != 1:
             raise ImportFailure('The file must contain exactly one issue.')
-        (issue, stories), = _resolve(
+        (issue, stories, legacy), = _resolve(
           RecordImporter(issue_revision.series), records)
         with transaction.atomic():
-            _set_issue_values(issue_revision, *issue)
+            _set_issue_values(issue_revision, *issue, legacy=legacy)
             _create_stories(changeset, issue_revision.issue, stories, 0)
     except ImportFailure as error:
         return _handle_import_error(request, changeset_url, str(error))
@@ -270,7 +304,7 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
     try:
         records = _read_records(request.FILES['flatfile'],
                                 _file_format(request), sequences_only=True)
-        stories = [story for issue, stories in _resolve(
+        stories = [story for issue, stories, legacy in _resolve(
                      RecordImporter(issue_revision.series), records)
                    for story in stories]
         with transaction.atomic():

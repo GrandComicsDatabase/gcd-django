@@ -115,12 +115,19 @@ with the disambiguation in braces if the name is not unique, e.g. the credit
 universes, groups and their members, e.g.
 <i>@Marvel: mainstream [&amp;X-Men [Wolverine (cameo); Rogue]; Logan]</i>.
 The characters <i>^ ; ( ) [ ] { }</i> in names and notes are escaped with a
-preceding <i>^</i>.
+preceding <i>^</i>, in lists of brands, printers or features only
+<i>^ ; { }</i>. In JSON and YAML each issue starts with
+<i>record: issue</i>.
   </p>
   <p>
 A variant gives the number of its base issue in the column variant_of, the
 variant name, and the variant cover status, which is one of
 ARTWORK_DIFFERENCE, ONLY_SCAN_DIFFERENCE, or NO_DIFFERENCE.
+  </p>
+  <p>
+Files of the earlier format 1.0 are still read as before: CSV and TSV files
+without header row, JSON and YAML issues without <i>record</i>. Their credits,
+feature and characters are imported as text.
   </p>
 </div>
 <table class="border border-gray-300 mt-2">
