@@ -1,0 +1,50 @@
+{% load compare l10n %}
+<tr data-row="{{ story.id }}" class="flex flex-wrap items-start border-b border-gray-200 py-2 lg:table-row [&>td]:align-top hover:bg-gray-50 {% if story.deleted %}bg-red-50 text-gray-500{% endif %}">
+  <td class="w-full min-w-0 p-1 lg:w-auto">
+    <div class="flex items-center gap-1">
+      <span data-handle draggable="{% if story.deleted %}false{% else %}true{% endif %}" tabindex="0" role="button" aria-label="Drag to reorder sequence {{ story.sequence_number }}" title="Drag to reorder, or Alt + Up / Down" class="inline-flex shrink-0 cursor-grab items-center gap-1 rounded border border-dashed border-gray-300 px-2 py-2 text-xs text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 active:cursor-grabbing">
+        <span aria-hidden="true">&#8597;</span> Drag</span>
+      <span data-sequence class="min-w-0 px-1 font-semibold tabular-nums" aria-label="Sequence number">{{ story.sequence_number }}</span>
+      {% if not story.deleted %}
+      <a class="inline-block text-center rounded-md bg-blue-700 px-4 py-2 font-semibold text-white visited:text-white hover:bg-blue-800 hover:no-underline" href="{% url 'edit_revision' model_name='story' id=story.id %}">Edit</a>
+      {% endif %}
+      <div class="relative">
+        <button type="button" data-menu-toggle aria-label="Sequence actions{% if not story.deleted and story.old_credits %}: credits to migrate{% endif %}" {% if not story.deleted and story.old_credits %}title="Credits to migrate — open Actions"{% endif %} aria-expanded="false" aria-controls="sequence-menu-{{ story.id }}" class="relative whitespace-nowrap rounded-md bg-stone-200 px-2 py-2 text-xs text-black hover:bg-stone-300 focus:ring-2 focus:ring-blue-500">Actions <span aria-hidden="true">&#9662;</span>
+          {% if not story.deleted and story.old_credits %}<span data-migration-needed aria-hidden="true" class="absolute -right-1 -top-1 rounded bg-blue-100 px-1 text-xs font-semibold text-blue-800">M</span>{% endif %}
+        </button>
+        {% include "oi/bits/sequence_menu.html" %}
+      </div>
+    </div>
+  </td>
+
+  <td class="w-full min-w-0 p-1 lg:w-auto">
+    <span class="block text-xs font-normal leading-5 text-normal-gcd lg:hidden">Title</span>
+    <input type="text" data-field="title" aria-label="Sequence title" maxlength="255" value="{{ story.title }}" class="w-full min-w-0 rounded-md border-gray-300 focus:border-blue-500 focus:ring-blue-500" {% if story.deleted %}disabled{% endif %}>
+  </td>
+  <td class="w-3/5 min-w-0 p-1 lg:w-auto">
+    <span class="block text-xs font-normal leading-5 text-normal-gcd lg:hidden">Feature</span>
+    {% include "oi/bits/sequence_feature.html" %}
+  </td>
+  <td class="w-2/5 min-w-0 p-1 lg:w-auto">
+    <span class="block text-xs font-normal leading-5 text-normal-gcd lg:hidden">Type</span>
+    <select data-field="type" aria-label="Sequence type" class="w-full rounded-md border-gray-300" {% if story.deleted %}disabled{% endif %}>
+      {% for type in sequence_types %}
+      <option value="{{ type.id }}" {% if story.type_id == type.id %}selected{% endif %}>{{ type.name }}</option>
+      {% endfor %}
+    </select>
+  </td>
+  <td class="w-1/4 min-w-0 p-1 lg:w-auto">
+    <span class="block text-xs font-normal leading-5 text-normal-gcd lg:hidden">Pages</span>
+    <input data-field="pages" aria-label="Page count" type="number" min="0.01" max="9999999.999" step="0.01" placeholder="?" value="{{ story.page_count|unlocalize|default_if_none:'' }}" class="h-10 w-full rounded-md border-gray-300" {% if story.deleted %}disabled{% endif %}>
+  </td>
+  <td class="w-1/3 min-w-0 break-words p-1 lg:w-auto">
+    <span class="block text-xs font-normal leading-5 text-normal-gcd lg:hidden">Range</span>
+    <span data-range class="flex min-h-10 items-center text-sm text-gray-600"></span>
+  </td>
+  <td class="w-5/12 min-w-0 p-1 lg:w-auto">
+    <span class="block text-xs font-normal leading-5 text-normal-gcd lg:hidden">Creators</span>
+    <span class="flex min-h-10 items-center">
+      <span data-credit-status class="whitespace-nowrap text-sm" title="S: Script; P: Pencils; I: Inks; C: Colors; L: Letters; E: Editing. Green: complete; red: incomplete; gray background: marked No.">{{ story|show_credit_status }}</span>
+    </span>
+  </td>
+</tr>

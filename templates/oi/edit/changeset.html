@@ -80,7 +80,7 @@
     {% endcomment %}
       {% if changeset.issuerevisions.count %}
         {% include 'oi/edit/issue_changeset.html' %}
-<form method="POST" action="{% url "process" id=changeset.id %}">
+<form id="changeset-workflow" method="POST" action="{% url "process" id=changeset.id %}">
   {% csrf_token %}
   <table>
     <tr>
@@ -92,16 +92,18 @@
       </td>
     </tr>
   </table>
-  <button class="btn-blue-editing inline" type="submit" name="submit">{{ workflow_action_labels.submit }}</button>
-      {% if changeset.approver %}
-      <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
-      {% endif %}
-  <button class="btn-blue-editing inline" type="submit" name="discard">Discard All Changes</button>
-  <button class="btn-blue-editing inline" type="submit" name="add_comment">Add Comment</button>
 </form>
         {% with changeset.comments as comments %}
           {% include 'oi/bits/comments.html' %}
         {% endwith %}
+<div id="changeset-actions" class="sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2 sm:px-4" role="region" aria-label="Changeset actions">
+  <button class="rounded-md bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800" type="submit" form="changeset-workflow" name="submit">{{ workflow_action_labels.submit }}</button>
+      {% if changeset.approver %}
+      <button class="btn-blue-editing inline" type="submit" form="changeset-workflow" name="discuss">Discuss</button>
+      {% endif %}
+  <button class="btn-blue-editing inline" type="submit" form="changeset-workflow" name="discard">Discard All Changes</button>
+  <button class="btn-blue-editing inline" type="submit" form="changeset-workflow" name="add_comment">Add Comment</button>
+</div>
       {% endif %}
       {% if changeset.change_type == CTYPES.series_bond %}
         {% include 'oi/edit/series_bond_changeset.html' %}
