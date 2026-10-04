@@ -2,8 +2,8 @@
 import pytest
 
 from apps.oi.interchange import (
-    LIST_RESERVED, REF_RESERVED, NotationError, Ref, canonical_text, escape,
-    keywords_of, parse_item, parse_items, parse_ref, render_ref,
+    LIST_RESERVED, REF_RESERVED, NotationError, Ref, escape,
+    keywords_of, parse_items, parse_ref, render_ref,
     split_free_text, split_items, tokens_of)
 
 
@@ -164,70 +164,6 @@ def test_syntax_errors(text, position, token):
         parse_items(text)
     assert error.value.kind == 'syntax'
     assert (error.value.position, error.value.token) == (position, token)
-
-
-# the canonical stress test of github.com/ProfNardi/ParserCharacters
-STRESS_TEST = (
-  'Alpha (a,b) (c); Alpha; Alpha (a); Beta [X]; Beta [Y] (i1,i2); '
-  'Beta [X] (i3); Gamma [A;B]; Gamma [A; B]; Gamma [A; B; C]; '
-  'Gamma [A [AA]; B]; Gamma [A; B [BB]]; Delta [One Two]; Delta [One; Two]; '
-  'Delta [One; Two] (info); Epsilon [Solo]; Epsilon (info) [Solo]; '
-  'Epsilon [Solo] (info1, info2); Zeta (a(b)); Zeta (a,b; Eta [Unclosed; '
-  'Theta (Unclosed; Iota [A] [B]; Iota [A] (x) [B] (y); Kappa [M [N [O]]]; '
-  'Kappa [M; N [O; P]]; Lambda; Lambda (x); Lambda (y); Mu [X; Y] [Z]; '
-  'Mu [X] [Y; Z]; Nu [A [B; C]; D]; Xi; Omicron (o1,o2) (o3); '
-  'Pi [P1 [P2] (pinfo)]; Rho [R1; R2] (rinfo1, rinfo2); '
-  'Sigma [One Two; Three]; Tau [One; Two Three]; Upsilon [A; B] (u1) '
-  '(u2,u3); Phi [A; B]; Chi [A [AA] (i1); B]; Psi [A; B] (i); Omega')
-
-
-def _tolerant(text):
-    results = []
-    for item in split_items(tokens_of(text, tolerant=True), tolerant=True):
-        try:
-            results.append(parse_item(item, tolerant=True))
-        except NotationError as error:
-            results.append(error)
-    return results
-
-
-def test_legacy_stress_test():
-    results = _tolerant(STRESS_TEST)
-    assert len(results) == 42
-    assert sorted(result.message for result in results
-                  if isinstance(result, NotationError)) == [
-        'second square bracket', 'second square bracket',
-        'second square bracket', 'second square bracket',
-        'unbalanced bracket', 'unbalanced bracket', 'unbalanced bracket']
-    canonical = canonical_text(STRESS_TEST)
-    assert 'Gamma [A; B]; Gamma [A; B];' in canonical
-    assert 'Zeta (a^(b^))' in canonical
-    assert canonical_text(canonical) == canonical
-
-
-@pytest.mark.parametrize('text', [
-    STRESS_TEST, 'A [B', 'A (x; B (y; C', 'A [x; B [y]', ';;; A ;  ; B;',
-    'A ] B; C', 'A [B (c]; D)', 'Ben Parker (Flashback; Cameo)',
-    'X  [ a ;b ](  c  d )', 'A ^', '&G (&) [M (@)]; @U [N] ;; free ^ text'])
-def test_canonical_text_is_idempotent(text):
-    canonical = canonical_text(text)
-    assert canonical_text(canonical) == canonical
-
-
-@pytest.mark.parametrize('text, canonical', [
-    # nothing is dropped: text after the brackets is kept as written
-    ('A (x) B', 'A (x) B'),
-    # a note is kept whole, commas included
-    ('A (as Tom, Dick)', 'A (as Tom, Dick)'),
-    # a character also appearing as a member is kept
-    ('Batman; JLA [Batman; Flash]', 'Batman; JLA [Batman; Flash]'),
-    ('A(x)', 'A (x)'),
-    ('Justice League [Wonder Woman; Batman [Bruce Wayne] (cameo)];'
-     'Jimmy Olsen (origin, death)',
-     'Justice League [Wonder Woman; Batman [Bruce Wayne] (cameo)]; '
-     'Jimmy Olsen (origin, death)')])
-def test_canonical_text_loses_nothing(text, canonical):
-    assert canonical_text(text) == canonical
 
 
 def test_second_anchor_names_the_owner():

@@ -257,7 +257,7 @@ def render_ref(label, disambiguation='', object_id=None, owner=None,
 # A notation is read as tokens (char, escaped, position), so that only
 # unescaped characters have a meaning.
 
-def tokens_of(text, offset=0, tolerant=False):
+def tokens_of(text, offset=0):
     tokens = []
     index = 0
     while index < len(text):
@@ -269,8 +269,7 @@ def tokens_of(text, offset=0, tolerant=False):
                                offset + index))
                 index += 2
                 continue
-            if not tolerant:
-                raise _syntax_error('dangling escape', offset + index)
+            raise _syntax_error('dangling escape', offset + index)
         tokens.append((char, False, offset + index))
         index += 1
     return tokens
@@ -287,15 +286,6 @@ def _end(tokens):
     if not tokens:
         return 0
     return tokens[-1][2] + (2 if tokens[-1][1] else 1)
-
-
-def _raw(text, tokens):
-    """
-    The text of the tokens as written.
-    """
-    if not tokens:
-        return ''
-    return text[tokens[0][2]:_end(tokens)]
 
 
 def _is(token, chars):
@@ -347,25 +337,9 @@ def _closing(tokens, start, brackets=BRACKETS):
     return -1
 
 
-def _can_close(tokens, start, stack):
-    stack = list(stack)
-    for token in tokens[start:]:
-        if _is(token, BRACKETS):
-            stack.append(BRACKETS[token[0]])
-        elif _is(token, ')]}') and stack and stack[-1] == token[0]:
-            stack.pop()
-            if not stack:
-                return True
-    return False
-
-
-def split_items(tokens, tolerant=False, brackets=BRACKETS):
+def split_items(tokens, brackets=BRACKETS):
     """
     Splits at the semicolons outside brackets, returns the stripped items.
-    In tolerant mode, as in ParserCharacters, a semicolon in a bracket
-    which is not closed any more ends the item, so that an unbalanced
-    bracket does not swallow the following items, and empty items are
-    dropped.
     """
     items = []
     stack = []
@@ -376,14 +350,12 @@ def split_items(tokens, tolerant=False, brackets=BRACKETS):
         elif _is(token, brackets.values()):
             if stack and stack[-1] == token[0]:
                 stack.pop()
-            elif not tolerant:
+            else:
                 raise _syntax_error('unbalanced bracket', token[2], token[0])
-        elif _is(token, ';') and (not stack or tolerant and not _can_close(
-                tokens, index + 1, stack)):
+        elif _is(token, ';') and not stack:
             items.append((tokens[start:index], token[2]))
             start = index + 1
-            stack = []
-    if stack and not tolerant:
+    if stack:
         raise _syntax_error('unbalanced bracket', _end(tokens))
     items.append((tokens[start:], _end(tokens)))
     result = []
@@ -391,7 +363,7 @@ def split_items(tokens, tolerant=False, brackets=BRACKETS):
         item = _strip(item)
         if item:
             result.append(item)
-        elif not tolerant and len(items) > 1:
+        elif len(items) > 1:
             raise _syntax_error('empty item', end)
     return result
 
@@ -517,7 +489,7 @@ def parse_ref(tokens, position, empty=False, reserved=RESERVED):
     return ref
 
 
-def _qualifier(tokens, position, tolerant, sigils):
+def _qualifier(tokens, position, sigils):
     tokens = _strip(tokens)
     if not tokens:
         raise _syntax_error('empty qualifier', position)
@@ -526,12 +498,11 @@ def _qualifier(tokens, position, tolerant, sigils):
                 _is(token, char) for token, char in zip(tokens, sigil)):
             return kind, parse_ref(tokens[len(sigil):],
                                    tokens[0][2] + len(sigil), empty=True)
-    if not tolerant:
-        _check_escaped(tokens)
+    _check_escaped(tokens)
     return 'text', tokens
 
 
-def parse_item(tokens, tolerant=False, sigils=True):
+def parse_item(tokens, sigils=True):
     """
     Parses an item, the tokens are stripped and not empty.
     """
@@ -557,15 +528,14 @@ def parse_item(tokens, tolerant=False, sigils=True):
                 raise _syntax_error('unbalanced bracket', token[2], token[0])
             inner = tokens[index + 1:close]
             if token[0] == '(':
-                kind, value = _qualifier(inner, token[2] + 1, tolerant,
-                                         sigils)
+                kind, value = _qualifier(inner, token[2] + 1, sigils)
                 item.qualifiers.append((kind, value, token[2] + 1))
             else:
                 if item.children is not None:
                     raise _syntax_error('second square bracket', token[2],
                                         _text(tokens[index:close + 1]))
-                item.children = [parse_item(child, tolerant, sigils)
-                                 for child in split_items(inner, tolerant)]
+                item.children = [parse_item(child, sigils)
+                                 for child in split_items(inner)]
                 item.children_at = len(item.qualifiers)
                 if not item.children:
                     raise _syntax_error('empty square bracket', token[2])
@@ -581,10 +551,9 @@ def parse_item(tokens, tolerant=False, sigils=True):
     return item
 
 
-def parse_items(text, tolerant=False, sigils=True):
-    return [parse_item(item, tolerant, sigils)
-            for item in split_items(tokens_of(text, tolerant=tolerant),
-                                    tolerant)]
+def parse_items(text, sigils=True):
+    return [parse_item(item, sigils)
+            for item in split_items(tokens_of(text))]
 
 
 def _render_parsed(ref):
@@ -596,38 +565,6 @@ def _render_qualifier(kind, value):
         return escape(_text(value), keyword=not _plain(value))
     sigil = {kind: sigil for sigil, kind in QUALIFIER_SIGILS}[kind]
     return sigil if value is None else sigil + _render_parsed(value)
-
-
-def render_item(item):
-    """
-    The canonical text of a parsed item.
-    """
-    parts = [' (%s)' % _render_qualifier(kind, value)
-             for kind, value, position in item.qualifiers]
-    if item.children is not None:
-        parts.insert(item.children_at, ' [%s]' % '; '.join(
-          render_item(child) for child in item.children))
-    return item.sigil + _render_parsed(item.name) + ''.join(parts)
-
-
-def canonical_text(text):
-    """
-    The canonical form of a characters text, as far as it can be read
-    without the database: items which cannot be read are kept as written.
-    """
-    tokens = tokens_of(text, tolerant=True)
-    tokens, free_text = split_free_text(tokens)
-    parts = []
-    for item in split_items(tokens, tolerant=True):
-        try:
-            parts.append(render_item(parse_item(item, tolerant=True)))
-        except NotationError:
-            parts.append(_raw(text, item))
-    result = '; '.join(parts)
-    if free_text is not None:
-        result += (' ' if result else '') + FREE_TEXT_SEPARATOR + ' ' + \
-                  escape_text(free_text)
-    return result
 
 
 # resolution
@@ -797,7 +734,6 @@ class Resolver:
         self._by_label = defaultdict(dict)
         self._roles = None
         self._universes = None
-        self._universe_names = None
         self._scopes = {}
 
     def _queryset(self, model):
@@ -820,43 +756,6 @@ class Resolver:
                 self._universes[universe_label(universe)].append(universe)
                 self._by_id[Universe][universe.id] = universe
         return self._universes
-
-    def universes_named(self, name, reference=None):
-        """
-        The universes with the name GCD shows, with or without multiverse,
-        in any case, preferably of the multiverse of the reference universe.
-        """
-        if self._universe_names is None:
-            # by lower case name
-            self._universe_names = defaultdict(dict)
-            for label, universes in self._universe_index().items():
-                for universe in universes:
-                    for text in (label, universe.universe_name(),
-                                 universe.name, universe.designation):
-                        if text:
-                            self._universe_names[text.lower()][
-                              universe.id] = universe
-        candidates = list(self._universe_names.get(name.lower(), {}).values())
-        if len(candidates) > 1 and reference:
-            candidates = [universe for universe in candidates
-                          if universe.verse_id == reference.verse_id] or \
-                         candidates
-        return candidates
-
-    def universe_named(self, name, reference=None):
-        candidates = self.universes_named(name, reference)
-        return candidates[0] if len(candidates) == 1 else None
-
-    def multiverse_universes(self, name, reference=None):
-        """
-        The universes of the multiverse of the name, the reference universe
-        first.
-        """
-        universes = [universe for universes in self._universe_index().values()
-                     for universe in universes
-                     if universe.multiverse.lower() == name.lower()]
-        return sorted(universes, key=lambda universe: (
-          universe != reference, universe_label(universe)))
 
     def _by_object_id(self, model, object_id):
         if model is Universe:
@@ -909,40 +808,6 @@ class Resolver:
         return [related for related in found if related.id in
                 self._scopes[key]]
 
-    def kind_of(self, ref, with_members=False, reference=None):
-        """
-        Whether a name without sigil, written by hand, is a group or a
-        character, as GCD shows groups without members, or, with members,
-        also a universe. Returns the kind and the universe. A name of more
-        than one kind is ambiguous, the candidates are its readings; for the
-        name of a multiverse the candidates are its universes.
-        """
-        universes, multiverse = [], False
-        if with_members and ref.disambiguation is None and ref.id is None:
-            universes = self.universes_named(ref.label, reference)
-            if not universes:
-                universes = self.multiverse_universes(ref.label,
-                                                      reference)[:10]
-                multiverse = bool(universes)
-        kinds = ['universe'] if universes else []
-        readings = ['@' + escape(universe_label(universe))
-                    for universe in universes]
-        for kind, model, sigil in (('group', GroupNameDetail, '&'),
-                                   ('character', CharacterNameDetail, '')):
-            if self._candidates(model, ref.label, ignore_case=True):
-                kinds.append(kind)
-                readings.append(sigil + render_ref(ref.label,
-                                                   ref.disambiguation))
-        if kinds == ['universe'] and multiverse:
-            raise NotationError('not_found', 'a multiverse, not a universe',
-                                ref.position, ref.label, readings)
-        if len(readings) > 1:
-            raise NotationError('ambiguous', 'ambiguous ' + ' or '.join(kinds),
-                                ref.position, ref.label, readings)
-        if kinds == ['universe']:
-            return 'universe', universes[0]
-        return (kinds or ['character'])[0], None
-
     def roles(self):
         # the roles by lower case name, keywords of the notation
         if self._roles is None:
@@ -963,7 +828,7 @@ class Resolver:
     def resolve_ref(self, model, ref, any_disambiguation=False, scope=(),
                     all_preferences=True):
         """
-        any_disambiguation is set for text written by hand as GCD shows it,
+        any_disambiguation is set for the names of files of format 1.0,
         which may also differ in case. Without all_preferences the official
         name and the names used in the series do not count.
         """
@@ -1060,12 +925,11 @@ class Resolver:
                 pass
         return texts[0]
 
-    def resolve_group(self, entry, any_disambiguation=False):
+    def resolve_group(self, entry):
         # universe -> group
         universe = self.resolve_ref(Universe, entry.universe)
         return {
-          'group_name': self.resolve_ref(GroupNameDetail, entry.name,
-                                         any_disambiguation),
+          'group_name': self.resolve_ref(GroupNameDetail, entry.name),
           'universe': universe,
           'notes': entry.notes}
 
@@ -1104,22 +968,19 @@ class Resolver:
           to_character__in=ids).values_list('from_character_id',
                                             'to_character_id'))
 
-    def resolve_appearance(self, entry, any_disambiguation=False):
+    def resolve_appearance(self, entry):
         # universe -> group -> character
         universe = self.resolve_ref(Universe, entry.universe)
         if entry.group_universe is SAME:
             group_universe = universe
         else:
             group_universe = self.resolve_ref(Universe, entry.group_universe)
-        groups = [self.resolve_ref(Group, ref, any_disambiguation)
-                  for ref in entry.groups]
-        group_names = [self.resolve_ref(GroupNameDetail, ref,
-                                        any_disambiguation)
+        groups = [self.resolve_ref(Group, ref) for ref in entry.groups]
+        group_names = [self.resolve_ref(GroupNameDetail, ref)
                        for ref in entry.group_names]
         scope = []
         if entry.member_of:
-            group_name = self.resolve_ref(GroupNameDetail, entry.member_of,
-                                          any_disambiguation)
+            group_name = self.resolve_ref(GroupNameDetail, entry.member_of)
             if 'group' in entry.member_links:
                 groups.insert(0, group_name.group)
             if 'group_name' in entry.member_links:
@@ -1129,7 +990,7 @@ class Resolver:
             scope.append(self.related_scope(entry.related))
         return {
           'character': self.resolve_ref(CharacterNameDetail, entry.name,
-                                        any_disambiguation, scope),
+                                        scope=scope),
           'universe': universe,
           'group': groups,
           'group_name': group_names,
@@ -1141,7 +1002,7 @@ class Resolver:
           'is_death': 'death' in entry.flags,
           'notes': entry.notes}
 
-    def resolve(self, characters, any_disambiguation=False):
+    def resolve(self, characters):
         """
         Returns the resolved groups and appearances, raises a NotationError
         with all failed references.
@@ -1149,13 +1010,12 @@ class Resolver:
         groups, appearances, errors = [], [], []
         for entry in characters.groups:
             try:
-                groups.append(self.resolve_group(entry, any_disambiguation))
+                groups.append(self.resolve_group(entry))
             except NotationError as error:
                 errors.append(error)
         for entry in characters.appearances:
             try:
-                appearances.append(self.resolve_appearance(
-                  entry, any_disambiguation))
+                appearances.append(self.resolve_appearance(entry))
             except NotationError as error:
                 errors.append(error)
         if errors:
@@ -1168,29 +1028,16 @@ class Resolver:
 class CharactersReader:
     """
     Reads parsed characters into the entries of the groups and appearances,
-    inheriting the values down the tree.
-
-    Strict for files: groups are marked with '&', universes with '@', and
-    a missing universe is no universe. Tolerant for the free text of the
-    editing form, which also reads characters as GCD shows them: an item
-    without '&' is a group if its name is only the name of a group, an
-    item with members at the top a universe if its name is only the name
-    of a universe, a universe can be given by its name, and a missing
-    universe is the reference universe of the sequence.
+    inheriting the values down the tree. Groups are marked with '&',
+    universes with '@', and a missing universe is no universe.
     """
-    def __init__(self, resolver, tolerant=False, reference_universe=None):
+    def __init__(self, resolver):
         self.resolver = resolver
-        self.tolerant = tolerant
-        self.reference_universe = reference_universe
-        self.reference = None
-        if reference_universe:
-            self.reference = Ref(universe_label(reference_universe),
-                                 id=reference_universe.id)
 
     def read(self, items, characters=None):
         characters = characters or Characters()
         for item in items:
-            self._item(item, self.reference, characters, top=True)
+            self._item(item, None, characters, top=True)
         return characters
 
     def _item(self, item, universe, characters, top=False):
@@ -1203,17 +1050,7 @@ class CharactersReader:
             self._universe(item, Ref(item.name.label,
                                      position=item.name.position), characters)
             return
-        kind = 'group' if item.sigil == '&' else 'character'
-        if not item.sigil and self.tolerant:
-            kind, found = self.resolver.kind_of(
-              item.name, top and item.children is not None and
-              not item.qualifiers, self.reference_universe)
-            if kind == 'universe':
-                self._universe(item, Ref(universe_label(found), id=found.id,
-                                         position=item.name.position),
-                               characters)
-                return
-        if kind == 'group':
+        if item.sigil == '&':
             self._group(item, universe, characters)
         else:
             self._appearance(item, universe, characters)
@@ -1240,12 +1077,6 @@ class CharactersReader:
                 role, flags = keywords
                 return ([('role', role.name)] if role else []) + \
                     ([('flags', flags)] if flags else [])
-        if plain and self.tolerant:
-            universe = self.resolver.universe_named(text,
-                                                    self.reference_universe)
-            if universe:
-                return [('universe', Ref(universe_label(universe),
-                                         id=universe.id, position=position))]
         return [('notes', text)]
 
     def _qualifiers(self, item, is_group):
@@ -1367,18 +1198,6 @@ def story_rows(story):
           'character__character', 'universe', 'group_universe', 'role')
         .prefetch_related('group', 'group_name__group'))]
     return groups, appearances
-
-
-def resolved_rows(groups, appearances):
-    return (
-      [GroupRow(values['group_name'], values['universe'], values['notes'])
-       for values in groups],
-      [AppearanceRow(values['character'], values['universe'],
-                     _sorted(values['group']), _sorted(values['group_name']),
-                     values['group_universe'], values['role'],
-                     [flag for flag in FLAGS if values['is_' + flag]],
-                     values['notes'])
-       for values in appearances])
 
 
 def _links(group, row):
@@ -1606,26 +1425,13 @@ def render_characters(resolver, group_rows, appearance_rows, free_text=''):
 
 def characters_text(story, resolver=None):
     """
-    The characters of a sequence as text, with what the migration converts
-    of its free text, so that an import migrates it; what the migration
-    cannot convert stays free text.
+    The characters of a sequence as text: the linked characters in the
+    notation, the characters typed as text as free text.
     """
     if resolver is None:
         series = story.issue.series
         resolver = Resolver(series.language, series)
-    group_rows, appearance_rows = story_rows(story)
-    free_text = story.characters
-    if free_text:
-        universes = list(story.universe.all())
-        groups, appearances, free_text, _, _ = migrate_text(
-          free_text, resolver, plain_names=True,
-          reference_universe=universes[0] if len(universes) == 1 else None)
-        migrated_groups, migrated_appearances = resolved_rows(groups,
-                                                              appearances)
-        group_rows += migrated_groups
-        appearance_rows += migrated_appearances
-    return render_characters(resolver, group_rows, appearance_rows,
-                             free_text)
+    return render_characters(resolver, *story_rows(story), story.characters)
 
 
 def create_revisions(story_revision, groups, appearances):
@@ -1643,110 +1449,6 @@ def create_revisions(story_revision, groups, appearances):
           **values)
         revision.group.set(group)
         revision.group_name.set(group_name)
-
-
-# the text field of the editing form
-
-def _is_notation(tokens):
-    """
-    Whether an item uses what only the notation has: a sigil, an anchor
-    or an escape.
-    """
-    if _is(tokens[0], SIGILS) or any(token[1] or _is(token, '{')
-                                     for token in tokens):
-        return True
-    for index, token in enumerate(tokens):
-        if _is(token, '('):
-            rest = _strip(tokens[index + 1:])
-            if rest and _is(rest[0], SIGILS):
-                return True
-    return False
-
-
-def _once_per_character(appearances):
-    """
-    The appearances of an item written as GCD shows it, once for each
-    character and universe: the other names of a character in its square
-    brackets, as D-Man [Demolition-Man; Dennis Dunphy], are no appearances.
-    """
-    seen, once = set(), []
-    for appearance in appearances:
-        key = (appearance['character'].character_id,
-               appearance['universe'].id if appearance['universe'] else None)
-        if key not in seen:
-            seen.add(key)
-            once.append(appearance)
-    return once
-
-
-def migrate_text(text, resolver, plain_names=False, reference_universe=None):
-    """
-    Converts the resolvable items of the free text of the characters field.
-    Items written in the notation are always converted and must resolve,
-    other items, read as GCD shows characters, if plain_names is set. An
-    item is converted completely or stays text, so that converting the
-    remaining text again changes nothing.
-
-    Returns the resolved groups and appearances, the remaining free text,
-    the errors of the items written in the notation, and why the other
-    items stayed text, such as an unknown or ambiguous name.
-    """
-    groups, appearances, errors, remaining, unresolved = [], [], [], [], []
-    tokens = tokens_of(text, tolerant=True)
-    if _free_text_index(tokens) >= 0:
-        # the field is written in the notation
-        try:
-            characters = read_characters(text, resolver)
-            groups, appearances = resolver.resolve(characters)
-            return groups, appearances, characters.free_text, [], []
-        except NotationError as error:
-            return [], [], text, [error], []
-    strict = CharactersReader(resolver)
-    tolerant = CharactersReader(resolver, tolerant=True,
-                                reference_universe=reference_universe)
-    for item in split_items(tokens, tolerant=True):
-        raw = _raw(text, item)
-        notation = _is_notation(item)
-        if not notation and not plain_names:
-            remaining.append(raw)
-            continue
-        try:
-            if notation:
-                characters = strict.read([parse_item(
-                  tokens_of(raw, item[0][2]))])
-                item_groups, item_appearances = resolver.resolve(characters)
-            else:
-                characters = tolerant.read([parse_item(item, tolerant=True)])
-                item_groups, item_appearances = resolver.resolve(
-                  characters, any_disambiguation=True)
-                item_appearances = _once_per_character(item_appearances)
-            groups += item_groups
-            appearances += item_appearances
-        except NotationError as error:
-            (errors if notation else unresolved).append(error)
-            remaining.append(raw)
-    return groups, appearances, '; '.join(remaining), errors, unresolved
-
-
-def check_text(text, resolver, reference_universe=None):
-    """
-    Checks the characters field while it is typed: the brackets, the
-    separators and the escapes, then the items as the migration reads them.
-    Returns the problems and the text which the migration would save.
-    """
-    problems = []
-    try:
-        tokens, free_text = split_free_text(tokens_of(text))
-        split_items(tokens)
-    except NotationError as error:
-        problems.append(error)
-    groups, appearances, remaining, errors, unresolved = migrate_text(
-      text, resolver, plain_names=True, reference_universe=reference_universe)
-    for error in errors + unresolved:
-        if str(error) not in [str(problem) for problem in problems]:
-            problems.append(error)
-    return problems, render_characters(
-      resolver, *resolved_rows(groups, appearances), remaining)
 
 
 # issue records

@@ -12,7 +12,6 @@ from django.contrib.auth.models import Permission
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory
-from django.urls import reverse
 
 from apps.gcd.models import (
     Brand, Character, CharacterNameDetail, CreditType, Creator,
@@ -22,8 +21,8 @@ from apps.indexer.models import Error
 from apps.stddata.models import Language, Script
 from apps.oi import import_export, states
 from apps.oi.interchange import (
-    Ref, Resolver, characters_text, check_text, issue_record, migrate_text,
-    read_characters, render_characters, resolved_rows)
+    FLAGS, AppearanceRow, GroupRow, Ref, Resolver, characters_text,
+    issue_record, read_characters, render_characters)
 from apps.oi.models import Changeset, IssueRevision, CTYPES
 
 FORMATS = ['csv', 'tsv', 'json', 'yaml']
@@ -306,8 +305,8 @@ def test_export_is_not_read_as_format_1_0(importer, credited_story,
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('file_format', FORMATS)
-def test_series_import_adds_issue_with_sequences(importer, credited_story,
-                                                 file_format):
+def test_series_import_adds_issues_without_sequences(importer, credited_story,
+                                                     file_format):
     issue = credited_story.issue
     response = import_export.import_issues_to_series(
       _request(importer, 'post', {
@@ -323,11 +322,30 @@ def test_series_import_adds_issue_with_sequences(importer, credited_story,
     assert issue_revision.number == issue.number
     assert list(issue_revision.brand_emblem.all()) == \
         list(issue.brand_emblem.all())
-    story_revision = changeset.storyrevisions.get()
-    assert story_revision.issue is None
-    assert story_revision.story_credit_revisions.count() == 2
-    # the sequences are part of the changeset
-    assert story_revision in list(changeset.revisions)
+    # the sequences are added in a second step, from the issue
+    assert not changeset.storyrevisions.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('status, message', [
+    ('NO_DIFFERENCE', 'but a sequence exists for variant'),
+    ('ARTWORK_DIFFERENCE', 'is not of type cover')])
+def test_series_import_checks_the_cover_of_a_variant(importer, credited_story,
+                                                     status, message):
+    issue = credited_story.issue
+    data = json.loads(_export(importer, issue.id, 'json'))
+    data.update({'variant_of': issue.number, 'variant_name': 'Sketch Cover',
+                 'variant_cover_status': status})
+
+    response = import_export.import_issues_to_series(
+      _request(importer, 'post', {
+        'file': SimpleUploadedFile('issue.json', json.dumps(data).encode()),
+        'json': '1'}),
+      issue.series.id)
+
+    assert message in _error_text(response)
+    assert not Changeset.objects.filter(
+      change_type=CTYPES['issue_add'], indexer=importer).exists()
 
 
 def _flat_with(user, story, column, value):
@@ -536,6 +554,21 @@ def _story_state(story):
       story.characters)
 
 
+def _rows(groups, appearances):
+    def by_id(objects):
+        return sorted(objects, key=lambda related: related.id)
+
+    return (
+      [GroupRow(values['group_name'], values['universe'], values['notes'])
+       for values in groups],
+      [AppearanceRow(values['character'], values['universe'],
+                     by_id(values['group']), by_id(values['group_name']),
+                     values['group_universe'], values['role'],
+                     [flag for flag in FLAGS if values['is_' + flag]],
+                     values['notes'])
+       for values in appearances])
+
+
 def _series_resolver(story):
     # as the import into the series of the story reads
     return Resolver(story.issue.series.language, story.issue.series)
@@ -571,8 +604,33 @@ def test_characters_round_trip(story_with_characters, namesakes):
     groups, appearances = resolver.resolve(characters)
     assert _state(groups, appearances, characters.free_text) == \
         _story_state(story)
-    assert render_characters(resolver, *resolved_rows(groups, appearances),
+    assert render_characters(resolver, *_rows(groups, appearances),
                              characters.free_text) == text
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('file_format', FORMATS)
+def test_characters_typed_as_text_stay_text(importer, story_with_characters,
+                                            file_format):
+    """
+    A name typed as text is not linked by a download and upload, even if it
+    is the name of a character.
+    """
+    story = story_with_characters
+    story.characters = '#1 Fan (cameo)'
+    story.save()
+    story = Story.objects.get(id=story.id)
+    assert characters_text(story).endswith(' ;; #1 Fan (cameo)')
+
+    response, issue_revision = _import_into_new_changeset(
+      importer, story.issue, _export(importer, story.issue.id, file_format),
+      file_format)
+
+    assert 'error' not in response['Location'], _error_text(response)
+    story_revision = issue_revision.changeset.storyrevisions.get()
+    assert story_revision.characters == '#1 Fan (cameo)'
+    assert story_revision.story_character_revisions.count() == \
+        story.active_characters.count()
 
 
 @pytest.mark.django_db
@@ -594,72 +652,6 @@ def test_characters_by_name_and_in_order(story_with_characters):
     assert fan['group'] == []
     assert (fan['role'].name, fan['is_origin'], fan['is_death']) == (
       'cameo', True, True)
-
-
-@pytest.mark.django_db
-def test_migrate_free_text(story_with_characters, any_language):
-    resolver = Resolver(any_language)
-    text = 'Spider-Man [Peter Parker]; #1 Fan (cameo); #1 Fan (Corpse, 2)'
-    assert migrate_text(text, resolver) == ([], [], text, [], [])
-
-    groups, appearances, remaining, errors, unresolved = migrate_text(
-      text, resolver, plain_names=True)
-    cameo, corpse = appearances
-    assert cameo['character'].name == '#1 Fan'
-    assert cameo['role'].name == 'cameo'
-    assert corpse['notes'] == 'Corpse, 2'
-    assert remaining == 'Spider-Man [Peter Parker]'
-    assert errors == []
-    # why it stayed text
-    assert 'Spider-Man' in str(unresolved[0])
-
-
-@pytest.mark.django_db
-def test_migrate_two_names_and_the_identity_of_a_character(any_language):
-    """
-    D-Man [Demolition-Man; Demolition; Dennis Dunphy]: other names of one
-    character and his civilian identity, not the namesake of another
-    language with an identity of the same name.
-    """
-    from apps.gcd.models import CharacterRelation, CharacterRelationType
-    other_language = Language.objects.get_or_create(
-      code='XZY', name='Other Language')[0]
-    alias_of = CharacterRelationType.objects.get_or_create(
-      id=2, defaults={'type': 'alias of',
-                      'reverse_type': 'secret identity of'})[0]
-
-    def character(names, language=any_language):
-        related = Character.objects.create(
-          name=names[0], sort_name=names[0], language=language,
-          description='', notes='')
-        return [CharacterNameDetail.objects.create(
-                  name=name, sort_name=name, character=related,
-                  is_official_name=name == names[0]) for name in names]
-
-    d_man = character(['Demolition Man', 'D-Man', 'Demolition-Man',
-                       'Demolition'])
-    dennis = character(['Dennis Dunphy'])
-    for hero, civilian in (
-          (d_man, dennis),
-          (character(['Demolition Man', 'D-Man'], other_language),
-           character(['Dennis Dunphy'], other_language))):
-        CharacterRelation.objects.create(
-          from_character=hero[0].character,
-          to_character=civilian[0].character, relation_type=alias_of,
-          notes='')
-
-    resolver = Resolver(any_language)
-
-    groups, appearances, remaining, _, _ = migrate_text(
-      'D-Man [Demolition-Man; Demolition; Dennis Dunphy]', resolver,
-      plain_names=True)
-
-    assert remaining == ''
-    # the other names are no appearances
-    assert [appearance['character'] for appearance in appearances] == [
-      d_man[1], dennis[0]]
-    assert render_characters(resolver, *resolved_rows(
-      groups, appearances)) == 'D-Man [Dennis Dunphy]'
 
 
 @pytest.fixture
@@ -736,26 +728,6 @@ def legacy_story(any_added_story, any_language):
 
 
 @pytest.mark.django_db
-def test_migrate_gcd_text(legacy_story):
-    """
-    The text GCD shows for structured characters converts back to them.
-    """
-    story = Story.objects.get(id=legacy_story.id)
-    text = story.show_characters_as_text()
-    assert text == (
-      'Justice League (first team) [Batman [Bruce Wayne] (guest); '
-      'Flash (flashback, death)]; Superman [Clark] (Earth-2) (origin) '
-      '(as Kal-El, once)')
-
-    groups, appearances, remaining, errors, unresolved = migrate_text(
-      text, Resolver(story.issue.series.language), plain_names=True,
-      reference_universe=story.universe.get())
-
-    assert (remaining, errors, unresolved) == ('', [], [])
-    assert _state(groups, appearances, '') == _story_state(story)
-
-
-@pytest.mark.django_db
 def test_export_writes_civilian_identities_as_gcd(legacy_story):
     story = Story.objects.get(id=legacy_story.id)
 
@@ -766,120 +738,6 @@ def test_export_writes_civilian_identities_as_gcd(legacy_story):
     assert 'Superman [Clark] (origin)' in text
     characters = read_characters(text, _series_resolver(story))
     assert _resolved_state(story, characters) == _story_state(story)
-
-
-@pytest.mark.django_db
-def test_migrate_legacy_keeps_unresolved_entries(legacy_story):
-    resolver = Resolver(legacy_story.issue.series.language)
-    text = ('Robin; Flash; Superman [Bruce Wayne]; Batman [Bruce Wayne] '
-            '(Earth-3); Zeta (a(b)); Justice League [Flash; Nobody]; '
-            'Batman (cameo) (villain)')
-
-    groups, appearances, remaining, errors, unresolved = migrate_text(
-      text, resolver, plain_names=True)
-
-    assert (groups, errors) == ([], [])
-    # unknown notes are notes, a second role is not
-    assert [(appearance['character'].name, appearance['notes'])
-            for appearance in appearances] == [
-        ('Superman', ''), ('Bruce Wayne', ''), ('Batman', 'Earth-3'),
-        ('Bruce Wayne', '')]
-    # a group or a character, ambiguous and unknown names stay text
-    assert remaining == (
-      'Robin; Flash; Zeta (a(b)); Justice League [Flash; Nobody]; '
-      'Batman (cameo) (villain)')
-    # and say why
-    assert [(error.kind, error.message) for error in unresolved] == [
-      ('ambiguous', 'ambiguous group or character'),
-      ('ambiguous', 'ambiguous character name detail'),
-      ('not_found', 'unknown character name detail'),
-      ('not_found', 'unknown character name detail'),
-      ('syntax', 'repeated qualifier')]
-    assert unresolved[0].candidates == ['&Robin', 'Robin']
-    # migrating again changes nothing
-    assert migrate_text(remaining, resolver, plain_names=True)[:4] == (
-      [], [], remaining, [])
-
-
-@pytest.mark.django_db
-def test_migrate_reads_text_written_by_hand(legacy_story):
-    """
-    Names in any case, a role and flags in one qualifier, a universe by
-    its name; the notation writes them back as GCD has them.
-    """
-    story = Story.objects.get(id=legacy_story.id)
-    resolver = Resolver(story.issue.series.language)
-    text = ('earth-2 [superman (guest, origin)]; justice league [batman '
-            '(flashback death)]; Clark (guest villain)')
-
-    groups, appearances, remaining, errors, unresolved = migrate_text(
-      text, resolver, plain_names=True)
-
-    assert (remaining, errors, unresolved) == ('', [], [])
-    (league,), (superman, batman, clark) = groups, appearances
-    assert (superman['character'].name, superman['universe'].name,
-            superman['role'].name, superman['is_origin']) == (
-      'Superman', 'Earth-2', 'guest', True)
-    assert league['group_name'].name == 'Justice League'
-    assert (batman['group_name'], batman['is_flashback'],
-            batman['is_death']) == ([league['group_name']], True, True)
-    # two roles are a note
-    assert (clark['role'], clark['notes']) == (None, 'guest villain')
-    assert '@DC: Earth-2 [Superman (origin) (guest)' in render_characters(
-      resolver, *resolved_rows(groups, appearances))
-
-
-@pytest.mark.django_db
-def test_migrate_tells_universe_group_and_character_apart(legacy_story):
-    resolver = Resolver(legacy_story.issue.series.language)
-    text = 'DC [Justice League [Batman]]; Robin [Superman]'
-
-    groups, appearances, remaining, errors, unresolved = migrate_text(
-      text, resolver, plain_names=True)
-
-    assert remaining == text
-    multiverse, robin = unresolved
-    assert (multiverse.message, multiverse.candidates) == (
-      'a multiverse, not a universe', ['@DC: Earth-1', '@DC: Earth-2'])
-    assert (robin.message, robin.candidates) == (
-      'ambiguous group or character', ['&Robin', 'Robin'])
-
-
-@pytest.mark.django_db
-def test_civilian_identity_tells_names_apart(legacy_story, any_language):
-    other = Character.objects.create(
-      name='Batman', sort_name='Batman', disambiguation='other',
-      language=any_language, description='', notes='')
-    CharacterNameDetail.objects.create(name='Batman', sort_name='Batman',
-                                       character=other)
-    resolver = Resolver(legacy_story.issue.series.language)
-
-    groups, appearances, remaining, errors, unresolved = migrate_text(
-      'Batman [Bruce Wayne]; Batman', resolver, plain_names=True)
-
-    # the Batman of Bruce Wayne, Batman alone is ambiguous
-    batman, bruce = appearances
-    assert batman['character'].character.disambiguation == ''
-    assert remaining == 'Batman'
-
-
-@pytest.mark.django_db
-def test_characters_are_checked_while_typed(legacy_story, importer, client):
-    series = legacy_story.issue.series
-    problems, text = check_text('justice league [batman (guest); Nobody',
-                                Resolver(series.language, series))
-    assert 'unbalanced bracket' in str(problems[0])
-    assert 'unknown character name detail "Nobody"' in str(problems[-1])
-
-    client.force_login(importer)
-    response = client.post(
-      reverse('check_characters', kwargs={'series_id': series.id}),
-      {'characters': 'superman (guest, origin); DC [Batman]'})
-
-    content = response.content.decode()
-    assert 'a multiverse, not a universe' in content
-    assert 'Migrate saves: <code>Superman (origin) (guest) ;; DC [Batman]' \
-        '</code>' in content
 
 
 @pytest.mark.django_db
@@ -897,85 +755,6 @@ def test_note_of_keywords_stays_a_note(legacy_story):
               if appearance['character'].name == 'Clark']
     assert (clark['notes'], clark['role'], clark['is_death']) == (
       'guest, death', None, False)
-
-
-@pytest.mark.django_db
-def test_migrate_reports_unresolved_notation(story_with_characters,
-                                             any_language):
-    jane = CharacterNameDetail.objects.get(name='Doe; Jane')
-    duplicate = Character.objects.create(
-      name=jane.name, sort_name=jane.name, disambiguation='711',
-      language=any_language, description='', notes='')
-    CharacterNameDetail.objects.create(name=jane.name, sort_name=jane.name,
-                                       character=duplicate)
-    text = 'Doe^; Jane {711}; Nobody (@DC: mainstream); Ben Parker'
-
-    groups, appearances, remaining, errors, unresolved = migrate_text(
-      text, Resolver(any_language))
-
-    assert (groups, appearances, remaining, unresolved) == ([], [], text, [])
-    ambiguous, unknown = errors
-    assert ambiguous.kind == 'ambiguous'
-    assert len(ambiguous.candidates) == 2
-    assert unknown.kind == 'not_found'
-
-
-@pytest.mark.django_db
-def test_story_form_checks_and_migrates_characters(story_with_characters,
-                                                   any_editing_changeset):
-    from django import forms
-    from apps.oi.forms.story import get_story_revision_form
-    from apps.oi.models import StoryRevision
-
-    revision = StoryRevision.clone(data_object=story_with_characters,
-                                   changeset=any_editing_changeset)
-    form_class = get_story_revision_form(revision=revision,
-                                         user=any_editing_changeset.indexer)
-    text = '#1 Fan (cameo); Nobody; Ben Parker (Flashback; Cameo)'
-
-    # saving checks only what is written in the notation
-    form = form_class(data={}, instance=revision)
-    form.cleaned_data = {'characters': text, 'universe': []}
-    assert form.clean_characters() == text
-    form.cleaned_data = {'characters': 'Nobody (@DC: mainstream)',
-                         'universe': []}
-    with pytest.raises(forms.ValidationError) as error:
-        form.clean_characters()
-    assert 'unknown character name detail' in str(error.value)
-
-    # the migrate button converts what resolves
-    form = form_class(data={'save_migrate_characters': '1'},
-                      instance=revision)
-    form.cleaned_data = {'characters': text, 'universe': []}
-    assert form.clean_characters() == 'Nobody; Ben Parker (Flashback; Cameo)'
-    groups, (fan,) = form.migrated_characters
-    assert (fan['character'].name, fan['role'].name) == ('#1 Fan', 'cameo')
-
-
-@pytest.mark.django_db
-def test_migrate_of_the_changeset_page_migrates_characters(
-      story_with_characters, any_editing_changeset):
-    from apps.oi.models import StoryRevision
-    from apps.oi.views import migrate_story_revision
-
-    revision = StoryRevision.clone(data_object=story_with_characters,
-                                   changeset=any_editing_changeset)
-    revision.characters = '#1 Fan (cameo); Nobody'
-    revision.save()
-    before = revision.story_character_revisions.count()
-    indexer = any_editing_changeset.indexer
-    indexer.user_permissions.add(
-      Permission.objects.get(codename='can_reserve'))
-    indexer = type(indexer).objects.get(id=indexer.id)
-
-    response = migrate_story_revision(_request(indexer, 'post'),
-                                      revision.id)
-
-    assert response['Location'].endswith('/story/revision/%d/edit/' %
-                                         revision.id)
-    revision.refresh_from_db()
-    assert revision.characters == 'Nobody'
-    assert revision.story_character_revisions.count() == before + 1
 
 
 @pytest.mark.django_db
@@ -1078,20 +857,15 @@ story_set:
 
 
 @pytest.mark.django_db
-def test_hand_written_yaml_adds_an_issue(importer, credited_story):
-    response = import_export.import_issues_to_series(
-      _request(importer, 'post', {
-        'file': SimpleUploadedFile('issue.yaml', HAND_WRITTEN.encode()),
-        'yaml': '1'}),
-      credited_story.issue.series.id)
+def test_hand_written_yaml_is_imported(importer, credited_story):
+    response, issue_revision = _import_into_new_changeset(
+      importer, credited_story.issue, HAND_WRITTEN.encode(), 'yaml')
 
-    assert 'error' not in response['Location']
-    changeset = Changeset.objects.filter(
-      change_type=CTYPES['issue_add'], indexer=importer).get()
-    issue_revision = changeset.issuerevisions.get()
+    assert 'error' not in response['Location'], _error_text(response)
+    issue_revision.refresh_from_db()
     assert (issue_revision.number, issue_revision.page_count,
             issue_revision.page_count_uncertain) == ('99', 36, True)
-    story_revision = changeset.storyrevisions.get()
+    story_revision = issue_revision.changeset.storyrevisions.get()
     assert (story_revision.title, story_revision.page_count) == (
       'Written by hand', Decimal('8.5'))
     assert story_revision.characters == 'Ben Parker'

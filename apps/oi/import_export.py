@@ -18,11 +18,11 @@ from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
-from django.shortcuts import get_object_or_404, render
-from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
 
 from apps.indexer.views import render_error
-from apps.gcd.models import Issue, Series, Universe
+from apps.gcd.models import (
+    Issue, Series, STORY_TYPES, VARIANT_COVER_STATUS, VCS_Codes)
 from apps.oi.models import (
     Changeset, StoryRevision, IssueRevision, CTYPES, IssueCreditRevision,
     StoryCreditRevision)
@@ -30,7 +30,7 @@ from apps.oi import states
 from apps.oi.interchange import (
     CREDIT_FIELDS, ISSUE_CREDIT_FIELDS, ISSUE_FIELDS, LEGACY_ISSUE_VALUES,
     RECORD, STORY_FIELDS, NotationError, RecordDecoder, RecordImporter,
-    Resolver, check_text, create_credits, create_revisions, flat_rows,
+    create_credits, create_revisions, flat_rows,
     is_legacy, is_legacy_rows, issue_record, legacy_values,
     read_flat_records, set_multi, unused_fields)
 
@@ -207,6 +207,21 @@ def _set_issue_values(issue_revision, values, multi, credits, legacy=False):
                    issue_revision=issue_revision)
 
 
+def _check_variant_cover(issue_revision, stories):
+    if len(stories) > 1:
+        raise ImportFailure('Variant %s has more than one story.' %
+                            issue_revision)
+    if stories and (issue_revision.variant_cover_status !=
+                    VCS_Codes['ARTWORK_DIFFERENCE']):
+        raise ImportFailure(
+          'Variant is of cover status %s, but a sequence exists for variant '
+          '%s.' % (VARIANT_COVER_STATUS[issue_revision.variant_cover_status],
+                   issue_revision))
+    if stories and stories[0][0]['type'].id != STORY_TYPES['cover']:
+        raise ImportFailure('Sequence for variant %s is not of type cover.' %
+                            issue_revision)
+
+
 def _base_issue(series, values):
     base = Issue.objects.filter(series=series, number=values['variant_of'],
                                 variant_of=None, deleted=False)
@@ -227,6 +242,10 @@ def import_issues_to_series(request, series_id):
     try:
         records = _read_records(request.FILES['file'], _file_format(request),
                                 series=True)
+        # issues are added without their sequences, only a variant can come
+        # with its cover
+        records = [(issue, stories if issue['variant_of'] else [], legacy)
+                   for issue, stories, legacy in records]
         bases = [_base_issue(series, issue) if issue['variant_of'] else None
                  for issue, stories, legacy in records]
         resolved = _resolve(RecordImporter(series), records)
@@ -245,8 +264,10 @@ def import_issues_to_series(request, series_id):
                                                series=series, after=after,
                                                variant_of=base)
                 _set_issue_values(issue_revision, values, multi, credits)
-                # stories of a variant added with its issue have no issue
-                _create_stories(changeset, None, stories, 0)
+                if base:
+                    _check_variant_cover(issue_revision, stories)
+                    # the cover of a variant added with it has no issue
+                    _create_stories(changeset, None, stories, 0)
     except ImportFailure as error:
         return _handle_import_error(request, series_url, str(error))
     return HttpResponseRedirect(urlresolvers.reverse('editing'))
@@ -317,25 +338,6 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
     except ImportFailure as error:
         return _handle_import_error(request, changeset_url, str(error))
     return HttpResponseRedirect(changeset_url)
-
-
-@permission_required('indexer.can_reserve')
-@require_POST
-def check_characters(request, series_id):
-    """
-    The problems of the characters field of a sequence of the series while
-    it is typed, and the text the migration would save.
-    """
-    series = get_object_or_404(Series, id=series_id)
-    universes = Universe.objects.filter(
-      id__in=[value for value in request.POST.getlist('universe')
-              if value.isdigit()])
-    problems, text = check_text(
-      request.POST.get('characters', '').strip(),
-      Resolver(series.language, series),
-      universes.get() if universes.count() == 1 else None)
-    return render(request, 'oi/bits/characters_check.html',
-                  {'problems': problems, 'text': text})
 
 
 def _export_object(issue_id, revision):

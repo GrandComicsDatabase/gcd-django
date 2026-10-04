@@ -240,7 +240,7 @@ Cover is moved from {{ cover.issue }}.
                 value="Move To Other Issue"></button>
         </form>
         {% endif %}
-        {% if story.old_credits or story.feature or story.characters %}
+        {% if story.old_credits %}
         <form method="POST"
               action="{% url 'migrate_story_revision' id=story.id %}">
           {% csrf_token %}

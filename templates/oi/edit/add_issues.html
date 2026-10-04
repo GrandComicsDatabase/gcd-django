@@ -101,9 +101,10 @@ you must wait until those issues are approved.<br>
 
 <div>
   <p>
-Using the file import option below, you can add a number of issues with their
-sequences at once, as CSV, TSV, JSON or YAML file in the format of the
-issue export.
+Using the file import option below, you can add a number of issues at once,
+as CSV, TSV, JSON or YAML file in the format of the issue export. Only the
+issues are added, their sequences can be imported later from the editing
+page of each issue.
   </p>
   <p>
 All four formats carry the same fields with the same values. CSV and TSV
@@ -122,7 +123,8 @@ preceding <i>^</i>, in lists of brands, printers or features only
   <p>
 A variant gives the number of its base issue in the column variant_of, the
 variant name, and the variant cover status, which is one of
-ARTWORK_DIFFERENCE, ONLY_SCAN_DIFFERENCE, or NO_DIFFERENCE.
+ARTWORK_DIFFERENCE, ONLY_SCAN_DIFFERENCE, or NO_DIFFERENCE. A variant with
+status ARTWORK_DIFFERENCE can optionally be followed by its cover sequence.
   </p>
   <p>
 Files of the earlier format 1.0 are still read as before: CSV and TSV files

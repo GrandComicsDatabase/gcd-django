@@ -350,10 +350,8 @@ class Changeset(models.Model):
                     self.characterorderrevisions.all(),)
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
-            # an added issue can come with its sequences, e.g. from a file
-            if self.issuerevisions.all().count() == 1 and (
-               self.issuerevisions.get().variant_of or
-               self.storyrevisions.exists()):
+            if self.issuerevisions.all().count() == 1 and \
+               self.issuerevisions.get().variant_of:
                 return (self.issuerevisions.all(),
                         self.issuecreditrevisions.all(),
                         self.storyrevisions.all(),
@@ -6733,25 +6731,6 @@ class StoryRevision(Revision):
                         old_features = save_feature
             setattr(self, 'feature', old_features)
             self.save()
-
-    def migrate_characters(self):
-        """
-        Converts the characters written as text into linked characters and
-        groups, as the Migrate button of the field, what does not resolve
-        stays text.
-        """
-        from apps.oi.interchange import (Resolver, create_revisions,
-                                         migrate_text)
-        series = self.issue.series if self.issue \
-            else self.my_issue_revision.series
-        universes = list(self.universe.all())
-        groups, appearances, remaining, _, _ = migrate_text(
-          self.characters, Resolver(series.language, series),
-          plain_names=True,
-          reference_universe=universes[0] if len(universes) == 1 else None)
-        create_revisions(self, groups, appearances)
-        self.characters = remaining
-        self.save()
 
     def deletable(self):
         if self.changeset.reprintrevisions \

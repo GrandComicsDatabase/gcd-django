@@ -3,7 +3,6 @@
 from django import forms
 from django.conf import settings
 from django.forms.models import inlineformset_factory
-from django.urls import reverse
 
 from dal import autocomplete, forward
 
@@ -22,7 +21,6 @@ from apps.oi.models import (
     BiblioEntryRevision, ReprintRevision, StoryRevision, StoryArcRevision,
     StoryArcRelationRevision, StoryCreditRevision, StoryCharacterRevision,
     StoryGroupRevision)
-from apps.oi.interchange import Resolver, create_revisions, migrate_text
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
@@ -181,20 +179,6 @@ def get_story_revision_form(revision=None, user=None,
                   '<btn class="btn-blue-editing inline">' \
                   '<input type="submit" name="save_migrate_feature"' \
                   ' value="Migrate"></btn></td> Feature'
-            if revision and revision.characters != '':
-                self.fields['characters'].label = \
-                  '<btn class="btn-blue-editing inline">' \
-                  '<input type="submit" name="save_migrate_characters"' \
-                  ' value="Migrate"></btn></td> d) Characters'
-            self.migrated_characters = ([], [])
-            self.unresolved_characters = []
-            # checked when the page is shown, e.g. after Migrate, telling
-            # why items stayed text, and while it is typed
-            self.fields['characters'].widget.attrs.update({
-              'hx-post': reverse('check_characters',
-                                 kwargs={'series_id': series.id}),
-              'hx-trigger': 'load, keyup changed delay:500ms',
-              'hx-target': '#characters-check'})
 
         def save(self, commit=True):
             instance = super(RuntimeStoryRevisionForm,
@@ -274,26 +258,6 @@ def get_story_revision_form(revision=None, user=None,
                       changeset=changeset)
                     story_character.save()
                     story_character.group_name.add(group_name)
-            create_revisions(instance, *self.migrated_characters)
-
-        def clean_characters(self):
-            # Items written in the notation of the files must resolve, with
-            # the migrate button also the other items are converted, read as
-            # GCD shows characters: without the universe of a sequence with
-            # one universe. Everything else stays text.
-            universes = list(self.cleaned_data.get('universe') or [])
-            groups, appearances, remaining, errors, unresolved = migrate_text(
-              self.cleaned_data['characters'].strip(),
-              Resolver(language, series),
-              plain_names='save_migrate_characters' in self.data,
-              reference_universe=universes[0] if len(universes) == 1
-              else None)
-            if errors:
-                raise forms.ValidationError([str(error) for error in errors])
-            self.migrated_characters = (groups, appearances)
-            # why items written as GCD shows them stayed text
-            self.unresolved_characters = unresolved
-            return remaining
 
         def clean_type(self):
             if queryset:
@@ -816,8 +780,6 @@ class StoryRevisionForm(KeywordBaseForm):
         field_list.append(Formset('characters_formset'))
         field_list.append(Field(fields[characters_start],
                                 template='oi/bits/uni_field.html'))
-        field_list.append(HTML(
-          '<tr><th></th><td id="characters-check"></td></tr>'))
         field_list.append(Formset('groups_formset'))
         has_appearance_order = False
         has_importance_order = False
