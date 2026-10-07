@@ -69,6 +69,41 @@ def test_v2_schema_generation_has_no_warnings(
 
 @pytest.mark.django_db
 @override_settings(MYCOMICS=False)
+def test_story_arc_issues_schema_reuses_paginated_issue_contract(
+    client,
+    restore_v2_urlconf,
+):
+    """The additive action documents issue identity, bounds, and ordering."""
+    schema = _schema(client)
+    path = '/api/v2/story-arcs/{id}/issues/'
+    operation = schema['paths'][path]['get']
+    assert _response_schema(schema, path) == _response_schema(
+        schema,
+        '/api/v2/issues/',
+    )
+    assert {parameter['name'] for parameter in operation['parameters']} == {
+        'id',
+        'page',
+        'page_size',
+        'format',
+    }
+    description = operation['description'].lower()
+    for fact in [
+        'distinct',
+        'publication',
+        'not a curated',
+        'variant',
+        'deleted',
+        'reprint',
+        '50',
+        '200',
+    ]:
+        assert fact in description
+    assert set(schema['paths'][path]) == {'get'}
+
+
+@pytest.mark.django_db
+@override_settings(MYCOMICS=False)
 def test_token_schema_separates_request_and_response(
     client,
     restore_v2_urlconf,

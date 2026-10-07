@@ -5,8 +5,11 @@
 
 from django.db.models import Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
+from rest_framework.decorators import action
 
 from apps.api_v2.filters.story_arcs import StoryArcFilterSet
+from apps.api_v2.serializers.issues import IssueListSerializer
 from apps.api_v2.serializers.story_arcs import (
     StoryArcListSerializer,
     StoryArcSerializer,
@@ -17,6 +20,7 @@ from apps.api_v2.utils.conditional import (
     make_last_modified,
 )
 from apps.api_v2.views import GCDBaseViewSet
+from apps.api_v2.views.issues import IssueViewSet
 from apps.gcd.models import Reprint, Story, StoryArc
 
 
@@ -86,10 +90,53 @@ class StoryArcViewSet(GCDBaseViewSet):
         return queryset
 
     def get_serializer_class(self):
-        """Switch to the detail serializer for retrieve requests."""
+        """Select arc detail or the existing native member-issue shape."""
         if self.action == 'retrieve':
             return StoryArcSerializer
+        if self.action == 'issues':
+            return IssueListSerializer
         return StoryArcListSerializer
+
+    @extend_schema(
+        filters=False,
+        responses=IssueListSerializer(many=True),
+        description=(
+            'Return distinct issues containing active stories associated '
+            'with this Story Arc, including reprints. Deleted arcs, '
+            'stories, issues, and parent series are excluded. Exact native '
+            'issue and parent-series identities and variant_of references '
+            'are retained; variants are not replaced with base issues. '
+            'Order is by key_date, on_sale_date, series sort_name, issue '
+            'sort_code, then issue ID. This is publication sorting, '
+            'not a curated reading order; story sequence_number is not a '
+            'global position. Count is the number of distinct issues. '
+            'Page size defaults to 50 and is capped at 200. An existing '
+            'empty arc returns an empty page; an unavailable arc is 404.'
+        ),
+    )
+    @action(detail=True, methods=('get',), filter_backends=())
+    def issues(self, request, *args, **kwargs):
+        """Return a bounded page of distinct native member issues."""
+        arc = self.get_object()
+        member_ids = (
+            Story.objects.filter(deleted=False, story_arc=arc)
+            .order_by()
+            .values('issue_id')
+        )
+        queryset = IssueViewSet.queryset.filter(
+            deleted=False,
+            series__deleted=False,
+            pk__in=member_ids,
+        ).order_by(
+            'key_date',
+            'on_sale_date',
+            'series__sort_name',
+            'sort_code',
+            'id',
+        )
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
     @condition(
         etag_func=story_arc_etag,
