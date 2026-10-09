@@ -1037,35 +1037,37 @@ class Story(GcdData):
         """
         Simplifies UI checks for conditionals.  Credit fields.
         """
-        return self.script or \
-            self.pencils or \
-            self.inks or \
-            self.colors or \
-            self.letters or \
-            self.editing or \
+        return self.script != '' or \
+            self.pencils != '' or \
+            self.inks != '' or \
+            self.colors != '' or \
+            self.letters != '' or \
+            self.editing != '' or \
             self.active_credits.exists()
 
     def has_content(self):
         """
         Simplifies UI checks for conditionals.  Content fields
         """
-        return self.job_number or \
-            self.genre or \
+        return self.job_number != '' or \
+            self.genre != '' or \
             self.has_characters() or \
-            self.first_line or \
-            self.synopsis or \
+            self.first_line != '' or \
+            self.synopsis != '' or \
             self.has_keywords() or \
             self.has_reprints() or \
             self.feature_name.exclude(feature__genre='').exists() or \
-            self.feature_logo.count() or \
-            self.active_awards().count()
+            self.feature_logo.count() > 0 or \
+            self.story_arc.count() > 0 or \
+            self.active_awards().count() > 0
 
     def has_characters(self):
         """
         UI check for characters.
         """
-        return self.characters or self.appearing_characters.count() or \
-            self.appearing_groups.count()
+        return self.characters != '' or \
+            self.appearing_characters.count() > 0 or \
+            self.appearing_groups.count() > 0
 
     def has_characters_order_appearance(self):
         """
@@ -1086,7 +1088,7 @@ class Story(GcdData):
         feature_logo entry automatically results in corresponding
         feature_name entry, therefore no check needed
         """
-        return self.feature or self.feature_name.count()
+        return self.feature != '' or self.feature_name.count() > 0
 
     def has_reprints(self, notes=True, ignore=STORY_TYPES['preview']):
         if self.type_id not in [STORY_TYPES['preview'],
@@ -1095,9 +1097,9 @@ class Story(GcdData):
         else:
             ignore = []
         return ((notes and self.reprint_notes) or
-                self.from_all_reprints.count() or
+                self.from_all_reprints.count() > 0 or
                 self.to_all_reprints.exclude(target__type__id__in=ignore)
-                                    .count())
+                                    .count() > 0)
 
     def reprint_count(self):
         if self.type_id not in [STORY_TYPES['preview'],
@@ -1114,7 +1116,7 @@ class Story(GcdData):
         """
         Simplifies UI checks for conditionals.  All non-heading fields
         """
-        return self.has_credits() or self.has_content() or self.notes
+        return self.has_credits() or self.has_content() or self.notes != ''
 
     def active_awards(self):
         return self.awards.exclude(deleted=True)
