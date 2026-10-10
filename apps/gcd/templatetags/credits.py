@@ -871,8 +871,8 @@ def show_reprints(story, bare_value=False):
         return mark_safe('<dt class="credit_tag">' +
                          '<span class="credit_label">' + label +
                          '</span></dt>' + '<dd class="credit_def">' +
-                         '<div class="credit_value">' +
-                         '<ul>' + reprint + '</ul></div></dd>')
+                         '<span class="credit_value">' +
+                         '<ul>' + reprint + '</ul></span></dd>')
     else:
         return ""
 
