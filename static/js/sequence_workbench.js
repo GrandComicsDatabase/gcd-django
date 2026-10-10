@@ -48,7 +48,7 @@
       for (const field of ['title', 'type', 'pages']) {
         const input = element.querySelector(`[data-field="${field}"]`);
         // Do not reformat the field being typed into.
-        if (input !== document.activeElement) input.value = field === 'pages' && row[field] !== '' ? Number(Number(row[field]).toFixed(2)) : row[field];
+        if (input !== document.activeElement) input.value = field === 'pages' && row[field] !== '' ? Number(Number(row[field]).toFixed(3)) : row[field];
       }
       if (document.activeElement !== feature) feature.value = row.feature_text ?? row.feature;
       const pages = Number(row.pages);
@@ -65,11 +65,11 @@
     }
     const next = section.querySelector('[data-next-sequence]'); if (next) next.value = active.length ? sequence : 0;
     const sum = total / 1000;
-    section.querySelector('[data-total]').textContent = `${active.length} sequences · ${Number(sum.toFixed(2))} pages${unknown ? ' + unknown' : ''}`;
-    const declared = issue.declared === null ? null : Number(Number(issue.declared).toFixed(2));
+    section.querySelector('[data-total]').textContent = `${active.length} sequences · ${Number(sum.toFixed(3))} pages${unknown ? ' + unknown' : ''}`;
+    const declared = issue.declared === null ? null : Number(Number(issue.declared).toFixed(3));
     const check = section.querySelector('[data-page-check]');
     const matches = !unknown && declared !== null && Math.round(Number(declared) * 1000) === total;
-    check.textContent = declared === null ? 'Issue page count not declared' : unknown ? `Issue: ${declared} pages · complete missing page counts to compare` : matches ? `✓ Matches issue: ${declared} pages` : `Issue: ${declared} pages · difference ${Number((sum - Number(declared)).toFixed(2))}`;
+    check.textContent = declared === null ? 'Issue page count not declared' : unknown ? `Issue: ${declared} pages · complete missing page counts to compare` : matches ? `✓ Matches issue: ${declared} pages` : `Issue: ${declared} pages · difference ${Number((sum - Number(declared)).toFixed(3))}`;
     const anomalies = [];
     if (!cover) anomalies.push('Missing cover');
     if (cover && Number(cover.pages) % 2 !== 0) anomalies.push('Odd cover page count');
@@ -175,6 +175,16 @@
     try { await flush(); resubmitting = true; event.target.requestSubmit(event.submitter); }
     catch (_) { /* The error is shown; stay on the page. */ } finally { resubmitting = false; }
   }, true);
+  // Links in this tab, too, leave only after the pending edits are saved.
+  document.addEventListener('click', async event => {
+    const link = event.target.closest('a[href]');
+    if (!link || !(dirty || saving) || event.defaultPrevented || event.button !== 0
+        || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+        || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
+    event.preventDefault();
+    try { await flush(); location.assign(link.href); }
+    catch (_) { /* The error is shown; stay on the page. */ }
+  });
 
   let adding = false;
   root.addEventListener('click', async event => {

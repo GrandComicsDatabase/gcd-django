@@ -35,7 +35,7 @@
   </td>
   <td class="w-1/4 min-w-0 p-1 lg:w-auto">
     <span class="block text-xs font-normal leading-5 text-normal-gcd lg:hidden">Pages</span>
-    <input data-field="pages" aria-label="Page count" type="number" min="0.01" max="9999999.999" step="0.01" placeholder="?" value="{{ story.page_count|unlocalize|default_if_none:'' }}" class="h-10 w-full rounded-md border-gray-300" {% if story.deleted %}disabled{% endif %}>
+    <input data-field="pages" aria-label="Page count" type="number" min="0.001" max="9999999.999" step="any" placeholder="?" value="{{ story.page_count|unlocalize|default_if_none:'' }}" class="h-10 w-full rounded-md border-gray-300" {% if story.deleted %}disabled{% endif %}>
   </td>
   <td class="w-1/3 min-w-0 break-words p-1 lg:w-auto">
     <span class="block text-xs font-normal leading-5 text-normal-gcd lg:hidden">Range</span>
