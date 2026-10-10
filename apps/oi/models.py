@@ -56,7 +56,7 @@ from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.reprint import validate_reprint_issue_ids
 from apps.gcd.models.story import show_feature, show_feature_as_text, \
                                   show_characters, show_title, \
-                                  _get_civilian_identity, \
+                                  _build_character_identity_cache, \
                                   CharacterThroughOrder
 from apps.gcd.models.image import CropToFace
 from apps.indexer.views import ErrorWithMessage
@@ -1706,7 +1706,6 @@ class Revision(models.Model):
 
         revision._pre_initial_save(fork=fork, fork_source=data_object,
                                    exclude=exclude, **kwargs)
-
         revision.save()
 
         # Populate all of the many to many relations that don't use
@@ -4395,16 +4394,49 @@ class IssueRevision(Revision):
             old_series = self.previous_revision.series
             old_series.set_first_last_issues()
 
+            new_series = self.series
+
             # new series might have gallery after move
-            if not self.series.has_gallery and \
+            if not new_series.has_gallery and \
                self.issue.active_covers().count():
-                self.series.has_gallery = True
-                self.series.save(update_fields=['has_gallery'])
+                new_series.has_gallery = True
+                new_series.save(update_fields=['has_gallery'])
 
             # old series might have lost gallery after move
             if old_series.scan_count == 0:
                 old_series.has_gallery = False
                 old_series.save(update_fields=['has_gallery'])
+
+            # -------------------------------------------------------------------
+            # Cross-Series Variant Stat Routing
+            # -------------------------------------------------------------------
+            # When a base issue moves to a new series, its variants do not
+            # automatically follow it. This means a variant left behind in the
+            # old series just became a "cross-series" variant (which
+            # contributes +1 to its series issue_count), or vice-versa.
+            # Adjust the cached counts of the affected series.
+
+            variants = self.issue.variant_set.filter(deleted=False)
+            for variant in variants:
+                # 1. Variant left behind:
+                # Goes from Standard -> Cross-Series (+1)
+                if variant.series == old_series and \
+                        variant.series != new_series:
+                    variant.series.issue_count += 1
+                    variant.series.save(update_fields=['issue_count'])
+
+                # 2. Base issue returns:
+                # Goes from Cross-Series -> Standard (-1)
+                elif variant.series != old_series and \
+                        variant.series == new_series:
+                    if variant.series.issue_count > 0:
+                        variant.series.issue_count -= 1
+                        variant.series.save(update_fields=['issue_count'])
+
+            # Need to update the changes dict so that the changes made here
+            # persist in _adjust_stats.
+            changes['old series'] = old_series
+
         if self.source.variant_of and self.added:
             self.source.is_indexed = self.source.variant_of.is_indexed
             self.source.save()
@@ -4510,38 +4542,6 @@ class IssueRevision(Revision):
         for story in self.changeset.storyrevisions.filter(issue=None):
             story.issue = self.issue
             story.save()
-
-        # -------------------------------------------------------------------
-        # Cross-Series Variant Stat Routing
-        # -------------------------------------------------------------------
-        # When a base issue moves to a new series, its variants do not
-        # automatically follow it. This means a variant left behind in the
-        # old series just became a "cross-series" variant (which contributes
-        # +1 to its series issue_count), or vice-versa. Adjust the cached
-        # counts of the affected series.
-        if changes.get('series changed'):
-            old_series = changes.get('old series')
-            new_series = self.issue.series
-
-            IssueClass = type(self.issue)
-            variants = IssueClass.objects.filter(variant_of=self.issue,
-                                                 deleted=False)
-
-            for variant in variants:
-                # 1. Variant left behind:
-                # Goes from Standard -> Cross-Series (+1)
-                if variant.series == old_series and \
-                        variant.series != new_series:
-                    variant.series.issue_count += 1
-                    variant.series.save(update_fields=['issue_count'])
-
-                # 2. Base issue returns:
-                # Goes from Cross-Series -> Standard (-1)
-                elif variant.series != old_series and \
-                        variant.series == new_series:
-                    if variant.series.issue_count > 0:
-                        variant.series.issue_count -= 1
-                        variant.series.save(update_fields=['issue_count'])
 
     def extra_forms(self, request):
         from apps.oi.forms import IssueRevisionFormSet, \
@@ -5617,10 +5617,12 @@ class CharacterOrderRevision(Revision):
                                .order_by('id')
         # process characters to have civilians after their aliases
         character_list = _order_civilian_after_alias(story_characters)
+        ordered_character_ids = set(
+            self.character_revisions.values_list('id', flat=True))
         for character in character_list:
             character_id = character[0].id
             # add characters to the list if not already present in the order
-            if not self.character_revisions.filter(id=character_id).exists():
+            if character_id not in ordered_character_ids:
                 character_order_list.append((character[0], order))
                 order += 1
                 # we do not add civilians if their alias is present, so
@@ -5883,24 +5885,17 @@ class StoryArcRelationRevision(Revision):
 
 
 def _order_civilian_after_alias(story_characters):
+    civilian_identity_cache, has_alias = _build_character_identity_cache(
+        story_characters)
+    appearances_by_id = {item.id: item for item in story_characters}
     character_list = []
-    for character in story_characters:
-        alias_identity = set(
-            character.character.character.from_related_character
-                     .filter(relation_type__id=2)
-                     .values_list('from_character', flat=True))\
-                     .intersection(story_characters.filter(
-                                   universe=character.universe).values_list(
-                                   'character__character', flat=True))
-        if alias_identity:
+    for character in civilian_identity_cache:
+        if has_alias.get(character, False):
             continue
-        civilian_identity = _get_civilian_identity(character,
-                                                   story_characters)
-        if civilian_identity:
-            civilian_identity = story_characters.filter(
-                universe=character.universe,
-                character__character__id__in=civilian_identity)
-        character_list.append([character, civilian_identity])
+        character_list.append([
+            appearances_by_id[character],
+            civilian_identity_cache.get(character, []),
+        ])
     return character_list
 
 

@@ -19,7 +19,7 @@
 </head>
 
 <body>
-<div {% if preview %} class="bg-preview" {% endif %}>
+<div class="flex flex-col min-h-dvh{% if preview %} bg-preview{% endif %}">
 {% if BETA %}
   {% include "gcd/bits/beta_banner.html" %}
 {% endif %}
@@ -34,11 +34,12 @@
 
 {% block body %}{% endblock %}
 
-{% block fine_print %}
+<div class="mt-auto">
+  {% block bottom_nav_bar %}{% endblock %}
   <div class="text-sm text-gray-700 bg-gray-200 px-2 py-1">
-  {% include "gcd/fine_print.html" %}
+    {% include "gcd/fine_print.html" %}
   </div>
-{% endblock %}
+</div>
 </div>
 {% block footer %}{% endblock %}
 </body>
