@@ -5,7 +5,7 @@ import pytest
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
-from django.template import Context
+from django.template import Context, Template
 from django.template.base import VariableNode
 from django.template.defaulttags import ForNode, IfNode
 from django.template.loader import get_template, render_to_string
@@ -19,8 +19,6 @@ from apps.gcd.models import (
     Character, CharacterNameDetail, Group, GroupMembership, GroupNameDetail,
     Issue, Publisher, Reprint, Series, Story, StoryType)
 from apps.gcd.models.character import GroupMembershipType
-from apps.gcd.models.publisher import (
-    BrandGroupEmblemTable, BrandEmblemPublisherTable, BrandEmblemGroupTable)
 from apps.gcd.models.story import character_notes
 from apps.gcd.templatetags.credits import (
     follow_reprint_link, generate_reprint_link, generate_reprint_link_sequence,
@@ -33,6 +31,110 @@ from apps.oi.templatetags.compare import field_value, show_diff_markdown
 
 SOURCE = ('**Membership note** [reference](https://example.org/source)'
           '\nNext line')
+
+
+@pytest.mark.parametrize('name', [
+    'award', 'received_award', 'character_relation', 'group_membership',
+    'group_relation', 'feature_logo', 'feature_relation',
+    'creator_art_influence', 'creator_degree', 'creator_membership',
+    'creator_non_comic_work', 'creator_relation', 'creator_school',
+    'creator_signature'])
+@pytest.mark.parametrize('prefix', ['', 'tw_'])
+def test_other_detail_notes_do_not_gain_markdown(name, prefix):
+    template = get_template(f'gcd/details/{prefix}{name}.html').template
+    record = SimpleNamespace(notes='**Literal** <b>text</b>')
+    context = Context({name: record, 'page': SimpleNamespace(number=1)})
+    nodes = [node for node in template.nodelist.get_nodes_by_type(IfNode)
+             if node.token.contents.startswith(f'if {name}.notes')]
+    assert nodes
+    with context.bind_template(template):
+        for node in nodes:
+            rendered = node.render(context)
+            assert '**Literal** &lt;b&gt;text&lt;/b&gt;' in rendered
+            assert '<strong>Literal</strong>' not in rendered
+
+
+def test_baseform_notes_keep_markdown_without_expanding_tracking_fields():
+    from markdownx.widgets import MarkdownxWidget
+    from apps.oi.forms.character import (
+        GroupRevisionForm, GroupMembershipRevisionForm)
+    from apps.oi.forms.series import SeriesRevisionForm
+    assert isinstance(GroupRevisionForm.base_fields['notes'].widget,
+                      MarkdownxWidget)
+    assert not isinstance(GroupMembershipRevisionForm.base_fields['notes']
+                          .widget, MarkdownxWidget)
+    assert not isinstance(SeriesRevisionForm.base_fields['tracking_notes']
+                          .widget, MarkdownxWidget)
+
+
+@pytest.mark.parametrize('model', ['character', 'group'])
+@pytest.mark.parametrize('prefix', ['', 'tw_'])
+def test_inline_relationship_and_membership_lists_remain_plain(model, prefix):
+    template = get_template(f'gcd/details/{prefix}{model}.html').template
+    source = SOURCE + ' <b>literal</b>'
+    target = SimpleNamespace(id=1, descriptor='Target')
+    row = SimpleNamespace(
+        id=1, notes=source, character=target, group=target,
+        to_character=target, to_group=target,
+        pre_process_relation=lambda obj: (target, 'Related'))
+    fields = ('active_relations_own', 'active_translations',
+              'active_alternate_universe_versions',
+              ('active_memberships' if model == 'character'
+               else 'active_members'))
+    obj = SimpleNamespace(**{field: [row] for field in fields})
+    context = Context({model: obj})
+    # Render the real list loops without unrelated page/database dependencies.
+    loops = [node for node in template.nodelist.get_nodes_by_type(ForNode)
+             if node.sequence.token in {
+                 f'{model}.{field}' for field in fields}]
+    assert len(loops) == (3 if model == 'group' and not prefix else 4)
+    with context.bind_template(template):
+        for loop in loops:
+            rendered = loop.render(context)
+            assert SOURCE in rendered
+            assert '&lt;b&gt;literal&lt;/b&gt;' in rendered
+            assert '<strong>Membership note</strong>' not in rendered
+            assert 'href="https://example.org/source"' not in rendered
+
+
+@pytest.mark.parametrize('collection', ['open_items', 'pending_items'])
+def test_voting_notes_keep_plain_text_and_linebreaks(collection):
+    template = get_template('voting/agenda.html').template
+    item = SimpleNamespace(notes=SOURCE + '<b>x</b>')
+    context = Context({collection: [item]})
+    loop, = [node for node in template.nodelist.get_nodes_by_type(ForNode)
+             if node.sequence.token == collection]
+    with context.bind_template(template):
+        rendered = loop.render(context)
+    assert '**Membership note**' in rendered
+    assert '<br>Next line&lt;b&gt;x&lt;/b&gt;' in rendered
+    assert '<a ' not in rendered
+
+
+def test_mycomics_notes_keep_plain_text():
+    template = get_template('mycomics/collection_item.html').template
+    context = Context({'item': SimpleNamespace(notes=SOURCE + '<b>x</b>')})
+    node, = [node for node in template.nodelist.get_nodes_by_type(IfNode)
+             if node.token.contents == 'if item.notes']
+    with context.bind_template(template):
+        rendered = node.render(context)
+    assert SOURCE + '&lt;b&gt;x&lt;/b&gt;' in rendered
+    assert '<a ' not in rendered
+
+
+@pytest.mark.parametrize('prefix', ['', 'tw_'])
+def test_story_template_reprint_newlines_are_converted_once(prefix):
+    template = get_template(f'gcd/details/{prefix}single_story.html').template
+    story = Mock(reprint_notes='First\nSecond', type_id=0)
+    for manager in (story.from_all_reprints, story.to_all_reprints):
+        manager.select_related.return_value.order_by.return_value = []
+    context = Context({'story': story})
+    node, = [node for node in template.nodelist.get_nodes_by_type(VariableNode)
+             if 'show_reprints' in node.filter_expression.token]
+    with context.bind_template(template):
+        rendered = node.render(context)
+    assert 'First<br>Second' in rendered
+    assert '<br><br>' not in rendered
 
 
 @pytest.mark.parametrize('source, expected', [
@@ -72,6 +174,8 @@ def test_renderer_removes_executable_html(source):
 def test_display_sanitizes_without_preview_extension():
     rendered = render_markdown('<img src="x" onerror="alert(1)">')
     assert 'onerror' not in rendered
+
+
 
 
 @pytest.mark.parametrize('source', [
@@ -143,15 +247,17 @@ def test_reprint_comparison_preserves_plain_text():
     assert '<strong>' not in rendered
 
 
-@pytest.mark.parametrize('table_class', [
-    BrandGroupEmblemTable, BrandEmblemPublisherTable, BrandEmblemGroupTable])
-def test_brand_table_notes(table_class):
-    table = table_class([{'notes': SOURCE}])
-    rendered = table.rows[0].get_cell('notes')
-    assert '<strong>Membership note</strong>' in rendered
-    assert 'href="https://example.org/source"' in rendered
-    # Exports must retain link destinations and editable Markdown syntax.
-    assert table.rows[0].get_cell_value('notes') == SOURCE
+@pytest.mark.parametrize('table_name', [
+    'BrandGroupEmblemTable', 'BrandEmblemPublisherTable',
+    'BrandEmblemGroupTable'])
+def test_inline_brand_table_notes_remain_plain(table_name):
+    from apps.gcd.models import publisher
+    table = getattr(publisher, table_name)([{'notes': SOURCE + '<b>x</b>'}])
+    # Ordinary columns leave escaping to the table's template context.
+    cell = table.rows[0].get_cell('notes')
+    rendered = Template('{{ cell }}').render(Context({'cell': cell}))
+    assert SOURCE + '&lt;b&gt;x&lt;/b&gt;' == rendered
+    assert table.rows[0].get_cell_value('notes') == SOURCE + '<b>x</b>'
 
 
 def test_partial_handles_blocks_and_escapes_label():
@@ -254,17 +360,19 @@ def test_reprint_note_lists_stay_plain_text(surface):
         assert rendered.count('<li>') == 2
 
 
-def test_bond_notes_render_in_tracking():
+def test_bond_notes_remain_plain_in_tracking():
     series = Mock()
-    bond = SimpleNamespace(origin=series, target=None, notes=SOURCE,
-                           bond_type=SimpleNamespace(id=1))
+    bond = SimpleNamespace(
+        origin=series, target=None, notes=SOURCE + '<b>x</b>',
+        bond_type=SimpleNamespace(id=1))
     relative = SimpleNamespace(
         bond=bond, near_issue=None, near_issue_default=None,
         has_explicit_far_issue=False, far_series=Mock())
     relative.far_series.full_name_with_link.return_value = 'Another series'
     series.series_relative_bonds.return_value = [relative]
     rendered = show_series_tracking(series)
-    assert '<strong>Membership note</strong>' in rendered
+    assert SOURCE + '&lt;b&gt;x&lt;/b&gt;' in rendered
+    assert '<strong>Membership note</strong>' not in rendered
     assert '</dd></dl>' in rendered
 
 
@@ -273,7 +381,7 @@ def test_review_preview_preserves_markdown_source():
     assert '<strong>Membership note</strong>' in rendered
     assert '**Membership note**' in rendered
     assert field_value(SimpleNamespace(tracking_notes=SOURCE),
-                       'tracking_notes') == SOURCE
+                       'tracking_notes') == SOURCE.replace('\n', '<br>')
 
 
 @pytest.mark.django_db
@@ -325,52 +433,12 @@ def test_group_membership_detail_and_parent_pages(client):
         response = client.get(reverse(name, kwargs=kwargs))
         assert response.status_code == 200
         content = response.content.decode()
-        assert '<strong>Membership note</strong>' in content
-        assert 'href="https://example.org/source"' in content
-        assert '**Membership note**' not in content
+        assert '**Membership note**' in content
+        assert '<strong>Membership note</strong>' not in content
     membership.refresh_from_db()
     assert membership.notes == SOURCE
     request = RequestFactory().get('/')
     request.user = AnonymousUser()
     preview = show_group_membership(request, membership, preview=True)
-    assert '<strong>Membership note</strong>' in preview.content.decode()
-
-
-@pytest.mark.parametrize('prefix', ['', 'tw_'])
-def test_story_template_reprint_newlines_are_converted_once(prefix):
-    template = get_template(f'gcd/details/{prefix}single_story.html').template
-    story = Mock(reprint_notes='First\nSecond', type_id=0)
-    for manager in (story.from_all_reprints, story.to_all_reprints):
-        manager.select_related.return_value.order_by.return_value = []
-    context = Context({'story': story})
-    node, = [node for node in template.nodelist.get_nodes_by_type(VariableNode)
-             if 'show_reprints' in node.filter_expression.token]
-    with context.bind_template(template):
-        rendered = node.render(context)
-    assert 'First<br>Second' in rendered
-    assert '<br><br>' not in rendered
-
-
-@pytest.mark.parametrize('collection', ['open_items', 'pending_items'])
-def test_voting_notes_keep_plain_text_and_linebreaks(collection):
-    template = get_template('voting/agenda.html').template
-    item = SimpleNamespace(notes=SOURCE + '<b>x</b>')
-    context = Context({collection: [item]})
-    loop, = [node for node in template.nodelist.get_nodes_by_type(ForNode)
-             if node.sequence.token == collection]
-    with context.bind_template(template):
-        rendered = loop.render(context)
-    assert '**Membership note**' in rendered
-    assert '<br>Next line&lt;b&gt;x&lt;/b&gt;' in rendered
-    assert '<a ' not in rendered
-
-
-def test_mycomics_notes_keep_plain_text():
-    template = get_template('mycomics/collection_item.html').template
-    context = Context({'item': SimpleNamespace(notes=SOURCE + '<b>x</b>')})
-    node, = [node for node in template.nodelist.get_nodes_by_type(IfNode)
-             if node.token.contents == 'if item.notes']
-    with context.bind_template(template):
-        rendered = node.render(context)
-    assert SOURCE + '&lt;b&gt;x&lt;/b&gt;' in rendered
-    assert '<a ' not in rendered
+    assert '**Membership note**' in preview.content.decode()
+    assert '<strong>Membership note</strong>' not in preview.content.decode()

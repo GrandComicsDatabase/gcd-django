@@ -45,7 +45,7 @@
   {% endif %}
   {% if creator_non_comic_work.notes %}
             <li><span class="font-bold">Notes:</span>
-            {% include "gcd/bits/notes.html" with value=creator_non_comic_work.notes only %}
+            {{ creator_non_comic_work.notes|urlizetrunc:75|linebreaksbr }}
   {% endif %}
   {% with creator_non_comic_work.data_source.all as data_sources %}
             {% include "gcd/bits/show_sources.html" %}

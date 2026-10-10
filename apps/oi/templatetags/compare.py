@@ -1,7 +1,7 @@
 from django import template
 from diff_match_patch import diff_match_patch
 from django.conf import settings
-from django.template.defaultfilters import yesno, urlize, \
+from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
                                            pluralize
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
@@ -25,8 +25,7 @@ from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
 
-MARKDOWN_FIELDS = {'notes', 'description', 'bio', 'tracking_notes',
-                   'publication_notes'}
+MARKDOWN_FIELDS = {'notes', 'description', 'bio'}
 
 
 def valid_barcode(barcode):
@@ -180,7 +179,7 @@ def field_value(revision, field):
                 esc(story_arc.name))
         return mark_safe(story_arcs)
     elif field in ['tracking_notes', 'publication_notes']:
-        return value
+        return linebreaksbr(value)
     elif field == 'reprint_notes':
         reprint = ''
         if value.strip() != '':

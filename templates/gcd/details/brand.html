@@ -151,7 +151,7 @@ GCD :: Publisher's Brand Emblem :: {{ brand.name }}
     <td> {{ group.issue_count }} </td>
     <td> {{ group.year_began|default:"" }} </td>
     <td> {{ group.year_ended|default:"" }} </td>
-    <td> {% include "gcd/bits/notes.html" with value=group.notes only %} </td>
+    <td> {{ group.notes }} </td>
   </tr>
   {% endfor %}
 </table>
@@ -175,7 +175,7 @@ GCD :: Publisher's Brand Emblem :: {{ brand.name }}
     <td> <a href="{{ use.publisher.get_absolute_url }}">{{ use.publisher }}</a> </td>
     <td> {{ use.year_began|default:"" }} </td>
     <td> {{ use.year_ended|default:"" }} </td>
-    <td> {% include "gcd/bits/notes.html" with value=use.notes only %} </td>
+    <td> {{ use.notes }} </td>
   {% if user.is_authenticated and not MYCOMICS %}
     <td>
     {% if use|is_locked %}

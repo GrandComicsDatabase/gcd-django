@@ -50,7 +50,7 @@
             </li>
           {% if brand_use.notes %}
             <li><span class="font-bold">Notes:</span>
-              {% include "gcd/bits/notes.html" with value=brand_use.notes only %}
+              {{ brand_use.notes }}
             </li>
           {% endif %}
           </ul>

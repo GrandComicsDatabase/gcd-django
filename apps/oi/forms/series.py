@@ -2,7 +2,6 @@
 
 
 from django import forms
-from markdownx.widgets import MarkdownxWidget
 
 from .support import (
     _get_comments_form_field, _set_help_labels,
@@ -119,8 +118,8 @@ class SeriesRevisionForm(KeywordBaseForm):
             'binding': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
             'publishing_format': forms.TextInput(attrs={'class':
                                                         'w-full lg:w-4/5'}),
-            'tracking_notes': MarkdownxWidget(
-                attrs={'class': 'w-full lg:w-4/5', 'rows': '3'}),
+            'tracking_notes': forms.Textarea(attrs={'class': 'w-full lg:w-4/5',
+                                                    'rows': '3'}),
         }
         labels = {
             'has_isbn': 'Has ISBN',

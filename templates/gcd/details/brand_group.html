@@ -117,7 +117,7 @@ GCD :: Publisher's Brand Group :: {{ brand.name }}
     <td> {{ brand.issue_count }} </td>
     <td> {{ brand.year_began|default:"" }} </td>
     <td> {{ brand.year_ended|default:"" }} </td>
-    <td> {% include "gcd/bits/notes.html" with value=brand.notes only %} </td>
+    <td> {{ brand.notes }} </td>
   </tr>
 {% endfor %}
 </table>

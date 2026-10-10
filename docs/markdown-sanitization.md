@@ -1,11 +1,18 @@
 # Markdown rendering and HTML sanitization
 
-Full Notes fields and existing Markdown descriptions/biographies use
-`render_markdown()` in `apps/gcd/markdown_extension.py`. Short reprint and
-character/group appearance annotations remain plain text, escaped for HTML
-display; they do not pass through the Markdown renderer.
+Main catalog Notes edited through `BaseForm` (including its subclasses) and
+existing Markdown descriptions/biographies use `render_markdown()` in
+`apps/gcd/markdown_extension.py`. Inheritance includes Group, Printer, and
+Indicia Publisher/Printer forms. This does not enable Markdown for every field
+whose name contains "notes": series tracking/publication Notes retain their
+previous formatting.
 
-Voting and MyComics Notes retain their existing plain-text formatting.
+Inline summaries and tables retain their previous formatting even for these
+models. Other forms, including group memberships, relationships, creator
+subrecords, awards, brand uses, and series bonds, do not gain Markdown on
+detail pages or summaries. Voting, MyComics, and short appearance/reprint
+annotations also retain their previous formatting. Limited inline Markdown or
+internal-link support requires a separate product decision.
 
 ## Why sanitize?
 

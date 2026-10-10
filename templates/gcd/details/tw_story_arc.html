@@ -92,7 +92,7 @@ GCD :: Story Arc :: {{ story_arc.name }}
     <a href="{% url 'show_story_arc' story_arc_id=relation.to_story_arc.id %}">{{ relation.to_story_arc.object_page_name }}</a>
     <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">(story arc relation)</a>
       {% if relation.notes %}
-      {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
       {% endif %}
   </li>
   {% endfor %}
@@ -107,7 +107,7 @@ GCD :: Story Arc :: {{ story_arc.name }}
     <a href="{% url 'show_story_arc' story_arc_id=relation.from_story_arc.id %}">{{ relation.from_story_arc.object_page_name }}</a>
     <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">(story arc relation)</a>
       {% if relation.notes %}
-      {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
       {% endif %}
   </li>
   {% endfor %}
@@ -123,7 +123,7 @@ GCD :: Story Arc :: {{ story_arc.name }}
     <a href="{% url 'show_story_arc' story_arc_id=relation_info.0.id %}">{{ relation_info.0.object_page_name }}</a>
     <a href="{% url 'show_story_arc_relation' story_arc_relation_id=relation.id %}">({{ relation_info.1 }})</a>
       {% if relation.notes %}
-      {% include "gcd/bits/notes.html" with value=relation.notes label="Notes:" only %}
+      <br><strong>Notes: </strong>{{ relation.notes }}
       {% endif %}
   </li>
     {% endwith %}

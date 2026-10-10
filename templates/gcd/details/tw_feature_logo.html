@@ -38,7 +38,7 @@
     </li>
   {% if feature_logo.notes %}
     <li><span class="font-bold">Notes:</span>
-    {% include "gcd/bits/notes.html" with value=feature_logo.notes only %}
+    {{ feature_logo.notes|urlizetrunc:75|linebreaksbr }}
     </li>
   {% endif %}
   </ul>
