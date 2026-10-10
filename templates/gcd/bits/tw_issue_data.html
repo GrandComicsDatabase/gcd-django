@@ -19,7 +19,7 @@
   <li><span class="font-bold">Barcode:</span> {{ issue.barcode }}</li>
   <li><span class="font-bold">On-sale Date:</span> {{ issue.on_sale_date }}</li>
   <li><span class="font-bold">Rating:</span> {{ issue.rating }}</li>
-  <li><span class="font-bold">Notes:</span> {{ issue.notes }}</li>
+  <li><span class="font-bold">Notes:</span> {% include "gcd/bits/notes.html" with value=issue.notes only %}</li>
   <li><span class="font-bold">Keywords:</span> {{ issue.keywords }}</li>
   <li><span class="font-bold">Editing:</span> {{ issue.editor }}</li>
 </ul>

@@ -13,6 +13,7 @@ from taggit.managers import TaggableManager
 import django_tables2 as tables
 
 from apps.stddata.models import Language
+from django.template.defaultfilters import linebreaksbr
 
 from .gcddata import GcdData, GcdLink
 from .award import ReceivedAward
@@ -110,7 +111,7 @@ def show_title(story, use_first_line=False):
     return story.title
 
 
-def character_notes(character):
+def character_notes(character, html=False):
     notes = []
     if character.is_flashback:
         notes.append('flashback')
@@ -123,12 +124,14 @@ def character_notes(character):
         note = ' (%s)' % note
 
     if character.role:
-        note += ' (%s)' % character.role
+        note += ' (%s)' % (esc(character.role) if html else character.role)
 
     if character.notes:
-        note += ' (%s)' % character.notes
+        # Short appearance annotations are plain text, even in HTML views.
+        value = esc(character.notes) if html else character.notes
+        note += ' (%s)' % value
 
-    return note
+    return mark_safe(note) if html else note
 
 
 def _get_civilian_identity(character, appearing_characters):
@@ -413,7 +416,8 @@ def show_characters(story, url=True, css_style=True, compare=False,
                                group_universe_name if
                                group_universe_name else '',
                                ' (%s)' %
-                               group.notes if group.notes else '')
+                               esc(group.notes)
+                               if group.notes else '')
         else:
             characters += '%s%s%s [' % (group.group_name.name,
                                         ' (%s)' % group_universe_name if
@@ -465,7 +469,7 @@ def show_characters(story, url=True, css_style=True, compare=False,
                     else:
                         characters += ' (%s)' % member.universe\
                                                       .universe_name()
-            characters += character_notes(member)
+            characters += character_notes(member, html=url)
         if first_member is True:
             characters = characters[:-2]
             if url:
@@ -542,11 +546,12 @@ def show_characters(story, url=True, css_style=True, compare=False,
                 else:
                     characters += ' (%s)' % character.universe\
                                                      .universe_name()
-        characters += character_notes(character)
+        characters += character_notes(character, html=url)
 
     if story.characters:
         if url:
-            text_characters = esc(story.characters)
+            # Convert only this plain-text field; the other parts are HTML.
+            text_characters = linebreaksbr(esc(story.characters))
         else:
             text_characters = story.characters
         if characters:
@@ -689,7 +694,7 @@ class StoryCharacter(GcdData):
     notes = models.TextField()
 
     def show_notes(self):
-        return character_notes(self)
+        return character_notes(self, html=True)
 
     def __str__(self):
         return "%s: %s" % (self.story, self.character)

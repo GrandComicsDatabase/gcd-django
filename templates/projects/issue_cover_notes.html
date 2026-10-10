@@ -67,7 +67,7 @@
   </tr>
   <tr class="{{ row_classes }}">
     <td colspan="3" class="listing_publisher first_row last_row">
-      <b>Notes:</b> {{ issue.notes }}
+      <b>Notes:</b> {% include "gcd/bits/notes.html" with value=issue.notes only %}
     </td>
   </tr>
 {% endfor %}

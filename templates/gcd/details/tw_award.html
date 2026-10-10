@@ -26,7 +26,7 @@ GCD :: Award :: {{ award.name }}
         <div>
           {% if award.notes and page.number == 1 %}
           <h3>Notes:</h3>
-          {{ award.notes|urlizetrunc:75|linebreaksbr }}
+          {% include "gcd/bits/notes.html" with value=award.notes only %}
           {% endif %}
         </div>
       </div> 

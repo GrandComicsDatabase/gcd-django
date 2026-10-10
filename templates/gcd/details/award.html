@@ -26,7 +26,7 @@ GCD :: Award :: {{ award.name }}
 <dl class="pub_data">
   {% if award.notes and page.number == 1 %}
   <dt> Notes:
-  <dd> {{ award.notes|urlizetrunc:75|linebreaksbr }}
+  <dd> {% include "gcd/bits/notes.html" with value=award.notes only %}
   {% endif %}
 </dl>
 {% endblock content %}
