@@ -48,7 +48,7 @@ Allowed elements:
 
 ```text
 a abbr b blockquote br caption code dd del div dl dt em
-h1 h2 h3 h4 h5 h6 hr i img li ol p pre s span strong sub sup
+h1 h2 h3 h4 h5 h6 hr i li ol p pre s span strong sub sup
 table tbody td tfoot th thead tr ul
 ```
 
@@ -58,7 +58,6 @@ Allowed source attributes:
 | --- | --- |
 | `a` | `href`, `title` |
 | `abbr` | `title` |
-| `img` | `src`, `alt`, `title`, `width`, `height` |
 | `td` | `colspan`, `rowspan` |
 | `th` | `colspan`, `rowspan`, `scope` |
 
@@ -71,9 +70,11 @@ attributes, including `style`, `id`, `target`, and event handlers such as
 
 Explicit URL schemes are limited to `http`, `https`, and `mailto`. Relative
 links, including GCD links, are retained. URLs with schemes such as
-`javascript` or `data` are not retained as link/image destinations. This is
-HTML sanitization, not a check that a destination is trustworthy or available;
-allowed remote images can still cause the browser to fetch their sources.
+`javascript` or `data` are not retained as link destinations. This is HTML
+sanitization, not a check that a destination is trustworthy or available.
+Images are excluded, whether written as Markdown or raw HTML, in both display
+and preview. Image elements and their attributes (including alt text) are
+removed; they are not converted to text or links.
 
 ## Examples and compatibility
 
@@ -82,12 +83,14 @@ allowed remote images can still cause the browser to fetch their sources.
 | `**bold**` | Bold text is retained. |
 | `[reference](https://example.org)` | A clickable link is retained. |
 | `<a href="/issue/123/">Issue</a>` | The relative link is retained. |
-| `<img src="x" onerror="alert(1)">` | The image element is retained; its event handler is removed. |
+| `![Cover](https://example.org/cover.png)` | The image is removed. |
+| `<img src="x" onerror="alert(1)">` | The entire image element is removed. |
 | `<div style="position:fixed" onclick="alert(1)">Text</div>` | The text/container remains without the style or handler. |
 | `[click](javascript:alert%281%29)` | No executable JavaScript link destination survives. |
 
 Existing raw HTML may display differently if it relies on elements,
-attributes, or styling outside this policy. Lists, tables, images, and common
+attributes, or styling outside this policy. Existing embedded images no longer
+appear in rendered output. Lists, tables, and common
 formatting elements are allowed, but this does not add new Markdown syntax
 extensions (for example, allowing HTML tables does not enable pipe-table
 Markdown syntax).

@@ -26,11 +26,11 @@ BLOCK_TAGS = {
 }
 # Display and Markdownx previews share this allowlist. See
 # docs/markdown-sanitization.md for its scope and compatibility effects.
+# Exclude Markdown and raw HTML images from display and previews alike.
 HTML_CLEANER = nh3.Cleaner(
     tags=BLOCK_TAGS | {'a', 'abbr', 'b', 'br', 'code', 'del', 'em', 'i',
-                       'img', 's', 'span', 'strong', 'sub', 'sup'},
+                       's', 'span', 'strong', 'sub', 'sup'},
     attributes={'a': {'href', 'title'}, 'abbr': {'title'},
-                'img': {'src', 'alt', 'title', 'width', 'height'},
                 'td': {'colspan', 'rowspan'},
                 'th': {'colspan', 'rowspan', 'scope'}},
     allowed_classes={tag: set(classes.split())
@@ -82,9 +82,11 @@ class URLInlineProcessor(InlineProcessor):
 class URLExtension(Extension):
     """Add support for auto-converting URLs to links."""
     def extendMarkdown(self, md):
+        # Let Markdown protect raw HTML attributes before matching bare URLs.
+        # Otherwise removing an image can leave pieces of its src attribute.
         md.inlinePatterns.register(
             URLInlineProcessor(URL_RE, md),
-            'autolink_urls', 180)
+            'autolink_urls', 85)
 
 
 class GCDReferenceInlineProcessor(InlineProcessor):

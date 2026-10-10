@@ -174,8 +174,19 @@ def test_renderer_removes_executable_html(source):
 def test_display_sanitizes_without_preview_extension():
     rendered = render_markdown('<img src="x" onerror="alert(1)">')
     assert 'onerror' not in rendered
+    assert '<img' not in rendered
 
 
+@pytest.mark.parametrize('source', [
+    '![Cover](https://example.org/cover.png)',
+    '<img src="https://example.org/cover.png" alt="Cover" width="100">',
+])
+def test_images_are_removed_from_display_and_preview(source):
+    for rendered in (render_markdown(source), markdownify(source)):
+        assert '<img' not in rendered
+        assert 'cover.png' not in rendered
+    assert 'Before' in render_markdown('Before ' + source + ' After')
+    assert 'After' in render_markdown('Before ' + source + ' After')
 
 
 @pytest.mark.parametrize('source', [
