@@ -14,7 +14,6 @@ import apps.gcd.views.search
 import apps.gcd.views.redirect
 
 urlpatterns = [
-    path('keywords/manage/', keyword_list, name='keyword_manage'),
     path('keywords/manage/duplicates/', keyword_duplicates,
          name='keyword_manage_duplicates'),
     path('keywords/manage/<int:pk>/', keyword_detail,
@@ -635,9 +634,9 @@ urlpatterns = [
 
     # Keywords
     path('keyword/name/<str:keyword>/',
-      gcd_views.details.keywords, name='keyword_by_name'),
+      keyword_list, name='keyword_by_name'),
     path('keyword/name/',
-      gcd_views.details.keywords, name='keyword_by_name'),
+      keyword_list, name='keyword_by_name'),
     path('keyword/<str:keyword>/<str:model_name>/',
       gcd_views.details.keyword, name='show_keyword'),
     path('keyword/<str:keyword>/',

@@ -1,5 +1,6 @@
-"""Management access and rendering checks; no database is required."""
+"""Keyword list and management checks; no database is required."""
 
+from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import patch
 from urllib.parse import parse_qs
@@ -13,8 +14,20 @@ from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import reverse
 
 from apps.gcd.views.keyword_management import (
-    catalog_usage, duplicate_groups, keyword_detail, keyword_duplicates,
-    keyword_list, navigation_state, normalized_name)
+    KeywordTable, catalog_usage, duplicate_groups, keyword_detail,
+    keyword_duplicates, keyword_list, navigation_state, normalized_name)
+
+MODULE = 'apps.gcd.views.keyword_management'
+
+
+@contextmanager
+def list_view_patches():
+    """Run keyword_list without a database: the table only gets configured."""
+    with patch(MODULE + '.Tag.objects') as tags, \
+            patch(MODULE + '.KeywordTable') as table, \
+            patch(MODULE + '.RequestConfig'), \
+            patch(MODULE + '.render', return_value=HttpResponse()) as render:
+        yield SimpleNamespace(tags=tags, table=table, render=render)
 
 
 @override_settings(ALLOWED_HOSTS=['testserver'])
@@ -29,29 +42,48 @@ class KeywordManagementTests(SimpleTestCase):
             has_perms=lambda permissions: permitted)
         return request
 
-    def render_page(self, template, context):
+    def render_page(self, template, context, request=None):
         return render_to_string(template, {
             'ICON_SET_SYMBOLIC': settings.ICON_SET_SYMBOLIC,
             'ICON_SET': settings.ICON_SET,
             'user': AnonymousUser(),
             **context,
-        })
+        }, request=request)
+
+    def render_list(self, keywords, query='', usage='', detail_query='',
+                    params=None):
+        request = self.factory.get('/keyword/name/', params or {})
+        request.user = AnonymousUser()
+        table = KeywordTable(keywords, detail_query=detail_query)
+        table.paginate(page=request.GET.get('page', 1), per_page=50)
+        return self.render_page('gcd/keywords/manage.html', {
+            'table': table, 'page_obj': table.page,
+            'query': query, 'usage': usage,
+        }, request)
 
     def test_anonymous_users_are_redirected_to_login(self):
-        for view, args in ((keyword_list, ()), (keyword_detail, (1,)),
-                           (keyword_duplicates, ())):
+        for view, args in ((keyword_detail, (1,)), (keyword_duplicates, ())):
             with self.subTest(view=view.__name__):
                 response = view(self.request(authenticated=False), *args)
                 self.assertEqual(response.status_code, 302)
                 self.assertIn('next=', response.url)
 
+    def test_anonymous_users_see_used_keywords_with_public_links(self):
+        with list_view_patches() as view:
+            request = self.request(authenticated=False)
+            request.GET = self.factory.get('/', {'usage': 'unused'}).GET
+            response = keyword_list(request)
+            annotated = view.tags.all.return_value.annotate.return_value
+            annotated.filter.assert_called_once_with(usage_count__gt=0)
+            self.assertIsNone(view.table.call_args.kwargs['detail_query'])
+            self.assertEqual(view.render.call_args.args[2]['usage'], 'used')
+        self.assertEqual(response.status_code, 200)
+
     def test_authenticated_user_without_tag_permissions_can_browse(self):
-        module = 'apps.gcd.views.keyword_management'
-        with patch(module + '.Tag.objects') as tags, \
-                patch(module + '.render', return_value=HttpResponse()):
-            annotated = tags.all.return_value.annotate.return_value
-            annotated.order_by.return_value = []
+        with list_view_patches() as view:
             response = keyword_list(self.request(permitted=False))
+            self.assertEqual(view.table.call_args.kwargs['detail_query'],
+                             'origin=list&q=&usage=')
         self.assertEqual(response.status_code, 200)
         self.assertIn('no-store', response['Cache-Control'])
 
@@ -88,28 +120,30 @@ class KeywordManagementTests(SimpleTestCase):
     def test_list_escapes_names_and_links_by_id(self):
         keyword = SimpleNamespace(pk=12, name='<script>alert(1)</script>',
                                   usage_count=0)
-        html = self.render_page('gcd/keywords/manage.html', {
-            'page_obj': Paginator([keyword], 50).get_page(1),
-            'query': '', 'usage': '',
-        })
+        html = self.render_list([keyword])
         self.assertIn('&lt;script&gt;', html)
         self.assertNotIn('<script>alert(1)</script>', html)
         self.assertIn(reverse('keyword_manage_detail', args=[12]), html)
 
+    def test_public_list_links_to_the_keyword_page(self):
+        html = self.render_list(
+            [SimpleNamespace(pk=12, name='London', usage_count=3)],
+            detail_query=None)
+        self.assertIn('href="%s"' % reverse(
+            'show_keyword', kwargs={'keyword': 'London'}), html)
+        self.assertNotIn(reverse('keyword_manage_detail', args=[12]), html)
+
     def test_pagination_keeps_search_and_usage_filter(self):
-        html = self.render_page('gcd/keywords/manage.html', {
-            'page_obj': Paginator([], 50).get_page(1),
-            'query': 'London', 'usage': 'unused',
-        })
+        html = self.render_list([], query='London', usage='unused')
         self.assertIn('No keywords match these filters.', html)
         self.assertIn('value="London"', html)
 
-        page = Paginator([SimpleNamespace(pk=n, name='London', usage_count=0)
-                          for n in range(51)], 50).get_page(1)
-        html = self.render_page('gcd/keywords/manage.html', {
-            'page_obj': page, 'query': 'London & UK', 'usage': 'unused',
-        })
-        self.assertIn('q=London%20%26%20UK&amp;usage=unused&amp;page=2', html)
+        html = self.render_list(
+            [SimpleNamespace(pk=n, name='London', usage_count=0)
+             for n in range(51)], query='London & UK', usage='unused',
+            params={'q': 'London & UK', 'usage': 'unused', 'sort': 'name'})
+        self.assertIn('href="?q=London+%26+UK&amp;usage=unused&amp;sort=name'
+                      '&amp;page=2"', html)
 
     def test_unused_keyword_detail_renders_without_edit_form(self):
         html = self.render_page('gcd/keywords/detail.html', {
@@ -151,19 +185,19 @@ class KeywordManagementTests(SimpleTestCase):
             'page': ['3'], 'origin': ['duplicates'],
         })
 
-    def test_sort_is_allowlisted_and_deterministic(self):
-        module = 'apps.gcd.views.keyword_management'
-        for sort, expected in (('-usage', ('-usage_count', 'name', 'pk')),
-                               ('invalid', ('name', 'pk'))):
-            with self.subTest(sort=sort), \
-                    patch(module + '.Tag.objects') as tags, \
-                    patch(module + '.render', return_value=HttpResponse()):
-                annotated = tags.all.return_value.annotate.return_value
-                annotated.order_by.return_value = []
+    def test_list_sorts_by_table_columns_with_most_used_first(self):
+        for params, expected in (({}, '-usage_count'),
+                                 ({'sort': 'name'}, 'name')):
+            with self.subTest(params=params), list_view_patches() as view:
                 request = self.request()
-                request.GET = self.factory.get('/', {'sort': sort}).GET
+                request.GET = self.factory.get('/', params).GET
                 keyword_list(request)
-                annotated.order_by.assert_called_once_with(*expected)
+                self.assertEqual(view.table.call_args.kwargs['order_by'],
+                                 expected)
+        table = KeywordTable([], order_by='invalid')
+        self.assertEqual(list(table.order_by), [])
+        self.assertEqual(KeywordTable.base_columns['usage_count'].order_by,
+                         ('usage_count', 'name', 'pk'))
 
     def test_duplicate_template_links_to_ids_and_preserves_return_state(self):
         page = Paginator([{'key': 'london', 'members': [
@@ -203,17 +237,13 @@ class KeywordManagementTests(SimpleTestCase):
         })
 
     def test_live_search_returns_fragment_but_history_returns_full_page(self):
-        module = 'apps.gcd.views.keyword_management'
         for inline, restore, template in (
                 (False, False, 'gcd/keywords/manage.html'),
                 (True, False, 'gcd/keywords/partials/results.html'),
                 (True, True, 'gcd/keywords/manage.html')):
             with self.subTest(inline=inline, restore=restore), \
-                    patch(module + '.Tag.objects') as tags, \
-                    patch(module + '.render',
-                          return_value=HttpResponse()) as render:
-                annotated = tags.all.return_value.annotate.return_value
-                annotated.order_by.return_value = []
+                    list_view_patches() as view:
+                render = view.render
                 request = self.request()
                 if inline:
                     request.META['HTTP_HX_REQUEST'] = 'true'
@@ -266,12 +296,8 @@ class KeywordManagementTests(SimpleTestCase):
         self.assertNotIn('<html', html)
 
     def test_live_search_keeps_full_page_links_and_tailwind(self):
-        html = self.render_page('gcd/keywords/manage.html', {
-            'page_obj': Paginator([
-                SimpleNamespace(pk=12, name='London', usage_count=0)
-            ], 50).get_page(1),
-            'query': '', 'usage': '', 'sort': 'name',
-        })
+        html = self.render_list(
+            [SimpleNamespace(pk=12, name='London', usage_count=0)])
         self.assertIn('js/htmx_2_0_8.min.js', html)
         self.assertIn('js/keyword_filters.js', html)
         self.assertIn('hx-target="#keyword-results"', html)

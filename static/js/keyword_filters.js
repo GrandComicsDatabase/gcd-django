@@ -25,9 +25,10 @@
         const form = document.getElementById('keyword-filters');
         if (!form) return;
         const params = new URLSearchParams(window.location.search);
-        for (const name of ['q', 'usage', 'sort']) {
-            form.elements.namedItem(name).value = params.get(name) ||
-                (name === 'sort' ? 'name' : '');
+        // The restored results carry their own sort field.
+        for (const name of ['q', 'usage']) {
+            const field = form.elements.namedItem(name);
+            if (field) field.value = params.get(name) || '';
         }
     }
 

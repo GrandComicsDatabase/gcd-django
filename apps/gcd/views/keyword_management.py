@@ -1,4 +1,4 @@
-"""Read-only keyword management using the existing taggit tables."""
+"""Read-only keyword list and management using the existing taggit tables."""
 
 from collections import defaultdict
 from unicodedata import normalize
@@ -6,21 +6,20 @@ from urllib.parse import urlencode
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils.html import format_html
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_safe
 from django.views.decorators.vary import vary_on_headers
+import django_tables2 as tables
+from django_tables2 import RequestConfig
 from taggit.models import Tag, TaggedItem
 
+from apps.gcd.views.details import TW_SORT_TABLE_TEMPLATE
 
-SORTS = {
-    'name': ('name', 'pk'),
-    '-name': ('-name', 'pk'),
-    'usage': ('usage_count', 'name', 'pk'),
-    '-usage': ('-usage_count', 'name', 'pk'),
-}
+
 KEYWORDS_PER_PAGE = 50
 DUPLICATE_GROUPS_PER_PAGE = 20
 OBJECTS_PER_PAGE = 25
@@ -91,40 +90,74 @@ def keyword_duplicates(request):
     })
 
 
+class KeywordTable(tables.Table):
+    name = tables.Column(verbose_name='Keyword', order_by=('name', 'pk'))
+    usage_count = tables.Column(verbose_name='Usages',
+                                order_by=('usage_count', 'name', 'pk'),
+                                attrs={'th': {'class': 'text-right'},
+                                       'td': {'class': 'text-right'}})
+
+    class Meta:
+        template_name = TW_SORT_TABLE_TEMPLATE
+        order_by_field = 'sort'
+        attrs = {'class': 'w-full'}
+        empty_text = 'No keywords match these filters.'
+
+    def __init__(self, *args, detail_query=None, **kwargs):
+        self.detail_query = detail_query
+        super().__init__(*args, **kwargs)
+        self.no_export = True
+
+    def render_name(self, record):
+        if self.detail_query is None:
+            return format_html('<a href="{}">{}</a>', reverse(
+                'show_keyword', kwargs={'keyword': record.name}), record.name)
+        url = '%s?%s' % (reverse('keyword_manage_detail', args=[record.pk]),
+                         self.detail_query)
+        return format_html(
+            '<a id="keyword-{}" href="{}" hx-get="{}" hx-target="#keyword-detail"'
+            ' hx-push-url="false" hx-sync="#keyword-detail:replace"'
+            ' aria-controls="keyword-detail" aria-expanded="false">{}</a>',
+            record.pk, url, url, record.name)
+
+
 @require_safe
 @never_cache
-@login_required
 @vary_on_headers('HX-Request', 'HX-History-Restore-Request')
-def keyword_list(request):
-    query = request.GET.get('q', '').strip()
-    usage = request.GET.get('usage', '')
+def keyword_list(request, keyword=''):
+    """Public keyword list; signed-in users also see unused keywords."""
+    query = request.GET.get('q', keyword).strip()
     keywords = Tag.objects.all()
     if query:
         keywords = keywords.filter(name__icontains=query)
-    keywords = keywords.annotate(
-        usage_count=Count('taggit_taggeditem_items'))
+    # Only public catalog objects count, never private collection items.
+    keywords = keywords.annotate(usage_count=Count(
+        'taggit_taggeditem_items',
+        filter=Q(taggit_taggeditem_items__content_type__app_label='gcd')))
+    usage = request.GET.get('usage', '')
+    if not request.user.is_authenticated:
+        usage = 'used'
     if usage == 'unused':
         keywords = keywords.filter(usage_count=0)
     elif usage == 'used':
         keywords = keywords.filter(usage_count__gt=0)
     else:
         usage = ''
-    sort = request.GET.get('sort', 'name')
-    if sort not in SORTS:
-        sort = 'name'
-    page = Paginator(
-        keywords.order_by(*SORTS[sort]), KEYWORDS_PER_PAGE
-    ).get_page(request.GET.get('page'))
+    detail_query = None
+    if request.user.is_authenticated:
+        detail_query = navigation_state(request, origin='list', q=query,
+                                        usage=usage)
+    table = KeywordTable(keywords, detail_query=detail_query,
+                         order_by=request.GET.get('sort') or '-usage_count')
+    RequestConfig(request, paginate={'per_page': KEYWORDS_PER_PAGE}).configure(
+        table)
     template = ('gcd/keywords/partials/results.html' if inline_request(request)
                 else 'gcd/keywords/manage.html')
     return render(request, template, {
-        'page_obj': page,
+        'table': table,
+        'page_obj': table.page,
         'query': query,
         'usage': usage,
-        'sort': sort,
-        'detail_query': navigation_state(request, origin='list',
-                                         page=page.number, sort=sort,
-                                         q=query, usage=usage),
     })
 
 
@@ -150,7 +183,7 @@ def keyword_detail(request, pk):
                   'content_type', 'content_object')]
     origin = ('keyword_manage_duplicates'
               if request.GET.get('origin') == 'duplicates'
-              else 'keyword_manage')
+              else 'keyword_by_name')
     state = navigation_state(request)
     inline = inline_request(request)
     template = ('gcd/keywords/partials/detail.html' if inline
