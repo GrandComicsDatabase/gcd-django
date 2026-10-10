@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="flag_of_togo" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px"
+	 y="0px" width="809.016px" height="500px" viewBox="0 0 809.016 500" enable-background="new 0 0 809.016 500"
+	 xml:space="preserve">
+<path fill="#006A4E" d="M0,0h809.016v500H0V0z"/>
+<path fill="#FFCE00" d="M0,100h809.016v100H0V100z"/>
+<path fill="#D21034" d="M0,0h300v300H0V0z"/>
+<path fill="#FFCE00" d="M0,300h809.016v100H0V300z"/>
+<polygon fill="#FFFFFF" points="184.511,161.213 240.351,120.644 171.329,120.644 150,55 128.671,120.644 59.649,120.644 
+	115.489,161.213 94.16,226.856 150,186.287 205.84,226.856 "/>
+</svg>

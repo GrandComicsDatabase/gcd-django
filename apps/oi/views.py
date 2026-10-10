@@ -1778,6 +1778,10 @@ def process(request, id):
 
     if 'submit' in request.POST:
         changeset = get_object_or_404(Changeset, id=id)
+        if request.user != changeset.indexer:
+            return oi_render(
+              request, 'indexer/error.html',
+              {'error_text': 'A change may only be submitted by its author.'})
         if changeset.inline():
             revision = changeset.inline_revision()
             form_class = get_revision_form(revision, user=request.user)
@@ -1834,6 +1838,10 @@ def process_revision(request, id, model_name):
        or 'edit_importance_order' in request.POST \
        or 'create_importance_order' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
+        if request.user != revision.changeset.indexer:
+            return oi_render(
+              request, 'indexer/error.html',
+              {'error_text': 'A revision may only be saved by its author.'})
         form = get_revision_form(revision,
                                  user=request.user)(request.POST,
                                                     instance=revision)
@@ -4887,7 +4895,7 @@ def _copy_placement(existing, position, has_cover):
         'cover_position': 0 if mode == 'main' else insertion,
         'insertion': insertion,
         'state': [[r.id, r.type_id, r.sequence_number] for r in existing]
-                 if has_cover else None,
+        if has_cover else None,
     }
 
 
@@ -4914,7 +4922,8 @@ def _single_copy_context(request, issue_revision, story, position,
 def copy_cached_sequences(request, data, select_key):
     """Preview or atomically copy selected covers and stories."""
     issue_revision = get_object_or_404(
-        IssueRevision.objects.select_for_update(), id=data['issue_revision_id'])
+        IssueRevision.objects.select_for_update(),
+        id=data['issue_revision_id'])
     changeset = Changeset.objects.select_for_update().get(
         id=issue_revision.changeset_id)
     if request.user != changeset.indexer:
@@ -4941,15 +4950,16 @@ def copy_cached_sequences(request, data, select_key):
             operation_id = UUID(payload['operation_id']).hex
         except (KeyError, ValueError, TypeError, AttributeError):
             return HttpResponseBadRequest(
-                'The copy confirmation is outdated or invalid. Select the objects again.')
+              'The copy confirmation is outdated or invalid. '
+              'Select the objects again.')
         batch_key = 'story-copy:%s:%s' % (issue_revision.id, operation_id)
         batch_state = cache.get(batch_key)
         if batch_state == 'done':
             return HttpResponseRedirect(destination)
         if batch_state != 'ready':
             return HttpResponseBadRequest(
-                'This copy confirmation has expired or has already been submitted. '
-                'Check the issue before starting another copy.')
+              'This copy confirmation has expired or has already been '
+              'submitted. Check the issue before starting another copy.')
         kind, selected_ids = payload['kind'], payload['ids']
     else:
         kind = request.POST['copy_selected_cached_objects']
@@ -4971,8 +4981,10 @@ def copy_cached_sequences(request, data, select_key):
         cached_ids = get_ordered_cached_ids(request, 'cached_%s' % (
             'stories' if kind == 'story' else 'covers'))
         if not selected.issubset(set(cached_ids)):
-            return HttpResponseBadRequest('A selected object is no longer cached.')
-        story_ids = [pk for pk in cached_ids if pk in selected] if kind == 'story' else []
+            return HttpResponseBadRequest(
+              'A selected object is no longer cached.')
+        story_ids = [pk for pk in cached_ids if pk in selected] \
+            if kind == 'story' else []
         covers = set(selected) if kind == 'cover' else set()
         for choice in cover_choices:
             if not choice:
@@ -4987,19 +4999,23 @@ def copy_cached_sequences(request, data, select_key):
             covers.add(pk)
         cached_covers = get_ordered_cached_ids(request, 'cached_covers')
         if not covers.issubset(set(cached_covers)):
-            return HttpResponseBadRequest('A selected cover is no longer cached.')
+            return HttpResponseBadRequest(
+              'A selected cover is no longer cached.')
         cover_ids = [pk for pk in cached_covers if pk in covers]
         if covers.intersection(story_ids):
-            return HttpResponseBadRequest('The same object cannot be selected twice.')
+            return HttpResponseBadRequest(
+              'The same object cannot be selected twice.')
         selected_ids = cover_ids + story_ids
         if not selected_ids:
             return HttpResponseBadRequest('Select objects to copy.')
-        kind = 'mixed' if cover_ids and story_ids else 'cover' if cover_ids else 'story'
+        kind = 'mixed' if cover_ids and story_ids else 'cover' \
+            if cover_ids else 'story'
         payload = {'select_key': select_key,
                    'operation_id': uuid4().hex,
                    'issue_revision_id': issue_revision.id,
                    'kind': kind, 'ids': selected_ids, 'cover_ids': cover_ids}
-        batch_key = 'story-copy:%s:%s' % (issue_revision.id, payload['operation_id'])
+        batch_key = 'story-copy:%s:%s' % (issue_revision.id,
+                                          payload['operation_id'])
 
     cover_ids = payload.get('cover_ids', [])
     if not cover_ids and payload.get('cover_id'):
@@ -5016,24 +5032,30 @@ def copy_cached_sequences(request, data, select_key):
     by_id = {story.id: story for story in sources}
     if len(by_id) != len(selected_ids):
         return HttpResponseBadRequest(
-            'A selected object is no longer available. Select the objects again.')
+            'A selected object is no longer available. '
+            'Select the objects again.')
     stories = [by_id[pk] for pk in selected_ids]
-    actual_covers = [s.id for s in stories if s.type_id == STORY_TYPES['cover']]
+    actual_covers = [s.id for s in stories
+                     if s.type_id == STORY_TYPES['cover']]
     if any(pk not in actual_covers for pk in cover_ids):
         return HttpResponseBadRequest('A selected cover is no longer a cover.')
     cover_ids = actual_covers
     payload['cover_ids'] = cover_ids
     existing = list(issue_revision.active_stories())
-    placement = _copy_placement(existing, data.get('sequence_number'), bool(cover_ids))
-    changed = bool(confirming and cover_ids and payload.get('placement') != placement)
+    placement = _copy_placement(existing, data.get('sequence_number'),
+                                bool(cover_ids))
+    changed = bool(confirming and cover_ids and
+                   payload.get('placement') != placement)
     main_id = payload.get('main_cover_id')
     if 'main_cover' in request.POST:
         try:
             main_id = int(request.POST['main_cover'])
         except ValueError:
-            return HttpResponseBadRequest('Choose a selected cover as the main cover.')
+            return HttpResponseBadRequest(
+              'Choose a selected cover as the main cover.')
         if main_id not in cover_ids:
-            return HttpResponseBadRequest('The main cover must be one of the selected covers.')
+            return HttpResponseBadRequest(
+              'The main cover must be one of the selected covers.')
     if placement['cover_mode'] == 'main' and len(cover_ids) == 1:
         main_id = cover_ids[0]
     if placement['cover_mode'] != 'main':
@@ -5070,7 +5092,8 @@ def copy_cached_sequences(request, data, select_key):
                 'story': story, 'position': position,
                 **copy_options[story.id],
                 'copy_type': ('cover' if is_main else
-                              'cover reprint (on interior page)' if story.id in cover_ids
+                              'cover reprint (on interior page)'
+                              if story.id in cover_ids
                               else story.type.name),
             })
         return oi_render(request, 'oi/edit/confirm_copy_sequence.html', {
@@ -5083,7 +5106,8 @@ def copy_cached_sequences(request, data, select_key):
             **placement, 'copy_plan_changed': changed,
             'copy_credit_info': 'copy_credit_info' in request.POST,
             'copy_characters': 'copy_characters' in request.POST,
-            'select_key': select_key, 'sequence_number': data['sequence_number'],
+            'select_key': select_key,
+            'sequence_number': data['sequence_number'],
             'copy_batch': signing.dumps(payload, salt='copy-cached-sequences'),
         })
 
@@ -5098,7 +5122,8 @@ def copy_cached_sequences(request, data, select_key):
         story, changeset, issue_revision=issue_revision,
         **copy_options[story.id]) for story in stories]
     if placement['cover_mode'] == 'main':
-        ordered = [copied[0]] + existing[:insertion] + copied[1:] + existing[insertion:]
+        ordered = [copied[0]] + existing[:insertion] + copied[1:] + \
+                  existing[insertion:]
     else:
         ordered = existing[:insertion] + copied + existing[insertion:]
     for sequence, revision in enumerate(ordered):
@@ -5108,7 +5133,8 @@ def copy_cached_sequences(request, data, select_key):
     transaction.on_commit(lambda: cache.set(batch_key, 'done', timeout=3600))
     if len(copied) == 1:
         return HttpResponseRedirect(urlresolvers.reverse(
-            'edit_revision', kwargs={'model_name': 'story', 'id': copied[0].id}))
+            'edit_revision', kwargs={'model_name': 'story',
+                                     'id': copied[0].id}))
     return HttpResponseRedirect(destination)
 
 
@@ -5167,7 +5193,7 @@ def copy_sequence(request, issue_revision_id, story_id=None,
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit', kwargs={'id': issue_revision.changeset_id}))
         story = get_object_or_404(Story.objects.select_for_update(),
-                                 id=story_id, deleted=False)
+                                  id=story_id, deleted=False)
         existing = list(issue_revision.active_stories())
         placement = _copy_placement(existing, sequence_number,
                                     story.type_id == STORY_TYPES['cover'])
@@ -5194,7 +5220,8 @@ def copy_sequence(request, issue_revision_id, story_id=None,
         if placement['cover_mode']:
             insertion = (0 if placement['cover_mode'] == 'main'
                          else placement['insertion'])
-            ordered = existing[:insertion] + [story_revision] + existing[insertion:]
+            ordered = existing[:insertion] + [story_revision] + \
+                existing[insertion:]
             for sequence, revision in enumerate(ordered):
                 if revision.sequence_number != sequence:
                     revision.sequence_number = sequence
@@ -6228,34 +6255,50 @@ def reorder_characters(request, character_order_id):
     try:
         order_code_boundary = request.POST['order_code_boundary']
         request_post = request.POST.copy()
+        revision_characters = character_order_revision.character_revisions
+        revision_character_ids = set(
+            revision_characters.values_list('id', flat=True))
+        removed_character_ids = []
         for key in request.POST:
             if key.startswith('order_code_') and key != 'order_code_boundary':
                 value = request.POST[key]
                 if value and float(value) >= float(order_code_boundary):
                     request_post.pop(key)
                     character_id = int(key.split('_')[-1])
-                    revision_characters = character_order_revision\
-                        .character_revisions
-                    if revision_characters.filter(id=character_id).exists():
-                        revision_characters.remove(character_id)
+                    if character_id in revision_character_ids:
+                        removed_character_ids.append(character_id)
+                        revision_character_ids.remove(character_id)
+        if removed_character_ids:
+            revision_characters.remove(*removed_character_ids)
         request.POST = request_post
         characters = _process_reorder_form(request, character_order_revision,
                                            'order_code',
                                            'character', StoryCharacterRevision)
         order = 0
+        through_model = revision_characters.through
+        current_through = {
+            row.story_character_id: row
+            for row in through_model.objects.filter(
+                order=character_order_revision)
+        }
+        changed_through = []
+        new_through = []
         for character in characters:
-            revision_characters = character_order_revision.character_revisions
-            if not revision_characters.filter(id=character.id).exists():
-                revision_characters.add(character,
-                                        through_defaults={'order_code': order})
+            through_instance = current_through.get(character.id)
+            if through_instance is None:
+                new_through.append(through_model(
+                    order_id=character_order_revision.id,
+                    story_character_id=character.id,
+                    order_code=order,
+                ))
             else:
-                through_instance = revision_characters.through.objects.get(
-                    order=character_order_revision,
-                    story_character=character
-                )
                 through_instance.order_code = order
-                through_instance.save()
+                changed_through.append(through_instance)
             order += 1
+        if changed_through:
+            through_model.objects.bulk_update(changed_through, ['order_code'])
+        if new_through:
+            through_model.objects.bulk_create(new_through)
         if 'commit_and_changeset' in request.POST:
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit', kwargs={'id': changeset.id}))
