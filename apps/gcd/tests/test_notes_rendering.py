@@ -7,7 +7,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
 from django.template import Context
 from django.template.base import VariableNode
-from django.template.defaulttags import ForNode
+from django.template.defaulttags import ForNode, IfNode
 from django.template.loader import get_template, render_to_string
 from django.urls import reverse
 from django.test import RequestFactory, override_settings
@@ -362,4 +362,15 @@ def test_voting_notes_keep_plain_text_and_linebreaks(collection):
         rendered = loop.render(context)
     assert '**Membership note**' in rendered
     assert '<br>Next line&lt;b&gt;x&lt;/b&gt;' in rendered
+    assert '<a ' not in rendered
+
+
+def test_mycomics_notes_keep_plain_text():
+    template = get_template('mycomics/collection_item.html').template
+    context = Context({'item': SimpleNamespace(notes=SOURCE + '<b>x</b>')})
+    node, = [node for node in template.nodelist.get_nodes_by_type(IfNode)
+             if node.token.contents == 'if item.notes']
+    with context.bind_template(template):
+        rendered = node.render(context)
+    assert SOURCE + '&lt;b&gt;x&lt;/b&gt;' in rendered
     assert '<a ' not in rendered
