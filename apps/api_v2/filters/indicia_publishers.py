@@ -8,6 +8,7 @@ import django_filters
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
     IntegerFilter,
+    StrictBooleanFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import IndiciaPublisher
@@ -22,7 +23,7 @@ class IndiciaPublisherFilterSet(TimestampFilterSet):
     )
     parent = IntegerFilter(field_name='parent_id')
     country = django_filters.CharFilter(field_name='country__code')
-    is_surrogate = django_filters.BooleanFilter(field_name='is_surrogate')
+    is_surrogate = StrictBooleanFilter(field_name='is_surrogate')
 
     class Meta:
         """FilterSet metadata for indicia publisher filtering."""
