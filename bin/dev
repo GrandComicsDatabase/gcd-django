@@ -6,8 +6,9 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${PYTHON:-python}"
 ALLOWED_ENVIRONMENT_VARIABLES=(
-  COMPOSE_PROJECT_NAME GCD_WEB_PORT GCD_MYSQL_PORT MYSQL_DATABASE MYSQL_USER
-  MYSQL_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_HOST MYSQL_PORT
+  COMPOSE_PROJECT_NAME GCD_WEB_PORT GCD_MYSQL_PORT GCD_ELASTICSEARCH_PORT
+  GCD_SEARCH_WORKERS
+  MYSQL_DATABASE MYSQL_USER MYSQL_PASSWORD MYSQL_ROOT_PASSWORD MYSQL_HOST MYSQL_PORT
 )
 
 usage() {
@@ -22,12 +23,15 @@ Commands:
   setup [--dump ARCHIVE] [--replace --yes]
                       Create a ready-to-use local environment, optionally
                       loading a manually downloaded GCD catalog dump
+  search-up           Start the application with Elasticsearch and queued updates
+  search-rebuild [args]
+                      Start search and rebuild the Haystack index
   down                Stop the Docker stack (native has nothing to stop)
   test [pytest args]  Run the test suite
   shell               Open a Django development shell
   manage <args>       Run a Django management command
   doctor              Check the selected development environment
-  logs [service]      Follow Docker logs (db, migrate, or web)
+  logs [service]      Follow Docker logs for a core or search service
   reset --yes         Destroy Docker data, or flush the native development DB
   help                Show this command reference
 
@@ -35,6 +39,8 @@ Examples:
   ./bin/dev up
   ./bin/dev setup
   ./bin/dev setup --dump ~/Downloads/current.zip
+  ./bin/dev search-rebuild
+  ./bin/dev search-up
   ./bin/dev test apps/gcd/tests
   ./bin/dev manage createsuperuser
   ./bin/dev --runtime native up
@@ -114,6 +120,18 @@ prepare_docker_application() {
   compose up -d --wait db
 }
 
+enable_docker_search() {
+  export USE_ELASTICSEARCH=true
+  export ELASTICSEARCH_URL=http://elasticsearch:9200/
+  export REDIS_HOST=redis
+  export REDIS_PORT=6379
+}
+
+start_docker_search() {
+  enable_docker_search
+  compose --profile search up -d --build --wait
+}
+
 native_environment() {
   export DJANGO_SETTINGS_MODULE=settings_dev
   export MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
@@ -185,7 +203,7 @@ confirm_setup_replacement() {
 }
 
 fresh_docker_database() {
-  compose down --volumes
+  compose --profile search down --volumes
   compose build web
   compose up -d --wait db
   compose run --rm --no-deps web python manage.py migrate --noinput
@@ -358,9 +376,49 @@ case "$command" in
       "$PYTHON_BIN" manage.py migrate --noinput
       exec "$PYTHON_BIN" manage.py runserver "127.0.0.1:${GCD_WEB_PORT}"
     fi ;;
+  search-up)
+    if [[ "$runtime" != "docker" ]]; then
+      echo "search-up currently supports the default Docker runtime." >&2
+      exit 2
+    fi
+    require_docker
+    start_docker_search
+    echo "GCD search is available at http://127.0.0.1:${GCD_WEB_PORT}"
+    ;;
+  search-rebuild)
+    if [[ "$runtime" != "docker" ]]; then
+      echo "search-rebuild currently supports the default Docker runtime." >&2
+      exit 2
+    fi
+    require_docker
+    search_arguments=("$@")
+    has_batch_size=false
+    has_workers=false
+    for argument in "$@"; do
+      case "$argument" in
+        --batch-size|--batch-size=*) has_batch_size=true ;;
+        --workers|--workers=*) has_workers=true ;;
+      esac
+    done
+    if [[ "$has_batch_size" == false ]]; then
+      search_arguments+=(--batch-size 1000)
+    fi
+    if [[ "$has_workers" == false ]]; then
+      search_workers="${GCD_SEARCH_WORKERS:-4}"
+      if [[ ! "$search_workers" =~ ^[1-9][0-9]*$ ]]; then
+        echo "GCD_SEARCH_WORKERS must be a positive integer." >&2
+        exit 2
+      fi
+      search_arguments+=(--workers "$search_workers")
+    fi
+    start_docker_search
+    compose exec -T web python manage.py rebuild_index --noinput \
+      "${search_arguments[@]}"
+    echo "The Haystack search index is ready."
+    ;;
   down)
     if [[ "$runtime" == "docker" ]]; then
-      require_docker; compose down
+      require_docker; compose --profile search down
     else
       echo "The native runtime does not manage a background stack."
     fi ;;
@@ -405,8 +463,10 @@ case "$command" in
     fi
     require_docker
     service="${1:-web}"
-    if [[ "$service" != "db" && "$service" != "migrate" && "$service" != "web" ]]; then
-      echo "Unknown service: $service (expected db, migrate, or web)" >&2; exit 2
+    if [[ "$service" != "db" && "$service" != "migrate" && \
+          "$service" != "web" && "$service" != "elasticsearch" && \
+          "$service" != "redis" && "$service" != "worker" ]]; then
+      echo "Unknown service: $service (expected db, migrate, web, elasticsearch, redis, or worker)" >&2; exit 2
     fi
     compose logs --follow "$service" ;;
   reset)
@@ -414,7 +474,9 @@ case "$command" in
       echo "reset is destructive; rerun with: ./bin/dev reset --yes" >&2; exit 2
     fi
     if [[ "$runtime" == "docker" ]]; then
-      require_docker; compose down --volumes; compose up --build --wait
+      require_docker
+      compose --profile search down --volumes
+      compose up --build --wait
     else
       require_native_python; native_environment
       database_name="$(native_database_name)"
