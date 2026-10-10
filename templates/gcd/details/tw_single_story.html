@@ -167,7 +167,7 @@
               {% include 'gcd/bits/svg_details.html' %}
             <span class="btn-blue btn">Reprints ({{ story.reprint_count }})</span>
           </summary>
-          <dd><ul class="object-page-link-list columns-1 [&_ul]:columns-1 [&_ul]:object-page-link-list ">{{ story|show_reprints:True }}</ul></dd>
+          <dd><ul class="object-page-link-list columns-1 [&_ul]:columns-1 [&_ul]:object-page-link-list ">{{ story|show_reprints:True|linebreaksbr }}</ul></dd>
         </details>
       {% endif %}
     </dl>

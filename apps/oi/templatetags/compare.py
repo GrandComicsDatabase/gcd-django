@@ -1,5 +1,4 @@
 from django import template
-from django.template.defaultfilters import linebreaksbr
 from diff_match_patch import diff_match_patch
 from django.conf import settings
 from django.template.defaultfilters import yesno, urlize, \
@@ -187,7 +186,7 @@ def field_value(revision, field):
         if value.strip() != '':
             for string in split_reprint_string(value):
                 string = string.strip()
-                reprint += '<li> ' + linebreaksbr(esc(string)) + ' </li>'
+                reprint += '<li> ' + esc(string) + ' </li>'
             if reprint != '':
                 reprint = '<ul>' + reprint + '</ul>'
         return mark_safe(reprint)

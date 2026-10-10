@@ -5,7 +5,9 @@ import pytest
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
-from django.template.loader import render_to_string
+from django.template import Context
+from django.template.base import VariableNode
+from django.template.loader import get_template, render_to_string
 from django.urls import reverse
 from django.test import RequestFactory, override_settings
 from markdownx.utils import markdownify
@@ -238,6 +240,7 @@ def test_reprint_note_lists_stay_plain_text(surface):
     assert '<em>' not in rendered
     assert '<b>' not in rendered
     assert '<a ' not in rendered
+    assert '<br' not in rendered
     if surface != 'to':
         assert '**First** [reference](https://example.org/source)' in rendered
         assert 'Next paragraph' in rendered
@@ -292,7 +295,7 @@ def test_story_templates_convert_note_newlines_once(template_name):
     request.user = AnonymousUser()
     rendered = render_to_string(template_name, {
         'story': story, 'request': request, 'user': request.user})
-    assert 'Note first<br>\nNote second' in rendered
+    assert 'Note first<br>Note second' in rendered
     assert 'Note first<br><br>' not in rendered
     if template_name == 'gcd/details/single_story.html':
         assert 'Legacy first<br>Legacy second' in rendered
@@ -330,3 +333,18 @@ def test_group_membership_detail_and_parent_pages(client):
     request.user = AnonymousUser()
     preview = show_group_membership(request, membership, preview=True)
     assert '<strong>Membership note</strong>' in preview.content.decode()
+
+
+@pytest.mark.parametrize('prefix', ['', 'tw_'])
+def test_story_template_reprint_newlines_are_converted_once(prefix):
+    template = get_template(f'gcd/details/{prefix}single_story.html').template
+    story = Mock(reprint_notes='First\nSecond', type_id=0)
+    for manager in (story.from_all_reprints, story.to_all_reprints):
+        manager.select_related.return_value.order_by.return_value = []
+    context = Context({'story': story})
+    node, = [node for node in template.nodelist.get_nodes_by_type(VariableNode)
+             if 'show_reprints' in node.filter_expression.token]
+    with context.bind_template(template):
+        rendered = node.render(context)
+    assert 'First<br>Second' in rendered
+    assert '<br><br>' not in rendered

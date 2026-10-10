@@ -12,7 +12,6 @@ from taggit.managers import TaggableManager
 import django_tables2 as tables
 
 from apps.stddata.models import Language
-from django.template.defaultfilters import linebreaksbr
 
 from .gcddata import GcdData, GcdLink
 from .award import ReceivedAward
@@ -503,8 +502,7 @@ def show_characters(story, url=True, css_style=True, compare=False,
 
     if story.characters:
         if url:
-            # Convert only this plain-text field; the other parts are HTML.
-            text_characters = linebreaksbr(esc(story.characters))
+            text_characters = esc(story.characters)
         else:
             text_characters = story.characters
         if characters:

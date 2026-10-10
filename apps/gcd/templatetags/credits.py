@@ -2,7 +2,6 @@
 import icu
 
 from django import template
-from django.template.defaultfilters import linebreaksbr
 from django.conf import settings
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
@@ -812,8 +811,7 @@ def follow_reprint_link(reprint, direction, level=0):
             for string in split_reprint_string(reprint.origin.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('from '):
-                    reprint_note += ('<li> ' + linebreaksbr(esc(string)) +
-                                     ' </li>')
+                    reprint_note += '<li> ' + esc(string) + ' </li>'
     else:
         if type(reprint.target) is Story:
             further_reprints = reprint.target.to_all_reprints\
@@ -829,8 +827,7 @@ def follow_reprint_link(reprint, direction, level=0):
             for string in split_reprint_string(reprint.target.reprint_notes):
                 string = string.strip()
                 if string.lower().startswith('in '):
-                    reprint_note += ('<li> ' + linebreaksbr(esc(string)) +
-                                     ' </li>')
+                    reprint_note += '<li> ' + esc(string) + ' </li>'
 
     if reprint_note != '':
         reprint_note = 'which is reprinted<ul>%s</ul>' % reprint_note
@@ -865,7 +862,7 @@ def show_reprints(story, bare_value=False):
     if story.reprint_notes:
         for string in split_reprint_string(story.reprint_notes):
             string = string.strip()
-            reprint += '<li> ' + linebreaksbr(esc(string)) + ' </li>'
+            reprint += '<li> ' + esc(string) + ' </li>'
 
     if reprint != '':
         if bare_value:
