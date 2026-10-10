@@ -289,7 +289,7 @@ CHARACTER_HELP_LINKS = {
     'site': 'External_Sites',
     'description': 'Description_(Characters)',
     'notes': 'Notes_(Characters)',
-    'keywords': KEYWORDS_HELP,
+    'keywords': 'Keywords',
     'comments': 'Comments '
 }
 
@@ -300,7 +300,7 @@ GROUP_HELP_LINKS = {
     'site': 'External_Sites',
     'description': 'Description_(Characters)',
     'notes': 'Notes_(Characters)',
-    'keywords': KEYWORDS_HELP,
+    'keywords': 'Keywords',
     'comments': 'Comments '
 }
 
