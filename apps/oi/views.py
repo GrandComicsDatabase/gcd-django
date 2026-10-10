@@ -371,9 +371,9 @@ def validate_changeset_revisions(changeset, request):
             invalid.append((revision, messages))
     if changeset.change_type == CTYPES['issue'] and page_count_sum > 0:
         issue = changeset.issuerevisions.first()
-        if issue.page_count is not None and\
-           not issue.page_count_uncertain and \
-           page_count_sum > issue.page_count:
+        if (issue is not None and issue.page_count is not None and
+                not issue.page_count_uncertain and
+                page_count_sum > issue.page_count):
             invalid.append((issue,
                             ['Sum of the page count of all sequences is %d, '
                              'which exceeds the issue page count of %d.' % (
