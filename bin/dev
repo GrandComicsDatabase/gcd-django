@@ -269,6 +269,36 @@ copy_dump_catalog() {
   } | mysql_root
 }
 
+# Keywords are django-taggit rows. Tagged items point at their objects through
+# content type ids, which differ between the dump and the migrated database, so
+# they are matched by app label and model. Only catalog (gcd) objects are copied.
+copy_dump_keywords() {
+  local stage="gcd_dev_import_stage" target="$MYSQL_DATABASE"
+  if [[ "$(mysql_root_query "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${stage}' AND table_name IN ('taggit_tag', 'taggit_taggeditem', 'django_content_type');")" != "3" ]]; then
+    echo "The dump has no keyword tables; keywords are not copied."
+    return
+  fi
+  mysql_root <<SQL
+SET FOREIGN_KEY_CHECKS=0;
+DELETE FROM ${target}.taggit_taggeditem;
+DELETE FROM ${target}.taggit_tag;
+INSERT INTO ${target}.taggit_tag (id, name, slug)
+  SELECT id, name, slug FROM ${stage}.taggit_tag;
+INSERT INTO ${target}.taggit_taggeditem (id, tag_id, object_id, content_type_id)
+  SELECT item.id, item.tag_id, item.object_id, target_type.id
+  FROM ${stage}.taggit_taggeditem AS item
+  JOIN ${stage}.django_content_type AS source_type
+    ON source_type.id = item.content_type_id
+  JOIN ${target}.django_content_type AS target_type
+    ON target_type.app_label = source_type.app_label
+   AND target_type.model = source_type.model
+  WHERE source_type.app_label = 'gcd';
+ALTER TABLE ${target}.taggit_tag AUTO_INCREMENT = 1;
+ALTER TABLE ${target}.taggit_taggeditem AUTO_INCREMENT = 1;
+SET FOREIGN_KEY_CHECKS=1;
+SQL
+}
+
 setup_dump_database() {
   local archive="$1"
   validate_dump_archive "$archive"
@@ -278,6 +308,8 @@ setup_dump_database() {
   validate_dump_schema
   echo "Copying compatible catalog data into the migrated development database..."
   copy_dump_catalog
+  echo "Copying keywords of catalog records..."
+  copy_dump_keywords
   mysql_root_query 'DROP DATABASE gcd_dev_import_stage;'
 }
 
