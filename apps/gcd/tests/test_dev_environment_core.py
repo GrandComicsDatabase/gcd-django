@@ -137,6 +137,19 @@ def test_dev_launcher_allows_long_catalog_column_lists():
         in launcher
 
 
+def test_dev_launcher_copies_catalog_keywords_by_content_type():
+    """Dump keywords are linked through matching content types, not raw ids."""
+    launcher = _read_project_file('bin/dev')
+    setup_body = launcher.split('setup_dump_database() {', 1)[1]
+    assert setup_body.index('copy_dump_catalog') < \
+        setup_body.index('copy_dump_keywords')
+    keywords = launcher.split('copy_dump_keywords() {', 1)[1] \
+        .split('setup_dump_database() {', 1)[0]
+    assert 'target_type.app_label = source_type.app_label' in keywords
+    assert 'target_type.model = source_type.model' in keywords
+    assert "WHERE source_type.app_label = 'gcd'" in keywords
+
+
 def test_dev_launcher_handles_crlf_dotenv_and_native_database_overrides():
     """The .env parser supports Windows endings and native DB configuration."""
     launcher = _read_project_file('bin/dev')
