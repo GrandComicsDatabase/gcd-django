@@ -58,13 +58,14 @@ def _create_series(
     name,
     publication_type,
     publisher,
+    sort_name=None,
     year_began,
     year_ended=None,
 ):
     """Create a minimal series row for filter tests."""
     return Series.objects.create(
         name=name,
-        sort_name=name,
+        sort_name=sort_name or name,
         year_began=year_began,
         year_ended=year_ended,
         publication_dates='1990 - present',
@@ -103,6 +104,213 @@ def test_series_filter_matches_name_icontains(
 
     qs = SeriesFilterSet(
         {'name': 'batman'},
+        queryset=Series.objects.all(),
+    ).qs
+
+    assert list(qs) == [matching]
+
+
+def test_series_search_ranks_matches_deterministically(
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """Search ranks exact, prefix, token-prefix, then substring matches."""
+    exact_later = _create_series(
+        country=country,
+        language=language,
+        name='BATMAN',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        sort_name='Batman',
+        year_began=2000,
+    )
+    exact_earlier = _create_series(
+        country=country,
+        language=language,
+        name='Batman',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        sort_name='Batman',
+        year_began=1940,
+    )
+    prefix_first = _create_series(
+        country=country,
+        language=language,
+        name='Batman Adventures',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        sort_name='Batman Adventures',
+        year_began=1992,
+    )
+    prefix_second = _create_series(
+        country=country,
+        language=language,
+        name='Batman Beyond',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        sort_name='Batman Beyond',
+        year_began=1999,
+    )
+    token_prefix = _create_series(
+        country=country,
+        language=language,
+        name='The Batman Chronicles',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1995,
+    )
+    substring = _create_series(
+        country=country,
+        language=language,
+        name='Combatman',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1962,
+    )
+    _create_series(
+        country=country,
+        language=language,
+        name='Båtman',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1966,
+    )
+
+    qs = SeriesFilterSet(
+        {'search': 'batman'},
+        queryset=Series.objects.all(),
+    ).qs
+
+    assert list(qs) == [
+        exact_earlier,
+        exact_later,
+        prefix_first,
+        prefix_second,
+        token_prefix,
+        substring,
+    ]
+
+
+def test_series_search_normalizes_query_whitespace(
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """Search ignores query case and trims and collapses whitespace."""
+    exact = _create_series(
+        country=country,
+        language=language,
+        name='Batman Adventures',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1992,
+    )
+    prefix = _create_series(
+        country=country,
+        language=language,
+        name='Batman Adventures Continued',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1993,
+    )
+
+    qs = SeriesFilterSet(
+        {'search': '  batman   ADVENTURES  '},
+        queryset=Series.objects.all(),
+    ).qs
+
+    assert list(qs) == [exact, prefix]
+
+
+def test_series_search_treats_punctuation_as_literal_text(
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """Regex punctuation in a query cannot change token matching."""
+    exact = _create_series(
+        country=country,
+        language=language,
+        name='C++',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1995,
+    )
+    token_prefix = _create_series(
+        country=country,
+        language=language,
+        name='Learn C++ Today',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1996,
+    )
+    _create_series(
+        country=country,
+        language=language,
+        name='CCCC',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1997,
+    )
+
+    qs = SeriesFilterSet(
+        {'search': 'C++'},
+        queryset=Series.objects.all(),
+    ).qs
+
+    assert list(qs) == [exact, token_prefix]
+
+
+def test_series_search_combines_with_existing_filters(
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """Ranked search composes with existing exact filters."""
+    other_publisher = Publisher.objects.create(
+        name='Other Publisher',
+        year_began=1940,
+        notes='',
+        country=country,
+    )
+    matching = _create_series(
+        country=country,
+        language=language,
+        name='Batman',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1940,
+    )
+    _create_series(
+        country=country,
+        language=language,
+        name='Batman',
+        publication_type=series_publication_type,
+        publisher=other_publisher,
+        year_began=1940,
+    )
+    _create_series(
+        country=country,
+        language=language,
+        name='Batman Adventures',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1992,
+    )
+
+    qs = SeriesFilterSet(
+        {
+            'search': 'Batman',
+            'publisher': str(publisher.pk),
+            'year_began': '1940',
+            'country': country.code,
+            'language': language.code,
+        },
         queryset=Series.objects.all(),
     ).qs
 
