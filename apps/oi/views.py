@@ -700,6 +700,10 @@ def _display_edit_form(request, changeset, form, revision=None,
     }
     if extra_forms:
         context_vars.update(extra_forms)
+    if template == 'oi/edit/changeset.html' and \
+       changeset.issuerevisions.exists():
+        from apps.oi.sequence_workbench import workbench_context
+        context_vars.update(workbench_context(changeset))
     response = oi_render(request, template, context_vars)
     response['Cache-Control'] = "no-cache, no-store," \
                                 " max-age=0, must-revalidate"

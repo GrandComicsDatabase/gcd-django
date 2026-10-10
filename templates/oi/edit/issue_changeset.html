@@ -1,344 +1,112 @@
-{% load credits %}
-{% load display %}
-{% load compare %}
+{% load static display %}
+{% with btn="inline-block rounded-md bg-stone-200 px-4 py-2 text-center font-semibold text-black visited:text-black hover:bg-stone-300 hover:no-underline" %}
+{{ sequence_workbench|json_script:"sequence-workbench-data" }}
+<div id="sequence-workbench" data-add-url="{% url 'add_changeset_sequence' id=changeset.id %}" data-save-url="{% url 'save_changeset_sequences' id=changeset.id %}" data-autocomplete-url="{% url 'feature_name_autocomplete' %}" class="min-w-0 space-y-6">
+  <p data-error role="alert" class="hidden rounded-md border border-red-300 bg-red-50 p-3 text-red-800"></p>
 
-
-{% for issue_revision in changeset.issuerevisions.all %}
-<div class="sm:w-3/4 2xl:w-1/2 border border-gray-300">
-  <div class="ps-1 flex justify-between border border-gray-300">
-    <div class="flex items-center">
-  {% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}
-      <a href="{{ issue_revision.series.get_absolute_url }}">
-  {% endif %}
-    {{ issue_revision.full_name }}
-  {% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}
-      </a>
-  {% endif %}
-  {% if issue_revision.variant_of %}
-    (variant of {{ issue_revision.variant_of }})
-  {% endif %}
-    </div>
-    <div class="sm:flex sm:items-center">
-  {% if issue_revision.old_credits %}
-    <form class="sm:inline-block" action="{% url 'migrate_issue_revision' id=issue_revision.id %}" method="POST">
-      {% csrf_token %}
-      <button class="btn-blue-editing"><input type="submit" value="Migrate Editing" class="text-red-600"></button>
-    </form>
-  {% endif %}
-    <form class="sm:inline-block" method="GET"
-          action="{% url 'edit_revision' model_name='issue' id=issue_revision.id %}">
-      <button class="btn-blue-editing"><input type="submit" id="edit_issue_{{ issue_revision.id }}"
-           name="edit_issue_{{ issue_revision.id }}" value="Edit Issue Fields"></button>
-    </form>
-    </div>
-  </div>
-
-  {% if issue_revision.variant_of or issue_revision.issue.get_prev_next_issue.0 or issue_revision.after %}
-  <div class="flex justify-between border border-gray-300">
-    <div>
-    {% if issue_revision.issue.get_prev_next_issue.0 %}
-      <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">
-        <button class="btn-blue-editing inline no-underline">Compare With & Copy From Preceding Issue</button>
-      </a>
-    {% elif issue_revision.after and not issue_revision.variant_of %}
-      <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">
-        <button class="btn-blue-editing inline">Compare With & Copy From Preceding Issue</button>
-      </a>
-    {% elif issue_revision.variant_of and issue_revision.variant_of.get_prev_next_issue.0 %}
-      <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.get_prev_next_issue.0.id %}">
-        <button class="btn-blue-editing inline">Compare With & Copy From Preceding Issue</button>
-      </a>
-    {% endif %}
-    </div>
-    <div>
-    {% if issue_revision.variant_of %}
-      <a class="hover:no-underline" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.id %}">
-        <button class="btn-blue-editing inline">Compare With & Copy From Base Issue</button>
-      </a>
-      {% endif %}
-    </div>
-  </div>
-  {% endif %}
-
-  {% if issue_revision.variant_of and issue_revision.ordered_story_revisions.count > 0 %}
-  <div class="border border-gray-300">
-    <div class="my-1 px-1">
-      A cover sequence exists for the cover artwork, which is different between variant and base. <br>
-      Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
-    </div>
-  </div>
-  {% else %}
-    {% if issue_revision.issue or issue_revision.variant_of %}
-      {% if not issue_revision.variant_of or issue_revision.variant_cover_status is 3 %}
-  <div class="border border-gray-300">
-    <form class="changeset" method="GET"
-          action="{% url 'add_story' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
-      <div class="flex justify-between">
-        <div class="flex items-center">
-          <button class="btn-blue-editing inline mt-1"><input type="submit" id="add_story" name="add" value="Add Sequence"></button>
-        {% if issue_revision.variant_of %}
-          {% if issue_revision.issue %}
-          <button class="btn-blue-editing inline"><input type="submit" id="copy_cover" name="copy_cover" value="Copy Cover Sequence"></button>
-          {% endif %}
-          <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
-        {% else %}
-          <button class="btn-blue-editing inline" type="submit" id="copy_story" name="copy">Copy Sequence</button>
-        {% endif %}
-        </div>
-        {% if not issue_revision.variant_of %}
-        <div class="my-1">
-          sequence number (1.5 will go between 1 &amp; 2; -1 will go before 0)
-          <input type="text" size="4" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
-        </div>
-        {% endif %}
+  {% for issue_revision in changeset.issuerevisions.all %}
+  <section data-issue="{{ issue_revision.id }}" data-language="{{ issue_revision.series.language.code }}" class="rounded-lg border border-gray-300 bg-white shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-4">
+      <div>
+        <h2 class="text-2xl font-bold">{% if issue_revision.issue and issue_revision.series != issue_revision.issue.series %}<a href="{{ issue_revision.series.get_absolute_url }}">{{ issue_revision.full_name }}</a>{% else %}{{ issue_revision.full_name }}{% endif %}</h2>
+        {% if issue_revision.variant_of %}<p class="text-sm text-gray-500">Variant of {{ issue_revision.variant_of }}</p>{% endif %}
       </div>
-    </form>
-        {% if issue_revision.variant_of %}
-    <div class="px-1">
-      A cover sequence can be added in case the cover artwork is different between variant and base. <br>
-    Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.
-    </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <a class="rounded-md bg-blue-700 px-4 py-2 font-semibold text-white visited:text-white hover:bg-blue-800 hover:no-underline" href="{% url 'edit_revision' model_name='issue' id=issue_revision.id %}">Edit Issue Fields</a>
+        {% if issue_revision.old_credits %}
+        <form method="POST" action="{% url 'migrate_issue_revision' id=issue_revision.id %}">{% csrf_token %}<button class="{{ btn }}"><span class="text-red-600">Migrate Editing</span></button></form>
         {% endif %}
-  </div>
+        {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}<a class="{{ btn }}" href="{% url 'add_variant_to_issue_revision' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">Add Variant Issue</a>{% endif %}
+      </div>
+    </div>
+    {% if issue_revision.issue.get_prev_next_issue.0 or issue_revision.after and not issue_revision.variant_of or issue_revision.variant_of %}
+    <div class="flex flex-wrap gap-3 border-b border-gray-200 p-3">
+      {% if issue_revision.issue.get_prev_next_issue.0 %}
+      <a class="{{ btn }}" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.issue.get_prev_next_issue.0.id %}">Compare With &amp; Copy From Preceding Issue</a>
+      {% elif issue_revision.after and not issue_revision.variant_of %}
+      <a class="{{ btn }}" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.after.id %}">Compare With &amp; Copy From Preceding Issue</a>
+      {% elif issue_revision.variant_of.get_prev_next_issue.0 %}
+      <a class="{{ btn }}" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.get_prev_next_issue.0.id %}">Compare With &amp; Copy From Preceding Issue</a>
       {% endif %}
+      {% if issue_revision.variant_of %}
+      <a class="{{ btn }}" href="{% url 'compare_issues_copy' issue_revision_id=issue_revision.id issue_id=issue_revision.variant_of.id %}">Compare With &amp; Copy From Base Issue</a>
+      {% endif %}
+    </div>
     {% endif %}
-  {% endif %}
+    {% if issue_revision.variant_of %}
+    <p class="border-b border-gray-200 p-3 text-sm text-gray-600">A cover sequence can be added in case the cover artwork is different between variant and base. Changes between variant and base besides the cover are so far not supported, while some changes can be captured in the notes.</p>
+    {% endif %}
+    <div class="min-w-0">
+      <table class="block w-full text-left text-sm lg:table lg:table-fixed">
+        <colgroup class="hidden lg:table-column-group"><col class="w-56"><col><col class="w-[20%]"><col class="w-[15%]"><col class="w-[7%]"><col class="w-[9%]"><col class="w-[8%]"></colgroup>
+        <caption class="sr-only">Editable sequences for {{ issue_revision.full_name }}</caption>
+        <thead class="hidden border-b border-gray-200 bg-gray-50 text-xs uppercase text-gray-600 lg:table-header-group"><tr>
+          <th scope="col" class="min-w-0 p-1"><span class="sr-only">Sequence number and actions</span></th><th scope="col" class="min-w-0 p-1">Title</th><th scope="col" class="min-w-0 p-1">Feature</th><th scope="col" class="min-w-0 p-1">Type</th><th scope="col" class="min-w-0 p-1">Pages</th><th scope="col" class="min-w-0 p-1">Range</th><th scope="col" class="min-w-0 p-1">Creators</th>
+        </tr></thead>
+        <tbody class="block lg:table-row-group">
+        {% for story in issue_revision.ordered_story_revisions %}
+          {% include "oi/bits/sequence_row.html" %}
+        {% empty %}<tr data-empty><td colspan="7" class="p-8 text-center text-gray-500">No sequences yet. Add a sequence or drop an import file below.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 p-4 text-sm"><span data-total class="font-semibold" aria-live="polite"></span><span data-page-check class="text-gray-600"></span></div>
 
-  {% if issue_revision.source and issue_revision.story_set.count > 1 or issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
-  <div class="flex justify-between border border-gray-300">
-    {% if issue_revision.source and issue_revision.story_set.count > 1 %}
-    <form method="GET"
-          action="{% url 'reorder_stories' issue_id=issue_revision.source.id changeset_id=changeset.id %}">
-      <button class="btn-blue-editing inline"><input type="submit" id="reorder_issue_{{ issue.id }}"
-           name="reorder_issue_{{ issue.id }}"
-           value="Reorder Issue Sequences"></button>
-    </form>
-    {% else %}
-    <div></div>
-    {% endif %}
-    {% if issue_revision.issue and not issue_revision.variant_of and changeset.issuerevisions.count == 1 and changeset.reprintrevisions.count == 0 %}
-    <form method="GET"
-          action="{% url 'add_variant_to_issue_revision' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
-      <button class="btn-blue-editing"><input type="submit" id="add_variant_to_issue_revision_{{ issue_revision.id }}"
-           name="add_variant_to_issue_revision_{{ issue_revision.id }}"
-           value="Add Variant Issue"></button>
-    </form>
-    {% endif %}
-  </div>
-  {% endif %}
-
-  {% if issue_revision.source and changeset.change_type == CTYPES.issue %}
-  <div class="flex justify-between border border-gray-300">
-    <form method="GET"
-          action="{% url 'list_issue_reprints' id=issue_revision.id %}">
-      <button  class="btn-blue-editing"><input type="submit" id="list_reprints_{{ issue_revision.id }}"
-           name="list_issue_reprints_{{ issue_revision.id }}" value="Edit Issue & Sequence Reprint Links"></button>
-    </form>
-    {% if issue_revision.can_add_reprints %}
-      <form method="GET"
-            action="{% url 'add_issue_reprint' issue_id=issue_revision.id changeset_id=changeset.id %}">
-        <button class="btn-blue-editing"><input type="submit" value="Add Reprint"></button>
+    <div class="flex flex-wrap items-center gap-3 border-t border-gray-200 p-3">
+      {% if issue_revision.issue or issue_revision.variant_of %}
+        {% if not issue_revision.variant_of or issue_revision.variant_cover_status == 3 and not issue_revision.ordered_story_revisions.count %}
+      <form class="flex flex-wrap gap-3" method="GET" action="{% url 'add_story' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
+        <input type="hidden" name="added_sequence_number" data-next-sequence value="{{ issue_revision.next_sequence_number }}">
+        <button type="button" data-add-sequence class="rounded-md bg-blue-700 px-4 py-2 font-semibold text-white hover:bg-blue-800">+ Add Sequence</button>
+        {% if not issue_revision.variant_of %}<button type="submit" name="copy" class="{{ btn }}">Copy Sequences</button>
+        {% elif issue_revision.issue %}<button type="submit" name="copy_cover" class="{{ btn }}">Copy Cover Sequence</button>{% endif %}
       </form>
-    {% endif %}
-  </div>
-  {% endif %}
-  <form method="GET" action="{% url 'move_issue' issue_revision_id=issue_revision.id series_id=0 %}">
-    <div class="my-1">
-      <button class="btn-blue-editing inline"><input type="submit" value="Move To Series With ID"></button>
-        <input type="text" title="Enter the id of the series from its url: www.comics.org/series/#id" name="series_id" size="7"> 
-    <span class="px-1">brand/indicia publisher values might reset</span>
-    </div>
-  </form>
-</div>
-{% endfor %}
-
-{% if changeset.change_type == CTYPES.variant_add or changeset.change_type == CTYPES.two_issues %}
-  {% if changeset.coverrevisions.count %}
-    {% for cover in changeset.coverrevisions.all %}
-<div class="mt-2">
-      {{ cover.cover|cover_image_tag:'1, moved_cover' }}
-Cover is moved from {{ cover.issue }}.
-  <form action="{% url 'undo_move_cover' id=changeset.id cover_id=cover.id %}" method="POST">
-      {% csrf_token %}
-    <button class="btn-blue-editing inline"><input type="submit" value="Undo Cover Move"></button>
-  </form>
-</div>
-    {% endfor %}
-  {% endif %}
-  {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}
-<div class="my-2 ">
-  <form action="{% url 'move_cover' id=changeset.id %}" method="GET">
-    <button class="btn-blue-editing inline"><input type="submit" value="Move Covers Between Both Issues"></button>
-  </form>
-</div>
-  {% endif %}
-{% endif %} <!-- variant_add or two_issues -->
-
-{% if changeset.storyrevisions.count %}
-  {% for issuerevision in changeset.issuerevisions.all %}
-    {% if changeset.issuerevisions.count > 1 %}
-      {{ issuerevision.full_name }}
-      {% if issuerevision.story_set.count == 0 %}
-<p>No stories for this issue/variant.</p>
-      {% endif %}
-    {% endif %}
-<table class="border border-gray-300 mt-2">
-  <tbody>
-    {% for story in issuerevision.ordered_story_revisions %}
-    <tr class="max-sm:flex max-sm:flex-col border-y border-gray-300{% if story.deleted %} bg-red-400 {% endif %}">
-      <td class="px-1">{{ story|show_story_short }}</td>
-      <td class="w-24">{{ story|show_credit_status }}</td>
-      <td class="flex">
-      {% if not story.deleted %}
-        <form method="GET"
-              action="{% url 'edit_revision' model_name='story' id=story.id %}">
-          <button class="btn-blue-editing inline"><input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
-                value="Edit"></button>
-        </form>
-        <form method="GET"
-              action="{% url 'story_select_compare' story_revision_id=story.id  %}">
-          <button class="btn-blue-editing inline"><input type="submit" id="edit_{{ story.id }}" name="edit_{{ story.id }}"
-                value="Compare & Copy"></button>
-        </form>
-        {% if changeset.change_type == CTYPES.issue %}
-        <form method="GET"
-              action="{% url 'add_story_reprint' story_id=story.id changeset_id=changeset.id reprint_note=story.reprint_notes|default:" "|urlencode %}">
-          <button class="btn-blue-editing inline"><input type="submit" id="reprint_{{ story.id }}" name="reprint_{{ story.id }}"
-                value="Add Reprint"></button>
-        </form>
-        {% endif %}
-        {% if not story.story and not story.has_reprint_revisions %}
-        <form method="GET"
-              action="{% url 'remove_story_revision' id=story.id %}">
-          <button class="btn-blue-editing inline"><input type="submit" id="remove_{{ story.id }}" name="remove_{{ story.id }}"
-                value="Remove New Sequence"></button>
-        </form>
-        {% else %}
-          {% if story.issue %}
-            {% comment %}
-                Only allow deletes when assigned to the original issue in
-                the changeset. Relevant if a story is moved between two
-                issues. story.issue becomes None in an active changeset
-                in such a case, therefore used as a conditional.
-                Reconsider once we are working on moves in general, and not
-                just issue variants.
-            {% endcomment %}
-            {% if story.deletable %}
-        <form method="POST"
-              action="{% url "toggle_delete_story_revision" id=story.id %}">
-                {% csrf_token %}
-          <button class="btn-blue-editing inline"><input type="submit" value="Mark To Delete"></button>
-        </form>
-            {% endif %}
-          {% endif %}
-        {% endif %}
-        {% if story.moveable %}
-        <form method="POST"
-              action="{% url 'move_story_revision' id=story.id %}">
-            {% csrf_token %}
-          <button class="btn-blue-editing inline"><input type="submit" id="move_{{ story.id }}" name="move_{{ story.id }}"
-                value="Move To Other Issue"></button>
-        </form>
-        {% endif %}
-        {% if story.old_credits %}
-        <form method="POST"
-              action="{% url 'migrate_story_revision' id=story.id %}">
-          {% csrf_token %}
-          <button class="btn-blue-editing inline"><input type="submit" value="Migrate Credits" class="text-red-600"></button>
-        </form>
-        {% endif %}
-      {% else %}
-        {% if issuerevision.variant_cover_status == 3 %}
-        <form class="story_button" method="POST"
-              action="{% url 'toggle_delete_story_revision' id=story.id %}">
-          {% csrf_token %}
-          <button class="btn-blue-editing inline"><input type="submit" value="Restore"></button>
-        </form>
         {% endif %}
       {% endif %}
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-  {% endfor %}
-
-  {% if changeset.issuerevisions.count == 1 and not changeset.issuerevisions.get.variant_of %}
-    {% with issue_revision=changeset.issuerevisions.get %}
-<form class="border border-gray-300 w-fit pe-1 mt-2" method="GET"
-    action="{% url 'copy_story_revision' issue_revision_id=issue_revision.id changeset_id=changeset.id %}">
-  <div class="flex items-center w-auto">
-    <button class="btn-blue-editing inline"><input type="submit" id="copy_story_revision" name="copy_story_revision" value="Copy Sequence"></button>
-    <div class="my-1">
-    &nbsp;number of sequence to copy
-    <input type="text" size="4" id="copied_sequence_number" name="copied_sequence_number" value="">
-    </div>
-  </div>
-</form>
-    {% endwith %}
-  {% endif %}
-{% endif %} <!-- changeset.storyrevisions.count -->
-
-{% with changeset.issuerevisions.all.0 as issue_revision %}
-  {% if issue_revision.issue and not issue_revision.variant_of %}
-<table class="border border-gray-300 mt-2">
-    {% if not changeset.storyrevisions.count %}
-  <tr class="max-sm:flex max-sm:flex-col border border-gray-300">
-    <form class="" method="POST" enctype="multipart/form-data"
-                  action="{% url 'import_issue' issue_id=issue_revision.source.id changeset_id=changeset.id %}">
+      {% if issue_revision.source and changeset.change_type == CTYPES.issue %}
+      <a class="{{ btn }}" href="{% url 'list_issue_reprints' id=issue_revision.id %}">Edit Issue &amp; Sequence Reprint Links</a>
+        {% if issue_revision.can_add_reprints %}<a class="{{ btn }}" href="{% url 'add_issue_reprint' issue_id=issue_revision.id changeset_id=changeset.id %}">Add Reprint</a>{% endif %}
+      {% endif %}
+      <form data-migrate-credits method="POST" action="{% url 'migrate_all_sequence_credits' id=changeset.id %}">
         {% csrf_token %}
-      <td>
-        Select file: <input type="file" name="flatfile">
-      </td>
-      <td>
-        <button><input class="btn-blue-editing inline" type="submit" name="tab" value="Import Issue (TSV)"></button>
-      </td>
-      <td>
-        <button><input class="btn-blue-editing inline" type="submit" name="csv" value="Import Issue (CSV)"></button>
-      </td>
-      <td>
-        <button><input class="btn-blue-editing inline" type="submit" name="json" value="Import Issue (JSON)"></button>
-      </td>
-      <td>
-        <button><input class="btn-blue-editing inline" type="submit" name="yaml" value="Import Issue (YAML)"></button>
-      </td>
-    </form>
-  </tr>
-
-  {% endif %}
-  <tr class="border border-gray-300 max-sm:flex max-sm:flex-col">
-    <form class="changeset" method="POST" enctype="multipart/form-data"
-         action="{% url 'import_stories' issue_id=issue_revision.source.id changeset_id=changeset.id %}">
-    {% csrf_token %}
-      <td>
-        Select file: <input type="file" name="flatfile">
-      </td>
-      <td>
-        <button><input class="btn-blue-editing inline" type="submit" name="tab" value="Import Sequences (TSV)"></button>
-      </td>
-      <td>
-        <button><input class="btn-blue-editing inline" type="submit" name="csv" value="Import Sequences (CSV)"></button>
-      </td>
-      <td>
-        <button><input class="btn-blue-editing inline" type="submit" name="json" value="Import Sequences (JSON)"></button>
-      </td>
-      <td>
-        <button><input class="btn-blue-editing inline" type="submit" name="yaml" value="Import Sequences (YAML)"></button>
-      </td>
-    </form>
-  </tr>
-  <tr>
-    <td colspan="5">
-      <a class="new_window" href="https://docs.comics.org/wiki/Indexing_Offline" target="_blank">Information</a> about the file format for imports.
-    </td>
-  </tr>
-</table>
-  {% endif %}
+        <button type="submit" class="{{ btn }}"><span class="text-red-600">Migrate all credits <span data-migration-count></span></span></button>
+      </form>
+    </div>
+    <div class="space-y-3 border-t border-gray-200 p-4">
+      {% if issue_revision.issue and not issue_revision.variant_of %}
+        {% if not changeset.storyrevisions.count %}
+      <form data-import method="POST" enctype="multipart/form-data" action="{% url 'import_issue' issue_id=issue_revision.issue.id changeset_id=changeset.id %}" class="w-full min-w-0">
+        {% csrf_token %}
+        <label data-dropzone class="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-center hover:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+          <span class="block text-sm font-semibold">Import issue: drop file here or click to browse</span>
+          <span class="block text-xs text-gray-500">Issue fields and sequences from CSV / TSV / JSON / YAML</span>
+          <input type="file" name="flatfile" accept=".csv,.tsv,.json,.yaml,.yml" class="sr-only" aria-label="Import issue from CSV, TSV, JSON or YAML">
+        </label>
+      </form>
+        {% endif %}
+      <form data-import method="POST" enctype="multipart/form-data" action="{% url 'import_stories' issue_id=issue_revision.issue.id changeset_id=changeset.id %}" class="w-full min-w-0">
+        {% csrf_token %}
+        <label data-dropzone class="block cursor-pointer rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-center hover:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+          <span class="block text-sm font-semibold">Drop file here or click to browse</span>
+          <span class="block text-xs text-gray-500">Import sequences from CSV / TSV / JSON / YAML</span>
+          <input type="file" name="flatfile" accept=".csv,.tsv,.json,.yaml,.yml" class="sr-only" aria-label="Import sequences from CSV, TSV, JSON or YAML">
+        </label>
+      </form>
+      <a class="text-xs underline" href="https://docs.comics.org/wiki/Indexing_Offline" target="_blank" rel="noopener">File format guide</a>
+      {% endif %}
+      <form class="flex flex-wrap items-center gap-2" method="GET" action="{% url 'move_issue' issue_revision_id=issue_revision.id series_id=0 %}">
+        <label for="move-series-{{ issue_revision.id }}" class="text-sm">Move to Series ID</label>
+        <input id="move-series-{{ issue_revision.id }}" type="number" min="1" required name="series_id" class="w-24 rounded-md border-gray-300" title="Series ID from /series/ID/. Brand and indicia publisher may reset.">
+        <button class="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50" type="submit">Move</button>
+      </form>
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% if changeset.change_type == CTYPES.variant_add or changeset.change_type == CTYPES.two_issues %}
+  {% for cover in changeset.coverrevisions.all %}<div class="mt-2">{{ cover.cover|cover_image_tag:'1, moved_cover' }} Cover is moved from {{ cover.issue }}.<form action="{% url 'undo_move_cover' id=changeset.id cover_id=cover.id %}" method="POST">{% csrf_token %}<button class="btn-blue-editing">Undo Cover Move</button></form></div>{% endfor %}
+  {% if changeset.issuerevisions.all.0.issue.cover_set.count or changeset.issuerevisions.all.1.issue.cover_set.count %}<a class="{{ btn }}" href="{% url 'move_cover' id=changeset.id %}">Move Covers Between Both Issues</a>{% endif %}
+{% endif %}
+<p class="my-4 flex flex-wrap gap-3"><a class="{{ btn }}" href="{% url 'compare' id=changeset.id %}">Compare Changes</a>{% for issue_revision in changeset.issuerevisions.all %} <a class="{{ btn }}" href="{% url 'preview_revision' model_name='issue' id=issue_revision.id %}" target="_blank" rel="noopener">Preview{% if issue_revision.variant_of %} (Variant){% endif %}</a>{% endfor %}</p>
 {% endwith %}
-<p>
-  <a href="{% url 'compare' id=changeset.id %}">Compare Changes</a>
-{% for issue_revision in changeset.issuerevisions.all %}
-  {% if not forloop.first %}&nbsp;{% endif %} | <a class="new_window" href="{% url "preview_revision" model_name='issue' id=issue_revision.id %}" target=_blank>Preview
-  {% if issue_revision.variant_of %} (Variant) {% endif %}</a>
-{% endfor %}
-</p>
+<script src="{% static 'js/sequence_workbench.js' %}" defer></script>
