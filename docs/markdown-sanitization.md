@@ -5,6 +5,8 @@ Full Notes fields and existing Markdown descriptions/biographies use
 character/group appearance annotations remain plain text, escaped for HTML
 display; they do not pass through the Markdown renderer.
 
+Voting Notes retain their existing plain-text formatting.
+
 ## Why sanitize?
 
 Markdown conversion can preserve raw HTML supplied in the source. Converting
