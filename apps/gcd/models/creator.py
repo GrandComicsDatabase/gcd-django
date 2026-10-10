@@ -14,6 +14,7 @@ from .datasource import DataSource, ExternalLink
 from .image import Image
 from apps.stddata.models import Country, Date, Script
 from .support_tables import TW_COLUMN_ALIGN_RIGHT
+from apps.oi import states
 
 MONTH_CHOICES = [(i, calendar.month_name[i]) for i in range(1, 13)]
 
@@ -252,8 +253,8 @@ class CreatorNameDetail(GcdData):
             elif self.type_id == NAME_TYPES['joint']:
                 attribute = 'under joint name '
                 display_as_name = as_name.name
-            elif self.type_id == NAME_TYPES['misspelled'] and \
-                                                          credit.is_credited:
+            elif (self.type_id == NAME_TYPES['misspelled'] and
+                  credit.is_credited):
                 attribute = 'misspelled as '
                 display_as_name = as_name.name
             elif credit.is_credited and not credit.credited_as:
@@ -488,6 +489,12 @@ class Creator(GcdData):
         if self.creator_names.filter(storycredit__deleted=False).exists():
             return True
         if self.creator_names.filter(issuecredit__deleted=False).exists():
+            return True
+        if self.creator_names.filter(
+          storycreditrevision__changeset__state__in=states.ACTIVE).exists():
+            return True
+        if self.creator_names.filter(
+          issuecreditrevision__changeset__state__in=states.ACTIVE).exists():
             return True
         if self.art_influence_revisions.active_set().exists():
             return True
