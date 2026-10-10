@@ -1,0 +1,51 @@
+{% extends "gcd/keywords/base.html" %}
+{% load static %}
+
+{% block css_raw %}
+  {{ block.super }}
+  <script src="{% static 'js/htmx_2_0_8.min.js' %}" defer></script>
+  <script src="{% static 'js/keyword_filters.js' %}" defer></script>
+{% endblock %}
+
+{% block title %}GCD :: Keywords{% endblock %}
+
+{% block keyword_heading %}Keywords{% endblock %}
+
+{% block keyword_actions %}
+  {% if user.is_authenticated %}
+  <a class="btn-blue-editing" href="{% url 'keyword_manage_duplicates' %}">Review possible duplicates</a>
+  {% endif %}
+{% endblock %}
+
+{% block keyword_body %}
+  <p class="mb-4 text-gray-700">Browse keywords and their associated catalog objects{% if user.is_authenticated %}, including unused keywords{% endif %}.</p>
+  <form id="keyword-filters" method="get" action="{% url 'keyword_by_name' %}"
+        hx-get="{% url 'keyword_by_name' %}" hx-target="#keyword-results"
+        hx-trigger="submit, input changed delay:300ms from:#keyword-query, change from:#keyword-usage"
+        hx-push-url="true" hx-sync="this:replace" class="flex flex-wrap items-center gap-4 rounded border bg-gray-200 p-2 mb-4">
+    <div class="w-full sm:w-auto">
+      <label for="keyword-query" class="block font-bold">Name contains</label>
+      <input id="keyword-query" type="search" name="q" value="{{ query }}" class="w-full rounded">
+    </div>
+    {% if user.is_authenticated %}
+    <div>
+      <label for="keyword-usage" class="block font-bold">Usage</label>
+      <select id="keyword-usage" name="usage" class="w-full rounded">
+        <option value="">All keywords</option>
+        <option value="used"{% if usage == 'used' %} selected{% endif %}>Used</option>
+        <option value="unused"{% if usage == 'unused' %} selected{% endif %}>Unused</option>
+      </select>
+    </div>
+    {% endif %}
+    <div class="flex flex-wrap items-center gap-4">
+      <button type="submit" class="btn-blue-editing">Search</button>
+      <a id="keyword-reset" class="btn-blue-editing" href="{% url 'keyword_by_name' %}" hx-get="{% url 'keyword_by_name' %}" hx-target="#keyword-results" hx-push-url="true" hx-sync="#keyword-filters:replace" hx-params="none">Reset</a>
+    </div>
+  </form>
+  <p id="keyword-request-status" role="status" aria-live="polite"></p>
+  <section id="keyword-detail" hidden aria-label="Keyword details"
+           class="rounded border border-gray-200 bg-white p-2 mb-4"></section>
+  <section id="keyword-results" aria-label="Keyword results">
+    {% include 'gcd/keywords/partials/results.html' %}
+  </section>
+{% endblock %}

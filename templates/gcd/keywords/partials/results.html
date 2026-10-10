@@ -1,0 +1,22 @@
+{% load humanize django_tables2 %}
+  <div class="flex flex-wrap justify-between gap-4 mb-2">
+    <p>
+      <strong>{{ page_obj.paginator.count|intcomma }}</strong> keyword{{ page_obj.paginator.count|pluralize }} found
+    </p>
+    <p class="text-sm text-gray-700">Usage counts include catalog objects only.</p>
+  </div>
+  <input type="hidden" name="sort" form="keyword-filters" value="{{ request.GET.sort }}">
+  <div class="overflow-y-auto" hx-boost="true" hx-target="#keyword-results" hx-push-url="true" hx-sync="#keyword-filters:replace">
+    {% render_table table %}
+  </div>
+  {% if page_obj.has_other_pages %}
+    <nav hx-boost="true" hx-target="#keyword-results" hx-push-url="true" hx-sync="#keyword-filters:replace" aria-label="Keyword pages" class="flex flex-wrap items-center gap-4 my-2">
+      {% if page_obj.has_previous %}
+        <a href="{% querystring table.prefixed_page_field=page_obj.previous_page_number %}">Previous</a>
+      {% endif %}
+      <span>Page {{ page_obj.number|intcomma }} of {{ page_obj.paginator.num_pages|intcomma }}</span>
+      {% if page_obj.has_next %}
+        <a href="{% querystring table.prefixed_page_field=page_obj.next_page_number %}">Next</a>
+      {% endif %}
+    </nav>
+  {% endif %}

@@ -1,0 +1,8 @@
+<header class="flex flex-wrap items-center justify-between gap-4 mb-2">
+  <h2 id="keyword-detail-title" tabindex="-1" class="text-xl font-bold">{{ keyword.name }}</h2>
+  <div class="flex flex-wrap items-center gap-4">
+    <a href="{% url 'keyword_manage_detail' keyword.pk %}?{{ navigation_query }}">Open full page</a>
+    <button type="button" class="btn-blue-editing" data-keyword-close>Back to results</button>
+  </div>
+</header>
+{% include 'gcd/keywords/partials/detail_body.html' %}
