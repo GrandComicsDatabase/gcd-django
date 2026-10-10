@@ -1377,6 +1377,11 @@ a:hover {
   margin: 0.5rem;
 }
 
+.-mx-2 {
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+}
+
 .mx-0 {
   margin-left: 0px;
   margin-right: 0px;
@@ -1470,6 +1475,10 @@ a:hover {
 
 .mb-2 {
   margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+  margin-bottom: 0.75rem;
 }
 
 .mb-4 {
@@ -1584,6 +1593,10 @@ a:hover {
   height: 1rem;
 }
 
+.h-5 {
+  height: 1.25rem;
+}
+
 .h-7 {
   height: 1.75rem;
 }
@@ -1664,6 +1677,10 @@ a:hover {
   width: 7rem;
 }
 
+.w-3\/4 {
+  width: 75%;
+}
+
 .w-3\/5 {
   width: 60%;
 }
@@ -1678,6 +1695,10 @@ a:hover {
 
 .w-48 {
   width: 12rem;
+}
+
+.w-5 {
+  width: 1.25rem;
 }
 
 .w-5\/12 {
@@ -1728,6 +1749,10 @@ a:hover {
   width: 20%;
 }
 
+.w-\[200px\] {
+  width: 200px;
+}
+
 .w-\[60px\] {
   width: 60px;
 }
@@ -1750,6 +1775,15 @@ a:hover {
 
 .w-\[98px\] {
   width: 98px;
+}
+
+.w-auto {
+  width: auto;
+}
+
+.w-fit {
+  width: -moz-fit-content;
+  width: fit-content;
 }
 
 .w-full {
@@ -1787,6 +1821,10 @@ a:hover {
 .min-w-fit {
   min-width: -moz-fit-content;
   min-width: fit-content;
+}
+
+.max-w-48 {
+  max-width: 12rem;
 }
 
 .max-w-\[400px\] {
@@ -2045,6 +2083,11 @@ a:hover {
        column-gap: 1.5rem;
 }
 
+.gap-x-8 {
+  -moz-column-gap: 2rem;
+       column-gap: 2rem;
+}
+
 .gap-y-0 {
   row-gap: 0px;
 }
@@ -2164,6 +2207,11 @@ a:hover {
   border-width: 4px;
 }
 
+.border-y {
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+}
+
 .border-y-2 {
   border-top-width: 2px;
   border-bottom-width: 2px;
@@ -2217,6 +2265,11 @@ a:hover {
 .border-gray-500 {
   --tw-border-opacity: 1;
   border-color: rgb(107 114 128 / var(--tw-border-opacity));
+}
+
+.border-orange-400 {
+  --tw-border-opacity: 1;
+  border-color: rgb(251 146 60 / var(--tw-border-opacity));
 }
 
 .border-red-300 {
@@ -2329,6 +2382,11 @@ a:hover {
   background-color: rgb(169 48 42 / var(--tw-bg-opacity));
 }
 
+.bg-orange-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(251 146 60 / var(--tw-bg-opacity));
+}
+
 .bg-preview {
   --tw-bg-opacity: 1;
   background-color: rgb(255 233 68 / var(--tw-bg-opacity));
@@ -2372,6 +2430,11 @@ a:hover {
 .bg-stone-200 {
   --tw-bg-opacity: 1;
   background-color: rgb(231 229 228 / var(--tw-bg-opacity));
+}
+
+.bg-stone-300 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(214 211 209 / var(--tw-bg-opacity));
 }
 
 .bg-transparent {
@@ -2487,6 +2550,11 @@ a:hover {
 .py-3 {
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
+}
+
+.py-5 {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
 }
 
 .\!pb-4 {
@@ -2714,6 +2782,11 @@ a:hover {
   color: rgb(30 64 175 / var(--tw-text-opacity));
 }
 
+.text-blue-900 {
+  --tw-text-opacity: 1;
+  color: rgb(30 58 138 / var(--tw-text-opacity));
+}
+
 .text-gray-500 {
   --tw-text-opacity: 1;
   color: rgb(107 114 128 / var(--tw-text-opacity));
@@ -2786,6 +2859,10 @@ a:hover {
 
 .underline {
   text-decoration-line: underline;
+}
+
+.no-underline {
+  text-decoration-line: none;
 }
 
 .opacity-0 {
@@ -2882,22 +2959,6 @@ a:hover {
 
 .ease-in-out {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.\[characters_end\:-2\] {
-  characters_end: -2;
-}
-
-.\[credits_start-4\:credits_end\+7\] {
-  credits_start-4: credits end+7;
-}
-
-.\[credits_start-7\:credits_start\] {
-  credits_start-7: credits start;
-}
-
-.\[genres\:credits_start-7\] {
-  genres: credits start-7;
 }
 
 html {
@@ -3276,6 +3337,10 @@ select {
     margin-inline-end: 0.25rem;
   }
 
+  .sm\:inline-block {
+    display: inline-block;
+  }
+
   .sm\:\!flex {
     display: flex !important;
   }
@@ -3306,6 +3371,10 @@ select {
 
   .sm\:w-1\/2 {
     width: 50%;
+  }
+
+  .sm\:w-1\/3 {
+    width: 33.333333%;
   }
 
   .sm\:w-24 {
@@ -3390,6 +3459,10 @@ select {
     flex-direction: row-reverse !important;
   }
 
+  .sm\:items-center {
+    align-items: center;
+  }
+
   .sm\:justify-center {
     justify-content: center;
   }
@@ -3471,6 +3544,10 @@ select {
     display: none;
   }
 
+  .md\:w-3\/4 {
+    width: 75%;
+  }
+
   .md\:w-\[200px\] {
     width: 200px;
   }
@@ -3539,12 +3616,20 @@ select {
     height: 2rem;
   }
 
+  .lg\:w-3\/4 {
+    width: 75%;
+  }
+
   .lg\:w-4\/5 {
     width: 80%;
   }
 
   .lg\:w-44 {
     width: 11rem;
+  }
+
+  .lg\:w-64 {
+    width: 16rem;
   }
 
   .lg\:w-auto {
@@ -3596,6 +3681,10 @@ select {
     margin-inline-start: 0.5rem;
   }
 
+  .\32xl\:w-1\/2 {
+    width: 50%;
+  }
+
   .\32xl\:p-4 {
     padding: 1rem;
   }
@@ -3613,6 +3702,10 @@ select {
 .\[\&\>a\]\:px-2>a {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+
+.\[\&\>a\]\:visited\:text-link-gcd:visited>a {
+  color: rgb(39 39 235 );
 }
 
 .\[\&\>div\]\:text-center>div {

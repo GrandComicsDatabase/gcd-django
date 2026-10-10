@@ -20,6 +20,9 @@ module.exports = {
             './apps/gcd/markdown_extension.py',],
   // Rendered by third-party widgets (markdownx, crispy-forms tabs).
   safelist: ['markdownx-preview', 'tab-pane'],
+  // List slices in apps/oi/forms/story.py, read as arbitrary properties.
+  blocklist: ['[genres:credits_start-7]', '[credits_start-7:credits_start]',
+              '[characters_end:-2]', '[credits_start-4:credits_end+7]'],
   theme: {
   extend: {
       colors: {

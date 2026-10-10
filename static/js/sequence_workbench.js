@@ -151,7 +151,7 @@
       dirty = false;
       const response = await postJSON(root.dataset.saveUrl, {version: state.version, issues: state.issues});
       const result = await response.json().catch(() => ({}));
-      if (!response.ok) { dirty = true; throw new Error(result.error || 'Save failed. Try again.'); }
+      if (!response.ok) throw new Error(result.error || 'Save failed. Try again.');
       state.version = result.version;
       // Keep edits typed while the request was running; they save next.
       if (JSON.stringify(state.issues) === sent) {
@@ -160,6 +160,8 @@
       }
       message('');
     })().catch(err => {
+      // The save may not have reached the server: keep the edits pending.
+      dirty = true;
       message(err.message === 'Failed to fetch' ? 'Connection unavailable. Reconnect before leaving this page.' : err.message);
       throw err;
     }).finally(() => { saving = null; });
@@ -337,7 +339,7 @@
     if (row === destination || row.deleted || destination.deleted) return;
     issue.rows = issue.rows.filter(r => r !== row);
     issue.rows.splice(issue.rows.indexOf(destination) + (after ? 1 : 0), 0, row);
-    if (Number(row.type) === coverType && issue.rows.find(r => !r.deleted) !== row) {
+    if (reprintType && Number(row.type) === coverType && issue.rows.find(r => !r.deleted) !== row) {
       row.type = reprintType;
     }
     calculate(issue); persist();

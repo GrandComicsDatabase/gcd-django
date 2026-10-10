@@ -65,8 +65,13 @@ def migrate_all_credits(request, id):
         if not isinstance(data, dict) or data.get('version') != snapshot_version(sequence_snapshot(changeset)):
             return JsonResponse({'error': 'Sequences changed. Reload before migrating.'}, status=409)
     stories = changeset.storyrevisions.filter(deleted=False)
+    story_id = None
     if data and data.get('story') is not None:
-        stories = [get_object_or_404(stories, pk=data['story'])]
+        try:
+            story_id = int(data['story'])
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'Invalid request.'}, status=400)
+        stories = [get_object_or_404(stories, pk=story_id)]
     # Same steps as migrate_story_revision.
     for story in stories:
         if story.old_credits():
@@ -78,7 +83,7 @@ def migrate_all_credits(request, id):
         for issue in changeset.issuerevisions.all():
             for story in issue.ordered_story_revisions():
                 # A single-row migration only needs that row back.
-                if data.get('story') is not None and story.pk != data['story']:
+                if story_id is not None and story.pk != story_id:
                     continue
                 rows.append({'id': story.pk, 'html': render_to_string(
                     'oi/bits/sequence_row.html', {

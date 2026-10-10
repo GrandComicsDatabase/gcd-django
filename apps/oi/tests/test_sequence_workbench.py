@@ -99,6 +99,21 @@ def test_inline_migration_returns_rows_and_checks_version(workbench):
     assert migrate_all_credits(request, changeset.pk).status_code == 409
 
 
+def test_inline_migration_accepts_story_id_as_text(workbench):
+    changeset, issue, story, user = workbench
+
+    def migrate(story_id):
+        data = {'version': snapshot_version(sequence_snapshot(changeset)), 'story': story_id}
+        request = RequestFactory().post('/migrate/', json.dumps(data), content_type='application/json')
+        request.user = user
+        return migrate_all_credits(request, changeset.pk)
+
+    response = migrate(str(story.pk))
+    assert response.status_code == 200
+    assert [row['id'] for row in json.loads(response.content)['rows']] == [story.pk]
+    assert migrate('first').status_code == 400
+
+
 def test_migration_links_text_feature_like_production(workbench):
     from apps.gcd.models import Feature, FeatureNameDetail, FeatureType
     changeset, issue, story, user = workbench
