@@ -1,0 +1,68 @@
+{% extends "forum/base.html" %}
+{% load forum_tags %}
+{% block title %}GCD :: Forum{% if category %} :: {{ category.name }}{% elif record %} :: {{ record }}{% endif %}{% endblock %}
+{% block search_action %}{{ request.path }}{% endblock %}
+{% block forum_content %}
+{% if category %}
+<div class="mb-2">
+  <h2 class="font-bold text-xl">{{ category.name }}</h2>
+  {% if category.description %}<p>{{ category.description }}</p>{% endif %}
+  <p class="text-sm text-gray-700">
+    {% if category.read_access == 'public' %}Anyone can read{% elif category.read_access == 'users' %}Any GCD user can read{% else %}Group members read{% endif %};
+    {% if category.post_access == 'users' %}any GCD user can post{% else %}group members post{% endif %}.
+    {% if not can_read and can_post %}You see only the topics you started.{% endif %}
+  </p>
+  {% if user.is_authenticated and can_read %}
+  <form method="post" action="{% url 'forum:group-email' category.slug %}" class="mt-1">
+    {% csrf_token %}
+    <button class="btn-blue-editing inline-block m-0" aria-pressed="{% if email_member %}true{% else %}false{% endif %}">{% if email_member %}Getting every post by email ✓{% else %}Get every post by email{% endif %}</button>
+    <span class="text-sm text-gray-700">Reply to those emails to post here. To start a topic by email, write to <a href="mailto:{{ category|group_address }}">{{ category|group_address }}</a>.</span>
+  </form>
+  {% endif %}
+</div>
+{% elif record %}
+<div class="mb-2">
+  <h2 class="font-bold text-xl">Discussions about <a href="{{ record.get_absolute_url }}">{{ record }}</a></h2>
+  <p class="text-sm text-gray-700">Topics in every group that are linked to this record.</p>
+</div>
+{% endif %}
+
+<div class="flex flex-wrap items-end justify-between gap-2 border-b border-gray-400 mb-1">
+  <nav aria-label="Topic lists" class="flex text-sm font-bold">
+    <a href="{% querystring feed=None page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'latest' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'latest' %}aria-current="page"{% endif %}>Latest</a>
+    <a href="{% querystring feed='new' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'new' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'new' %}aria-current="page"{% endif %}>New</a>
+    <a href="{% querystring feed='unanswered' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'unanswered' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'unanswered' %}aria-current="page"{% endif %}>Unanswered</a>
+    {% if user.is_authenticated %}
+    <a href="{% querystring feed='following' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'following' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'following' %}aria-current="page"{% endif %}>Following</a>
+    <a href="{% querystring feed='mine' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'mine' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'mine' %}aria-current="page"{% endif %}>Mine</a>
+    {% endif %}
+  </nav>
+  <span class="text-sm text-gray-700 pb-1">{% if search_query %}Results for “{{ search_query }}”: {% endif %}{{ page_obj.paginator.count }} topic{{ page_obj.paginator.count|pluralize }}</span>
+</div>
+
+<ul>
+{% for discussion in discussions %}
+  {% include "forum/_topic_row.html" %}
+{% empty %}
+  <li class="py-6 text-center">
+    {% if search_query %}No topics match “{{ search_query }}”. <a href="{{ request.path }}">Clear the search</a>.
+    {% elif record %}No discussions about this record yet.
+    {% else %}No topics here yet.{% endif %}
+  </li>
+{% endfor %}
+</ul>
+
+{% if page_obj.has_other_pages %}
+<nav aria-label="Pages" class="flex items-center justify-between py-2 text-sm">
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  <span class="flex gap-2">
+    {% if page_obj.has_previous %}<a class="navigation-bar-box-link" href="{% querystring page=page_obj.previous_page_number %}">Previous</a>{% endif %}
+    {% if page_obj.has_next %}<a class="navigation-bar-box-link" href="{% querystring page=page_obj.next_page_number %}">Next</a>{% endif %}
+  </span>
+</nav>
+{% endif %}
+{% endblock %}
+
+{% block forum_sidebar %}
+{% include "forum/_sidebar.html" %}
+{% endblock %}

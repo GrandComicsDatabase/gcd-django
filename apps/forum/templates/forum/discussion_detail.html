@@ -1,0 +1,81 @@
+{% extends "forum/base.html" %}
+{% block title %}GCD :: Forum :: {{ discussion.title }}{% endblock %}
+{% block forum_content %}
+<nav aria-label="Breadcrumb" class="text-sm"><a href="{% url 'forum:index' %}">Forum</a> › <a href="{{ discussion.category.get_absolute_url }}">{{ discussion.category.name }}</a></nav>
+<h2 class="font-bold text-xl break-words">{{ discussion.title }}</h2>
+<p class="text-sm text-gray-700">
+  Started by {{ discussion.author.username }} on {{ discussion.created_at|date:"Y-m-d" }} · {{ discussion.views_count }} view{{ discussion.views_count|pluralize }}
+  {% if discussion.status == 'resolved' %}· <span class="bg-green-100 rounded px-1">Solved</span>{% endif %}
+  {% if discussion.is_locked %}· closed{% endif %}
+</p>
+{% if discussion.moved_from %}
+<p class="text-sm bg-stone-200 rounded px-1 mt-1 inline-block">Moved from <a href="{{ discussion.moved_from.get_absolute_url }}">{{ discussion.moved_from.name }}</a> by {{ discussion.moved_by.username }} on {{ discussion.moved_at|date:"Y-m-d" }}</p>
+{% endif %}
+<div class="mt-1">{% include "forum/_records.html" with records=discussion.records.all removable=can_moderate %}</div>
+{% if discussion.duplicate_of %}
+<p class="mt-1 bg-stone-200 px-2 py-1">Closed as a duplicate of <a href="{{ discussion.duplicate_of.get_absolute_url }}">{{ discussion.duplicate_of.title }}</a>. Please continue there.</p>
+{% endif %}
+{% if discussion.answer and not discussion.answer.is_deleted %}
+<p class="mt-1 bg-green-100 px-2 py-1">Solved: <a href="#post-{{ discussion.answer_id }}">see the answer by {{ discussion.answer.author.username }}</a>.</p>
+{% endif %}
+{% if first_unread %}<a class="mt-1 inline-block text-sm" href="#post-{{ first_unread.pk }}">Go to the first unread post ↓</a>{% endif %}
+
+<section id="post-list" class="mt-2" aria-label="Posts"{% if discussion.category.language %} lang="{{ discussion.category.language }}"{% endif %}>
+  {% for post in post_roots %}
+    {% include "forum/_post.html" %}
+  {% endfor %}
+</section>
+
+{% if can_reply %}
+  {% include "forum/_reply_form.html" %}
+{% elif not user.is_authenticated %}
+  <p class="mt-3 bg-blue-100 px-2 py-1"><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Sign in</a> with your GCD account to reply. <a href="{% url 'register' %}">Registering</a> is free.</p>
+{% elif discussion.is_locked or discussion.status == 'archived' %}
+  <p class="mt-3 bg-stone-200 px-2 py-1">This topic is closed to new replies.</p>
+{% else %}
+  <p class="mt-3 bg-stone-200 px-2 py-1">Only members of {{ discussion.category.name }} can reply here.</p>
+{% endif %}
+{% endblock %}
+
+{% block forum_sidebar %}
+<aside class="md:w-60 shrink-0">
+  {% if can_reply %}<a class="btn btn-blue block text-center max-md:hidden" href="#reply-form-container">Reply</a>{% endif %}
+  {% if user.is_authenticated %}{% include "forum/_follow_button.html" %}{% endif %}
+  {% if can_moderate %}
+  <div class="label-gcd-blue mt-2">Topic</div>
+  <a class="btn-blue-editing" href="{% url 'forum:discussion-edit' discussion.slug %}">Edit title and records</a>
+  <form method="post" action="{% url 'forum:discussion-move' discussion.slug %}" class="mt-1">
+    {% csrf_token %}
+    <label for="{{ move_form.category.id_for_label }}" class="text-sm">Move to another group</label>
+    <div class="flex gap-1">{{ move_form.category }}<button class="btn-blue-editing m-0">Move</button></div>
+  </form>
+  {% if group_moderator %}
+  <form method="post" action="{% url 'forum:discussion-moderate' discussion.slug %}" class="flex gap-1">
+    {% csrf_token %}
+    <button class="btn-blue-editing flex-1 m-0 mt-1" name="action" value="{% if discussion.is_pinned %}unpin{% else %}pin{% endif %}">{% if discussion.is_pinned %}Unpin{% else %}Pin{% endif %}</button>
+    <button class="btn-blue-editing flex-1 m-0 mt-1" name="action" value="{% if discussion.is_locked %}reopen{% else %}close{% endif %}">{% if discussion.is_locked %}Reopen{% else %}Close{% endif %}</button>
+  </form>
+  <form method="post" action="{% url 'forum:discussion-duplicate' discussion.slug %}" class="mt-1">
+    {% csrf_token %}
+    <label for="duplicate-of" class="text-sm">Close as a duplicate of</label>
+    <input id="duplicate-of" name="original" required placeholder="Link to the original topic" class="w-full border-gray-400 px-1 text-sm">
+    <button class="btn-blue-editing w-full m-0 mt-1">Close as duplicate</button>
+  </form>
+  {% endif %}
+  <form method="post" action="{% url 'forum:discussion-delete' discussion.slug %}" onsubmit="return confirm('Remove this topic?');">
+    {% csrf_token %}<button class="btn-blue-editing w-full">Remove topic</button>
+  </form>
+  {% endif %}
+  {% if user.is_authenticated %}
+  <details class="mt-2 text-sm">
+    <summary class="cursor-pointer">Report this topic</summary>
+    <form method="post" action="{% url 'forum:report' 'discussion' discussion.pk %}">
+      {% csrf_token %}
+      <label for="report-topic" class="sr-only">Reason</label>
+      <textarea id="report-topic" name="reason" maxlength="1000" required rows="3" class="w-full border-gray-400" placeholder="What is wrong with it?"></textarea>
+      <button class="btn-blue-editing">Send to moderators</button>
+    </form>
+  </details>
+  {% endif %}
+</aside>
+{% endblock %}

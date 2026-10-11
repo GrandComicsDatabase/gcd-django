@@ -1,6 +1,7 @@
 {% extends "gcd/tw_base_view.html" %}
 {% load static %}
 {% load django_tables2 %}
+{% load forum_tags %}
 
 {% block nav_bar %}
   {{ block.super }}
@@ -48,6 +49,9 @@
             View Change History
           </btn>
         </a>
+    {% endif %}
+    {% if not preview and not MYCOMICS %}
+      {% record_discussions model_name object %}
     {% endif %}
   {% endblock change_history %}
 

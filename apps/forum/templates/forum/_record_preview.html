@@ -1,0 +1,5 @@
+{% load forum_tags %}
+<ul class="text-sm">
+  {% for key, record in found %}<li>✓ <span class="text-gray-700">{{ record|record_type }}:</span> <a href="{{ record.get_absolute_url }}" target="_blank">{{ record }}</a></li>{% endfor %}
+  {% for line in invalid %}<li class="alert">✗ Not a GCD record page: {{ line }}</li>{% endfor %}
+</ul>

@@ -1,0 +1,30 @@
+{% extends "forum/base.html" %}
+{% block title %}GCD :: Forum :: {% if object %}Edit{% else %}New topic{% endif %}{% endblock %}
+{% block forum_content %}
+<div class="max-w-3xl">
+  <h2 class="font-bold text-xl">{% if object.title %}Edit “{{ object.title }}”{% elif object %}Edit post #{{ object.pk }}{% else %}New topic{% endif %}</h2>
+  <form method="post" class="mt-2">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <table class="editing w-full">
+    {% for field in form %}
+      <tr>
+        <th><label for="{{ field.id_for_label }}">{{ field.label }}</label></th>
+        <td>
+          {% if field.name == 'records' %}
+          <div hx-get="{% url 'forum:record-preview' %}" hx-trigger="change from:#{{ field.id_for_label }}, load" hx-include="#{{ field.id_for_label }}" hx-target="#record-preview">{{ field }}</div>
+          <div id="record-preview" aria-live="polite"></div>
+          {% else %}{{ field }}{% endif %}
+          {% if field.help_text %}<p class="text-sm text-gray-700">{{ field.help_text }}</p>{% endif %}
+          {{ field.errors }}
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+    <div class="flex justify-end gap-2 mt-2">
+      <a class="btn-blue-editing inline-block" href="{% if object.get_absolute_url %}{{ object.get_absolute_url }}{% elif object.discussion %}{{ object.discussion.get_absolute_url }}{% else %}{% url 'forum:index' %}{% endif %}">Cancel</a>
+      <button class="btn btn-blue">{% if object %}Save{% else %}Publish topic{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

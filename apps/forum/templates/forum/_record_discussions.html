@@ -1,0 +1,6 @@
+{% if show %}
+<a class="link-with-text-color" href="{% url 'forum:record' key record.pk %}">
+  <btn class="btn btn-blue mt-1 block text-center font-bold px-2 py-1 text-base mx-0">Forum discussions ({{ count }})</btn>
+</a>
+<a class="btn-blue-editing" href="{% url 'forum:discussion-create' %}?category=gcd-error&amp;record={{ key }}:{{ record.pk }}">Report an error on the forum</a>
+{% endif %}

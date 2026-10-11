@@ -1,0 +1,50 @@
+<section id="reply-form-container" class="mt-3">
+  <div class="flex items-center justify-between gap-2">
+    <h3 id="reply-heading" class="font-bold text-lg">{% if reply_form.parent.value %}Reply to post #{{ reply_form.parent.value }}{% else %}Reply to the topic{% endif %}</h3>
+    <button id="cancel-reply" type="button" onclick="clearReplyTarget()" class="btn-blue-editing{% if not reply_form.parent.value %} hidden{% endif %}">Reply to the topic instead</button>
+  </div>
+  <form id="quick-reply-form" method="post" action="{% url 'forum:reply' discussion.slug %}"
+        hx-post="{% url 'forum:reply' discussion.slug %}" hx-target="{% if reply_form.parent.value %}#children-{{ reply_form.parent.value }}{% else %}#post-list{% endif %}" hx-swap="beforeend">
+    {% csrf_token %}
+    {{ reply_form.parent }}
+    {{ reply_form.parent.errors }}{{ reply_form.non_field_errors }}
+    <label for="{{ reply_form.content.id_for_label }}" class="sr-only">Your reply</label>
+    {{ reply_form.content }}
+    {{ reply_form.content.errors }}
+    <div class="flex items-center justify-between gap-2 mt-1">
+      <span class="text-sm text-gray-700">Markdown is supported.</span>
+      <button class="btn btn-blue">Post reply</button>
+    </div>
+  </form>
+</section>
+<script>
+function setReplyTarget(postId, username) {
+  const form = document.getElementById('quick-reply-form');
+  form.querySelector('[name="parent"]').value = postId;
+  form.setAttribute('hx-target', '#children-' + postId);
+  document.getElementById('reply-heading').textContent = 'Reply to ' + username;
+  document.getElementById('cancel-reply').classList.remove('hidden');
+  htmx.process(form);
+  form.querySelector('textarea').focus();
+}
+function clearReplyTarget() {
+  const form = document.getElementById('quick-reply-form');
+  form.querySelector('[name="parent"]').value = '';
+  form.setAttribute('hx-target', '#post-list');
+  document.getElementById('reply-heading').textContent = 'Reply to the topic';
+  document.getElementById('cancel-reply').classList.add('hidden');
+  htmx.process(form);
+}
+document.addEventListener('htmx:afterRequest', function (event) {
+  if (event.detail.successful && event.detail.elt.id === 'quick-reply-form') {
+    event.detail.elt.reset();
+    clearReplyTarget();
+  }
+});
+document.addEventListener('htmx:beforeSwap', function (event) {
+  if (event.detail.xhr.status === 422 && event.detail.target.id === 'reply-form-container') {
+    event.detail.shouldSwap = true;
+    event.detail.isError = false;
+  }
+});
+</script>
