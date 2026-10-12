@@ -24,7 +24,7 @@ from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
 
-MARKDOWN_FIELDS = {'notes', 'description', 'bio'}
+MARKDOWN_FIELDS = {'notes', 'description', 'bio', 'tracking_notes'}
 
 
 def valid_barcode(barcode):
@@ -177,7 +177,7 @@ def field_value(revision, field):
                 story_arc.get_absolute_url(),
                 esc(story_arc.name))
         return mark_safe(story_arcs)
-    elif field in ['tracking_notes', 'publication_notes']:
+    elif field == 'publication_notes':
         return linebreaksbr(value)
     elif field == 'reprint_notes':
         reprint = ''
