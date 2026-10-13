@@ -35,7 +35,7 @@ from apps.gcd.templatetags.credits import get_native_language_name
 from apps.gcd.models.issue import IssuePublisherTable
 from apps.gcd.models.publisher import PublisherSearchTable
 from apps.gcd.models.series import SeriesPublisherTable
-from apps.gcd.models.story import StoryTable
+from apps.gcd.models.story import StoryTable, NO_FEATURE_TYPES
 from apps.indexer.views import render_error
 from apps.select.forms import get_select_cache_form, get_select_search_form
 
@@ -843,6 +843,8 @@ class FeatureNameAutocomplete(LoginRequiredMixin,
 
         if type:
             type = int(type)
+            if type in NO_FEATURE_TYPES:
+                return FeatureNameDetail.objects.none()
             if type == STORY_TYPES['letters_page']:
                 qs = qs.filter(feature__feature_type__id=2)
             else:
@@ -885,12 +887,16 @@ class FeatureLogoAutocomplete(LoginRequiredMixin,
 
         if type:
             type = int(type)
-            if type == STORY_TYPES['cover']:
+            if type == STORY_TYPES['cover'] or type in NO_FEATURE_TYPES:
                 qs = FeatureLogo.objects.none()
             elif type == STORY_TYPES['letters_page']:
                 qs = qs.filter(feature_name__feature__feature_type__id=2)
             else:
                 qs = qs.exclude(feature_name__feature__feature_type__id=2)
+            if type == STORY_TYPES['in-house column']:
+                qs = qs.filter(feature_name__feature__feature_type__id=4)
+            else:
+                qs = qs.exclude(feature_name__feature__feature_type__id=4)
             if type not in [STORY_TYPES['ad'], STORY_TYPES['comics-form ad']]:
                 qs = qs.exclude(feature_name__feature__feature_type__id=3)
 
@@ -905,9 +911,14 @@ class StoryArcAutocomplete(LoginRequiredMixin,
         qs = StoryArc.objects.filter(deleted=False)
 
         language = self.forwarded.get('language_code', None)
+        type = self.forwarded.get('type', None)
 
         if language and language not in ['zxx', 'und']:
             qs = qs.filter(language__code__in=[language, 'zxx'])
+
+        # the sequence form accepts story arcs only for comic stories
+        if type and int(type) != STORY_TYPES['comic story']:
+            return StoryArc.objects.none()
 
         qs = _filter_and_sort(qs, self.q, disambiguation=True,
                               interactive=interactive)

@@ -186,7 +186,7 @@ Cover is moved from {{ cover.issue }}.
   <tbody>
     {% for story in issuerevision.ordered_story_revisions %}
     <tr class="max-sm:flex max-sm:flex-col border-y border-gray-300{% if story.deleted %} bg-red-400 {% endif %}">
-      <td class="px-1">{{ story|show_story_short }}</td>
+      <td class="px-1">{{ story|show_story_short }}{{ story|show_type_notes }}</td>
       <td class="w-24">{{ story|show_credit_status }}</td>
       <td class="flex">
       {% if not story.deleted %}

@@ -26,6 +26,7 @@ from .support_tables import render_publisher
 STORY_TYPES = {
     'ad': 2,
     'cover': 6,
+    'cover reprint': 7,
     'insert': 11,
     'letters_page': 12,
     'comic story': 19,
@@ -61,6 +62,9 @@ NON_OPTIONAL_TYPES = [6, 7, 19]
 # sequences types that cannot have a feature or genre
 NO_FEATURE_TYPES = [8, 22, 24, 25]
 NO_GENRE_TYPES = [8, 22, 24, 25]
+# sequence types which typically have no synopsis: activity, ad, credits,
+# letters page, promo, statement of ownership, table of contents
+NO_SYNOPSIS_TYPES = [1, 2, 8, 12, 16, 22, 25]
 DEPRECATED_TYPES = [3, 4, 23]
 
 

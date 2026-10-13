@@ -19,7 +19,8 @@ from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
                            ReprintRevision, StoryRevision, IssueRevision, \
                            IssueCreditRevision
-from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
+from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS, STORY_TYPES
+from apps.gcd.models.story import NO_SYNOPSIS_TYPES
 from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
@@ -671,6 +672,28 @@ def compare_current_reprints(object_type, changeset):
                               '"list-disc list-outside ps-8">' + kept_string
 
     return mark_safe(reprint_string)
+
+
+@register.filter
+def show_type_notes(story):
+    """
+    Notes on wiki rules for the sequence type which need the indexer's
+    judgment, so they do not block saving.
+    """
+    if story.deleted:
+        return ''
+    notes = []
+    if story.synopsis and story.type_id in NO_SYNOPSIS_TYPES:
+        notes.append('Note: wiki "Synopsis": "The synopsis field should be '
+                     'used only for story or article sequences having a plot '
+                     'or storyline."')
+    if story.type_id == STORY_TYPES['cover reprint'] and \
+       not story.reprint_notes and not story.from_all_reprints.exists():
+        notes.append('Note: wiki "Type", Cover Reprint (on interior page): '
+                     '"All cover reprints of 1/4 page in size or larger will '
+                     'have a reprint link."')
+    return mark_safe(''.join('<br><span class="text-sm italic">%s</span>'
+                             % esc(note) for note in notes))
 
 
 @register.filter
