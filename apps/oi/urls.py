@@ -8,6 +8,7 @@ from apps.oi import views as oi_views
 from apps.oi import covers as oi_covers
 from apps.oi import import_export as oi_import
 from apps.oi import coordinators as oi_coordinators
+from apps.oi import sequence_workbench as oi_sequences
 
 
 class SignedIntConverter:
@@ -24,6 +25,12 @@ register_converter(SignedIntConverter, 'signed_int')
 
 
 urlpatterns = [
+    path('changeset/<int:id>/sequences/migrate/', oi_sequences.migrate_all_credits,
+         name='migrate_all_sequence_credits'),
+    path('changeset/<int:id>/sequences/add/', oi_sequences.add_sequence,
+         name='add_changeset_sequence'),
+    path('changeset/<int:id>/sequences/', oi_sequences.save_sequences,
+         name='save_changeset_sequences'),
     # General-purpose new record add page.
     path('add/',
       login_required(
