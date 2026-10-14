@@ -1,3 +1,5 @@
+from html import unescape
+
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 
@@ -81,8 +83,10 @@ class URLInlineProcessor(InlineProcessor):
         # shared final sanitizer still applies to these generated links.
         # Keep sentence punctuation outside urlize: some Django versions lose
         # it when trimming a closing parenthesis and punctuation together.
-        candidate = m.group(0).rstrip('.,:;!?')
-        html = urlize(candidate, autoescape=True)
+        # Preserve entity terminators and source offsets. Decode before urlize
+        # escapes labels, so &amp; does not become visible literal entity text.
+        candidate = m.group(0).rstrip('.,:!?')
+        html = urlize(unescape(candidate), autoescape=True)
         return (self.md.htmlStash.store(html), m.start(0),
                 m.start(0) + len(candidate))
 

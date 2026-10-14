@@ -180,6 +180,32 @@ def test_automatic_links_preserve_legacy_addresses(
         'gcd/bits/notes.html', {'value': source})
 
 
+@pytest.mark.parametrize('entity', ['&amp;', '&#38;', '&#x26;'])
+@pytest.mark.parametrize('prefix', ['https://', 'www.'])
+@pytest.mark.parametrize('ending', ['b=2', ''])
+def test_automatic_links_decode_entities_in_labels_and_destinations(
+        entity, prefix, ending):
+    source = f'{prefix}example.org/?a=1{entity}{ending}'
+    plain = f'{prefix}example.org/?a=1&{ending}'
+    # Entity decoding changes the candidate's length, but must not consume
+    # following text or leave the entity's semicolon outside the link.
+    rendered = render_markdown(source + ' Next')
+    assert rendered == render_markdown(plain + ' Next')
+    assert rendered == markdownify(source + ' Next')
+    assert rendered.count('<a ') == 1
+    assert '</a> Next' in rendered
+    assert '&amp;amp;' not in rendered
+
+
+def test_decoded_url_entities_remain_escaped():
+    source = ('https://example.org/?q=&quot;&lt;script&gt;'
+              'alert(1)&lt;/script&gt;')
+    rendered = render_markdown(source)
+    assert '<script' not in rendered
+    assert '&lt;script&gt;' in rendered
+    assert rendered == markdownify(source)
+
+
 @pytest.mark.parametrize('source', [
     '[www.example.org](https://example.net)',
     '[editor@example.org](mailto:other@example.net)',
