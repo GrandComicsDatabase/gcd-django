@@ -110,11 +110,13 @@ def test_series_filter_matches_name_icontains(
     assert list(qs) == [matching]
 
 
+@pytest.mark.parametrize('query', ['batman', 'BATMAN', 'BaTmAn'])
 def test_series_search_ranks_matches_deterministically(
     country,
     language,
     publisher,
     series_publication_type,
+    query,
 ):
     """Search ranks exact, prefix, token-prefix, then substring matches."""
     exact_later = _create_series(
@@ -179,7 +181,7 @@ def test_series_search_ranks_matches_deterministically(
     )
 
     qs = SeriesFilterSet(
-        {'search': 'batman'},
+        {'search': query},
         queryset=Series.objects.all(),
     ).qs
 
@@ -191,6 +193,7 @@ def test_series_search_ranks_matches_deterministically(
         token_prefix,
         substring,
     ]
+    assert [result._search_rank for result in qs] == [0, 0, 1, 1, 2, 3]
 
 
 def test_series_search_normalizes_query_whitespace(
@@ -225,17 +228,23 @@ def test_series_search_normalizes_query_whitespace(
     assert list(qs) == [exact, prefix]
 
 
+@pytest.mark.parametrize(
+    ('query', 'nonmatching_title'),
+    [('C++', 'CCCC'), ('A_B', 'AxB'), ('100%', '1000')],
+)
 def test_series_search_treats_punctuation_as_literal_text(
     country,
     language,
     publisher,
     series_publication_type,
+    query,
+    nonmatching_title,
 ):
-    """Regex punctuation in a query cannot change token matching."""
+    """SQL wildcards and regex punctuation in a query remain literal."""
     exact = _create_series(
         country=country,
         language=language,
-        name='C++',
+        name=query,
         publication_type=series_publication_type,
         publisher=publisher,
         year_began=1995,
@@ -243,7 +252,7 @@ def test_series_search_treats_punctuation_as_literal_text(
     token_prefix = _create_series(
         country=country,
         language=language,
-        name='Learn C++ Today',
+        name=f'Learn {query} Today',
         publication_type=series_publication_type,
         publisher=publisher,
         year_began=1996,
@@ -251,14 +260,14 @@ def test_series_search_treats_punctuation_as_literal_text(
     _create_series(
         country=country,
         language=language,
-        name='CCCC',
+        name=nonmatching_title,
         publication_type=series_publication_type,
         publisher=publisher,
         year_began=1997,
     )
 
     qs = SeriesFilterSet(
-        {'search': 'C++'},
+        {'search': query},
         queryset=Series.objects.all(),
     ).qs
 

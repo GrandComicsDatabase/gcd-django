@@ -71,13 +71,14 @@ def _create_series(
     publication_type,
     publisher,
     year_began,
+    sort_name=None,
     year_ended=None,
     deleted=False,
 ):
     """Create a minimal series row for view tests."""
     return Series.objects.create(
         name=name,
-        sort_name=name,
+        sort_name=sort_name if sort_name is not None else name,
         year_began=year_began,
         year_ended=year_ended,
         publication_dates='1990 - present',
@@ -312,6 +313,52 @@ def test_series_search_paginates_in_stable_relevance_order(
         token_prefix.pk,
         substring.pk,
     ]
+
+
+def test_series_search_paginates_same_rank_with_stable_tie_breakers(
+    api_client,
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """Sort name, year, and ID break equal-rank ties across pages."""
+    matches = [
+        _create_series(
+            country=country,
+            language=language,
+            name='Batman',
+            sort_name=sort_name,
+            publication_type=series_publication_type,
+            publisher=publisher,
+            year_began=year_began,
+        )
+        for sort_name, year_began in [
+            ('Z Batman', 1940),
+            ('A Batman', 2000),
+            ('A Batman', 1940),
+            ('A Batman', 1940),
+        ]
+    ]
+    expected_ids = [matches[index].pk for index in (2, 3, 1, 0)]
+    url = reverse('api-v2-series-list')
+    actual_ids = []
+
+    for page, expected_id in enumerate(expected_ids, start=1):
+        params = {'search': 'batman', 'page_size': 1, 'page': page}
+        response = api_client.get(url, params)
+        repeated = api_client.get(url, params)
+
+        assert response.status_code == repeated.status_code == 200
+        assert response.data['count'] == 4
+        assert [result['id'] for result in response.data['results']] == [
+            expected_id,
+        ]
+        assert repeated.data == response.data
+        actual_ids.append(response.data['results'][0]['id'])
+
+    assert actual_ids == expected_ids
+    assert len(set(actual_ids)) == len(matches)
 
 
 def test_series_endpoints_hide_soft_deleted_records(

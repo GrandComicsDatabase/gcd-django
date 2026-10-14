@@ -73,7 +73,7 @@ class SeriesFilterSet(TimestampFilterSet):
                 ),
                 _search_rank=Case(
                     When(_search_title__exact=query, then=Value(0)),
-                    When(_search_title__startswith=query, then=Value(1)),
+                    When(_search_title__istartswith=query, then=Value(1)),
                     When(
                         name__iregex=token_prefix_pattern,
                         then=Value(2),
@@ -82,7 +82,7 @@ class SeriesFilterSet(TimestampFilterSet):
                     output_field=IntegerField(),
                 ),
             )
-            .filter(_search_title__contains=query)
+            .filter(_search_title__icontains=query)
             .order_by(
                 '_search_rank',
                 'sort_name',
