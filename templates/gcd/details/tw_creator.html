@@ -358,6 +358,7 @@
 {% if not school.school_year_ended or school.school_year_ended_uncertain %}
   ?
 {% endif %}
+      </p>
 {% if school.notes %}
       <p><strong>Notes: </strong>{{ school.notes }}</p>
 {% endif %}
@@ -377,6 +378,7 @@
 {% if degree.degree_year or degree.degree_year_uncertain %}
 in {{ degree.degree_year }}{% if degree.degree_year_uncertain %}?{% endif %}
 {% endif %}
+      </p>
 {% if degree.notes %}
       <p><strong>Notes: </strong>{{ degree.notes }}</p>
 {% endif %}

@@ -12,6 +12,7 @@ import nh3
 
 from django.conf import settings
 from django.utils.safestring import mark_safe
+from django.utils.html import urlize
 
 
 MARKDOWN_CLASSES = {
@@ -65,18 +66,25 @@ class SafeHTMLPostprocessor(Postprocessor):
 GCD_REFERENCE_RE = r'\[gcd_link_([^\]]+)\]\((\d+)\)'
 GCD_REFERENCE_LINK_NAME_RE = r'\[gcd_link_name_([^\]]+)\]\((\d+)\)\{([^\}]+)\}'
 
-# Regular expression for matching URLs
-URL_RE = r'(?<!\]\()(https?:\/\/[^\s\)\]\}]+)'
+# Match candidates only; Django handles URL/email validation and punctuation.
+URL_RE = (r'(?<![\w@])(?:https?://|www\.)[^\s<>\[\]{}*`]+|'
+          r'(?<![\w@])[\w.+%-]+@[\w.-]+')
 
 
 class URLInlineProcessor(InlineProcessor):
-    """Process URLs and convert them to links."""
+    """Preserve Django's automatic links within Markdown text."""
+
+    ANCESTOR_EXCLUDES = ('a', 'code', 'pre')
+
     def handleMatch(self, m, data):
-        url = m.group(1)
-        el = Element('a')
-        el.set('href', url)
-        el.text = url
-        return el, m.start(0), m.end(0)
+        # Stash escaped HTML so Markdown does not reinterpret link text. The
+        # shared final sanitizer still applies to these generated links.
+        # Keep sentence punctuation outside urlize: some Django versions lose
+        # it when trimming a closing parenthesis and punctuation together.
+        candidate = m.group(0).rstrip('.,:;!?')
+        html = urlize(candidate, autoescape=True)
+        return (self.md.htmlStash.store(html), m.start(0),
+                m.start(0) + len(candidate))
 
 
 class URLExtension(Extension):

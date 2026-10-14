@@ -82,6 +82,8 @@ removed; they are not converted to text or links.
 | --- | --- |
 | `**bold**` | Bold text is retained. |
 | `[reference](https://example.org)` | A clickable link is retained. |
+| `www.example.org` | An automatic link uses Django's `http://` default. |
+| `editor@example.org` | An automatic `mailto:` link is created. |
 | `<a href="/issue/123/">Issue</a>` | The relative link is retained. |
 | `![Cover](https://example.org/cover.png)` | The image is removed. |
 | `<img src="x" onerror="alert(1)">` | The entire image element is removed. |
@@ -94,6 +96,12 @@ appear in rendered output. Lists, tables, and common
 formatting elements are allowed, but this does not add new Markdown syntax
 extensions (for example, allowing HTML tables does not enable pipe-table
 Markdown syntax).
+
+Bare HTTP/HTTPS URLs, `www.` addresses, and email addresses use Django's
+automatic link formatting inside the shared Markdown extension. Explicit
+Markdown links and code are protected from automatic linking. Classic and
+Tailwind creator biographies and group descriptions use the same shared
+rich-text partial as other supported Markdown fields.
 
 Cleaning changes rendered output only. Stored source is not rewritten; table
 exports and revision source diffs retain the editable source. There is no

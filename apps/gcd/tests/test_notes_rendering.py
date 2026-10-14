@@ -154,6 +154,78 @@ def test_renderer_and_editor_preview_share_policy(source, expected):
         assert rendered == markdownify(source)
 
 
+@pytest.mark.parametrize('source, destination, label, suffix', [
+    ('www.example.org', 'http://www.example.org', 'www.example.org', ''),
+    ('editor@example.org', 'mailto:editor@example.org',
+     'editor@example.org', ''),
+    ('**editor@example.org**', 'mailto:editor@example.org',
+     'editor@example.org', ''),
+    ('**www.example.org**', 'http://www.example.org', 'www.example.org', ''),
+    ('(www.example.org).', 'http://www.example.org', 'www.example.org', ').'),
+    ('editor+notes@example.org,', 'mailto:editor%2Bnotes@example.org',
+     'editor+notes@example.org', ','),
+    ('https://example.org/a_(b).', 'https://example.org/a_(b)',
+     'https://example.org/a_(b)', '.'),
+    ('www.example.org/?a=1&b=2', 'http://www.example.org/?a=1&amp;b=2',
+     'www.example.org/?a=1&amp;b=2', ''),
+])
+def test_automatic_links_preserve_legacy_addresses(
+        source, destination, label, suffix):
+    rendered = render_markdown(source)
+    assert rendered.count('<a ') == 1
+    assert f'href="{destination}"' in rendered
+    assert f'>{label}</a>{suffix}' in rendered
+    assert rendered == markdownify(source)
+    assert rendered in render_to_string(
+        'gcd/bits/notes.html', {'value': source})
+
+
+@pytest.mark.parametrize('source', [
+    '[www.example.org](https://example.net)',
+    '[editor@example.org](mailto:other@example.net)',
+    '<https://example.org>',
+    '<editor@example.org>',
+])
+def test_automatic_links_do_not_nest_in_markdown_links(source):
+    rendered = render_markdown(source)
+    assert rendered.count('<a ') == 1
+    assert rendered.count('</a>') == 1
+    assert rendered == markdownify(source)
+
+
+@pytest.mark.parametrize('source', [
+    '`www.example.org editor@example.org`',
+    '    www.example.org editor@example.org',
+    '<span title="www.example.org editor@example.org">label</span>',
+    '<img src="https://example.org/image.png" alt="editor@example.org">',
+])
+def test_automatic_links_leave_code_and_html_attributes_alone(source):
+    rendered = render_markdown(source)
+    assert '<a ' not in rendered
+    assert rendered == markdownify(source)
+
+
+@pytest.mark.parametrize('model, field', [
+    ('creator', 'bio'), ('group', 'description')])
+@pytest.mark.parametrize('prefix', ['', 'tw_'])
+def test_biography_and_description_use_shared_rich_text(model, field, prefix):
+    template = get_template(f'gcd/details/{prefix}{model}.html').template
+    source = ('**Bold** www.example.org\n\n- First\n- Second\n\n'
+              '<script>alert(1)</script>')
+    context = Context({model: SimpleNamespace(**{field: source})})
+    node, = [node for node in template.nodelist.get_nodes_by_type(IfNode)
+             if node.token.contents == f'if {model}.{field}']
+    with context.bind_template(template):
+        rendered = node.render(context)
+    expected = render_to_string('gcd/bits/rich_text.html', {'value': source})
+    assert expected in rendered
+    assert '<strong>Bold</strong>' in rendered
+    assert 'href="http://www.example.org"' in rendered
+    assert '<li>First</li>' in rendered
+    assert '<script' not in rendered
+    assert '<p><strong>Biography:' not in rendered
+
+
 @pytest.mark.parametrize('source', [
     '<script>alert(1)</script>',
     '<img src="x" onerror="alert(1)">',
