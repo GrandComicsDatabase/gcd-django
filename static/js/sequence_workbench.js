@@ -1,17 +1,34 @@
-/* Inline sequence edits are saved automatically shortly after each change. */
+/* Inline sequence edits are kept in this browser (localStorage) and sent to
+   the server only by Save, Ctrl+S, an action of the page or hiding the tab. */
 (() => {
   'use strict';
   const root = document.getElementById('sequence-workbench');
   if (!root) return;
   const state = JSON.parse(document.getElementById('sequence-workbench-data').textContent);
   const error = root.querySelector('[data-error]');
-  let dirty = false, saving = null, timer = null;
+  const notice = root.querySelector('[data-notice]');
+  const saveButton = document.querySelector('[data-save-sequences]');
+  const saveStatus = document.querySelector('[data-save-status]');
+  const draftKey = 'sequence-draft:' + root.dataset.saveUrl;
+  // stored: whether the unsaved edits are also in localStorage; discarding:
+  // leaving for the discard confirmation, which needs no save.
+  let dirty = false, saving = null, stored = true, discarding = false;
   const message = text => { error.textContent = text; error.classList.toggle('hidden', !text); };
-  const persist = () => {
-    dirty = true;
-    clearTimeout(timer);
-    timer = setTimeout(() => flush().catch(() => {}), 800);
-  };
+  const inform = text => { notice.textContent = text; notice.classList.toggle('hidden', !text); };
+  function showStatus(text) {
+    if (saveStatus) saveStatus.textContent = text ?? (!dirty ? '' : stored ? 'Unsaved edits kept in this browser' : 'Unsaved edits');
+    if (saveButton) { saveButton.disabled = !dirty || !!saving; saveButton.classList.toggle('opacity-50', saveButton.disabled); }
+  }
+  function storeDraft() {
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({version: state.version, issues: state.issues, saved: Date.now()}));
+      stored = true;
+    } catch (_) { stored = false; }  // Private mode or full storage: the page warns before closing.
+  }
+  function clearDraft() {
+    try { localStorage.removeItem(draftKey); } catch (_) { /* Nothing could be stored either. */ }
+  }
+  const persist = () => { dirty = true; discarding = false; storeDraft(); showStatus(); };
   const sectionFor = issue => root.querySelector(`[data-issue="${issue.id}"]`);
   const rowFor = row => root.querySelector(`[data-row="${row.id}"]`);
 
@@ -79,8 +96,37 @@
     check.classList.toggle('text-green-700', matches && !!cover && !anomalies.some(x => x.startsWith('Odd')));
     check.classList.toggle('text-amber-700', !matches || !cover || anomalies.some(x => x.startsWith('Odd')));
   }
+  // The rows of each issue, and the fields the server saves: a draft applies
+  // only to the same rows, and a draft equal to the saved data is not restored.
+  const rowIds = issues => JSON.stringify(issues.map(issue => [issue.id, issue.rows.map(row => row.id).sort((a, b) => a - b)]));
+  const editable = issues => JSON.stringify(issues.map(issue => issue.rows.map(row => [
+    row.id, row.title, Number(row.type), row.pages === '' ? '' : Number(row.pages), row.feature_text,
+    (row.selected_features || []).map(item => Number(item.id))])));
+  try {
+    const draft = JSON.parse(localStorage.getItem(draftKey));
+    if (draft?.issues) {
+      if (editable(draft.issues) === editable(state.issues)) clearDraft();
+      else if (draft.version === state.version && rowIds(draft.issues) === rowIds(state.issues)) {
+        // Nothing changed on the server since: the edits of an earlier visit apply as they were.
+        state.issues = draft.issues; dirty = true;
+        inform('Unsaved edits from an earlier visit were restored from this browser.');
+      } else {
+        clearDraft();
+        inform('Unsaved edits kept in this browser were discarded: the sequences were changed elsewhere since.');
+      }
+    }
+    // Drafts of changesets never opened again (e.g. discarded ones) go after 30 days.
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (!key?.startsWith('sequence-draft:') || key === draftKey) continue;
+      let saved = 0;
+      try { saved = JSON.parse(localStorage.getItem(key))?.saved || 0; } catch (_) { /* Unreadable: removed below. */ }
+      if (!(Date.now() - saved < 30 * 864e5)) localStorage.removeItem(key);
+    }
+  } catch (_) { /* Storage unavailable or unreadable: the page works without drafts. */ }
   // Rendering computed indices does not by itself create a draft.
   state.issues.forEach(calculate);
+  showStatus();
   function updateMigrationCount() {
     const count = root.querySelectorAll('[data-migration-needed]').length;
     root.querySelectorAll('[data-migration-count]').forEach(label => {
@@ -128,18 +174,21 @@
       window.scrollTo(scroll);
     }
   });
-  function postJSON(url, data) {
+  function postJSON(url, data, keepalive = false) {
+    const body = JSON.stringify(data);
     return fetch(url, {
       method: 'POST', credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value,
       },
-      body: JSON.stringify(data),
+      // keepalive lets the request finish after the tab closes; browsers cap its body at 64 KiB.
+      body, keepalive: keepalive && new Blob([body]).size < 65536,
     });
   }
-  async function flush() {
-    clearTimeout(timer);
+  // The only way edits reach the server: one request with all rows, of which
+  // the server writes those that changed.
+  async function flush({keepalive = false} = {}) {
     if (saving) await saving.catch(() => {});
     if (!dirty) return;
     saving = (async () => {
@@ -148,39 +197,66 @@
       }
       const sent = JSON.stringify(state.issues);
       dirty = false;
-      const response = await postJSON(root.dataset.saveUrl, {version: state.version, issues: state.issues});
+      showStatus('Saving…');
+      const response = await postJSON(root.dataset.saveUrl, {version: state.version, issues: state.issues}, keepalive);
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error || 'Save failed. Try again.');
+      const unchanged = JSON.stringify(state.issues) === sent;
       state.version = result.version;
-      // Keep edits typed while the request was running; they save next.
-      if (JSON.stringify(state.issues) === sent) {
-        state.issues = result.issues;
-        state.issues.forEach(calculate);
+      // The type choices of a row follow its saved type.
+      for (const issue of state.issues) {
+        for (const row of issue.rows) if (result.allowed?.[row.id]) row.allowed_types = result.allowed[row.id];
       }
-      message('');
+      state.issues.forEach(calculate);
+      // Edits typed while the request was running stay in the draft, on the new version.
+      if (unchanged) clearDraft(); else { dirty = true; storeDraft(); }
+      message(''); inform('');
     })().catch(err => {
       // The save may not have reached the server: keep the edits pending.
       dirty = true;
-      message(err.message === 'Failed to fetch' ? 'Connection unavailable. Reconnect before leaving this page.' : err.message);
+      message(err.message === 'Failed to fetch' ? 'Connection unavailable. The edits are kept in this browser: save again when the connection is back.' : err.message);
       throw err;
-    }).finally(() => { saving = null; });
+    }).finally(() => { saving = null; showStatus(dirty ? undefined : 'All edits saved'); });
     return saving;
   }
+  saveButton?.addEventListener('click', () => flush().catch(() => {}));
+  document.addEventListener('keydown', event => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') { event.preventDefault(); flush().catch(() => {}); }
+  });
+  // Hidden is the last state a page can rely on before it is closed or
+  // discarded (Page Lifecycle API), also on phones.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && dirty && !discarding) flush({keepalive: true}).catch(() => {});
+  });
+  // Back from a cancelled discard (page restored from the back/forward cache).
+  window.addEventListener('pageshow', () => { discarding = false; });
   // Server forms (delete, move, submit) see the saved sequences.
   let resubmitting = false;
   document.addEventListener('submit', async event => {
     if (resubmitting || !(dirty || saving) || event.target.closest('[data-migrate-credits]')) return;
+    // Discarding needs no save; if it is cancelled, the draft is still here.
+    if (event.submitter?.name === 'discard') { discarding = true; return; }
     event.preventDefault();
     try { await flush(); resubmitting = true; event.target.requestSubmit(event.submitter); }
     catch (_) { /* The error is shown; stay on the page. */ } finally { resubmitting = false; }
   }, true);
-  // Links in this tab, too, leave only after the pending edits are saved.
+  // Links of this site leave only after the pending edits are saved, so the
+  // next page (Edit, Preview, Compare) shows them.
   document.addEventListener('click', async event => {
     const link = event.target.closest('a[href]');
     if (!link || !(dirty || saving) || event.defaultPrevented || event.button !== 0
         || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
-        || (link.target && link.target !== '_self') || link.hasAttribute('download')) return;
+        || link.origin !== location.origin || link.hasAttribute('download')) return;
     event.preventDefault();
+    if (link.target === '_blank') {
+      // Open the tab within the click, so it is not blocked as a popup, and load it after the save.
+      const tab = window.open('', '_blank');
+      try {
+        await flush();
+        if (tab) { tab.opener = null; tab.location = link.href; } else location.assign(link.href);  // the tab was blocked
+      } catch (_) { tab?.close(); }
+      return;
+    }
     try { await flush(); location.assign(link.href); }
     catch (_) { /* The error is shown; stay on the page. */ }
   });
@@ -220,7 +296,8 @@
       adding = false;
     }
   });
-  window.addEventListener('beforeunload', event => { if (dirty || saving) { event.preventDefault(); event.returnValue = ''; } });
+  // Edits kept in localStorage survive the tab; only edits that could not be stored need a warning.
+  window.addEventListener('beforeunload', event => { if (dirty && !stored) { event.preventDefault(); event.returnValue = ''; } });
   function rowContext(input) {
     const issue = state.issues.find(i => i.id === Number(input.closest('[data-issue]').dataset.issue));
     return {issue, row: issue.rows.find(r => r.id === Number(input.closest('[data-row]').dataset.row))};
@@ -326,8 +403,6 @@
       if (editor) { editor.open = false; editor.querySelector('summary').focus(); }
     }
   });
-  // Leaving a field saves at once instead of waiting for the timer.
-  root.addEventListener('change', event => { if (event.target.matches('[data-field]') && dirty) flush().catch(() => {}); });
   let dragged = null;
   root.addEventListener('dragstart', event => {
     const handle = event.target.closest('[data-handle]');

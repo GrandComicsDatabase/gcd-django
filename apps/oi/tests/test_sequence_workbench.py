@@ -5,14 +5,16 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth.models import Permission
+from django.db import connection
 from django.test import RequestFactory
+from django.test.utils import CaptureQueriesContext
 from django.template.loader import render_to_string
 
 from apps.gcd.models import StoryType, CreditType
 from apps.oi import states
 from apps.oi.models import CTYPES, IssueRevision, StoryRevision
 from apps.oi.sequence_workbench import (
-    migrate_all_credits, save_sequences, sequence_snapshot, snapshot_version,
+    migrate_all_credits, save_sequences, sequence_snapshot, sequence_version,
     workbench_context,
 )
 
@@ -37,8 +39,8 @@ def workbench(any_edit_story_rev, any_indexer):
 
 
 def payload(changeset):
-    issues = sequence_snapshot(changeset)
-    return {'issues': deepcopy(issues), 'version': snapshot_version(issues)}
+    return {'issues': deepcopy(sequence_snapshot(changeset)),
+            'version': sequence_version(changeset)}
 
 
 def post(changeset, user, data):
@@ -77,7 +79,7 @@ def test_inline_migration_returns_rows_and_checks_version(workbench):
     changeset, issue, story, user = workbench
     story.script = 'Legacy creator'
     story.save()
-    data = {'version': snapshot_version(sequence_snapshot(changeset)), 'story': story.pk}
+    data = {'version': sequence_version(changeset), 'story': story.pk}
 
     def migrate(revision):
         revision.script = ''
@@ -90,7 +92,7 @@ def test_inline_migration_returns_rows_and_checks_version(workbench):
     assert response.status_code == 200
     assert converter.call_count == 1
     result = json.loads(response.content)
-    assert result['version'] == snapshot_version(sequence_snapshot(changeset))
+    assert result['version'] == sequence_version(changeset)
     assert result['rows'][0]['id'] == story.pk
     assert 'data-row=' in result['rows'][0]['html']
     data['version'] = 'stale'
@@ -103,7 +105,7 @@ def test_inline_migration_accepts_story_id_as_text(workbench):
     changeset, issue, story, user = workbench
 
     def migrate(story_id):
-        data = {'version': snapshot_version(sequence_snapshot(changeset)), 'story': story_id}
+        data = {'version': sequence_version(changeset), 'story': story_id}
         request = RequestFactory().post('/migrate/', json.dumps(data), content_type='application/json')
         request.user = user
         return migrate_all_credits(request, changeset.pk)
@@ -369,6 +371,8 @@ def test_template_renders_actions_and_empty_table(workbench):
         'workflow_action_labels': {'submit': 'Submit Changes For Approval'},
     })
     assert full_page.count('<h1') == 1
+    assert 'data-save-sequences' in full_page
+    assert 'data-save-status' in full_page
     story.delete()
     html = render_to_string('oi/edit/issue_changeset.html', context)
     assert 'No sequences yet.' in html
@@ -413,7 +417,7 @@ def test_late_validation_failure_rolls_back_all_rows(workbench):
 
 def add_request(changeset, issue, user, **overrides):
     from apps.oi.sequence_workbench import add_sequence
-    data = {'issue': issue.pk, 'version': snapshot_version(sequence_snapshot(changeset))}
+    data = {'issue': issue.pk, 'version': sequence_version(changeset)}
     data.update(overrides)
     request = RequestFactory().post('/sequences/add/', json.dumps(data), content_type='application/json')
     request.user = user
@@ -554,3 +558,92 @@ def test_inline_type_change_rejects_existing_story_arc(workbench):
     story.refresh_from_db()
     assert story.type_id == 19
     assert story.story_arc.filter(pk=arc.pk).exists()
+
+
+def add_rows(story, changeset, issue, count):
+    """Add rows after the existing ones, numbered as the workbench numbers them."""
+    story.sequence_number = 0
+    story.save()
+    start = changeset.storyrevisions.count()
+    rows = []
+    for number in range(start, start + count):
+        row = StoryRevision.clone_revision(story, changeset, issue)
+        row.sequence_number = number
+        row.save()
+        rows.append(row)
+    return rows
+
+
+def save_queries(changeset, user, title):
+    """Queries of a save that changes only the title of the first row."""
+    data = payload(changeset)
+    data['issues'][0]['rows'][0]['title'] = title
+    with CaptureQueriesContext(connection) as queries:
+        response = post(changeset, user, data)
+    assert response.status_code == 200, response.content
+    return len(queries)
+
+
+def test_save_writes_only_changed_rows(workbench):
+    changeset, issue, story, user = workbench
+    other, = add_rows(story, changeset, issue, 1)
+    other.refresh_from_db()
+    untouched = other.modified
+    data = payload(changeset)
+    data['issues'][0]['rows'][0]['title'] = 'Only this one'
+    response = post(changeset, user, data)
+    assert response.status_code == 200, response.content
+    story.refresh_from_db()
+    other.refresh_from_db()
+    assert story.title == 'Only this one'
+    assert other.modified == untouched
+    assert json.loads(response.content)['version'] == sequence_version(changeset)
+
+
+def test_save_cost_does_not_grow_with_unchanged_rows(workbench):
+    changeset, issue, story, user = workbench
+    add_rows(story, changeset, issue, 1)
+    save_queries(changeset, user, 'Warm up')  # loads the user's permissions once
+    few = save_queries(changeset, user, 'Two rows')
+    add_rows(story, changeset, issue, 5)
+    assert save_queries(changeset, user, 'Seven rows') == few
+
+
+def test_retry_after_lost_response_succeeds_without_writing(workbench):
+    changeset, issue, story, user = workbench
+    data = payload(changeset)
+    data['issues'][0]['rows'][0]['title'] = 'Saved once'
+    assert post(changeset, user, data).status_code == 200
+    story.refresh_from_db()
+    saved = story.modified
+    # The same data again, with the version the response would have replaced.
+    response = post(changeset, user, data)
+    assert response.status_code == 200, response.content
+    story.refresh_from_db()
+    assert story.modified == saved
+    assert json.loads(response.content)['version'] == sequence_version(changeset)
+
+
+def test_save_elsewhere_makes_the_version_stale(workbench):
+    changeset, issue, story, user = workbench
+    data = payload(changeset)
+    story.save()  # as the full sequence editor does
+    data['issues'][0]['rows'][0]['title'] = 'Inline edit'
+    assert post(changeset, user, data).status_code == 409
+    story.refresh_from_db()
+    assert story.title != 'Inline edit'
+
+
+def test_unedited_legacy_row_does_not_block_other_rows(workbench):
+    changeset, issue, story, user = workbench
+    legacy, = add_rows(story, changeset, issue, 1)
+    legacy.type_id = 8  # credits: a type that cannot have a genre
+    legacy.feature = ''
+    legacy.save()
+    assert legacy.genre
+    data = payload(changeset)
+    data['issues'][0]['rows'][0]['title'] = 'Still saved'
+    response = post(changeset, user, data)
+    assert response.status_code == 200, response.content
+    story.refresh_from_db()
+    assert story.title == 'Still saved'

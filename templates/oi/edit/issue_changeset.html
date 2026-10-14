@@ -3,6 +3,7 @@
 {{ sequence_workbench|json_script:"sequence-workbench-data" }}
 <div id="sequence-workbench" data-add-url="{% url 'add_changeset_sequence' id=changeset.id %}" data-save-url="{% url 'save_changeset_sequences' id=changeset.id %}" data-autocomplete-url="{% url 'feature_name_autocomplete' %}" class="min-w-0 space-y-6">
   <p data-error role="alert" class="hidden rounded-md border border-red-300 bg-red-50 p-3 text-red-800"></p>
+  <p data-notice role="status" class="hidden rounded-md bg-blue-50 p-3 text-blue-800"></p>
 
   {% for issue_revision in changeset.issuerevisions.all %}
   <section data-issue="{{ issue_revision.id }}" data-language="{{ issue_revision.series.language.code }}" class="rounded-lg border border-gray-300 bg-white shadow-sm">
