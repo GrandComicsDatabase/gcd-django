@@ -1,0 +1,20 @@
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="600" viewBox="0 0 1200 600">
+  <style type="text/css">
+    .st0{fill:#012169;} .st1{clip-path:url(#SVGID_4_);fill:none;stroke:#FFFFFF;stroke-width:56.25;stroke-miterlimit:10;} .st2{fill:none;stroke:#C8102E;stroke-width:75;stroke-miterlimit:10;} .st3{fill:none;stroke:#FFFFFF;stroke-width:75;stroke-miterlimit:10;} .st4{clip-path:url(#SVGID_2_);fill:none;stroke:#C8102E;stroke-width:37.5;stroke-miterlimit:10;} .st5{fill:none;stroke:#C8102E;stroke-width:56.25;stroke-miterlimit:10;}
+  </style>
+  <defs>
+    <clipPath id="SVGID_2_">
+      <path id="SVGID_1_" d="M525 150H0V0l525 300z" overflow="visible" />
+      <path id="SVGID_3_" d="M262.5 300V0H525L0 300z" overflow="visible" />
+    </clipPath>
+    <clipPath id="SVGID_4_">
+      <path d="M0,0 H530 V305 H0z"/>
+    </clipPath>
+  </defs>
+  <path class="st0" d="M0 0h1200v600H0z"/>
+  <path class="st1" d="M0 300L525 0M0 0l525 300"/>
+  <path class="st4" d="M0 0l525 300 M525 0L0 300"/>
+  <path class="st3" d="M 262.5,305 V 0 M 0,150 h 525 M525 37.5h675M525 262.5h675M0 487.5h1200"/>
+  <path class="st5" d="M 0,150 H 525 M 262.5,305 V 0"/>
+  <path class="st2" d="M525 112.5h675M0 562.5h1200 M0 337.5h1200" />
+</svg>

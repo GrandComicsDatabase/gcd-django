@@ -153,8 +153,10 @@ class AccountForm(forms.Form):
                  'otherwise a single page view.'))
 
     cache_size = forms.IntegerField(
-      initial=3, required=False, help_text='Number of objects to cache '
-      'using the remember function.',)
+      initial=3, min_value=1, required=False,
+      help_text='Maximum remembered objects per category. Changing this value '
+      'keeps your current cache. A smaller limit applies the next time you '
+      'remember an object, removing the oldest entries in that category.')
     variant_threshold = forms.IntegerField(
       initial=5, required=False, help_text='Number up to which '
       'the variant covers are shown unfolded on the issue page.')
@@ -289,6 +291,12 @@ class ProfileForm(AccountForm):
                                            min_length=MIN_PASSWORD_LENGTH,
                                            max_length=MAX_PASSWORD_LENGTH,
                                            required=False)
+
+    # Required here, but not in AccountForm: register.html does not render
+    # this field, so requiring it there broke registration submissions.
+    cache_size = forms.IntegerField(
+      initial=3, min_value=1, required=True,
+      help_text=AccountForm.base_fields['cache_size'].help_text)
 
 
 class PasswordResetForm(SetPasswordForm):
