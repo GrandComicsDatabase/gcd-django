@@ -94,7 +94,9 @@ def test_story_arc_issues_schema_reuses_paginated_issue_contract(
         'not a curated',
         'variant',
         'deleted',
-        'reprint',
+        'direct reprints',
+        'without an indexed target story',
+        'not followed recursively',
         '50',
         '200',
     ]:

@@ -17,7 +17,7 @@ from apps.api_v2.throttling import (
     V2TokenUserRateThrottle,
 )
 from apps.api_v2.views.issues import IssueViewSet
-from apps.gcd.models import Issue, Series
+from apps.gcd.models import Issue, Reprint, Series
 
 
 def _issue(series, *, number='1', sort_code=1, **kwargs):
@@ -169,6 +169,139 @@ def test_arc_issues_preserves_cross_series_variants(
     assert row['variant_of'] == base.pk
 
 
+@pytest.mark.parametrize('indexed_target', [True, False])
+def test_arc_issues_includes_untagged_reprint_targets(
+    api_client,
+    issue,
+    language,
+    indexed_target,
+):
+    """A direct story reprint retains its exact issue without an arc tag."""
+    arc = _create_story_arc(language)
+    origin = _member(arc, issue)
+    parent = _series(issue.series)
+    base = _issue(parent)
+    variant = _issue(parent, number='1/A', sort_code=2, variant_of=base)
+    target = (
+        _create_story(variant, title='Reprinted story', sequence_number=1)
+        if indexed_target
+        else None
+    )
+    Reprint.objects.create(origin=origin, target=target, target_issue=variant)
+    if target is not None:
+        assert not target.story_arc.exists()
+
+    response = api_client.get(_url(arc))
+
+    assert response.status_code == 200
+    assert response.data['count'] == 2
+    assert [row['id'] for row in response.data['results']] == [
+        issue.pk,
+        variant.pk,
+    ]
+    row = response.data['results'][1]
+    assert (row['series']['id'], row['variant_of']) == (parent.pk, base.pk)
+
+
+def test_arc_issues_deduplicates_direct_and_reprinted_members(
+    api_client,
+    series,
+    language,
+):
+    """Overlapping tags and reprint links retain stable distinct pages."""
+    arc = _create_story_arc(language)
+    issues = [_issue(series, number=str(i), sort_code=i) for i in range(3)]
+    origins = [_member(arc, issues[0], sequence_number=i) for i in (1, 2)]
+    target = _member(arc, issues[1])
+    for origin in origins:
+        Reprint.objects.create(origin=origin, target=target)
+        Reprint.objects.create(origin=origin, target_issue=issues[2])
+
+    returned_ids = []
+    for page in (1, 2, 3):
+        response = api_client.get(_url(arc), {'page': page, 'page_size': 1})
+        repeated = api_client.get(_url(arc), {'page': page, 'page_size': 1})
+        assert response.status_code == 200
+        assert response.data == repeated.data
+        assert response.data['count'] == 3
+        assert bool(response.data['next']) == (page < 3)
+        assert bool(response.data['previous']) == (page > 1)
+        returned_ids.extend(row['id'] for row in response.data['results'])
+    assert returned_ids == [issue.pk for issue in issues]
+
+
+@pytest.mark.parametrize(
+    'deleted_model',
+    [
+        'origin_story',
+        'origin_issue',
+        'origin_series',
+        'target_story',
+        'target_issue',
+        'target_series',
+    ],
+)
+def test_arc_issues_hides_deleted_reprint_members(
+    api_client,
+    issue,
+    language,
+    deleted_model,
+):
+    """Neither end of a reprint can introduce deleted catalog records."""
+    arc = _create_story_arc(language)
+    origin = _member(arc, issue)
+    target_issue = _issue(_series(issue.series))
+    target = _create_story(
+        target_issue, title='Reprinted story', sequence_number=1
+    )
+    Reprint.objects.create(origin=origin, target=target)
+    deleted = {
+        'origin_story': origin,
+        'origin_issue': issue,
+        'origin_series': issue.series,
+        'target_story': target,
+        'target_issue': target_issue,
+        'target_series': target_issue.series,
+    }[deleted_model]
+    deleted.deleted = True
+    deleted.save(update_fields=['deleted'])
+
+    response = api_client.get(_url(arc))
+
+    assert response.status_code == 200
+    expected = [issue.pk] if deleted_model.startswith('target') else []
+    assert response.data['count'] == len(expected)
+    assert [row['id'] for row in response.data['results']] == expected
+
+
+def test_arc_issues_only_follows_direct_member_story_reprints(
+    api_client,
+    series,
+    language,
+):
+    """Incoming, issue-only, unrelated, and recursive links add no members."""
+    arc = _create_story_arc(language)
+    issues = [_issue(series, number=str(i), sort_code=i) for i in range(6)]
+    origin = _member(arc, issues[0])
+    target = _create_story(issues[1], title='Reprint', sequence_number=1)
+    Reprint.objects.create(origin=origin, target=target)
+    Reprint.objects.create(origin=target, target_issue=issues[2])
+    Reprint.objects.create(origin_issue=issues[3], target=origin)
+    Reprint.objects.create(origin_issue=issues[0], target_issue=issues[4])
+    unrelated = _member(
+        _create_story_arc(language, name='Unrelated arc'), issues[3]
+    )
+    Reprint.objects.create(origin=unrelated, target_issue=issues[5])
+
+    response = api_client.get(_url(arc))
+
+    assert response.status_code == 200
+    assert response.data['count'] == 2
+    assert [row['id'] for row in response.data['results']] == [
+        issue.pk for issue in issues[:2]
+    ]
+
+
 @pytest.mark.parametrize('deleted_model', ['story', 'issue', 'series'])
 def test_arc_issues_hides_deleted_members(
     api_client,
@@ -287,16 +420,23 @@ def test_arc_issues_inherits_v2_throttling(
 
 
 @pytest.mark.parametrize('member_count', [1, 25, 100])
+@pytest.mark.parametrize('reprinted', [False, True])
 def test_arc_issues_query_count_is_bounded(
     api_client,
     series,
     language,
     member_count,
+    reprinted,
 ):
     """The existing batched issue prefetches avoid per-member queries."""
     arc = _create_story_arc(language)
+    origin = None
     for i in range(member_count):
-        _member(arc, _issue(series, number=str(i), sort_code=i))
+        issue = _issue(series, number=str(i), sort_code=i)
+        if reprinted and origin is not None:
+            Reprint.objects.create(origin=origin, target_issue=issue)
+        else:
+            origin = _member(arc, issue)
 
     with CaptureQueriesContext(connection) as context:
         response = api_client.get(_url(arc), {'page_size': 100})

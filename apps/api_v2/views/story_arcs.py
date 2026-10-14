@@ -3,7 +3,7 @@
 
 """Viewsets for v2 story-arc endpoints."""
 
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
@@ -102,7 +102,9 @@ class StoryArcViewSet(GCDBaseViewSet):
         responses=IssueListSerializer(many=True),
         description=(
             'Return distinct issues containing active stories associated '
-            'with this Story Arc, including reprints. Deleted arcs, '
+            'with this Story Arc and direct reprints of those stories, '
+            'including reprints without an indexed target story. Reprint '
+            'links are not followed recursively. Deleted arcs, '
             'stories, issues, and parent series are excluded. Exact native '
             'issue and parent-series identities and variant_of references '
             'are retained; variants are not replaced with base issues. '
@@ -118,15 +120,22 @@ class StoryArcViewSet(GCDBaseViewSet):
     def issues(self, request, *args, **kwargs):
         """Return a bounded page of distinct native member issues."""
         arc = self.get_object()
-        member_ids = (
-            Story.objects.filter(deleted=False, story_arc=arc)
+        members = Story.objects.filter(
+            deleted=False,
+            issue__deleted=False,
+            issue__series__deleted=False,
+            story_arc=arc,
+        ).order_by()
+        reprint_issue_ids = (
+            Reprint.objects.filter(origin_id__in=members.values('id'))
+            .filter(Q(target__isnull=True) | Q(target__deleted=False))
             .order_by()
-            .values('issue_id')
+            .values('target_issue_id')
         )
         queryset = IssueViewSet.queryset.filter(
+            Q(pk__in=members.values('issue_id')) | Q(pk__in=reprint_issue_ids),
             deleted=False,
             series__deleted=False,
-            pk__in=member_ids,
         ).order_by(
             'key_date',
             'on_sale_date',
