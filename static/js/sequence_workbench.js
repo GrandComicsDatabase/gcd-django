@@ -72,7 +72,6 @@
     check.textContent = declared === null ? 'Issue page count not declared' : unknown ? `Issue: ${declared} pages · complete missing page counts to compare` : matches ? `✓ Matches issue: ${declared} pages` : `Issue: ${declared} pages · difference ${Number((sum - Number(declared)).toFixed(3))}`;
     const anomalies = [];
     if (!cover) anomalies.push('Missing cover');
-    if (cover && Number(cover.pages) % 2 !== 0) anomalies.push('Odd cover page count');
     if (!unknown && Number.isInteger(sum) && sum % 2 !== 0) anomalies.push('Odd total page count');
     if (!unknown && !Number.isInteger(sum)) anomalies.push('Fractional total page count');
     if (declared !== null && !unknown) anomalies.push(sum < Number(declared) ? 'Total < issue' : sum > Number(declared) ? 'Total > issue' : 'Total = issue');
