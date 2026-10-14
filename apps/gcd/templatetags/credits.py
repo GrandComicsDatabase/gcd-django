@@ -364,8 +364,7 @@ def __format_credit(story, credit, computed_value='', tailwind=False,
 @register.filter
 def search_creator_credit(story, credit_type):
     credits = story.active_credits.filter(
-              credit_type_id=CREDIT_TYPES[credit_type],
-              creator__creator__isnull=False)
+              credit_type_id=CREDIT_TYPES[credit_type])
     if not credits:
         return ''
     credit_value = '%s' % credits[0].creator.display_credit(credits[0],

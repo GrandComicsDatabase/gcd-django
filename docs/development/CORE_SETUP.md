@@ -87,7 +87,7 @@ Useful commands:
 ## Optional Elasticsearch search
 
 The existing Haystack indexes and Elasticsearch 7 backend can run as an
-optional extension of the core environment. For the first search-enabled
+optional extension of the Docker core environment. For the first search-enabled
 startup, or after replacing the development database, run:
 
 ```bash
@@ -100,6 +100,12 @@ and four workers. Rebuilding a full catalog dump can still take several hours;
 the deterministic sample dataset completes quickly. You can override the
 defaults with Haystack options such as `--workers 2`, or set
 `GCD_SEARCH_WORKERS` in `.env` for the local machine.
+
+Public-dump indexing requires valid catalog relationships. Older snapshots can
+contain references to missing creators or universes and stop a rebuild. If that
+happens, report the error and affected record IDs and use a dump confirmed to
+contain the corrections, or use the deterministic sample dataset. Rebuilding
+does not repair the database or silently skip broken relationships.
 
 After an index exists, preserve and reuse it with:
 
