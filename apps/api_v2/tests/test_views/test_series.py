@@ -71,13 +71,14 @@ def _create_series(
     publication_type,
     publisher,
     year_began,
+    sort_name=None,
     year_ended=None,
     deleted=False,
 ):
     """Create a minimal series row for view tests."""
     return Series.objects.create(
         name=name,
-        sort_name=name,
+        sort_name=sort_name if sort_name is not None else name,
         year_began=year_began,
         year_ended=year_ended,
         publication_dates='1990 - present',
@@ -242,6 +243,122 @@ def test_series_list_applies_filter_query_params(
     assert response.status_code == 200
     assert response.data['count'] == 1
     assert response.data['results'][0]['id'] == matching.pk
+
+
+def test_series_search_paginates_in_stable_relevance_order(
+    api_client,
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """Ranked search stays deterministic across page boundaries."""
+    exact = _create_series(
+        country=country,
+        language=language,
+        name='Batman',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1940,
+    )
+    prefix = _create_series(
+        country=country,
+        language=language,
+        name='Batman Adventures',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1992,
+    )
+    token_prefix = _create_series(
+        country=country,
+        language=language,
+        name='The Batman Chronicles',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1995,
+    )
+    substring = _create_series(
+        country=country,
+        language=language,
+        name='Combatman',
+        publication_type=series_publication_type,
+        publisher=publisher,
+        year_began=1962,
+    )
+    url = reverse('api-v2-series-list')
+
+    first_page = api_client.get(
+        url,
+        {'search': 'batman', 'page_size': 2},
+    )
+    repeated_first_page = api_client.get(
+        url,
+        {'search': 'batman', 'page_size': 2},
+    )
+    second_page = api_client.get(
+        url,
+        {'search': 'batman', 'page_size': 2, 'page': 2},
+    )
+
+    assert first_page.status_code == 200
+    assert repeated_first_page.status_code == 200
+    assert second_page.status_code == 200
+    assert first_page.data['count'] == 4
+    assert [result['id'] for result in first_page.data['results']] == [
+        exact.pk,
+        prefix.pk,
+    ]
+    assert repeated_first_page.data['results'] == first_page.data['results']
+    assert [result['id'] for result in second_page.data['results']] == [
+        token_prefix.pk,
+        substring.pk,
+    ]
+
+
+def test_series_search_paginates_same_rank_with_stable_tie_breakers(
+    api_client,
+    country,
+    language,
+    publisher,
+    series_publication_type,
+):
+    """Sort name, year, and ID break equal-rank ties across pages."""
+    matches = [
+        _create_series(
+            country=country,
+            language=language,
+            name='Batman',
+            sort_name=sort_name,
+            publication_type=series_publication_type,
+            publisher=publisher,
+            year_began=year_began,
+        )
+        for sort_name, year_began in [
+            ('Z Batman', 1940),
+            ('A Batman', 2000),
+            ('A Batman', 1940),
+            ('A Batman', 1940),
+        ]
+    ]
+    expected_ids = [matches[index].pk for index in (2, 3, 1, 0)]
+    url = reverse('api-v2-series-list')
+    actual_ids = []
+
+    for page, expected_id in enumerate(expected_ids, start=1):
+        params = {'search': 'batman', 'page_size': 1, 'page': page}
+        response = api_client.get(url, params)
+        repeated = api_client.get(url, params)
+
+        assert response.status_code == repeated.status_code == 200
+        assert response.data['count'] == 4
+        assert [result['id'] for result in response.data['results']] == [
+            expected_id,
+        ]
+        assert repeated.data == response.data
+        actual_ids.append(response.data['results'][0]['id'])
+
+    assert actual_ids == expected_ids
+    assert len(set(actual_ids)) == len(matches)
 
 
 def test_series_endpoints_hide_soft_deleted_records(
