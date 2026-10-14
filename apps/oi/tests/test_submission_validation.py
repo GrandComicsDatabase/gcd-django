@@ -135,6 +135,7 @@ def test_submission_validation_accepts_empty_multiple_choice(
 ])
 def test_submission_validates_sequence_total_when_issue_revision_exists(
         any_edit_story_rev, any_indexer, page_count, uncertain, exceeds):
+    """Report a sequence total above a known, certain issue page count."""
     changeset = any_edit_story_rev.changeset
     changeset.change_type = CTYPES['issue']
     changeset.save()
