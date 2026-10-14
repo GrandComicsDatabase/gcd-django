@@ -3,6 +3,13 @@
 
 """Serializers for v2 issue endpoints."""
 
+import base64
+import hmac
+import time
+import urllib.parse
+from hashlib import sha256
+
+from django.conf import settings
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -64,7 +71,27 @@ def _cover_url(issue):
     if not covers:
         return ''
     cover = covers[0]
-    return f'{cover.get_base_url()}/w400/{cover.id}.jpg'
+    cover_url = f'{cover.get_base_url()}/w400/{cover.id}.jpg'
+    if hasattr(settings, 'URL_SIGN_SECRET_KEY'):
+        return _hmac_sign_url(cover_url, settings.URL_SIGN_SECRET_KEY)
+    else:
+        return cover_url
+
+
+def _hmac_sign_url(url, secret):
+    """Sign the url with HMAC token expected by Cloudflare.
+
+    Implementation guide:
+    https://developers.cloudflare.com/waf/custom-rules/use-cases/configure-token-authentication/
+    """
+    message = urllib.parse.urlsplit(url).path
+    separator = 'verify'
+    timestamp = str(int(time.time()))
+    digest = hmac.new(
+        (secret).encode('utf8'), f'{message}{timestamp}'.encode(), sha256
+    )
+    token = urllib.parse.quote_plus(base64.b64encode(digest.digest()))
+    return f'{url}?{separator}={timestamp}-{token}'
 
 
 class IssueStorySerializer(serializers.ModelSerializer):

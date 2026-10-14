@@ -254,6 +254,19 @@ def test_issue_filter_matches_variant_presence(series):
     assert list(base_qs) == [base]
 
 
+def test_issue_filter_rejects_invalid_variant_boolean(series):
+    """Malformed variant values fail validation instead of being ignored."""
+    filterset = IssueFilterSet(
+        {'variant_of': 'not-a-boolean'},
+        queryset=Issue.objects.all(),
+    )
+
+    assert filterset.is_valid() is False
+    assert filterset.errors == {
+        'variant_of': ['Enter either true or false.'],
+    }
+
+
 def test_issue_filter_matches_modified_and_created_ranges(series):
     """Created/modified range filters support sync-style issue queries."""
     older = _create_issue(

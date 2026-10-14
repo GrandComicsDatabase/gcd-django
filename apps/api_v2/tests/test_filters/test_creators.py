@@ -289,6 +289,19 @@ def test_creator_filter_matches_living_creators(db):
     assert list(qs) == [matching]
 
 
+def test_creator_filter_rejects_invalid_death_date_isnull(db):
+    """Malformed isnull values fail validation instead of being ignored."""
+    filterset = CreatorFilterSet(
+        {'death_date__isnull': 'not-a-boolean'},
+        queryset=Creator.objects.filter(deleted=False),
+    )
+
+    assert filterset.is_valid() is False
+    assert filterset.errors == {
+        'death_date__isnull': ['Enter either true or false.'],
+    }
+
+
 def test_creator_filter_rejects_invalid_partial_date(db):
     """Malformed partial-date values fail validation."""
     filterset = CreatorFilterSet(

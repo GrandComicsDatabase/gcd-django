@@ -19,6 +19,7 @@ from django.db.models.functions import Concat, Replace, Right
 
 from apps.api_v2.filters.common import (
     TIMESTAMP_FILTER_FIELDS,
+    StrictBooleanFilter,
     TimestampFilterSet,
 )
 from apps.gcd.models import Creator
@@ -196,7 +197,7 @@ class CreatorFilterSet(TimestampFilterSet):
         method='filter_death_date_lte',
         validators=[validate_partial_date],
     )
-    death_date__isnull = django_filters.BooleanFilter(
+    death_date__isnull = StrictBooleanFilter(
         field_name='death_date',
         lookup_expr='isnull',
     )
