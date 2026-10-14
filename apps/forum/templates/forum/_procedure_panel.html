@@ -1,0 +1,74 @@
+{% load forum_tags %}
+{% if procedure %}
+<section id="procedure" class="mt-2" aria-labelledby="procedure-heading">
+  <h3 id="procedure-heading" class="label-gcd-blue">Agenda and vote</h3>
+  {% if discussion.agenda_item %}
+  <p class="text-sm">Agenda item: <a href="{{ discussion.agenda_item.agenda.get_absolute_url }}">{{ discussion.agenda_item.name }}</a> · {% if discussion.agenda_item.open %}open{% elif discussion.agenda_item.pending %}pending{% else %}closed{% endif %}</p>
+  {% endif %}
+  {% if ballot_info %}
+  <div class="text-sm mt-1">
+    <p>Ballot: <a href="{{ ballot_info.ballot.get_absolute_url }}">{{ ballot_info.ballot.name }}</a></p>
+    {% if ballot_info.ballot.open %}
+    <p>Open until <time datetime="{{ ballot_info.ballot.deadline|date:'c' }}">{{ ballot_info.ballot.deadline|date:"Y-m-d H:i" }} UTC</time></p>
+    {% endif %}
+    <p>{{ ballot_info.voters }} of {{ ballot_info.quorum }} votes for the quorum{% if ballot_info.quorum_reached %} · quorum reached{% endif %}</p>
+    <meter class="w-full" min="0" max="{{ ballot_info.quorum }}" value="{{ ballot_info.voters }}" aria-label="Votes cast toward the quorum">{{ ballot_info.voters }}</meter>
+    {% if ballot_info.results %}<p class="font-bold">Result: {% for option in ballot_info.results %}{{ option.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+    {% if ballot_info.ballot.open %}<a class="btn btn-blue block text-center mt-1" href="{{ ballot_info.ballot.get_absolute_url }}">Vote on the ballot page</a>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if consensus %}
+  <div class="text-sm mt-1">
+    {% if consensus.state == 'passed' %}
+    <p class="bg-green-100 px-1">Passed by consensus on {{ consensus.at|date:"Y-m-d" }}.</p>
+    {% elif consensus.state == 'impasse' %}
+    <p class="bg-stone-200 px-1">Consensus sought, but {{ consensus.objections|length }} member{{ consensus.objections|length|pluralize }} objected: the item moves to a vote.</p>
+    <ul>{% for objection in consensus.objections %}<li><a href="{{ objection.post.get_absolute_url }}">{{ objection.user|display_name }}</a></li>{% endfor %}</ul>
+    {% elif consensus.state == 'ready' %}
+    <p class="bg-green-100 px-1">No objections in one week and one day: a coordinator can declare it passed.</p>
+    {% else %}
+    <p class="bg-blue-100 px-1">Seeking consensus: passes on <time datetime="{{ consensus.ends|date:'c' }}">{{ consensus.ends|date:"Y-m-d H:i" }} UTC</time> if nobody objects.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if can_object %}
+  <details class="mt-1 text-sm border-t border-gray-200 pt-1">
+    <summary class="cursor-pointer">Object to the consensus…</summary>
+    <form method="post" action="{% url 'forum:consensus-object' discussion.slug %}">
+      {% csrf_token %}
+      <label for="objection" class="sr-only">What you object to</label>
+      <textarea id="objection" name="reason" required rows="3" maxlength="2000" class="w-full border-gray-400" placeholder="What do you object to?"></textarea>
+      <button class="btn-blue-editing m-0">Send the objection</button>
+    </form>
+  </details>
+  {% endif %}
+
+  {% if coordinator %}
+  {% if can_seek_consensus %}
+  <form method="post" action="{% url 'forum:consensus-seek' discussion.slug %}" class="mt-1" onsubmit="return confirm('Seek consensus? Members have one week and one day to object.');">
+    {% csrf_token %}<button class="btn-blue-editing w-full m-0">Seek consensus</button>
+  </form>
+  {% endif %}
+  {% if consensus.state == 'ready' %}
+  <form method="post" action="{% url 'forum:consensus-declare' discussion.slug %}" class="mt-1">
+    {% csrf_token %}<button class="btn-blue-editing w-full m-0">Declare passed by consensus</button>
+  </form>
+  {% endif %}
+  <details class="mt-1 text-sm">
+    <summary class="cursor-pointer">Link the agenda item and ballot…</summary>
+    <form method="post" action="{% url 'forum:agenda-link' discussion.slug %}">
+      {% csrf_token %}
+      <label for="agenda-item" class="block">Agenda item</label>
+      <select id="agenda-item" name="agenda_item" class="w-full border-gray-400 text-sm">
+        <option value="">None</option>
+        {% for item in agenda_choices %}<option value="{{ item.pk }}"{% if item.pk == discussion.agenda_item_id %} selected{% endif %}>{{ item.name }} ({{ item.agenda.name }})</option>{% endfor %}
+      </select>
+      <label for="ballot-link" class="block">Ballot</label>
+      <input id="ballot-link" name="ballot" value="{% if discussion.ballot_id %}{{ discussion.ballot_id }}{% endif %}" placeholder="Number or link" class="w-full border-gray-400 px-1">
+      <button class="btn-blue-editing m-0 mt-1">Save</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endif %}

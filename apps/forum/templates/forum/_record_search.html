@@ -1,0 +1,21 @@
+{% if results %}
+{% if not offset %}<ul class="mt-1 max-h-80 divide-y divide-gray-200 overflow-y-auto border border-gray-300 bg-white text-sm" aria-label="Matching records">{% endif %}
+  {% for result in results %}
+  <li><button type="button"{% if offset and forloop.first %} autofocus{% endif %} class="flex w-full items-center gap-2 px-2 py-1 text-left hover:bg-blue-50 focus-visible:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+              data-record-url="{{ result.url }}" data-record-label="{{ result.label }}" onclick="forumAddRecord(this)">
+    <span class="flex {% if covers %}h-14 w-10{% else %}h-8 w-8{% endif %} shrink-0 items-center justify-center overflow-hidden bg-stone-100 text-gray-500 [&_img]:h-full [&_img]:w-full [&_img]:object-cover" aria-hidden="true">{% if result.cover %}{{ result.cover }}{% else %}{% include "forum/_record_glyph.html" %}{% endif %}</span>
+    <span class="min-w-0"><span class="block font-bold">{{ result.label }}</span>{% if result.details %}<span class="block text-gray-700">{{ result.details }}</span>{% endif %}</span>
+  </button></li>
+  {% endfor %}
+  {% if more %}
+  <li><button type="button" class="w-full px-2 py-1 text-left font-bold hover:bg-blue-50 focus-visible:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+              hx-get="{% url 'forum:record-search' %}" hx-vals='js:{...forumRecordQuery("{{ prefix }}"), "offset": {{ next_offset }}}'
+              hx-target="closest li" hx-swap="outerHTML">More results…</button></li>
+  {% elif not offset %}
+  <li class="px-2 py-1 text-gray-700">Not here? Add a year ({% if issue_hint %}Mickey Mouse 1986 #219{% else %}Spider-Man 1983{% endif %}){% if filtered %} or choose All languages{% endif %}.</li>
+  {% endif %}
+{% if not offset %}</ul>{% endif %}
+{% elif searched %}
+<p class="mt-1 text-sm text-gray-700">{% if issue_hint %}Write the series and the issue number, such as Spider-Man #12. {% endif %}No records found{% if filtered %} in this language; try All languages{% endif %}.</p>
+{% endif %}
+{% if not offset %}<p id="{{ prefix }}-status" hx-swap-oob="innerHTML">{% if results %}{{ results|length }} record{{ results|length|pluralize }} found{% if more %}, more below{% endif %}.{% elif searched %}No records found{% if filtered %} in this language{% endif %}.{% endif %}</p>{% endif %}

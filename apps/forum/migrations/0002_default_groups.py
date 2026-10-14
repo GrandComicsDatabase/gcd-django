@@ -36,6 +36,7 @@ SPECIALIZED = (
 
 
 def seed_groups(apps, schema_editor):
+    """Create the main, international and specialized groups in order; existing groups stay as they are."""
     Category = apps.get_model("forum", "Category")
     db = schema_editor.connection.alias
     position = 0
@@ -61,6 +62,8 @@ def seed_groups(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    """Seed the groups of the GCD email lists; rolling back keeps the groups and their topics."""
+
     dependencies = [("forum", "0001_initial")]
     # Never remove groups or user discussions when rolling back the data step.
     operations = [migrations.RunPython(seed_groups, migrations.RunPython.noop)]

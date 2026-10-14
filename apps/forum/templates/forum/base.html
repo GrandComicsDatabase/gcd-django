@@ -1,8 +1,11 @@
 {% extends "gcd/tw_base_view.html" %}
-{% load static %}
+{% load static forum_tags %}
 {% block title %}GCD :: Forum{% endblock %}
 {% block css_raw %}
 <script type="text/javascript" src="{% static 'js/htmx.min.js' %}" defer></script>
+<script type="text/javascript" src="{% forum_static 'forum/forum.js' %}" defer></script>
+<link rel="alternate" type="application/atom+xml" title="GCD Forum: new topics" href="{% url 'forum:feed' %}">
+{% block forum_head %}{% endblock %}
 {% endblock %}
 {% block nav_bar %}
   {{ block.super }}
@@ -20,6 +23,8 @@
   <div class="min-w-0 flex-1">
     {% include "forum/_messages.html" %}
     {% block forum_content %}{% endblock %}
+    {# Failed buttons and checks of the page (forum.js showAlert); always at the bottom of the screen. #}
+    <div id="forum-alert" role="alert" class="fixed bottom-0 left-0 right-0 z-50 border-t bg-red-100 px-2 py-1 text-red-700 shadow-lg" data-login-url="{% url 'login' %}" data-draft-published="{% draft_published %}" hidden><span data-alert-text></span> <button type="button" class="ms-2 underline" data-alert-close>Close</button></div>
   </div>
   {% block forum_sidebar %}{% endblock %}
 </div>

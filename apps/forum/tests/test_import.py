@@ -14,7 +14,10 @@ from .base import ForumTestCase
 
 
 class MboxImportTests(ForumTestCase):
+    """Import of an email list archive (mbox) into gcd-main with the forum_import_mbox command."""
+
     def setUp(self):
+        """Give other an email address, have author follow the topic and create a temporary mbox file."""
         super().setUp()
         self.other.email = "other@example.com"
         self.other.save()
@@ -24,6 +27,7 @@ class MboxImportTests(ForumTestCase):
         self.addCleanup(os.remove, self.path)
 
     def write(self, *messages):
+        """Add the messages to the mbox file."""
         box = mailbox.mbox(self.path)
         for message in messages:
             box.add(message)
@@ -31,16 +35,19 @@ class MboxImportTests(ForumTestCase):
         box.close()
 
     def run_import(self, *extra):
+        """Run forum_import_mbox on the file for gcd-main, with author as archive user; return its output."""
         out = StringIO()
         call_command("forum_import_mbox", self.path, "--group", "gcd-main",
                      "--archive-user", self.author.username, *extra, stdout=out)
         return out.getvalue()
 
     def message(self, sender, subject, body, message_id, date, **headers):
+        """A raw message to the gcd-main Google Group, with this Message-ID and Date."""
         return raw_email(sender, "gcd-main@googlegroups.com", subject, body, message_id=message_id,
                          Date=date, **headers)
 
     def archive(self):
+        """Jane's question (she has no account), other's answer, first in the file, and Jane's thanks."""
         return (
             # Out of order on purpose: the reply comes first in the file.
             self.message("Other <other@example.com>", "Re: [gcd-main] Indicia dates", "They differ.\n\n"
@@ -53,6 +60,7 @@ class MboxImportTests(ForumTestCase):
         )
 
     def test_archive_becomes_threaded_topics_with_original_dates(self):
+        """The archive becomes one threaded topic, original dates kept; Jane is named without her address."""
         self.write(*self.archive())
         output = self.run_import()
         self.assertIn("Imported 1 topics and 2 replies", output)
@@ -68,6 +76,7 @@ class MboxImportTests(ForumTestCase):
                          (3, datetime(2006, 1, 4, 8, tzinfo=timezone.utc)))
 
     def test_import_notifies_nobody_and_runs_once(self):
+        """The import notifies and emails nobody, and a second run skips the messages already imported."""
         self.write(*self.archive())
         self.run_import()
         self.assertIn("Imported 0 topics and 0 replies; skipped 3", self.run_import())
@@ -77,12 +86,14 @@ class MboxImportTests(ForumTestCase):
         self.assertEqual(IncomingEmail.objects.filter(reason="mbox import").count(), 3)
 
     def test_dry_run_changes_nothing(self):
+        """A dry run reports what it would import and leaves no topic or IncomingEmail behind."""
         self.write(*self.archive())
         self.assertIn("Would import 1 topics and 2 replies", self.run_import("--dry-run"))
         self.assertFalse(Discussion.objects.filter(title="Indicia dates").exists())
         self.assertFalse(IncomingEmail.objects.exists())
 
     def test_forum_copies_and_undated_messages_are_skipped(self):
+        """Copies of forum posts sent by the gateway and messages without a date are skipped."""
         self.write(
             self.message("forum@comics.org", "[gcd-main] A forum topic", "Copy", "<forum-post-1@comics.org>",
                          "Mon, 02 Jan 2006 10:00:00 +0000", X_GCD_Forum_Post="1"),

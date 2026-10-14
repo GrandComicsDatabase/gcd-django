@@ -1,0 +1,9 @@
+<nav aria-label="Pages of the topic" class="flex flex-wrap items-center justify-between gap-2 py-1 text-sm">
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  <span class="flex flex-wrap gap-1">
+    {% for number in page_obj.paginator.page_range %}
+    {% if number == page_obj.number %}<span class="navigation-bar-box-link bg-blue-100" aria-current="page">{{ number }}</span>
+    {% else %}<a class="navigation-bar-box-link" href="?page={{ number }}{% if read_since is not None %}&amp;since={{ read_since }}{% endif %}">{{ number }}</a>{% endif %}
+    {% endfor %}
+  </span>
+</nav>

@@ -1,0 +1,7 @@
+{% load forum_tags %}{% with items=post.attachments.all %}{% if items %}
+<ul class="flex flex-wrap items-end gap-2 px-2 pb-1" aria-label="Attachments">
+  {% for item in items %}
+  <li class="min-w-0">{% if item.is_image %}<a href="{{ item.get_absolute_url }}" title="{{ item.name }}, {{ item.size|filesizeformat }}{% if item.preview %}: open the full image{% endif %}"><img src="{{ item.get_preview_url }}" alt="{% if item.description %}{{ item.description }}{% else %}Image {{ forloop.counter }} attached by {{ post.author|display_name }}{% endif %}" loading="lazy" class="max-h-60 max-w-full border border-gray-300"></a>{% else %}<a class="underline break-all" href="{{ item.get_absolute_url }}">{{ item.name }}</a> <span class="text-sm text-gray-700">(PDF, {{ item.size|filesizeformat }})</span>{% endif %}</li>
+  {% endfor %}
+</ul>
+{% endif %}{% endwith %}

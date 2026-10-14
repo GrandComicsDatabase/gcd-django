@@ -1,0 +1,9 @@
+<details class="mt-1 text-sm">
+  <summary class="cursor-pointer">Link a database change…</summary>
+  <form method="post" action="{% url 'forum:change-link' discussion.slug %}" class="mt-1">
+    {% csrf_token %}
+    <label for="link-change" class="sr-only">Number or link of the change</label>
+    <div class="flex gap-1"><input id="link-change" name="changeset" required placeholder="Number or link of the change" class="min-w-0 flex-1 border-gray-400 px-1"><button class="btn-blue-editing m-0">Link</button></div>
+    <p class="text-gray-700">When a linked change is approved, the topic is marked fixed.</p>
+  </form>
+</details>

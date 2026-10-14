@@ -26,6 +26,7 @@ IMPORTED = "mbox import"
 
 
 def _date(message):
+    """The Date header as an aware datetime, in UTC when it has no zone; None when missing or invalid."""
     try:
         date = parsedate_to_datetime(str(message.get("Date", "")))
     except (TypeError, ValueError):
@@ -36,9 +37,12 @@ def _date(message):
 
 
 class Command(BaseCommand):
+    """Import an mbox archive into one group, oldest message first, as topics and replies."""
+
     help = "Import an mbox archive of an email list into a forum group."
 
     def add_arguments(self, parser):
+        """The mbox path, --group, --archive-user for senders without a single GCD account, and --dry-run."""
         parser.add_argument("mbox", help="Path of the mbox file")
         parser.add_argument("--group", required=True, help="Slug of the forum group, such as gcd-main")
         parser.add_argument("--archive-user", required=True,
@@ -46,6 +50,7 @@ class Command(BaseCommand):
         parser.add_argument("--dry-run", action="store_true", help="Count what would be imported, change nothing")
 
     def handle(self, *args, **options):
+        """Import the dated messages oldest first, one transaction each; a dry run rolls them all back."""
         try:
             self.category = Category.objects.get(slug=options["group"])
             self.archive_user = get_user_model().objects.get(username=options["archive_user"])
@@ -77,22 +82,29 @@ class Command(BaseCommand):
 
     @staticmethod
     def parse(raw):
+        """The email message of the raw bytes, parsed with policy.default so headers come decoded."""
         return message_from_bytes(raw, policy=policy.default)
 
     def title(self, message):
+        """The topic title: the subject without the [group] tag and reply or forward prefixes such as Re:
+        and Fwd:, at most 200 characters; "(no subject)" when nothing is left."""
         subject = REPLY_PREFIX.sub("", self.list_tag.sub("", str(message.get("Subject", ""))))
         return self.list_tag.sub("", subject).strip()[:200] or "(no subject)"
 
     def author(self, message):
+        """The one active user with the sender's address and no header; otherwise the archive user and a
+        header that names the sender, without the address."""
         name, address = parseaddr(str(message.get("From", "")))
         users = list(get_user_model().objects.filter(email__iexact=address, is_active=True)[:2]) \
             if address else []
         if len(users) == 1:
             return users[0], ""
-        # Show the name only: the archive is public and addresses stay private.
+        # Show the name only: members' addresses stay private.
         return self.archive_user, f"*{name or 'Unknown sender'} wrote on the email list:*\n\n"
 
     def parent(self, message):
+        """The post this message answers: In-Reply-To first, then References from the last one, looking
+        only at posts of this group; None when there is none."""
         references = REFERENCE.findall(f"{message.get('References', '')} {message.get('In-Reply-To', '')}")
         for reference in reversed(references):
             found = IncomingEmail.objects.filter(message_id=reference, post__isnull=False).select_related(
@@ -102,6 +114,8 @@ class Command(BaseCommand):
         return None
 
     def import_message(self, message, date):
+        """Import one message as a topic or a reply, dated as sent; return the counter it adds to: "topics",
+        "replies", or "skipped" for messages without a new Message-ID, forum copies and empty ones."""
         msg_id = str(message.get("Message-ID", "")).strip()[:255]
         # Copies of forum posts sent by the gateway are already in the forum.
         if not msg_id or message.get("X-GCD-Forum-Post") or \

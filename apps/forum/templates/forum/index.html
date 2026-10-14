@@ -2,6 +2,7 @@
 {% load forum_tags %}
 {% block title %}GCD :: Forum{% if category %} :: {{ category.name }}{% elif record %} :: {{ record }}{% endif %}{% endblock %}
 {% block search_action %}{{ request.path }}{% endblock %}
+{% block forum_head %}{% if category.read_access == 'public' %}<link rel="alternate" type="application/atom+xml" title="GCD Forum: {{ category.name }}" href="{% url 'forum:group-feed' category.slug %}">{% endif %}{% endblock %}
 {% block forum_content %}
 {% if category %}
 <div class="mb-2">
@@ -13,34 +14,68 @@
     {% if not can_read and can_post %}You see only the topics you started.{% endif %}
   </p>
   {% if user.is_authenticated and can_read %}
-  <form method="post" action="{% url 'forum:group-email' category.slug %}" class="mt-1">
+  <form method="post" action="{% url 'forum:group-email' category.slug %}" class="mt-1 flex flex-wrap items-center gap-1 text-sm">
     {% csrf_token %}
-    <button class="btn-blue-editing inline-block m-0" aria-pressed="{% if email_member %}true{% else %}false{% endif %}">{% if email_member %}Getting every post by email ✓{% else %}Get every post by email{% endif %}</button>
-    <span class="text-sm text-gray-700">Reply to those emails to post here. To start a topic by email, write to <a href="mailto:{{ category|group_address }}">{{ category|group_address }}</a>.</span>
+    <label for="email-mode">Get this group by email:</label>
+    <select id="email-mode" name="mode" class="border-gray-400 py-0.5 text-sm">
+      <option value="off"{% if email_mode == 'off' %} selected{% endif %}>No emails</option>
+      {% for value, label in email_modes %}<option value="{{ value }}"{% if email_mode == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn-blue-editing inline-block m-0">Save</button>
   </form>
+  {% endif %}
+  <p class="text-sm text-gray-700">{% if user.is_authenticated and can_read %}Reply to the emails to post here; to start a topic by email, write to <a class="underline" href="mailto:{{ category|group_address }}">{{ category|group_address }}</a>.{% endif %}{% if category.read_access == 'public' %} <a class="underline" href="{% url 'forum:group-feed' category.slug %}">Atom feed</a>{% endif %}</p>
+  {% if agenda_items or open_ballots %}
+  <section class="mt-2 border border-gray-300 px-2 py-1" aria-labelledby="agenda-heading">
+    <h3 id="agenda-heading" class="font-bold">Agenda</h3>
+    <ul class="text-sm">
+      {% for ballot in open_ballots %}
+      <li class="py-0.5"><span class="rounded bg-blue-100 px-1">Vote open</span> <a href="{{ ballot.get_absolute_url }}">{{ ballot.name }}</a> · until {{ ballot.deadline|date:"Y-m-d H:i" }} UTC{% if ballot.forum_topic %} · <a href="{{ ballot.forum_topic.get_absolute_url }}">discussion</a>{% endif %}</li>
+      {% endfor %}
+      {% for item in agenda_items %}
+      <li class="py-0.5"><span class="rounded bg-stone-200 px-1">{% if item.open %}Open{% else %}Pending{% endif %}</span> {{ item.name }} ·
+        {% if item.forum_topic %}<a href="{{ item.forum_topic.get_absolute_url }}">discussion</a>{% elif can_post %}<a href="{% url 'forum:discussion-create' %}?category={{ category.slug }}&agenda_item={{ item.pk }}">start the discussion</a>{% else %}no discussion yet{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
   {% endif %}
 </div>
 {% elif record %}
 <div class="mb-2">
   <h2 class="font-bold text-xl">Discussions about <a href="{{ record.get_absolute_url }}">{{ record }}</a></h2>
   <p class="text-sm text-gray-700">Topics in every group that are linked to this record.</p>
+  {% if user.is_authenticated %}
+  <form method="post" action="{% url 'forum:record-follow' record_key record.pk %}" class="mt-1">
+    {% csrf_token %}
+    <input type="hidden" name="follow" value="{% if record_following %}0{% else %}1{% endif %}">
+    <button class="btn-blue-editing inline-block m-0" aria-pressed="{% if record_following %}true{% else %}false{% endif %}">{% if record_following %}Following this record ✓{% else %}Follow this record{% endif %}</button>
+    <span class="text-sm text-gray-700">Get a notification and an email for every new topic about it.</span>
+  </form>
+  {% endif %}
+</div>
+{% else %}
+<div class="mb-2">
+  <h2 class="font-bold text-xl">All topics</h2>
+  <p class="text-sm text-gray-700">Topics from every group you can read. A group page adds its description, its email subscription and its posting address.</p>
 </div>
 {% endif %}
 
 <div class="flex flex-wrap items-end justify-between gap-2 border-b border-gray-400 mb-1">
-  <nav aria-label="Topic lists" class="flex text-sm font-bold">
-    <a href="{% querystring feed=None page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'latest' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'latest' %}aria-current="page"{% endif %}>Latest</a>
-    <a href="{% querystring feed='new' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'new' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'new' %}aria-current="page"{% endif %}>New</a>
-    <a href="{% querystring feed='unanswered' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'unanswered' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'unanswered' %}aria-current="page"{% endif %}>Unanswered</a>
+  <nav aria-label="Topic lists" class="flex flex-wrap text-sm font-bold">
+    <a href="{% querystring feed=None page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'latest' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'latest' %}aria-current="page"{% endif %} title="Topics with the latest posts first">Recent activity</a>
+    <a href="{% querystring feed='new' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'new' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'new' %}aria-current="page"{% endif %} title="The newest topics first">Newest</a>
+    <a href="{% querystring feed='unanswered' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'unanswered' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'unanswered' %}aria-current="page"{% endif %} title="Topics nobody has answered yet">Unanswered</a>
     {% if user.is_authenticated %}
-    <a href="{% querystring feed='following' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'following' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'following' %}aria-current="page"{% endif %}>Following</a>
-    <a href="{% querystring feed='mine' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'mine' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'mine' %}aria-current="page"{% endif %}>Mine</a>
+    <a href="{% querystring feed='following' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'following' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'following' %}aria-current="page"{% endif %} title="Topics you follow">Following</a>
+    <a href="{% querystring feed='mine' page=None %}" class="px-3 py-1 hover:no-underline {% if active_feed == 'mine' %}bg-blue-100 link-with-text-color{% endif %}" {% if active_feed == 'mine' %}aria-current="page"{% endif %} title="Topics you started or posted in">Mine</a>
     {% endif %}
   </nav>
   <span class="text-sm text-gray-700 pb-1">{% if search_query %}Results for “{{ search_query }}”: {% endif %}{{ page_obj.paginator.count }} topic{{ page_obj.paginator.count|pluralize }}</span>
 </div>
+{% for note in search_notes %}<p role="status" class="text-sm font-bold text-red-700">{{ note }}</p>{% endfor %}
+{% if search_query %}<p class="text-sm text-gray-700">Every word is searched, also as the start of longer words. Use "quotes" for a phrase, by:Rossi or by:"Maria Rossi" for the posts of a person, after:2020-01-31 and before:2020-12-31 for a period.</p>{% endif %}
 
-<ul>
+<ul aria-label="Topics">
 {% for discussion in discussions %}
   {% include "forum/_topic_row.html" %}
 {% empty %}

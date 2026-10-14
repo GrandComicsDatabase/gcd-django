@@ -7,5 +7,6 @@
     {% if removable %}<form class="inline" method="post" action="{% url 'forum:record-remove' discussion.slug link.pk %}">{% csrf_token %}<button class="text-gray-700 px-1" aria-label="Unlink {{ link.content_object }}" title="Unlink">×</button></form>{% endif %}
   </li>
   {% endfor %}
+  {% if more > 0 %}<li class="px-1 text-gray-700">and {{ more }} more</li>{% endif %}
 </ul>
 {% endif %}
