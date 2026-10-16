@@ -34,11 +34,11 @@ GCD :: Group :: {{ group.name }}
   {% endif %}
   {% if group.description %}
         <dt> Description:
-        <dd> {{ group.description|urlizetrunc:75|linebreaksbr }}
+        <dd> {% include "gcd/bits/rich_text.html" with value=group.description only %}
   {% endif %}
   {% if group.notes %}
         <dt> Notes:
-        <dd> {{ group.notes|render_markdown }}
+        <dd> {% include "gcd/bits/notes.html" with value=group.notes only %}
   {% endif %}
 <p>{{ group|show_credit:'keywords' }}</P>
       </dl>

@@ -58,7 +58,7 @@
 {% if not page.has_previous %}
   {% if indicia_printer.notes %}
   <h3 class="mt-2">Notes:</h3>
-    {{ indicia_printer.notes|render_markdown }}
+    {% include "gcd/bits/notes.html" with value=indicia_printer.notes only %}
   {% endif %}
 {% endif %}
 {% endblock content %}

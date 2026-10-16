@@ -95,11 +95,11 @@ GCD :: Character :: {{ character.name }}
 </table>
 {% if character.description %}
 <h3 class="mt-2">Description:</h3>
-{{ character.description|render_markdown }}
+{% include "gcd/bits/rich_text.html" with value=character.description only %}
 {% endif %}
 {% if character.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ character.notes|render_markdown }}
+{% include "gcd/bits/notes.html" with value=character.notes only %}
 {% endif %}
 {% endblock %}
 

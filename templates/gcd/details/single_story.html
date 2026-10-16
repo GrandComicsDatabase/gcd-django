@@ -98,7 +98,7 @@
 
         {% if story.notes %}
         <h3 class="notes_header"> Indexer Notes </h3>
-        <p>{{ story.notes|urlizetrunc:75|linebreaksbr }}</p>
+        <div>{% include "gcd/bits/notes.html" with value=story.notes only %}</div>
         {% endif %}
       {% endif %} <!-- shown_types -->
 

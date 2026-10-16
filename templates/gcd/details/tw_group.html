@@ -92,11 +92,11 @@ GCD :: Group :: {{ group.name }}
 </table>
 {% if group.description %}
 <h3 class="mt-2">Description:</h3>
-{{ group.description|render_markdown }}
+{% include "gcd/bits/rich_text.html" with value=group.description only %}
 {% endif %}
 {% if group.notes %}
 <h3 class="mt-2">Notes:</h3>
-{{ group.notes|render_markdown }}
+{% include "gcd/bits/notes.html" with value=group.notes only %}
 {% endif %}
 {% endblock %}
 

@@ -149,7 +149,7 @@
 {% endif %}
 {% if series.notes %}
             <div class="series_detail_header"> Notes </div>
-            <div class="series_notes">{{ series.notes|urlizetrunc:75|linebreaksbr }}</div>
+            <div class="series_notes">{% include "gcd/bits/notes.html" with value=series.notes only %}</div>
 {% endif %}
           </div> <!-- series_notes -->
         </div> <!-- series_data -->

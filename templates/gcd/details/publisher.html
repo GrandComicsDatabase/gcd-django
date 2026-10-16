@@ -86,7 +86,7 @@
   {% endif %}
   {% if publisher.notes and page.number == 1 %}
           <dt> Notes:</dt>
-          <dd> {{ publisher.notes|urlizetrunc:75|linebreaksbr }}</dd>
+          <dd> {% include "gcd/bits/notes.html" with value=publisher.notes only %}</dd>
   {% endif %}
   {{ publisher|show_credit:'keywords' }}
         </dl>

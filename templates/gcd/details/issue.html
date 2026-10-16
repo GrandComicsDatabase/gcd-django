@@ -44,7 +44,7 @@
                   <h3 class="notes_header"> Issue Notes </h3>
                   <div class="issue_level_content">
   {% if issue.notes %}
-    {{ issue.notes|urlizetrunc:75|linebreaksbr }}
+    {% include "gcd/bits/notes.html" with value=issue.notes only %}
     {% if issue.variant_of or issue.other_variants %}
     <br>
     {% endif %}

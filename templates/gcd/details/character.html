@@ -34,11 +34,11 @@ GCD :: Character :: {{ character.name }}
 {% endif %}
 {% if character.description %}
         <dt> Description:
-        <dd> {{ character.description|render_markdown }}
+        <dd> {% include "gcd/bits/rich_text.html" with value=character.description only %}
 {% endif %}
 {% if character.notes %}
         <dt> Notes:
-        <dd> {{ character.notes|render_markdown }}
+        <dd> {% include "gcd/bits/notes.html" with value=character.notes only %}
 {% endif %}
 {% if character.external_link.count %}
   {% for external_link in character.external_link.all %}

@@ -46,10 +46,11 @@
     {% endif %}
   {% endfor %}
   {% if creator.bio %}
-            <p><strong>Biography:</strong> {{ creator.bio|linebreaksbr }}</p>
+            <strong>Biography:</strong>
+            {% include "gcd/bits/rich_text.html" with value=creator.bio only %}
   {% endif %}
   {% if creator.notes %}
-            <p><strong>Notes:</strong> {{ creator.notes|urlizetrunc:75|linebreaksbr }}</p>
+            {% include "gcd/bits/notes.html" with value=creator.notes label="Notes:" only %}
   {% endif %}
             <p>
             <ul style="columns: 2;">
@@ -155,6 +156,7 @@
         {% if not school.school_year_ended or school.school_year_ended_uncertain %}
           ?
         {% endif %}
+              </p>
         {% if school.notes %}
               <p><strong>Notes: </strong>{{ school.notes }}</p>
         {% endif %}
@@ -174,6 +176,7 @@
       {% if degree.degree_year or degree.degree_year_uncertain %}
         in {{ degree.degree_year }}{% if degree.degree_year_uncertain %}?{% endif %}
       {% endif %}
+            </p>
       {% if degree.notes %}
             <p><strong>Notes: </strong>{{ degree.notes }}</p>
       {% endif %}

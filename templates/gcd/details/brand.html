@@ -55,7 +55,7 @@ GCD :: Publisher's Brand Emblem :: {{ brand.name }}
 {% endif %}
 {% if brand.notes %}
         <dt> Notes:
-        <dd> {{ brand.notes|urlizetrunc:75|linebreaksbr }}
+        <dd> {% include "gcd/bits/notes.html" with value=brand.notes only %}
 {% endif %}
 {{ brand|show_credit:'keywords' }}
       <dt>Publisher's Brand Emblem:</dt>

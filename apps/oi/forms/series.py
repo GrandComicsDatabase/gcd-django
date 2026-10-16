@@ -4,12 +4,12 @@
 from django import forms
 
 from .support import (
-    _get_comments_form_field, _set_help_labels, _clean_keywords,
+    _get_comments_form_field, _set_help_labels,
     SERIES_HELP_LINKS, SERIES_HELP_TEXTS, GENERIC_ERROR_MESSAGE,
     KeywordBaseForm)
 
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Field, HTML
+from crispy_forms.layout import Layout, Field
 from .custom_layout_object import Formset, BaseField
 
 from apps.oi.models import (
