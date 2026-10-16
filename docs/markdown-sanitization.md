@@ -7,13 +7,6 @@ Indicia Publisher/Printer forms. This does not enable Markdown for every field
 whose name contains "notes": series tracking/publication Notes retain their
 previous formatting.
 
-Inline summaries and tables retain their previous formatting even for these
-models. Other forms, including group memberships, relationships, creator
-subrecords, awards, brand uses, and series bonds, do not gain Markdown on
-detail pages or summaries. Voting, MyComics, and short appearance/reprint
-annotations also retain their previous formatting. Limited inline Markdown or
-internal-link support requires a separate product decision.
-
 ## Why sanitize?
 
 Markdown conversion can preserve raw HTML supplied in the source. Converting

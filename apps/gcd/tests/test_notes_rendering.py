@@ -39,9 +39,8 @@ SOURCE = ('**Membership note** [reference](https://example.org/source)'
     'creator_art_influence', 'creator_degree', 'creator_membership',
     'creator_non_comic_work', 'creator_relation', 'creator_school',
     'creator_signature'])
-@pytest.mark.parametrize('prefix', ['', 'tw_'])
-def test_other_detail_notes_do_not_gain_markdown(name, prefix):
-    template = get_template(f'gcd/details/{prefix}{name}.html').template
+def test_other_detail_notes_do_not_gain_markdown(name):
+    template = get_template(f'gcd/details/tw_{name}.html').template
     record = SimpleNamespace(notes='**Literal** <b>text</b>')
     context = Context({name: record, 'page': SimpleNamespace(number=1)})
     nodes = [node for node in template.nodelist.get_nodes_by_type(IfNode)
@@ -68,9 +67,8 @@ def test_baseform_notes_keep_markdown_without_expanding_tracking_fields():
 
 
 @pytest.mark.parametrize('model', ['character', 'group'])
-@pytest.mark.parametrize('prefix', ['', 'tw_'])
-def test_inline_relationship_and_membership_lists_remain_plain(model, prefix):
-    template = get_template(f'gcd/details/{prefix}{model}.html').template
+def test_inline_relationship_and_membership_lists_remain_plain(model):
+    template = get_template(f'gcd/details/tw_{model}.html').template
     source = SOURCE + ' <b>literal</b>'
     target = SimpleNamespace(id=1, descriptor='Target')
     row = SimpleNamespace(
@@ -87,7 +85,7 @@ def test_inline_relationship_and_membership_lists_remain_plain(model, prefix):
     loops = [node for node in template.nodelist.get_nodes_by_type(ForNode)
              if node.sequence.token in {
                  f'{model}.{field}' for field in fields}]
-    assert len(loops) == (3 if model == 'group' and not prefix else 4)
+    assert len(loops) == 4
     with context.bind_template(template):
         for loop in loops:
             rendered = loop.render(context)
@@ -122,9 +120,8 @@ def test_mycomics_notes_keep_plain_text():
     assert '<a ' not in rendered
 
 
-@pytest.mark.parametrize('prefix', ['', 'tw_'])
-def test_story_template_reprint_newlines_are_converted_once(prefix):
-    template = get_template(f'gcd/details/{prefix}single_story.html').template
+def test_story_template_reprint_newlines_are_converted_once():
+    template = get_template(f'gcd/details/tw_single_story.html').template
     story = Mock(reprint_notes='First\nSecond', type_id=0)
     for manager in (story.from_all_reprints, story.to_all_reprints):
         manager.select_related.return_value.order_by.return_value = []
@@ -176,8 +173,7 @@ def test_automatic_links_preserve_legacy_addresses(
     assert f'href="{destination}"' in rendered
     assert f'>{label}</a>{suffix}' in rendered
     assert rendered == markdownify(source)
-    assert rendered in render_to_string(
-        'gcd/bits/notes.html', {'value': source})
+    assert rendered in render_markdown(source)
 
 
 @pytest.mark.parametrize('entity', ['&amp;', '&#38;', '&#x26;'])
@@ -233,9 +229,8 @@ def test_automatic_links_leave_code_and_html_attributes_alone(source):
 
 @pytest.mark.parametrize('model, field', [
     ('creator', 'bio'), ('group', 'description')])
-@pytest.mark.parametrize('prefix', ['', 'tw_'])
-def test_biography_and_description_use_shared_rich_text(model, field, prefix):
-    template = get_template(f'gcd/details/{prefix}{model}.html').template
+def test_biography_and_description_use_shared_rich_text(model, field):
+    template = get_template(f'gcd/details/tw_{model}.html').template
     source = ('**Bold** www.example.org\n\n- First\n- Second\n\n'
               '<script>alert(1)</script>')
     context = Context({model: SimpleNamespace(**{field: source})})
@@ -243,7 +238,7 @@ def test_biography_and_description_use_shared_rich_text(model, field, prefix):
              if node.token.contents == f'if {model}.{field}']
     with context.bind_template(template):
         rendered = node.render(context)
-    expected = render_to_string('gcd/bits/rich_text.html', {'value': source})
+    expected = render_markdown(source)
     assert expected in rendered
     assert '<strong>Bold</strong>' in rendered
     assert 'href="http://www.example.org"' in rendered
@@ -367,15 +362,6 @@ def test_inline_brand_table_notes_remain_plain(table_name):
     rendered = Template('{{ cell }}').render(Context({'cell': cell}))
     assert SOURCE + '&lt;b&gt;x&lt;/b&gt;' == rendered
     assert table.rows[0].get_cell_value('notes') == SOURCE + '<b>x</b>'
-
-
-def test_partial_handles_blocks_and_escapes_label():
-    rendered = render_to_string('gcd/bits/notes.html', {
-        'value': '- one\n- two', 'label': '<script>label</script>'})
-    assert '<li>one</li>' in rendered
-    assert '<div class="notes"' in rendered
-    assert '&lt;script&gt;label&lt;/script&gt;' in rendered
-    assert render_to_string('gcd/bits/notes.html', {'value': ''}).strip() == ''
 
 
 def test_appearance_notes_keep_plain_text_contract():

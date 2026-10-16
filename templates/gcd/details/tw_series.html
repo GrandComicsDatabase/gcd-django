@@ -160,7 +160,7 @@
   {% endif %}
   {% if series.notes %}
 <h3 class="mt-2">Notes:</h3>
-    {% include "gcd/bits/notes.html" with value=series.notes only %}
+    {{ series.notes|render_markdown }}
   {% endif %}
   {% if series.active_issues.count %}
 
