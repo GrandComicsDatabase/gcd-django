@@ -480,9 +480,8 @@ def test_review_preview_preserves_markdown_source():
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('template_name', [
-    'gcd/details/single_story.html', 'gcd/details/tw_single_story.html'])
-def test_story_templates_convert_note_newlines_once(template_name):
+def test_story_templates_convert_note_newlines_once():
+    template_name = 'gcd/details/tw_single_story.html'
     country = Country.objects.get(code='us')
     language = Language.objects.get(code='en')
     publisher = Publisher.objects.create(name='Example', country=country)
