@@ -30,6 +30,7 @@ STORY_TYPES = {
     'filler': 9,
     'insert': 11,
     'letters_page': 12,
+    'illustration': 14,
     'comic story': 19,
     'soo': 22,
     'blank': 24,

@@ -20,7 +20,8 @@ from markdownx.widgets import MarkdownxWidget
 from taggit.models import Tag
 
 from apps.oi.models import (
-    get_reprint_field_list, get_story_field_list, remove_leading_article,
+    get_keywords, get_reprint_field_list, get_story_field_list,
+    remove_leading_article,
     BiblioEntryRevision, ReprintRevision, StoryRevision, StoryArcRevision,
     StoryArcRelationRevision, StoryCreditRevision, StoryCharacterRevision,
     StoryGroupRevision)
@@ -741,6 +742,386 @@ def _format_errors(cd, story):
             errors.append('Title: ' + TITLE_ELLIPSIS_MESSAGE)
             break
     return errors
+
+
+def _without_brackets(value):
+    """The value without its parts in ( ) and [ ], innermost first."""
+    previous = None
+    while previous != value:
+        previous, value = value, re.sub(r'\([^()\[\]]*\)|\[[^()\[\]]*\]', '',
+                                        value)
+    return value
+
+
+def _sections(value):
+    """The parts of the value between semicolons outside ( ) and [ ]."""
+    sections, depth, section = [], 0, ''
+    for character in value:
+        if character in '([':
+            depth += 1
+        elif character in ')]':
+            depth -= 1
+        if character == ';' and depth == 0:
+            sections.append(section)
+            section = ''
+        else:
+            section += character
+    return sections + [section]
+
+
+def _search(pattern, flags=0):
+    """A check whether the pattern occurs in a value."""
+    return re.compile(pattern, flags).search
+
+
+def _search_outside_brackets(pattern):
+    """A check whether the pattern occurs outside ( ) and [ ] of a value."""
+    search = re.compile(pattern).search
+    return lambda value: search(_without_brackets(value))
+
+
+REPRINT_SECTION_START = re.compile(
+    r'^\s*(?:from|in|de|dans|fra|i|Original em|Reimpresso em)\b|'
+    r'^\s*\d{4}-\d{2}-\d{2}')
+COMICS_REPRINT_SECTION = re.compile(
+    r'^\s*(?:from|in)\s+(?!\?)(?!.*\d{4}-\d{2}-\d{2}).*')
+SERIES_DESIGNATION = re.compile(r'\([^()]*,\s*\d{4}\s+[Ss]eries\)\s*#\S+')
+QUOTED = r'^["“”„«»‹›\'‘’‚「『].*["“”«»‹›\'‘’」』]$'
+
+
+def _reprint_section_start(value):
+    """Whether a reprint section starts neither with from/in nor a date."""
+    return any(not REPRINT_SECTION_START.search(section)
+               for section in _sections(value) if section.strip())
+
+
+def _reprint_without_series(value):
+    """Whether a comics reprint section lacks (Publisher, YYYY series) #."""
+    return any(COMICS_REPRINT_SECTION.search(section) and
+               not SERIES_DESIGNATION.search(section)
+               for section in _sections(value))
+
+
+# wiki format rules where a person has to judge whether a value breaks
+# them: (fields, check of a value, wiki page, section, rule, sequence types
+# the rule does not apply to), shown as notes that do not block
+FORMAT_NOTES = [
+    (['title'], _search(QUOTED), 'Style Guide', 'Story titles',
+     'In the story title field, do not use quotation marks unless they '
+     'occur within the title.', ()),
+    # a leading ellipsis, which the refusal of _format_errors() skips
+    (['title'], _search(r'^\.{3}(?=[^\s.,;:!?)\]"“”\'’»›」』])'),
+     'Style Guide', 'Story titles',
+     'When transcribing it for the database, enter it with no preceding '
+     'space, no space between the periods, and one space following the '
+     'ellipsis.', ()),
+    (['first_line'], _search(QUOTED), 'Title', 'First Line field',
+     'Also in such cases, the Unofficial Title box should not be checked, '
+     'and quotation marks are not used.', ()),
+    (['feature'], _search(r'\S/|/\S'), 'Feature', 'Feature Names',
+     'If the name of a feature contains a "/" to separate two individual '
+     'name components, use a space before and after the "/", regardless of '
+     'the presence or absence of spaces around the "/" in print. No spaces '
+     'are used if the "/" is an integral part of the name.', ()),
+    (['feature'], _search(r',\s*(?:The|A|An)\s*(?:;|$)', re.IGNORECASE),
+     'Feature', 'Feature Use',
+     'Leave articles at the front of the Feature title:  "The Shadow", not '
+     '"Shadow, The"', ()),
+    (['feature'] + CREDIT_TEXT_FIELDS, _search_outside_brackets(','),
+     'Formatting Documentation', 'General Indexing Format Rules',
+     'Separate multiple entries in the same field (such as stories with more '
+     'than one penciller) with a semicolon (";"), not a comma.', ()),
+    # wiki "Letters and Fan Art" asks for commas between fan-art characters
+    (['characters'], _search_outside_brackets(','),
+     'Formatting Documentation', 'General Indexing Format Rules',
+     'Separate multiple entries in the same field (such as stories with more '
+     'than one penciller) with a semicolon (";"), not a comma.',
+     (STORY_TYPES['letters_page'],)),
+    (['characters'], _search_outside_brackets(','), 'Character Appearances',
+     'Entering Character Appearances using text',
+     'Characters in the Characters field (of a Sequence editing page) should '
+     'be separated with a semi-colon (;).', (STORY_TYPES['letters_page'],)),
+    (CREDIT_TEXT_FIELDS, _search(r'\)[\s,]*\('), 'Credits',
+     'Using the text format',
+     'If there are multiple notes, these should be placed within a single '
+     'set of parentheses, such as (signed, painted).', ()),
+    (CREDIT_TEXT_FIELDS, _search(r'\(as\s'), 'Formatting Documentation',
+     'General Indexing Format Rules',
+     'Use square brackets for a creator\'s pseudonym such as "[as Joe King]" '
+     'per Credits or for information that is not actually in the comic.',
+     ()),
+    (CREDIT_TEXT_FIELDS, _search(r'\b[A-Z]\.[A-Z]\.'), 'Credits',
+     'Using the text format',
+     'In case multiple initials are used they should be separated by '
+     'spaces.', ()),
+    (CREDIT_TEXT_FIELDS,
+     _search(r'\bpgs?\.?\s*\d|\bpag\.?\s*\d|\bpp?(?!\.)\s+\d', re.IGNORECASE),
+     'Credits', 'Using the text format',
+     'If it is known which pages were done by specific creators, include '
+     'those pages in parentheses after each name using the terms page, '
+     'pages, p. or pp.', ()),
+    (CREDIT_TEXT_FIELDS, _search(r'\)\s*\[as\s'), 'Credits',
+     'Using the text format',
+     'The general form for a credit is "Who\'s Who form" [as "Credited or '
+     'signed form"] (signed)".', ()),
+    (CREDIT_TEXT_FIELDS, _search(r'\b(?:Typeset|TYPESET|Painting|Painted)\b'),
+     'Formatting Documentation', 'General Indexing Format Rules',
+     'Do not capitalize genres, credit clarifications (such as "painting" or '
+     '"typeset"), etc., per a September 2012 clarification of when to use '
+     'capitalization.', ()),
+    (['editing'], _search(r'\([A-Z]{2,5}\)'), 'Editing', '',
+     'Only specific, pre-approved exceptions will be permitted, and all '
+     'other abbreviations must be expanded.', ()),
+    (CREDIT_TEXT_FIELDS,
+     _search(r'(?:^|;)\s*(?:unknown|unk\.?)\s*(?:;|$)', re.IGNORECASE),
+     'Credits', 'Using the text format',
+     'If a credit is unknown, enter only a question mark: "?". Do not use '
+     '"n/a" or leave the field blank.', ()),
+    (['characters'], _search(r'\([^()]*;[^()]*\)'), 'Character Appearances',
+     'Standard Format for Groups and Notes',
+     'Multiple notes should be separated with a comma: "Superman '
+     '(introduction, origin)".', ()),
+    (['characters'], _search(r'\((?:[A-Z](?:,\s*)?)+\)'),
+     'Character Appearances', 'Standard Format for Groups and Notes',
+     'Abbreviations, such as O for Origin, should not be used.', ()),
+    (['characters'], _search(r'\b[A-Z][a-z]+ (?:I{1,3}|IV)\b(?!\])'),
+     'Character Appearances', 'Entering Character Appearances using text',
+     'An older format seen in some sequences, where different versions of a '
+     'character were numbered with Roman numerals, such as "Wildcat I" and '
+     '"Wildcat II", is not allowed and should be corrected to the named '
+     'form, as in "Wildcat" [Ted Grant]" and "Wildcat [Yolanda Montez]".',
+     ()),
+    (['characters'], _search(r'\b(?:Gen|Sgt|Capt|Col|Lt|Maj|Sen)\.'),
+     'Style Guide', 'Characters',
+     'If you are going to use personal titles, such as military ranks, in '
+     'the character field, spell them out.', ()),
+    (['synopsis'], _search('!'), 'Style Guide', 'Synopses',
+     'Do not use exclamation points in synopses.', ()),
+    (['synopsis'], _search(r'\.\.\.|…'), 'Style Guide', 'Synopses',
+     'Do not use the ellipsis in a synopsis.', ()),
+    (['synopsis'], _search(r'\b(?:Spidey|Wolvie|Supes)\b'), 'Style Guide',
+     'Synopses',
+     'Names such as “Spidey” or “Wolvie” or “Supes” are inappropriate and '
+     'should not be used.', ()),
+    (['reprint_notes'], _reprint_section_start, 'Reprints',
+     'Textual Reprint Notes',
+     'the first word in each section in this field must be either "from" or '
+     '"in".  The equivalent of "from" or "in" in languages other than '
+     'English may also be used.', ()),
+    (['reprint_notes'], _search_outside_brackets(r',\s*(?:from|in)\s'),
+     'Reprints', 'Textual Reprint Notes',
+     'Multiple sections of the field are separated by semicolons (;).', ()),
+    (['reprint_notes'], _reprint_without_series, 'Reprints',
+     'Textual Reprint Notes',
+     'Format for comics reprinted from or in other comics is: in/from Series '
+     'Title (Original publisher, YYYY series) #number (optional exact date '
+     'of publication) [optional short notes].', ()),
+    (['reprint_notes'], _search(r'\[(?:[^\]\s]+\s+){12,}[^\]]*\]'),
+     'Reprints', 'Textual Reprint Notes',
+     'Most details about the reprint (such as editing or a title change) '
+     'belong in the Notes field.  Short notes of less than about 10 words '
+     'can be put in square brackets after the reprint info.', ()),
+    (['reprint_notes'],
+     _search(r'\b\d{1,2}([-./])\d{1,2}\1(?:\d{4}|\d{2})\b|'
+             r'\b\d{4}([./])\d{1,2}\2\d{1,2}\b|\b\d{4}-\d(?!\d)|'
+             r'\b\d{4}-\d{2}-\d(?!\d)|\b\d{4}-\d{2}-\d{2}(?! - \d)\s*-\s*\d'),
+     'Style Guide', 'General rules',
+     'Reprint Notes shall be formatted using hyphens in the style '
+     '“YYYY-MM-DD” for a single date, or “YYYY-MM-DD - YYYY-MM-DD” for a '
+     'range of dates, or “YYYY-MM-DD; YYYY-MM-DD - YYYY-MM-DD; YYYY-MM-DD” '
+     'for a group of separate dates.', ()),
+    (['reprint_notes'],
+     _search(r'(?<!#)\bv\d+\s*#|#v\d+\s+#|\bvol(?:ume)?\.?\s*\d+\s*#',
+             re.IGNORECASE),
+     'Reprints', 'Textual Reprint Notes',
+     'Format for the number of issues that show their volume number with the '
+     'issue number is #v2#1 (including the leading #).', ()),
+    (['notes'],
+     _search(r'\bcredits by\b|\bidentification from\b', re.IGNORECASE),
+     'Style Guide', 'Credits and Creators',
+     'In notes, the acceptable phrases for the source of credits are:  '
+     '“credits from” or “identification by.”  Do not mix and match:  '
+     '“credits by” or “identification from” are incorrect.', ()),
+    (['notes'],
+     _search(r'(?<!letter )\b(?:writer|inker|penciller|penciler|colorist|'
+             r'letterer)s?\b', re.IGNORECASE),
+     'Style Guide', 'Credits and Creators',
+     'Note the names of the GCD credits fields and use those in your notes: '
+     'script not writer; inks not inker.', ()),
+    (['notes'], _search(r'(?<![Ss]eries\) )(?<!#v\d)(?<!#v\d\d)#\d'),
+     'Style Guide', "Series' titles",
+     'When referring to a series, always use the full GCD designation of '
+     'official series title, followed by the publisher name and the year the '
+     'series began, in parentheses: The Amazing Spider-Man (Marvel, 1963 '
+     'series) or Kalle Anka & C:o (Egmont, 1997 series).', ()),
+    (['notes', 'synopsis'],
+     _search(r'\b(?:[A-Z][a-z]?\.){2,}(?![^\[\]]*\])'), 'Style Guide',
+     'General rules',
+     'use no periods with abbreviations that appear in full capitals, even '
+     'if lowercase letters appear: NASA, AD, PhD', ()),
+    (['notes', 'synopsis'], _search('[$€£¥]'), 'Style Guide',
+     'General rules',
+     'Currencies are only to be referred to by their currency code.', ()),
+    (['title'] + CREDIT_TEXT_FIELDS + ['reprint_notes', 'notes', 'synopsis'],
+     _search(r'(?<![\d-])#?\d+(?: - ?|- )#?\d+(?![\d-])'), 'Style Guide',
+     'General rules',
+     'Use the hyphen when indicating continuing numbers, with no space '
+     'before or after the hyphen', ()),
+    (['title', 'first_line', 'feature'] + CREDIT_TEXT_FIELDS +
+     ['job_number', 'characters', 'synopsis', 'reprint_notes', 'notes',
+      'keywords'],
+     _search('[‒–—―−]'), 'Style Guide', 'General rules',
+     'There are a variety of dashes in typography but in the GCD, we only '
+     'use one: the hyphen.', ()),
+    (['keywords'], _search(r'[()\[\]]'), 'Keywords', 'Notes',
+     'Do not group items with parentheses or brackets.', ()),
+    (['keywords'],
+     _search(r'\b(?:WW ?I{1,2}|WW ?[12]|First World War|Second World War|'
+             r'War of Northern Aggression|War Between the States)\b',
+             re.IGNORECASE),
+     'Style Guide', 'Keywords',
+     'World War I and World War II should be used in place of WWI, WWII, or '
+     'First World War, etc.', ()),
+]
+
+
+def _new_value(revision, story, field):
+    """Whether the revision has a new or changed value in field."""
+    if story is None:
+        return True
+    old = get_keywords(story) if field == 'keywords' \
+        else getattr(story, field)
+    return old.strip() != getattr(revision, field).strip()
+
+
+def _entries(value):
+    """The entries of a text field, without notes in ( ) and [ ]."""
+    return {_without_brackets(entry).strip(' ?').lower()
+            for entry in value.split(';')} - {''}
+
+
+# credit types counting for each text credit field, as in
+# StoryRevisionForm.clean()
+CREDIT_FIELD_TYPES = {
+    'script': SCRIPT_CREDIT_TYPES,
+    'pencils': [CREDIT_TYPES['pencils']] + list(range(7, 15)),
+    'inks': [CREDIT_TYPES['inks']] + list(range(7, 15)),
+    'colors': [CREDIT_TYPES['colors'], 8, 9, 11, 13],
+    'letters': [CREDIT_TYPES['letters'], 12, 13, 14],
+    'editing': [CREDIT_TYPES['editing']],
+}
+
+
+def _credits_also_in_records(revision, story):
+    """
+    Text credit fields naming a creator who has a credit record of the
+    field, by the official or an alternate name of the creator.
+    """
+    if revision.pk is None:
+        return []
+    records = list(revision.story_credit_revisions.exclude(deleted=True)
+                           .select_related('creator__creator'))
+    flagged = []
+    for field, credit_types in CREDIT_FIELD_TYPES.items():
+        names = _entries(getattr(revision, field))
+        field_records = [record for record in records
+                         if record.credit_type_id in credit_types]
+        if not names or not field_records or \
+           not (_new_value(revision, story, field) or
+                any(record.story_credit_id is None
+                    for record in field_records)):
+            continue
+        for record in field_records:
+            if names & {name.lower() for name in record.creator.creator
+                        .creator_names.values_list('name', flat=True)}:
+                flagged.append(field)
+                break
+    return flagged
+
+
+SEE_NOTES = re.compile(r'\([^()]*\bsee notes\b[^()]*\)', re.IGNORECASE)
+SEE_NOTES_FIELDS = ['title', 'first_line', 'feature'] + CREDIT_TEXT_FIELDS + \
+                   ['job_number', 'characters', 'synopsis', 'reprint_notes']
+
+
+def _see_notes_without_notes(revision, story):
+    """Fields with "(see notes)" while Notes is empty."""
+    if revision.notes.strip():
+        return []
+    notes_changed = _new_value(revision, story, 'notes')
+    return [field for field in SEE_NOTES_FIELDS
+            if SEE_NOTES.search(getattr(revision, field)) and
+            (notes_changed or _new_value(revision, story, field))]
+
+
+def _keywords_in_other_fields(revision, story):
+    """
+    Keywords equal to the title, a feature, a story arc, a genre or a
+    character or group of the sequence.
+    """
+    keywords = _entries(revision.keywords)
+    if not keywords or not _new_value(revision, story, 'keywords'):
+        return []
+    others = {revision.title.strip().lower()} | \
+        _entries(revision.feature) | _entries(revision.genre) | \
+        _entries(revision.characters)
+    if revision.pk is not None:
+        for names in [
+          revision.feature_name.values_list('name', flat=True),
+          revision.story_arc.values_list('name', flat=True),
+          revision.story_character_revisions.exclude(deleted=True)
+                  .values_list('character__name', flat=True),
+          revision.story_group_revisions.exclude(deleted=True)
+                  .values_list('group_name__name', flat=True)]:
+            others |= {name.lower() for name in names if name}
+    return ['keywords'] if keywords & others else []
+
+
+# wiki rules checked on the whole revision, also against its records:
+# (check giving the fields that may break the rule, page, section, rule)
+REVISION_NOTES = [
+    (_credits_also_in_records, 'Credits', 'Missing Creator Record',
+     'BE CAREFUL NOT TO ENTER THE SAME CREDIT USING BOTH THE CREATOR RECORD '
+     'AND TEXT CREDITS.'),
+    (_see_notes_without_notes, 'Notes (Sequence)', '',
+     'Direct comments about other fields to here with a "(see notes)" '
+     'comment.'),
+    (_keywords_in_other_fields, 'Keywords', '',
+     'Do not put anything in the keyword field that should be put in another '
+     'field. An exception is made for real-world comic event names and '
+     'initiatives, which can be included in the Keywords even if they are '
+     'also in another field'),
+]
+
+
+def _note(fields, page, section, rule):
+    """A note quoting the wiki rule that values of the fields may break."""
+    return 'Note on %s: wiki "%s"%s: "%s"' % (
+        ', '.join(field.replace('_', ' ').capitalize() for field in fields),
+        page, ', ' + section if section else '', rule)
+
+
+def format_notes(revision):
+    """
+    Notes on the wiki format rules that new or changed values of a sequence
+    revision may break, where a person has to judge.
+    """
+    story = revision.story
+    notes = []
+    for fields, check, page, section, rule, skipped_types in FORMAT_NOTES:
+        if revision.type_id in skipped_types:
+            continue
+        flagged = [field for field in fields
+                   if getattr(revision, field).strip() and
+                   _new_value(revision, story, field) and
+                   check(getattr(revision, field).strip())]
+        if flagged:
+            notes.append(_note(flagged, page, section, rule))
+    for check, page, section, rule in REVISION_NOTES:
+        flagged = check(revision, story)
+        if flagged:
+            notes.append(_note(flagged, page, section, rule))
+    return notes
 
 
 NO_CREDIT_BOXES = ['no_script', 'no_pencils', 'no_inks', 'no_colors',

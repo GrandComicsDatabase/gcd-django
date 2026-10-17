@@ -10,12 +10,14 @@ from django import forms
 
 from crispy_forms.layout import HTML
 
-from apps.gcd.models import Feature, FeatureLogo, FeatureNameDetail, \
+from apps.gcd.models import Creator, CreatorNameDetail, CreditType, \
+                            Feature, FeatureLogo, FeatureNameDetail, \
                             FeatureType, Story, StoryType
+from apps.stddata.models import Script
 from apps.oi.forms.story import StoryCreditRevisionForm, StoryRevisionForm, \
-                                _hidden_rows
+                                _hidden_rows, format_notes
 from apps.oi.models import StoryCreditRevision, StoryRevision
-from apps.oi.templatetags.compare import show_type_notes
+from apps.oi.templatetags.compare import _few_about_comics, show_type_notes
 from apps.oi.views import _cover_order_error, _covers_out_of_order
 from apps.select.views import FeatureLogoAutocomplete, \
                               FeatureNameAutocomplete, StoryArcAutocomplete
@@ -462,11 +464,17 @@ def test_cover_order_of_approved_issue_stays_editable():
 
 def _notes(type_id, synopsis='', reprint_notes='', has_links=False,
            deleted=False):
-    """The type notes of a story revision mock."""
+    """The type notes of a story revision mock of an added sequence."""
     story = mock.MagicMock(type_id=type_id, synopsis=synopsis,
-                           reprint_notes=reprint_notes, deleted=deleted)
+                           reprint_notes=reprint_notes, deleted=deleted,
+                           story=None, **dict.fromkeys(TEXT_FIELDS, ''))
     story.from_all_reprints.exists.return_value = has_links
     return show_type_notes(story)
+
+
+TEXT_FIELDS = ['title', 'first_line', 'feature', 'script', 'pencils', 'inks',
+               'colors', 'letters', 'editing', 'job_number', 'characters',
+               'notes', 'keywords']
 
 
 def test_synopsis_note_on_types_without_plot():
@@ -486,6 +494,174 @@ def test_cover_reprint_link_note():
 def test_no_type_notes_on_deleted_sequences():
     """Deleted sequences get no notes."""
     assert _notes(16, synopsis='Buy this!', deleted=True) == ''
+
+
+def _format_notes(type_id=STORY, **values):
+    """The format notes of a new sequence revision with these values."""
+    return ' '.join(format_notes(StoryRevision(type_id=type_id, **values)))
+
+
+@pytest.mark.parametrize('field, value, wiki', [
+    ('title', '"Clash of the Titans"', 'Style Guide'),
+    ('title', '...And Then There Were None', 'Style Guide'),
+    ('first_line', '«C\'était une nuit sombre...»', 'Title'),
+    ('feature', 'Batman/Superman', 'Feature'),
+    ('feature', 'Shadow, The; Batman', 'Feature'),
+    ('pencils', 'Joe Kubert, Alex Toth', 'Formatting Documentation'),
+    ('inks', 'Joe Kubert (signed) (painted)', 'Credits'),
+    ('script', 'Mike Esposito (as Micky Demeo)', 'Formatting Documentation'),
+    ('letters', 'C.C. Beck', 'Credits'),
+    ('pencils', 'Jack Kirby (pp 2-19)', 'Credits'),
+    ('pencils', 'Gene Colan (signed) [as Adam Austin]', 'Credits'),
+    ('colors', 'Joe Kubert (Painting)', 'Formatting Documentation'),
+    ('editing', 'Julius Schwartz (ME)', 'Editing'),
+    ('script', 'Joe Kubert; Unknown', 'Credits'),
+    ('characters', 'Superman, Batman', 'Character Appearances'),
+    ('characters', 'Superman (introduction; origin)',
+     'Character Appearances'),
+    ('pencils', 'Frank Giacoia (see notes)', 'Notes (Sequence)'),
+    ('characters', '? (photo, see notes)', 'Notes (Sequence)'),
+    ('characters', 'Superman (I, O)', 'Character Appearances'),
+    ('characters', 'Wildcat II', 'Character Appearances'),
+    ('characters', 'Gen. Thaddeus Ross', 'Style Guide'),
+    ('synopsis', 'Superman saves the day!', 'Style Guide'),
+    ('synopsis', 'Superman waits…', 'Style Guide'),
+    ('synopsis', 'Spidey saves the day.', 'Style Guide'),
+    ('reprint_notes', 'Superman (DC, 1939 series) #3', 'Reprints'),
+    ('reprint_notes', 'from Action Comics (DC, 1938 series) #6, in '
+     'Superman (DC, 1939 series) #3', 'Reprints'),
+    ('reprint_notes', 'in Superman (DC) #3', 'Reprints'),
+    ('reprint_notes', 'from Action Comics (DC, 1938 series) #6 [the first '
+     'two pages are redrawn and the last page is replaced by a new one]',
+     'Reprints'),
+    ('reprint_notes', 'from Krazy Kat daily (Hearst Syndicate) 14/02/1933',
+     'Style Guide'),
+    ('reprint_notes', 'in Daredevil (Marvel, 1998 series) Vol. 2 #1',
+     'Reprints'),
+    ('notes', 'Identification from the letters page.', 'Style Guide'),
+    ('notes', 'Writer unknown.', 'Style Guide'),
+    ('notes', 'Story continues in Avengers (Marvel) #56.', 'Style Guide'),
+    ('synopsis', 'Superman visits the U.S.A.', 'Style Guide'),
+    ('notes', 'Price raised to $1.00.', 'Style Guide'),
+    ('notes', 'Continued in issues #58 - 69.', 'Style Guide'),
+    ('job_number', 'X–1234', 'Style Guide'),
+    ('keywords', 'vehicles (cars and trucks)', 'Keywords'),
+    ('keywords', 'WWII', 'Style Guide')])
+def test_format_notes_on_new_values(field, value, wiki):
+    """Values that may break a format rule of the wiki get a note."""
+    assert 'wiki "%s"' % wiki in _format_notes(**{field: value})
+
+
+@pytest.mark.parametrize('field, value', [
+    ('title', 'It was a dark and stormy night...'),
+    ('title', '... And Then There Were None'),
+    ('feature', 'Batman / Superman'), ('feature', 'The Shadow'),
+    ('pencils', 'Jack Kirby (page 1, pages 20-22); Alex Toth (pages 2-19)'),
+    ('inks', 'Eliot R. Brown (photo, signed)'),
+    ('script', 'Gene Colan [as Adam Austin]'), ('letters', 'C. C. Beck'),
+    ('characters', 'Jimmy Olsen (origin, death)'),
+    ('characters', 'Justice Society of America [Superman [Clark Kent] '
+     '(Earth-2); Flash [Jay Garrick] (cameo)]'),
+    ('synopsis', 'The Human Torch visits the Inhuman Great Refuge.'),
+    ('reprint_notes', 'from Warlord (DC, 1976 series) #3-21'),
+    ('reprint_notes', 'from Calvin and Hobbes daily (Universal Press '
+     'Syndicate) 1985-11-18 - 1988-10-01 [reformatted]'),
+    ('reprint_notes', 'in Spurious Comic (Wacky Comics, 1985 series) #v2#5'),
+    ('reprint_notes', 'from ? [unknown American Comics Group magazine]'),
+    ('notes', 'Miscredited to Joe Sinnott. Obvious by style.'),
+    ('keywords', 'World War II; vehicles')])
+def test_format_notes_accept_correct_values(field, value):
+    """Values following the format rules get no note."""
+    assert _format_notes(**{field: value}) == ''
+
+
+def test_see_notes_needs_notes():
+    """A "(see notes)" entry gets no note when Notes says more."""
+    assert _format_notes(pencils='Frank Giacoia (see notes)',
+                         notes='Miscredited to Joe Sinnott.') == ''
+
+
+def test_keywords_in_other_fields():
+    """A keyword repeating the title, feature, genre or a character."""
+    for field in ['title', 'feature', 'genre', 'characters']:
+        assert 'wiki "Keywords"' in _format_notes(
+          keywords='robots; Batman', **{field: 'Batman'})
+    assert _format_notes(keywords='robots', title='Batman') == ''
+
+
+@pytest.mark.django_db
+def test_credit_in_text_and_record(any_added_story, any_editing_changeset):
+    """A text credit naming the creator of a credit record of the field."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story',
+                    pencils='')
+    creator = Creator.objects.create(
+      gcd_official_name='Joseph Kubert', birth_province='', birth_city='',
+      death_province='', death_city='', bio='', notes='')
+    script, _ = Script.objects.get_or_create(
+      code='Tst', defaults={'number': 999, 'name': 'Test Script'})
+    official = CreatorNameDetail.objects.create(
+      name='Joseph Kubert', creator=creator, is_official_name=True,
+      in_script=script)
+    CreatorNameDetail.objects.create(name='Joe Kubert', creator=creator,
+                                     in_script=script)
+    pencils, _ = CreditType.objects.get_or_create(
+      id=2, defaults={'name': 'pencils', 'sort_code': 2})
+    StoryCreditRevision.objects.create(
+      changeset=any_editing_changeset, story_revision=rev, creator=official,
+      credit_type=pencils)
+    rev.pencils = 'Joe Kubert ?'
+    assert 'Missing Creator Record' in ' '.join(format_notes(rev))
+    rev.pencils = 'Alex Toth'
+    assert 'Missing Creator Record' not in ' '.join(format_notes(rev))
+    rev.inks = 'Joe Kubert'
+    assert 'Missing Creator Record' not in ' '.join(format_notes(rev))
+
+
+def test_format_notes_letters_page_fan_art():
+    """Fan-art characters of letters pages are separated by commas."""
+    fan_art = 'Big Boy (fan art), Hawkman (fan art), et al.'
+    assert 'semicolon' in _format_notes(characters=fan_art)
+    assert _format_notes(type_id=12, characters=fan_art) == ''
+    assert 'semicolon' in _format_notes(type_id=12, pencils='A, B')
+
+
+@pytest.mark.django_db
+def test_format_notes_skip_old_values(any_added_story, any_editing_changeset):
+    """Approved values get no note, new or changed values do."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, TEXT_STORY,
+                    synopsis='Superman saves the day!', notes='Writer: ?')
+    assert format_notes(rev) == []
+    rev.synopsis = 'Superman saves the day again!'
+    assert ['Synopsis'] == [note.split(':')[0][len('Note on '):]
+                            for note in format_notes(rev)]
+
+
+def _sequences(*types, comics=False, in_change=True):
+    """A cover revision mock in an issue with sequences of these types."""
+    story = mock.MagicMock(type_id=COVER, story_id=1)
+    sequences = [mock.MagicMock(id=i + 1, type_id=type_id)
+                 for i, type_id in enumerate(types)]
+    if in_change:
+        issue_revision = mock.MagicMock()
+        issue_revision.series.is_comics_publication = comics
+        issue_revision.active_stories.return_value = sequences
+        story.changeset.issuerevisions.filter.return_value = [issue_revision]
+    else:
+        story.changeset.issuerevisions.filter.return_value = []
+        story.issue.series.is_comics_publication = comics
+        story.issue.active_stories.return_value = sequences
+    return story
+
+
+def test_about_comics_share_for_non_comics_covers():
+    """Covers in non-comics issues with less than half About Comics."""
+    assert _few_about_comics(_sequences(COVER, 27, 19))
+    assert not _few_about_comics(_sequences(COVER, 27, 27))
+    assert not _few_about_comics(_sequences(COVER, 27, 19, comics=True))
+    # a sequence change: the approved issue, with the edited sequence (the
+    # first one) as changed
+    assert _few_about_comics(_sequences(27, 27, 19, in_change=False))
+    assert not _few_about_comics(_sequences(19, 27, 27, in_change=False))
 
 
 def _choices(view_class, type_id):
