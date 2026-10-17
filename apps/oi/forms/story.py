@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import json
+import re
+
 from django import forms
 from django.conf import settings
 from django.forms.models import inlineformset_factory
@@ -17,7 +20,8 @@ from markdownx.widgets import MarkdownxWidget
 from taggit.models import Tag
 
 from apps.oi.models import (
-    get_reprint_field_list, get_story_field_list, remove_leading_article,
+    get_keywords, get_reprint_field_list, get_story_field_list,
+    remove_leading_article,
     BiblioEntryRevision, ReprintRevision, StoryRevision, StoryArcRevision,
     StoryArcRelationRevision, StoryCreditRevision, StoryCharacterRevision,
     StoryGroupRevision)
@@ -165,6 +169,7 @@ def get_story_revision_form(revision=None, user=None,
             queryset = queryset.exclude(name__in=OLD_TYPES)
 
     class RuntimeStoryRevisionForm(StoryRevisionForm):
+        series_has_about_comics = has_about_comics
         type = forms.ModelChoiceField(queryset=queryset, **extra)
         genre = _genre_choices(language=language,
                                additional_genres=additional_genres)
@@ -406,6 +411,15 @@ class StoryCreditRevisionForm(forms.ModelForm):
         if cd['sourced_by'] and not cd['is_sourced']:
             cd['sourced_by'] = ""
 
+        # only new or changed credits, old ones stay editable
+        if cd['is_sourced'] and not cd['sourced_by'].strip() and \
+           (self.instance.pk is None or self.has_changed()):
+            raise forms.ValidationError(
+              ['Enter the source in "Sourced by", or uncheck "Is sourced". '
+               'Wiki "Credits", Sourced: "When "Is sourced" is checked, the '
+               '"Sourced by" text box must be filled in."']
+            )
+
         if cd['credit_name']:
             if cd['credit_name'].strip() == "credited":
                 raise forms.ValidationError(
@@ -629,6 +643,537 @@ StoryGroupRevisionFormSet = inlineformset_factory(
     can_delete=True, extra=1)
 
 
+# credit types counting as script credits, as in StoryRevisionForm.clean()
+SCRIPT_CREDIT_TYPES = [CREDIT_TYPES['script'], 10, 11, 12, 13]
+
+
+def _formset_has_rows(data, prefix, field):
+    """Whether a not deleted row of the posted formset has a value in field."""
+    for i in range(int(data.get('%s-TOTAL_FORMS' % prefix, 0))):
+        if data.get('%s-%d-DELETE' % (prefix, i)):
+            continue
+        if data.get('%s-%d-%s' % (prefix, i, field)):
+            return True
+    return False
+
+
+def _has_script(story):
+    """Whether the approved story has a script entry or No Script."""
+    return (story.script != '' or story.no_script or
+            story.active_credits.filter(
+              credit_type_id__in=SCRIPT_CREDIT_TYPES).exists())
+
+
+def _blank_page_content(story):
+    """The kinds of content of the approved story a blank page cannot have."""
+    content = []
+    if any(getattr(story, credit) for credit in CREDIT_TYPES) or \
+       story.active_credits.exists():
+        content.append('credits')
+    if story.characters or story.active_characters.exists() or \
+       story.active_groups.exists():
+        content.append('characters')
+    if story.synopsis:
+        content.append('a synopsis')
+    return content
+
+
+CREDIT_TEXT_FIELDS = ['script', 'pencils', 'inks', 'colors', 'letters',
+                      'editing']
+
+# wiki format rules a program can tell, refused for new or changed values:
+# (fields, pattern of a wrong value, message quoting the rule)
+FORMAT_RULES = [
+    (CREDIT_TEXT_FIELDS,
+     re.compile(r'(?:^|;)\s*(?:n/?a|none)\s*(?:;|$)', re.IGNORECASE),
+     'Do not enter "n/a" or "none": check the No box if the credit does not '
+     'apply, or enter "?" if the creator is unknown. Wiki "Credits", Using '
+     'the text format: "Do not use "n/a" or "none" or leave the field '
+     'blank."'),
+    (CREDIT_TEXT_FIELDS, re.compile(r';(?!\s|$)'),
+     'Put a space after each semicolon. Wiki "Credits", Using the text '
+     'format: "Multiple creators are separated by a semi-colon and space."'),
+    (CREDIT_TEXT_FIELDS, re.compile(r'[^\s;?\[(]\?'),
+     'Put a space before the question mark of an uncertain credit, as in '
+     '"Joe Kubert ?". Wiki "Credits", Using the text format: "If there is '
+     'uncertainty about a credit, note it with a space and a question mark '
+     'after the name."'),
+    (['letters'], re.compile(r'\b(?:Typeset|TYPESET)\b'),
+     'Write "typeset" in lower case. Wiki "Style Guide", Credits and '
+     'Creators: "The word “typeset,” used in the letters field to indicate '
+     'type instead of lettering, is not capitalized."'),
+    (CREDIT_TEXT_FIELDS + ['characters'],
+     re.compile(r',\s*(?:Jr|Sr)\b|\b(?:Jr|Sr)\b(?!\.)'),
+     'Write Jr. and Sr. with a period and without a comma before them. Wiki '
+     '"Style Guide", Credits and Creators: "Do not use a comma beforehand, '
+     'but use a period behind the identifiers Jr. or Sr."'),
+]
+
+# a wrong ellipsis in a title: a space before it, spaced or two, four or more
+# periods, the character …, no space or two spaces after it
+TITLE_ELLIPSIS = re.compile(
+    r'''\s\.{3}|\.\s\.\s\.|(?<!\.)\.\.(?!\.)|\.{4,}|…|'''
+    r'''\.{3}(?=[^\s.,;:!?)\]"“”'’»›」』])|\.{3} {2,}''')
+TITLE_ELLIPSIS_MESSAGE = (
+    'Enter an ellipsis as three periods. Wiki "Style Guide", Story titles: '
+    '"When transcribing it for the database, enter it with no preceding '
+    'space, no space between the periods, and one space following the '
+    'ellipsis."')
+
+
+def _is_new_value(cd, story, field):
+    """Whether the value of field is new: added sequence or changed value."""
+    return story is None or getattr(story, field).strip() != cd[field]
+
+
+def _format_errors(cd, story):
+    """The format rules broken by new or changed values of text fields."""
+    errors = []
+    for fields, pattern, message in FORMAT_RULES:
+        for field in fields:
+            if _is_new_value(cd, story, field) and pattern.search(cd[field]):
+                errors.append('%s: %s' % (field.capitalize(), message))
+    if _is_new_value(cd, story, 'title'):
+        for match in TITLE_ELLIPSIS.finditer(cd['title']):
+            # the wiki does not say whether a leading ellipsis is followed
+            # by a space
+            if match.start() == 0 and match.group() == '...':
+                continue
+            errors.append('Title: ' + TITLE_ELLIPSIS_MESSAGE)
+            break
+    return errors
+
+
+def _without_brackets(value):
+    """The value without its parts in ( ) and [ ], innermost first."""
+    previous = None
+    while previous != value:
+        previous, value = value, re.sub(r'\([^()\[\]]*\)|\[[^()\[\]]*\]', '',
+                                        value)
+    return value
+
+
+def _sections(value):
+    """The parts of the value between semicolons outside ( ) and [ ]."""
+    sections, depth, section = [], 0, ''
+    for character in value:
+        if character in '([':
+            depth += 1
+        elif character in ')]':
+            depth -= 1
+        if character == ';' and depth == 0:
+            sections.append(section)
+            section = ''
+        else:
+            section += character
+    return sections + [section]
+
+
+def _search(pattern, flags=0):
+    """A check whether the pattern occurs in a value."""
+    return re.compile(pattern, flags).search
+
+
+def _search_outside_brackets(pattern):
+    """A check whether the pattern occurs outside ( ) and [ ] of a value."""
+    search = re.compile(pattern).search
+    return lambda value: search(_without_brackets(value))
+
+
+REPRINT_SECTION_START = re.compile(
+    r'^\s*(?:from|in|de|dans|fra|i|Original em|Reimpresso em)\b|'
+    r'^\s*\d{4}-\d{2}-\d{2}')
+COMICS_REPRINT_SECTION = re.compile(
+    r'^\s*(?:from|in)\s+(?!\?)(?!.*\d{4}-\d{2}-\d{2}).*')
+SERIES_DESIGNATION = re.compile(r'\([^()]*,\s*\d{4}\s+[Ss]eries\)\s*#\S+')
+QUOTED = r'^["“”„«»‹›\'‘’‚「『].*["“”«»‹›\'‘’」』]$'
+
+
+def _reprint_section_start(value):
+    """Whether a reprint section starts neither with from/in nor a date."""
+    return any(not REPRINT_SECTION_START.search(section)
+               for section in _sections(value) if section.strip())
+
+
+def _reprint_without_series(value):
+    """Whether a comics reprint section lacks (Publisher, YYYY series) #."""
+    return any(COMICS_REPRINT_SECTION.search(section) and
+               not SERIES_DESIGNATION.search(section)
+               for section in _sections(value))
+
+
+# wiki format rules where a person has to judge whether a value breaks
+# them: (fields, check of a value, wiki page, section, rule, sequence types
+# the rule does not apply to), shown as notes that do not block
+FORMAT_NOTES = [
+    (['title'], _search(QUOTED), 'Style Guide', 'Story titles',
+     'In the story title field, do not use quotation marks unless they '
+     'occur within the title.', ()),
+    # a leading ellipsis, which the refusal of _format_errors() skips
+    (['title'], _search(r'^\.{3}(?=[^\s.,;:!?)\]"“”\'’»›」』])'),
+     'Style Guide', 'Story titles',
+     'When transcribing it for the database, enter it with no preceding '
+     'space, no space between the periods, and one space following the '
+     'ellipsis.', ()),
+    (['first_line'], _search(QUOTED), 'Title', 'First Line field',
+     'Also in such cases, the Unofficial Title box should not be checked, '
+     'and quotation marks are not used.', ()),
+    (['feature'], _search(r'\S/|/\S'), 'Feature', 'Feature Names',
+     'If the name of a feature contains a "/" to separate two individual '
+     'name components, use a space before and after the "/", regardless of '
+     'the presence or absence of spaces around the "/" in print. No spaces '
+     'are used if the "/" is an integral part of the name.', ()),
+    (['feature'], _search(r',\s*(?:The|A|An)\s*(?:;|$)', re.IGNORECASE),
+     'Feature', 'Feature Use',
+     'Leave articles at the front of the Feature title:  "The Shadow", not '
+     '"Shadow, The"', ()),
+    (['feature'] + CREDIT_TEXT_FIELDS, _search_outside_brackets(','),
+     'Formatting Documentation', 'General Indexing Format Rules',
+     'Separate multiple entries in the same field (such as stories with more '
+     'than one penciller) with a semicolon (";"), not a comma.', ()),
+    # wiki "Letters and Fan Art" asks for commas between fan-art characters
+    (['characters'], _search_outside_brackets(','),
+     'Formatting Documentation', 'General Indexing Format Rules',
+     'Separate multiple entries in the same field (such as stories with more '
+     'than one penciller) with a semicolon (";"), not a comma.',
+     (STORY_TYPES['letters_page'],)),
+    (['characters'], _search_outside_brackets(','), 'Character Appearances',
+     'Entering Character Appearances using text',
+     'Characters in the Characters field (of a Sequence editing page) should '
+     'be separated with a semi-colon (;).', (STORY_TYPES['letters_page'],)),
+    (CREDIT_TEXT_FIELDS, _search(r'\)[\s,]*\('), 'Credits',
+     'Using the text format',
+     'If there are multiple notes, these should be placed within a single '
+     'set of parentheses, such as (signed, painted).', ()),
+    (CREDIT_TEXT_FIELDS, _search(r'\(as\s'), 'Formatting Documentation',
+     'General Indexing Format Rules',
+     'Use square brackets for a creator\'s pseudonym such as "[as Joe King]" '
+     'per Credits or for information that is not actually in the comic.',
+     ()),
+    (CREDIT_TEXT_FIELDS, _search(r'\b[A-Z]\.[A-Z]\.'), 'Credits',
+     'Using the text format',
+     'In case multiple initials are used they should be separated by '
+     'spaces.', ()),
+    (CREDIT_TEXT_FIELDS,
+     _search(r'\bpgs?\.?\s*\d|\bpag\.?\s*\d|\bpp?(?!\.)\s+\d', re.IGNORECASE),
+     'Credits', 'Using the text format',
+     'If it is known which pages were done by specific creators, include '
+     'those pages in parentheses after each name using the terms page, '
+     'pages, p. or pp.', ()),
+    (CREDIT_TEXT_FIELDS, _search(r'\)\s*\[as\s'), 'Credits',
+     'Using the text format',
+     'The general form for a credit is "Who\'s Who form" [as "Credited or '
+     'signed form"] (signed)".', ()),
+    (CREDIT_TEXT_FIELDS, _search(r'\b(?:Typeset|TYPESET|Painting|Painted)\b'),
+     'Formatting Documentation', 'General Indexing Format Rules',
+     'Do not capitalize genres, credit clarifications (such as "painting" or '
+     '"typeset"), etc., per a September 2012 clarification of when to use '
+     'capitalization.', ()),
+    (['editing'], _search(r'\([A-Z]{2,5}\)'), 'Editing', '',
+     'Only specific, pre-approved exceptions will be permitted, and all '
+     'other abbreviations must be expanded.', ()),
+    (CREDIT_TEXT_FIELDS,
+     _search(r'(?:^|;)\s*(?:unknown|unk\.?)\s*(?:;|$)', re.IGNORECASE),
+     'Credits', 'Using the text format',
+     'If a credit is unknown, enter only a question mark: "?". Do not use '
+     '"n/a" or leave the field blank.', ()),
+    (['characters'], _search(r'\([^()]*;[^()]*\)'), 'Character Appearances',
+     'Standard Format for Groups and Notes',
+     'Multiple notes should be separated with a comma: "Superman '
+     '(introduction, origin)".', ()),
+    (['characters'], _search(r'\((?:[A-Z](?:,\s*)?)+\)'),
+     'Character Appearances', 'Standard Format for Groups and Notes',
+     'Abbreviations, such as O for Origin, should not be used.', ()),
+    (['characters'], _search(r'\b[A-Z][a-z]+ (?:I{1,3}|IV)\b(?!\])'),
+     'Character Appearances', 'Entering Character Appearances using text',
+     'An older format seen in some sequences, where different versions of a '
+     'character were numbered with Roman numerals, such as "Wildcat I" and '
+     '"Wildcat II", is not allowed and should be corrected to the named '
+     'form, as in "Wildcat" [Ted Grant]" and "Wildcat [Yolanda Montez]".',
+     ()),
+    (['characters'], _search(r'\b(?:Gen|Sgt|Capt|Col|Lt|Maj|Sen)\.'),
+     'Style Guide', 'Characters',
+     'If you are going to use personal titles, such as military ranks, in '
+     'the character field, spell them out.', ()),
+    (['synopsis'], _search('!'), 'Style Guide', 'Synopses',
+     'Do not use exclamation points in synopses.', ()),
+    (['synopsis'], _search(r'\.\.\.|…'), 'Style Guide', 'Synopses',
+     'Do not use the ellipsis in a synopsis.', ()),
+    (['synopsis'], _search(r'\b(?:Spidey|Wolvie|Supes)\b'), 'Style Guide',
+     'Synopses',
+     'Names such as “Spidey” or “Wolvie” or “Supes” are inappropriate and '
+     'should not be used.', ()),
+    (['reprint_notes'], _reprint_section_start, 'Reprints',
+     'Textual Reprint Notes',
+     'the first word in each section in this field must be either "from" or '
+     '"in".  The equivalent of "from" or "in" in languages other than '
+     'English may also be used.', ()),
+    (['reprint_notes'], _search_outside_brackets(r',\s*(?:from|in)\s'),
+     'Reprints', 'Textual Reprint Notes',
+     'Multiple sections of the field are separated by semicolons (;).', ()),
+    (['reprint_notes'], _reprint_without_series, 'Reprints',
+     'Textual Reprint Notes',
+     'Format for comics reprinted from or in other comics is: in/from Series '
+     'Title (Original publisher, YYYY series) #number (optional exact date '
+     'of publication) [optional short notes].', ()),
+    (['reprint_notes'], _search(r'\[(?:[^\]\s]+\s+){12,}[^\]]*\]'),
+     'Reprints', 'Textual Reprint Notes',
+     'Most details about the reprint (such as editing or a title change) '
+     'belong in the Notes field.  Short notes of less than about 10 words '
+     'can be put in square brackets after the reprint info.', ()),
+    (['reprint_notes'],
+     _search(r'\b\d{1,2}([-./])\d{1,2}\1(?:\d{4}|\d{2})\b|'
+             r'\b\d{4}([./])\d{1,2}\2\d{1,2}\b|\b\d{4}-\d(?!\d)|'
+             r'\b\d{4}-\d{2}-\d(?!\d)|\b\d{4}-\d{2}-\d{2}(?! - \d)\s*-\s*\d'),
+     'Style Guide', 'General rules',
+     'Reprint Notes shall be formatted using hyphens in the style '
+     '“YYYY-MM-DD” for a single date, or “YYYY-MM-DD - YYYY-MM-DD” for a '
+     'range of dates, or “YYYY-MM-DD; YYYY-MM-DD - YYYY-MM-DD; YYYY-MM-DD” '
+     'for a group of separate dates.', ()),
+    (['reprint_notes'],
+     _search(r'(?<!#)\bv\d+\s*#|#v\d+\s+#|\bvol(?:ume)?\.?\s*\d+\s*#',
+             re.IGNORECASE),
+     'Reprints', 'Textual Reprint Notes',
+     'Format for the number of issues that show their volume number with the '
+     'issue number is #v2#1 (including the leading #).', ()),
+    (['notes'],
+     _search(r'\bcredits by\b|\bidentification from\b', re.IGNORECASE),
+     'Style Guide', 'Credits and Creators',
+     'In notes, the acceptable phrases for the source of credits are:  '
+     '“credits from” or “identification by.”  Do not mix and match:  '
+     '“credits by” or “identification from” are incorrect.', ()),
+    (['notes'],
+     _search(r'(?<!letter )\b(?:writer|inker|penciller|penciler|colorist|'
+             r'letterer)s?\b', re.IGNORECASE),
+     'Style Guide', 'Credits and Creators',
+     'Note the names of the GCD credits fields and use those in your notes: '
+     'script not writer; inks not inker.', ()),
+    (['notes'], _search(r'(?<![Ss]eries\) )(?<!#v\d)(?<!#v\d\d)#\d'),
+     'Style Guide', "Series' titles",
+     'When referring to a series, always use the full GCD designation of '
+     'official series title, followed by the publisher name and the year the '
+     'series began, in parentheses: The Amazing Spider-Man (Marvel, 1963 '
+     'series) or Kalle Anka & C:o (Egmont, 1997 series).', ()),
+    (['notes', 'synopsis'],
+     _search(r'\b(?:[A-Z][a-z]?\.){2,}(?![^\[\]]*\])'), 'Style Guide',
+     'General rules',
+     'use no periods with abbreviations that appear in full capitals, even '
+     'if lowercase letters appear: NASA, AD, PhD', ()),
+    (['notes', 'synopsis'], _search('[$€£¥]'), 'Style Guide',
+     'General rules',
+     'Currencies are only to be referred to by their currency code.', ()),
+    (['title'] + CREDIT_TEXT_FIELDS + ['reprint_notes', 'notes', 'synopsis'],
+     _search(r'(?<![\d-])#?\d+(?: - ?|- )#?\d+(?![\d-])'), 'Style Guide',
+     'General rules',
+     'Use the hyphen when indicating continuing numbers, with no space '
+     'before or after the hyphen', ()),
+    (['title', 'first_line', 'feature'] + CREDIT_TEXT_FIELDS +
+     ['job_number', 'characters', 'synopsis', 'reprint_notes', 'notes',
+      'keywords'],
+     _search('[‒–—―−]'), 'Style Guide', 'General rules',
+     'There are a variety of dashes in typography but in the GCD, we only '
+     'use one: the hyphen.', ()),
+    (['keywords'], _search(r'[()\[\]]'), 'Keywords', 'Notes',
+     'Do not group items with parentheses or brackets.', ()),
+    (['keywords'],
+     _search(r'\b(?:WW ?I{1,2}|WW ?[12]|First World War|Second World War|'
+             r'War of Northern Aggression|War Between the States)\b',
+             re.IGNORECASE),
+     'Style Guide', 'Keywords',
+     'World War I and World War II should be used in place of WWI, WWII, or '
+     'First World War, etc.', ()),
+]
+
+
+def _new_value(revision, story, field):
+    """Whether the revision has a new or changed value in field."""
+    if story is None:
+        return True
+    old = get_keywords(story) if field == 'keywords' \
+        else getattr(story, field)
+    return old.strip() != getattr(revision, field).strip()
+
+
+def _entries(value):
+    """The entries of a text field, without notes in ( ) and [ ]."""
+    return {_without_brackets(entry).strip(' ?').lower()
+            for entry in value.split(';')} - {''}
+
+
+# credit types counting for each text credit field, as in
+# StoryRevisionForm.clean()
+CREDIT_FIELD_TYPES = {
+    'script': SCRIPT_CREDIT_TYPES,
+    'pencils': [CREDIT_TYPES['pencils']] + list(range(7, 15)),
+    'inks': [CREDIT_TYPES['inks']] + list(range(7, 15)),
+    'colors': [CREDIT_TYPES['colors'], 8, 9, 11, 13],
+    'letters': [CREDIT_TYPES['letters'], 12, 13, 14],
+    'editing': [CREDIT_TYPES['editing']],
+}
+
+
+def _credits_also_in_records(revision, story):
+    """
+    Text credit fields naming a creator who has a credit record of the
+    field, by the official or an alternate name of the creator.
+    """
+    if revision.pk is None:
+        return []
+    records = list(revision.story_credit_revisions.exclude(deleted=True)
+                           .select_related('creator__creator'))
+    flagged = []
+    for field, credit_types in CREDIT_FIELD_TYPES.items():
+        names = _entries(getattr(revision, field))
+        field_records = [record for record in records
+                         if record.credit_type_id in credit_types]
+        if not names or not field_records or \
+           not (_new_value(revision, story, field) or
+                any(record.story_credit_id is None
+                    for record in field_records)):
+            continue
+        for record in field_records:
+            if names & {name.lower() for name in record.creator.creator
+                        .creator_names.values_list('name', flat=True)}:
+                flagged.append(field)
+                break
+    return flagged
+
+
+SEE_NOTES = re.compile(r'\([^()]*\bsee notes\b[^()]*\)', re.IGNORECASE)
+SEE_NOTES_FIELDS = ['title', 'first_line', 'feature'] + CREDIT_TEXT_FIELDS + \
+                   ['job_number', 'characters', 'synopsis', 'reprint_notes']
+
+
+def _see_notes_without_notes(revision, story):
+    """Fields with "(see notes)" while Notes is empty."""
+    if revision.notes.strip():
+        return []
+    notes_changed = _new_value(revision, story, 'notes')
+    return [field for field in SEE_NOTES_FIELDS
+            if SEE_NOTES.search(getattr(revision, field)) and
+            (notes_changed or _new_value(revision, story, field))]
+
+
+def _keywords_in_other_fields(revision, story):
+    """
+    Keywords equal to the title, a feature, a story arc, a genre or a
+    character or group of the sequence.
+    """
+    keywords = _entries(revision.keywords)
+    if not keywords or not _new_value(revision, story, 'keywords'):
+        return []
+    others = {revision.title.strip().lower()} | \
+        _entries(revision.feature) | _entries(revision.genre) | \
+        _entries(revision.characters)
+    if revision.pk is not None:
+        for names in [
+          revision.feature_name.values_list('name', flat=True),
+          revision.story_arc.values_list('name', flat=True),
+          revision.story_character_revisions.exclude(deleted=True)
+                  .values_list('character__name', flat=True),
+          revision.story_group_revisions.exclude(deleted=True)
+                  .values_list('group_name__name', flat=True)]:
+            others |= {name.lower() for name in names if name}
+    return ['keywords'] if keywords & others else []
+
+
+# wiki rules checked on the whole revision, also against its records:
+# (check giving the fields that may break the rule, page, section, rule)
+REVISION_NOTES = [
+    (_credits_also_in_records, 'Credits', 'Missing Creator Record',
+     'BE CAREFUL NOT TO ENTER THE SAME CREDIT USING BOTH THE CREATOR RECORD '
+     'AND TEXT CREDITS.'),
+    (_see_notes_without_notes, 'Notes (Sequence)', '',
+     'Direct comments about other fields to here with a "(see notes)" '
+     'comment.'),
+    (_keywords_in_other_fields, 'Keywords', '',
+     'Do not put anything in the keyword field that should be put in another '
+     'field. An exception is made for real-world comic event names and '
+     'initiatives, which can be included in the Keywords even if they are '
+     'also in another field'),
+]
+
+
+def _note(fields, page, section, rule):
+    """A note quoting the wiki rule that values of the fields may break."""
+    return 'Note on %s: wiki "%s"%s: "%s"' % (
+        ', '.join(field.replace('_', ' ').capitalize() for field in fields),
+        page, ', ' + section if section else '', rule)
+
+
+def format_notes(revision):
+    """
+    Notes on the wiki format rules that new or changed values of a sequence
+    revision may break, where a person has to judge.
+    """
+    story = revision.story
+    notes = []
+    for fields, check, page, section, rule, skipped_types in FORMAT_NOTES:
+        if revision.type_id in skipped_types:
+            continue
+        flagged = [field for field in fields
+                   if getattr(revision, field).strip() and
+                   _new_value(revision, story, field) and
+                   check(getattr(revision, field).strip())]
+        if flagged:
+            notes.append(_note(flagged, page, section, rule))
+    for check, page, section, rule in REVISION_NOTES:
+        flagged = check(revision, story)
+        if flagged:
+            notes.append(_note(flagged, page, section, rule))
+    return notes
+
+
+NO_CREDIT_BOXES = ['no_script', 'no_pencils', 'no_inks', 'no_colors',
+                   'no_letters']
+
+# rows of the sequence form for fields that do not apply to a type, as
+# (rows, fields whose value keeps the rows shown, so that old values can be
+# removed); a name is a form field, a formset prefix or the data-field of a
+# row
+FEATURE_ROWS = [(['feature'], ['feature']),
+                (['feature_name', 'feature_genres'], ['feature_name'])]
+FEATURE_LOGO_ROWS = [(['feature_logo'], ['feature_logo'])]
+GENRE_ROWS = [(['genre', 'selected_genres'], ['genre'])]
+CHARACTER_FIELDS = ['universe', 'appearing_characters', 'group_name',
+                    'group_members', 'story_character_revisions',
+                    'characters', 'story_group_revisions']
+BLANK_PAGE_ROWS = [
+    (['title', 'title_inferred'], ['title']),
+    (['first_line'], ['first_line']),
+    (['story_arc'], ['story_arc']),
+    (['job_number'], ['job_number']),
+    (['creator_help'] + CREDIT_TEXT_FIELDS + ['story_credit_revisions'],
+     CREDIT_TEXT_FIELDS + ['story_credit_revisions']),
+    (CHARACTER_FIELDS +
+     ['characters_heading', 'character_help', 'use_universe',
+      'save_and_set_universe', 'one_character_help', 'character_order'] +
+     ['%s_%s' % (field, detail)
+      for field in ['appearing_characters', 'group_members']
+      for detail in ['additional_information', 'role', 'flashback',
+                     'origin', 'death', 'notes']],
+     CHARACTER_FIELDS),
+    (['synopsis'], ['synopsis']),
+    (['reprint_notes'], ['reprint_notes']),
+    (['keywords', 'keyword_objects'], ['keywords', 'keyword_objects']),
+]
+
+
+def _hidden_rows():
+    """
+    The rows of the sequence form each type hides, by type id: the wiki
+    Not applicable and Forbidden fields of the type.
+    """
+    hidden = {STORY_TYPES['cover']: list(FEATURE_LOGO_ROWS),
+              STORY_TYPES['blank']: list(BLANK_PAGE_ROWS)}
+    for type_id in NO_FEATURE_TYPES:
+        hidden.setdefault(type_id, []).extend(FEATURE_ROWS +
+                                              FEATURE_LOGO_ROWS)
+    for type_id in NO_GENRE_TYPES:
+        hidden.setdefault(type_id, []).extend(GENRE_ROWS)
+    return hidden
+
+
 # TODO check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
     def render(self, form, context, renderer=None,
@@ -686,6 +1231,9 @@ class StoryRevisionForm(KeywordBaseForm):
                 KEYWORDS_HELP,
         }
 
+    # set by get_story_revision_form() from the series of the sequence
+    series_has_about_comics = None
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the StoryRevisionForm with custom layout and field
@@ -733,10 +1281,12 @@ class StoryRevisionForm(KeywordBaseForm):
                                       template='oi/bits/uni_field.html'))
                       for field in fields[:genres]]
         field_list.append(HTML(
-            '<tr class="mb-2"><th>Genre from Feature:</th>'
+            '<tr class="mb-2" data-field="feature_genres">'
+            '<th>Genre from Feature:</th>'
             '<td><div id="feature-genres"></div></td></tr>'))
         field_list.append(HTML(
-          '<tr class="mb-2"><th>Selected Genre:</th>'
+          '<tr class="mb-2" data-field="selected_genres">'
+          '<th>Selected Genre:</th>'
           '<td id="selected-genres"></td></tr>'))
 
         credits_start = fields.index('creator_help')
@@ -759,7 +1309,8 @@ class StoryRevisionForm(KeywordBaseForm):
                            for field in fields[credits_start:
                                                characters_start-19]])
         field_list.append(HTML(
-          '<tr><th><hr style="height:2px; background-color:#000;">&nbsp;'
+          '<tr data-field="characters_heading">'
+          '<th><hr style="height:2px; background-color:#000;">&nbsp;'
           '<strong>Characters:</strong></th>'
           '<td class="align-top">'
           '<hr style="height:2px; background-color:#000;"></td></tr>'))
@@ -789,7 +1340,7 @@ class StoryRevisionForm(KeywordBaseForm):
                 has_appearance_order = True
             if kwargs['instance'].character_order_revisions.filter(type__id=2):
                 has_importance_order = True
-        character_order_html = '<th></th><td>'
+        character_order_html = '<tr data-field="character_order"><th></th><td>'
         if has_appearance_order:
             character_order_html += '<input type="submit" ' \
               'name="edit_appearance_order"' \
@@ -810,7 +1361,7 @@ class StoryRevisionForm(KeywordBaseForm):
               'name="create_importance_order"' \
               ' value="Save And Create Importance Order" ' \
               'class="m-0 btn-blue-editing inline"/>'
-        field_list.append(HTML(character_order_html + '</td>'))
+        field_list.append(HTML(character_order_html + '</td></tr>'))
         characters_end = len(field_list)
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
@@ -838,6 +1389,13 @@ class StoryRevisionForm(KeywordBaseForm):
               *(f for f in field_list[-2:]),
               HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
+        # for storyrevision_form_utils.js: the rows each type hides, and the
+        # No boxes it checks when a sequence becomes a blank page
+        story = self.instance.story
+        self.fields['type'].widget.attrs.update({
+          'data-hidden-rows': json.dumps(_hidden_rows()),
+          'data-blank-type': STORY_TYPES['blank'],
+          'data-approved-type': story.type_id if story else ''})
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
     sequence_number = forms.IntegerField(widget=forms.HiddenInput)
@@ -1286,6 +1844,7 @@ class StoryRevisionForm(KeywordBaseForm):
                     cd['keywords'] += '; '
                 cd['keywords'] += keyword.name
 
+        credits_found = {}
         for seq_type in ['script', 'pencils', 'inks', 'colors', 'letters',
                          'editing']:
             nr_credit_forms = self.data['story_credit_revisions-TOTAL_FORMS']
@@ -1315,6 +1874,7 @@ class StoryRevisionForm(KeywordBaseForm):
                     elif seq_type == 'letters' and credit_type in ['12', '13',
                                                                    '14']:
                         seq_type_found = True
+            credits_found[seq_type] = seq_type_found
 
             if cd['type'].id in NON_OPTIONAL_TYPES:
                 if not cd['no_%s' % seq_type] and cd[seq_type] == "" \
@@ -1329,20 +1889,102 @@ class StoryRevisionForm(KeywordBaseForm):
                     ['%s field and No %s checkbox cannot both be filled in.' %
                      (seq_type.capitalize(), seq_type.capitalize())])
 
+        # the approved sequence, None for an added one
+        story = self.instance.story
+
+        if cd['type'].id == STORY_TYPES['letters_page'] and \
+           not cd['no_script'] and cd['script'] == '' and \
+           not credits_found['script']:
+            # older letters pages without a script entry stay editable
+            if story is None or \
+               story.type_id != STORY_TYPES['letters_page'] or \
+               _has_script(story):
+                raise forms.ValidationError(
+                    ['Enter the people answering the letters in the Script '
+                     'field, or check No Script if there are no answers. '
+                     'Wiki "Letters and Fan Art", Letter Column Script and '
+                     'Editorial Comment Credits: "If there is no response, '
+                     'then the NO script check-box must be checked."'])
+
+        if cd['type'].id == STORY_TYPES['blank']:
+            content = []
+            if any(cd[credit] or credits_found[credit]
+                   for credit in CREDIT_TYPES):
+                content.append('credits')
+            if cd['characters'] or cd['appearing_characters'] or \
+               cd['group_name'] or cd['group_members'] or \
+               _formset_has_rows(self.data, 'story_character_revisions',
+                                 'character') or \
+               _formset_has_rows(self.data, 'story_group_revisions',
+                                 'group_name'):
+                content.append('characters')
+            if cd['synopsis']:
+                content.append('a synopsis')
+            # older blank pages with such content stay editable
+            if story is not None and story.type_id == STORY_TYPES['blank']:
+                approved = _blank_page_content(story)
+                content = [c for c in content if c not in approved]
+            if content:
+                raise forms.ValidationError(
+                    ['A blank page cannot have %s. Wiki "Type", Blank '
+                     'Page(s): "Empty page with no content." If the page '
+                     'shows art, a logo or text, choose a matching type, '
+                     'e.g. Illustration.' % ' or '.join(content)])
+            # checked by storyrevision_form_utils.js when a sequence becomes
+            # a blank page, required for copies and imports
+            if (story is None or story.type_id != STORY_TYPES['blank']) and \
+               not all(cd[box] for box in NO_CREDIT_BOXES):
+                raise forms.ValidationError(
+                    ['Check No Script, No Pencils, No Inks, No Colors and No '
+                     'Letters: no credit applies to a blank page. Wiki '
+                     '"Formatting Documentation", General Indexing Format '
+                     'Rules: "If credits are not applicable to a sequence '
+                     '(colorist for black & white stories, writer or letterer '
+                     'for pinups), check the No script (or No pencils, No '
+                     'inks, etc.) checkbox".'])
+
+        format_errors = _format_errors(cd, story)
+        if format_errors:
+            raise forms.ValidationError(format_errors)
+
+        # types only old sequences keep: no new filler, and no new about
+        # comics in a series without "has about comics" (copies, imports)
+        old_type_id = story.type_id if story is not None else None
+        if cd['type'].id == STORY_TYPES['filler'] and \
+           old_type_id != STORY_TYPES['filler']:
+            raise forms.ValidationError(
+                ['Choose another type. Wiki "Type", Filler (types no longer '
+                 'used): "The type "filler" has been eliminated."'])
+        if cd['type'].id == STORY_TYPES['about comics'] and \
+           self.series_has_about_comics is False and \
+           old_type_id != STORY_TYPES['about comics']:
+            raise forms.ValidationError(
+                ['Choose another type, or ask for "has about comics" on the '
+                 'series. Wiki "About Comics": "The \'Has about comics\' box '
+                 'must be checked at the series level in order to add '
+                 '\'about comics\' sequences to an issue."'])
+
+        # compared with the approved sequence, so that a synopsis brought in
+        # by a copy is checked too
         synopsis_length = len(' '.join(cd['synopsis'].split()))
         if (synopsis_length > settings.LIMIT_SYNOPSIS_LENGTH and
-                (self.instance is None or
-                 self.instance.synopsis.strip() != cd['synopsis'])):
+                (story is None or story.synopsis.strip() != cd['synopsis'])):
 
             raise forms.ValidationError(
                 ['The synopsis field may not be longer than %d characters.' %
                  settings.LIMIT_SYNOPSIS_LENGTH])
 
-        if (cd['page_count'] is None and not cd['page_count_uncertain'] and
-                cd['type'].id != STORY_TYPES['insert']):
-            raise forms.ValidationError(
-                ['Page count uncertain must be checked if the page count '
-                 'is not filled in.'])
+        if cd['page_count'] is None and not cd['page_count_uncertain']:
+            # older inserts without a page count stay editable
+            if cd['type'].id != STORY_TYPES['insert'] or story is None or \
+               story.type_id != STORY_TYPES['insert'] or \
+               story.page_count is not None or story.page_count_uncertain:
+                raise forms.ValidationError(
+                    ['Page count uncertain must be checked if the page count '
+                     'is not filled in. Wiki "Page Count": "This is a '
+                     'required field for sequences, and either a number '
+                     'must be entered or the Uncertain box must be '
+                     'checked."'])
 
         return cd
 
