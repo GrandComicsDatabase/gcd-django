@@ -1,0 +1,5 @@
+<form id="follow-topic" method="post" action="{% url 'forum:discussion-follow' discussion.slug %}" hx-post="{% url 'forum:discussion-follow' discussion.slug %}" hx-swap="outerHTML" class="mt-1"{% if out_of_band %} hx-swap-oob="true"{% endif %}>
+  {% csrf_token %}
+  <input type="hidden" name="follow" value="{% if following %}0{% else %}1{% endif %}">
+  <button id="follow-topic-button" class="btn-blue-editing w-full m-0" aria-pressed="{% if following %}true{% else %}false{% endif %}" title="{% if following %}You get a notification for every reply{% else %}Get a notification for every reply{% endif %}">{% if following %}Following ✓{% else %}Follow{% endif %}</button>
+</form>

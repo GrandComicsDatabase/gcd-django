@@ -1,0 +1,14 @@
+{% extends "forum/base.html" %}
+{% block title %}GCD :: Forum :: Email{% endblock %}
+{% block forum_content %}
+<div class="max-w-md py-4">
+  {% if done %}
+  <h2 class="font-bold text-xl">You are unsubscribed</h2>
+  <p class="mt-1">You will not get emails about {{ about }} any more.</p>
+  {% else %}
+  <h2 class="font-bold text-xl">Stop these forum emails?</h2>
+  <p class="mt-1">You get an email for {{ about }}.</p>
+  <form method="post" class="mt-2"><button class="btn btn-blue">Unsubscribe</button></form>
+  {% endif %}
+</div>
+{% endblock %}

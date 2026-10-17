@@ -1,0 +1,14 @@
+{% if cards %}
+<ul class="flex flex-wrap gap-2 px-2 pb-1" aria-label="{{ label|default:'GCD records in this post' }}">
+  {% for card in cards %}
+  <li class="flex max-w-xs gap-2 border border-gray-300 p-1 text-sm">
+    {% if card.cover %}<a href="{{ card.record.get_absolute_url }}" class="shrink-0" tabindex="-1" aria-hidden="true"{% if new_tab %} target="_blank" rel="noopener"{% endif %}>{{ card.cover }}</a>{% endif %}
+    <div class="min-w-0">
+      <div class="text-gray-700">{{ card.type }}</div>
+      <a class="font-bold" href="{{ card.record.get_absolute_url }}"{% if new_tab %} target="_blank" rel="noopener"{% endif %}>{{ card.record }}</a>
+      {% if card.details %}<div class="text-gray-700">{{ card.details }}</div>{% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
