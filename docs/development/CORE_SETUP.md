@@ -71,7 +71,8 @@ staging database and final development database coexist. The public dump does
 not contain uploaded cover/image files; development uses the deterministic fake
 image created by `seed_development_data` instead. The dump also does not
 replace the local migration ledger, accounts, statistics, or change-history
-fixtures.
+fixtures. Keywords of catalog records are copied and linked to the local
+content types; keywords of My Comics collections are not.
 
 Useful commands:
 
