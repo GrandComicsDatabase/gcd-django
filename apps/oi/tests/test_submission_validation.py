@@ -188,8 +188,7 @@ def test_submit_allows_corrected_changeset(any_edit_story_rev,
 def test_approve_allows_backend_corrections(any_edit_story_rev, any_editor):
     changeset = any_edit_story_rev.changeset
     changeset.change_type = CTYPES['issue']
-    issue_revision = IssueRevision.clone(
-      any_edit_story_rev.issue, changeset=changeset)
+    issue_revision = changeset.issuerevisions.get()
     _put_in_review(changeset, any_editor, any_edit_story_rev.issue,
                    any_edit_story_rev.story)
     _add_feature_object(any_edit_story_rev,
@@ -236,8 +235,7 @@ def test_repeated_submission_validation_preserves_characters(
 def test_approve_allows_corrected_changeset(any_edit_story_rev, any_editor):
     changeset = any_edit_story_rev.changeset
     changeset.change_type = CTYPES['issue']
-    issue_revision = IssueRevision.clone(
-      any_edit_story_rev.issue, changeset=changeset)
+    issue_revision = changeset.issuerevisions.get()
     _put_in_review(changeset, any_editor, any_edit_story_rev.issue,
                    any_edit_story_rev.story)
 

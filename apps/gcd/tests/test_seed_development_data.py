@@ -17,8 +17,10 @@ from apps.gcd.models import (
     Story,
     StoryCharacter,
     StoryCredit,
+    StoryGroup,
     Universe,
 )
+from apps.gcd.search_indexes import StoryIndex
 from apps.indexer.models import Indexer
 from apps.oi import states
 from apps.oi.models import ChangesetComment, SeriesRevision
@@ -34,6 +36,12 @@ def test_seed_development_data_is_idempotent_and_initializes_stats(db):
     legacy_changeset.seriesrevisions.all().delete()
     legacy_changeset.approver = None
     legacy_changeset.save(update_fields=['approver'])
+
+    seeded_story = Story.objects.get(title='[GCD DEV] First Flight Story')
+    StoryGroup.objects.filter(story=seeded_story).delete()
+    StoryCharacter.objects.filter(story=seeded_story).update(
+        group_universe=None
+    )
 
     call_command('seed_development_data')
 
@@ -66,6 +74,15 @@ def test_seed_development_data_is_idempotent_and_initializes_stats(db):
     assert Character.objects.filter(name='[GCD DEV] Captain Example').exists()
     assert Group.objects.filter(name='[GCD DEV] Example League').exists()
     assert StoryCharacter.objects.filter(story=story).exists()
+    assert StoryGroup.objects.filter(story=story).count() == 1
+    appearance = StoryCharacter.objects.get(story=story)
+    assert appearance.group_universe == StoryGroup.objects.get(
+        story=story
+    ).universe
+    prepared_story = StoryIndex().prepare(story)
+    for field in ('characters', 'text'):
+        assert '[GCD DEV] Captain Example' in prepared_story[field]
+        assert '[GCD DEV] Example League' in prepared_story[field]
     assert Reprint.objects.filter(origin=story, target_issue=variant).exists()
     assert Cover.objects.filter(issue__in=(issue, variant)).count() == 2
     assert Image.objects.filter(object_id__in=(issue.id, variant.id)).exclude(

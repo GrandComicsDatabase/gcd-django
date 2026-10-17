@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Override default styles for Select2. */
+.select2-hidden-accessible + .select2-container {
+  @apply !w-full lg:!w-4/5;
+}
+
 @layer base {
   h1 {
     font-size: theme('fontSize.2xl');
@@ -218,8 +223,9 @@ html {
 [type='tel'],
 [type='time'],
 [type='week'],
+[type='checkbox'],
 [multiple],
 textarea,
 select {
-  @apply py-[0.2em] ps-[0.5rem] border-gray-500;
+  @apply py-[0.3em] ps-[0.5rem] border-gray-400 rounded;
 }

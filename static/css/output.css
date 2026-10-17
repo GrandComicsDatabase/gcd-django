@@ -1810,10 +1810,6 @@ a:hover {
   table-layout: fixed;
 }
 
-.border-collapse {
-  border-collapse: collapse;
-}
-
 .rotate-0 {
   --tw-rotate: 0deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -2748,6 +2744,16 @@ a:hover {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.select2-hidden-accessible + .select2-container {
+  width: 100% !important;
+}
+
+@media (min-width: 1024px) {
+  .select2-hidden-accessible + .select2-container {
+    width: 80% !important;
+  }
+}
+
 html {
   background-color: white;
   font-size: 14px;
@@ -2768,13 +2774,15 @@ html {
 [type='tel'],
 [type='time'],
 [type='week'],
+[type='checkbox'],
 [multiple],
 textarea,
 select {
+  border-radius: 0.25rem;
   --tw-border-opacity: 1;
-  border-color: rgb(107 114 128 / var(--tw-border-opacity));
-  padding-top: 0.2em;
-  padding-bottom: 0.2em;
+  border-color: rgb(156 163 175 / var(--tw-border-opacity));
+  padding-top: 0.3em;
+  padding-bottom: 0.3em;
   padding-inline-start: 0.5rem;
 }
 
