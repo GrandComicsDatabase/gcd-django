@@ -30,7 +30,7 @@ import django_tables2 as tables
 
 from djqscsv import render_to_csv_response
 
-from taggit.models import Tag, TaggedItem
+from taggit.models import TaggedItem
 
 from apps.indexer.views import ViewTerminationError
 from apps.indexer.models import Indexer
@@ -2610,48 +2610,6 @@ def series_issues_to_migrate(request, series_id):
     table = _table_issues_list_or_grid(request, issues, context,
                                        publisher=False)
     return generic_sortable_list(request, issues, table, template, context)
-
-
-class KeywordsTable(tables.Table):
-    keyword = tables.Column(accessor='name')
-    objects_count = tables.Column(verbose_name='# Usages')
-
-    def render_keyword(self, record):
-        url = urlresolvers.reverse(
-                'show_keyword',
-                kwargs={'keyword': record.name})
-        return mark_safe('<a href="%s">%s</a>' % (url,
-                                                  record.name))
-
-
-def keywords(request, keyword=''):
-    """
-    List all keywords
-    """
-    if keyword:
-        keywords = Tag.objects.filter(name__icontains=keyword)
-    else:
-        keywords = Tag.objects.all()
-    keywords = keywords.annotate(
-      objects_count=Count(
-        'taggit_taggeditem_items',
-        filter=~Q(taggit_taggeditem_items__content_type__id__in=[72, 75])))\
-        .order_by('-objects_count').filter(objects_count__gt=0)
-    template = 'gcd/search/tw_list_sortable.html'
-    context = {
-        'item_name': 'keyword',
-        'plural_suffix': 's',
-        'selected': 'keyword',
-        'search_term': keyword,
-        'heading': 'containing "%s"' % keyword
-    }
-    if not keyword:
-        context['heading'] = ''
-    table = KeywordsTable(keywords,
-                          attrs={'class': 'sortable_listing'},
-                          template_name=TW_SORT_TABLE_TEMPLATE,
-                          order_by=('keywords'))
-    return generic_sortable_list(request, keywords, table, template, context)
 
 
 class KeywordTable(tables.Table):
