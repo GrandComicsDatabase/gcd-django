@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import PIL.Image as pyImage
 import os
+import re
 import shutil
 import glob
 
@@ -33,6 +34,10 @@ from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
 UPLOAD_WIDTH = 3
 
 SHOW_GATEFOLD_WIDTH = 1000
+
+# extension of a gatefold scan in the tmp-dir, the upload form only lets
+# through image extensions
+GATEFOLD_SCAN_EXTENSION = re.compile(r'\.[A-Za-z0-9]+')
 
 # where to put our covers,
 LOCAL_NEW_SCANS = settings.NEW_COVERS_DIR
@@ -322,6 +327,14 @@ def uploaded_cover(request, revision_id):
                    'tag': tag})
 
 
+def _gatefold_scan_stem(user, issue_id, cover_id=None):
+    ''' name of a gatefold scan in the tmp-dir, without the extension '''
+    if cover_id:  # upload_type is 'replacement':
+        return "%d_%d_%d" % (user.id, issue_id, cover_id)
+    return "%d_%d" % (user.id, issue_id)
+
+
+@login_required
 def process_edited_gatefold_cover(request):
     ''' process the edited gatefold cover and generate CoverRevision '''
 
@@ -332,20 +345,42 @@ def process_edited_gatefold_cover(request):
           redirect=False)
 
     form = GatefoldScanForm(request.POST)
+    error_text = 'Error: Something went wrong in the file upload.'
     if not form.is_valid():
-        error_text = 'Error: Something went wrong in the file upload.'
         return render_error(request, error_text, redirect=False)
     cd = form.cleaned_data
 
+    # scan_name comes back from the browser, only accept the name
+    # handle_gatefold_cover gave to the upload of this user
+    stem, extension = os.path.splitext(cd['scan_name'])
+    if stem != _gatefold_scan_stem(request.user, cd['issue_id'],
+                                   cd['cover_id']) \
+       or not GATEFOLD_SCAN_EXTENSION.fullmatch(extension):
+        return render_error(request, error_text, redirect=False)
     tmpdir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + 'tmp'
-    scan_name = cd['scan_name']
-    tmp_name = os.path.join(tmpdir, scan_name)
+    tmp_name = os.path.join(tmpdir, cd['scan_name'])
+    if not os.path.isfile(tmp_name):
+        return render_error(request, error_text, redirect=False)
 
     if 'discard' in request.POST:
         os.remove(tmp_name)
         return HttpResponseRedirect(urlresolvers.reverse(
                                     'edit_covers',
                                     kwargs={'issue_id': cd['issue_id']}))
+
+    # the selection comes from the browser as well, keep it inside the scan
+    # and apply the size limit of the guidelines to the front part
+    with pyImage.open(tmp_name) as im:
+        scan_width, scan_height = im.size
+    front_left = max(cd['left'], 0)
+    front_top = max(cd['top'], 0)
+    front_right = min(cd['left'] + cd['width'], scan_width)
+    front_bottom = min(cd['top'] + cd['height'], scan_height)
+    if min(front_right - front_left, front_bottom - front_top) < 400:
+        return render_error(
+          request,
+          'The selected front cover needs to be at least 400 pixels in '
+          'width and height.', redirect=False)
 
     # create OI records
     changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -387,7 +422,7 @@ def process_edited_gatefold_cover(request):
                                  marked=cd['marked'])
     revision.save()
 
-    scan_name = str(revision.id) + os.path.splitext(tmp_name)[1]
+    scan_name = str(revision.id) + extension
     upload_dir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + \
                  changeset.created.strftime('%B_%Y').lower()
     destination_name = os.path.join(upload_dir, scan_name)
@@ -403,15 +438,10 @@ def process_edited_gatefold_cover(request):
 
     im = pyImage.open(destination_name)
     revision.is_wraparound = True
-    # convert from scaled to real values
-    width = cd['width']
-    height = cd['height']
-    left = cd['left']
-    top = cd['top']
-    revision.front_left = left
-    revision.front_right = left + width
-    revision.front_top = top
-    revision.front_bottom = top + height
+    revision.front_left = front_left
+    revision.front_right = front_right
+    revision.front_top = front_top
+    revision.front_bottom = front_bottom
     revision.save()
     generate_sizes(revision, im)
 
@@ -431,10 +461,8 @@ def handle_gatefold_cover(request, cover, issue, form):
     # use media/img/gcd/new_covers/tmp and accept that it could fill up with
     # abandoned files
     tmpdir = settings.MEDIA_ROOT + LOCAL_NEW_SCANS + 'tmp'
-    if cover:  # upload_type is 'replacement':
-        scan_name = "%d_%d_%d" % (request.user.id, issue.id, cover.id)
-    else:
-        scan_name = "%d_%d" % (request.user.id, issue.id)
+    scan_name = _gatefold_scan_stem(request.user, issue.id,
+                                    cover.id if cover else None)
     scan_name += os.path.splitext(scan.name)[1]
     destination_name = os.path.join(tmpdir, scan_name)
     # write uploaded file to tmp-dir

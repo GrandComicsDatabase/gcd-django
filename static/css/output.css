@@ -1023,9 +1023,6 @@ html {
   .table-fixed {
     table-layout: fixed;
   }
-  .border-collapse {
-    border-collapse: collapse;
-  }
   .rotate-0 {
     rotate: 0deg;
   }
@@ -2360,9 +2357,16 @@ html {
   .\[\&\[hidden\]\]\:hidden[hidden] {
     display: none;
   }
-  html [type='text'], html  [type='email'], html  [type='url'], html  [type='password'], html  [type='number'], html  [type='date'], html  [type='datetime-local'], html  [type='month'], html  [type='search'], html  [type='tel'], html  [type='time'], html  [type='week'], html  [multiple], html  textarea, html  select {
-    border-color: var(--color-gray-500);
-    padding-block: 0.2em;
+  .select2-hidden-accessible + .select2-container {
+    width: 100% !important;
+    @media (width >= 64rem) {
+      width: calc(4 / 5 * 100%) !important;
+    }
+  }
+  html [type='text'], html  [type='email'], html  [type='url'], html  [type='password'], html  [type='number'], html  [type='date'], html  [type='datetime-local'], html  [type='month'], html  [type='search'], html  [type='tel'], html  [type='time'], html  [type='week'], html  [type='checkbox'], html  [multiple], html  textarea, html  select {
+    border-radius: 0.25rem;
+    border-color: var(--color-gray-400);
+    padding-block: 0.3em;
     padding-inline-start: 0.5rem;
   }
   input:where([type='text']),input:where(:not([type])),input:where([type='email']),input:where([type='url']),input:where([type='password']),input:where([type='number']),input:where([type='date']),input:where([type='datetime-local']),input:where([type='month']),input:where([type='search']),input:where([type='tel']),input:where([type='time']),input:where([type='week']),select:where([multiple]),textarea,select {
