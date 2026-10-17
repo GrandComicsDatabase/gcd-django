@@ -289,7 +289,7 @@ CHARACTER_HELP_LINKS = {
     'site': 'External_Sites',
     'description': 'Description_(Characters)',
     'notes': 'Notes_(Characters)',
-    'keywords': KEYWORDS_HELP,
+    'keywords': 'Keywords',
     'comments': 'Comments '
 }
 
@@ -300,7 +300,7 @@ GROUP_HELP_LINKS = {
     'site': 'External_Sites',
     'description': 'Description_(Characters)',
     'notes': 'Notes_(Characters)',
-    'keywords': KEYWORDS_HELP,
+    'keywords': 'Keywords',
     'comments': 'Comments '
 }
 
@@ -479,7 +479,8 @@ SERIES_HELP_TEXTS = {
         'series. Only uncheck after the last issue is approved '
         'and in our database.',
     'tracking_notes':
-        'Field to track numbering from one series to another.',
+        'Field to track numbering from one series to another. '
+        'Supports the same Markdown formatting and links as Notes.',
     'has_barcode':
         "Barcodes are present for issues of this series.",
     'has_indicia_frequency':

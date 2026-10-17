@@ -12,8 +12,9 @@ from apps.gcd.templatetags.display import absolute_url, \
                                           sum_page_counts, show_barcode, \
                                           show_isbn
 from apps.gcd.templatetags.credits import format_page_count, \
-                                          split_reprint_string, \
-                                          render_markdown
+                                          split_reprint_string
+
+from apps.gcd.markdown_extension import render_markdown
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
@@ -596,11 +597,12 @@ def compare_current_reprints(object_type, changeset):
           .filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True)
 
-        kept_target = object_type.source.target_reprint_revisions\
-          .filter(changeset__modified__lte=changeset.modified)\
-          .exclude(changeset=changeset)\
-          .filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True)
+        kept_target = (
+            object_type.source.target_reprint_revisions
+            .filter(changeset__modified__lte=changeset.modified)
+            .exclude(changeset=changeset)
+            .filter(changeset__state=states.APPROVED)
+            .exclude(deleted=True))
         if type(object_type) is IssueRevision:
             kept_origin = kept_origin.filter(origin=None, origin_revision=None)
             kept_target = kept_target.filter(target=None, target_revision=None)
