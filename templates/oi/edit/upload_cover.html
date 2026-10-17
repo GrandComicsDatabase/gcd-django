@@ -61,6 +61,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
             <span class="text-gray-500">At least 400 pixels on the short side</span>
             {{ form.scan }}
           </label>
+          {% include "oi/bits/cover_capture_button.html" %}
         </div>
         <div id="scan_selected" class="hidden items-center gap-4" data-shown="flex">
           <button type="button" id="scan_open" class="max-w-[45%] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" title="Open at full size" aria-label="Open the image at full size">
@@ -233,6 +234,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 </div>
 </div>
 
+{% include "oi/bits/cover_capture_view.html" %}
 {% include 'oi/bits/jquery.html' %}
 {% compress js %}
   <script type='text/javascript' src="{% static 'js/oi/cover_upload.js' %}"></script>
