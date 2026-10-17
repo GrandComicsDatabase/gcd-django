@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import re
+
 from django import forms
 from django.conf import settings
 from django.forms.models import inlineformset_factory
@@ -165,6 +167,7 @@ def get_story_revision_form(revision=None, user=None,
             queryset = queryset.exclude(name__in=OLD_TYPES)
 
     class RuntimeStoryRevisionForm(StoryRevisionForm):
+        series_has_about_comics = has_about_comics
         type = forms.ModelChoiceField(queryset=queryset, **extra)
         genre = _genre_choices(language=language,
                                additional_genres=additional_genres)
@@ -405,6 +408,15 @@ class StoryCreditRevisionForm(forms.ModelForm):
 
         if cd['sourced_by'] and not cd['is_sourced']:
             cd['sourced_by'] = ""
+
+        # only new or changed credits, old ones stay editable
+        if cd['is_sourced'] and not cd['sourced_by'].strip() and \
+           (self.instance.pk is None or self.has_changed()):
+            raise forms.ValidationError(
+              ['Enter the source in "Sourced by", or uncheck "Is sourced". '
+               'Wiki "Credits", Sourced: "When "Is sourced" is checked, the '
+               '"Sourced by" text box must be filled in."']
+            )
 
         if cd['credit_name']:
             if cd['credit_name'].strip() == "credited":
@@ -664,6 +676,72 @@ def _blank_page_content(story):
     return content
 
 
+CREDIT_TEXT_FIELDS = ['script', 'pencils', 'inks', 'colors', 'letters',
+                      'editing']
+
+# wiki format rules a program can tell, refused for new or changed values:
+# (fields, pattern of a wrong value, message quoting the rule)
+FORMAT_RULES = [
+    (CREDIT_TEXT_FIELDS,
+     re.compile(r'(?:^|;)\s*(?:n/?a|none)\s*(?:;|$)', re.IGNORECASE),
+     'Do not enter "n/a" or "none": check the No box if the credit does not '
+     'apply, or enter "?" if the creator is unknown. Wiki "Credits", Using '
+     'the text format: "Do not use "n/a" or "none" or leave the field '
+     'blank."'),
+    (CREDIT_TEXT_FIELDS, re.compile(r';(?!\s|$)'),
+     'Put a space after each semicolon. Wiki "Credits", Using the text '
+     'format: "Multiple creators are separated by a semi-colon and space."'),
+    (CREDIT_TEXT_FIELDS, re.compile(r'[^\s;?\[(]\?'),
+     'Put a space before the question mark of an uncertain credit, as in '
+     '"Joe Kubert ?". Wiki "Credits", Using the text format: "If there is '
+     'uncertainty about a credit, note it with a space and a question mark '
+     'after the name."'),
+    (['letters'], re.compile(r'\b(?:Typeset|TYPESET)\b'),
+     'Write "typeset" in lower case. Wiki "Style Guide", Credits and '
+     'Creators: "The word “typeset,” used in the letters field to indicate '
+     'type instead of lettering, is not capitalized."'),
+    (CREDIT_TEXT_FIELDS + ['characters'],
+     re.compile(r',\s*(?:Jr|Sr)\b|\b(?:Jr|Sr)\b(?!\.)'),
+     'Write Jr. and Sr. with a period and without a comma before them. Wiki '
+     '"Style Guide", Credits and Creators: "Do not use a comma beforehand, '
+     'but use a period behind the identifiers Jr. or Sr."'),
+]
+
+# a wrong ellipsis in a title: a space before it, spaced or two, four or more
+# periods, the character …, no space or two spaces after it
+TITLE_ELLIPSIS = re.compile(
+    r'''\s\.{3}|\.\s\.\s\.|(?<!\.)\.\.(?!\.)|\.{4,}|…|'''
+    r'''\.{3}(?=[^\s.,;:!?)\]"“”'’»›」』])|\.{3} {2,}''')
+TITLE_ELLIPSIS_MESSAGE = (
+    'Enter an ellipsis as three periods. Wiki "Style Guide", Story titles: '
+    '"When transcribing it for the database, enter it with no preceding '
+    'space, no space between the periods, and one space following the '
+    'ellipsis."')
+
+
+def _is_new_value(cd, story, field):
+    """Whether the value of field is new: added sequence or changed value."""
+    return story is None or getattr(story, field).strip() != cd[field]
+
+
+def _format_errors(cd, story):
+    """The format rules broken by new or changed values of text fields."""
+    errors = []
+    for fields, pattern, message in FORMAT_RULES:
+        for field in fields:
+            if _is_new_value(cd, story, field) and pattern.search(cd[field]):
+                errors.append('%s: %s' % (field.capitalize(), message))
+    if _is_new_value(cd, story, 'title'):
+        for match in TITLE_ELLIPSIS.finditer(cd['title']):
+            # the wiki does not say whether a leading ellipsis is followed
+            # by a space
+            if match.start() == 0 and match.group() == '...':
+                continue
+            errors.append('Title: ' + TITLE_ELLIPSIS_MESSAGE)
+            break
+    return errors
+
+
 # TODO check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
     def render(self, form, context, renderer=None,
@@ -720,6 +798,9 @@ class StoryRevisionForm(KeywordBaseForm):
             'keywords':
                 KEYWORDS_HELP,
         }
+
+    # set by get_story_revision_form() from the series of the sequence
+    series_has_about_comics = None
 
     def __init__(self, *args, **kwargs):
         """
@@ -1408,10 +1489,32 @@ class StoryRevisionForm(KeywordBaseForm):
                      'shows art, a logo or text, choose a matching type, '
                      'e.g. Illustration.' % ' or '.join(content)])
 
+        format_errors = _format_errors(cd, story)
+        if format_errors:
+            raise forms.ValidationError(format_errors)
+
+        # types only old sequences keep: no new filler, and no new about
+        # comics in a series without "has about comics" (copies, imports)
+        old_type_id = story.type_id if story is not None else None
+        if cd['type'].id == STORY_TYPES['filler'] and \
+           old_type_id != STORY_TYPES['filler']:
+            raise forms.ValidationError(
+                ['Choose another type. Wiki "Type", Filler (types no longer '
+                 'used): "The type "filler" has been eliminated."'])
+        if cd['type'].id == STORY_TYPES['about comics'] and \
+           self.series_has_about_comics is False and \
+           old_type_id != STORY_TYPES['about comics']:
+            raise forms.ValidationError(
+                ['Choose another type, or ask for "has about comics" on the '
+                 'series. Wiki "About Comics": "The \'Has about comics\' box '
+                 'must be checked at the series level in order to add '
+                 '\'about comics\' sequences to an issue."'])
+
+        # compared with the approved sequence, so that a synopsis brought in
+        # by a copy is checked too
         synopsis_length = len(' '.join(cd['synopsis'].split()))
         if (synopsis_length > settings.LIMIT_SYNOPSIS_LENGTH and
-                (self.instance is None or
-                 self.instance.synopsis.strip() != cd['synopsis'])):
+                (story is None or story.synopsis.strip() != cd['synopsis'])):
 
             raise forms.ValidationError(
                 ['The synopsis field may not be longer than %d characters.' %

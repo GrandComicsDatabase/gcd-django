@@ -8,8 +8,8 @@ from django import forms
 
 from apps.gcd.models import Feature, FeatureLogo, FeatureNameDetail, \
                             FeatureType, Story, StoryType
-from apps.oi.forms.story import StoryRevisionForm
-from apps.oi.models import StoryRevision
+from apps.oi.forms.story import StoryCreditRevisionForm, StoryRevisionForm
+from apps.oi.models import StoryCreditRevision, StoryRevision
 from apps.oi.templatetags.compare import show_type_notes
 from apps.oi.views import _cover_order_error, _covers_out_of_order
 from apps.select.views import FeatureLogoAutocomplete, \
@@ -20,7 +20,8 @@ BLANK_PAGE = 'blank page(s)'
 INSERT = 'insert or dust jacket'
 
 
-def _clean(user, type_name, instance=None, data=None, **values):
+def _clean(user, type_name, instance=None, data=None,
+           form_class=StoryRevisionForm, **values):
     """Run clean() on cleaned data of an empty sequence of the type."""
     cleaned_data = {
         'type': StoryType.objects.get(name=type_name),
@@ -39,8 +40,8 @@ def _clean(user, type_name, instance=None, data=None, **values):
     cleaned_data.update(values)
     form_data = {'story_credit_revisions-TOTAL_FORMS': '0'}
     form_data.update(data or {})
-    form = StoryRevisionForm(form_data, user=user,
-                             instance=instance or StoryRevision())
+    form = form_class(form_data, user=user,
+                      instance=instance or StoryRevision())
     form._errors = {}
     form.cleaned_data = cleaned_data
     return form.clean()
@@ -185,6 +186,125 @@ def test_type_changed_to_insert_needs_page_count(any_added_story,
     rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story')
     _rejected(any_indexer, INSERT, 'Page Count', instance=rev,
               page_count=None)
+
+
+TEXT_STORY = 'text story'
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('field, value, wiki', [
+    ('script', 'n/a', 'Credits'),
+    ('pencils', 'Joe Kubert; none', 'Credits'),
+    ('inks', 'Joe Kubert;Dick Giordano', 'Credits'),
+    ('colors', 'Joe Kubert?', 'Credits'),
+    ('letters', 'Typeset', 'Style Guide'),
+    ('editing', 'Julius Schwartz, Jr.', 'Style Guide'),
+    ('characters', 'Martin Luther King Jr', 'Style Guide'),
+    ('title', 'Wait . . . what', 'Style Guide'),
+    ('title', 'When Titans Clash...the End', 'Style Guide')])
+def test_format_rules_refuse_new_values(any_indexer, field, value, wiki):
+    """Values breaking a format rule of the wiki are refused."""
+    _rejected(any_indexer, TEXT_STORY, 'Wiki "%s"' % wiki, **{field: value})
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('field, value', [
+    ('script', '?'), ('script', 'Nonesuch Smith'),
+    ('pencils', 'Joe Kubert; Dick Giordano'), ('colors', 'Joe Kubert ?'),
+    ('letters', 'typeset'), ('editing', 'Julius Schwartz Jr.'),
+    ('characters', 'Martin Luther King Jr.'),
+    ('title', 'It was a dark and stormy night...'),
+    ('title', '...And Then There Were None'), ('title', 'Wait... What')])
+def test_format_rules_accept_correct_values(any_indexer, field, value):
+    """Values following the format rules are accepted."""
+    assert _clean(any_indexer, TEXT_STORY, **{field: value})
+
+
+@pytest.mark.django_db
+def test_format_rules_skip_old_values(any_added_story, any_editing_changeset,
+                                      any_indexer):
+    """Approved values stay editable, new values are checked."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, TEXT_STORY,
+                    script='n/a', title='Wait . . . what')
+    assert _clean(any_indexer, TEXT_STORY, instance=rev, script='n/a',
+                  title='Wait . . . what', notes='corrected elsewhere')
+    _rejected(any_indexer, TEXT_STORY, 'Wiki "Credits"', instance=rev,
+              script='n/a', pencils='none')
+
+
+def _clean_credit(instance=None, changed=True, **values):
+    """Run clean() of the credit form on these cleaned values."""
+    form = StoryCreditRevisionForm({},
+                                   instance=instance or StoryCreditRevision())
+    form.has_changed = lambda: changed
+    form.cleaned_data = {
+        'credited_as': '', 'is_credited': False, 'signed_as': '',
+        'is_signed': False, 'signature': None, 'credit_name': '',
+        'sourced_by': '', 'is_sourced': False}
+    form.cleaned_data.update(values)
+    form.clean()
+
+
+@pytest.mark.django_db
+def test_sourced_credit_needs_sourced_by():
+    """A new or changed sourced credit needs its source, an old one not."""
+    with pytest.raises(forms.ValidationError) as error:
+        _clean_credit(is_sourced=True)
+    assert 'Wiki "Credits", Sourced' in str(error.value)
+    _clean_credit(is_sourced=True, sourced_by='Who\'s Who #3')
+    _clean_credit(instance=StoryCreditRevision(pk=1), changed=False,
+                  is_sourced=True)
+
+
+LONG_SYNOPSIS = 'Things happen. ' * 41
+
+
+@pytest.mark.django_db
+def test_long_synopsis_refused_also_when_copied(any_added_story,
+                                                any_editing_changeset,
+                                                any_indexer):
+    """A long synopsis already in a new revision (a copy) is refused."""
+    copy = StoryRevision(synopsis=LONG_SYNOPSIS)
+    with pytest.raises(forms.ValidationError) as error:
+        _clean(any_indexer, TEXT_STORY, instance=copy,
+               synopsis=LONG_SYNOPSIS.strip())
+    assert '600 characters' in str(error.value)
+    rev = _edit_rev(any_added_story, any_editing_changeset, TEXT_STORY,
+                    synopsis=LONG_SYNOPSIS)
+    assert _clean(any_indexer, TEXT_STORY, instance=rev,
+                  synopsis=LONG_SYNOPSIS.strip())
+
+
+@pytest.mark.django_db
+def test_new_filler_refused(any_added_story, any_editing_changeset,
+                            any_indexer):
+    """A new filler is refused, an approved one stays editable."""
+    _rejected(any_indexer, 'filler', 'Filler (types no longer used)')
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'filler')
+    assert _clean(any_indexer, 'filler', instance=rev)
+
+
+class NoAboutComicsForm(StoryRevisionForm):
+    series_has_about_comics = False
+
+
+class AboutComicsForm(StoryRevisionForm):
+    series_has_about_comics = True
+
+
+@pytest.mark.django_db
+def test_new_about_comics_needs_series_flag(any_added_story, any_indexer):
+    """About comics needs "has about comics", unless already approved."""
+    _rejected(any_indexer, 'about comics', 'Wiki "About Comics"',
+              form_class=NoAboutComicsForm)
+    assert _clean(any_indexer, 'about comics', form_class=AboutComicsForm)
+    # a revision of an approved about comics sequence (cloning one needs its
+    # bibliographic entry, which the clean() check does not use)
+    Story.objects.filter(pk=any_added_story.pk).update(
+        type=StoryType.objects.get(name='about comics'))
+    rev = StoryRevision(story=Story.objects.get(pk=any_added_story.pk))
+    assert _clean(any_indexer, 'about comics', instance=rev,
+                  form_class=NoAboutComicsForm)
 
 
 COVER, STORY = 6, 19

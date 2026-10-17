@@ -27,6 +27,7 @@ STORY_TYPES = {
     'ad': 2,
     'cover': 6,
     'cover reprint': 7,
+    'filler': 9,
     'insert': 11,
     'letters_page': 12,
     'comic story': 19,
