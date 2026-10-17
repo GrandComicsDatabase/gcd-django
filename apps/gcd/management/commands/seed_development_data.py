@@ -30,6 +30,7 @@ from apps.gcd.models import (
     Story,
     StoryCharacter,
     StoryCredit,
+    StoryGroup,
     StoryType,
     Universe,
 )
@@ -286,10 +287,24 @@ class Command(BaseCommand):
         appearance, _ = StoryCharacter.objects.get_or_create(
             story=story,
             character=character_name,
-            defaults={'universe': universe, 'role': role, 'notes': ''},
+            defaults={
+                'universe': universe,
+                'group_universe': universe,
+                'role': role,
+                'notes': '',
+            },
         )
+        if appearance.group_universe_id != universe.id:
+            appearance.group_universe = universe
+            appearance.save(update_fields=['group_universe'])
         appearance.group.add(group)
         appearance.group_name.add(group_name)
+        StoryGroup.objects.get_or_create(
+            story=story,
+            group_name=group_name,
+            universe=universe,
+            defaults={'notes': ''},
+        )
         story.universe.add(universe)
         Reprint.objects.get_or_create(
             origin=story,

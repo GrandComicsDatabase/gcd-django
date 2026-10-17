@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 import icu
 
-import markdown as md
-
 from django import template
 from django.conf import settings
-from django.template.defaultfilters import stringfilter
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from django.utils.safestring import mark_safe
@@ -16,10 +13,7 @@ from apps.stddata.models import Country, Language
 from apps.gcd.models.story import AD_TYPES, Story
 from apps.gcd.models.support import GENRES
 from apps.gcd.models import STORY_TYPES, CREDIT_TYPES
-from apps.gcd.markdown_extension import TailwindExtension, \
-                                        GCDFieldExtension, \
-                                        GCDFieldLinkNameExtension, \
-                                        URLExtension
+from apps.gcd.markdown_extension import render_markdown
 
 
 register = template.Library()
@@ -489,16 +483,7 @@ def show_cover_letterer_credit(story):
     return show_creator_credit(story, 'letters')
 
 
-@register.filter()
-@stringfilter
-def render_markdown(value):
-    return mark_safe(md.markdown(value,
-                                 extensions=['nl2br',
-                                             'md_in_html',
-                                             TailwindExtension(),
-                                             GCDFieldLinkNameExtension(),
-                                             GCDFieldExtension(),
-                                             URLExtension()]))
+register.filter('render_markdown', render_markdown)
 
 
 def __format_keywords(keywords, join_on='; ', model_name='story', url=True):

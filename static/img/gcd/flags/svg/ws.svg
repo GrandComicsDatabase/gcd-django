@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="600" viewBox="0 0 288 144" fill="#fff">
+	<title>Flag of Samoa</title>
+	<defs>
+		<path id="a" d="m0-.951057L.309017 0-.5-.587785h1L-.309017 0z"/>
+		<path id="b" d="m0 0 .309017.951057L-.5.363271h1l-.809017.587786z"/>
+	</defs>
+	<path fill="#ce1126" d="m0 0h288v144H0z"/>
+	<path fill="#002b7f" d="m0 0h144v72H0z"/>
+	<use xlink:href="#a" transform="matrix(20,0,0,20,72,69)"/>
+	<use xlink:href="#b" transform="matrix(16,0,0,16,50,21)"/>
+	<use xlink:href="#b" transform="matrix(16,0,0,16,72,3)"/>
+	<use xlink:href="#b" transform="matrix(15,0,0,15,94.5,18)"/>
+	<use xlink:href="#a" transform="matrix(10,0,0,10,83,46)"/>
+</svg>

@@ -40,6 +40,7 @@ class ImportFailure(Exception):
 
 
 def _handle_import_error(request, return_url, error_text):
+    # error_text can quote the uploaded file, only the link is markup
     return render_error(
         request,
         '%s Back to the <a href="%s">editing page</a>.' %
