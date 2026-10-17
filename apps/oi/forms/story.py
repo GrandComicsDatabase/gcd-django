@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import json
 import re
 
 from django import forms
@@ -742,6 +743,56 @@ def _format_errors(cd, story):
     return errors
 
 
+NO_CREDIT_BOXES = ['no_script', 'no_pencils', 'no_inks', 'no_colors',
+                   'no_letters']
+
+# rows of the sequence form for fields that do not apply to a type, as
+# (rows, fields whose value keeps the rows shown, so that old values can be
+# removed); a name is a form field, a formset prefix or the data-field of a
+# row
+FEATURE_ROWS = [(['feature'], ['feature']),
+                (['feature_name', 'feature_genres'], ['feature_name'])]
+FEATURE_LOGO_ROWS = [(['feature_logo'], ['feature_logo'])]
+GENRE_ROWS = [(['genre', 'selected_genres'], ['genre'])]
+CHARACTER_FIELDS = ['universe', 'appearing_characters', 'group_name',
+                    'group_members', 'story_character_revisions',
+                    'characters', 'story_group_revisions']
+BLANK_PAGE_ROWS = [
+    (['title', 'title_inferred'], ['title']),
+    (['first_line'], ['first_line']),
+    (['story_arc'], ['story_arc']),
+    (['job_number'], ['job_number']),
+    (['creator_help'] + CREDIT_TEXT_FIELDS + ['story_credit_revisions'],
+     CREDIT_TEXT_FIELDS + ['story_credit_revisions']),
+    (CHARACTER_FIELDS +
+     ['characters_heading', 'character_help', 'use_universe',
+      'save_and_set_universe', 'one_character_help', 'character_order'] +
+     ['%s_%s' % (field, detail)
+      for field in ['appearing_characters', 'group_members']
+      for detail in ['additional_information', 'role', 'flashback',
+                     'origin', 'death', 'notes']],
+     CHARACTER_FIELDS),
+    (['synopsis'], ['synopsis']),
+    (['reprint_notes'], ['reprint_notes']),
+    (['keywords', 'keyword_objects'], ['keywords', 'keyword_objects']),
+]
+
+
+def _hidden_rows():
+    """
+    The rows of the sequence form each type hides, by type id: the wiki
+    Not applicable and Forbidden fields of the type.
+    """
+    hidden = {STORY_TYPES['cover']: list(FEATURE_LOGO_ROWS),
+              STORY_TYPES['blank']: list(BLANK_PAGE_ROWS)}
+    for type_id in NO_FEATURE_TYPES:
+        hidden.setdefault(type_id, []).extend(FEATURE_ROWS +
+                                              FEATURE_LOGO_ROWS)
+    for type_id in NO_GENRE_TYPES:
+        hidden.setdefault(type_id, []).extend(GENRE_ROWS)
+    return hidden
+
+
 # TODO check with crispy 2.0, why here and in custom_layout ?
 class BaseField(Field):
     def render(self, form, context, renderer=None,
@@ -849,10 +900,12 @@ class StoryRevisionForm(KeywordBaseForm):
                                       template='oi/bits/uni_field.html'))
                       for field in fields[:genres]]
         field_list.append(HTML(
-            '<tr class="mb-2"><th>Genre from Feature:</th>'
+            '<tr class="mb-2" data-field="feature_genres">'
+            '<th>Genre from Feature:</th>'
             '<td><div id="feature-genres"></div></td></tr>'))
         field_list.append(HTML(
-          '<tr class="mb-2"><th>Selected Genre:</th>'
+          '<tr class="mb-2" data-field="selected_genres">'
+          '<th>Selected Genre:</th>'
           '<td id="selected-genres"></td></tr>'))
 
         credits_start = fields.index('creator_help')
@@ -875,7 +928,8 @@ class StoryRevisionForm(KeywordBaseForm):
                            for field in fields[credits_start:
                                                characters_start-19]])
         field_list.append(HTML(
-          '<tr><th><hr style="height:2px; background-color:#000;">&nbsp;'
+          '<tr data-field="characters_heading">'
+          '<th><hr style="height:2px; background-color:#000;">&nbsp;'
           '<strong>Characters:</strong></th>'
           '<td class="align-top">'
           '<hr style="height:2px; background-color:#000;"></td></tr>'))
@@ -905,7 +959,7 @@ class StoryRevisionForm(KeywordBaseForm):
                 has_appearance_order = True
             if kwargs['instance'].character_order_revisions.filter(type__id=2):
                 has_importance_order = True
-        character_order_html = '<th></th><td>'
+        character_order_html = '<tr data-field="character_order"><th></th><td>'
         if has_appearance_order:
             character_order_html += '<input type="submit" ' \
               'name="edit_appearance_order"' \
@@ -926,7 +980,7 @@ class StoryRevisionForm(KeywordBaseForm):
               'name="create_importance_order"' \
               ' value="Save And Create Importance Order" ' \
               'class="m-0 btn-blue-editing inline"/>'
-        field_list.append(HTML(character_order_html + '</td>'))
+        field_list.append(HTML(character_order_html + '</td></tr>'))
         characters_end = len(field_list)
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
@@ -954,6 +1008,13 @@ class StoryRevisionForm(KeywordBaseForm):
               *(f for f in field_list[-2:]),
               HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
+        # for storyrevision_form_utils.js: the rows each type hides, and the
+        # No boxes it checks when a sequence becomes a blank page
+        story = self.instance.story
+        self.fields['type'].widget.attrs.update({
+          'data-hidden-rows': json.dumps(_hidden_rows()),
+          'data-blank-type': STORY_TYPES['blank'],
+          'data-approved-type': story.type_id if story else ''})
     # The sequence number can only be changed through the reorder form, but
     # for new stories we add it through the initial value of a hidden field.
     sequence_number = forms.IntegerField(widget=forms.HiddenInput)
@@ -1488,6 +1549,18 @@ class StoryRevisionForm(KeywordBaseForm):
                      'Page(s): "Empty page with no content." If the page '
                      'shows art, a logo or text, choose a matching type, '
                      'e.g. Illustration.' % ' or '.join(content)])
+            # checked by storyrevision_form_utils.js when a sequence becomes
+            # a blank page, required for copies and imports
+            if (story is None or story.type_id != STORY_TYPES['blank']) and \
+               not all(cd[box] for box in NO_CREDIT_BOXES):
+                raise forms.ValidationError(
+                    ['Check No Script, No Pencils, No Inks, No Colors and No '
+                     'Letters: no credit applies to a blank page. Wiki '
+                     '"Formatting Documentation", General Indexing Format '
+                     'Rules: "If credits are not applicable to a sequence '
+                     '(colorist for black & white stories, writer or letterer '
+                     'for pinups), check the No script (or No pencils, No '
+                     'inks, etc.) checkbox".'])
 
         format_errors = _format_errors(cd, story)
         if format_errors:

@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 """Sequence type rules from the wiki in StoryRevisionForm.clean()."""
 
+import json
+
 import mock
 import pytest
 
 from django import forms
 
+from crispy_forms.layout import HTML
+
 from apps.gcd.models import Feature, FeatureLogo, FeatureNameDetail, \
                             FeatureType, Story, StoryType
-from apps.oi.forms.story import StoryCreditRevisionForm, StoryRevisionForm
+from apps.oi.forms.story import StoryCreditRevisionForm, StoryRevisionForm, \
+                                _hidden_rows
 from apps.oi.models import StoryCreditRevision, StoryRevision
 from apps.oi.templatetags.compare import show_type_notes
 from apps.oi.views import _cover_order_error, _covers_out_of_order
@@ -107,10 +112,14 @@ def test_type_changed_to_letters_page_needs_script(any_added_story,
               instance=rev)
 
 
+NO_CREDITS = {'no_script': True, 'no_pencils': True, 'no_inks': True,
+              'no_colors': True, 'no_letters': True}
+
+
 @pytest.mark.django_db
 def test_blank_page_has_no_content(any_indexer):
     """A new blank page has no credits, characters or synopsis."""
-    assert _clean(any_indexer, BLANK_PAGE, no_pencils=True)
+    assert _clean(any_indexer, BLANK_PAGE, **NO_CREDITS)
     _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content',
               pencils='?')
     _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content', data={
@@ -131,7 +140,7 @@ def test_blank_page_deleted_credit_row_is_ignored(any_indexer):
     assert _clean(any_indexer, BLANK_PAGE, data={
       'story_credit_revisions-TOTAL_FORMS': '1',
       'story_credit_revisions-0-credit_type': '2',
-      'story_credit_revisions-0-DELETE': 'on'})
+      'story_credit_revisions-0-DELETE': 'on'}, **NO_CREDITS)
 
 
 @pytest.mark.django_db
@@ -156,6 +165,102 @@ def test_type_changed_to_blank_page_drops_content(any_added_story,
     rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story')
     _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content',
               instance=rev, pencils='Test Person Two')
+
+
+@pytest.mark.django_db
+def test_new_blank_page_needs_no_credit_boxes(any_added_story,
+                                              any_editing_changeset,
+                                              any_indexer):
+    """No Script to No Letters on a new blank page or a type change."""
+    _rejected(any_indexer, BLANK_PAGE, 'Formatting Documentation')
+    _rejected(any_indexer, BLANK_PAGE, 'Formatting Documentation',
+              **dict(NO_CREDITS, no_letters=False))
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story')
+    _rejected(any_indexer, BLANK_PAGE, 'Formatting Documentation',
+              instance=rev)
+    assert _clean(any_indexer, BLANK_PAGE, instance=rev, **NO_CREDITS)
+
+
+@pytest.mark.django_db
+def test_old_blank_page_without_no_credit_boxes_stays_editable(
+      any_added_story, any_editing_changeset, any_indexer):
+    """An approved blank page without the No boxes can still be edited."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, BLANK_PAGE)
+    assert _clean(any_indexer, BLANK_PAGE, instance=rev,
+                  notes='corrected elsewhere')
+
+
+def _hidden_names(type_name):
+    """The names of the form rows the type hides."""
+    type_id = StoryType.objects.get(name=type_name).id
+    return {name for rows, shown_by in _hidden_rows().get(type_id, [])
+            for name in rows}
+
+
+@pytest.mark.django_db
+def test_rows_hidden_by_type():
+    """Rows of the Not applicable and Forbidden fields of a type."""
+    assert _hidden_names('comic story') == set()
+    assert _hidden_names('cover') == {'feature_logo'}
+    soo = _hidden_names('statement of ownership')
+    assert {'feature', 'feature_name', 'feature_logo', 'genre'} <= soo
+    assert 'title' not in soo
+    blank = _hidden_names(BLANK_PAGE)
+    assert {'title', 'first_line', 'feature', 'story_arc', 'genre',
+            'job_number', 'script', 'editing', 'story_credit_revisions',
+            'universe', 'characters', 'story_character_revisions',
+            'story_group_revisions', 'synopsis', 'reprint_notes',
+            'keywords'} <= blank
+    assert not {'type', 'page_count', 'page_count_uncertain', 'no_script',
+                'no_editing', 'notes', 'comments'} & blank
+
+
+def _html_rows(layout):
+    """The HTML snippets of a crispy layout, also inside tabs."""
+    for field in layout.fields:
+        if isinstance(field, HTML):
+            yield field.html
+        elif hasattr(field, 'fields'):
+            yield from _html_rows(field)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('use_tabs', [False, True])
+def test_hidden_rows_exist_in_the_form(any_indexer, use_tabs):
+    """Each hidden row is a field, a formset or a marked row of the form."""
+    any_indexer.indexer.use_tabs = use_tabs
+    form = StoryRevisionForm(user=any_indexer, instance=StoryRevision())
+    html = ''.join(_html_rows(form.helper.layout))
+    formsets = ['story_credit_revisions', 'story_character_revisions',
+                'story_group_revisions']
+    for groups in _hidden_rows().values():
+        for rows, shown_by in groups:
+            assert set(shown_by) <= set(rows)
+            for name in rows:
+                # the characters heading is not in the tab layout
+                assert name in form.fields or name in formsets or \
+                    'name="%s"' % name in html or \
+                    'data-field="%s"' % name in html or \
+                    (use_tabs and name == 'characters_heading'), name
+
+
+@pytest.mark.django_db
+def test_type_field_tells_the_approved_type(any_added_story,
+                                            any_editing_changeset,
+                                            any_indexer):
+    """The type field carries what storyrevision_form_utils.js needs."""
+    attrs = StoryRevisionForm(user=any_indexer, instance=StoryRevision())\
+        .fields['type'].widget.attrs
+    assert attrs['data-approved-type'] == ''
+    assert attrs['data-blank-type'] == \
+        StoryType.objects.get(name=BLANK_PAGE).id
+    assert json.loads(attrs['data-hidden-rows']) == \
+        json.loads(json.dumps(_hidden_rows()))
+    rev = _edit_rev(any_added_story, any_editing_changeset, BLANK_PAGE)
+    attrs = StoryRevisionForm(user=any_indexer, instance=rev)\
+        .fields['type'].widget.attrs
+    assert attrs['data-approved-type'] == \
+        StoryType.objects.get(name=BLANK_PAGE).id
 
 
 @pytest.mark.django_db
