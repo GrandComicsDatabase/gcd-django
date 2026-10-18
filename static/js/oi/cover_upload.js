@@ -23,6 +23,7 @@
   const scanWarning = document.getElementById('scan_warning');
   const changeButton = document.getElementById('scan_change');
   let scanUrl = null;
+  let shownFile = null;
 
   /**
    * Returns the class names listed in a data attribute of the element.
@@ -57,12 +58,29 @@
            (bytes / 1024 / 1024).toFixed(1) + ' MB';
   }
 
+  /**
+   * Puts the file in the scan input, as if it had been selected.
+   * @param {File} file
+   */
+  function setFile(file) {
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    scanInput.files = transfer.files;
+  }
+
   scanInput.addEventListener('change', function () {
+    // Some browsers empty the input when the picker is cancelled: the shown
+    // file stays selected until another one is chosen.
+    if (!scanInput.files.length && shownFile) {
+      setFile(shownFile);
+      return;
+    }
     if (scanUrl) {
       URL.revokeObjectURL(scanUrl);
       scanUrl = null;
     }
     const file = scanInput.files[0];
+    shownFile = file || null;
     show(choose, !file);
     show(selected, Boolean(file));
     if (!file) {
@@ -111,9 +129,9 @@
     }
   });
 
+  // Open the picker; the current file is kept if none is chosen.
   changeButton.addEventListener('click', function () {
-    scanInput.value = '';
-    scanInput.dispatchEvent(new Event('change'));
+    scanInput.click();
   });
 
   // Highlight the card while a file is dragged over it.
@@ -137,9 +155,7 @@
     event.preventDefault();
     const file = event.dataTransfer.files[0];
     if (file) {
-      const transfer = new DataTransfer();
-      transfer.items.add(file);
-      scanInput.files = transfer.files;
+      setFile(file);
       scanInput.dispatchEvent(new Event('change'));
     }
   });
