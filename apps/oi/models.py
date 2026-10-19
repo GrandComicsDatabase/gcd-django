@@ -1897,7 +1897,7 @@ class Revision(models.Model):
                 for v in new_value:
                     v.update_cached_counts(deltas)
                     v.save()
-            else:
+            elif new_value:
                 new_value.update_cached_counts(deltas)
                 new_value.save()
 
