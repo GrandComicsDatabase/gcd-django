@@ -336,7 +336,7 @@
     @media (width >= 40rem) {
       margin-inline: var(--spacing);
     }
-    a {
+    & a {
       display: block;
       text-align: center;
       color: var(--color-black);
@@ -351,7 +351,7 @@
   .btn-blue {
     background-color: var(--color-blue-500);
     color: var(--color-white);
-    a {
+    & a {
       color: var(--color-white);
       &:visited {
         color: var(--color-white);
@@ -416,7 +416,7 @@
     @media (width >= 40rem) {
       padding-inline: calc(var(--spacing) * 2);
     }
-    a {
+    & a {
       display: block;
       text-align: center;
       color: var(--color-black);
@@ -529,7 +529,7 @@
     @media (width >= 48rem) {
       top: 0px;
     }
-    tr {
+    & tr {
       display: flex;
       flex-direction: column;
       vertical-align: top;
@@ -597,7 +597,7 @@ html {
     @media (width >= 40rem) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-    li {
+    & li {
       padding-right: calc(var(--spacing) * 4);
     }
   }
@@ -608,7 +608,7 @@ html {
     @media (width >= 40rem) {
       columns: 2;
     }
-    li {
+    & li {
       padding-right: calc(var(--spacing) * 2);
     }
   }
