@@ -84,10 +84,11 @@ SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
 
 
 def _handle_import_error(request, return_url, error_text):
+    # error_text can quote the uploaded file, only the link is markup
     response = render_error(
         request,
         '%s Back to the <a href="%s">editing page</a>.' %
-        (error_text, return_url),
+        (esc(error_text), return_url),
         is_safe=True)
     # there might be a temporary file attached
     if hasattr(request, "tmpfile"):
@@ -241,7 +242,7 @@ def _find_story_type(request, changeset_url, story_type_name,
         return story_type, False
     except StoryType.DoesNotExist:
         error_text = 'Story type "%s" in line %s does not exist.' \
-            % (esc(story_type_name), esc(sequence_fields))
+            % (story_type_name, sequence_fields)
         return _handle_import_error(request, changeset_url, error_text), True
 
 
@@ -359,15 +360,15 @@ def _find_publisher_object(request, changeset_url, name, publisher_objects,
         return publisher_objects[0], False
     else:
         if publisher:
-            publisher_string = ' for publisher %s' % esc(publisher)
+            publisher_string = ' for publisher %s' % publisher
         else:
             publisher_string = ''
         if publisher_objects.count() > 1:
             error_text = '%s "%s" is not unique%s.' % \
-                         (object_type, esc(name), publisher_string)
+                         (object_type, name, publisher_string)
         else:
             error_text = '%s "%s" does not exist%s.' % \
-                         (object_type, esc(name), publisher_string)
+                         (object_type, name, publisher_string)
         return _handle_import_error(request, changeset_url, error_text), True
 
 

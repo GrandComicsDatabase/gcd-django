@@ -1897,7 +1897,7 @@ class Revision(models.Model):
                 for v in new_value:
                     v.update_cached_counts(deltas)
                     v.save()
-            else:
+            elif new_value:
                 new_value.update_cached_counts(deltas)
                 new_value.save()
 
@@ -5512,7 +5512,7 @@ class StoryCharacterRevision(Revision):
 
     def show_notes(self):
         from apps.gcd.models.story import character_notes
-        return character_notes(self)
+        return character_notes(self, html=True)
 
     def _imps_for(self, field_name):
         # imps already come from StoryRevision, since is_changed is True there

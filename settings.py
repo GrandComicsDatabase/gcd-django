@@ -286,10 +286,12 @@ SPECTACULAR_SETTINGS = {
 
 MARKDOWNX_MARKDOWN_EXTENSIONS = [
     'markdown.extensions.nl2br',
+    'markdown.extensions.md_in_html',
     'apps.gcd.markdown_extension:TailwindExtension',
     'apps.gcd.markdown_extension:GCDFieldLinkNameExtension',
     'apps.gcd.markdown_extension:GCDFieldExtension',
     'apps.gcd.markdown_extension:URLExtension',
+    'apps.gcd.markdown_extension:SafeHTMLExtension',
 ]
 MARKDOWNX_EDITOR_RESIZABLE = False
 MARKDOWNX_UPLOAD_CONTENT_TYPES = []
@@ -526,4 +528,3 @@ GCD_OFFICIAL_NAME_FIELDNAME = 'GCD Official'
 if READ_ONLY or NO_OI:
     MIDDLEWARE += \
       ('apps.middleware.read_only.ReadOnlyMiddleware',)
-

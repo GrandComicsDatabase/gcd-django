@@ -705,15 +705,19 @@ class CreatorIndex(ObjectIndex, indexes.SearchIndex, indexes.Indexable):
         return obj.gcd_official_name
 
     def prepare_year(self, obj):
-        if obj.birth_date.year and '?' not in obj.birth_date.year:
-            return int(obj.birth_date.year)
+        """Sort creators without a known birth year after dated records."""
+        birth_year = getattr(obj.birth_date, 'year', None)
+        if birth_year and '?' not in birth_year:
+            return int(birth_year)
         else:
             return 9999
 
     def prepare_date(self, obj):
-        if obj.birth_date.year:
+        """Index a birth-year date only when a valid year is available."""
+        birth_year = getattr(obj.birth_date, 'year', None)
+        if birth_year:
             try:
-                return date(int(obj.birth_date.year), 1, 1)
+                return date(int(birth_year), 1, 1)
             except ValueError:
                 return None
         else:

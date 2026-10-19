@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Override default styles for Select2. */
+.select2-hidden-accessible + .select2-container {
+  @apply !w-full lg:!w-4/5;
+}
+
 @layer base {
   h1 {
     font-size: theme('fontSize.2xl');
@@ -88,6 +93,11 @@
 
   .btn-queue-action:hover {
     @apply bg-stone-400;
+  }
+
+  /* Action buttons kept in view at the bottom of long pages. */
+  .sticky-action-bar {
+    @apply sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2;
   }
 
   .label-gcd-blue {
@@ -218,8 +228,9 @@ html {
 [type='tel'],
 [type='time'],
 [type='week'],
+[type='checkbox'],
 [multiple],
 textarea,
 select {
-  @apply py-[0.2em] ps-[0.5rem] border-gray-500;
+  @apply py-[0.3em] ps-[0.5rem] border-gray-400 rounded;
 }
