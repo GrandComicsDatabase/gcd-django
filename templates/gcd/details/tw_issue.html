@@ -103,9 +103,9 @@
     {% if num_variants > 2 %}
 
       {% if num_variants > request.user.indexer.variant_threshold|default:6 %}
-<details class="[&_svg]:open:rotate-90">
+<details class="open:[&_svg]:rotate-90">
       {% else %}
-<details class="[&_svg]:open:rotate-90" open="">
+<details class="open:[&_svg]:rotate-90" open="">
       {% endif %}
   <summary class="list-none">
       {% include 'gcd/bits/svg_details.html' %}
@@ -128,9 +128,9 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
 {% if issue.other_variants %}
   {% with num_variants=issue.other_variants|length %}
     {% if num_variants > request.user.indexer.variant_threshold|default:6 %}
-<details class="[&_svg]:open:rotate-90 mt-1">
+<details class="open:[&_svg]:rotate-90 mt-1">
     {% else %}
-<details class="[&_svg]:open:rotate-90 mt-1" open="">
+<details class="open:[&_svg]:rotate-90 mt-1" open="">
     {% endif %}
   <summary class="list-none">
       {% include 'gcd/bits/svg_details.html' %}
