@@ -343,7 +343,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
-                                       ),
+                                       attrs={'class': 'w-full'}),
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
@@ -358,7 +358,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
     signature = forms.ModelChoiceField(
       queryset=CreatorSignature.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_signature_autocomplete',
-                                       attrs={'data-html': True},
+                                       attrs={'data-html': True,
+                                              'class': 'w-full'},
                                        forward=['creator']),
       help_text='Select an existing signature for the creator.',
       required=False,
@@ -488,7 +489,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
     character = forms.ModelChoiceField(
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='character_name_autocomplete',
-                                       forward=['language_code', 'group_name']),
+                                       forward=['language_code', 'group_name'],
+                                       attrs={'class': 'w-full'}),
       required=True,
       help_text='By entering (any part of) a name select a character from the'
                 ' database.'
@@ -498,6 +500,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='group_name_autocomplete',
+        attrs={'class': 'w-full'},
         forward=[forward.Field('character', 'character_name'),
                  'language_code']),
       help_text='Select a group the character is appearing as a member of.',
@@ -512,7 +515,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
     universe = forms.ModelChoiceField(
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
-                          url='universe_autocomplete'),
+                          url='universe_autocomplete',
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Select the universe, if any, from which the character '
                 'originates. Use "mainstream" for the principal universe '
@@ -522,7 +526,8 @@ class StoryCharacterRevisionForm(forms.ModelForm):
     group_universe = forms.ModelChoiceField(
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
-                          url='universe_autocomplete'),
+                          url='universe_autocomplete',
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Select the universe, if any, for the group of the character. '
                 'If left empty, the value will default to the selected '
@@ -591,7 +596,8 @@ class StoryGroupRevisionForm(forms.ModelForm):
     group_name = forms.ModelChoiceField(
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='group_name_autocomplete',
-                                       forward=['language_code']),
+                                       forward=['language_code'],
+                                       attrs={'class': 'w-full'}),
       required=True,
       help_text='By entering (any part of) a name select a group from the'
                 ' database.'
@@ -600,7 +606,8 @@ class StoryGroupRevisionForm(forms.ModelForm):
     universe = forms.ModelChoiceField(
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
-                          url='universe_autocomplete'),
+                          url='universe_autocomplete',
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Select the universe, if any, from which the group '
                 'originates. Use "mainstream" for the principal universe '
@@ -849,7 +856,8 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=FeatureNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
                           url='feature_name_autocomplete',
-                          forward=['language_code', 'type']),
+                          forward=['language_code', 'type'],
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Only features for the series language can be selected. Enter '
                 '"&lt;space&gt;[&lt;text&gt;" to search the disambiguation. '
@@ -862,7 +870,7 @@ class StoryRevisionForm(KeywordBaseForm):
       widget=autocomplete.ModelSelect2Multiple(
                           url='feature_logo_autocomplete',
                           forward=['language_code', 'type'],
-                          attrs={'data-html': True}),
+                          attrs={'data-html': True, 'class': 'w-full'}),
       required=False,
       help_text='Only select a feature logo if it is present <b>directly</b> '
                 'on the sequence. The feature corresponding to the selected '
@@ -873,7 +881,8 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=StoryArc.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
                           url='story_arc_autocomplete',
-                          forward=['language_code', 'type']),
+                          forward=['language_code', 'type'],
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Only story arcs for the series language can be selected. '
                 'Enter "&lt;space&gt;[&lt;text&gt;" to search the '
@@ -883,7 +892,8 @@ class StoryRevisionForm(KeywordBaseForm):
     keyword_objects = forms.ModelMultipleChoiceField(
       queryset=Tag.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
-                          url='keyword_autocomplete'),
+                          url='keyword_autocomplete',
+                          attrs={'class': 'w-full'}),
       required=False,
       label='Keywords',
       help_text='Select existing keywords that apply to this story.'
@@ -946,7 +956,8 @@ class StoryRevisionForm(KeywordBaseForm):
     universe = forms.ModelMultipleChoiceField(
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
-                          url='universe_autocomplete'),
+                          url='universe_autocomplete',
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Select the universes, if any, in which the story takes place.'
                 ' Use "mainstream" for the principal universe of a publisher.'
@@ -1058,6 +1069,7 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(
         url='group_name_autocomplete',
+        attrs={'class': 'w-full'},
         forward=['language_code']),
       help_text='Select a group and enter its characters.',
       label='b) Group',
@@ -1068,6 +1080,7 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
+        attrs={'class': 'w-full'},
         forward=['language_code', 'group_name']),
       help_text='Select the appearing members of the group.',
       required=False,
@@ -1077,6 +1090,7 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
+        attrs={'class': 'w-full'},
         forward=['language_code', ]),
       help_text='Select one or more appearing characters without additional '
                 'details.',
