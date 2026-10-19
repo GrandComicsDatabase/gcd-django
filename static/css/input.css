@@ -181,6 +181,11 @@
     @apply bg-stone-400;
   }
 
+  /* Action buttons kept in view at the bottom of long pages. */
+  .sticky-action-bar {
+    @apply sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2;
+  }
+
   .label-gcd-blue {
     @apply bg-stone-600 text-white rounded px-2 py-1 font-bold;
   }
