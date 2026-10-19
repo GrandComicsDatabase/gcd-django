@@ -5097,9 +5097,18 @@ class IssueRevision(Revision):
 
 
 class PreviewIssue(Issue):
-    # TODO add and use PreviewIssue.init
+    # TODO use PreviewIssue.init
     class Meta:
         proxy = True
+
+    @classmethod
+    def init(cls, issue_revision):
+        preview_issue = PreviewIssue()
+        issue_revision._copy_fields_to(preview_issue)
+        preview_issue.keywords = issue_revision.keywords
+        preview_issue.revision = issue_revision
+        preview_issue.id = issue_revision.id
+        return preview_issue
 
     def get_prev_next_issue(self):
         if self.id:

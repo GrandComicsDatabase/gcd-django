@@ -30,7 +30,7 @@
 	    <td><a href="{% url "compare" changeset.id %}">{{ changeset.modified }}</a></td>
     {% endlocalize %}
 	    <td>{{ changeset.indexer.indexer|absolute_url }}</td>
-        <td>{{ first|show_creator_credit_bare:credit_type }}</td>
+        <td>{% show_bare_creator_credits first credit_type %}</td>
         <td></td>
 	  </tr>
   {% endwith %}
@@ -45,6 +45,6 @@
 	  </tr>
    {% endfor %}
 	</table>
-    <button _="on click trigger closeModal">Close</button> 
+    <button class="btn btn-blue-editing" _="on click trigger closeModal">Close</button>
   </div>
 </div>
