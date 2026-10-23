@@ -1,0 +1,60 @@
+{% extends "forum/base.html" %}
+{% load forum_tags %}
+{% block title %}GCD :: Forum :: Moderation{% endblock %}
+{% block forum_content %}
+<div class="border-b border-gray-400 mb-1">
+  <h2 class="font-bold text-xl">New members' posts</h2>
+  <p class="text-sm text-gray-700 pb-1">The first post of an account without approved changes to the database appears once a moderator of the group publishes it.</p>
+</div>
+<ul class="mb-4">
+{% for post in held_posts %}
+  <li id="review-{{ post.pk }}" class="border-b border-gray-200 px-1 py-2">
+    <div class="text-sm text-gray-700">
+      {{ post.discussion.category.name }} · {{ post.author|display_name }}, joined <time datetime="{{ post.author.date_joined|date:'c' }}">{{ post.author.date_joined|date:"Y-m-d" }}</time> · <time datetime="{{ post.created_at|date:'c' }}">{{ post.created_at|timesince }} ago</time>{% if post.ip_address == "0.0.0.0" %} · by email{% endif %}
+    </div>
+    <p class="font-bold break-words">{% if post.discussion.awaiting_review %}New topic: {{ post.discussion.title }}{% else %}Reply in <a href="{{ post.discussion.get_absolute_url }}">“{{ post.discussion.title }}”</a>{% endif %}</p>
+    <div class="mt-1 border border-gray-200">
+      <div class="{% prose_classes %}">{{ post.content|safe_markdown }}</div>
+      {% include "forum/_attachments.html" %}
+    </div>
+    <form method="post" action="{% url 'forum:post-review' post.pk %}" class="mt-1 flex flex-wrap gap-1">
+      {% csrf_token %}
+      <button class="btn-blue-editing m-0" name="action" value="approve">Publish</button>
+      <button class="btn-blue-editing m-0" name="action" value="reject">Reject</button>
+    </form>
+  </li>
+{% empty %}
+  <li class="py-6 text-center">No posts to review.</li>
+{% endfor %}
+</ul>
+<div class="border-b border-gray-400 mb-1">
+  <h2 class="font-bold text-xl">Reports to review</h2>
+  <p class="text-sm text-gray-700 pb-1">Open reports about content in the groups you moderate, oldest last.</p>
+</div>
+<ul>
+{% for report in reports %}
+  <li class="border-b border-gray-200 px-1 py-2">
+    <div class="text-sm text-gray-700">
+      {{ report.discussion.category.name }} · reported by {{ report.reporter|display_name }} <time datetime="{{ report.created_at|date:'c' }}">{{ report.created_at|timesince }} ago</time>
+    </div>
+    <p class="font-bold break-words">Reason: <span class="font-normal">{{ report.reason }}</span></p>
+    <div class="mt-1 border border-gray-200 px-2 py-1">
+      {% if report.post %}
+      <div class="text-sm"><a href="{{ report.post.get_absolute_url }}">Post #{{ report.post.pk }}</a> by {{ report.post.author|display_name }} in “{{ report.discussion.title }}”{% if report.post.is_deleted %} (removed){% endif %}</div>
+      <div class="break-words">{{ report.post.content|truncatechars:400|safe_markdown }}</div>
+      {% else %}
+      <div class="text-sm">Topic <a href="{{ report.discussion.get_absolute_url }}">“{{ report.discussion.title }}”</a> by {{ report.discussion.author|display_name }}{% if report.discussion.is_deleted %} (removed){% endif %}</div>
+      {% endif %}
+    </div>
+    <form method="post" action="{% url 'forum:report-resolve' report.pk %}" class="mt-1 flex flex-wrap gap-1">
+      {% csrf_token %}
+      <button class="btn-blue-editing m-0" name="action" value="remove">Remove the {% if report.post %}post{% else %}topic{% endif %}</button>
+      <button class="btn-blue-editing m-0" name="action" value="dismiss">Dismiss the report</button>
+    </form>
+  </li>
+{% empty %}
+  <li class="py-6 text-center">No open reports.</li>
+{% endfor %}
+</ul>
+{% endblock %}
+{% block forum_sidebar %}{% include "forum/_sidebar.html" %}{% endblock %}

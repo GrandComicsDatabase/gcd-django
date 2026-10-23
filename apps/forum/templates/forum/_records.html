@@ -1,0 +1,12 @@
+{% load forum_tags %}
+{% if records %}
+<ul class="flex flex-wrap gap-1 text-sm" aria-label="GCD records">
+  {% for link in records %}
+  <li class="bg-blue-100 rounded px-1">
+    {% if link.content_object %}<span class="text-gray-700">{{ link|record_type }}:</span> <a href="{{ link.content_object.get_absolute_url }}">{{ link.content_object }}</a>{% else %}<span class="text-gray-700">{{ link|record_type }} {{ link.object_id }} (removed)</span>{% endif %}
+    {% if removable %}<form class="inline" method="post" action="{% url 'forum:record-remove' discussion.slug link.pk %}">{% csrf_token %}<button class="text-gray-700 px-1" aria-label="Unlink {{ link.content_object }}" title="Unlink">×</button></form>{% endif %}
+  </li>
+  {% endfor %}
+  {% if more > 0 %}<li class="px-1 text-gray-700">and {{ more }} more</li>{% endif %}
+</ul>
+{% endif %}

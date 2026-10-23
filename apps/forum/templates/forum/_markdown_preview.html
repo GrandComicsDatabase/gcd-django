@@ -1,0 +1,4 @@
+{% load forum_tags %}
+<div class="{% prose_classes %}">
+  {% if content.strip %}{{ content|safe_markdown }}{% else %}<p class="text-gray-700">Nothing to preview yet.</p>{% endif %}
+</div>

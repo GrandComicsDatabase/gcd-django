@@ -1,0 +1,10 @@
+{% if topics %}
+<section class="mt-1 border border-gray-300 px-2 py-1 text-sm" aria-label="Similar topics">
+  <h3 class="font-bold">Already discussed? Similar topics</h3>
+  <ul>
+    {% for topic in topics %}
+    <li><a href="{{ topic.get_absolute_url }}" target="_blank">{{ topic.title }}</a> <span class="text-gray-700">· {{ topic.category.name }}{% if topic.status == 'resolved' %} · solved{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
