@@ -74,6 +74,51 @@ replace the local migration ledger, accounts, statistics, or change-history
 fixtures. Keywords of catalog records are copied and linked to the local
 content types.
 
+#### MySQL memory for the full catalog
+
+The full catalog is larger than 7 GiB, so MySQL's default 128 MiB InnoDB
+buffer pool leaves relatively little catalog data cached. A local full-dump
+comparison found that a 1 GiB buffer pool reduced physical reads and improved
+cold-query performance, although already-warm scan times were similar. A 1 GiB
+buffer pool is therefore the recommended starting point for both Docker and
+native development setups. This is a local-development recommendation, not a
+production configuration.
+
+##### Docker
+
+The Docker setup configures a 1 GiB buffer pool automatically. To use less
+memory on a constrained machine, copy `.env.example` to `.env` and set a lower
+value:
+
+```dotenv
+GCD_MYSQL_BUFFER_POOL_SIZE=512M
+```
+
+Restart the Docker stack after changing the value:
+
+```bash
+./bin/dev down
+./bin/dev up
+```
+
+A smaller buffer pool uses less memory but can make full-catalog imports and
+queries slower.
+
+##### Native
+
+For a native installation, configure the same setting in the MySQL server's
+option file:
+
+```ini
+[mysqld]
+innodb_buffer_pool_size=1G
+```
+
+Restart MySQL after changing its option file. File locations and service
+commands differ by operating system and package manager. The
+`GCD_MYSQL_BUFFER_POOL_SIZE` environment variable configures only the Docker
+service; it does not change a native MySQL installation.
+
 Useful commands:
 
 ```bash
@@ -118,10 +163,10 @@ Search data and queued jobs live in Docker volumes and survive normal
 `./bin/dev down` / `search-up` cycles. The normal `./bin/dev up` command keeps
 search disabled and does not start Elasticsearch, Redis, or the worker.
 
-To change local ports or development-only credentials, including the
-Elasticsearch host port, copy `.env.example` to `.env` and edit literal
-`KEY=VALUE` entries. Shell expressions are deliberately not evaluated. Do not
-use production credentials in this file.
+To change local ports or other development-only settings, including the
+Elasticsearch host port and MySQL buffer-pool size, copy `.env.example` to
+`.env` and edit literal `KEY=VALUE` entries. Shell expressions are deliberately
+not evaluated. Do not use production credentials in this file.
 
 `./bin/dev reset --yes` removes the local Docker database, Elasticsearch, and
 Redis volumes and starts a fresh core database. It is intentionally

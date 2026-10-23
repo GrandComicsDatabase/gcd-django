@@ -3,6 +3,8 @@ name: gcd-django-dev
 services:
   db:
     image: mysql:8.0
+    command:
+      - "--innodb-buffer-pool-size=${GCD_MYSQL_BUFFER_POOL_SIZE:-1G}"
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-gcd_dev}
       MYSQL_USER: ${MYSQL_USER:-gcd_dev}

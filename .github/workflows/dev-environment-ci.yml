@@ -109,6 +109,11 @@ jobs:
       - name: Verify the running environment
         run: |
           ./bin/dev doctor
+          buffer_pool_size="$(
+            docker compose exec -T db sh -c \
+              'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql --batch --skip-column-names -uroot -e "SELECT @@innodb_buffer_pool_size"'
+          )"
+          test "$buffer_pool_size" = "1073741824"
           curl --fail --silent --show-error http://127.0.0.1:8000/ -o /dev/null
 
       - name: Stop the core stack

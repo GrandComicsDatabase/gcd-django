@@ -125,6 +125,15 @@ def test_compose_defines_opt_in_search_services():
         set(compose['volumes'])
 
 
+def test_compose_sizes_mysql_for_the_full_catalog_with_an_override():
+    """Docker MySQL avoids the 128 MiB default but remains configurable."""
+    database = _load_compose_file()['services']['db']
+
+    assert database['command'] == [
+        '--innodb-buffer-pool-size=${GCD_MYSQL_BUFFER_POOL_SIZE:-1G}'
+    ]
+
+
 def test_compose_waits_for_database_and_migrations_before_web_starts():
     """Startup is health-gated rather than relying on a polling script."""
     services = _load_compose_file()['services']
@@ -235,8 +244,10 @@ def test_dev_launcher_handles_crlf_dotenv_and_native_database_overrides():
     launcher = _read_project_file('bin/dev')
     example_environment = _read_project_file('.env.example')
 
+    assert 'GCD_MYSQL_BUFFER_POOL_SIZE' in launcher
     assert 'MYSQL_HOST MYSQL_PORT' in launcher
     assert 'line="${line%$\'\\r\'}"' in launcher
+    assert 'GCD_MYSQL_BUFFER_POOL_SIZE=1G' in example_environment
     assert 'MYSQL_HOST=127.0.0.1' in example_environment
     assert 'MYSQL_PORT=3308' in example_environment
 
