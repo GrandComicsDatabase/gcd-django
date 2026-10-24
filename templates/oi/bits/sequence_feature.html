@@ -1,0 +1,13 @@
+<details data-feature-editor class="relative">
+  <summary data-feature-summary class="flex cursor-pointer list-none items-center gap-1 rounded-md border border-gray-500 bg-white px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 [&::-webkit-details-marker]:hidden">
+    <span data-feature-label class="min-w-0 flex-1 truncate">Type to search</span>
+    <span data-feature-count class="hidden shrink-0 rounded bg-blue-100 px-1 text-xs"></span>
+    <span aria-hidden="true">⌄</span>
+  </summary>
+  <div class="absolute left-0 top-full z-40 mt-1 w-full min-w-[min(22rem,75vw)] rounded-md border border-gray-300 bg-white p-3 shadow-lg">
+    <p class="mb-2 text-xs text-gray-600">Select feature names</p>
+    <div data-feature-tokens class="mb-2 flex max-h-32 flex-wrap gap-1 overflow-y-auto"></div>
+    <input type="text" data-field="feature" aria-label="Feature" maxlength="255" placeholder="Type to search" value="{{ story.feature }}" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="features-{{ story.id }}" autocomplete="off" class="w-full min-w-0 rounded-md border-gray-300 disabled:bg-gray-100 disabled:text-gray-400" {% if story.deleted %}disabled{% endif %}>
+    <div id="features-{{ story.id }}" data-feature-results role="listbox" aria-label="Feature search results" class="hidden mt-1 max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg"></div>
+  </div>
+</details>
