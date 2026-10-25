@@ -815,10 +815,13 @@ class StoryRevisionForm(KeywordBaseForm):
         if not user.indexer.use_tabs:
             self.helper.layout = Layout(*(f for f in field_list))
         else:
+            # The layout is organized into tabs for better user experience.
+            # When counting the fields, we need to account for the added
+            # hidden fields and formsets that are included in the field_list.
             self.helper.layout = Layout(TabHolder(
               Tab('Sequence Details',
                   *(f for f in field_list[:credits_start-5]),
-                  *(f for f in field_list[characters_end:-2]),
+                  *(f for f in field_list[characters_end:-3]),
                   template='oi/bits/tab.html',
                   ),
               Tab('Creator Credits',
@@ -832,7 +835,7 @@ class StoryRevisionForm(KeywordBaseForm):
               template='oi/bits/tab-bar.html',
             ),
               HTML('<table class="editing w-full">'),
-              *(f for f in field_list[-2:]),
+              *(f for f in field_list[-3:]),
               HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
     # The sequence number can only be changed through the reorder form, but
