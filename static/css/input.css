@@ -100,6 +100,11 @@
     @apply sticky bottom-0 z-50 flex flex-wrap items-center gap-1 border-t border-gray-200 bg-white pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] shadow-lg sm:gap-2;
   }
 
+  /* Keep focused fields visible above the sticky action bar. */
+  form :is(input, select, textarea) {
+    scroll-margin-bottom: 3rem;
+  }
+
   .label-gcd-blue {
     @apply bg-stone-600 text-white rounded px-2 py-1 font-bold;
   }

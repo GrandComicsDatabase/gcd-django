@@ -1042,6 +1042,12 @@ a:hover {
   }
 }
 
+/* Keep focused fields visible above the sticky action bar. */
+
+form :is(input, select, textarea) {
+  scroll-margin-bottom: 3rem;
+}
+
 .label-gcd-blue {
   border-radius: 0.25rem;
   --tw-bg-opacity: 1;
