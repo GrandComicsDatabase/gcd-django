@@ -174,7 +174,7 @@ def get_story_revision_form(revision=None, user=None,
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
         year = forms.CharField(widget=forms.HiddenInput,
-                               initial=issue_year)
+                               initial=issue_year, required=False)
 
         def __init__(self, *args, **kwargs):
             kwargs['user'] = user
