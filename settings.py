@@ -72,6 +72,8 @@ PASSWORD_HASHERS = [
 # absolute path to the directory that holds media.
 # URL that handles the media served from MEDIA_ROOT.
 MEDIA_ROOT = abspath(join(dirname(__file__), 'media'))
+# needs trailing slash, otherwise the path is not correct when joining.
+MEDIA_ROOT = join(MEDIA_ROOT, '')
 MEDIA_URL = '/media/'
 
 # URL and absolute path to static file tree.

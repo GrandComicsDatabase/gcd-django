@@ -14,7 +14,7 @@ from apps.oi.models import Changeset, CoverRevision
 @pytest.fixture
 def media_root(tmp_path):
     os.makedirs(tmp_path / 'img' / 'gcd' / 'new_covers' / 'tmp')
-    with override_settings(MEDIA_ROOT=str(tmp_path)):
+    with override_settings(MEDIA_ROOT=f'{tmp_path}/'):
         yield tmp_path
 
 
