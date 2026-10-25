@@ -743,6 +743,9 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
     def get_queryset(self):
         qs = CreatorNameDetail.objects.filter(deleted=False)\
                                       .exclude(type__id__in=[3, 4])
+        year = self.forwarded.get('year', None)
+        if year is not None:
+            qs = qs.filter(creator__birth_date__year__lte=year)
 
         qs = _filter_and_sort(qs, self.q, creator_detail=True,
                               parent_disambiguation='creator')

@@ -126,6 +126,9 @@ def get_story_revision_form(revision=None, user=None,
     is_comics_publication = series.is_comics_publication
     has_about_comics = series.has_about_comics
     language = series.language
+    issue_year = issue.key_date[:4]
+    if not issue_year.isnumeric():
+        issue_year = None
 
     # for variants we can only have cover sequences (for now)
     if (revision and (revision.issue is None or revision.issue.variant_of))\
@@ -170,6 +173,8 @@ def get_story_revision_form(revision=None, user=None,
                                additional_genres=additional_genres)
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
+        year = forms.CharField(widget=forms.HiddenInput,
+                               initial=issue_year)
 
         def __init__(self, *args, **kwargs):
             kwargs['user'] = user
@@ -343,7 +348,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
-                                       attrs={'class': 'w-full'}),
+                                       attrs={'class': 'w-full'},
+                                       forward=['year']),
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
