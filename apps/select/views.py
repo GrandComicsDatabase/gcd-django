@@ -696,7 +696,7 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
             if qs_match:
                 if chrono_sort:
                     qs_contains = qs_contains.exclude(Q(**{'%s' % field:
-                                                            query}))
+                                                           query}))
                     qs_match = qs_match.annotate(chrono=F(chrono_sort))\
                                        .annotate(qs_order=Value(1,
                                                  IntegerField()))
@@ -745,7 +745,8 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
                                       .exclude(type__id__in=[3, 4])
         year = self.forwarded.get('year', None)
         if year:
-            qs = qs.filter(creator__birth_date__year__lte=year)
+            qs = qs.filter(creator__birth_date__year__lte=year) | \
+                 qs.filter(creator__birth_date__year__startswith='?')
 
         qs = _filter_and_sort(qs, self.q, creator_detail=True,
                               parent_disambiguation='creator')
