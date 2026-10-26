@@ -126,8 +126,8 @@ def get_story_revision_form(revision=None, user=None,
     is_comics_publication = series.is_comics_publication
     has_about_comics = series.has_about_comics
     language = series.language
-    issue_year = issue.key_date[:4]
-    if not issue_year.isnumeric():
+    issue_year = issue.key_date[:4] if issue else None
+    if issue_year and not issue_year.isnumeric():
         issue_year = None
 
     # for variants we can only have cover sequences (for now)
