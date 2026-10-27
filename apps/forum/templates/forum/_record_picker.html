@@ -1,0 +1,33 @@
+{% load forum_tags %}{% record_search_languages as search_languages %}
+<div data-record-picker data-mode="{{ mode }}" data-target="{{ target }}" data-prefix="{{ prefix }}">
+  <div class="flex flex-wrap items-center gap-x-1 text-sm">
+    <span class="text-link-gcd">{% include "forum/_record_glyph.html" with glyph="book" %}</span>
+    <label for="{{ prefix }}-query" class="{% if label %}font-bold{% else %}sr-only{% endif %}">{{ label|default:"Search records by name" }}</label>
+    <span id="{{ prefix }}-syntax" class="text-gray-700">Add a year or #number: Spider-Man 1983, Mickey Mouse #219.</span>
+  </div>
+  <div class="mt-1 flex flex-wrap gap-1 sm:flex-nowrap">
+    {# One box like the site's search: the record type, then the name. #}
+    <div class="flex min-w-0 flex-1 basis-full items-center border border-gray-500 bg-white focus-within:border-blue-500 sm:basis-auto">
+      <label for="{{ prefix }}-type" class="sr-only">Record type</label>
+      <select id="{{ prefix }}-type" class="border-0 border-e bg-stone-100 text-sm focus:ring-0">
+        {% record_type_choices as choices %}{% for key, label, has_language in choices %}<option value="{{ key }}" data-language="{{ has_language|yesno:'1,' }}"{% if key == 'series' %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <svg class="ms-2 h-4 w-4 shrink-0 fill-gray-700" viewBox="0 0 192.904 192.904" aria-hidden="true" focusable="false"><path d="m190.707 180.101-47.078-47.077c11.702-14.072 18.752-32.142 18.752-51.831C162.381 36.423 125.959 0 81.191 0 36.422 0 0 36.423 0 81.193c0 44.767 36.422 81.187 81.191 81.187 19.688 0 37.759-7.049 51.831-18.751l47.079 47.078a7.474 7.474 0 0 0 5.303 2.197 7.498 7.498 0 0 0 5.303-12.803zM15 81.193C15 44.694 44.693 15 81.191 15c36.497 0 66.189 29.694 66.189 66.193 0 36.496-29.692 66.187-66.189 66.187C44.693 147.38 15 117.689 15 81.193z"/></svg>
+      <input id="{{ prefix }}-query" type="search" autocomplete="off" placeholder="Search by name"
+             class="min-w-0 flex-1 border-0 bg-transparent focus:ring-0" aria-describedby="{{ prefix }}-syntax"
+             hx-get="{% url 'forum:record-search' %}" hx-trigger="input changed delay:600ms, search, change from:#{{ prefix }}-type, change from:#{{ prefix }}-language"
+             hx-sync="this:replace" hx-vals='js:{...forumRecordQuery("{{ prefix }}")}' hx-indicator="#{{ prefix }}-searching"
+             hx-target="#{{ prefix }}-results" onkeydown="if (event.key === 'Enter') { event.preventDefault(); }">
+      <svg id="{{ prefix }}-searching" class="htmx-indicator me-2 h-4 w-4 shrink-0 text-blue-500 motion-safe:animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" opacity=".25"/><path d="M21 12a9 9 0 0 0-9-9" stroke-linecap="round"/></svg>
+    </div>
+    <label for="{{ prefix }}-language" class="sr-only">Language</label>
+    <select id="{{ prefix }}-language" class="w-full text-sm sm:w-auto sm:max-w-[12rem]">
+      <option value="">All languages</option>
+      {% if search_languages.mine %}<option value="mine"{% if search_languages.default == 'mine' %} selected{% endif %}>My languages ({{ search_languages.mine|join:", " }})</option>{% endif %}
+      {% for code, name in search_languages.choices %}<option value="{{ code }}"{% if search_languages.default == code %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div id="{{ prefix }}-results" data-record-results></div>
+  {# One sentence for screen readers ("10 records found", "Added …"), not the whole list again. #}
+  <p id="{{ prefix }}-status" data-record-status role="status" class="sr-only"></p>
+</div>

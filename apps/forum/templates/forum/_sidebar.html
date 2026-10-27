@@ -1,0 +1,16 @@
+<aside class="md:w-60 shrink-0">
+  <a class="btn btn-blue block text-center" href="{% url 'forum:discussion-create' %}{% if category and can_post %}?category={{ category.slug }}{% elif record %}?record={{ record_key }}:{{ record.pk }}{% endif %}">New topic</a>
+  <nav aria-label="Forum groups" class="mt-2">
+    <a class="block font-bold {% if not category and not record and not active_page %}bg-blue-100 link-with-text-color{% endif %} px-2 py-0.5" href="{% url 'forum:index' %}">All topics</a>
+    {% if user.is_authenticated %}<a class="flex justify-between px-2 py-0.5 font-bold hover:bg-blue-50" href="{% url 'forum:notifications' %}">Notifications{% if notification_count %}<span class="rounded bg-blue-100 px-1.5">{{ notification_count }}</span>{% endif %}</a>{% endif %}
+    {% if is_moderator %}<a class="flex justify-between px-2 py-0.5 font-bold hover:bg-blue-50 {% if active_page == 'moderation' %}bg-blue-100 link-with-text-color{% endif %}" href="{% url 'forum:moderation' %}">Moderation{% if report_count %}<span class="rounded bg-blue-100 px-1.5">{{ report_count }}</span>{% endif %}</a>{% endif %}
+    {% for section in sections %}
+    <div class="label-gcd-blue mt-2">{{ section.title }}</div>
+    <ul>
+      {% for group in section.groups %}
+      <li><a class="flex justify-between gap-2 px-2 py-0.5 hover:bg-blue-50 {% if category.pk == group.pk %}bg-blue-100 link-with-text-color{% endif %}" href="{{ group.get_absolute_url }}"{% if category.pk == group.pk %} aria-current="page"{% endif %}><span class="break-all">{{ group.name }}{% if group.read_access == 'members' %} <span class="text-gray-700 text-sm">(members)</span>{% endif %}</span><span class="text-gray-700 text-sm">{{ group.topic_count }}</span></a></li>
+      {% endfor %}
+    </ul>
+    {% endfor %}
+  </nav>
+</aside>

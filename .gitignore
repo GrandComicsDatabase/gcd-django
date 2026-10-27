@@ -5,6 +5,7 @@
 
 # Auto-generated or externally managed content
 /media
+/forum_attachments
 /static_root
 /templates/managed_content
 

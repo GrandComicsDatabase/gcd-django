@@ -1,0 +1,12 @@
+{% load forum_tags %}
+{% if experts %}
+<section id="experts" class="mt-2" aria-labelledby="experts-heading">
+  <h3 id="experts-heading" class="label-gcd-blue">Who knows these records</h3>
+  <ul class="text-sm">
+    {% for expert in experts %}
+    <li class="flex justify-between gap-2 py-0.5"><span>{{ expert.user|display_name }}</span><span class="text-gray-700">{{ expert.changes }} approved change{{ expert.changes|pluralize }}</span></li>
+    {% endfor %}
+  </ul>
+  <p class="text-sm text-gray-700">From the approved changes to the linked records.</p>
+</section>
+{% endif %}

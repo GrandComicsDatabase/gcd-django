@@ -1,0 +1,53 @@
+{# One message box, the same in every form: Write and Preview, the text, its files and the GCD records it links. #}
+{% with field_id=field.id_for_label %}
+<div data-editor class="group/editor relative border border-gray-500 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 data-[drop]:border-dashed data-[drop]:border-blue-500">
+  <div class="flex flex-wrap items-end justify-between gap-x-2 border-b border-gray-300 bg-blue-50 px-1">
+    <div role="tablist" aria-label="Message" class="flex [&[hidden]]:hidden" data-needs-js hidden>
+      <button type="button" role="tab" id="write-tab-{{ field_id }}" aria-controls="write-{{ field_id }}" aria-selected="true"
+              class="-mb-px border-b-2 border-transparent px-3 py-1.5 text-sm text-gray-700 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 aria-selected:border-blue-500 aria-selected:font-bold aria-selected:text-black">Write</button>
+      <button type="button" role="tab" id="preview-tab-{{ field_id }}" aria-controls="preview-{{ field_id }}" aria-selected="false" tabindex="-1"
+              class="-mb-px border-b-2 border-transparent px-3 py-1.5 text-sm text-gray-700 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 aria-selected:border-blue-500 aria-selected:font-bold aria-selected:text-black"
+              hx-post="{% url 'forum:markdown-preview' %}" hx-include="#{{ field_id }}" hx-params="content"
+              hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-target="#preview-{{ field_id }}" hx-swap="innerHTML">Preview</button>
+    </div>
+    {% if attachments %}
+    <input id="{{ attachments.id_for_label }}" type="file" name="{{ attachments.html_name }}" multiple accept="{{ attachments.field.widget.attrs.accept }}" class="sr-only"
+           data-file-input data-max-files="{{ attachments.field.max_files }}" data-max-bytes="{{ attachments.field.max_bytes }}">
+    <label for="{{ attachments.id_for_label }}" role="button" tabindex="0" aria-describedby="files-help-{{ field_id }}{% if attachments.errors %} {{ attachments.auto_id }}_error{% endif %}"
+           class="my-0.5 flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+           onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.control.click(); }">
+      <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M16 7l-7.4 7.4a2 2 0 0 0 2.8 2.8l7.5-7.4a4 4 0 0 0-5.7-5.7l-7.6 7.6a6 6 0 0 0 8.5 8.5L20 14"/></svg>
+      <span class="sm:hidden">Attach</span><span class="hidden sm:inline">Attach images or PDFs</span>
+    </label>
+    {% endif %}
+  </div>
+  <div id="write-{{ field_id }}" role="tabpanel" aria-labelledby="write-tab-{{ field_id }}">{{ field }}</div>
+  <div id="preview-{{ field_id }}" role="tabpanel" aria-labelledby="preview-tab-{{ field_id }}" tabindex="0" aria-live="polite" hidden></div>
+  {% if attachments %}
+  <div data-file-tray class="px-2 pb-2" hidden>
+    <p data-file-count class="text-sm text-gray-700"></p>
+    <ul data-file-list class="mt-2 flex flex-wrap gap-3" aria-label="Files to attach"></ul>
+    <template data-file-item>
+      <li class="relative w-28 text-sm">
+        <span data-file-thumb class="flex h-20 w-28 items-center justify-center overflow-hidden border border-gray-300 bg-stone-100 font-bold text-gray-700 [&_img]:h-full [&_img]:w-full [&_img]:object-cover"></span>
+        <span data-file-name class="block truncate"></span>
+        <span data-file-size class="block text-gray-700"></span>
+        {# Read by the forum as the image's alt text, one per file in order; a PDF sends an empty one. #}
+        <input data-file-description type="text" name="attachment_description" maxlength="200" placeholder="Describe it"
+               class="mt-1 w-28 border-gray-400 px-1 py-0 text-sm">
+        <button type="button" data-file-remove class="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border border-gray-500 bg-white leading-none hover:bg-stone-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">×</button>
+      </li>
+    </template>
+  </div>
+  {% endif %}
+  <div id="linked-{{ field_id }}" hx-get="{% url 'forum:record-preview' %}" hx-trigger="load, forum-links delay:300ms" hx-vals='js:{content: forumLinks("{{ field_id }}")}' hx-sync="this:replace"></div>
+  {# Always in the page, also when empty, so screen readers announce what it says. #}
+  <p data-editor-status role="status" class="px-2 pb-1 text-sm text-gray-700 empty:pb-0 data-[error]:font-bold data-[error]:text-red-700"{% if attachments.form.files %} data-error>Files are not kept when the form comes back with an error: attach them again.{% else %}>{% endif %}</p>
+  <div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-blue-50/90 p-2 text-center font-bold group-data-[drop]/editor:flex" aria-hidden="true">{% if attachments %}Drop images or PDFs to attach them{% else %}Files can be added to new topics and replies{% endif %}</div>
+  <div class="border-t border-gray-300 bg-blue-50 p-2" data-needs-js hidden>
+    {% include "forum/_record_picker.html" with prefix="insert-"|add:field_id mode="insert" target=field_id label="Link a GCD record" %}
+  </div>
+</div>
+<p class="text-sm text-gray-700"><span id="{{ field.auto_id }}_helptext">{{ field.help_text }}</span>{% if attachments %} <span id="files-help-{{ field_id }}">{{ attachments.help_text }} Describe each image for readers who cannot see it.</span>{% endif %}</p>
+{% if attachments %}{{ attachments.errors }}{% endif %}
+{% endwith %}

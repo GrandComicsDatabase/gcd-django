@@ -1,0 +1,64 @@
+{% load forum_tags %}
+{# The other actions on a post; on the first post, also the actions on the topic. #}
+<details class="relative" data-menu>
+  <summary class="btn-blue-editing inline-block m-0 list-none cursor-pointer" onmousedown="event.preventDefault()" title="More actions" aria-label="More actions on the post by {{ post.author|display_name }}">⋯</summary>
+  <div class="absolute right-0 z-10 mt-1 w-64 border border-gray-400 bg-white py-1 text-left shadow-xl">
+    {% if can_reply %}<button type="button" data-needs-js hidden class="block [&[hidden]]:hidden w-full px-3 py-1 text-left hover:bg-blue-50" onmousedown="event.preventDefault()" onclick="this.closest('details').open = false; quotePost({{ post.pk }}, {{ post.root.pk|default:post.pk }}, '{{ post.author|display_name|escapejs }}')" title="Quote the selected text, or the whole post">Quote</button>{% endif %}
+    {% if can_accept and post.pk != first_post_id %}
+    <form method="post" action="{% url 'forum:post-answer' post.pk %}">{% csrf_token %}<button class="block w-full px-3 py-1 text-left hover:bg-blue-50">{% if discussion.answer_id == post.pk %}Unmark the answer{% else %}Accept as the answer{% endif %}</button></form>
+    {% endif %}
+    {% if user == post.author and can_post or group_moderator %}<a class="block px-3 py-1 hover:bg-blue-50 link-with-text-color hover:no-underline" href="{% url 'forum:post-edit' post.pk %}">Edit</a>{% endif %}
+    {% if post.pk == first_post_id %}
+      {% if can_moderate %}
+      <div class="mt-1 border-t border-gray-200 pt-1">
+        {% if can_edit_topic %}
+        <a class="block px-3 py-1 hover:bg-blue-50 link-with-text-color hover:no-underline" href="{% url 'forum:discussion-edit' discussion.slug %}">Edit title and records</a>
+        {% if move_form.fields.category.queryset.exists %}
+        <details>
+          <summary class="cursor-pointer px-3 py-1 hover:bg-blue-50">Move to another group…</summary>
+          <form method="post" action="{% url 'forum:discussion-move' discussion.slug %}" class="flex gap-1 px-3 pb-1">
+            {% csrf_token %}
+            <label for="{{ move_form.category.id_for_label }}" class="sr-only">Group</label>{{ move_form.category }}<button class="btn-blue-editing m-0">Move</button>
+          </form>
+        </details>
+        {% endif %}
+        {% endif %}
+        {% if group_moderator %}
+        <form method="post" action="{% url 'forum:discussion-moderate' discussion.slug %}">
+          {% csrf_token %}
+          <button class="block w-full px-3 py-1 text-left hover:bg-blue-50" name="action" value="{% if discussion.is_pinned %}unpin{% else %}pin{% endif %}">{% if discussion.is_pinned %}Unpin the topic{% else %}Pin the topic{% endif %}</button>
+          <button class="block w-full px-3 py-1 text-left hover:bg-blue-50" name="action" value="{% if discussion.is_locked %}reopen{% else %}close{% endif %}">{% if discussion.is_locked %}Reopen the topic{% else %}Close the topic{% endif %}</button>
+        </form>
+        <details>
+          <summary class="cursor-pointer px-3 py-1 hover:bg-blue-50">Close as a duplicate…</summary>
+          <form method="post" action="{% url 'forum:discussion-duplicate' discussion.slug %}" class="px-3 pb-1">
+            {% csrf_token %}
+            <label for="duplicate-of" class="sr-only">Link to the original topic</label>
+            <input id="duplicate-of" name="original" required placeholder="Link to the original topic" class="w-full border-gray-400 px-1">
+            <button class="btn-blue-editing m-0 mt-1">Close as duplicate</button>
+          </form>
+        </details>
+        {% endif %}
+        <form method="post" action="{% url 'forum:discussion-delete' discussion.slug %}" onsubmit="return confirm('Remove this topic?');">
+          {% csrf_token %}<button class="block w-full px-3 py-1 text-left hover:bg-blue-50">Remove the topic</button>
+        </form>
+      </div>
+      {% endif %}
+    {% elif user == post.author or group_moderator %}
+    <form method="post" action="{% url 'forum:post-delete' post.pk %}" hx-post="{% url 'forum:post-delete' post.pk %}" hx-confirm="Remove this post?">
+      {% csrf_token %}<button class="block w-full px-3 py-1 text-left hover:bg-blue-50">Remove</button>
+    </form>
+    {% endif %}
+    {% if user != post.author %}
+    <details class="mt-1 border-t border-gray-200 pt-1">
+      <summary class="cursor-pointer px-3 py-1 hover:bg-blue-50">{% if post.pk == first_post_id %}Report the topic…{% else %}Report…{% endif %}</summary>
+      <form method="post" action="{% if post.pk == first_post_id %}{% url 'forum:report' 'discussion' discussion.pk %}{% else %}{% url 'forum:report' 'post' post.pk %}{% endif %}" class="px-3 pb-1">
+        {% csrf_token %}
+        <label class="text-sm" for="report-{{ post.pk }}">What is wrong with it?</label>
+        <textarea id="report-{{ post.pk }}" name="reason" maxlength="1000" required rows="3" class="w-full border-gray-400"></textarea>
+        <button class="btn-blue-editing m-0">Send to the moderators</button>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+</details>

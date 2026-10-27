@@ -1,0 +1,53 @@
+{% extends "forum/base.html" %}
+{% load forum_tags %}
+{% block title %}GCD :: Forum :: {% if object %}Edit{% else %}New topic{% endif %}{% endblock %}
+{% block forum_content %}
+<div class="max-w-3xl">
+  <h2 class="font-bold text-xl">{% if object.title %}Edit “{{ object.title }}”{% elif object %}Edit post #{{ object.pk }}{% else %}New topic{% endif %}</h2>
+  <form method="post" class="mt-2"{% if form.attachments %} enctype="multipart/form-data"{% endif %}{% if not object %} autocomplete="off" data-fresh-form{% endif %}>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
+    {% for field in form.visible_fields %}{% if field.name|slice:":5" != "poll_" and field.name != "attachments" %}
+    <div class="mt-2">
+      {% if field.name == 'records' %}
+      <div class="border border-gray-500 bg-blue-50 p-2 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+        <div data-needs-js hidden>{% include "forum/_record_picker.html" with prefix="record" mode="links" target=field.id_for_label label=field.label %}</div>
+        {# The links the search fills in; with scripts, shown only to fix a line that is not a record link. #}
+        <div class="mt-1"{% if not field.errors %} data-hide-with-js{% endif %}><label for="{{ field.id_for_label }}" class="text-sm">Record links, one per line</label>{{ field }}</div>
+        <div id="record-preview" hx-get="{% url 'forum:record-preview' %}" hx-trigger="load, change from:#{{ field.id_for_label }}" hx-include="#{{ field.id_for_label }}" aria-live="polite"></div>
+      </div>
+      <p class="text-sm text-gray-700">The topic is linked to the records you pick when you save; to unlink one, use × next to it on the topic page.</p>
+      {% elif field.name == 'content' %}
+      <label for="{{ field.id_for_label }}" class="block font-bold">{{ field.label }}</label>
+      {% include "forum/_editor.html" with field=field attachments=form.attachments %}
+      {% else %}
+      <label for="{{ field.id_for_label }}" class="block font-bold">{{ field.label }}</label>
+      {{ field }}
+      {% endif %}
+      {% if field.name == 'title' and not object %}<div id="similar-topics" aria-live="polite"></div>{% endif %}
+      {% if field.help_text and field.name != 'content' %}<p class="text-sm text-gray-700">{{ field.help_text }}</p>{% endif %}
+      {{ field.errors }}
+    </div>
+    {% endif %}{% endfor %}
+    {% if form.poll_question %}
+    <details class="mt-2"{% if form.poll_question.value or form.poll_options.errors or form.poll_question.errors %} open{% endif %}>
+      <summary class="cursor-pointer font-bold">Add a poll</summary>
+      <p class="text-sm text-gray-700">Everyone who can post in the group can vote, and change their vote until the poll closes.</p>
+      {% for field in form.visible_fields %}{% if field.name|slice:":5" == "poll_" %}
+      <div class="mt-1">
+        {% if field.name == 'poll_multiple' %}<label class="flex items-center gap-2">{{ field }} {{ field.label }}</label>
+        {% else %}<label for="{{ field.id_for_label }}" class="block">{{ field.label }}</label>{{ field }}{% endif %}
+        {% if field.help_text %}<p class="text-sm text-gray-700">{{ field.help_text }}</p>{% endif %}
+        {{ field.errors }}
+      </div>
+      {% endif %}{% endfor %}
+    </details>
+    {% endif %}
+    <div class="flex justify-end gap-2 mt-2">
+      <a class="btn-blue-editing inline-block" href="{% if object.get_absolute_url %}{{ object.get_absolute_url }}{% elif object.discussion %}{{ object.discussion.get_absolute_url }}{% else %}{% url 'forum:index' %}{% endif %}">Cancel</a>
+      <button class="btn btn-blue">{% if object %}Save{% else %}Publish topic{% endif %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
