@@ -6,7 +6,7 @@ import pytest
 import yaml
 from django.core.exceptions import ValidationError
 
-from apps.oi.sequence_validation import validate_sequence_type_fields
+from apps.oi.forms.story import validate_sequence_type_fields
 
 TYPES = yaml.safe_load((Path(__file__).parents[2] / 'gcd/fixtures/storytype.yaml').read_text())
 TYPE_IDS = [entry['pk'] for entry in TYPES]
@@ -79,7 +79,7 @@ def test_each_type_logo_categories(feature_type, any_language):
 
 @pytest.mark.parametrize('type_id', TYPE_IDS, ids=TYPE_NAMES)
 def test_each_type_missing_page_count_rule(type_id):
-    from apps.oi.sequence_validation import validate_sequence_page_count
+    from apps.oi.forms.story import validate_sequence_page_count
     data = dict(type=SimpleNamespace(id=type_id), page_count=None, page_count_uncertain=False)
     if type_id == 11:
         validate_sequence_page_count(data)
