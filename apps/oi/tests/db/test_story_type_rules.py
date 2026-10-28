@@ -1,0 +1,711 @@
+# -*- coding: utf-8 -*-
+"""Sequence type rules from the wiki in StoryRevisionForm.clean()."""
+
+import json
+
+import mock
+import pytest
+
+from django import forms
+
+from crispy_forms.layout import HTML
+
+from apps.gcd.models import Creator, CreatorNameDetail, CreditType, \
+                            Feature, FeatureLogo, FeatureNameDetail, \
+                            FeatureType, Story, StoryType
+from apps.stddata.models import Script
+from apps.oi.forms.story import StoryCreditRevisionForm, StoryRevisionForm, \
+                                _hidden_rows, format_notes
+from apps.oi.models import StoryCreditRevision, StoryRevision
+from apps.oi.templatetags.compare import _few_about_comics, show_type_notes
+from apps.oi.views import _cover_order_error, _covers_out_of_order
+from apps.select.views import FeatureLogoAutocomplete, \
+                              FeatureNameAutocomplete, StoryArcAutocomplete
+
+LETTERS_PAGE = 'letters page'
+BLANK_PAGE = 'blank page(s)'
+INSERT = 'insert or dust jacket'
+
+
+def _clean(user, type_name, instance=None, data=None,
+           form_class=StoryRevisionForm, **values):
+    """Run clean() on cleaned data of an empty sequence of the type."""
+    cleaned_data = {
+        'type': StoryType.objects.get(name=type_name),
+        'title': '', 'title_inferred': False, 'feature': '',
+        'feature_name': [], 'feature_logo': [], 'story_arc': [],
+        'genre': [], 'keywords': '', 'keyword_objects': [],
+        'script': '', 'pencils': '', 'inks': '', 'colors': '',
+        'letters': '', 'editing': '',
+        'no_script': False, 'no_pencils': False, 'no_inks': False,
+        'no_colors': False, 'no_letters': False, 'no_editing': False,
+        'characters': '', 'appearing_characters': [], 'group_name': None,
+        'group_members': [], 'job_number': '', 'reprint_notes': '',
+        'synopsis': '', 'notes': '', 'comments': '',
+        'page_count': 1, 'page_count_uncertain': False,
+    }
+    cleaned_data.update(values)
+    form_data = {'story_credit_revisions-TOTAL_FORMS': '0'}
+    form_data.update(data or {})
+    form = form_class(form_data, user=user,
+                      instance=instance or StoryRevision())
+    form._errors = {}
+    form.cleaned_data = cleaned_data
+    return form.clean()
+
+
+def _edit_rev(story, changeset, type_name, **values):
+    """Approve the story with these values and open an edit revision."""
+    Story.objects.filter(pk=story.pk).update(
+        type=StoryType.objects.get(name=type_name), **values)
+    return StoryRevision.clone(data_object=Story.objects.get(pk=story.pk),
+                               changeset=changeset)
+
+
+def _rejected(user, type_name, wiki_page, **kwargs):
+    """Assert clean() rejects the sequence citing the wiki page."""
+    with pytest.raises(forms.ValidationError) as error:
+        _clean(user, type_name, **kwargs)
+    assert wiki_page in str(error.value)
+
+
+@pytest.mark.django_db
+def test_letters_page_needs_script_or_no_script(any_indexer):
+    """A new letters page needs a script entry or No Script."""
+    _rejected(any_indexer, LETTERS_PAGE, 'Letters and Fan Art')
+    assert _clean(any_indexer, LETTERS_PAGE, no_script=True)
+    assert _clean(any_indexer, LETTERS_PAGE,
+                  script='Julius Schwartz (response)')
+    assert _clean(any_indexer, LETTERS_PAGE, data={
+      'story_credit_revisions-TOTAL_FORMS': '1',
+      'story_credit_revisions-0-credit_type': '1'})
+
+
+@pytest.mark.django_db
+def test_letters_page_without_script_stays_editable(any_added_story,
+                                                    any_editing_changeset,
+                                                    any_indexer):
+    """An approved letters page without script can still be corrected."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, LETTERS_PAGE,
+                    script='', no_script=False)
+    assert _clean(any_indexer, LETTERS_PAGE, instance=rev,
+                  notes='corrected elsewhere')
+
+
+@pytest.mark.django_db
+def test_letters_page_script_cannot_be_removed(any_added_story,
+                                               any_editing_changeset,
+                                               any_indexer):
+    """The script entry of an approved letters page cannot be dropped."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, LETTERS_PAGE,
+                    script='Julius Schwartz', no_script=False)
+    _rejected(any_indexer, LETTERS_PAGE, 'Letters and Fan Art',
+              instance=rev)
+
+
+@pytest.mark.django_db
+def test_type_changed_to_letters_page_needs_script(any_added_story,
+                                                   any_editing_changeset,
+                                                   any_indexer):
+    """A sequence becoming a letters page needs a script entry."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story',
+                    script='', no_script=True)
+    _rejected(any_indexer, LETTERS_PAGE, 'Letters and Fan Art',
+              instance=rev)
+
+
+NO_CREDITS = {'no_script': True, 'no_pencils': True, 'no_inks': True,
+              'no_colors': True, 'no_letters': True}
+
+
+@pytest.mark.django_db
+def test_blank_page_has_no_content(any_indexer):
+    """A new blank page has no credits, characters or synopsis."""
+    assert _clean(any_indexer, BLANK_PAGE, **NO_CREDITS)
+    _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content',
+              pencils='?')
+    _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content', data={
+      'story_credit_revisions-TOTAL_FORMS': '1',
+      'story_credit_revisions-0-credit_type': '2'})
+    _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content',
+              characters='Superman')
+    _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content', data={
+      'story_character_revisions-TOTAL_FORMS': '1',
+      'story_character_revisions-0-character': '1'})
+    _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content',
+              synopsis='Nothing happens.')
+
+
+@pytest.mark.django_db
+def test_blank_page_deleted_credit_row_is_ignored(any_indexer):
+    """A credit row marked for deletion does not count."""
+    assert _clean(any_indexer, BLANK_PAGE, data={
+      'story_credit_revisions-TOTAL_FORMS': '1',
+      'story_credit_revisions-0-credit_type': '2',
+      'story_credit_revisions-0-DELETE': 'on'}, **NO_CREDITS)
+
+
+@pytest.mark.django_db
+def test_blank_page_with_old_content_stays_editable(any_added_story,
+                                                    any_editing_changeset,
+                                                    any_indexer):
+    """An approved blank page keeps its content, but cannot get more."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, BLANK_PAGE,
+                    pencils='? (logo)', synopsis='', characters='',
+                    feature='', genre='')
+    assert _clean(any_indexer, BLANK_PAGE, instance=rev, pencils='? (logo)',
+                  notes='corrected elsewhere')
+    _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content',
+              instance=rev, pencils='? (logo)', synopsis='Nothing happens.')
+
+
+@pytest.mark.django_db
+def test_type_changed_to_blank_page_drops_content(any_added_story,
+                                                  any_editing_changeset,
+                                                  any_indexer):
+    """A sequence becoming a blank page must drop its credits."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story')
+    _rejected(any_indexer, BLANK_PAGE, 'Empty page with no content',
+              instance=rev, pencils='Test Person Two')
+
+
+@pytest.mark.django_db
+def test_new_blank_page_needs_no_credit_boxes(any_added_story,
+                                              any_editing_changeset,
+                                              any_indexer):
+    """No Script to No Letters on a new blank page or a type change."""
+    _rejected(any_indexer, BLANK_PAGE, 'Formatting Documentation')
+    _rejected(any_indexer, BLANK_PAGE, 'Formatting Documentation',
+              **dict(NO_CREDITS, no_letters=False))
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story')
+    _rejected(any_indexer, BLANK_PAGE, 'Formatting Documentation',
+              instance=rev)
+    assert _clean(any_indexer, BLANK_PAGE, instance=rev, **NO_CREDITS)
+
+
+@pytest.mark.django_db
+def test_old_blank_page_without_no_credit_boxes_stays_editable(
+      any_added_story, any_editing_changeset, any_indexer):
+    """An approved blank page without the No boxes can still be edited."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, BLANK_PAGE)
+    assert _clean(any_indexer, BLANK_PAGE, instance=rev,
+                  notes='corrected elsewhere')
+
+
+def _hidden_names(type_name):
+    """The names of the form rows the type hides."""
+    type_id = StoryType.objects.get(name=type_name).id
+    return {name for rows, shown_by in _hidden_rows().get(type_id, [])
+            for name in rows}
+
+
+@pytest.mark.django_db
+def test_rows_hidden_by_type():
+    """Rows of the Not applicable and Forbidden fields of a type."""
+    assert _hidden_names('comic story') == set()
+    assert _hidden_names('cover') == {'feature_logo'}
+    soo = _hidden_names('statement of ownership')
+    assert {'feature', 'feature_name', 'feature_logo', 'genre'} <= soo
+    assert 'title' not in soo
+    blank = _hidden_names(BLANK_PAGE)
+    assert {'title', 'first_line', 'feature', 'story_arc', 'genre',
+            'job_number', 'script', 'editing', 'story_credit_revisions',
+            'universe', 'characters', 'story_character_revisions',
+            'story_group_revisions', 'synopsis', 'reprint_notes',
+            'keywords'} <= blank
+    assert not {'type', 'page_count', 'page_count_uncertain', 'no_script',
+                'no_editing', 'notes', 'comments'} & blank
+
+
+def _html_rows(layout):
+    """The HTML snippets of a crispy layout, also inside tabs."""
+    for field in layout.fields:
+        if isinstance(field, HTML):
+            yield field.html
+        elif hasattr(field, 'fields'):
+            yield from _html_rows(field)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('use_tabs', [False, True])
+def test_hidden_rows_exist_in_the_form(any_indexer, use_tabs):
+    """Each hidden row is a field, a formset or a marked row of the form."""
+    any_indexer.indexer.use_tabs = use_tabs
+    form = StoryRevisionForm(user=any_indexer, instance=StoryRevision())
+    html = ''.join(_html_rows(form.helper.layout))
+    formsets = ['story_credit_revisions', 'story_character_revisions',
+                'story_group_revisions']
+    for groups in _hidden_rows().values():
+        for rows, shown_by in groups:
+            assert set(shown_by) <= set(rows)
+            for name in rows:
+                # the characters heading is not in the tab layout
+                assert name in form.fields or name in formsets or \
+                    'name="%s"' % name in html or \
+                    'data-field="%s"' % name in html or \
+                    (use_tabs and name == 'characters_heading'), name
+
+
+@pytest.mark.django_db
+def test_type_field_tells_the_approved_type(any_added_story,
+                                            any_editing_changeset,
+                                            any_indexer):
+    """The type field carries what storyrevision_form_utils.js needs."""
+    attrs = StoryRevisionForm(user=any_indexer, instance=StoryRevision())\
+        .fields['type'].widget.attrs
+    assert attrs['data-approved-type'] == ''
+    assert attrs['data-blank-type'] == \
+        StoryType.objects.get(name=BLANK_PAGE).id
+    assert json.loads(attrs['data-hidden-rows']) == \
+        json.loads(json.dumps(_hidden_rows()))
+    rev = _edit_rev(any_added_story, any_editing_changeset, BLANK_PAGE)
+    attrs = StoryRevisionForm(user=any_indexer, instance=rev)\
+        .fields['type'].widget.attrs
+    assert attrs['data-approved-type'] == \
+        StoryType.objects.get(name=BLANK_PAGE).id
+
+
+@pytest.mark.django_db
+def test_insert_needs_page_count_or_uncertain(any_indexer):
+    """A new insert needs a page count or Page count uncertain."""
+    _rejected(any_indexer, INSERT, 'Page Count', page_count=None)
+    assert _clean(any_indexer, INSERT, page_count=None,
+                  page_count_uncertain=True)
+    assert _clean(any_indexer, INSERT, page_count=4)
+
+
+@pytest.mark.django_db
+def test_insert_without_page_count_stays_editable(any_added_story,
+                                                  any_editing_changeset,
+                                                  any_indexer):
+    """An approved insert without page count can still be corrected."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, INSERT,
+                    page_count=None, page_count_uncertain=False)
+    assert _clean(any_indexer, INSERT, instance=rev, page_count=None,
+                  notes='corrected elsewhere')
+
+
+@pytest.mark.django_db
+def test_type_changed_to_insert_needs_page_count(any_added_story,
+                                                 any_editing_changeset,
+                                                 any_indexer):
+    """A sequence becoming an insert keeps the page count rule."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story')
+    _rejected(any_indexer, INSERT, 'Page Count', instance=rev,
+              page_count=None)
+
+
+TEXT_STORY = 'text story'
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('field, value, wiki', [
+    ('script', 'n/a', 'Credits'),
+    ('pencils', 'Joe Kubert; none', 'Credits'),
+    ('inks', 'Joe Kubert;Dick Giordano', 'Credits'),
+    ('colors', 'Joe Kubert?', 'Credits'),
+    ('letters', 'Typeset', 'Style Guide'),
+    ('editing', 'Julius Schwartz, Jr.', 'Style Guide'),
+    ('characters', 'Martin Luther King Jr', 'Style Guide'),
+    ('title', 'Wait . . . what', 'Style Guide'),
+    ('title', 'When Titans Clash...the End', 'Style Guide')])
+def test_format_rules_refuse_new_values(any_indexer, field, value, wiki):
+    """Values breaking a format rule of the wiki are refused."""
+    _rejected(any_indexer, TEXT_STORY, 'Wiki "%s"' % wiki, **{field: value})
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('field, value', [
+    ('script', '?'), ('script', 'Nonesuch Smith'),
+    ('pencils', 'Joe Kubert; Dick Giordano'), ('colors', 'Joe Kubert ?'),
+    ('letters', 'typeset'), ('editing', 'Julius Schwartz Jr.'),
+    ('characters', 'Martin Luther King Jr.'),
+    ('title', 'It was a dark and stormy night...'),
+    ('title', '...And Then There Were None'), ('title', 'Wait... What')])
+def test_format_rules_accept_correct_values(any_indexer, field, value):
+    """Values following the format rules are accepted."""
+    assert _clean(any_indexer, TEXT_STORY, **{field: value})
+
+
+@pytest.mark.django_db
+def test_format_rules_skip_old_values(any_added_story, any_editing_changeset,
+                                      any_indexer):
+    """Approved values stay editable, new values are checked."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, TEXT_STORY,
+                    script='n/a', title='Wait . . . what')
+    assert _clean(any_indexer, TEXT_STORY, instance=rev, script='n/a',
+                  title='Wait . . . what', notes='corrected elsewhere')
+    _rejected(any_indexer, TEXT_STORY, 'Wiki "Credits"', instance=rev,
+              script='n/a', pencils='none')
+
+
+def _clean_credit(instance=None, changed=True, **values):
+    """Run clean() of the credit form on these cleaned values."""
+    form = StoryCreditRevisionForm({},
+                                   instance=instance or StoryCreditRevision())
+    form.has_changed = lambda: changed
+    form.cleaned_data = {
+        'credited_as': '', 'is_credited': False, 'signed_as': '',
+        'is_signed': False, 'signature': None, 'credit_name': '',
+        'sourced_by': '', 'is_sourced': False}
+    form.cleaned_data.update(values)
+    form.clean()
+
+
+@pytest.mark.django_db
+def test_sourced_credit_needs_sourced_by():
+    """A new or changed sourced credit needs its source, an old one not."""
+    with pytest.raises(forms.ValidationError) as error:
+        _clean_credit(is_sourced=True)
+    assert 'Wiki "Credits", Sourced' in str(error.value)
+    _clean_credit(is_sourced=True, sourced_by='Who\'s Who #3')
+    _clean_credit(instance=StoryCreditRevision(pk=1), changed=False,
+                  is_sourced=True)
+
+
+LONG_SYNOPSIS = 'Things happen. ' * 41
+
+
+@pytest.mark.django_db
+def test_long_synopsis_refused_also_when_copied(any_added_story,
+                                                any_editing_changeset,
+                                                any_indexer):
+    """A long synopsis already in a new revision (a copy) is refused."""
+    copy = StoryRevision(synopsis=LONG_SYNOPSIS)
+    with pytest.raises(forms.ValidationError) as error:
+        _clean(any_indexer, TEXT_STORY, instance=copy,
+               synopsis=LONG_SYNOPSIS.strip())
+    assert '600 characters' in str(error.value)
+    rev = _edit_rev(any_added_story, any_editing_changeset, TEXT_STORY,
+                    synopsis=LONG_SYNOPSIS)
+    assert _clean(any_indexer, TEXT_STORY, instance=rev,
+                  synopsis=LONG_SYNOPSIS.strip())
+
+
+@pytest.mark.django_db
+def test_new_filler_refused(any_added_story, any_editing_changeset,
+                            any_indexer):
+    """A new filler is refused, an approved one stays editable."""
+    _rejected(any_indexer, 'filler', 'Filler (types no longer used)')
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'filler')
+    assert _clean(any_indexer, 'filler', instance=rev)
+
+
+class NoAboutComicsForm(StoryRevisionForm):
+    series_has_about_comics = False
+
+
+class AboutComicsForm(StoryRevisionForm):
+    series_has_about_comics = True
+
+
+@pytest.mark.django_db
+def test_new_about_comics_needs_series_flag(any_added_story, any_indexer):
+    """About comics needs "has about comics", unless already approved."""
+    _rejected(any_indexer, 'about comics', 'Wiki "About Comics"',
+              form_class=NoAboutComicsForm)
+    assert _clean(any_indexer, 'about comics', form_class=AboutComicsForm)
+    # a revision of an approved about comics sequence (cloning one needs its
+    # bibliographic entry, which the clean() check does not use)
+    Story.objects.filter(pk=any_added_story.pk).update(
+        type=StoryType.objects.get(name='about comics'))
+    rev = StoryRevision(story=Story.objects.get(pk=any_added_story.pk))
+    assert _clean(any_indexer, 'about comics', instance=rev,
+                  form_class=NoAboutComicsForm)
+
+
+COVER, STORY = 6, 19
+
+
+@pytest.mark.parametrize('types', [
+    [], [STORY, STORY], [COVER], [COVER, STORY, STORY],
+    [COVER, COVER, STORY], [COVER, STORY, COVER]])
+def test_covers_in_wiki_order(types):
+    """First cover, then a dust jacket cover or a final flip book cover."""
+    assert not _covers_out_of_order(types)
+
+
+@pytest.mark.parametrize('types', [
+    [STORY, COVER], [COVER, STORY, COVER, STORY],
+    [COVER, COVER, STORY, COVER]])
+def test_covers_out_of_wiki_order(types):
+    """Cover not first, second cover in the middle, three covers."""
+    assert _covers_out_of_order(types)
+
+
+def _issue_revision(types, approved_types=None):
+    """An issue revision mock with sequence types, and the approved ones."""
+    revision = mock.MagicMock()
+    stories = revision.active_stories.return_value.order_by.return_value
+    stories.values_list.return_value = types
+    if approved_types is None:
+        revision.issue = None
+    else:
+        approved = revision.issue.active_stories.return_value\
+                           .order_by.return_value
+        approved.values_list.return_value = approved_types
+    return revision
+
+
+def test_cover_order_error_cites_wiki():
+    """A new issue or a correct approved one gets the cover order error."""
+    assert 'Wiki "Type"' in _cover_order_error(
+      _issue_revision([STORY, COVER]))
+    assert 'Wiki "Type"' in _cover_order_error(
+      _issue_revision([STORY, COVER], [COVER, STORY]))
+    assert _cover_order_error(_issue_revision([COVER, STORY])) is None
+
+
+def test_cover_order_of_approved_issue_stays_editable():
+    """An approved issue with covers out of order can still be corrected."""
+    assert _cover_order_error(
+      _issue_revision([STORY, COVER], [STORY, COVER])) is None
+
+
+def _notes(type_id, synopsis='', reprint_notes='', has_links=False,
+           deleted=False):
+    """The type notes of a story revision mock of an added sequence."""
+    story = mock.MagicMock(type_id=type_id, synopsis=synopsis,
+                           reprint_notes=reprint_notes, deleted=deleted,
+                           story=None, **dict.fromkeys(TEXT_FIELDS, ''))
+    story.from_all_reprints.exists.return_value = has_links
+    return show_type_notes(story)
+
+
+TEXT_FIELDS = ['title', 'first_line', 'feature', 'script', 'pencils', 'inks',
+               'colors', 'letters', 'editing', 'job_number', 'characters',
+               'notes', 'keywords']
+
+
+def test_synopsis_note_on_types_without_plot():
+    """A synopsis on a promo gets a note, on a comic story not."""
+    assert 'Synopsis' in _notes(16, synopsis='Buy this!')
+    assert _notes(STORY, synopsis='Things happen.') == ''
+    assert _notes(16) == ''
+
+
+def test_cover_reprint_link_note():
+    """A cover reprint without reprint link or reprint notes gets a note."""
+    assert 'reprint link' in _notes(7)
+    assert _notes(7, has_links=True) == ''
+    assert _notes(7, reprint_notes='from Batman (DC, 1940 series) #1') == ''
+
+
+def test_no_type_notes_on_deleted_sequences():
+    """Deleted sequences get no notes."""
+    assert _notes(16, synopsis='Buy this!', deleted=True) == ''
+
+
+def _format_notes(type_id=STORY, **values):
+    """The format notes of a new sequence revision with these values."""
+    return ' '.join(format_notes(StoryRevision(type_id=type_id, **values)))
+
+
+@pytest.mark.parametrize('field, value, wiki', [
+    ('title', '"Clash of the Titans"', 'Style Guide'),
+    ('title', '...And Then There Were None', 'Style Guide'),
+    ('first_line', '«C\'était une nuit sombre...»', 'Title'),
+    ('feature', 'Batman/Superman', 'Feature'),
+    ('feature', 'Shadow, The; Batman', 'Feature'),
+    ('pencils', 'Joe Kubert, Alex Toth', 'Formatting Documentation'),
+    ('inks', 'Joe Kubert (signed) (painted)', 'Credits'),
+    ('script', 'Mike Esposito (as Micky Demeo)', 'Formatting Documentation'),
+    ('letters', 'C.C. Beck', 'Credits'),
+    ('pencils', 'Jack Kirby (pp 2-19)', 'Credits'),
+    ('pencils', 'Gene Colan (signed) [as Adam Austin]', 'Credits'),
+    ('colors', 'Joe Kubert (Painting)', 'Formatting Documentation'),
+    ('editing', 'Julius Schwartz (ME)', 'Editing'),
+    ('script', 'Joe Kubert; Unknown', 'Credits'),
+    ('characters', 'Superman, Batman', 'Character Appearances'),
+    ('characters', 'Superman (introduction; origin)',
+     'Character Appearances'),
+    ('pencils', 'Frank Giacoia (see notes)', 'Notes (Sequence)'),
+    ('characters', '? (photo, see notes)', 'Notes (Sequence)'),
+    ('characters', 'Superman (I, O)', 'Character Appearances'),
+    ('characters', 'Wildcat II', 'Character Appearances'),
+    ('characters', 'Gen. Thaddeus Ross', 'Style Guide'),
+    ('synopsis', 'Superman saves the day!', 'Style Guide'),
+    ('synopsis', 'Superman waits…', 'Style Guide'),
+    ('synopsis', 'Spidey saves the day.', 'Style Guide'),
+    ('reprint_notes', 'Superman (DC, 1939 series) #3', 'Reprints'),
+    ('reprint_notes', 'from Action Comics (DC, 1938 series) #6, in '
+     'Superman (DC, 1939 series) #3', 'Reprints'),
+    ('reprint_notes', 'in Superman (DC) #3', 'Reprints'),
+    ('reprint_notes', 'from Action Comics (DC, 1938 series) #6 [the first '
+     'two pages are redrawn and the last page is replaced by a new one]',
+     'Reprints'),
+    ('reprint_notes', 'from Krazy Kat daily (Hearst Syndicate) 14/02/1933',
+     'Style Guide'),
+    ('reprint_notes', 'in Daredevil (Marvel, 1998 series) Vol. 2 #1',
+     'Reprints'),
+    ('notes', 'Identification from the letters page.', 'Style Guide'),
+    ('notes', 'Writer unknown.', 'Style Guide'),
+    ('notes', 'Story continues in Avengers (Marvel) #56.', 'Style Guide'),
+    ('synopsis', 'Superman visits the U.S.A.', 'Style Guide'),
+    ('notes', 'Price raised to $1.00.', 'Style Guide'),
+    ('notes', 'Continued in issues #58 - 69.', 'Style Guide'),
+    ('job_number', 'X–1234', 'Style Guide'),
+    ('keywords', 'vehicles (cars and trucks)', 'Keywords'),
+    ('keywords', 'WWII', 'Style Guide')])
+def test_format_notes_on_new_values(field, value, wiki):
+    """Values that may break a format rule of the wiki get a note."""
+    assert 'wiki "%s"' % wiki in _format_notes(**{field: value})
+
+
+@pytest.mark.parametrize('field, value', [
+    ('title', 'It was a dark and stormy night...'),
+    ('title', '... And Then There Were None'),
+    ('feature', 'Batman / Superman'), ('feature', 'The Shadow'),
+    ('pencils', 'Jack Kirby (page 1, pages 20-22); Alex Toth (pages 2-19)'),
+    ('inks', 'Eliot R. Brown (photo, signed)'),
+    ('script', 'Gene Colan [as Adam Austin]'), ('letters', 'C. C. Beck'),
+    ('characters', 'Jimmy Olsen (origin, death)'),
+    ('characters', 'Justice Society of America [Superman [Clark Kent] '
+     '(Earth-2); Flash [Jay Garrick] (cameo)]'),
+    ('synopsis', 'The Human Torch visits the Inhuman Great Refuge.'),
+    ('reprint_notes', 'from Warlord (DC, 1976 series) #3-21'),
+    ('reprint_notes', 'from Calvin and Hobbes daily (Universal Press '
+     'Syndicate) 1985-11-18 - 1988-10-01 [reformatted]'),
+    ('reprint_notes', 'in Spurious Comic (Wacky Comics, 1985 series) #v2#5'),
+    ('reprint_notes', 'from ? [unknown American Comics Group magazine]'),
+    ('notes', 'Miscredited to Joe Sinnott. Obvious by style.'),
+    ('keywords', 'World War II; vehicles')])
+def test_format_notes_accept_correct_values(field, value):
+    """Values following the format rules get no note."""
+    assert _format_notes(**{field: value}) == ''
+
+
+def test_see_notes_needs_notes():
+    """A "(see notes)" entry gets no note when Notes says more."""
+    assert _format_notes(pencils='Frank Giacoia (see notes)',
+                         notes='Miscredited to Joe Sinnott.') == ''
+
+
+def test_keywords_in_other_fields():
+    """A keyword repeating the title, feature, genre or a character."""
+    for field in ['title', 'feature', 'genre', 'characters']:
+        assert 'wiki "Keywords"' in _format_notes(
+          keywords='robots; Batman', **{field: 'Batman'})
+    assert _format_notes(keywords='robots', title='Batman') == ''
+
+
+@pytest.mark.django_db
+def test_credit_in_text_and_record(any_added_story, any_editing_changeset):
+    """A text credit naming the creator of a credit record of the field."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, 'comic story',
+                    pencils='')
+    creator = Creator.objects.create(
+      gcd_official_name='Joseph Kubert', birth_province='', birth_city='',
+      death_province='', death_city='', bio='', notes='')
+    script, _ = Script.objects.get_or_create(
+      code='Tst', defaults={'number': 999, 'name': 'Test Script'})
+    official = CreatorNameDetail.objects.create(
+      name='Joseph Kubert', creator=creator, is_official_name=True,
+      in_script=script)
+    CreatorNameDetail.objects.create(name='Joe Kubert', creator=creator,
+                                     in_script=script)
+    pencils, _ = CreditType.objects.get_or_create(
+      id=2, defaults={'name': 'pencils', 'sort_code': 2})
+    StoryCreditRevision.objects.create(
+      changeset=any_editing_changeset, story_revision=rev, creator=official,
+      credit_type=pencils)
+    rev.pencils = 'Joe Kubert ?'
+    assert 'Missing Creator Record' in ' '.join(format_notes(rev))
+    rev.pencils = 'Alex Toth'
+    assert 'Missing Creator Record' not in ' '.join(format_notes(rev))
+    rev.inks = 'Joe Kubert'
+    assert 'Missing Creator Record' not in ' '.join(format_notes(rev))
+
+
+def test_format_notes_letters_page_fan_art():
+    """Fan-art characters of letters pages are separated by commas."""
+    fan_art = 'Big Boy (fan art), Hawkman (fan art), et al.'
+    assert 'semicolon' in _format_notes(characters=fan_art)
+    assert _format_notes(type_id=12, characters=fan_art) == ''
+    assert 'semicolon' in _format_notes(type_id=12, pencils='A, B')
+
+
+@pytest.mark.django_db
+def test_format_notes_skip_old_values(any_added_story, any_editing_changeset):
+    """Approved values get no note, new or changed values do."""
+    rev = _edit_rev(any_added_story, any_editing_changeset, TEXT_STORY,
+                    synopsis='Superman saves the day!', notes='Writer: ?')
+    assert format_notes(rev) == []
+    rev.synopsis = 'Superman saves the day again!'
+    assert ['Synopsis'] == [note.split(':')[0][len('Note on '):]
+                            for note in format_notes(rev)]
+
+
+def _sequences(*types, comics=False, in_change=True):
+    """A cover revision mock in an issue with sequences of these types."""
+    story = mock.MagicMock(type_id=COVER, story_id=1)
+    sequences = [mock.MagicMock(id=i + 1, type_id=type_id)
+                 for i, type_id in enumerate(types)]
+    if in_change:
+        issue_revision = mock.MagicMock()
+        issue_revision.series.is_comics_publication = comics
+        issue_revision.active_stories.return_value = sequences
+        story.changeset.issuerevisions.filter.return_value = [issue_revision]
+    else:
+        story.changeset.issuerevisions.filter.return_value = []
+        story.issue.series.is_comics_publication = comics
+        story.issue.active_stories.return_value = sequences
+    return story
+
+
+def test_about_comics_share_for_non_comics_covers():
+    """Covers in non-comics issues with less than half About Comics."""
+    assert _few_about_comics(_sequences(COVER, 27, 19))
+    assert not _few_about_comics(_sequences(COVER, 27, 27))
+    assert not _few_about_comics(_sequences(COVER, 27, 19, comics=True))
+    # a sequence change: the approved issue, with the edited sequence (the
+    # first one) as changed
+    assert _few_about_comics(_sequences(27, 27, 19, in_change=False))
+    assert not _few_about_comics(_sequences(19, 27, 27, in_change=False))
+
+
+def _choices(view_class, type_id):
+    """The queryset an autocomplete offers in a sequence of the type."""
+    view = view_class()
+    view.forwarded = {'type': str(type_id)}
+    view.q = ''
+    return view.get_queryset()
+
+
+def _feature_logo(name, feature_type_id, language):
+    """A feature logo of a new feature with the given feature type."""
+    feature_type, _ = FeatureType.objects.get_or_create(
+      id=feature_type_id, defaults={'name': name})
+    feature = Feature.objects.create(
+      name=name, sort_name=name, genre='', language=language,
+      feature_type=feature_type, notes='')
+    feature_name = FeatureNameDetail.objects.create(
+      feature=feature, name=name, sort_name=name, is_official_name=True)
+    logo = FeatureLogo.objects.create(name=name, sort_name=name, notes='')
+    logo.feature.add(feature)
+    logo.feature_name.add(feature_name)
+    return logo
+
+
+@pytest.mark.django_db
+def test_no_features_offered_for_types_without_feature():
+    """No feature names or logos are offered for a blank page."""
+    assert _choices(FeatureNameAutocomplete, 24).query.is_empty()
+    assert _choices(FeatureLogoAutocomplete, 24).query.is_empty()
+    assert not _choices(FeatureNameAutocomplete, STORY).query.is_empty()
+
+
+@pytest.mark.django_db
+def test_in_house_logos_only_for_in_house_columns(any_language):
+    """In-house column logos are offered only for in-house columns."""
+    story_logo = _feature_logo('Batman', 1, any_language)
+    in_house_logo = _feature_logo('DC Nation', 4, any_language)
+    assert list(_choices(FeatureLogoAutocomplete, 29)) == [in_house_logo]
+    assert list(_choices(FeatureLogoAutocomplete, STORY)) == [story_logo]
+
+
+@pytest.mark.django_db
+def test_story_arcs_offered_only_for_comic_stories():
+    """Story arcs are offered only for comic stories."""
+    assert _choices(StoryArcAutocomplete, 21).query.is_empty()
+    assert not _choices(StoryArcAutocomplete, STORY).query.is_empty()
