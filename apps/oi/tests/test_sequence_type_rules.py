@@ -8,7 +8,8 @@ from django.core.exceptions import ValidationError
 
 from apps.oi.forms.story import validate_sequence_type_fields
 
-TYPES = yaml.safe_load((Path(__file__).parents[2] / 'gcd/fixtures/storytype.yaml').read_text())
+FIXTURE = Path(__file__).parents[2] / 'gcd/fixtures/storytype.yaml'
+TYPES = yaml.safe_load(FIXTURE.read_text())
 TYPE_IDS = [entry['pk'] for entry in TYPES]
 TYPE_NAMES = [entry['fields']['name'] for entry in TYPES]
 NO_FEATURE = {8, 22, 24, 25}
@@ -32,15 +33,19 @@ def assert_validity(data, allowed):
 @pytest.mark.parametrize('type_id', TYPE_IDS, ids=TYPE_NAMES)
 def test_each_type_feature_genre_and_arc_rules(type_id):
     validate_sequence_type_fields(values(type_id))
-    assert_validity(values(type_id, feature='Avengers'), type_id not in NO_FEATURE)
-    assert_validity(values(type_id, genre='adventure'), type_id not in NO_FEATURE)
+    assert_validity(values(type_id, feature='Avengers'),
+                    type_id not in NO_FEATURE)
+    assert_validity(values(type_id, genre='adventure'),
+                    type_id not in NO_FEATURE)
     assert_validity(values(type_id, story_arc=[object()]), type_id == 19)
 
 
 @pytest.mark.parametrize('type_id', TYPE_IDS, ids=TYPE_NAMES)
-@pytest.mark.parametrize('feature_type', [1, 2, 3, 4], ids=['regular', 'letters', 'ad', 'column'])
+@pytest.mark.parametrize('feature_type', [1, 2, 3, 4],
+                         ids=['regular', 'letters', 'ad', 'column'])
 def test_each_type_linked_feature_categories(type_id, feature_type):
-    name = SimpleNamespace(feature=SimpleNamespace(feature_type=SimpleNamespace(id=feature_type)))
+    name = SimpleNamespace(feature=SimpleNamespace(
+        feature_type=SimpleNamespace(id=feature_type)))
     allowed = type_id not in NO_FEATURE
     if type_id == 12:
         allowed = feature_type == 2
@@ -51,17 +56,22 @@ def test_each_type_linked_feature_categories(type_id, feature_type):
     elif feature_type in {2, 4}:
         allowed = False
     assert_validity(values(type_id, feature_name=[name]), allowed)
-    assert_validity(values(type_id, feature='legacy text', feature_name=[name]), False)
+    assert_validity(values(type_id, feature='legacy text',
+                           feature_name=[name]), False)
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('feature_type', [1, 2, 3, 4])
 def test_each_type_logo_categories(feature_type, any_language):
-    from apps.gcd.models import Feature, FeatureNameDetail, FeatureLogo, FeatureType
-    category, _ = FeatureType.objects.get_or_create(pk=feature_type, defaults={'name': 'test'})
+    from apps.gcd.models import (Feature, FeatureNameDetail, FeatureLogo,
+                                 FeatureType)
+    category, _ = FeatureType.objects.get_or_create(
+        pk=feature_type, defaults={'name': 'test'})
     feature = Feature.objects.create(name='Feature', sort_name='Feature',
-                                     language=any_language, feature_type=category)
-    name = FeatureNameDetail.objects.create(feature=feature, name='Feature', sort_name='Feature')
+                                     language=any_language,
+                                     feature_type=category)
+    name = FeatureNameDetail.objects.create(feature=feature, name='Feature',
+                                            sort_name='Feature')
     logo = FeatureLogo.objects.create(name='Logo')
     logo.feature_name.add(name)
     for type_id in TYPE_IDS:
@@ -80,7 +90,8 @@ def test_each_type_logo_categories(feature_type, any_language):
 @pytest.mark.parametrize('type_id', TYPE_IDS, ids=TYPE_NAMES)
 def test_each_type_missing_page_count_rule(type_id):
     from apps.oi.forms.story import validate_sequence_page_count
-    data = dict(type=SimpleNamespace(id=type_id), page_count=None, page_count_uncertain=False)
+    data = dict(type=SimpleNamespace(id=type_id), page_count=None,
+                page_count_uncertain=False)
     if type_id == 11:
         validate_sequence_page_count(data)
     else:

@@ -23,8 +23,10 @@ from apps.oi.sequence_workbench import (
 def reference_types(db):
     for pk, name in [(19, 'comic story'), (6, 'cover'),
                      (7, 'cover reprint (on interior page)'), (8, 'credits')]:
-        StoryType.objects.get_or_create(pk=pk, defaults={'name': name, 'sort_code': pk})
-    CreditType.objects.get_or_create(pk=6, defaults={'name': 'editing', 'sort_code': 6})
+        StoryType.objects.get_or_create(
+            pk=pk, defaults={'name': name, 'sort_code': pk})
+    CreditType.objects.get_or_create(
+        pk=6, defaults={'name': 'editing', 'sort_code': 6})
 
 
 @pytest.fixture
@@ -34,7 +36,8 @@ def workbench(any_edit_story_rev, any_indexer):
     changeset.change_type = CTYPES['issue']
     changeset.save()
     issue = IssueRevision.clone(story.issue, changeset=changeset)
-    any_indexer.user_permissions.add(Permission.objects.get(codename='can_reserve'))
+    any_indexer.user_permissions.add(
+        Permission.objects.get(codename='can_reserve'))
     return changeset, issue, story, any_indexer
 
 
@@ -43,8 +46,13 @@ def payload(changeset):
             'version': sequence_version(changeset)}
 
 
+def json_post(path, data):
+    return RequestFactory().post(path, json.dumps(data),
+                                 content_type='application/json')
+
+
 def post(changeset, user, data):
-    request = RequestFactory().post('/sequences/', json.dumps(data), content_type='application/json')
+    request = json_post('/sequences/', data)
     request.user = user
     return save_sequences(request, changeset.pk)
 
@@ -62,7 +70,8 @@ def test_bulk_migration_only_active_legacy_credits(workbench):
     clean.save()
     request = RequestFactory().post('/migrate/')
     request.user = user
-    with patch.object(StoryRevision, 'migrate_credits', autospec=True) as migrate:
+    with patch.object(StoryRevision, 'migrate_credits',
+                      autospec=True) as migrate:
         response = migrate_all_credits(request, changeset.pk)
     assert response.status_code == 302
     assert response.url == '/changeset/%s/edit/' % changeset.pk
@@ -85,9 +94,10 @@ def test_inline_migration_returns_rows_and_checks_version(workbench):
         revision.script = ''
         revision.save()
 
-    request = RequestFactory().post('/migrate/', json.dumps(data), content_type='application/json')
+    request = json_post('/migrate/', data)
     request.user = user
-    with patch.object(StoryRevision, 'migrate_credits', autospec=True, side_effect=migrate) as converter:
+    with patch.object(StoryRevision, 'migrate_credits', autospec=True,
+                      side_effect=migrate) as converter:
         response = migrate_all_credits(request, changeset.pk)
     assert response.status_code == 200
     assert converter.call_count == 1
@@ -96,7 +106,7 @@ def test_inline_migration_returns_rows_and_checks_version(workbench):
     assert result['rows'][0]['id'] == story.pk
     assert 'data-row=' in result['rows'][0]['html']
     data['version'] = 'stale'
-    request = RequestFactory().post('/migrate/', json.dumps(data), content_type='application/json')
+    request = json_post('/migrate/', data)
     request.user = user
     assert migrate_all_credits(request, changeset.pk).status_code == 409
 
@@ -106,25 +116,28 @@ def test_inline_migration_accepts_story_id_as_text(workbench):
 
     def migrate(story_id):
         data = {'version': sequence_version(changeset), 'story': story_id}
-        request = RequestFactory().post('/migrate/', json.dumps(data), content_type='application/json')
+        request = json_post('/migrate/', data)
         request.user = user
         return migrate_all_credits(request, changeset.pk)
 
     response = migrate(str(story.pk))
     assert response.status_code == 200
-    assert [row['id'] for row in json.loads(response.content)['rows']] == [story.pk]
+    rows = json.loads(response.content)['rows']
+    assert [row['id'] for row in rows] == [story.pk]
     assert migrate('first').status_code == 400
 
 
 def test_migration_links_text_feature_like_production(workbench):
     from apps.gcd.models import Feature, FeatureNameDetail, FeatureType
     changeset, issue, story, user = workbench
-    feature_type, _ = FeatureType.objects.get_or_create(pk=1, defaults={'name': 'feature'})
+    feature_type, _ = FeatureType.objects.get_or_create(
+        pk=1, defaults={'name': 'feature'})
     feature = Feature.objects.create(name='Avengers', sort_name='Avengers',
                                      language=issue.series.language,
                                      feature_type=feature_type)
     name = FeatureNameDetail.objects.create(feature=feature, name='Avengers',
-                                           sort_name='Avengers', is_official_name=True)
+                                            sort_name='Avengers',
+                                            is_official_name=True)
     story.feature = 'Avengers; Unknown Strip'
     story.save()
     request = RequestFactory().post('/migrate/')
@@ -163,7 +176,8 @@ def test_bulk_migration_rolls_back_on_failure(workbench):
         revision.save()
         raise ValueError('Migration failed')
 
-    with patch.object(StoryRevision, 'migrate_credits', autospec=True, side_effect=fail):
+    with patch.object(StoryRevision, 'migrate_credits', autospec=True,
+                      side_effect=fail):
         with pytest.raises(ValueError, match='Migration failed'):
             migrate_all_credits(request, changeset.pk)
     story.refresh_from_db()
@@ -185,7 +199,8 @@ def test_edit_and_stale_draft_conflict(workbench):
     assert story.title == 'Updated'
 
 
-@pytest.mark.parametrize('pages', ['-1', '0', 'NaN', 'Infinity', '0.0001', '10000000', ''])
+@pytest.mark.parametrize('pages', ['-1', '0', 'NaN', 'Infinity', '0.0001',
+                                   '10000000', ''])
 def test_invalid_pages_roll_back(workbench, pages):
     changeset, issue, story, user = workbench
     story.page_count_uncertain = False
@@ -215,7 +230,8 @@ def test_owner_and_state_enforced(workbench, django_user_model):
 
 
 @pytest.mark.parametrize('replacement_type', [19, 7])
-def test_retyped_cover_reordered_without_cover_starts_at_zero(workbench, replacement_type):
+def test_retyped_cover_reordered_without_cover_starts_at_zero(
+        workbench, replacement_type):
     changeset, issue, story, user = workbench
     cover = StoryRevision.clone_revision(story, changeset, issue)
     cover.type_id = 6
@@ -259,7 +275,8 @@ def test_cover_zero_reprints_and_reorder(workbench):
 @pytest.mark.parametrize('type_id', [8, 22, 24, 25])
 def test_no_feature_type_clears_legacy_feature(workbench, type_id):
     changeset, issue, story, user = workbench
-    StoryType.objects.get_or_create(pk=type_id, defaults={'name': 'No feature type', 'sort_code': type_id})
+    StoryType.objects.get_or_create(
+        pk=type_id, defaults={'name': 'No feature type', 'sort_code': type_id})
     story.genre = ''
     story.save()
     data = payload(changeset)
@@ -284,7 +301,8 @@ def test_duplicate_preserves_all_scalar_fields(workbench):
     changeset, issue, story, user = workbench
     response = add_request(changeset, issue, user, duplicate=story.pk)
     assert response.status_code == 200, response.content
-    duplicate = StoryRevision.objects.get(pk=json.loads(response.content)['row_id'])
+    row_id = json.loads(response.content)['row_id']
+    duplicate = StoryRevision.objects.get(pk=row_id)
     assert duplicate.pk != story.pk
     assert duplicate.story_id is None
     for field in StoryRevision._get_single_value_fields():
@@ -300,15 +318,19 @@ def test_duplicate_preserves_linked_creator_details(workbench):
     changeset, issue, story, user = workbench
     creator = Creator.objects.create(gcd_official_name='Test Creator')
     script = Script.objects.create(code='Tst', number=999, name='Test Script')
-    name = CreatorNameDetail.objects.create(name='Test Creator', creator=creator,
-                                            is_official_name=True, in_script=script)
+    name = CreatorNameDetail.objects.create(name='Test Creator',
+                                            creator=creator,
+                                            is_official_name=True,
+                                            in_script=script)
     credit = StoryCreditRevision.objects.create(
-        changeset=changeset, story_revision=story, creator=name, credit_type_id=6,
+        changeset=changeset, story_revision=story, creator=name,
+        credit_type_id=6,
         is_credited=True, credited_as='Pen name', uncertain=True,
         is_sourced=True, sourced_by='Publisher archive', credit_name='Editor')
     response = add_request(changeset, issue, user, duplicate=story.pk)
     assert response.status_code == 200, response.content
-    duplicate = StoryRevision.objects.get(pk=json.loads(response.content)['row_id'])
+    row_id = json.loads(response.content)['row_id']
+    duplicate = StoryRevision.objects.get(pk=row_id)
     copied = duplicate.story_credit_revisions.get()
     assert copied.pk != credit.pk
     for field in ('creator_id', 'credit_type_id', 'is_credited', 'credited_as',
@@ -319,25 +341,30 @@ def test_duplicate_preserves_linked_creator_details(workbench):
 def test_multiple_feature_names_saved_as_objects(workbench):
     from apps.gcd.models import Feature, FeatureNameDetail, FeatureType
     changeset, issue, story, user = workbench
-    feature_type, _ = FeatureType.objects.get_or_create(pk=1, defaults={'name': 'feature'})
+    feature_type, _ = FeatureType.objects.get_or_create(
+        pk=1, defaults={'name': 'feature'})
     names = []
     for label in ('Avengers', 'Zagor'):
         feature = Feature.objects.create(name=label, sort_name=label,
                                          language=issue.series.language,
                                          feature_type=feature_type)
-        names.append(FeatureNameDetail.objects.create(feature=feature, name=label,
-                     sort_name=label, is_official_name=True))
+        names.append(FeatureNameDetail.objects.create(
+            feature=feature, name=label, sort_name=label,
+            is_official_name=True))
     data = payload(changeset)
     data['issues'][0]['rows'][0].update(
-        selected_features=[{'id': name.pk, 'text': str(name)} for name in names],
+        selected_features=[{'id': name.pk, 'text': str(name)}
+                           for name in names],
         feature_text='')
     response = post(changeset, user, data)
     assert response.status_code == 200, response.content
     story.refresh_from_db()
     assert story.feature == ''
-    assert set(story.feature_name.values_list('pk', flat=True)) == {name.pk for name in names}
+    assert set(story.feature_name.values_list('pk', flat=True)) == \
+        {name.pk for name in names}
     data = payload(changeset)
-    data['issues'][0]['rows'][0].update(selected_features=[], feature_text='New feature')
+    data['issues'][0]['rows'][0].update(selected_features=[],
+                                        feature_text='New feature')
     assert post(changeset, user, data).status_code == 200
     story.refresh_from_db()
     assert story.feature == 'New feature'
@@ -381,12 +408,15 @@ def test_template_renders_actions_and_empty_table(workbench):
 def test_linked_feature_preserved_then_cleared_inline(workbench):
     from apps.gcd.models import Feature, FeatureNameDetail, FeatureType
     changeset, issue, story, user = workbench
-    feature_type, _ = FeatureType.objects.get_or_create(pk=1, defaults={'name': 'feature'})
+    feature_type, _ = FeatureType.objects.get_or_create(
+        pk=1, defaults={'name': 'feature'})
     feature = Feature.objects.create(name='Avengers', sort_name='Avengers',
                                      language=issue.series.language,
-                                     feature_type=feature_type, genre='', notes='')
+                                     feature_type=feature_type, genre='',
+                                     notes='')
     name = FeatureNameDetail.objects.create(feature=feature, name='Avengers',
-                                           sort_name='Avengers', is_official_name=True)
+                                            sort_name='Avengers',
+                                            is_official_name=True)
     story.feature = ''
     story.save()
     story.feature_name.add(name)
@@ -419,7 +449,7 @@ def add_request(changeset, issue, user, **overrides):
     from apps.oi.sequence_workbench import add_sequence
     data = {'issue': issue.pk, 'version': sequence_version(changeset)}
     data.update(overrides)
-    request = RequestFactory().post('/sequences/add/', json.dumps(data), content_type='application/json')
+    request = json_post('/sequences/add/', data)
     request.user = user
     return add_sequence(request, changeset.pk)
 
@@ -436,7 +466,8 @@ def test_add_inline_returns_editable_row_and_correct_issue(workbench):
     assert added.title == added.feature == ''
     assert 'data-field="title"' in result['row_html']
     from django.urls import reverse
-    assert reverse('edit_revision', kwargs={'model_name': 'story', 'id': added.pk}) in result['row_html']
+    assert reverse('edit_revision', kwargs={
+        'model_name': 'story', 'id': added.pk}) in result['row_html']
     assert 'Location' not in response
 
 
@@ -470,14 +501,16 @@ def test_new_sequence_without_pages_does_not_block_other_rows(workbench):
 
 def test_inline_add_rejects_missing_issue_and_stale_version(workbench):
     changeset, issue, story, user = workbench
-    assert add_request(changeset, issue, user, version='stale').status_code == 409
+    response = add_request(changeset, issue, user, version='stale')
+    assert response.status_code == 409
     issue.issue = None
     issue.save()
     assert add_request(changeset, issue, user).status_code == 400
     assert changeset.storyrevisions.count() == 1
 
 
-def test_inline_add_rejects_other_owner_and_closed_changeset(workbench, django_user_model):
+def test_inline_add_rejects_other_owner_and_closed_changeset(
+        workbench, django_user_model):
     changeset, issue, story, user = workbench
     other = django_user_model.objects.create_user('other-inline')
     other.user_permissions.add(Permission.objects.get(codename='can_reserve'))
@@ -509,7 +542,8 @@ def test_type_change_rejects_incompatible_hidden_genre_atomically(workbench):
     assert story.feature == 'Test Feature'
 
 
-def test_credit_colors_preserve_legacy_complete_and_incomplete_states(workbench):
+def test_credit_colors_preserve_legacy_complete_and_incomplete_states(
+        workbench):
     from apps.oi.templatetags.compare import show_credit_status
     changeset, issue, story, user = workbench
     assert 'text-green-500' in show_credit_status(story)
@@ -534,7 +568,8 @@ def test_hidden_type_rule_matches_full_editor(workbench):
 
 def test_insert_accepts_unknown_page_count_inline(workbench):
     changeset, issue, story, user = workbench
-    StoryType.objects.get_or_create(pk=11, defaults={'name': 'insert or dust jacket', 'sort_code': 11})
+    StoryType.objects.get_or_create(
+        pk=11, defaults={'name': 'insert or dust jacket', 'sort_code': 11})
     story.page_count_uncertain = False
     story.save()
     data = payload(changeset)
@@ -548,7 +583,8 @@ def test_insert_accepts_unknown_page_count_inline(workbench):
 def test_inline_type_change_rejects_existing_story_arc(workbench):
     from apps.gcd.models import StoryArc
     changeset, issue, story, user = workbench
-    arc = StoryArc.objects.create(name='Arc', sort_name='Arc', language=issue.series.language)
+    arc = StoryArc.objects.create(name='Arc', sort_name='Arc',
+                                  language=issue.series.language)
     story.story_arc.add(arc)
     data = payload(changeset)
     data['issues'][0]['rows'][0]['type'] = 7
@@ -561,7 +597,7 @@ def test_inline_type_change_rejects_existing_story_arc(workbench):
 
 
 def add_rows(story, changeset, issue, count):
-    """Add rows after the existing ones, numbered as the workbench numbers them."""
+    """Add rows after the existing ones, numbered as the workbench does."""
     story.sequence_number = 0
     story.save()
     start = changeset.storyrevisions.count()
@@ -597,13 +633,15 @@ def test_save_writes_only_changed_rows(workbench):
     other.refresh_from_db()
     assert story.title == 'Only this one'
     assert other.modified == untouched
-    assert json.loads(response.content)['version'] == sequence_version(changeset)
+    assert json.loads(response.content)['version'] == \
+        sequence_version(changeset)
 
 
 def test_save_cost_does_not_grow_with_unchanged_rows(workbench):
     changeset, issue, story, user = workbench
     add_rows(story, changeset, issue, 1)
-    save_queries(changeset, user, 'Warm up')  # loads the user's permissions once
+    # Loads the user's permissions once.
+    save_queries(changeset, user, 'Warm up')
     few = save_queries(changeset, user, 'Two rows')
     add_rows(story, changeset, issue, 5)
     assert save_queries(changeset, user, 'Seven rows') == few
@@ -621,7 +659,8 @@ def test_retry_after_lost_response_succeeds_without_writing(workbench):
     assert response.status_code == 200, response.content
     story.refresh_from_db()
     assert story.modified == saved
-    assert json.loads(response.content)['version'] == sequence_version(changeset)
+    assert json.loads(response.content)['version'] == \
+        sequence_version(changeset)
 
 
 def test_save_elsewhere_makes_the_version_stale(workbench):
