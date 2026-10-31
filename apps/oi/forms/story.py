@@ -760,9 +760,29 @@ class StoryRevisionForm(KeywordBaseForm):
           '<strong>Characters:</strong></th>'
           '<td class="align-top">'
           '<hr style="height:2px; background-color:#000;"></td></tr>'))
+        field_list.append(Field(fields[characters_start-19],
+                                template='oi/bits/uni_field.html'))
+        has_appearance_order = False
+        has_importance_order = False
+        if 'instance' in kwargs and kwargs['instance'] and \
+           kwargs['instance'].id:
+            if kwargs['instance'].character_order_revisions.filter(type__id=1):
+                has_appearance_order = True
+            if kwargs['instance'].character_order_revisions.filter(type__id=2):
+                has_importance_order = True
+        if has_appearance_order or has_importance_order:
+            field_list.append(HTML(
+              '<tr><th></th><td>Character orders exist. To edit an order, '
+              'click on the corresponding "Save And Edit Order" button below. '
+              '</td></tr>'))
+            field_list.append(HTML(
+               '<tr><th></th><td>Characters listed above the line labeled '
+               '"--- characters below will be ordered alphabetically ---" '
+               'on either the Appearance Order or the Importance Order '
+               'cannot be removed.</td></tr>'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start-19:
+                           for field in fields[characters_start-18:
                                                characters_start-1]])
         field_list.append(HTML(
           '<tr><th><input type="submit" name="save_and_set_universe"'
@@ -778,14 +798,6 @@ class StoryRevisionForm(KeywordBaseForm):
         field_list.append(Field(fields[characters_start],
                                 template='oi/bits/uni_field.html'))
         field_list.append(Formset('groups_formset'))
-        has_appearance_order = False
-        has_importance_order = False
-        if 'instance' in kwargs and kwargs['instance'] and \
-           kwargs['instance'].id:
-            if kwargs['instance'].character_order_revisions.filter(type__id=1):
-                has_appearance_order = True
-            if kwargs['instance'].character_order_revisions.filter(type__id=2):
-                has_importance_order = True
         character_order_html = '<th></th><td>'
         if has_appearance_order:
             character_order_html += '<input type="submit" ' \
