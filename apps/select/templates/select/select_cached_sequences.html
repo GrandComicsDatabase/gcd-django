@@ -114,9 +114,10 @@
               <table class="mt-1 w-full table-fixed break-words border border-gray-200 bg-white text-left
                 [&_th]:p-1 [&_th]:align-middle [&_td]:border-b [&_td]:border-gray-200 [&_td]:p-1
                 [&_td]:align-middle sm:[&_th]:px-2 sm:[&_td]:px-2" id="cached-{{ group.label|lower }}">
-                <colgroup><col class="w-20 sm:w-28"><col></colgroup>
+                <colgroup><col class="w-20 sm:w-28"><col class="w-20 sm:w-28"><col></colgroup>
                 <thead>
                   <tr class="bg-blue-100">
+                    <th scope="col"></th>
                     <th scope="col"><button type="button" class="btn-blue-editing [&[hidden]]:hidden" data-cache-select-all="{{ group.kind }}" hidden>Select All</button></th>
                     <th scope="col">{{ group.kind|capfirst }}</th>
                   </tr>
@@ -125,6 +126,20 @@
                   {% for choice in group.choices %}
                     {% with radio=choice.radio %}
                       <tr data-cache-item="{{ radio.data.value }}" class="hover:bg-blue-50 cursor-move">
+                        <td>
+                          <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+                      {% csrf_token %}
+                            <button
+                              class="{% if radio.data.value in cache_form.disabled_choices %}btn-blue-disabled{% else %}btn-blue-editing{% endif %} inline py-1 px-2"
+                              type="submit" name="select_object"
+                              {% if radio.data.value in cache_form.disabled_choices %}
+                              disabled
+                              aria-describedby="disabled-choice-{{ forloop.counter }}"
+                              title="{{ disabled_choice_title }}"
+                              {% endif %}>Select</button>
+                            <input type="hidden" name="object_choice" value="{{ radio.data.value }}">
+                          </form>
+                        </td>
                         <td class="text-center"><input class="mx-auto block h-4 w-4 cursor-pointer text-blue-600" type="checkbox" name="{% if group.kind == 'cover' %}selected_covers{% else %}cached_objects{% endif %}" value="{{ radio.data.value }}" form="cache-selection"
                           aria-label="Select {{ radio.choice_label|striptags }}"
                           {% if group.kind == 'cover' and radio.data.value in cache_form.disabled_choices %}disabled{% endif %}></td>
