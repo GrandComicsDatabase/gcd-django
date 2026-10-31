@@ -7,10 +7,14 @@
   GCD :: Cover :: {{ issue.series.name }} {{ issue.display_number }}
 {% endblock %}
 
-{% block view_body %}
+{% block nav_bar %}
+  {{ block.super }}
   {% with issue_link=True %}
     {% include "gcd/bits/tw_issue_header.html" %}
   {% endwith %}
+{% endblock %}
+
+{% block view_body %}
 
 <div>
   <div class="mt-2 flex flex-wrap gap-x-16 gap-y-4 place-content-center">
