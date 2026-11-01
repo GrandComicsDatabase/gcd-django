@@ -923,6 +923,10 @@ class Changeset(models.Model):
     def review_is_overdue(self):
         if timezone.now() - timedelta(weeks=1) > self.modified:
             return True
+        elif (self.indexer.indexer.is_new and
+              timezone.now() - timedelta(days=3) > self.modified and
+              self.imps <= 20):
+            return True
         else:
             return False
 
@@ -4638,8 +4642,8 @@ class IssueRevision(Revision):
                     else:
                         issue_year = None
                     if creator.creator.birth_date.year and issue_year and \
-                        creator.creator.birth_date.year.isnumeric() and \
-                        int(creator.creator.birth_date.year) > int(issue_year):
+                       creator.creator.birth_date.year.isnumeric() and \
+                       int(creator.creator.birth_date.year) > int(issue_year):
                         creator = None
                 else:
                     creator = None
@@ -6677,7 +6681,8 @@ class StoryRevision(Revision):
                             issue_year = None
                         if creator.creator.birth_date.year and issue_year and \
                            creator.creator.birth_date.year.isnumeric() and \
-                           int(creator.creator.birth_date.year) > int(issue_year):
+                           int(creator.creator.birth_date.year) > \
+                           int(issue_year):
                             creator = None
                     else:
                         creator = None
