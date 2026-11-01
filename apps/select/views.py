@@ -651,6 +651,12 @@ def _select_object(request, select_key, multiple_sequences=False):
     elif 'search_select' in request.POST:
         choice = request.POST['object_choice']
         object_type, selected_id = choice.split('_')
+        # a return function can take any id for the object it expects, as a
+        # series bond does with an issue; a cover is chosen as its story
+        if not (data.get(object_type) or
+                (object_type == 'story' and data.get('cover'))):
+            return HttpResponseBadRequest(
+              'This selection does not take this kind of object.')
     elif 'entered_issue_id' in request.POST:
         object_type = 'issue'
         try:

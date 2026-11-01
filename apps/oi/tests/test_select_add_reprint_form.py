@@ -15,8 +15,9 @@ from django.template.loader import render_to_string
 from django.test.utils import CaptureQueriesContext
 from django.urls import resolve, reverse
 
-from apps.gcd.models import Issue, Publisher, Series, Story, StoryType
+from apps.gcd.models import Award, Issue, Publisher, Series, Story, StoryType
 from apps.gcd.views.pagination import DiggPaginator
+from apps.oi.models import SeriesBondRevision
 from apps.select.views import FEW_RESULTS
 from apps.stddata.models import Country, Language
 
@@ -219,6 +220,49 @@ def test_other_selector_keeps_the_two_searches(client, select_key, catalog):
     assert 'class="select_search"' in html
     assert 'name="search_series"' in html
     assert 'name="q"' in html
+
+
+def bond_selector(client, catalog):
+    """Follow the link to add a series bond and return the selector key."""
+    response = client.get(reverse('add_series_bond',
+                                  kwargs={'series_id': catalog['xmen91'].id}))
+    return resolve(response.url).kwargs['select_key']
+
+
+def test_form_is_only_where_stories_and_issues_can_be_chosen(
+        client, select_key, catalog):
+    """Its rows choose one or the other, whatever the selector takes."""
+    assert 'id="new-search-form"' in selector_page(client, select_key)
+    html = selector_page(client, bond_selector(client, catalog))
+    assert 'id="new-search-form"' not in html
+    response = client.get(reverse('edit_two_issues',
+                                  kwargs={'issue_id': catalog['a'].id}))
+    html = selector_page(client, resolve(response.url).kwargs['select_key'])
+    assert 'id="new-search-form"' not in html
+
+
+def test_award_selector_keeps_the_form(client, select_key, any_edit_story_rev):
+    """An award goes to a story or to an issue, or to a series."""
+    indexer = any_edit_story_rev.changeset.indexer.indexer
+    indexer.max_reservations = 5
+    indexer.save()
+    award = Award.objects.create(name='Any award')
+    response = client.get(reverse('select_award_recipient',
+                                  kwargs={'award_id': award.id}))
+    html = selector_page(client, resolve(response.url).kwargs['select_key'])
+    assert 'id="new-search-form"' in html
+
+
+def test_selector_refuses_what_it_does_not_take(client, select_key, catalog):
+    """A series bond would save the issue with the id of the story."""
+    bonds = SeriesBondRevision.objects.count()
+    response = client.post(
+      reverse('select_object',
+              kwargs={'select_key': bond_selector(client, catalog)}),
+      {'search_select': '1',
+       'object_choice': f'story_{catalog["a_story"].id}'})
+    assert response.status_code == 400
+    assert SeriesBondRevision.objects.count() == bonds
 
 
 def test_form_needs_the_right_to_edit(client, catalog, any_edit_story_rev):

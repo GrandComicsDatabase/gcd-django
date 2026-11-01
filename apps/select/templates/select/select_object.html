@@ -73,6 +73,8 @@ Search for {{ target }} by entering the relevant information here:
   {% endif %}
 </form>
 {% endif %}
+{# the rows of the form choose a story or an issue #}
+{% if story and issue %}
 <form id="new-search-form" action="{% url 'select_object_search_htmx' select_key=select_key %}" method="get" novalidate
       hx-get="{% url 'select_object_search_htmx' select_key=select_key %}"
       hx-trigger="change delay:500ms"
@@ -110,6 +112,7 @@ window.addEventListener("DOMContentLoaded", (e) => {
 });
 </script>
 <div id="new-search-results" aria-live="polite"></div>
+{% endif %}
   {% if cache_form.visible_fields %}
 or select from the data cache:
     {% for radio in cache_form.object_choice %}
