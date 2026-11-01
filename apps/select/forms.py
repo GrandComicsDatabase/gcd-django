@@ -4,7 +4,10 @@ from django import forms
 from django.forms.widgets import HiddenInput, RadioSelect
 from django.utils.safestring import mark_safe
 
+from dal import autocomplete, forward
+
 from apps.gcd.templatetags.display import absolute_url
+from apps.gcd.models import Publisher, Series
 
 
 def get_select_cache_form(cached_issues=None, cached_stories=None,
@@ -70,6 +73,33 @@ def get_select_search_form(search_publisher=False, search_series=False,
                                                  required=False, min_value=0)
         select_key = forms.CharField(widget=HiddenInput)
     return SelectSearchForm
+
+
+def get_select_issue_story_form(return_type_='reprint'):
+    class SelectSearchIssueStoryForm(forms.Form):
+        publisher_auto = forms.ModelChoiceField(
+          queryset=Publisher.objects.all(),
+          widget=autocomplete.ModelSelect2(url='publisher_autocomplete',
+                                           attrs={'class': 'w-full'}),
+          label='Publisher', required=False)
+
+        series_auto = forms.ModelChoiceField(
+          queryset=Series.objects.all(),
+          widget=autocomplete.ModelSelect2(
+            url='series_autocomplete',
+            forward=[forward.Field('publisher_auto', 'publisher'),
+                     forward.Field('series_year_auto', 'series_year')],
+            attrs={'class': 'w-full'}), label='Series', required=False)
+        series_year_auto = forms.IntegerField(label='Series Year',
+                                              required=False,
+                                              min_value=1800,
+                                              max_value=date.today().year)
+        issue_number = forms.CharField(
+          label='Issue Number',
+          help_text='(required, use [nn] for unnumbered singleton series.)',
+          required=True)
+        select_key = forms.CharField(widget=HiddenInput)
+    return SelectSearchIssueStoryForm
 
 
 def get_filter_form(countries=None, languages=None, publishers=None):

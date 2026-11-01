@@ -11,6 +11,8 @@ urlpatterns = [
 
     path('select_object/<path:select_key>/search/',
       select_views.process_select_search, name='select_object_search'),
+    path('select_object/<path:select_key>/search_htmx/',
+      select_views.process_htmx_select_search, name='select_object_search_htmx'),
     path('select_object/<path:select_key>/search_haystack/',
       select_views.process_select_search_haystack, name='select_object_search_haystack'),
     path('select_object/<path:select_key>/', select_views.select_object,
@@ -20,6 +22,7 @@ urlpatterns = [
 
     path('select_objects/<path:select_key>/',
       select_views.process_multiple_selects, name='process_multiple_selects'),
+
 
     path(
         'select/creator/by_detail/',
@@ -93,7 +96,16 @@ urlpatterns = [
         name='universe_autocomplete',
     ),
     path(
-        'autocomplete/brand_group/',
+        'autocomplete/publisher/',
+        select_views.PublisherAutocomplete.as_view(),
+        name='publisher_autocomplete',
+    ),
+    path(
+        'autocomplete/series/',
+        select_views.SeriesAutocomplete.as_view(),
+        name='series_autocomplete',
+    ),
+    path('autocomplete/brand_group/',
         select_views.BrandGroupAutocomplete.as_view(),
         name='brand_group_autocomplete',
     ),
