@@ -71,7 +71,7 @@ Search for {{ target }} by entering the relevant information here:
 <button class="btn-blue-editing inline" type="submit" name="search_publisher">Search For Publisher</button>
   {% endif %}
 </form>
-<form action="{% url 'select_object_search_htmx' select_key=select_key %}" method="get"
+<form id="new-search-form" action="{% url 'select_object_search_htmx' select_key=select_key %}" method="get" novalidate
       hx-get="{% url 'select_object_search_htmx' select_key=select_key %}"
       hx-trigger="change delay:500ms"
       hx-target="#new-search-results"
@@ -101,6 +101,15 @@ window.addEventListener("DOMContentLoaded", (e) => {
     $('select').on('select2:select select2:unselect', function (e) {
         $(this).closest('form').get(0).dispatchEvent(new Event('change'));
     });
+    // a request that fails says so; not htmx:error, which also comes with each
+    // request replaced by a newer one
+    for (const failure of ['htmx:responseError', 'htmx:sendError', 'htmx:swapError',
+                           'htmx:onLoadError', 'htmx:targetError', 'htmx:timeout']) {
+        document.getElementById('new-search-form').addEventListener(failure, event => {
+            document.getElementById('new-search-results').textContent =
+              `This search could not be done: ${event.detail.error}.`;
+        });
+    }
 });
 </script>
 <div id="new-search-results" aria-live="polite"></div>

@@ -248,7 +248,7 @@ def test_sequence_sections_render_with_bulk_removal_and_shared_styles():
         'return': '_selected_copy_sequence',
     })
     with patch('apps.select.views.get_select_forms',
-               return_value=(forms.Form(), cache_form)), \
+               return_value=(forms.Form(), forms.Form(), cache_form)), \
             patch('apps.select.views.render', return_value=HttpResponse()) as render:
         select_multiple_sequences.__wrapped__(request, 'test')
     template = render.call_args.args[1]
@@ -398,7 +398,7 @@ def test_reprint_selection_keeps_original_selector():
         'target': 'a story or issue', 'return': 'confirm_reprint',
     })
     with patch('apps.select.views.get_select_forms',
-               return_value=(forms.Form(), cache_form)), \
+               return_value=(forms.Form(), forms.Form(), cache_form)), \
             patch('apps.select.views.render', return_value=HttpResponse()) as render:
         select_object.__wrapped__(request, 'test')
     template = render.call_args.args[1]

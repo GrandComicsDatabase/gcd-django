@@ -96,8 +96,8 @@ def get_select_issue_story_form(return_type_='reprint'):
                                               max_value=date.today().year)
         issue_number = forms.CharField(
           label='Issue Number',
-          help_text='(required, use [nn] for unnumbered singleton series.)',
-          required=True)
+          help_text='(use [nn] for unnumbered singleton series.)',
+          required=False)
         select_key = forms.CharField(widget=HiddenInput)
     return SelectSearchIssueStoryForm
 

@@ -7,11 +7,13 @@ from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, Value, IntegerField, F
+from django.db.models.functions import Replace
 import django.urls as urlresolvers
-from django.http import HttpResponseBadRequest, HttpResponseRedirect, \
-                        JsonResponse
+from django.http import HttpResponse, HttpResponseBadRequest, \
+                        HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.shortcuts import render
+from django.template.defaultfilters import pluralize
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.html import format_html
 from django import forms
@@ -166,12 +168,37 @@ def process_select_search_haystack(request, select_key):
           + '?' + request.META['QUERY_STRING'])
 
 
-@permission_required('indexer.can_reserve')
+# Values or results listed at most: with more the page asks to narrow them.
+FEW_RESULTS = 20
+# Left out when series names are compared, so that "xmen" finds "X-Men".
+NAME_SEPARATORS = ('-', ' ', '.', "'", ':', ',')
+# A shorter text must be the whole name: 12 series are called just "X".
+NAME_MIN_TEXT = 3
+# Series read to tell how many are left, before dropping the deleted ones.
+SERIES_READ = 20000
+
+
+def _without_separators(field):
+    """Return the field as a database expression without separators."""
+    expression = F(field)
+    for separator in NAME_SEPARATORS:
+        expression = Replace(expression, Value(separator), Value(''))
+    return expression
+
+
+def _separators_removed(text):
+    """Return the text without separators."""
+    for separator in NAME_SEPARATORS:
+        text = text.replace(separator, '')
+    return text
+
+
+@permission_required('indexer.can_reserve', raise_exception=True)
 def process_htmx_select_search(request, select_key):
     publisher = request.GET.get('publisher_auto', None)
     series = request.GET.get('series_auto', None)
-    series_year = request.GET.get('series_year_auto', None)
-    issue_number = request.GET.get('issue_number', None)
+    series_year = request.GET.get('series_year_auto', '').strip()
+    issue_number = request.GET.get('issue_number', '').strip()
     search_filters = {'deleted': False}
     search_object = request.GET.get('search_object', 'story')
     filter_prefix = '' if search_object == 'issue' else 'issue__'
@@ -180,22 +207,33 @@ def process_htmx_select_search(request, select_key):
         search_filters[f'{filter_prefix}series__publisher_id'] = publisher
     if series:
         search_filters[f'{filter_prefix}series_id'] = series
-    if series_year:
+    if series_year.isdecimal():
         search_filters[f'{filter_prefix}series__year_began'] = series_year
+    number_query = Q()
     if issue_number:
-        search_filters[f'{filter_prefix}number'] = issue_number
+        number_query = Q(**{f'{filter_prefix}number': issue_number})
+        if series:
+            # inside a series it also finds the numbers that go on after it,
+            # such as "1 [Cover A]"
+            number_query |= Q(**{f'{filter_prefix}number__istartswith':
+                                 issue_number + ' '})
+    if len(search_filters) == 1 and not issue_number:
+        return HttpResponse('')
     table_format = StoryTable
-    if len(search_filters) == 1:
-        search = Story.objects.none()
+    if search_object == 'issue':
+        search = Issue.objects.filter(number_query, **search_filters)
+        table_format = IssuePublisherTable
     else:
-        if search_object == 'issue':
-            search = Issue.objects.filter(**search_filters)
-            table_format = IssuePublisherTable
-        else:
-            search = Story.objects.filter(**search_filters)
-            if search_object == 'cover':
-                search = search.filter(
-                  type=StoryType.objects.get(name='cover'))
+        search = Story.objects.filter(number_query, **search_filters)
+        if search_object == 'cover':
+            search = search.filter(type=StoryType.objects.get(name='cover'))
+    # with a series and its number there is nothing left to narrow down
+    if not (series and issue_number) and len(
+      search.order_by().values_list('pk', flat=True)[:FEW_RESULTS + 1]) \
+            > FEW_RESULTS:
+        return HttpResponse(format_html(
+          '<p>Too many results: {}</p>',
+          'write the Issue Number.' if series else 'choose a Series.'))
 
     from apps.gcd.views.details import generic_sortable_list
     order_by = 'issue'
@@ -1132,14 +1170,28 @@ class KeywordAutocomplete(LoginRequiredMixin,
         return super(KeywordAutocomplete, self).validate(text)
 
 
-class PublisherAutocomplete(LoginRequiredMixin,
+class FewResultsMixin:
+    """List the values of a menu only if they are few, or else say so."""
+    paginate_by = None
+
+    def render_to_response(self, context):
+        if len(context['object_list']) > FEW_RESULTS:
+            return JsonResponse({
+              # not an empty id: Select2 would take it for its placeholder
+              'results': [{'id': 'too_many', 'disabled': True,
+                           'text': 'Too many results: write more.'}],
+              'pagination': {'more': False}})
+        return super().render_to_response(context)
+
+
+class PublisherAutocomplete(FewResultsMixin, LoginRequiredMixin,
                             autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Publisher.objects.filter(deleted=False)
 
         qs = _filter_and_sort(qs, self.q, field='name')
 
-        return qs
+        return qs[:FEW_RESULTS + 1]
 
 
 class BrandGroupAutocomplete(LoginRequiredMixin,
@@ -1206,19 +1258,45 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
         return qs
 
 
-class SeriesAutocomplete(LoginRequiredMixin,
+class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
                          autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = Series.objects.filter(deleted=False)
+        # Deleted series are dropped afterwards: that filter makes MySQL read
+        # the table row by row through its index, far slower than reading it
+        # whole, when the name is compared without separators.
+        qs = Series.objects.order_by()
         publisher_id = self.forwarded.get('publisher', None)
         if publisher_id:
             qs = qs.filter(publisher__id=publisher_id)
-        series_year = self.forwarded.get('series_year', None)
-        if series_year:
+        series_year = str(self.forwarded.get('series_year', '')).strip()
+        if series_year.isdecimal():
             qs = qs.filter(year_began=series_year)
-        qs = _filter_and_sort(qs, self.q, field='name')
+        text = (self.q or '').strip()
+        key = _separators_removed(text)
+        if text and (len(text) < NAME_MIN_TEXT or not key):
+            qs = qs.filter(name=text)
+        elif text:
+            qs = qs.annotate(name_key=_without_separators('name')) \
+                   .filter(name_key__icontains=key)
+        ids = [series_id for series_id, deleted
+               in qs.values_list('id', 'deleted')[:SERIES_READ] if not deleted]
+        if len(ids) > FEW_RESULTS:
+            return ids
+        found = Series.objects.filter(id__in=ids) \
+                              .select_related('publisher', 'country') \
+                              .order_by('sort_name', 'year_began',
+                                        'publisher__name')
+        # first the name equal to the typed text, then the alphabetical order
+        return sorted(found, key=lambda series: _separators_removed(
+          series.name).casefold() != key.casefold())
 
-        return qs
+    def get_result_label(self, series):
+        """Tell apart the series with the same name, as far as the data can."""
+        return '%s (%s, %s series) - %s, %d issue%s%s' % (
+          series.name, series.publisher.name, series.year_began,
+          series.country.code.upper(), series.issue_count,
+          pluralize(series.issue_count),
+          ', ' + series.binding if series.binding else '')
 
 
 ##############################################################################
