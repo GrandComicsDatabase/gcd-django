@@ -15,6 +15,9 @@ from apps.stddata.models import Country, Language
 
 TOO_MANY_VALUES = [{'id': 'too_many', 'disabled': True,
                     'text': 'Too many results: write more.'}]
+TOO_MANY_NAMED = [{'id': 'too_many', 'disabled': True,
+                   'text': 'Too many results: write more, or choose a '
+                           'Publisher or a Series Year.'}]
 
 
 @pytest.fixture
@@ -174,7 +177,8 @@ def test_publisher_menu_says_when_values_are_too_many(
                                  country=catalog['country'], year_began=2000)
     values = menu(client, select_key, 'publisher_auto', 'marvel')
     if too_many:
-        assert values == TOO_MANY_VALUES
+        assert labels(values[:-1]) == ['Marvel']
+        assert values[-1:] == TOO_MANY_VALUES
     else:
         assert len(values) == FEW_RESULTS
 
@@ -185,6 +189,30 @@ def test_opened_publisher_menu_lists_few_values_too(client, select_key,
         Publisher.objects.create(name='Some %d' % number,
                                  country=catalog['country'], year_began=2000)
     assert menu(client, select_key, 'publisher_auto') == TOO_MANY_VALUES
+
+
+def test_publisher_with_too_many_longer_names_can_still_be_chosen(
+        client, select_key, catalog):
+    """Writing more would leave it out, as with DC in the catalog."""
+    for number in range(FEW_RESULTS + 1):
+        Publisher.objects.create(name='DC %d' % number,
+                                 country=catalog['country'], year_began=2000)
+    wanted = Publisher.objects.create(name='DC', country=catalog['country'],
+                                      year_began=1935)
+    values = menu(client, select_key, 'publisher_auto', ' dc ')
+    assert values[0]['id'] == str(wanted.id)
+    assert values[1:] == TOO_MANY_VALUES
+
+
+def test_publisher_is_found_by_its_id_among_too_many(client, select_key,
+                                                     catalog):
+    wanted = catalog['marvel_uk']
+    for number in range(FEW_RESULTS + 1):
+        Publisher.objects.create(name='Some %d' % wanted.id,
+                                 country=catalog['country'], year_began=2000)
+    values = menu(client, select_key, 'publisher_auto', str(wanted.id))
+    assert values[0]['id'] == str(wanted.id)
+    assert values[1:] == TOO_MANY_VALUES
 
 
 def test_series_menu_compares_names_without_separators(client, select_key):
@@ -229,10 +257,30 @@ def test_series_menu_leaves_out_deleted_series(client, select_key, catalog):
     assert str(catalog['deleted'].id) not in ids
 
 
-def test_series_menu_finds_the_whole_name_with_a_short_text(
-        client, select_key, catalog):
-    assert [value['id'] for value in menu(client, select_key, 'series_auto',
-                                          'x')] == [str(catalog['x'].id)]
+@pytest.mark.parametrize('name', [
+  'X\u2013Men', 'X\u2014Men', 'X\u2015Men', 'X/Men', 'X\u2019Men',
+  'X\u2018Men',
+])
+def test_series_menu_leaves_out_the_other_separators(client, select_key,
+                                                     catalog, name):
+    wanted = another_series(catalog, name)
+    assert str(wanted.id) in [value['id'] for value in menu(
+      client, select_key, 'series_auto', 'xmen')]
+
+
+def test_series_menu_lists_what_contains_a_short_text(client, select_key,
+                                                      catalog):
+    assert labels(menu(client, select_key, 'series_auto', 'xm')) == [
+      'X-Men (Marvel, 1991 series) - XA, 118 issues',
+      'X-Men (Marvel UK, 1992 series) - XA, 1 issue',
+      'X-Men Forever (Marvel, 2009 series) - XA, 24 issues']
+
+
+def test_series_menu_lists_the_whole_short_name_first(client, select_key,
+                                                      catalog):
+    values = menu(client, select_key, 'series_auto', 'x')
+    assert values[0]['id'] == str(catalog['x'].id)
+    assert len(values) == 4
 
 
 @pytest.mark.parametrize('extra, too_many', [(FEW_RESULTS - 3, False),
@@ -243,9 +291,67 @@ def test_series_menu_says_when_values_are_too_many(
         another_series(catalog, 'X-Men %d' % number)
     values = menu(client, select_key, 'series_auto', 'xmen')
     if too_many:
-        assert values == TOO_MANY_VALUES
+        assert [value['id'] for value in values[:-1]] == [
+          str(catalog['xmen91'].id), str(catalog['xmen_uk'].id)]
+        assert values[-1:] == TOO_MANY_VALUES
     else:
         assert len(values) == FEW_RESULTS
+
+
+def test_series_with_too_many_longer_names_can_still_be_chosen(
+        client, select_key, catalog):
+    """Writing more would leave it out, as with X-Men of Marvel of 2010."""
+    for number in range(FEW_RESULTS + 1):
+        another_series(catalog, 'X-Men %d' % number, year_began=2010)
+    wanted = another_series(catalog, 'X-Men', year_began=2010)
+    values = menu(client, select_key, 'series_auto', 'X-Men',
+                  publisher=str(catalog['marvel'].id), series_year='2010')
+    assert values[0]['id'] == str(wanted.id)
+    assert values[1:] == TOO_MANY_VALUES
+
+
+def test_too_many_series_with_the_same_name_ask_for_publisher_or_year(
+        client, select_key, catalog):
+    """Writing more cannot reach them: as with Batman in the catalog."""
+    for number in range(FEW_RESULTS + 1):
+        another_series(catalog, 'Klassiker', year_began=1950 + number)
+    values = menu(client, select_key, 'series_auto', 'klassiker')
+    assert values == TOO_MANY_NAMED
+    wanted = another_series(catalog, 'Klassiker', year_began=2020)
+    values = menu(client, select_key, 'series_auto', 'klassiker',
+                  series_year='2020')
+    assert [value['id'] for value in values] == [str(wanted.id)]
+
+
+def test_series_is_found_by_its_id(client, select_key, catalog):
+    wanted = catalog['forever']
+    assert [value['id'] for value in menu(client, select_key, 'series_auto',
+                                          str(wanted.id))] == [str(wanted.id)]
+
+
+def test_series_is_found_by_its_id_among_too_many(client, select_key, catalog):
+    wanted = catalog['forever']
+    for number in range(FEW_RESULTS + 1):
+        another_series(catalog, 'Volume %d' % wanted.id)
+    values = menu(client, select_key, 'series_auto', str(wanted.id))
+    assert values[0]['id'] == str(wanted.id)
+    assert values[1:] == TOO_MANY_VALUES
+
+
+def test_series_id_must_agree_with_publisher_and_year(client, select_key,
+                                                      catalog):
+    assert menu(client, select_key, 'series_auto', str(catalog['forever'].id),
+                publisher=str(catalog['marvel_uk'].id)) == []
+
+
+def test_deleted_series_is_not_named_by_its_id(client, select_key, catalog):
+    assert menu(client, select_key, 'series_auto',
+                str(catalog['deleted'].id)) == []
+
+
+@pytest.mark.parametrize('field', ['publisher_auto', 'series_auto'])
+def test_menus_bear_an_id_too_long_for_the_database(client, select_key, field):
+    assert menu(client, select_key, field, '9' * 40) == []
 
 
 def test_series_menu_with_a_mistaken_year_lists_nothing_wrong(

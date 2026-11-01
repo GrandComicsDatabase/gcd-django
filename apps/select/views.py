@@ -6,7 +6,8 @@ from haystack.forms import FacetedSearchForm
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Value, IntegerField, F
+from django.db.models import BooleanField, ExpressionWrapper, Q, Value, \
+                             IntegerField, F
 from django.db.models.functions import Replace
 import django.urls as urlresolvers
 from django.http import HttpResponse, HttpResponseBadRequest, \
@@ -170,10 +171,11 @@ def process_select_search_haystack(request, select_key):
 
 # Values or results listed at most: with more the page asks to narrow them.
 FEW_RESULTS = 20
-# Left out when series names are compared, so that "xmen" finds "X-Men".
-NAME_SEPARATORS = ('-', ' ', '.', "'", ':', ',')
-# A shorter text must be the whole name: 12 series are called just "X".
-NAME_MIN_TEXT = 3
+TOO_MANY_VALUES = 'Too many results: write more.'
+# Left out when series names are compared, so that "xmen" finds "X-Men". The
+# other dashes and apostrophes are in hundreds of names.
+NAME_SEPARATORS = ('-', '\u2013', '\u2014', '\u2015', ' ', '.', "'", '\u2018',
+                   '\u2019', ':', ',', '/')
 # Series read to tell how many are left, before dropping the deleted ones.
 SERIES_READ = 20000
 
@@ -1171,27 +1173,47 @@ class KeywordAutocomplete(LoginRequiredMixin,
 
 
 class FewResultsMixin:
-    """List the values of a menu only if they are few, or else say so."""
+    """
+    List the values of a menu only if they are few, or else say so below the
+    values the typed text names whole: writing more would leave those out.
+    """
     paginate_by = None
+    too_many = ''
+    too_many_named = TOO_MANY_VALUES
 
-    def render_to_response(self, context):
-        if len(context['object_list']) > FEW_RESULTS:
-            return JsonResponse({
-              # not an empty id: Select2 would take it for its placeholder
-              'results': [{'id': 'too_many', 'disabled': True,
-                           'text': 'Too many results: write more.'}],
-              'pagination': {'more': False}})
-        return super().render_to_response(context)
+    def few_values(self, found, named):
+        """Return the values to list and note what to say about the others."""
+        if len(found) <= FEW_RESULTS:
+            return found
+        if len(named) > FEW_RESULTS:
+            self.too_many = self.too_many_named
+            return []
+        self.too_many = TOO_MANY_VALUES
+        return named
+
+    def get_results(self, context):
+        results = super().get_results(context)
+        if self.too_many:
+            # not an empty id: Select2 would take it for its placeholder
+            results.append({'id': 'too_many', 'disabled': True,
+                            'text': self.too_many})
+        return results
+
+
+def _named_by_text(text, whole_name):
+    """Return the query of the values the text names: whole name, or id."""
+    return whole_name | Q(id=text) if text.isdecimal() else whole_name
 
 
 class PublisherAutocomplete(FewResultsMixin, LoginRequiredMixin,
                             autocomplete.Select2QuerySetView):
     def get_queryset(self):
         qs = Publisher.objects.filter(deleted=False)
+        text = (self.q or '').strip()
 
-        qs = _filter_and_sort(qs, self.q, field='name')
-
-        return qs[:FEW_RESULTS + 1]
+        return self.few_values(
+          _filter_and_sort(qs, text, field='name')[:FEW_RESULTS + 1],
+          qs.filter(_named_by_text(text, Q(name=text))))
 
 
 class BrandGroupAutocomplete(LoginRequiredMixin,
@@ -1260,6 +1282,9 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
 
 class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
                          autocomplete.Select2QuerySetView):
+    too_many_named = ('Too many results: write more, or choose a Publisher '
+                      'or a Series Year.')
+
     def get_queryset(self):
         # Deleted series are dropped afterwards: that filter makes MySQL read
         # the table row by row through its index, far slower than reading it
@@ -1272,23 +1297,28 @@ class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
         if series_year.isdecimal():
             qs = qs.filter(year_began=series_year)
         text = (self.q or '').strip()
-        key = _separators_removed(text)
-        if text and (len(text) < NAME_MIN_TEXT or not key):
-            qs = qs.filter(name=text)
-        elif text:
+        if text:
+            key = _separators_removed(text)
+            # the series the text names come first: no limit leaves them out
             qs = qs.annotate(name_key=_without_separators('name')) \
-                   .filter(name_key__icontains=key)
-        ids = [series_id for series_id, deleted
-               in qs.values_list('id', 'deleted')[:SERIES_READ] if not deleted]
-        if len(ids) > FEW_RESULTS:
-            return ids
+                   .annotate(named=ExpressionWrapper(
+                     _named_by_text(text, Q(name_key=key)),
+                     output_field=BooleanField())) \
+                   .filter(_named_by_text(text, Q(name_key__icontains=key))) \
+                   .order_by('-named')
+        else:
+            qs = qs.annotate(named=Value(False))
+        rows = [row for row
+                in qs.values_list('id', 'deleted', 'named')[:SERIES_READ]
+                if not row[1]]
+        named_ids = [row[0] for row in rows if row[2]]
+        ids = self.few_values([row[0] for row in rows], named_ids)
         found = Series.objects.filter(id__in=ids) \
                               .select_related('publisher', 'country') \
                               .order_by('sort_name', 'year_began',
                                         'publisher__name')
-        # first the name equal to the typed text, then the alphabetical order
-        return sorted(found, key=lambda series: _separators_removed(
-          series.name).casefold() != key.casefold())
+        # first the series the text names, then the alphabetical order
+        return sorted(found, key=lambda series: series.id not in named_ids)
 
     def get_result_label(self, series):
         """Tell apart the series with the same name, as far as the data can."""
