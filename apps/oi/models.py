@@ -4632,6 +4632,18 @@ class IssueRevision(Revision):
 
                 if creator.count() == 1:
                     creator = creator.get()
+                    # disallow crediting a creator before their birth year
+                    if self.key_date[:4].isnumeric():
+                        issue_year = self.key_date[:4]
+                    else:
+                        issue_year = None
+                    if creator.creator.birth_date.year and issue_year and \
+                        creator.creator.birth_date.year.isnumeric() and \
+                        int(creator.creator.birth_date.year) > int(issue_year):
+                        creator = None
+                else:
+                    creator = None
+                if creator:
                     if uncertain and not creator.is_official_name:
                         if creator.in_script == creator.creator\
                            .active_names().get(is_official_name=True)\
@@ -6649,6 +6661,7 @@ class StoryRevision(Revision):
                         else:
                             credit = value
                             ghost_possible = True
+
                     creator = CreatorNameDetail.objects.filter(name=credit,
                                                                deleted=False)
                     if not ghost_possible:
@@ -6657,6 +6670,18 @@ class StoryRevision(Revision):
 
                     if creator.count() == 1:
                         creator = creator.get()
+                        # disallow crediting a creator before their birth year
+                        if self.issue and self.issue.key_date[:4].isnumeric():
+                            issue_year = self.issue.key_date[:4]
+                        else:
+                            issue_year = None
+                        if creator.creator.birth_date.year and issue_year and \
+                           creator.creator.birth_date.year.isnumeric() and \
+                           int(creator.creator.birth_date.year) > int(issue_year):
+                            creator = None
+                    else:
+                        creator = None
+                    if creator:
                         if uncertain and not creator.is_official_name:
                             if creator.in_script == creator.creator\
                                .active_names().get(is_official_name=True)\
