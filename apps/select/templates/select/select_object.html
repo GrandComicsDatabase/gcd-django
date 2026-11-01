@@ -125,6 +125,24 @@ or select from the data cache:
       {% endif %}
 </form>
     {% endfor %}
+    {% if has_cached_objects %}
+      <div class="mt-4 flex flex-wrap gap-x-3 gap-y-1 border-t border-gray-200 pt-2" role="group" aria-label="Clear remembered objects">
+        {% for group in cache_groups %}
+          {% if group.choices %}
+            <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+              {% csrf_token %}
+              <button type="submit" class="btn-blue-editing bg-stone-100 text-gray-500" name="clear_cache" value="{{ group.kind }}"
+                onclick="return confirm('Clear all remembered {{ group.label|lower }}?');">Clear {{ group.kind|capfirst }} Cache</button>
+            </form>
+          {% endif %}
+        {% endfor %}
+        <form action="{% url 'select_object' select_key=select_key %}" method="POST">
+          {% csrf_token %}
+          <button class="btn-blue-editing bg-stone-100 text-gray-500" name="clear_cache" value="all" type="submit"
+            onclick="return confirm('Clear all remembered issues, stories and covers?');">Clear All Remembered Objects</button>
+        </form>
+      </div>
+    {% endif %}
   {% else %}
     <p>There are no remembered objects in the data cache. Use Remember Issue or Remember Story on an issue page to add objects to the data cache and then you can select them here.</p>
   {% endif %}
