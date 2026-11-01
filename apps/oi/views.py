@@ -4317,6 +4317,7 @@ def save_selected_series_bond(request, data, object_type, selected_id):
 
 @permission_required('indexer.can_reserve')
 def edit_series_bond(request, id):
+    """Go to the selector for a side of a series bond, or flip its direction."""
     if request.method != 'POST':
         return _cant_get(request)
     series_bond_revision = get_object_or_404(SeriesBondRevision, id=id)
@@ -4352,7 +4353,7 @@ def edit_series_bond(request, id):
             'series': True,
             'issue': True,
             'heading': mark_safe('<h2>Select %s of the bond %s</h2>' %
-                                 (which_side, series_bond_revision)),
+                                 (which_side, esc(series_bond_revision))),
             'target': 'a series or issue',
             'return': 'save_selected_series_bond',
             'which_side': which_side,

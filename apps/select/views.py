@@ -208,6 +208,7 @@ def _few_rows(rows):
 
 @permission_required('indexer.can_reserve', raise_exception=True)
 def process_htmx_select_search(request, select_key):
+    """List what the form finds, or ask for the next field if too much."""
     publisher = request.GET.get('publisher_auto', None)
     series = request.GET.get('series_auto', None)
     series_year = request.GET.get('series_year_auto', '').strip()
@@ -441,6 +442,7 @@ def select_multiple_sequences(request, select_key):
 
 
 def _select_object(request, select_key, multiple_sequences=False):
+    """Show the page of the selector, or go on with the object chosen on it."""
     try:
         data = get_select_data(request, select_key)
     except KeyError:
@@ -1220,6 +1222,7 @@ class FewResultsMixin:
         return found[:FEW_RESULTS] if (self.q or '').strip() else []
 
     def get_results(self, context):
+        """Return the values, with the note as a line below them."""
         results = super().get_results(context)
         if self.note:
             # not an empty id: Select2 would take it for its placeholder
@@ -1236,6 +1239,7 @@ def _named_by_text(text, whole_name):
 class PublisherAutocomplete(FewResultsMixin, LoginRequiredMixin,
                             autocomplete.Select2QuerySetView):
     def get_queryset(self):
+        """Return the publishers to list for the typed text."""
         text = (self.q or '').strip()
         named = _named_by_text(text, Q(name=text))
         # the publishers the text names come first: no limit leaves them out
@@ -1317,6 +1321,7 @@ class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
                       'or a Series Year.')
 
     def get_queryset(self):
+        """Return the series to list for the text and the other fields."""
         # Deleted series are dropped afterwards: that filter makes MySQL read
         # the table row by row through its index, far slower than reading it
         # whole, when the name is compared without separators.

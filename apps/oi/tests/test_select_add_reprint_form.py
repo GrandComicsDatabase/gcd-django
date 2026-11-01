@@ -194,6 +194,23 @@ def test_heading_is_a_heading_when_the_session_cache_is_lost(client,
     assert '&lt;h2&gt;' not in html
 
 
+def test_bond_heading_writes_a_name_as_text(db, client,
+                                            any_added_series_bond_rev):
+    """The names come from the indexers, and the heading is shown as html."""
+    bond = any_added_series_bond_rev
+    Series.objects.filter(id=bond.origin_id).update(
+      name='<img src=x onerror=alert(1)>')
+    indexer = bond.changeset.indexer
+    indexer.user_permissions.add(Permission.objects.get(
+      content_type__app_label='indexer', codename='can_reserve'))
+    client.force_login(indexer)
+    response = client.post(reverse('edit_series_bond', kwargs={'id': bond.id}),
+                           {'edit_origin': 'Change'})
+    html = selector_page(client, resolve(response.url).kwargs['select_key'])
+    assert '<img src=x' not in html
+    assert '<h2>Select origin of the bond &lt;img src=x' in html
+
+
 def test_other_selector_keeps_the_two_searches(client, select_key, catalog):
     """The form finds no series, and a series bond needs to find one."""
     response = client.get(reverse('add_series_bond',
@@ -231,6 +248,7 @@ def test_publisher_menu_lists_few_values(client, select_key):
                                              (FEW_RESULTS - 1, True)])
 def test_publisher_menu_says_when_values_are_too_many(
         client, select_key, catalog, extra, too_many):
+    """The name equal to the text first, then the alphabetical order."""
     for number in range(extra):
         Publisher.objects.create(name='Marvel %02d' % number,
                                  country=catalog['country'], year_began=2000)
@@ -245,6 +263,7 @@ def test_publisher_menu_says_when_values_are_too_many(
 
 def test_opened_publisher_menu_lists_few_values_too(client, select_key,
                                                     catalog):
+    """With no text to go by, the first values would be any values."""
     for number in range(FEW_RESULTS):
         Publisher.objects.create(name='Some %d' % number,
                                  country=catalog['country'], year_began=2000)
@@ -267,6 +286,7 @@ def test_publisher_with_too_many_longer_names_can_still_be_chosen(
 
 def test_publisher_is_found_by_its_id_among_too_many(client, select_key,
                                                      catalog):
+    """Names that contain the id must not push the publisher off the list."""
     wanted = catalog['marvel_uk']
     for number in range(FEW_RESULTS + 1):
         Publisher.objects.create(name='Some %d' % wanted.id,
@@ -304,6 +324,7 @@ def test_series_menu_lists_the_equal_name_first(client, select_key, catalog):
 
 def test_series_menu_is_narrowed_by_publisher_and_year(
         client, select_key, catalog):
+    """The publisher alone narrows it, and so does a year with a publisher."""
     assert [value['id'] for value in menu(
       client, select_key, 'series_auto', 'xmen',
       publisher=str(catalog['marvel_uk'].id))] == [str(catalog['xmen_uk'].id)]
@@ -314,6 +335,7 @@ def test_series_menu_is_narrowed_by_publisher_and_year(
 
 
 def test_series_menu_leaves_out_deleted_series(client, select_key, catalog):
+    """A deleted X-Men has the same name as the two that can be chosen."""
     ids = [value['id'] for value in menu(client, select_key, 'series_auto',
                                          'xmen')]
     assert str(catalog['deleted'].id) not in ids
@@ -325,6 +347,7 @@ def test_series_menu_leaves_out_deleted_series(client, select_key, catalog):
 ])
 def test_series_menu_leaves_out_the_other_separators(client, select_key,
                                                      catalog, name):
+    """Long dashes, slashes and curly apostrophes must not hide a name."""
     wanted = another_series(catalog, name)
     assert str(wanted.id) in [value['id'] for value in menu(
       client, select_key, 'series_auto', 'xmen')]
@@ -349,6 +372,7 @@ def test_series_menu_lists_the_whole_short_name_first(client, select_key,
                                              (FEW_RESULTS - 2, True)])
 def test_series_menu_says_when_values_are_too_many(
         client, select_key, catalog, extra, too_many):
+    """The two series called X-Men first, then the others up to the limit."""
     for number in range(extra):
         another_series(catalog, 'X-Men %d' % number)
     values = menu(client, select_key, 'series_auto', 'xmen')
@@ -410,12 +434,14 @@ def test_too_many_series_with_the_same_name_ask_for_publisher_or_year(
 
 
 def test_series_is_found_by_its_id(client, select_key, catalog):
+    """Writing the id of a series in the menu lists only that series."""
     wanted = catalog['forever']
     assert [value['id'] for value in menu(client, select_key, 'series_auto',
                                           str(wanted.id))] == [str(wanted.id)]
 
 
 def test_series_is_found_by_its_id_among_too_many(client, select_key, catalog):
+    """Names that contain the id must not push the series off the list."""
     wanted = catalog['forever']
     for number in range(FEW_RESULTS + 1):
         another_series(catalog, 'Volume %d' % wanted.id)
@@ -447,6 +473,7 @@ def test_series_menu_with_a_mistaken_year_lists_nothing_wrong(
 
 
 def test_menus_find_a_key_inside_the_name(client, select_key, catalog):
+    """The text is looked for at any point of the name."""
     assert labels(menu(client, select_key, 'publisher_auto', 'arv')) == [
       'Marvel', 'Marvel UK']
     assert [value['id'] for value in menu(client, select_key, 'series_auto',
@@ -679,6 +706,7 @@ def long_table(client, select_key, catalog):
 
 
 def test_short_table_has_no_links_to_pages(client, select_key, catalog):
+    """A table that fits in one page shows no bar."""
     response = search(client, select_key, series_auto=catalog['xmen91'].id,
                       issue_number='2')
     assert not page_links(response)
@@ -705,6 +733,7 @@ def test_box_of_a_long_table_asks_the_search_for_the_same_form(
 
 def test_pages_of_a_long_table_list_each_story_once(client, select_key,
                                                     catalog):
+    """The two pages together hold every story, and the links go both ways."""
     response = long_table(client, select_key, catalog)
     first = results(response)
     assert stories_listed(response) == 100
@@ -742,6 +771,7 @@ def test_pages_of_one_table_leave_the_other_alone(client, select_key, catalog):
 
 
 def test_link_to_a_page_is_as_it_was_elsewhere(db):
+    """Without page_url the shared bar writes its links as before."""
     html = render_to_string(
       'gcd/bits/tw_pagination_bar.html',
       {'page': DiggPaginator(range(200), 100, body=7, padding=2,
