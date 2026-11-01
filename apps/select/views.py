@@ -6,8 +6,8 @@ from haystack.forms import FacetedSearchForm
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import BooleanField, ExpressionWrapper, Q, Value, \
-                             IntegerField, F
+from django.db.models import BooleanField, Exists, ExpressionWrapper, \
+                             OuterRef, Q, Value, IntegerField, F
 from django.db.models.functions import Replace
 import django.urls as urlresolvers
 from django.http import HttpResponse, HttpResponseBadRequest, \
@@ -195,70 +195,95 @@ def _separators_removed(text):
     return text
 
 
+def _number_query(number, prefix=''):
+    """Return the query of a number and of those that go on after it."""
+    return Q(**{f'{prefix}number': number}) \
+        | Q(**{f'{prefix}number__istartswith': number + ' '})
+
+
+def _few_rows(rows):
+    """Return how many rows there are, reading no more than the limit needs."""
+    return len(rows.order_by().values_list('pk', flat=True)[:FEW_RESULTS + 1])
+
+
 @permission_required('indexer.can_reserve', raise_exception=True)
 def process_htmx_select_search(request, select_key):
     publisher = request.GET.get('publisher_auto', None)
     series = request.GET.get('series_auto', None)
     series_year = request.GET.get('series_year_auto', '').strip()
     issue_number = request.GET.get('issue_number', '').strip()
-    search_filters = {'deleted': False}
-    search_object = request.GET.get('search_object', 'story')
-    filter_prefix = '' if search_object == 'issue' else 'issue__'
-
-    if publisher:
-        search_filters[f'{filter_prefix}series__publisher_id'] = publisher
+    filters = {}
     if series:
-        search_filters[f'{filter_prefix}series_id'] = series
-    if series_year.isdecimal():
-        search_filters[f'{filter_prefix}series__year_began'] = series_year
-    number_query = Q()
-    if issue_number:
-        number_query = Q(**{f'{filter_prefix}number': issue_number})
-        if series:
-            # inside a series it also finds the numbers that go on after it,
-            # such as "1 [Cover A]"
-            number_query |= Q(**{f'{filter_prefix}number__istartswith':
-                                 issue_number + ' '})
-    if len(search_filters) == 1 and not issue_number:
-        return HttpResponse('')
-    table_format = StoryTable
-    if search_object == 'issue':
-        search = Issue.objects.filter(number_query, **search_filters)
-        table_format = IssuePublisherTable
+        # the chosen series says it all: a publisher or a year that disagree
+        # with it would only empty the list
+        filters['series_id'] = series
     else:
-        search = Story.objects.filter(number_query, **search_filters)
-        if search_object == 'cover':
-            search = search.filter(type=StoryType.objects.get(name='cover'))
+        if publisher:
+            filters['series__publisher_id'] = publisher
+        if series_year.isdecimal():
+            filters['series__year_began'] = series_year
+    if not filters and not issue_number:
+        return HttpResponse('')
+
+    def issue_query(prefix=''):
+        """Return the query of the issues, seen from the given relation."""
+        query = Q(**{prefix + field: filters[field] for field in filters})
+        if filters and issue_number:
+            # with something else to go by it also finds the numbers that go
+            # on after it, such as "1 [Cover A]"
+            query &= _number_query(issue_number, prefix)
+        elif issue_number:
+            query &= Q(**{f'{prefix}number': issue_number})
+        return query
+
+    stories = Story.objects.filter(issue_query('issue__'), deleted=False)
+    # they have no row among the stories, and they are most of the issues
+    issues = Issue.objects.filter(issue_query(), deleted=False).filter(
+      ~Exists(Story.objects.filter(issue=OuterRef('pk'), deleted=False)))
     # with a series and its number there is nothing left to narrow down
-    if not (series and issue_number) and len(
-      search.order_by().values_list('pk', flat=True)[:FEW_RESULTS + 1]) \
-            > FEW_RESULTS:
-        return HttpResponse(format_html(
-          '<p>Too many results: {}</p>',
-          'write the Issue Number.' if series else 'choose a Series.'))
+    if not (series and issue_number):
+        rows = _few_rows(stories)
+        # read only if needed: among all the issues of a publisher or of a
+        # number they take seconds
+        if rows <= FEW_RESULTS:
+            rows += _few_rows(issues)
+        if rows > FEW_RESULTS:
+            return HttpResponse(format_html(
+              '<p>Too many results: {}</p>',
+              'write the Issue Number.' if series else 'choose a Series.'))
 
     from apps.gcd.views.details import generic_sortable_list
-    order_by = 'issue'
-    base_name = 'objects'
-    plural_suffix = ''
-    table = table_format(
-        search,
-        template_name='gcd/bits/tw_sortable_table.html',
-        order_by=order_by)
-    context = {
-      'item_name': base_name,
-      'plural_suffix': plural_suffix,
-      'select_key': select_key,
-      'select_target': search_object,
-      'select_issue': search_object != 'issue',
-      'no_bulk_edit': True,
-    }
-    template = 'gcd/bits/tw_render_table.html'
-    table.no_export = True
-    table.orderable = False
 
-    return generic_sortable_list(
-        request, search, table, template, context)
+    def listing(search, table_format, select_target):
+        """Return the response with the table of the given objects."""
+        table = table_format(
+            search,
+            template_name='gcd/bits/tw_sortable_table.html',
+            order_by='issue')
+        table.no_export = True
+        table.orderable = False
+        return generic_sortable_list(
+            request, search, table, 'select/search_results.html',
+            {'item_name': 'objects',
+             'plural_suffix': '',
+             'select_key': select_key,
+             'select_target': select_target,
+             'select_issue': select_target == 'story',
+             'no_bulk_edit': True})
+
+    # the links to the pages of a table ask for that table only
+    paged_table = request.headers.get('HX-Target')
+    if paged_table == 'story-results':
+        return listing(stories, StoryTable, 'story')
+    if paged_table == 'issue-results':
+        return listing(issues, IssuePublisherTable, 'issue')
+    if not issues.exists():
+        return listing(stories, StoryTable, 'story')
+    issue_list = listing(issues, IssuePublisherTable, 'issue')
+    if not stories.exists():
+        return issue_list
+    return HttpResponse(listing(stories, StoryTable, 'story').content
+                        + issue_list.content)
 
 
 @permission_required('indexer.can_reserve')
@@ -485,6 +510,9 @@ def _select_object(request, select_key, multiple_sequences=False):
         for index, choice in enumerate(cache_choices, 1):
             choice['help_id'] = 'disabled-choice-%d' % index
         can_copy_multiple = data.get('return') == '_selected_copy_sequence'
+        # the form takes the place of the two searches above it for a reprint
+        # link; the other selectors need them to find a series or a publisher
+        reprint_link = data.get('return') == 'confirm_reprint'
         template = ('select/select_cached_sequences.html' if multiple_sequences
                     else 'select/select_object.html')
         return render(request, template,
@@ -500,6 +528,7 @@ def _select_object(request, select_key, multiple_sequences=False):
                                       'cached_covers')),
                        'show_cache': issue or story or cover,
                        'can_copy_multiple': can_copy_multiple,
+                       'reprint_link': reprint_link,
                        'disabled_choice_title': disabled_choice_title,
                        'disabled_choice_help': disabled_choice_help,
                        'search_form': search_form,
@@ -1174,29 +1203,28 @@ class KeywordAutocomplete(LoginRequiredMixin,
 
 class FewResultsMixin:
     """
-    List the values of a menu only if they are few, or else say so below the
-    values the typed text names whole: writing more would leave those out.
+    List the first values of a menu, and say so below them if there are others.
+    With no text typed only say so: the first values would be any values.
     """
     paginate_by = None
-    too_many = ''
+    note = ''
     too_many_named = TOO_MANY_VALUES
 
-    def few_values(self, found, named):
+    def few_values(self, found, named=0):
         """Return the values to list and note what to say about the others."""
         if len(found) <= FEW_RESULTS:
             return found
-        if len(named) > FEW_RESULTS:
-            self.too_many = self.too_many_named
-            return []
-        self.too_many = TOO_MANY_VALUES
-        return named
+        # writing more would leave out the values the text names whole
+        self.note = self.too_many_named if named > FEW_RESULTS \
+            else TOO_MANY_VALUES
+        return found[:FEW_RESULTS] if (self.q or '').strip() else []
 
     def get_results(self, context):
         results = super().get_results(context)
-        if self.too_many:
+        if self.note:
             # not an empty id: Select2 would take it for its placeholder
-            results.append({'id': 'too_many', 'disabled': True,
-                            'text': self.too_many})
+            results.append({'id': 'note', 'disabled': True,
+                            'text': self.note})
         return results
 
 
@@ -1208,12 +1236,15 @@ def _named_by_text(text, whole_name):
 class PublisherAutocomplete(FewResultsMixin, LoginRequiredMixin,
                             autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = Publisher.objects.filter(deleted=False)
         text = (self.q or '').strip()
-
+        named = _named_by_text(text, Q(name=text))
+        # the publishers the text names come first: no limit leaves them out
         return self.few_values(
-          _filter_and_sort(qs, text, field='name')[:FEW_RESULTS + 1],
-          qs.filter(_named_by_text(text, Q(name=text))))
+          Publisher.objects.filter(named | Q(name__icontains=text),
+                                   deleted=False)
+          .annotate(named=ExpressionWrapper(named,
+                                            output_field=BooleanField()))
+          .order_by('-named', 'name')[:FEW_RESULTS + 1])
 
 
 class BrandGroupAutocomplete(LoginRequiredMixin,
@@ -1296,6 +1327,13 @@ class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
         series_year = str(self.forwarded.get('series_year', '')).strip()
         if series_year.isdecimal():
             qs = qs.filter(year_began=series_year)
+        # Only among the series of a publisher or a year: among all of them it
+        # would take seconds at each key.
+        number = str(self.forwarded.get('issue_number', '')).strip()
+        by_number = number and (publisher_id or series_year.isdecimal())
+        if by_number:
+            qs = qs.filter(id__in=Issue.objects.order_by().filter(
+              _number_query(number), deleted=False).values('series_id'))
         text = (self.q or '').strip()
         if text:
             key = _separators_removed(text)
@@ -1305,14 +1343,16 @@ class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
                      _named_by_text(text, Q(name_key=key)),
                      output_field=BooleanField())) \
                    .filter(_named_by_text(text, Q(name_key__icontains=key))) \
-                   .order_by('-named')
+                   .order_by('-named', 'sort_name', 'year_began')
         else:
             qs = qs.annotate(named=Value(False))
         rows = [row for row
                 in qs.values_list('id', 'deleted', 'named')[:SERIES_READ]
                 if not row[1]]
+        if by_number and not rows:
+            self.note = 'No series with this Issue Number.'
         named_ids = [row[0] for row in rows if row[2]]
-        ids = self.few_values([row[0] for row in rows], named_ids)
+        ids = self.few_values([row[0] for row in rows], len(named_ids))
         found = Series.objects.filter(id__in=ids) \
                               .select_related('publisher', 'country') \
                               .order_by('sort_name', 'year_began',

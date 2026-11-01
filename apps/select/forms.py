@@ -88,7 +88,8 @@ def get_select_issue_story_form(return_type_='reprint'):
           widget=autocomplete.ModelSelect2(
             url='series_autocomplete',
             forward=[forward.Field('publisher_auto', 'publisher'),
-                     forward.Field('series_year_auto', 'series_year')],
+                     forward.Field('series_year_auto', 'series_year'),
+                     forward.Field('issue_number', 'issue_number')],
             attrs={'class': 'w-full'}), label='Series', required=False)
         series_year_auto = forms.IntegerField(label='Series Year',
                                               required=False,

@@ -9,7 +9,8 @@
 {% endblock %}
 
 {% block view_body %}
-  {{ heading }}
+  {{ heading|safe }}
+{% if not reprint_link %}
 Search for {{ target }} by entering the relevant information here:
 
 <form method="get" action="{% url 'select_object_search_haystack' select_key=select_key %}">
@@ -71,19 +72,13 @@ Search for {{ target }} by entering the relevant information here:
 <button class="btn-blue-editing inline" type="submit" name="search_publisher">Search For Publisher</button>
   {% endif %}
 </form>
+{% endif %}
 <form id="new-search-form" action="{% url 'select_object_search_htmx' select_key=select_key %}" method="get" novalidate
       hx-get="{% url 'select_object_search_htmx' select_key=select_key %}"
       hx-trigger="change delay:500ms"
       hx-target="#new-search-results"
       hx-swap="innerHTML"
       hx-sync="this:replace">
-
-  <div role="group" aria-label="Search for:">
-    <span>Search for:</span>
-    <label><input type="radio" name="search_object" value="story" checked> Stories</label>
-    <label><input type="radio" name="search_object" value="cover"> Covers</label>
-    <label><input type="radio" name="search_object" value="issue"> Issues</label>
-  </div>
 
   <table class="editing w-full">
   {% for field in new_search_form.visible_fields %}
@@ -105,10 +100,12 @@ window.addEventListener("DOMContentLoaded", (e) => {
     // request replaced by a newer one
     for (const failure of ['htmx:responseError', 'htmx:sendError', 'htmx:swapError',
                            'htmx:onLoadError', 'htmx:targetError', 'htmx:timeout']) {
-        document.getElementById('new-search-form').addEventListener(failure, event => {
-            document.getElementById('new-search-results').textContent =
-              `This search could not be done: ${event.detail.error}.`;
-        });
+        for (const source of ['new-search-form', 'new-search-results']) {
+            document.getElementById(source).addEventListener(failure, event => {
+                document.getElementById('new-search-results').textContent =
+                  `This search could not be done: ${event.detail.error}.`;
+            });
+        }
     }
 });
 </script>

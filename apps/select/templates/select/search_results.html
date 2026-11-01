@@ -1,0 +1,8 @@
+<div id="{{ select_target }}-results">
+  {% include "gcd/bits/tw_render_table.html" %}
+  {% if page.has_other_pages %}
+  <div hx-boost="true" hx-target="#{{ select_target }}-results" hx-swap="outerHTML" hx-push-url="false">
+    {% include "gcd/bits/tw_pagination_bar.html" with page_url=request.path %}
+  </div>
+  {% endif %}
+</div>

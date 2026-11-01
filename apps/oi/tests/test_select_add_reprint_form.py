@@ -1,23 +1,32 @@
 # -*- coding: utf-8 -*-
 """Tests of the form of the reprint selector: few results, or it says so."""
 
+from html import unescape
 import json
 import re
 
 import pytest
 
+from django.conf import settings
 from django.contrib.auth.models import Permission
+from django.core.cache import caches
+from django.db import connection
+from django.template.loader import render_to_string
+from django.test.utils import CaptureQueriesContext
 from django.urls import resolve, reverse
 
 from apps.gcd.models import Issue, Publisher, Series, Story, StoryType
+from apps.gcd.views.pagination import DiggPaginator
 from apps.select.views import FEW_RESULTS
 from apps.stddata.models import Country, Language
 
-TOO_MANY_VALUES = [{'id': 'too_many', 'disabled': True,
+TOO_MANY_VALUES = [{'id': 'note', 'disabled': True,
                     'text': 'Too many results: write more.'}]
-TOO_MANY_NAMED = [{'id': 'too_many', 'disabled': True,
+TOO_MANY_NAMED = [{'id': 'note', 'disabled': True,
                    'text': 'Too many results: write more, or choose a '
                            'Publisher or a Series Year.'}]
+NO_SERIES = [{'id': 'note', 'disabled': True,
+              'text': 'No series with this Issue Number.'}]
 
 
 @pytest.fixture
@@ -101,16 +110,33 @@ def selector_page(client, select_key):
                       ).content.decode()
 
 
+def search_url(client, select_key):
+    """Return the address the page itself asks the form at."""
+    return re.search(r'<form id="new-search-form"[^>]*hx-get="([^"]+)"',
+                     selector_page(client, select_key)).group(1)
+
+
 def search(client, select_key, **form):
-    """Send the form, asked where the page itself asks it."""
-    url = re.search(r'<form id="new-search-form"[^>]*hx-get="([^"]+)"',
-                    selector_page(client, select_key)).group(1)
-    return client.get(url, form)
+    """Send the form."""
+    return client.get(search_url(client, select_key), form)
 
 
 def results(response):
-    """Return the ids of the objects listed by the form."""
-    return {row.record.id for row in response.context['table'].rows}
+    """Return what the buttons of the listed rows choose."""
+    return set(re.findall(r'name="object_choice" value="(\w+)"',
+                          response.content.decode()))
+
+
+def story_rows(catalog, *keys):
+    """Return what the rows of the stories of the given short names choose."""
+    return {f'story_{catalog[key].id}' for key in keys} \
+        | {f'issue_{catalog[key].issue_id}' for key in keys}
+
+
+def stories_listed(response):
+    """Return how many stories are listed."""
+    return len([choice for choice in results(response)
+                if choice.startswith('story_')])
 
 
 def menu_url(client, select_key, field):
@@ -145,6 +171,39 @@ def test_form_is_sent_whatever_the_limits_and_without_number(client,
     assert 'htmx:responseError' in html
 
 
+def test_reprint_selector_has_only_the_form(client, select_key):
+    html = selector_page(client, select_key)
+    assert 'class="select_search"' not in html
+    assert 'name="search_story"' not in html
+    assert 'name="q"' not in html
+    assert 'by entering the relevant information' not in html
+    assert 'id="new-search-form"' in html
+
+
+def test_form_has_no_choice_of_what_to_list(client, select_key):
+    """The rows have a button for the story and one for the issue."""
+    assert 'name="search_object"' not in selector_page(client, select_key)
+
+
+def test_heading_is_a_heading_when_the_session_cache_is_lost(client,
+                                                             select_key):
+    """The session comes back from the database, and from JSON a plain text."""
+    caches[settings.SESSION_CACHE_ALIAS].clear()
+    html = selector_page(client, select_key)
+    assert '<h2>Select story/issue' in html
+    assert '&lt;h2&gt;' not in html
+
+
+def test_other_selector_keeps_the_two_searches(client, select_key, catalog):
+    """The form finds no series, and a series bond needs to find one."""
+    response = client.get(reverse('add_series_bond',
+                                  kwargs={'series_id': catalog['xmen91'].id}))
+    html = selector_page(client, resolve(response.url).kwargs['select_key'])
+    assert 'class="select_search"' in html
+    assert 'name="search_series"' in html
+    assert 'name="q"' in html
+
+
 def test_form_needs_the_right_to_edit(client, catalog, any_edit_story_rev):
     """A lost session is an error the page writes, not a login page in it."""
     response = client.get(reverse('select_object_search_htmx',
@@ -173,11 +232,12 @@ def test_publisher_menu_lists_few_values(client, select_key):
 def test_publisher_menu_says_when_values_are_too_many(
         client, select_key, catalog, extra, too_many):
     for number in range(extra):
-        Publisher.objects.create(name='Marvel %d' % number,
+        Publisher.objects.create(name='Marvel %02d' % number,
                                  country=catalog['country'], year_began=2000)
     values = menu(client, select_key, 'publisher_auto', 'marvel')
     if too_many:
-        assert labels(values[:-1]) == ['Marvel']
+        assert labels(values[:-1]) == ['Marvel'] + [
+          'Marvel %02d' % number for number in range(FEW_RESULTS - 1)]
         assert values[-1:] == TOO_MANY_VALUES
     else:
         assert len(values) == FEW_RESULTS
@@ -201,7 +261,8 @@ def test_publisher_with_too_many_longer_names_can_still_be_chosen(
                                       year_began=1935)
     values = menu(client, select_key, 'publisher_auto', ' dc ')
     assert values[0]['id'] == str(wanted.id)
-    assert values[1:] == TOO_MANY_VALUES
+    assert len(values) == FEW_RESULTS + 1
+    assert values[-1:] == TOO_MANY_VALUES
 
 
 def test_publisher_is_found_by_its_id_among_too_many(client, select_key,
@@ -212,7 +273,8 @@ def test_publisher_is_found_by_its_id_among_too_many(client, select_key,
                                  country=catalog['country'], year_began=2000)
     values = menu(client, select_key, 'publisher_auto', str(wanted.id))
     assert values[0]['id'] == str(wanted.id)
-    assert values[1:] == TOO_MANY_VALUES
+    assert len(values) == FEW_RESULTS + 1
+    assert values[-1:] == TOO_MANY_VALUES
 
 
 def test_series_menu_compares_names_without_separators(client, select_key):
@@ -291,23 +353,46 @@ def test_series_menu_says_when_values_are_too_many(
         another_series(catalog, 'X-Men %d' % number)
     values = menu(client, select_key, 'series_auto', 'xmen')
     if too_many:
-        assert [value['id'] for value in values[:-1]] == [
+        assert [value['id'] for value in values[:2]] == [
           str(catalog['xmen91'].id), str(catalog['xmen_uk'].id)]
+        assert len(values) == FEW_RESULTS + 1
         assert values[-1:] == TOO_MANY_VALUES
     else:
         assert len(values) == FEW_RESULTS
 
 
+def test_part_of_a_name_lists_the_first_series_among_too_many(
+        client, select_key, catalog):
+    """As with nathan ne of Sergio Bonelli Editore: 26 series, 20 listed."""
+    for number in reversed(range(FEW_RESULTS + 1)):
+        another_series(catalog, 'Nathan Never %02d' % number)
+    values = menu(client, select_key, 'series_auto', 'nathan ne',
+                  publisher=str(catalog['marvel'].id))
+    assert labels(values[:-1]) == [
+      'Nathan Never %02d (Marvel, 2000 series) - XA, 0 issues' % number
+      for number in range(FEW_RESULTS)]
+    assert values[-1:] == TOO_MANY_VALUES
+
+
+def test_opened_series_menu_only_says_when_values_are_too_many(
+        client, select_key, catalog):
+    """With no text to go by, the first values would be any values."""
+    for number in range(FEW_RESULTS + 1):
+        another_series(catalog, 'Some %d' % number)
+    assert menu(client, select_key, 'series_auto') == TOO_MANY_VALUES
+
+
 def test_series_with_too_many_longer_names_can_still_be_chosen(
         client, select_key, catalog):
-    """Writing more would leave it out, as with X-Men of Marvel of 2010."""
+    """Alphabetically they could fall out, as with Le grandi storie."""
     for number in range(FEW_RESULTS + 1):
-        another_series(catalog, 'X-Men %d' % number, year_began=2010)
+        another_series(catalog, 'A X-Men %d' % number, year_began=2010)
     wanted = another_series(catalog, 'X-Men', year_began=2010)
     values = menu(client, select_key, 'series_auto', 'X-Men',
                   publisher=str(catalog['marvel'].id), series_year='2010')
     assert values[0]['id'] == str(wanted.id)
-    assert values[1:] == TOO_MANY_VALUES
+    assert len(values) == FEW_RESULTS + 1
+    assert values[-1:] == TOO_MANY_VALUES
 
 
 def test_too_many_series_with_the_same_name_ask_for_publisher_or_year(
@@ -316,7 +401,8 @@ def test_too_many_series_with_the_same_name_ask_for_publisher_or_year(
     for number in range(FEW_RESULTS + 1):
         another_series(catalog, 'Klassiker', year_began=1950 + number)
     values = menu(client, select_key, 'series_auto', 'klassiker')
-    assert values == TOO_MANY_NAMED
+    assert len(values) == FEW_RESULTS + 1
+    assert values[-1:] == TOO_MANY_NAMED
     wanted = another_series(catalog, 'Klassiker', year_began=2020)
     values = menu(client, select_key, 'series_auto', 'klassiker',
                   series_year='2020')
@@ -335,7 +421,8 @@ def test_series_is_found_by_its_id_among_too_many(client, select_key, catalog):
         another_series(catalog, 'Volume %d' % wanted.id)
     values = menu(client, select_key, 'series_auto', str(wanted.id))
     assert values[0]['id'] == str(wanted.id)
-    assert values[1:] == TOO_MANY_VALUES
+    assert len(values) == FEW_RESULTS + 1
+    assert values[-1:] == TOO_MANY_VALUES
 
 
 def test_series_id_must_agree_with_publisher_and_year(client, select_key,
@@ -359,14 +446,80 @@ def test_series_menu_with_a_mistaken_year_lists_nothing_wrong(
     assert menu(client, select_key, 'series_auto', 'xmen', series_year='abc')
 
 
+def test_menus_find_a_key_inside_the_name(client, select_key, catalog):
+    assert labels(menu(client, select_key, 'publisher_auto', 'arv')) == [
+      'Marvel', 'Marvel UK']
+    assert [value['id'] for value in menu(client, select_key, 'series_auto',
+                                          'forever')] \
+        == [str(catalog['forever'].id)]
+
+
+@pytest.mark.parametrize('forward', [
+    {'publisher': 'marvel'}, {'series_year': '1991'}])
+@pytest.mark.parametrize('number', ['2', '10', '1'])
+def test_number_narrows_the_series_menu(client, select_key, catalog, forward,
+                                        number):
+    """Going on after the number too: X-Men of 1991 has no plain 1."""
+    if 'publisher' in forward:
+        forward = {'publisher': str(catalog['marvel'].id)}
+    values = menu(client, select_key, 'series_auto', 'xmen',
+                  issue_number=number, **forward)
+    assert [value['id'] for value in values] == [str(catalog['xmen91'].id)]
+
+
+def test_number_lists_what_the_text_alone_finds_too_many(client, select_key,
+                                                         catalog):
+    """As with DC, 2014, batm and 2: 49 series, 16 of them with that number."""
+    wanted = None
+    for number in range(FEW_RESULTS + 1):
+        wanted = another_series(catalog, 'X-Men %d' % number, year_began=2014)
+    Issue.objects.create(series=wanted, number='2', sort_code=1)
+    forward = {'publisher': str(catalog['marvel'].id), 'series_year': '2014'}
+    assert menu(client, select_key, 'series_auto', 'xmen', **forward)[-1:] \
+        == TOO_MANY_VALUES
+    values = menu(client, select_key, 'series_auto', 'xmen', issue_number='2',
+                  **forward)
+    assert [value['id'] for value in values] == [str(wanted.id)]
+
+
+def test_number_alone_does_not_narrow_the_series_menu(client, select_key):
+    """Among all the series it would take seconds at each key."""
+    assert len(menu(client, select_key, 'series_auto', 'xmen',
+                    issue_number='2')) == 3
+
+
+def test_number_no_series_has_is_said_by_the_series_menu(client, select_key,
+                                                         catalog):
+    assert menu(client, select_key, 'series_auto', 'xmen', issue_number='999',
+                publisher=str(catalog['marvel'].id)) == NO_SERIES
+
+
+def test_deleted_issue_does_not_narrow_the_series_menu(client, select_key,
+                                                       catalog):
+    Issue.objects.create(series=catalog['xmen91'], number='7', sort_code=8,
+                         deleted=True)
+    assert menu(client, select_key, 'series_auto', 'xmen', issue_number='7',
+                publisher=str(catalog['marvel'].id)) == NO_SERIES
+
+
 # the results
+
+
+def test_chosen_series_is_not_emptied_by_publisher_or_year(client, select_key,
+                                                           catalog):
+    """They can disagree with it, as with Batman of 2024 and the year 2014."""
+    response = search(client, select_key, series_auto=catalog['xmen91'].id,
+                      publisher_auto=catalog['marvel_uk'].id,
+                      series_year_auto=2014, issue_number='2')
+    assert results(response) == story_rows(catalog, 'second_cover',
+                                           'second_story')
 
 
 def test_number_goes_on_inside_a_series(client, select_key, catalog):
     response = search(client, select_key, series_auto=catalog['xmen91'].id,
                       issue_number='1')
-    assert results(response) == {
-      catalog[key].id for key in ('a_cover', 'a_story', 'b_cover', 'b_story')}
+    assert results(response) == story_rows(catalog, 'a_cover', 'a_story',
+                                           'b_cover', 'b_story')
 
 
 def test_number_going_on_ignores_case_like_the_exact_one(
@@ -374,37 +527,103 @@ def test_number_going_on_ignores_case_like_the_exact_one(
     issue = Issue.objects.create(series=catalog['xmen91'], sort_code=9,
                                  number='April 1968 [2]')
     response = search(client, select_key, series_auto=catalog['xmen91'].id,
-                      issue_number='april 1968', search_object='issue')
-    assert results(response) == {issue.id}
+                      issue_number='april 1968')
+    assert results(response) == {f'issue_{issue.id}'}
 
 
 def test_number_does_not_go_on_into_longer_numbers(client, select_key,
                                                    catalog):
     response = search(client, select_key, series_auto=catalog['xmen91'].id,
-                      issue_number='1', search_object='issue')
-    assert catalog['tenth'].id not in results(response)
+                      issue_number='1')
+    assert f'issue_{catalog["tenth"].id}' not in results(response)
 
 
-def test_number_is_exact_without_a_series(client, select_key, catalog):
+def test_number_alone_is_exact(client, select_key, catalog):
     response = search(client, select_key, issue_number='1')
-    assert results(response) == {catalog['uk_cover'].id,
-                                 catalog['uk_story'].id}
+    assert results(response) == story_rows(catalog, 'uk_cover', 'uk_story')
 
 
-@pytest.mark.parametrize('search_object, expected', [
-    ('cover', {'a_cover', 'b_cover'}),
-    ('issue', {'a', 'b'}),
-])
-def test_form_finds_covers_and_issues(client, select_key, catalog,
-                                      search_object, expected):
+def test_number_goes_on_with_a_publisher_or_a_year(client, select_key,
+                                                   catalog):
+    expected = story_rows(catalog, 'a_cover', 'a_story', 'b_cover', 'b_story')
+    assert results(search(client, select_key, issue_number='1',
+                          publisher_auto=catalog['marvel'].id)) == expected
+    assert results(search(client, select_key, issue_number='1',
+                          series_year_auto=1991)) == expected
+
+
+def test_story_rows_have_the_buttons_of_the_story_and_of_the_issue(
+        client, select_key, catalog):
     response = search(client, select_key, series_auto=catalog['xmen91'].id,
-                      issue_number='1', search_object=search_object)
-    assert results(response) == {catalog[key].id for key in expected}
+                      issue_number='2')
+    html = response.content.decode()
+    assert html.count('Select This Story') == 2
+    assert html.count('Select This Issue') == 2
+
+
+def test_issue_without_sequences_is_listed_with_its_button(client, select_key,
+                                                           catalog):
+    """Most issues are so, and the stories have no row for them."""
+    issue = Issue.objects.create(series=catalog['xmen91'], sort_code=9,
+                                 number='1 [Cover C]')
+    response = search(client, select_key, series_auto=catalog['xmen91'].id,
+                      issue_number='1')
+    html = response.content.decode()
+    assert results(response) == story_rows(
+      catalog, 'a_cover', 'a_story', 'b_cover', 'b_story') \
+        | {f'issue_{issue.id}'}
+    assert html.count('Select This Story') == 4
+    assert html.count('Select This Issue') == 5
+    assert html.index('Select This Story') \
+        < html.index(f'value="issue_{issue.id}"')
+
+
+def test_only_issues_without_sequences_are_listed(client, select_key, catalog):
+    issue = Issue.objects.create(series=catalog['forever'], number='1',
+                                 sort_code=1)
+    response = search(client, select_key, series_auto=catalog['forever'].id)
+    assert results(response) == {f'issue_{issue.id}'}
+    assert 'Select This Story' not in response.content.decode()
+
+
+def test_nothing_found_says_so(client, select_key, catalog):
+    response = search(client, select_key, series_auto=catalog['forever'].id)
+    assert '0 to 0 of 0 objects' in ' '.join(response.content.decode().split())
+
+
+@pytest.mark.parametrize('extra, too_many', [(FEW_RESULTS - 8, False),
+                                             (FEW_RESULTS - 7, True)])
+def test_stories_and_issues_count_together(client, select_key, catalog, extra,
+                                           too_many):
+    """A series of 8 stories must not hide the issues without sequences."""
+    for number in range(extra):
+        Issue.objects.create(series=catalog['xmen91'], number=f'{number + 20}',
+                             sort_code=number + 20)
+    response = search(client, select_key, series_auto=catalog['xmen91'].id)
+    if too_many:
+        assert response.content \
+          == b'<p>Too many results: write the Issue Number.</p>'
+    else:
+        assert stories_listed(response) == 8
+        assert len(results(response)) == FEW_RESULTS + 4
+
+
+def test_issues_are_not_read_with_too_many_stories(client, select_key,
+                                                   catalog):
+    """Among all the issues of a publisher they take seconds."""
+    url = search_url(client, select_key)
+    with CaptureQueriesContext(connection) as few:
+        client.get(url, {'publisher_auto': catalog['marvel'].id})
+    assert any('NOT EXISTS' in query['sql'] for query in few)
+    many_stories(catalog, 'second', FEW_RESULTS)
+    with CaptureQueriesContext(connection) as many:
+        client.get(url, {'publisher_auto': catalog['marvel'].id})
+    assert not any('NOT EXISTS' in query['sql'] for query in many)
 
 
 def test_few_results_are_listed_without_a_number(client, select_key, catalog):
     response = search(client, select_key, series_auto=catalog['xmen91'].id)
-    assert len(results(response)) == 8
+    assert stories_listed(response) == 8
 
 
 def many_stories(catalog, number, how_many):
@@ -431,7 +650,7 @@ def test_too_many_results_ask_for_the_series(client, select_key, catalog):
 def test_exactly_the_most_results_are_listed(client, select_key, catalog):
     many_stories(catalog, 'second', FEW_RESULTS - 8)
     response = search(client, select_key, series_auto=catalog['xmen91'].id)
-    assert len(results(response)) == FEW_RESULTS
+    assert stories_listed(response) == FEW_RESULTS
 
 
 def test_series_and_number_always_list(client, select_key, catalog):
@@ -439,7 +658,97 @@ def test_series_and_number_always_list(client, select_key, catalog):
     many_stories(catalog, 'second', FEW_RESULTS + 5)
     response = search(client, select_key, series_auto=catalog['xmen91'].id,
                       issue_number='2')
-    assert len(results(response)) == FEW_RESULTS + 7
+    assert stories_listed(response) == FEW_RESULTS + 7
+
+
+# the pages of a table
+
+
+def page_links(response):
+    """Return the addresses of the links to other pages, by their page."""
+    return {int(link.rsplit('=', 1)[1]): link for link in (
+      unescape(found) for found in re.findall(
+        r'<a [^>]*href="([^"]*page=\d+)"', response.content.decode()))}
+
+
+def long_table(client, select_key, catalog):
+    """Return the first page of the 102 stories of an issue."""
+    many_stories(catalog, 'second', 100)
+    return search(client, select_key, series_auto=catalog['xmen91'].id,
+                  issue_number='2', publisher_auto='', series_year_auto='')
+
+
+def test_short_table_has_no_links_to_pages(client, select_key, catalog):
+    response = search(client, select_key, series_auto=catalog['xmen91'].id,
+                      issue_number='2')
+    assert not page_links(response)
+    assert 'hx-boost' not in response.content.decode()
+
+
+def test_links_of_a_long_table_ask_the_search_for_the_same_form(
+        client, select_key, catalog):
+    response = long_table(client, select_key, catalog)
+    link = page_links(response)[2]
+    assert link.startswith(search_url(client, select_key) + '?')
+    assert f'series_auto={catalog["xmen91"].id}' in link
+    assert 'issue_number=2' in link
+
+
+def test_box_of_a_long_table_asks_the_search_for_the_same_form(
+        client, select_key, catalog):
+    html = long_table(client, select_key, catalog).content.decode()
+    box = re.search(r'<form method="GET" action="([^"]+)">.*?</form>', html,
+                    re.DOTALL)
+    assert box.group(1) == search_url(client, select_key)
+    assert 'name="issue_number" value="2"' in box.group()
+
+
+def test_pages_of_a_long_table_list_each_story_once(client, select_key,
+                                                    catalog):
+    response = long_table(client, select_key, catalog)
+    first = results(response)
+    assert stories_listed(response) == 100
+    second = client.get(page_links(response)[2],
+                        headers={'HX-Target': 'story-results'})
+    assert stories_listed(second) == 2
+    stories = Story.objects.filter(issue=catalog['second'], deleted=False)
+    assert {choice for choice in first | results(second)
+            if choice.startswith('story_')} \
+        == {f'story_{story.id}' for story in stories}
+    assert page_links(second)[1] == page_links(response)[2].replace(
+      'page=2', 'page=1')
+
+
+def test_pages_of_one_table_leave_the_other_alone(client, select_key, catalog):
+    """As with Il Giornalino 3, whose 484 stories hid the issues."""
+    many_stories(catalog, 'second', 100)
+    issues = [Issue.objects.create(series=catalog['xmen91'], sort_code=9 + n,
+                                   number=f'2 [{n}]') for n in range(101)]
+    response = search(client, select_key, series_auto=catalog['xmen91'].id,
+                      issue_number='2')
+    html = response.content.decode()
+    assert 'id="story-results"' in html and 'id="issue-results"' in html
+    link = page_links(response)[2]
+
+    stories = client.get(link, headers={'HX-Target': 'story-results'})
+    html = stories.content.decode()
+    assert 'id="story-results"' in html and 'id="issue-results"' not in html
+    assert stories_listed(stories) == 2
+
+    others = client.get(link, headers={'HX-Target': 'issue-results'})
+    html = others.content.decode()
+    assert 'id="issue-results"' in html and 'id="story-results"' not in html
+    assert results(others) == {f'issue_{issues[100].id}'}
+
+
+def test_link_to_a_page_is_as_it_was_elsewhere(db):
+    html = render_to_string(
+      'gcd/bits/tw_pagination_bar.html',
+      {'page': DiggPaginator(range(200), 100, body=7, padding=2,
+                             tail=1).page(1),
+       'query_string': 'a=b'})
+    assert 'href="?a=b&amp;page=2"' in html
+    assert '<form method="GET">' in html
 
 
 @pytest.mark.parametrize('year', [0, 1682, 2027, 20005])
@@ -452,11 +761,11 @@ def test_year_outside_the_limits_of_the_form_still_narrows(
       series_year=str(year))] == [str(odd.id)]
     issue = Issue.objects.create(series=odd, number='1', sort_code=1)
     response = search(client, select_key, series_year_auto=year,
-                      issue_number='1', search_object='issue')
-    assert results(response) == {issue.id}
+                      issue_number='1')
+    assert results(response) == {f'issue_{issue.id}'}
 
 
 def test_year_that_is_no_number_is_left_out(client, select_key, catalog):
     response = search(client, select_key, series_year_auto='abc',
-                      issue_number='1', search_object='issue')
-    assert results(response) == {catalog['uk'].id}
+                      issue_number='1')
+    assert results(response) == story_rows(catalog, 'uk_cover', 'uk_story')
