@@ -88,6 +88,8 @@ or select from the data cache:
       {% endif %}
 </form>
     {% endfor %}
+  {% else %}
+    <p>There are no remembered objects in the data cache. Use Remember Issue or Remember Story on an issue page to add objects to the data cache and then you can select them here.</p>
   {% endif %}
   {% if story or issue %}
     {% if issue %}
