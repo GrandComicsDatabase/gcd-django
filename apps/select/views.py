@@ -14,9 +14,9 @@ from django.http import HttpResponse, HttpResponseBadRequest, \
                         HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.shortcuts import render
-from django.template.defaultfilters import pluralize
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django import forms
 
 from django_filters import FilterSet, ModelChoiceFilter, \
@@ -41,7 +41,7 @@ from apps.gcd.models.series import SeriesPublisherTable
 from apps.gcd.models.story import StoryTable
 from apps.indexer.views import render_error
 from apps.select.forms import get_select_cache_form, get_select_search_form, \
-                              get_select_issue_story_form
+                              get_select_issue_story_form, series_label
 
 
 ##############################################################################
@@ -83,6 +83,7 @@ def get_select_data(request, select_key):
 def get_select_forms(request, initial, data, publisher=False,
                      series=False, issue=False, story=False, cover=False,
                      exclude_issue_id=None):
+    """Return the row search form, the results form and the cache form."""
     if issue:
         cached_issues = get_cached_issues(request)
     else:
@@ -101,7 +102,8 @@ def get_select_forms(request, initial, data, publisher=False,
                                          search_issue=issue,
                                          search_story=story,
                                          search_cover=cover)
-    new_search_form = get_select_issue_story_form()
+    new_search_form = get_select_issue_story_form(
+      search_story=story)(initial=initial)
     if data:
         search_form = search_form(data)
     else:
@@ -160,8 +162,12 @@ def process_select_search_haystack(request, select_key):
                 allowed_selects.append(select)
         context['allowed_selects'] = allowed_selects
         sqs = GcdSearchQuerySet().facet('facet_model_name')
-        return PaginatedFacetedSearchView(searchqueryset=sqs)(request,
-                                                              context=context)
+        # the row of what the selector does not take would have no button
+        if allowed_selects:
+            sqs = sqs.filter(facet_model_name__in=allowed_selects)
+        return PaginatedFacetedSearchView(
+          searchqueryset=sqs, template='search/tw_search.html')(
+            request, context=context)
     else:
         return HttpResponseRedirect(
           urlresolvers.reverse(data.get('selection_view', 'select_object'),
@@ -206,13 +212,39 @@ def _few_rows(rows):
     return len(rows.order_by().values_list('pk', flat=True)[:FEW_RESULTS + 1])
 
 
+def _has_one_issue(series):
+    """Return whether the series has one issue, so a number narrows nothing."""
+    return Issue.objects.filter(series_id=series,
+                                deleted=False)[:2].count() == 1
+
+
+def _search_object(request):
+    """Return what the form lists: all, story, cover or issue."""
+    search_object = request.GET.get('search_object')
+    if search_object in ('story', 'cover', 'issue'):
+        return search_object
+    return 'all'
+
+
 @permission_required('indexer.can_reserve', raise_exception=True)
 def process_htmx_select_search(request, select_key):
-    """List what the form finds, or ask for the next field if too much."""
+    """
+    List what the form finds, or ask for the next field if too much.
+
+    search_object chooses what: all, story, cover or issue. A selector that
+    takes no stories has no such choice and lists issues, whatever is asked.
+    """
+    try:
+        data = get_select_data(request, select_key)
+    except KeyError:
+        # the page writes a failing status; an error page would be swapped in
+        return HttpResponseBadRequest('This selection is no longer available.')
+    search_object = _search_object(request) if data.get('story') else 'issue'
     publisher = request.GET.get('publisher_auto', None)
     series = request.GET.get('series_auto', None)
     series_year = request.GET.get('series_year_auto', '').strip()
     issue_number = request.GET.get('issue_number', '').strip()
+    sequence_number = request.GET.get('sequence_number', '').strip()
     filters = {}
     if series:
         # the chosen series says it all: a publisher or a year that disagree
@@ -223,8 +255,6 @@ def process_htmx_select_search(request, select_key):
             filters['series__publisher_id'] = publisher
         if series_year.isdecimal():
             filters['series__year_began'] = series_year
-    if not filters and not issue_number:
-        return HttpResponse('')
 
     def issue_query(prefix=''):
         """Return the query of the issues, seen from the given relation."""
@@ -238,29 +268,27 @@ def process_htmx_select_search(request, select_key):
         return query
 
     stories = Story.objects.filter(issue_query('issue__'), deleted=False)
-    # they have no row among the stories, and they are most of the issues
-    issues = Issue.objects.filter(issue_query(), deleted=False).filter(
-      ~Exists(Story.objects.filter(issue=OuterRef('pk'), deleted=False)))
-    # with a series and its number there is nothing left to narrow down
-    if not (series and issue_number):
-        rows = _few_rows(stories)
-        # read only if needed: among all the issues of a publisher or of a
-        # number they take seconds
-        if rows <= FEW_RESULTS:
-            rows += _few_rows(issues)
-        if rows > FEW_RESULTS:
-            return HttpResponse(format_html(
-              '<p>Too many results: {}</p>',
-              'write the Issue Number.' if series else 'choose a Series.'))
+    issues = Issue.objects.filter(issue_query(), deleted=False)
+    if sequence_number.isdecimal():
+        stories = stories.filter(sequence_number=sequence_number)
+        # the issues without sequences have no such number
+        if search_object == 'all':
+            search_object = 'story'
+    if search_object == 'cover':
+        stories = stories.filter(type=STORY_TYPES['cover'])
+    elif search_object == 'all':
+        # they have no row among the stories, and they are most of the issues
+        issues = issues.filter(
+          ~Exists(Story.objects.filter(issue=OuterRef('pk'), deleted=False)))
 
     from apps.gcd.views.details import generic_sortable_list
 
-    def listing(search, table_format, select_target):
+    def listing(search, table_format, select_target, order_by='issue'):
         """Return the response with the table of the given objects."""
         table = table_format(
             search,
             template_name='gcd/bits/tw_sortable_table.html',
-            order_by='issue')
+            order_by=order_by)
         table.no_export = True
         table.orderable = False
         return generic_sortable_list(
@@ -269,22 +297,62 @@ def process_htmx_select_search(request, select_key):
              'plural_suffix': '',
              'select_key': select_key,
              'select_target': select_target,
-             'select_issue': select_target == 'story',
+             'select_issue': select_target in ('story', 'cover'),
              'no_bulk_edit': True})
 
-    # the links to the pages of a table ask for that table only
-    paged_table = request.headers.get('HX-Target')
-    if paged_table == 'story-results':
-        return listing(stories, StoryTable, 'story')
-    if paged_table == 'issue-results':
-        return listing(issues, IssuePublisherTable, 'issue')
-    if not issues.exists():
-        return listing(stories, StoryTable, 'story')
-    issue_list = listing(issues, IssuePublisherTable, 'issue')
-    if not stories.exists():
-        return issue_list
-    return HttpResponse(listing(stories, StoryTable, 'story').content
-                        + issue_list.content)
+    def found():
+        """Return the tables of what the form finds, or ask for more."""
+        if not filters and not issue_number:
+            # a sequence alone, or a year that is no number, narrow nothing
+            if sequence_number or series_year:
+                return HttpResponse(
+                  '<p>Too many results: choose a Series.</p>')
+            return HttpResponse('')
+        # with a series and its number there is nothing left to narrow down
+        if not (series and issue_number):
+            rows = 0 if search_object == 'issue' else _few_rows(stories)
+            # read only if needed: among all the issues of a publisher or of a
+            # number they take seconds
+            if search_object in ('all', 'issue') and rows <= FEW_RESULTS:
+                rows += _few_rows(issues)
+            if rows > FEW_RESULTS and not (series and _has_one_issue(series)):
+                wanted = 'write the Issue Number.' if series \
+                    else 'choose a Series.'
+                return HttpResponse('<p>Too many results: %s</p>' % wanted)
+
+        if search_object in ('story', 'cover'):
+            return listing(stories, StoryTable, search_object)
+        if search_object == 'issue':
+            return listing(issues, IssuePublisherTable, 'issue')
+        # the links to the pages of a table ask for that table only
+        paged_table = request.headers.get('HX-Target')
+        if paged_table == 'story-results':
+            return listing(stories, StoryTable, 'story')
+        if paged_table == 'issue-results':
+            return listing(issues, IssuePublisherTable, 'issue')
+        if not issues.exists():
+            return listing(stories, StoryTable, 'story')
+        issue_list = listing(issues, IssuePublisherTable, 'issue')
+        if not stories.exists():
+            return issue_list
+        return HttpResponse(listing(stories, StoryTable, 'story').content
+                            + issue_list.content)
+
+    response = found()
+    # a link to a page of a table asks for that table only
+    if 'page' not in request.GET:
+        # a selector that takes series can choose this one
+        if series and data.get('series'):
+            response.content = listing(
+              Series.objects.filter(id=series, deleted=False),
+              SeriesPublisherTable, 'series', 'name').content \
+              + response.content
+        # Back and reload find the search in the address of the page
+        response['HX-Replace-Url'] = '%s?%s' % (
+          urlresolvers.reverse('select_object',
+                               kwargs={'select_key': select_key}),
+          request.META['QUERY_STRING'])
+    return response
 
 
 @permission_required('indexer.can_reserve')
@@ -468,7 +536,12 @@ def _select_object(request, select_key, multiple_sequences=False):
             request_data = request.GET
         else:
             request_data = None
-        initial = data.get('initial', {})
+        # the form writes its last search in the address, always with a number
+        if 'issue_number' in request.GET:
+            initial = request.GET.dict()
+        else:
+            initial = data.get('initial', {})
+        search_on_open = any(initial.values())
         initial['select_key'] = select_key
         publisher = data.get('publisher', False)
         series = data.get('series', False)
@@ -490,6 +563,8 @@ def _select_object(request, select_key, multiple_sequences=False):
           exclude_issue_id=(
             exclude_issue_id))
         haystack_form = FacetedSearchForm()
+        # sent empty it would reload the page and empty the form below it
+        haystack_form.fields['q'].required = True
         cache_choices = []
         if 'object_choice' in cache_form.fields:
             radios = list(cache_form['object_choice'])
@@ -512,13 +587,11 @@ def _select_object(request, select_key, multiple_sequences=False):
         for index, choice in enumerate(cache_choices, 1):
             choice['help_id'] = 'disabled-choice-%d' % index
         can_copy_multiple = data.get('return') == '_selected_copy_sequence'
-        # the form takes the place of the two searches above it for a reprint
-        # link; the other selectors need them to find a series or a publisher
-        reprint_link = data.get('return') == 'confirm_reprint'
         template = ('select/select_cached_sequences.html' if multiple_sequences
                     else 'select/select_object.html')
+        # without its cache the session comes back from JSON, without the mark
         return render(request, template,
-                      {'heading': data['heading'],
+                      {'heading': mark_safe(data['heading']),
                        'select_key': select_key,
                        'cache_form': cache_form,
                        'cache_choices': cache_choices,
@@ -530,11 +603,12 @@ def _select_object(request, select_key, multiple_sequences=False):
                                       'cached_covers')),
                        'show_cache': issue or story or cover,
                        'can_copy_multiple': can_copy_multiple,
-                       'reprint_link': reprint_link,
                        'disabled_choice_title': disabled_choice_title,
                        'disabled_choice_help': disabled_choice_help,
                        'search_form': search_form,
                        'new_search_form': new_search_form,
+                       'search_on_open': search_on_open,
+                       'search_object': _search_object(request),
                        'haystack_form': haystack_form,
                        'publisher': publisher,
                        'series': series,
@@ -651,10 +725,14 @@ def _select_object(request, select_key, multiple_sequences=False):
     elif 'search_select' in request.POST:
         choice = request.POST['object_choice']
         object_type, selected_id = choice.split('_')
+        # a cover is chosen as its story
+        if object_type == 'cover':
+            object_type = 'story'
         # a return function can take any id for the object it expects, as a
-        # series bond does with an issue; a cover is chosen as its story
-        if not (data.get(object_type) or
-                (object_type == 'story' and data.get('cover'))):
+        # series bond does with an issue
+        if (object_type not in ('publisher', 'series', 'issue', 'story') or
+                not (data.get(object_type) or
+                     (object_type == 'story' and data.get('cover')))):
             return HttpResponseBadRequest(
               'This selection does not take this kind of object.')
     elif 'entered_issue_id' in request.POST:
@@ -1361,7 +1439,8 @@ class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
                 in qs.values_list('id', 'deleted', 'named')[:SERIES_READ]
                 if not row[1]]
         if by_number and not rows:
-            self.note = 'No series with this Issue Number.'
+            self.note = ('No series with this name and this Issue Number.'
+                         if text else 'No series with this Issue Number.')
         named_ids = [row[0] for row in rows if row[2]]
         ids = self.few_values([row[0] for row in rows], len(named_ids))
         found = Series.objects.filter(id__in=ids) \
@@ -1372,12 +1451,8 @@ class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
         return sorted(found, key=lambda series: series.id not in named_ids)
 
     def get_result_label(self, series):
-        """Tell apart the series with the same name, as far as the data can."""
-        return '%s (%s, %s series) - %s, %d issue%s%s' % (
-          series.name, series.publisher.name, series.year_began,
-          series.country.code.upper(), series.issue_count,
-          pluralize(series.issue_count),
-          ', ' + series.binding if series.binding else '')
+        """Return the text of a value of the menu."""
+        return series_label(series)
 
 
 ##############################################################################

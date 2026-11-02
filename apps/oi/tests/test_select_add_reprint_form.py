@@ -4,6 +4,7 @@
 from html import unescape
 import json
 import re
+from unittest.mock import patch
 
 import pytest
 
@@ -11,13 +12,15 @@ from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.core.cache import caches
 from django.db import connection
+from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.test.utils import CaptureQueriesContext
 from django.urls import resolve, reverse
 
-from apps.gcd.models import Award, Issue, Publisher, Series, Story, StoryType
+from apps.gcd.models import Award, Brand, Issue, Publisher, Series, Story, \
+                            StoryType
 from apps.gcd.views.pagination import DiggPaginator
-from apps.oi.models import SeriesBondRevision
+from apps.oi.models import ReprintRevision, SeriesBondRevision
 from apps.select.views import FEW_RESULTS
 from apps.stddata.models import Country, Language
 
@@ -28,6 +31,11 @@ TOO_MANY_NAMED = [{'id': 'note', 'disabled': True,
                            'Publisher or a Series Year.'}]
 NO_SERIES = [{'id': 'note', 'disabled': True,
               'text': 'No series with this Issue Number.'}]
+NO_SERIES_NAMED = [{'id': 'note', 'disabled': True,
+                    'text': 'No series with this name and this Issue Number.'}]
+ASK_SERIES = b'<p>Too many results: choose a Series.</p>'
+ASK_NUMBER = b'<p>Too many results: write the Issue Number.</p>'
+SEARCH_ON_OPEN = 'pageshow[!event.persisted] from:window, change delay:500ms'
 
 
 @pytest.fixture
@@ -78,6 +86,8 @@ def catalog(db):
     issue('second', 'xmen91', '2', 3)
     issue('tenth', 'xmen91', '10', 4)
     issue('uk', 'xmen_uk', '1', 1)
+    found['xmen91'].set_first_last_issues()
+    found['xmen_uk'].set_first_last_issues()
     found['language'], found['country'] = language, country
     return found
 
@@ -134,6 +144,27 @@ def story_rows(catalog, *keys):
         | {f'issue_{catalog[key].issue_id}' for key in keys}
 
 
+def cover_rows(catalog, *keys):
+    """Return what the rows of the covers of the given issues choose."""
+    return {f'cover_{catalog[key + "_cover"].id}' for key in keys} \
+        | {f'issue_{catalog[key].id}' for key in keys}
+
+
+def radio_buttons(html):
+    """Return the choices of the radio buttons of the form, and which is on."""
+    form = re.search(r'<form id="new-search-form".*?</form>', html,
+                     re.DOTALL).group()
+    return re.findall(
+      r'<input type="radio" name="search_object" value="(\w+)"( checked)?',
+      form)
+
+
+def trigger(html):
+    """Return what makes the form send itself."""
+    return re.search(r'<form id="new-search-form"[^>]*hx-trigger="([^"]+)"',
+                     html).group(1)
+
+
 def stories_listed(response):
     """Return how many stories are listed."""
     return len([choice for choice in results(response)
@@ -172,18 +203,9 @@ def test_form_is_sent_whatever_the_limits_and_without_number(client,
     assert 'htmx:responseError' in html
 
 
-def test_reprint_selector_has_only_the_form(client, select_key):
-    html = selector_page(client, select_key)
-    assert 'class="select_search"' not in html
-    assert 'name="search_story"' not in html
-    assert 'name="q"' not in html
-    assert 'by entering the relevant information' not in html
-    assert 'id="new-search-form"' in html
-
-
-def test_form_has_no_choice_of_what_to_list(client, select_key):
-    """The rows have a button for the story and one for the issue."""
-    assert 'name="search_object"' not in selector_page(client, select_key)
+def test_x_of_a_menu_keeps_it_closed(client, select_key):
+    """Opened, it would cover the next field and take what is written there."""
+    assert "'select2:opening', stayClosed" in selector_page(client, select_key)
 
 
 def test_heading_is_a_heading_when_the_session_cache_is_lost(client,
@@ -195,31 +217,51 @@ def test_heading_is_a_heading_when_the_session_cache_is_lost(client,
     assert '&lt;h2&gt;' not in html
 
 
+def bond_side_selector(client, bond, side):
+    """Follow the button to edit a side of a bond, return the selector key."""
+    indexer = bond.changeset.indexer
+    indexer.user_permissions.add(Permission.objects.get(
+      content_type__app_label='indexer', codename='can_reserve'))
+    client.force_login(indexer)
+    response = client.post(reverse('edit_series_bond', kwargs={'id': bond.id}),
+                           {side: 'Change'})
+    return resolve(response.url).kwargs['select_key']
+
+
 def test_bond_heading_writes_a_name_as_text(db, client,
                                             any_added_series_bond_rev):
     """The names come from the indexers, and the heading is shown as html."""
     bond = any_added_series_bond_rev
     Series.objects.filter(id=bond.origin_id).update(
       name='<img src=x onerror=alert(1)>')
-    indexer = bond.changeset.indexer
-    indexer.user_permissions.add(Permission.objects.get(
-      content_type__app_label='indexer', codename='can_reserve'))
-    client.force_login(indexer)
-    response = client.post(reverse('edit_series_bond', kwargs={'id': bond.id}),
-                           {'edit_origin': 'Change'})
-    html = selector_page(client, resolve(response.url).kwargs['select_key'])
+    key = bond_side_selector(client, bond, 'edit_origin')
+    html = selector_page(client, key)
     assert '<img src=x' not in html
     assert '<h2>Select origin of the bond &lt;img src=x' in html
 
 
-def test_other_selector_keeps_the_two_searches(client, select_key, catalog):
-    """The form finds no series, and a series bond needs to find one."""
-    response = client.get(reverse('add_series_bond',
-                                  kwargs={'series_id': catalog['xmen91'].id}))
-    html = selector_page(client, resolve(response.url).kwargs['select_key'])
-    assert 'class="select_search"' in html
-    assert 'name="search_series"' in html
-    assert 'name="q"' in html
+def test_headings_write_names_as_text(client, select_key, catalog,
+                                      any_added_brand, any_edit_story_rev):
+    """The view marks each heading safe, and each one holds indexers' names."""
+    hostile = '<img src=x onerror=alert(1)>'
+    Series.objects.filter(id=catalog['xmen91'].id).update(name=hostile)
+    Brand.objects.filter(id=any_added_brand.id).update(name=hostile)
+    indexer = any_edit_story_rev.changeset.indexer.indexer
+    indexer.max_reservations = 5
+    indexer.save()
+    award = Award.objects.create(name=hostile)
+    for key in (
+      two_issues_selector(client, catalog),
+      resolve(client.get(reverse(
+        'add_brand_use', kwargs={'brand_id': any_added_brand.id})).url
+              ).kwargs['select_key'],
+      resolve(client.get(reverse(
+        'select_award_recipient', kwargs={'award_id': award.id})).url
+              ).kwargs['select_key']):
+        html = selector_page(client, key)
+        assert '<h2>' in html
+        assert '<img src=x' not in html
+        assert '&lt;img src=x' in html
 
 
 def bond_selector(client, catalog):
@@ -229,16 +271,73 @@ def bond_selector(client, catalog):
     return resolve(response.url).kwargs['select_key']
 
 
-def test_form_is_only_where_stories_and_issues_can_be_chosen(
-        client, select_key, catalog):
-    """Its rows choose one or the other, whatever the selector takes."""
-    assert 'id="new-search-form"' in selector_page(client, select_key)
-    html = selector_page(client, bond_selector(client, catalog))
-    assert 'id="new-search-form"' not in html
+def two_issues_selector(client, catalog):
+    """Follow the link to edit two issues and return the selector key."""
     response = client.get(reverse('edit_two_issues',
                                   kwargs={'issue_id': catalog['a'].id}))
+    return resolve(response.url).kwargs['select_key']
+
+
+def test_one_set_of_fields_where_the_form_is(client, select_key, catalog):
+    """The row asks for the same fields, and the form does what it does."""
+    for key in (select_key, bond_selector(client, catalog),
+                two_issues_selector(client, catalog)):
+        html = selector_page(client, key)
+        assert 'id="new-search-form"' in html
+        assert 'class="select_search"' not in html
+        assert 'by entering the relevant information' not in html
+        for name in ('publisher', 'series', 'year', 'number', 'search_story',
+                     'search_series'):
+            assert f'name="{name}"' not in html
+        assert html.count('name="issue_number"') == 1
+
+
+def test_free_search_stays_where_the_form_is(client, select_key, catalog):
+    """It is the one search by title."""
+    for key in (select_key, bond_selector(client, catalog)):
+        assert 'name="q"' in selector_page(client, key)
+
+
+def test_sequence_number_is_where_stories_can_be_chosen(client, select_key,
+                                                        catalog):
+    assert 'name="sequence_number"' in selector_page(client, select_key)
+    for key in (bond_selector(client, catalog),
+                two_issues_selector(client, catalog)):
+        assert 'name="sequence_number"' not in selector_page(client, key)
+
+
+def test_form_is_where_issues_can_be_chosen(client, select_key, catalog):
+    """It lists issues, and stories where the selector takes them."""
+    for key in (select_key, bond_selector(client, catalog),
+                two_issues_selector(client, catalog)):
+        assert 'id="new-search-form"' in selector_page(client, key)
+
+
+def test_brand_use_selector_has_no_form(client, select_key, any_added_brand):
+    """A publisher cannot be chosen from its rows."""
+    response = client.get(reverse('add_brand_use',
+                                  kwargs={'brand_id': any_added_brand.id}))
     html = selector_page(client, resolve(response.url).kwargs['select_key'])
     assert 'id="new-search-form"' not in html
+    assert 'id="new-search-results"' not in html
+    assert 'name="search_publisher"' in html
+    assert 'class="select_search"' in html
+    assert 'by entering the relevant information' in html
+
+
+def test_form_offers_all_first_and_checked(client, select_key):
+    """The default lists both, as the free search on the page does."""
+    html = selector_page(client, select_key)
+    assert radio_buttons(html) \
+        == [('all', ' checked'), ('story', ''), ('cover', ''), ('issue', '')]
+    assert '<span>List:</span>' in html
+
+
+def test_issue_selectors_have_no_radio_buttons(client, select_key, catalog):
+    """They take issues alone: there is nothing to choose among."""
+    for key in (bond_selector(client, catalog),
+                two_issues_selector(client, catalog)):
+        assert radio_buttons(selector_page(client, key)) == []
 
 
 def test_award_selector_keeps_the_form(client, select_key, any_edit_story_rev):
@@ -251,18 +350,37 @@ def test_award_selector_keeps_the_form(client, select_key, any_edit_story_rev):
                                   kwargs={'award_id': award.id}))
     html = selector_page(client, resolve(response.url).kwargs['select_key'])
     assert 'id="new-search-form"' in html
+    assert radio_buttons(html)[0] == ('all', ' checked')
 
 
-def test_selector_refuses_what_it_does_not_take(client, select_key, catalog):
-    """A series bond would save the issue with the id of the story."""
+@pytest.mark.parametrize('choice', ['story', 'cover', 'target', 'return',
+                                    'cancel', 'heading'])
+def test_selector_refuses_what_it_does_not_take(client, select_key, catalog,
+                                                choice):
+    """
+    A series bond would save the issue with the id of the story, and with the
+    id of anything else the data of the selector has a value for.
+    """
     bonds = SeriesBondRevision.objects.count()
     response = client.post(
       reverse('select_object',
               kwargs={'select_key': bond_selector(client, catalog)}),
       {'search_select': '1',
-       'object_choice': f'story_{catalog["a_story"].id}'})
+       'object_choice': f'{choice}_{catalog["a_story"].id}'})
     assert response.status_code == 400
     assert SeriesBondRevision.objects.count() == bonds
+
+
+def test_select_this_cover_goes_on_as_its_story(client, select_key, catalog):
+    """Its number is the id of a story: as an issue it is another comic."""
+    cover = catalog['a_cover']
+    with patch('apps.oi.views.confirm_reprint',
+               return_value=HttpResponse('confirmation')) as confirm:
+        response = client.post(
+          reverse('select_object', kwargs={'select_key': select_key}),
+          {'search_select': '1', 'object_choice': f'cover_{cover.id}'})
+    assert response.content == b'confirmation'
+    assert confirm.call_args.args[2:] == ('story', str(cover.id))
 
 
 def test_form_needs_the_right_to_edit(client, catalog, any_edit_story_rev):
@@ -273,11 +391,393 @@ def test_form_needs_the_right_to_edit(client, catalog, any_edit_story_rev):
     assert response.status_code == 403
 
 
+def test_lost_selector_is_a_failing_status(client, select_key):
+    """The page writes a failing status: an error page would land inside it."""
+    response = client.get(reverse('select_object_search_htmx',
+                                  kwargs={'select_key': 'lost'}),
+                          {'issue_number': '1'})
+    assert response.status_code == 400
+    assert b'<html' not in response.content
+
+
+def filled_values(html):
+    """Return the values the form starts with, by field."""
+    form = re.search(r'<form id="new-search-form".*?</form>', html,
+                     re.DOTALL).group()
+    found = {}
+    for field in ('publisher_auto', 'series_auto'):
+        select = re.search(r'<select[^>]*name="%s".*?</select>' % field, form,
+                           re.DOTALL).group()
+        found[field] = re.findall(r'<option value="(\d+)" selected', select)
+    for field in ('series_year_auto', 'issue_number'):
+        tag = re.search(r'<input[^>]*name="%s"[^>]*>' % field, form).group()
+        value = re.search(r'value="([^"]*)"', tag)
+        found[field] = value.group(1) if value else ''
+    return found
+
+
+@pytest.mark.parametrize('side, series, issue', [
+  ('edit_origin', 'origin', 'origin_issue'),
+  ('edit_target', 'target', 'target_issue')])
+def test_editing_a_bond_fills_series_and_number(
+        db, client, any_added_series_bond_rev, side, series, issue):
+    """Publisher and year would narrow the menu of those who want another."""
+    bond = any_added_series_bond_rev
+    the_series = getattr(bond, series)
+    setattr(bond, issue, Issue.objects.create(series=the_series, number='7',
+                                              sort_code=1))
+    bond.save()
+    html = selector_page(client, bond_side_selector(client, bond, side))
+    assert filled_values(html) == {'publisher_auto': [],
+                                   'series_auto': [str(the_series.id)],
+                                   'series_year_auto': '',
+                                   'issue_number': '7'}
+    assert trigger(html) == SEARCH_ON_OPEN
+
+
+def test_series_only_bond_fills_no_number(db, client,
+                                          any_added_series_bond_rev):
+    bond = any_added_series_bond_rev
+    html = selector_page(client, bond_side_selector(client, bond,
+                                                    'edit_origin'))
+    assert filled_values(html)['series_auto'] == [str(bond.origin_id)]
+    assert filled_values(html)['issue_number'] == ''
+
+
+def test_only_a_filled_form_lists_at_load(client, select_key, catalog):
+    """An empty form has nothing to ask, on every page of a selector."""
+    for key in (select_key, bond_selector(client, catalog)):
+        html = selector_page(client, key)
+        assert filled_values(html)['series_auto'] == []
+        assert trigger(html) == 'change delay:500ms'
+
+
+@pytest.mark.parametrize('side', ['edit_origin', 'edit_target'])
+def test_change_of_a_side_fills_the_form(client, select_key, catalog,
+                                         any_edit_story_rev, side):
+    """It lists every sequence of the issue: this one is being changed."""
+    story = any_edit_story_rev.story
+    sides = {'origin': catalog['second_story'], 'target': story} \
+        if side == 'edit_origin' \
+        else {'origin': story, 'target': catalog['second_story']}
+    link = ReprintRevision.objects.create(
+      changeset=any_edit_story_rev.changeset,
+      origin=sides['origin'], origin_issue=sides['origin'].issue,
+      target=sides['target'], target_issue=sides['target'].issue)
+    response = client.post(reverse('edit_reprint', kwargs={'id': link.id}),
+                           {side: 'Change'})
+    html = selector_page(client, resolve(response.url).kwargs['select_key'])
+    assert filled_values(html) == {'publisher_auto': [],
+                                   'series_auto': [str(catalog['xmen91'].id)],
+                                   'series_year_auto': '',
+                                   'issue_number': '2'}
+    assert trigger(html) == SEARCH_ON_OPEN
+    number = re.search(r'<input[^>]*name="sequence_number"[^>]*>', html)
+    assert 'value=' not in number.group()
+
+
+def note_selector(client, revision, note):
+    """Follow Add Reprint from a reprint note and return the selector key."""
+    response = client.get(reverse(
+      'add_story_reprint',
+      kwargs={'story_id': revision.id,
+              'changeset_id': revision.changeset_id,
+              'reprint_note': note}))
+    return resolve(response.url).kwargs['select_key']
+
+
+def test_note_of_one_series_fills_the_form(client, select_key, catalog,
+                                           any_edit_story_rev):
+    note = 'from X-Men (Marvel, 1991 series) #2'
+    html = selector_page(client,
+                         note_selector(client, any_edit_story_rev, note))
+    assert filled_values(html)['series_auto'] == [str(catalog['xmen91'].id)]
+    assert filled_values(html)['issue_number'] == '2'
+    assert trigger(html) == SEARCH_ON_OPEN
+    assert f'<p>Reprint note: {note}</p>' in html
+
+
+@pytest.mark.parametrize('note', ['from Nothing (Nobody, 1900 series) #1',
+                                  'from Nothing (Nobody, 1900 series) #1 -',
+                                  'Donald Duck daily 1944-03-28'])
+def test_other_note_is_only_shown(client, select_key, catalog,
+                                  any_edit_story_rev, note):
+    """It names no series of the catalog, or it has not the standard form."""
+    html = selector_page(client,
+                         note_selector(client, any_edit_story_rev, note))
+    assert filled_values(html)['series_auto'] == []
+    assert trigger(html) == 'change delay:500ms'
+    assert f'<p>Reprint note: {note}</p>' in html
+
+
+def test_button_of_a_sequence_without_notes_shows_no_note(
+        client, select_key, catalog, any_edit_story_rev):
+    """It sends a space, and the page must not say an empty Reprint note."""
+    html = selector_page(client,
+                         note_selector(client, any_edit_story_rev, ' '))
+    assert 'Reprint note' not in html
+    assert trigger(html) == 'change delay:500ms'
+
+
+def test_note_is_shown_whole_and_fills_from_its_first_part(
+        client, select_key, catalog, any_edit_story_rev):
+    note = 'from X-Men (Marvel, 1991 series) #2; in Other (A, 2000 series) #1'
+    html = selector_page(client,
+                         note_selector(client, any_edit_story_rev, note))
+    assert f'<p>Reprint note: {note}</p>' in html
+    assert filled_values(html)['series_auto'] == [str(catalog['xmen91'].id)]
+
+
+def test_note_of_twin_series_fills_nothing(client, select_key, catalog,
+                                           any_edit_story_rev):
+    """It cannot say which one it means."""
+    another_series(catalog, 'X-Men', year_began=1991)
+    html = selector_page(client, note_selector(
+      client, any_edit_story_rev, 'from X-Men (Marvel, 1991 series) #2'))
+    assert filled_values(html)['series_auto'] == []
+
+
+def test_note_is_written_as_text(client, select_key, catalog,
+                                 any_edit_story_rev):
+    """The heading is marked safe in the view, and a note is free text."""
+    html = selector_page(client, note_selector(
+      client, any_edit_story_rev, 'from <img src=x onerror=alert(1)>'))
+    assert '<img src=x' not in html
+    assert '&lt;img src=x' in html
+
+
+def test_bond_selects_the_chosen_series_too(client, select_key, catalog):
+    """An end of a bond can be a whole series."""
+    key = bond_selector(client, catalog)
+    url = reverse('select_object_search_htmx', kwargs={'select_key': key})
+    series = catalog['xmen91'].id
+    response = client.get(url, {'series_auto': series, 'issue_number': '2'})
+    html = response.content.decode()
+    assert results(response) == {f'series_{series}',
+                                 f'issue_{catalog["second"].id}'}
+    assert html.index('Select This Series') < html.index('Select This Issue')
+    assert '1 to 1 of 1 objects' in ' '.join(html.split())
+    assert ' '.join(html.split()).count('of 1 objects') == 1
+    too_many_of_each(catalog)
+    response = client.get(url, {'series_auto': series})
+    assert 'Select This Series' in response.content.decode()
+    assert response.content.endswith(ASK_NUMBER)
+
+
+def test_chosen_series_is_not_repeated_on_the_pages_of_a_table(
+        client, select_key, catalog):
+    key = bond_selector(client, catalog)
+    response = client.get(
+      reverse('select_object_search_htmx', kwargs={'select_key': key}),
+      {'series_auto': catalog['xmen91'].id, 'issue_number': '2', 'page': '1'})
+    assert 'Select This Series' not in response.content.decode()
+
+
+def test_series_is_not_offered_where_the_selector_takes_none(client,
+                                                             select_key,
+                                                             catalog):
+    for key in (select_key, two_issues_selector(client, catalog)):
+        response = client.get(
+          reverse('select_object_search_htmx', kwargs={'select_key': key}),
+          {'series_auto': catalog['xmen91'].id, 'issue_number': '2'})
+        assert 'Select This Series' not in response.content.decode()
+
+
+def test_select_this_series_saves_the_bond_on_the_series(client, select_key,
+                                                         catalog):
+    response = client.post(
+      reverse('select_object',
+              kwargs={'select_key': bond_selector(client, catalog)}),
+      {'search_select': '1', 'object_choice': f'series_{catalog["x"].id}'})
+    assert response.status_code == 302
+    bond = SeriesBondRevision.objects.latest('id')
+    assert bond.target == catalog['x']
+    assert bond.target_issue is None
+
+
+def test_award_selects_the_chosen_series_too(client, select_key, catalog,
+                                             any_edit_story_rev):
+    indexer = any_edit_story_rev.changeset.indexer.indexer
+    indexer.max_reservations = 5
+    indexer.save()
+    award = Award.objects.create(name='Any award')
+    key = resolve(client.get(reverse(
+      'select_award_recipient', kwargs={'award_id': award.id})).url
+                  ).kwargs['select_key']
+    series = catalog['xmen91'].id
+    response = client.get(
+      reverse('select_object_search_htmx', kwargs={'select_key': key}),
+      {'series_auto': series, 'issue_number': '2'})
+    assert f'series_{series}' in results(response)
+    response = client.post(
+      reverse('select_object', kwargs={'select_key': key}),
+      {'search_select': '1', 'object_choice': f'series_{series}'})
+    assert response.url == reverse(
+      'add_received_award',
+      kwargs={'award_id': award.id, 'model_name': 'series', 'id': series})
+
+
+def test_filled_series_shows_its_name_as_text(db, client,
+                                              any_added_series_bond_rev):
+    """The names come from the indexers."""
+    bond = any_added_series_bond_rev
+    Series.objects.filter(id=bond.origin_id).update(name='<b>Origin</b>')
+    html = selector_page(client, bond_side_selector(client, bond,
+                                                    'edit_origin'))
+    assert f'<option value="{bond.origin_id}" selected>&lt;b&gt;Origin' in html
+
+
+def test_filled_series_reads_as_in_its_menu(client, select_key, catalog,
+                                            any_edit_story_rev):
+    html = selector_page(client, note_selector(
+      client, any_edit_story_rev, 'from X-Men (Marvel, 1991 series) #2'))
+    label = menu(client, select_key, 'series_auto', str(catalog['xmen91'].id)
+                 )[0]['text']
+    assert label.startswith('X-Men (Marvel, 1991 series) - XA, 118 issues')
+    assert f'selected>{label}</option>' in html
+
+
 def test_empty_form_lists_nothing(client, select_key):
     response = search(client, select_key, publisher_auto='', series_auto='',
                       series_year_auto='', issue_number='')
     assert response.status_code == 200
     assert response.content == b''
+
+
+@pytest.mark.parametrize('form', [{'sequence_number': '7'},
+                                  {'series_year_auto': '-1'},
+                                  {'series_year_auto': '19.4'}])
+def test_field_that_narrows_nothing_alone_asks_for_a_series(client, select_key,
+                                                            form):
+    """No field is required, and none is answered with silence."""
+    assert search(client, select_key, **form).content == ASK_SERIES
+
+
+def test_free_search_lists_only_what_the_selector_takes(client, select_key):
+    """The row of anything else would have no button."""
+    with patch('apps.gcd.views.search_haystack.PaginatedFacetedSearchView'
+               ) as view:
+        view.return_value.return_value = HttpResponse('')
+        client.get(reverse('select_object_search_haystack',
+                           kwargs={'select_key': select_key}), {'q': 'batman'})
+    assert view.call_args.kwargs['template'] == 'search/tw_search.html'
+    searched = str(view.call_args.kwargs['searchqueryset'].query.query_filter)
+    assert "('facet_model_name__in', ['issue', 'story'])" in searched
+
+
+def options_of_the_results(**context):
+    """Return the choices of the menu of the page of the free search."""
+    return re.findall(r'value="([^"]+)"',
+                      render_to_string('gcd/bits/hs_search_for.html', context))
+
+
+def test_results_of_a_selector_offer_only_what_it_takes():
+    assert options_of_the_results(allowed_selects=['issue', 'story']) == [
+      'all', 'issue', 'story']
+    selected = render_to_string(
+      'gcd/bits/hs_search_for.html',
+      {'allowed_selects': ['issue', 'story'],
+       'selected_model': 'facet_model_name_exact:story'})
+    assert '<option value="story" selected>' in selected
+
+
+@pytest.mark.parametrize('context', [
+  {}, {'allowed_selects': ['issue', 'story'], 'multiple_selects': True}])
+def test_other_results_offer_every_kind_as_before(context):
+    """The search of the site, and the one of the collections."""
+    assert options_of_the_results(**context) == [
+      'all', 'story', 'issue', 'series', 'publisher', 'printer', 'creator']
+
+
+def test_free_search_is_not_sent_empty(client, select_key):
+    """It would reload the page and empty the form below it."""
+    bar = re.search(r'<input[^>]*name="q"[^>]*>',
+                    selector_page(client, select_key)).group()
+    assert 'required' in bar
+
+
+# Back and reload
+
+
+def selector_address(select_key, query):
+    """Return the address of the page of a selector with the given query."""
+    return reverse('select_object', kwargs={'select_key': select_key}) \
+        + '?' + query
+
+
+def test_search_writes_itself_in_the_address(client, select_key, catalog):
+    series = catalog['xmen91'].id
+    response = search(client, select_key, series_auto=series,
+                      issue_number='1 [Cover A]', search_object='cover')
+    assert response['HX-Replace-Url'] == selector_address(
+      select_key,
+      f'series_auto={series}&issue_number=1+%5BCover+A%5D&search_object=cover')
+
+
+def test_emptied_form_writes_itself_in_the_address(client, select_key):
+    """Back must not bring back what was just cleared."""
+    response = search(client, select_key, issue_number='')
+    assert response['HX-Replace-Url'] == selector_address(select_key,
+                                                          'issue_number=')
+
+
+def test_page_of_a_table_leaves_the_address(client, select_key, catalog):
+    """The page would come back as the first page of what the form finds."""
+    response = search(client, select_key, series_auto=catalog['xmen91'].id,
+                      page='1')
+    assert 'HX-Replace-Url' not in response
+
+
+def test_address_fills_the_form_and_lists(client, select_key, catalog):
+    series = catalog['xmen91'].id
+    html = client.get(selector_address(
+      select_key,
+      f'series_auto={series}&series_year_auto=&issue_number=2'
+      '&sequence_number=1&search_object=cover')).content.decode()
+    assert filled_values(html) == {'publisher_auto': [],
+                                   'series_auto': [str(series)],
+                                   'series_year_auto': '',
+                                   'issue_number': '2'}
+    number = re.search(r'<input[^>]*name="sequence_number"[^>]*>', html)
+    assert 'value="1"' in number.group()
+    assert ('cover', ' checked') in radio_buttons(html)
+    assert ('all', ' checked') not in radio_buttons(html)
+    assert trigger(html) == SEARCH_ON_OPEN
+
+
+def test_address_wins_over_what_the_note_filled(client, select_key, catalog,
+                                                any_edit_story_rev):
+    """What was changed or cleared stays so."""
+    key = note_selector(client, any_edit_story_rev,
+                        'from X-Men (Marvel, 1991 series) #2')
+    html = client.get(selector_address(key, 'issue_number=3&search_object=all')
+                      ).content.decode()
+    assert filled_values(html)['series_auto'] == []
+    assert filled_values(html)['issue_number'] == '3'
+
+
+def test_empty_free_search_leaves_what_the_note_filled(client, select_key,
+                                                       catalog,
+                                                       any_edit_story_rev):
+    """Its address has no number: it is not a search of the form."""
+    key = note_selector(client, any_edit_story_rev,
+                        'from X-Men (Marvel, 1991 series) #2')
+    html = client.get(selector_address(key, 'q=&search_object=all')
+                      ).content.decode()
+    assert filled_values(html)['series_auto'] == [str(catalog['xmen91'].id)]
+
+
+def test_address_is_written_as_text(client, select_key):
+    html = client.get(selector_address(
+      select_key, 'issue_number=%22%3E%3Cimg+src%3Dx%3E')).content.decode()
+    assert '<img src=x>' not in html
+    assert '&quot;&gt;&lt;img src=x&gt;' in html
+
+
+def test_address_with_an_unknown_choice_checks_all(client, select_key):
+    html = client.get(selector_address(
+      select_key, 'issue_number=1&search_object=series')).content.decode()
+    assert ('all', ' checked') in radio_buttons(html)
 
 
 # the menus
@@ -561,8 +1061,14 @@ def test_number_alone_does_not_narrow_the_series_menu(client, select_key):
 
 def test_number_no_series_has_is_said_by_the_series_menu(client, select_key,
                                                          catalog):
-    assert menu(client, select_key, 'series_auto', 'xmen', issue_number='999',
+    assert menu(client, select_key, 'series_auto', issue_number='999',
                 publisher=str(catalog['marvel'].id)) == NO_SERIES
+
+
+def test_text_no_series_has_is_not_blamed_on_the_number(client, select_key,
+                                                        catalog):
+    assert menu(client, select_key, 'series_auto', 'zzzzz', issue_number='1',
+                publisher=str(catalog['marvel'].id)) == NO_SERIES_NAMED
 
 
 def test_deleted_issue_does_not_narrow_the_series_menu(client, select_key,
@@ -570,7 +1076,7 @@ def test_deleted_issue_does_not_narrow_the_series_menu(client, select_key,
     Issue.objects.create(series=catalog['xmen91'], number='7', sort_code=8,
                          deleted=True)
     assert menu(client, select_key, 'series_auto', 'xmen', issue_number='7',
-                publisher=str(catalog['marvel'].id)) == NO_SERIES
+                publisher=str(catalog['marvel'].id)) == NO_SERIES_NAMED
 
 
 # the results
@@ -659,7 +1165,120 @@ def test_only_issues_without_sequences_are_listed(client, select_key, catalog):
 
 def test_nothing_found_says_so(client, select_key, catalog):
     response = search(client, select_key, series_auto=catalog['forever'].id)
-    assert '0 to 0 of 0 objects' in ' '.join(response.content.decode().split())
+    html = response.content.decode()
+    assert '<p>No results.</p>' in html
+    assert '<table' not in html
+    assert '0 of 0' not in html
+
+
+# the radio buttons
+
+
+def test_story_choice_lists_only_stories(client, select_key, catalog):
+    """Not the issues without sequences that all lists below them."""
+    Issue.objects.create(series=catalog['xmen91'], sort_code=9, number='2 [B]')
+    response = search(client, select_key, search_object='story',
+                      series_auto=catalog['xmen91'].id, issue_number='2')
+    assert results(response) == story_rows(catalog, 'second_cover',
+                                           'second_story')
+
+
+def test_cover_choice_lists_only_covers(client, select_key, catalog):
+    response = search(client, select_key, search_object='cover',
+                      series_auto=catalog['xmen91'].id, issue_number='2')
+    html = response.content.decode()
+    assert results(response) == cover_rows(catalog, 'second')
+    assert html.count('Select This Cover') == 1
+    assert html.count('Select This Issue') == 1
+    assert 'Select This Story' not in html
+
+
+def test_issue_choice_lists_issues_with_sequences(client, select_key, catalog):
+    """All lists only those without: this choice has one row for each."""
+    empty = Issue.objects.create(series=catalog['xmen91'], sort_code=9,
+                                 number='2 [B]')
+    response = search(client, select_key, search_object='issue',
+                      series_auto=catalog['xmen91'].id, issue_number='2')
+    html = response.content.decode()
+    assert results(response) == {f'issue_{catalog["second"].id}',
+                                 f'issue_{empty.id}'}
+    assert html.count('Select This Issue') == 2
+    assert 'Select This Story' not in html
+
+
+def test_sequence_number_narrows_the_stories(client, select_key, catalog):
+    """The rows do not show it, and the issues without sequences have none."""
+    Issue.objects.create(series=catalog['xmen91'], sort_code=9, number='2 [B]')
+    response = search(client, select_key, series_auto=catalog['xmen91'].id,
+                      issue_number='2', sequence_number='1')
+    assert results(response) == story_rows(catalog, 'second_story')
+
+
+def test_sequence_number_zero_is_a_number(client, select_key, catalog):
+    """Covers are mostly sequence 0."""
+    response = search(client, select_key, series_auto=catalog['xmen91'].id,
+                      issue_number='2', sequence_number='0')
+    assert results(response) == story_rows(catalog, 'second_cover')
+
+
+def test_sequence_number_that_is_no_number_is_left_out(client, select_key,
+                                                       catalog):
+    response = search(client, select_key, series_auto=catalog['xmen91'].id,
+                      issue_number='2', sequence_number='abc')
+    assert results(response) == story_rows(catalog, 'second_cover',
+                                           'second_story')
+
+
+def test_unknown_choice_counts_as_all(client, select_key, catalog):
+    form = {'series_auto': catalog['xmen91'].id, 'issue_number': '2'}
+    assert results(search(client, select_key, search_object='any', **form)) \
+        == results(search(client, select_key, **form)) \
+        == story_rows(catalog, 'second_cover', 'second_story')
+
+
+@pytest.mark.parametrize('form, headers', [
+  ({'search_object': 'story'}, {}),
+  ({'search_object': 'cover'}, {}),
+  ({}, {'HX-Target': 'story-results'})])
+def test_issue_selector_ignores_what_the_request_asks(client, select_key,
+                                                      catalog, form, headers):
+    """A row of a story would save its id as an issue of the bond."""
+    response = client.get(
+      reverse('select_object_search_htmx',
+              kwargs={'select_key': bond_selector(client, catalog)}),
+      {'series_auto': catalog['xmen91'].id, 'issue_number': '2', **form},
+      headers=headers)
+    assert results(response) == {f'issue_{catalog["second"].id}',
+                                 f'series_{catalog["xmen91"].id}'}
+    assert 'Select This Story' not in response.content.decode()
+
+
+@pytest.mark.parametrize('extra, too_many', [(FEW_RESULTS - 4, False),
+                                             (FEW_RESULTS - 3, True)])
+def test_issue_choice_counts_all_issues(client, select_key, catalog, extra,
+                                        too_many):
+    """The 4 issues of the series with sequences count, not only the others."""
+    for number in range(extra):
+        Issue.objects.create(series=catalog['xmen91'], number=f'{number + 20}',
+                             sort_code=number + 20)
+    response = search(client, select_key, search_object='issue',
+                      series_auto=catalog['xmen91'].id)
+    if too_many:
+        assert response.content == ASK_NUMBER
+    else:
+        assert len(results(response)) == FEW_RESULTS
+
+
+@pytest.mark.parametrize('kind, reads', [('all', True), ('story', False),
+                                         ('cover', False), ('issue', False)])
+def test_only_all_reads_issues_without_sequences(client, select_key, catalog,
+                                                 kind, reads):
+    """Among all the issues of a publisher that query takes seconds."""
+    url = search_url(client, select_key)
+    with CaptureQueriesContext(connection) as queries:
+        client.get(url, {'search_object': kind,
+                         'publisher_auto': catalog['marvel'].id})
+    assert any('NOT EXISTS' in query['sql'] for query in queries) == reads
 
 
 @pytest.mark.parametrize('extra, too_many', [(FEW_RESULTS - 8, False),
@@ -672,8 +1291,7 @@ def test_stories_and_issues_count_together(client, select_key, catalog, extra,
                              sort_code=number + 20)
     response = search(client, select_key, series_auto=catalog['xmen91'].id)
     if too_many:
-        assert response.content \
-          == b'<p>Too many results: write the Issue Number.</p>'
+        assert response.content == ASK_NUMBER
     else:
         assert stories_listed(response) == 8
         assert len(results(response)) == FEW_RESULTS + 4
@@ -697,25 +1315,76 @@ def test_few_results_are_listed_without_a_number(client, select_key, catalog):
     assert stories_listed(response) == 8
 
 
-def many_stories(catalog, number, how_many):
+def many_stories(catalog, number, how_many, kind='comic story'):
     """Add stories to the issue of the given short name."""
-    story_type = StoryType.objects.get(name='comic story')
+    story_type = StoryType.objects.get(name=kind)
     for sequence_number in range(how_many):
         Story.objects.create(issue=catalog[number], type=story_type,
                              sequence_number=sequence_number + 2)
 
 
-def test_too_many_results_ask_for_the_number(client, select_key, catalog):
-    many_stories(catalog, 'second', FEW_RESULTS)
-    response = search(client, select_key, series_auto=catalog['xmen91'].id)
-    expected = b'<p>Too many results: write the Issue Number.</p>'
-    assert response.content == expected
+def too_many_of_each(catalog):
+    """Add to X-Men of 1991 more than the limit of covers and of issues."""
+    many_stories(catalog, 'second', FEW_RESULTS, kind='cover')
+    for number in range(FEW_RESULTS):
+        Issue.objects.create(series=catalog['xmen91'], number=f'{number + 20}',
+                             sort_code=number + 20)
 
 
-def test_too_many_results_ask_for_the_series(client, select_key, catalog):
+@pytest.mark.parametrize('kind', ['all', 'story', 'cover', 'issue'])
+def test_too_many_of_a_series_ask_for_the_number(client, select_key, catalog,
+                                                 kind):
+    too_many_of_each(catalog)
+    response = search(client, select_key, search_object=kind,
+                      series_auto=catalog['xmen91'].id)
+    assert response.content == ASK_NUMBER
+
+
+@pytest.mark.parametrize('kind', ['all', 'story', 'cover', 'issue'])
+def test_too_many_results_ask_for_the_series(client, select_key, catalog,
+                                             kind):
+    too_many_of_each(catalog)
+    response = search(client, select_key, search_object=kind,
+                      publisher_auto=catalog['marvel'].id)
+    assert response.content == ASK_SERIES
+
+
+def test_issue_selector_too_many_offers_no_covers(client, select_key, catalog):
+    """It has no radio buttons to go to, whatever the request asks."""
+    too_many_of_each(catalog)
+    key = two_issues_selector(client, catalog)
+    response = client.get(reverse('select_object_search_htmx',
+                                  kwargs={'select_key': key}),
+                          {'search_object': 'story',
+                           'series_auto': catalog['xmen91'].id})
+    assert response.content == ASK_NUMBER
+
+
+@pytest.mark.parametrize('kind', ['cover', 'issue'])
+def test_other_choices_list_what_stories_would_hide(client, select_key,
+                                                    catalog, kind):
+    """The radio buttons limit the results: this is what they are for."""
     many_stories(catalog, 'second', FEW_RESULTS)
-    response = search(client, select_key, publisher_auto=catalog['marvel'].id)
-    assert response.content == b'<p>Too many results: choose a Series.</p>'
+    series = catalog['xmen91'].id
+    assert search(client, select_key, series_auto=series).content == ASK_NUMBER
+    assert results(search(client, select_key, series_auto=series,
+                          search_object=kind))
+
+
+def test_series_of_one_issue_always_lists(client, select_key, catalog):
+    """A number would narrow nothing, and it may well be [nn]."""
+    many_stories(catalog, 'uk', FEW_RESULTS + 5)
+    response = search(client, select_key, series_auto=catalog['xmen_uk'].id)
+    assert stories_listed(response) == FEW_RESULTS + 7
+
+
+def test_deleted_issue_does_not_count_for_a_series_of_one_issue(
+        client, select_key, catalog):
+    many_stories(catalog, 'uk', FEW_RESULTS + 5)
+    Issue.objects.create(series=catalog['xmen_uk'], number='2', sort_code=2,
+                         deleted=True)
+    response = search(client, select_key, series_auto=catalog['xmen_uk'].id)
+    assert stories_listed(response) == FEW_RESULTS + 7
 
 
 def test_exactly_the_most_results_are_listed(client, select_key, catalog):
@@ -742,11 +1411,12 @@ def page_links(response):
         r'<a [^>]*href="([^"]*page=\d+)"', response.content.decode()))}
 
 
-def long_table(client, select_key, catalog):
+def long_table(client, select_key, catalog, **form):
     """Return the first page of the 102 stories of an issue."""
     many_stories(catalog, 'second', 100)
     return search(client, select_key, series_auto=catalog['xmen91'].id,
-                  issue_number='2', publisher_auto='', series_year_auto='')
+                  issue_number='2', publisher_auto='', series_year_auto='',
+                  **form)
 
 
 def test_short_table_has_no_links_to_pages(client, select_key, catalog):
@@ -773,6 +1443,29 @@ def test_box_of_a_long_table_asks_the_search_for_the_same_form(
                     re.DOTALL)
     assert box.group(1) == search_url(client, select_key)
     assert 'name="issue_number" value="2"' in box.group()
+
+
+def test_links_and_box_keep_the_choice(client, select_key, catalog):
+    response = long_table(client, select_key, catalog, search_object='story')
+    assert 'search_object=story' in page_links(response)[2]
+    html = response.content.decode()
+    box = re.search(r'<form method="GET" action="[^"]+">.*?</form>', html,
+                    re.DOTALL)
+    assert 'name="search_object" value="story"' in box.group()
+
+
+def test_cover_table_pages_by_itself(client, select_key, catalog):
+    """Its links answer in its own place, with the rest of the covers."""
+    many_stories(catalog, 'second', 100, kind='cover')
+    response = search(client, select_key, search_object='cover',
+                      series_auto=catalog['xmen91'].id, issue_number='2')
+    html = response.content.decode()
+    assert 'id="cover-results"' in html
+    assert 'hx-target="#cover-results"' in html
+    second = client.get(page_links(response)[2])
+    assert 'id="cover-results"' in second.content.decode()
+    assert len([choice for choice in results(second)
+                if choice.startswith('cover_')]) == 1
 
 
 def test_pages_of_a_long_table_list_each_story_once(client, select_key,

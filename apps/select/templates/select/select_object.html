@@ -9,9 +9,10 @@
 {% endblock %}
 
 {% block view_body %}
-  {{ heading|safe }}
-{% if not reprint_link %}
+  {{ heading }}
+{% if not issue %}
 Search for {{ target }} by entering the relevant information here:
+{% endif %}
 
 <form method="get" action="{% url 'select_object_search_haystack' select_key=select_key %}">
   <p>
@@ -36,6 +37,8 @@ Search for {{ target }} by entering the relevant information here:
   </p>
 </form>
 
+{# where the selector takes issues the form below does what this row does #}
+{% if not issue %}
 <form action="{% url 'select_object_search' select_key=select_key %}" method="GET">
   <table class="select_search">
     <tr>
@@ -72,16 +75,27 @@ Search for {{ target }} by entering the relevant information here:
 <button class="btn-blue-editing inline" type="submit" name="search_publisher">Search For Publisher</button>
   {% endif %}
 </form>
-{% endif %}
-{# the rows of the form choose a story or an issue #}
-{% if story and issue %}
+{% else %}
+{# it lists issues, and stories where the selector takes them #}
 <form id="new-search-form" action="{% url 'select_object_search_htmx' select_key=select_key %}" method="get" novalidate
       hx-get="{% url 'select_object_search_htmx' select_key=select_key %}"
-      hx-trigger="change delay:500ms"
+      {# on pageshow, as Back fills the fields only after load #}
+      hx-trigger="{% if search_on_open %}pageshow[!event.persisted] from:window, {% endif %}change delay:500ms"
       hx-target="#new-search-results"
       hx-swap="innerHTML"
-      hx-sync="this:replace">
+      hx-sync="this:replace"
+      hx-history="false">
 
+  {% if story %}
+  <div role="group" aria-label="List:">
+    <span>List:</span>
+    <label><input type="radio" name="search_object" value="all"{% if search_object == 'all' %} checked{% endif %}> All</label>
+    <label><input type="radio" name="search_object" value="story"{% if search_object == 'story' %} checked{% endif %}> Stories</label>
+    <label><input type="radio" name="search_object" value="cover"{% if search_object == 'cover' %} checked{% endif %}> Covers</label>
+    <label><input type="radio" name="search_object" value="issue"{% if search_object == 'issue' %} checked{% endif %}> Issues</label>
+  </div>
+
+  {% endif %}
   <table class="editing w-full">
   {% for field in new_search_form.visible_fields %}
     <tr>
@@ -98,6 +112,13 @@ window.addEventListener("DOMContentLoaded", (e) => {
     $('select').on('select2:select select2:unselect', function (e) {
         $(this).closest('form').get(0).dispatchEvent(new Event('change'));
     });
+    // the x of a menu only empties it: opened, the menu would cover the next
+    // field, and what is written there would go to this menu
+    $('select').on('select2:unselect', function () {
+        const stayClosed = event => event.preventDefault();
+        $(this).on('select2:opening', stayClosed);
+        setTimeout(() => $(this).off('select2:opening', stayClosed));
+    });
     // a request that fails says so; not htmx:error, which also comes with each
     // request replaced by a newer one
     for (const failure of ['htmx:responseError', 'htmx:sendError', 'htmx:swapError',
@@ -105,7 +126,7 @@ window.addEventListener("DOMContentLoaded", (e) => {
         for (const source of ['new-search-form', 'new-search-results']) {
             document.getElementById(source).addEventListener(failure, event => {
                 document.getElementById('new-search-results').textContent =
-                  `This search could not be done: ${event.detail.error}.`;
+                  'This search could not be done. Reload the page and try again.';
             });
         }
     }
