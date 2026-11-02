@@ -4317,6 +4317,7 @@ def save_selected_series_bond(request, data, object_type, selected_id):
 
 @permission_required('indexer.can_reserve')
 def edit_series_bond(request, id):
+    """Go to the selector for a side of a series bond, or flip the bond."""
     if request.method != 'POST':
         return _cant_get(request)
     series_bond_revision = get_object_or_404(SeriesBondRevision, id=id)
@@ -4343,16 +4344,16 @@ def edit_series_bond(request, id):
           'edit', kwargs={'id': series_bond_revision.changeset.id}))
     else:
         raise NotImplementedError
-    initial = {'series': series.name,
-               'publisher': series.publisher.name,
-               'year': series.year_began,
-               'number': number}
+    # no publisher or year: they would narrow the Series menu and trap someone
+    # looking for another series
+    initial = {'series_auto': series.id,
+               'issue_number': number}
     data = {'series_bond_revision_id': id,
             'initial': initial,
             'series': True,
             'issue': True,
             'heading': mark_safe('<h2>Select %s of the bond %s</h2>' %
-                                 (which_side, series_bond_revision)),
+                                 (which_side, esc(series_bond_revision))),
             'target': 'a series or issue',
             'return': 'save_selected_series_bond',
             'which_side': which_side,
@@ -4474,7 +4475,7 @@ def parse_reprint(reprints):
                 number = None
                 volume = None
             return publisher, series, year, number, volume
-        except ValueError:
+        except (ValueError, IndexError):
             pass
     return None, None, None, None, None
 
@@ -4593,10 +4594,8 @@ def edit_reprint(request, id, which_side=None):
     if which_side.startswith('origin'):
         if reprint_revision.origin:
             select_issue = reprint_revision.origin_issue
-            sequence_number = reprint_revision.origin.sequence_number
         elif reprint_revision.origin_issue:
             select_issue = reprint_revision.origin_issue
-            sequence_number = None
         elif which_side == 'origin_internal':
             select_issue = reprint_revision.origin_revision.issue
         else:  # for newly added stories problematic otherwise
@@ -4609,10 +4608,8 @@ def edit_reprint(request, id, which_side=None):
     elif which_side.startswith('target'):
         if reprint_revision.target:
             select_issue = reprint_revision.target.issue
-            sequence_number = reprint_revision.target.sequence_number
         elif reprint_revision.target_issue:
             select_issue = reprint_revision.target_issue
-            sequence_number = None
         elif which_side == 'target_internal':
             select_issue = reprint_revision.target_revision.issue
         else:  # for newly added stories problematic otherwise
@@ -4739,11 +4736,9 @@ def edit_reprint(request, id, which_side=None):
            'reprint_revision': reprint_revision,
            'which_side': which_side[:6]})
 
-    initial = {'series': select_issue.series.name,
-               'publisher': select_issue.series.publisher.name,
-               'year': select_issue.series.year_began,
-               'number': select_issue.number,
-               'sequence_number': sequence_number}
+    # no sequence number: changing a side needs to see the other sequences
+    initial = {'series_auto': select_issue.series_id,
+               'issue_number': select_issue.number}
     if story or story_revision:
         if story:
             story_id = story.id
@@ -4787,9 +4782,22 @@ def edit_reprint(request, id, which_side=None):
       'select_object', kwargs={'select_key': select_key}))
 
 
+def _form_values_of_note(publisher, series, year, number):
+    """Return the values of the selector's form if a note names one series."""
+    found = Series.objects.filter(name=series, publisher__name=publisher,
+                                  deleted=False)
+    if str(year).isdecimal():
+        found = found.filter(year_began=year)
+    ids = list(found.values_list('id', flat=True)[:2])
+    if len(ids) != 1:
+        return {}
+    return {'series_auto': ids[0], 'issue_number': number}
+
+
 @permission_required('indexer.can_reserve')
 def add_reprint(request, changeset_id,
                 story_id=None, issue_id=None, reprint_note=''):
+    """Go to the selector for the other side of a new reprint link."""
     if story_id:
         story = get_object_or_404(StoryRevision, id=story_id,
                                   changeset__id=changeset_id)
@@ -4798,11 +4806,12 @@ def add_reprint(request, changeset_id,
         issue = get_object_or_404(IssueRevision, id=issue_id,
                                   changeset__id=changeset_id)
         exclude_issue_id = issue.issue_id
-    if reprint_note:
+    # the button of a sequence without notes sends a space
+    note = unquote(reprint_note).strip()
+    if note:
         publisher, series, year, number, volume = \
-            parse_reprint(unquote(reprint_note).split(';')[0])
-        initial = {'series': series, 'publisher': publisher,
-                   'year': year, 'number': number}
+            parse_reprint(note.split(';')[0])
+        initial = _form_values_of_note(publisher, series, year, number)
     else:
         initial = {}
     if story_id:
@@ -4811,13 +4820,17 @@ def add_reprint(request, changeset_id,
     else:
         heading = 'Select story/issue for the reprint link with %s' \
                                     % (esc(issue))
+    heading = '<h2>%s</h2>' % heading
+    if note:
+        # what the form cannot be filled with stays readable
+        heading += '<p>Reprint note: %s</p>' % esc(note)
     data = {'story_revision_id': story_id,
             'issue_revision_id': issue_id,
             'changeset_id': changeset_id,
             'story': True,
             'issue': True,
             'initial': initial,
-            'heading': mark_safe('<h2>%s</h2>' % heading),
+            'heading': mark_safe(heading),
             'target': 'a story or issue',
             'return': 'confirm_reprint',
             'cancel': urlresolvers.reverse('edit',
