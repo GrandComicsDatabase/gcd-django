@@ -1,0 +1,25 @@
+{% load forum_tags %}
+<li class="border-b border-gray-200 px-1 py-2 hover:bg-blue-50">
+  <div class="flex gap-2">
+    <div class="min-w-0 flex-1">
+      <div class="font-bold break-words">
+        <a href="{{ discussion.get_absolute_url }}">{{ discussion.title }}</a>
+        {% if discussion.is_pinned %}<span class="text-sm font-normal rounded bg-stone-200 px-1">Pinned</span>{% endif %}
+        {% if discussion.status == 'resolved' %}<span class="text-sm font-normal rounded bg-green-100 px-1">Solved</span>{% endif %}
+        {% if discussion.duplicate_of_id %}<span class="text-sm font-normal rounded bg-stone-200 px-1">Duplicate</span>{% elif discussion.is_locked %}<span class="text-sm font-normal rounded bg-stone-200 px-1">Closed</span>{% endif %}
+        {% if category and discussion.category_id != category.pk %}<span class="text-sm font-normal rounded bg-stone-200 px-1">Moved to {{ discussion.category.name }}</span>{% endif %}
+        {% if discussion.unread_count %}<a class="text-sm rounded bg-blue-100 px-1 link-with-text-color hover:no-underline" href="{{ discussion.get_absolute_url }}?post={{ discussion.first_unread_id }}#post-{{ discussion.first_unread_id }}" title="Go to the first unread post">{{ discussion.unread_count }} unread</a>
+        {% elif user.is_authenticated and discussion.last_read_post_id is None and discussion.author_id != user.pk %}<span class="text-sm font-normal rounded bg-blue-100 px-1">Unread</span>{% endif %}
+      </div>
+      <div class="text-sm text-gray-700">
+        {% if not category %}<a class="link-no-visited underline" href="{{ discussion.category.get_absolute_url }}">{{ discussion.category.name }}</a> · {% endif %}{{ discussion.author|display_name }}, {{ discussion.created_at|date:"Y-m-d" }}
+      </div>
+      {% if discussion.search_excerpt %}<p class="text-sm break-words"><a class="link-with-text-color" href="{{ discussion.get_absolute_url }}?post={{ discussion.search_post_id }}#post-{{ discussion.search_post_id }}">{{ discussion.search_excerpt }}</a></p>{% endif %}
+      {% with links=discussion.records.all %}{% include "forum/_records.html" with records=links|slice:":5" more=links|length|add:"-5" %}{% endwith %}
+    </div>
+    <div class="shrink-0 text-right text-sm text-gray-700">
+      <div>{{ discussion.post_count|reply_count }} repl{{ discussion.post_count|reply_count|pluralize:"y,ies" }}</div>
+      {% with last=discussion.last_activity|default:discussion.created_at %}<time datetime="{{ last|date:'c' }}" title="Last post {{ last|date:'Y-m-d H:i' }}">{{ last|timesince }} ago</time>{% endwith %}
+    </div>
+  </div>
+</li>

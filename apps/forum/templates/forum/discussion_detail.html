@@ -1,0 +1,61 @@
+{% extends "forum/base.html" %}
+{% load forum_tags %}
+{% block title %}GCD :: Forum :: {{ discussion.title }}{% endblock %}
+{% block forum_head %}
+<link rel="canonical" href="{{ canonical_url }}">
+{% if discussion.category.read_access == 'public' %}<link rel="alternate" type="application/atom+xml" title="GCD Forum: {{ discussion.category.name }}" href="{% url 'forum:group-feed' discussion.category.slug %}">{% endif %}
+{% if structured_data %}<script type="application/ld+json">{{ structured_data }}</script>{% endif %}
+{% endblock %}
+{% block forum_content %}
+<nav aria-label="Breadcrumb" class="text-sm"><a href="{% url 'forum:index' %}">Forum</a> › <a href="{{ discussion.category.get_absolute_url }}">{{ discussion.category.name }}</a></nav>
+<h2 class="font-bold text-xl break-words">{{ discussion.title }}</h2>
+<p class="text-sm text-gray-700">
+  Started by {{ discussion.author|display_name }} on {{ discussion.created_at|date:"Y-m-d" }} · {{ discussion.views_count }} view{{ discussion.views_count|pluralize }}
+  {% if discussion.status == 'resolved' %}· <span class="bg-green-100 rounded px-1">Solved</span>{% endif %}
+  {% if discussion.is_locked %}· closed{% endif %}
+</p>
+{% if discussion.moved_from %}
+<p class="text-sm bg-stone-200 rounded px-1 mt-1 inline-block">Moved from <a class="underline" href="{{ discussion.moved_from.get_absolute_url }}">{{ discussion.moved_from.name }}</a> by {{ discussion.moved_by|display_name }} on {{ discussion.moved_at|date:"Y-m-d" }}</p>
+{% endif %}
+<div class="mt-1">{% include "forum/_records.html" with records=discussion.records.all removable=can_edit_topic %}</div>
+{% if discussion.duplicate_of_id %}
+<p class="mt-1 bg-stone-200 px-2 py-1">Closed as a duplicate{% if duplicate_of %} of <a class="underline" href="{{ duplicate_of.get_absolute_url }}">{{ duplicate_of.title }}</a>. Please continue there{% endif %}.</p>
+{% endif %}
+{% if discussion.fixed_by_id %}
+<p class="mt-1 bg-green-100 px-2 py-1">Fixed in the database by <a class="underline" href="{% url 'compare' discussion.fixed_by_id %}">change {{ discussion.fixed_by_id }}</a>.</p>
+{% endif %}
+{% if discussion.answer and not discussion.answer.is_deleted %}
+<p class="mt-1 bg-green-100 px-2 py-1">Solved: <a class="underline" href="{{ discussion.answer.get_absolute_url }}">see the answer by {{ discussion.answer.author|display_name }}</a>.</p>
+{% endif %}
+{% if first_unread %}<a class="mt-1 inline-block text-sm" href="{% if first_unread_here %}#post-{{ first_unread.pk }}{% else %}?post={{ first_unread.pk }}&amp;since={{ read_since }}#post-{{ first_unread.pk }}{% endif %}">Go to the first unread post ↓</a>{% endif %}
+
+{% if poll %}{% include "forum/_poll.html" %}{% endif %}
+
+{% if page_obj.has_other_pages %}{% include "forum/_post_pages.html" %}{% endif %}
+<section id="post-list" class="mt-2" aria-label="Posts">
+  {% for post in post_roots %}
+    {% include "forum/_post.html" %}
+  {% endfor %}
+</section>
+{% if page_obj.has_other_pages %}{% include "forum/_post_pages.html" %}{% endif %}
+<div class="mt-2" aria-live="polite" hx-get="{% url 'forum:discussion-updates' discussion.slug %}?after={{ last_post_id }}" hx-trigger="every 30s [document.visibilityState === 'visible']"></div>
+
+{% if can_reply %}
+  {% include "forum/_reply_form.html" %}
+{% elif not user.is_authenticated %}
+  <p class="mt-3 bg-blue-100 px-2 py-1"><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Sign in</a> with your GCD account to reply. <a href="{% url 'register' %}">Registering</a> is free.</p>
+{% elif discussion.is_locked or discussion.status == 'archived' %}
+  <p class="mt-3 bg-stone-200 px-2 py-1">This topic is closed to new replies.</p>
+{% else %}
+  <p class="mt-3 bg-stone-200 px-2 py-1">Only members of {{ discussion.category.name }} can reply here.</p>
+{% endif %}
+{% endblock %}
+
+{% block forum_sidebar %}
+<aside class="md:w-60 shrink-0">
+  {% if user.is_authenticated %}{% include "forum/_follow_button.html" %}{% endif %}
+  {% include "forum/_database_panel.html" %}
+  {% include "forum/_experts_panel.html" %}
+  {% include "forum/_procedure_panel.html" %}
+</aside>
+{% endblock %}

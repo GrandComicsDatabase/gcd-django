@@ -10,6 +10,9 @@ module.exports = {
             './static/js/select_cache.js',
             './static/js/select_search_panels.js',
 	    './apps/voting/templates/voting/*.html',
+            './apps/forum/templates/forum/**/*.html',
+            './apps/forum/forms.py',
+            './apps/forum/templatetags/forum_tags.py',
             './apps/gcd/markdown_extension.py',],
   theme: {
   extend: {

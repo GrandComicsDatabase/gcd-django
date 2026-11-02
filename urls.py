@@ -114,6 +114,7 @@ else:
                     [path('', include('apps.oi.urls'))] + \
                     [path('api/', include('apps.api.urls'))] + \
                     [path('voting/', include('apps.voting.urls'))] + \
+                    [path('forum/', include('apps.forum.urls'))] + \
                     [path('admin/templatesadmin/', include('templatesadmin.urls'))] + \
                     [path('admin/', admin.site.urls)] + \
                     [path('markdownx/', include('markdownx.urls'))] + \

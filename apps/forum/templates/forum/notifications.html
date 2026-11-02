@@ -1,0 +1,28 @@
+{% extends "forum/base.html" %}
+{% load forum_tags %}
+{% block title %}GCD :: Forum :: Notifications{% endblock %}
+{% block forum_content %}
+<div class="flex flex-wrap items-end justify-between gap-2 border-b border-gray-400 mb-1">
+  <h2 class="font-bold text-xl">Notifications</h2>
+  {% if notification_count %}
+  <form method="post" action="{% url 'forum:notifications-read' %}" class="pb-1">{% csrf_token %}<button class="btn-blue-editing m-0">Mark all as read</button></form>
+  {% endif %}
+</div>
+<ul>
+{% for item in notifications %}
+  <li class="border-b border-gray-200 px-1 py-2 hover:bg-blue-50 {% if not item.read_at %}font-bold{% endif %}">
+    <a href="{% if item.kind == 'review' %}{% url 'forum:moderation' %}#review-{{ item.post_id }}{% else %}{{ item.post.get_absolute_url }}{% endif %}">{% if not item.read_at %}<span class="sr-only">Unread: </span>{% endif %}{% with title=item.post.discussion.title author=item.post.author|display_name %}{% if item.kind == 'review' %}A new member's post awaits your review: “{{ title }}”{% elif item.kind == 'record' %}New topic about a record you follow: “{{ title }}”{% elif item.kind == 'fixed' %}Fixed in the database: “{{ title }}”{% else %}{{ author }} replied in “{{ title }}”{% endif %}{% endwith %}</a>
+    <div class="text-sm font-normal text-gray-700">{{ item.post.discussion.category.name }} · <time datetime="{{ item.created_at|date:'c' }}">{{ item.created_at|timesince }} ago</time></div>
+  </li>
+{% empty %}
+  <li class="py-6 text-center">No notifications. Follow a topic to hear about its replies.</li>
+{% endfor %}
+</ul>
+{% if page_obj.has_other_pages %}
+<nav aria-label="Pages" class="flex justify-end gap-2 py-2 text-sm">
+  {% if page_obj.has_previous %}<a class="navigation-bar-box-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  {% if page_obj.has_next %}<a class="navigation-bar-box-link" href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}
+{% block forum_sidebar %}{% include "forum/_sidebar.html" %}{% endblock %}

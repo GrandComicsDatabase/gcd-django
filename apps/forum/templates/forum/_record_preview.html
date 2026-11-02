@@ -1,0 +1,6 @@
+{% if cards %}
+<p class="px-2 pt-1 text-sm font-bold">{% if picked %}The topic will be linked to:{% else %}GCD records in your message{% endif %}</p>
+{% include "forum/_record_cards.html" with label=picked|yesno:"Records to link,GCD records in your message" new_tab=True %}
+{% if more %}<p class="px-2 pb-1 text-sm text-gray-700">and {{ more }} more record{{ more|pluralize }}</p>{% endif %}
+{% endif %}
+{% for line in invalid %}<p class="alert text-sm">✗ Not a GCD record page: {{ line }}</p>{% endfor %}

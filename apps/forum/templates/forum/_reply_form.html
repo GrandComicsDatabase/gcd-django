@@ -1,0 +1,21 @@
+{% load forum_tags %}
+<section id="reply-form-container" class="mt-3">
+  <div class="flex items-center justify-between gap-2">
+    <h3 id="reply-heading" class="font-bold text-lg">{% if reply_parent %}Reply to {{ reply_parent.author|display_name }}{% elif reply_form.parent.value %}Reply to post #{{ reply_form.parent.value }}{% else %}Reply to the topic{% endif %}</h3>
+    <button id="cancel-reply" type="button" onclick="clearReplyTarget(true)" class="btn-blue-editing{% if not reply_form.parent.value %} hidden{% endif %}">Reply to the topic instead</button>
+  </div>
+  <form id="quick-reply-form" method="post" action="{% url 'forum:reply' discussion.slug %}"
+        hx-post="{% url 'forum:reply' discussion.slug %}" hx-target="{% if reply_root %}#children-{{ reply_root.pk }}{% else %}#post-list{% endif %}" hx-swap="beforeend"
+        hx-disinherit="*" hx-sync="this:drop" hx-disabled-elt="find button[type='submit']" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="page" value="{% if reply_page %}{{ reply_page }}{% else %}{{ page_obj.number }}{% endif %}">
+    {{ reply_form.parent }}
+    {{ reply_form.parent.errors }}{{ reply_form.non_field_errors }}
+    <label for="{{ reply_form.content.id_for_label }}" class="sr-only">Your reply</label>
+    {% include "forum/_editor.html" with field=reply_form.content attachments=reply_form.attachments %}
+    {{ reply_form.content.errors }}
+    <div class="flex justify-end mt-1">
+      <button type="submit" class="btn btn-blue">Post reply</button>
+    </div>
+  </form>
+</section>

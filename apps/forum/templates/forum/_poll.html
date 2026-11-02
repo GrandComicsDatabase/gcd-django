@@ -1,0 +1,39 @@
+<section id="poll" class="mt-2 border border-gray-300 px-2 py-1" aria-labelledby="poll-question">
+  <h3 id="poll-question" class="font-bold">{{ poll.question }}</h3>
+  <p class="text-sm text-gray-700">
+    {{ poll_voters }} voter{{ poll_voters|pluralize }} ·
+    {% if poll.is_open %}{% if poll.closes_at %}closes on {{ poll.closes_at|date:"Y-m-d H:i" }} UTC{% else %}open{% endif %}{% else %}closed{% endif %}
+    {% if poll.multiple %}· more than one choice allowed{% endif %}
+  </p>
+  {% if poll_can_vote %}
+  <form method="post" action="{% url 'forum:poll-vote' discussion.slug %}" class="mt-1">
+    {% csrf_token %}
+    <fieldset>
+      <legend class="sr-only">{{ poll.question }}</legend>
+      {% for option in poll_options %}
+      <label class="flex items-center gap-2 py-0.5">
+        <input type="{% if poll.multiple %}checkbox{% else %}radio{% endif %}" name="option" value="{{ option.pk }}"{% if option.chosen %} checked{% endif %}>
+        <span>{{ option.text }}</span>
+        {% if poll_results %}<span class="text-sm text-gray-700">{{ option.vote_count }} ({{ option.percent }}%)</span>{% endif %}
+      </label>
+      {% endfor %}
+    </fieldset>
+    <button class="btn btn-blue mt-1">{% if poll_results %}Change my vote{% else %}Vote{% endif %}</button>
+  </form>
+  {% else %}
+  <ul class="mt-1">
+    {% for option in poll_options %}
+    <li class="py-0.5">
+      <div class="flex justify-between gap-2"><span>{{ option.text }}{% if option.chosen %} <span class="text-sm">(your vote)</span>{% endif %}</span><span class="text-sm text-gray-700">{{ option.vote_count }} ({{ option.percent }}%)</span></div>
+      <meter class="w-full" min="0" max="100" value="{{ option.percent }}" aria-label="{{ option.text }}: {{ option.percent }}%">{{ option.percent }}%</meter>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if poll.is_open and not user.is_authenticated %}<p class="text-sm text-gray-700">Sign in to vote.</p>{% elif poll.is_open %}<p class="text-sm text-gray-700">Only members of {{ discussion.category.name }} vote in this poll.</p>{% endif %}
+  {% endif %}
+  {% if poll_can_close %}
+  <form method="post" action="{% url 'forum:poll-close' discussion.slug %}" class="mt-1" onsubmit="return confirm('Close the poll? Nobody will be able to vote.');">
+    {% csrf_token %}<button class="btn-blue-editing m-0">Close the poll</button>
+  </form>
+  {% endif %}
+</section>
