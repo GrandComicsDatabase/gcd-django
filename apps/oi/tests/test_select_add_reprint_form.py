@@ -774,6 +774,41 @@ def test_address_is_written_as_text(client, select_key):
     assert '&quot;&gt;&lt;img src=x&gt;' in html
 
 
+@pytest.mark.parametrize('value', ['abc', '1.5', '-1'])
+def test_address_with_a_menu_value_that_is_no_id_lists_no_rows(
+        client, select_key, catalog, value):
+    """The menu would write all its rows in the page: 233,636 on the site."""
+    html = client.get(selector_address(
+      select_key, f'publisher_auto={value}&series_auto={value}&issue_number=1')
+      ).content.decode()
+    assert filled_values(html) == {'publisher_auto': [], 'series_auto': [],
+                                   'series_year_auto': '', 'issue_number': '1'}
+    assert f'<option value="{catalog["xmen91"].id}"' not in html
+    assert f'<option value="{catalog["marvel"].id}"' not in html
+
+
+def test_address_with_an_id_too_long_for_the_database_lists_no_rows(
+        client, select_key, catalog):
+    html = client.get(selector_address(
+      select_key, f'series_auto={"9" * 30}&issue_number=1')).content.decode()
+    assert filled_values(html)['series_auto'] == []
+
+
+@pytest.mark.parametrize('field', ['publisher_auto', 'series_auto'])
+def test_search_leaves_out_a_menu_value_that_is_no_id(client, select_key,
+                                                      catalog, field):
+    assert search(client, select_key, **{field: 'abc'}).content == b''
+    response = search(client, select_key, issue_number='1', **{field: 'abc'})
+    assert response.status_code == 200
+    assert results(response) == story_rows(catalog, 'uk_cover', 'uk_story')
+
+
+def test_search_bears_an_id_too_long_for_the_database(client, select_key):
+    response = search(client, select_key, series_auto='9' * 30)
+    assert response.status_code == 200
+    assert b'No results.' in response.content
+
+
 def test_address_with_an_unknown_choice_checks_all(client, select_key):
     html = client.get(selector_address(
       select_key, 'issue_number=1&search_object=series')).content.decode()

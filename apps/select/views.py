@@ -218,6 +218,12 @@ def _has_one_issue(series):
                                 deleted=False)[:2].count() == 1
 
 
+def _menu_id(request, menu):
+    """Return the id chosen in a menu of the form, if the value is an id."""
+    value = request.GET.get(menu, '').strip()
+    return value if value.isdecimal() else None
+
+
 def _search_object(request):
     """Return what the form lists: all, story, cover or issue."""
     search_object = request.GET.get('search_object')
@@ -240,8 +246,8 @@ def process_htmx_select_search(request, select_key):
         # the page writes a failing status; an error page would be swapped in
         return HttpResponseBadRequest('This selection is no longer available.')
     search_object = _search_object(request) if data.get('story') else 'issue'
-    publisher = request.GET.get('publisher_auto', None)
-    series = request.GET.get('series_auto', None)
+    publisher = _menu_id(request, 'publisher_auto')
+    series = _menu_id(request, 'series_auto')
     series_year = request.GET.get('series_year_auto', '').strip()
     issue_number = request.GET.get('issue_number', '').strip()
     sequence_number = request.GET.get('sequence_number', '').strip()
@@ -539,6 +545,9 @@ def _select_object(request, select_key, multiple_sequences=False):
         # the form writes its last search in the address, always with a number
         if 'issue_number' in request.GET:
             initial = request.GET.dict()
+            # given what is no id, a menu writes all its rows in the page
+            for menu in ('publisher_auto', 'series_auto'):
+                initial[menu] = _menu_id(request, menu)
         else:
             initial = data.get('initial', {})
         search_on_open = any(initial.values())
