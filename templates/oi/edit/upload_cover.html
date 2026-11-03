@@ -11,6 +11,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 {% endblock %}
 
 {% block view_body %}
+{# Icons: Heroicons v2 (https://heroicons.com), Copyright (c) Tailwind Labs, Inc., MIT License #}
 <h1 class="item_id search_id">
   <div class="left">
      Upload {{ upload_type }} cover for
@@ -23,81 +24,168 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 </div>
 
 {% if info %}
-<h2>{{ info }}<br/></h2>
+<div class="my-3 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800" role="alert">
+  <svg class="mt-0.5 h-5 w-5 flex-none" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+  <p>{{ info }}</p>
+</div>
 {% endif %}
 
 {% if not perms.indexer.can_vote %}
-<div class="cover_guidelines">
+<div class="cover_guidelines my-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
 {% include "oi/bits/cover_guidelines.html" %}
 </div>
 {% endif %}
 
-<div class="flex">
-  <fieldset class="border border-gray-300 sm:w-1/2">
-    <ol>
 {% if upload_type == 'replacement' %}
-      <form action="{% url 'replace_cover' cover_id=cover.id %}" method="post" enctype="multipart/form-data">
-      {% csrf_token %}
+  <form class="mt-3" action="{% url 'replace_cover' cover_id=cover.id %}" method="post" enctype="multipart/form-data">
+{% elif upload_type == 'variant' %}
+  <form class="mt-3" action="{% url 'upload_variant' issue_id=issue.id %}" method="post" enctype="multipart/form-data">
 {% else %}
-  {% if upload_type == 'variant' %}
-      <form action="{% url 'upload_variant' issue_id=issue.id %}" method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-  {% else %}
-      <form action="{% url 'upload_cover' issue_id=issue.id %}" method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      {% endif %}
-  {% endif %}
-        <table class="editing">
-          <button><input class="btn-blue-editing" type="submit" value="Upload"></button>
-    {{ form.as_table }}
-        </table>
-        <button><input class="btn-blue-editing" type="submit" value="Upload"></button>
-      </form>
-    </ol>
-  </fieldset>
-
+  <form class="mt-3" action="{% url 'upload_cover' issue_id=issue.id %}" method="post" enctype="multipart/form-data">
+{% endif %}
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="grid gap-4 md:grid-cols-5 md:gap-y-0">
+    <section id="scan_section" class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm transition md:col-span-2 md:row-span-2 md:grid md:grid-rows-subgrid" data-dragging="ring-2 ring-blue-500 bg-blue-50">
+      <div class="border-b border-gray-200 px-4 py-3">
+        <h2 class="text-gray-900">Cover image</h2>
+        <p class="text-gray-600">A scan of the printed cover.</p>
+      </div>
+      <div class="p-4">
+        {{ form.scan.errors }}
+        <div id="scan_choose" class="grid gap-3">
+          <label for="{{ form.scan.id_for_label }}" class="group flex cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 px-4 py-8 text-center transition md:py-6 hover:border-blue-500 hover:bg-blue-50 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500 [&_input]:sr-only">
+            <svg class="mb-1 h-10 w-10 text-gray-400 group-hover:text-blue-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+            <span class="font-semibold text-gray-900">Upload a scan</span>
+            <span class="text-gray-600"><span class="hidden sm:inline">Drag and drop it here, or </span><span class="font-medium text-blue-700 underline">browse files</span></span>
+            <span class="text-gray-500">At least 400 pixels on the short side</span>
+            {{ form.scan }}
+          </label>
+        </div>
+        <div id="scan_selected" class="hidden items-center gap-4" data-shown="flex">
+          <button type="button" id="scan_open" class="max-w-[45%] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" title="Open at full size" aria-label="Open the image at full size">
+            <img id="scan_preview" class="h-48 w-auto max-w-full border border-gray-200 object-contain shadow-sm sm:h-64" alt="Selected cover image">
+          </button>
+          <div class="min-w-0 flex-1">
+            <p id="scan_name" class="truncate font-semibold text-gray-900"></p>
+            <p id="scan_info" class="text-gray-600" aria-live="polite"></p>
+            <p id="scan_warning" class="hidden font-medium text-red-700">The image is too small: the shorter side must be at least 400 pixels.</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button type="button" id="scan_change" class="rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-900 shadow-sm hover:bg-gray-50">Choose another</button>
+            </div>
+          </div>
+        </div>
   {% if replace_cover %}
-  <div class="px-1">
-    {{ replace_cover }}
-    <div class="issue_cover_links">
-      <a href="{{ issue.get_absolute_url }}cover/4">Zoom</a>
-    </div>
-    <div style="text-align:left">
-      <ul>
-        <li>If you are replacing a cover, please make sure that the cover you upload is better than the one that is
-            already there.
-        <li>Cover replacements will usually be rejected unless significantly better so do not expect your replacement cover to always be accepted.
-        <li>If you realize in the compare view after the upload that the newly uploaded cover is not better
-            please retract and discard the upload.
-      </ul>
-    </div>
-  </div>
-  {% else %}
-  <div class="px-1">
+        <div class="mt-4 border-t border-gray-200 pt-4">
+          <h3 class="text-gray-900">Cover to replace</h3>
+          <div class="mt-3">{{ replace_cover }}</div>
+          <div class="issue_cover_links mt-1">
+            <a href="{{ issue.get_absolute_url }}cover/4">Zoom</a>
+          </div>
+          <ul class="mt-3 list-disc space-y-1 ps-5 text-gray-700">
+            <li>If you are replacing a cover, please make sure that the cover you upload is better than the one that is
+                already there.</li>
+            <li>Cover replacements will usually be rejected unless significantly better so do not expect your replacement cover to always be accepted.</li>
+            <li>If you realize in the compare view after the upload that the newly uploaded cover is not better
+                please retract and discard the upload.</li>
+          </ul>
+        </div>
+  {% elif current_covers or active_covers or pending_variant_adds %}
+        <div class="mt-4 border-t border-gray-200 pt-4">
     {% if current_covers or active_covers %}
-      Please upload covers currently <span class="changed p-1">existing or pending</span> only as a replacement.<br>
+          <p>Please upload covers currently <span class="changed p-1">existing or pending</span> only as a replacement.</p>
     {% endif %}
+          <ul class="mt-2 space-y-1">
     {% if current_covers %}
-    <span class="font-bold">
-      <a href="#current_covers">{{ current_covers|length }} current cover{{ current_covers|length|pluralize }}</a>
-    </span> for this issue.
+            <li><a class="font-bold" href="#current_covers">{{ current_covers|length }} current cover{{ current_covers|length|pluralize }}</a> for this issue.</li>
     {% endif %}
     {% if active_covers %}
-    <span class="font-bold">
-      <br><a href="#pending_covers">{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }}</a>
-    </span> for this issue.
+            <li><a class="font-bold" href="#pending_covers">{{ active_covers|length }} pending cover{{ active_covers|length|pluralize }}</a> for this issue.</li>
     {% endif %}
+          </ul>
     {% if pending_variant_adds %}
-    <p>Please do not upload covers which belong to a <span class="changed p-1">pending variant add.</span>
-      <span class="font-bold">
-        <br><a href="#pending_variant_adds">{{ pending_variant_adds|length }} pending variant add{{ pending_variant_adds|length|pluralize }}</a>
-      </span> for this issue.
-    </p>
+          <p class="mt-2">Please do not upload covers which belong to a <span class="changed p-1">pending variant add.</span>
+            <a class="font-bold" href="#pending_variant_adds">{{ pending_variant_adds|length }} pending variant add{{ pending_variant_adds|length|pluralize }}</a> for this issue.
+          </p>
     {% endif %}
-  </div>
+        </div>
   {% endif %}
-</div> <!-- main -->
+      </div>
+    </section>
 
+    <section class="min-w-0 rounded-xl border border-gray-200 bg-white shadow-sm md:col-span-3 md:row-span-2 md:grid md:grid-rows-subgrid">
+      <div class="border-b border-gray-200 px-4 py-3">
+        <h2 class="text-gray-900">Details</h2>
+        <p class="text-gray-600">About the scan and the cover.</p>
+      </div>
+      <div class="divide-y divide-gray-100 px-4">
+  {% for field in form.visible_fields %}
+    {% if field.name != 'scan' and field.name != 'comments' and field.name != 'is_wraparound' and field.name != 'is_gatefold' %}
+      {% if field.widget_type == 'checkbox' %}
+        <div class="flex items-start gap-3 py-3">
+          <div class="flex h-6 items-center [&_input]:h-5 [&_input]:w-5 [&_input]:rounded [&_input]:border-gray-300 [&_input]:text-blue-600">{{ field }}</div>
+          <div class="leading-6">
+            <label for="{{ field.id_for_label }}" class="font-medium text-gray-900">{{ field.label }}</label>
+            {{ field.errors }}
+            {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="py-3">
+          <label for="{{ field.id_for_label }}" class="block font-medium text-gray-900">{{ field.label }}{% if field.field.required %} <span class="text-red-600" aria-hidden="true">*</span>{% endif %}</label>
+          {{ field.errors }}
+          <div class="mt-1 [&_input[type=text]]:w-full [&_input[type=text]]:rounded-md [&_input[type=text]]:border-gray-300 [&_input[type=text]]:shadow-sm [&_textarea]:!w-full [&_textarea]:rounded-md [&_textarea]:border-gray-300 [&_textarea]:shadow-sm">{{ field }}</div>
+          {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="mt-1 text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
+        </div>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+        <div class="py-3">
+          <fieldset id="cover_type">
+            <legend class="font-medium text-gray-900">Cover type</legend>
+            <p class="mt-1 text-gray-600">Leave unchecked for a regular single cover.</p>
+  {% for field in form.visible_fields %}
+    {% if field.name == 'is_wraparound' or field.name == 'is_gatefold' %}
+      {% if field.widget_type == 'checkbox' %}
+            <div class="flex items-start gap-3 pt-3">
+              <div class="flex h-6 items-center [&_input]:h-5 [&_input]:w-5 [&_input]:rounded [&_input]:border-gray-300 [&_input]:text-blue-600">{{ field }}</div>
+              <div class="leading-6">
+                <label for="{{ field.id_for_label }}" class="font-medium text-gray-900">{{ field.label }}</label>
+                {{ field.errors }}
+                {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
+              </div>
+            </div>
+      {% else %}
+            <div class="pt-3 leading-6">
+              <p class="font-medium text-gray-900">{{ field.label }}</p>
+              {{ field }}
+              {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
+            </div>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+          </fieldset>
+        </div>
+      </div>
+    </section>
+    </div>
+  {% with field=form.comments %}
+    <div class="mt-4">
+      <label for="{{ field.id_for_label }}" class="block font-medium text-gray-900">{{ field.label }}</label>
+      {{ field.errors }}
+      <div class="mt-1 [&_textarea]:!w-full [&_textarea]:rounded-md [&_textarea]:border-gray-300 [&_textarea]:shadow-sm">{{ field }}</div>
+      {% if field.help_text %}<p id="{{ field.auto_id }}_helptext" class="mt-1 text-gray-600">{{ field.help_text|safe }}</p>{% endif %}
+    </div>
+  {% endwith %}
+  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+
+    <div class="sticky bottom-0 z-10 mt-4 flex items-center justify-end gap-3 border-t border-gray-200 bg-white/95 py-3 backdrop-blur">
+      <p class="mr-auto hidden text-gray-600 sm:block">The upload is reviewed by an editor before it appears.</p>
+      <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Upload cover</button>
+    </div>
+  </form>
+
+<div>
 {% if current_covers %}
 <a name="current_covers"></a>
 <h2> Current Cover{{ current_covers|length|pluralize }} </h2>
@@ -143,11 +231,19 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 <div id="guidelines">
 {% include "oi/bits/cover_guidelines.html" %}
 </div>
+</div>
 
 {% include 'oi/bits/jquery.html' %}
 {% compress js %}
+  <script type='text/javascript' src="{% static 'js/oi/cover_upload.js' %}"></script>
   <script type='text/javascript'>
   $(function () {
+    // Wraparound and gatefold are mutually exclusive.
+    $('#cover_type input[type=checkbox]').on('change', function () {
+        if (this.checked) {
+            $('#cover_type input[type=checkbox]').not(this).prop('checked', false);
+        }
+    });
     $('form[method=post]')
         .submit(function (event) {
             var source = $('#id_source');
