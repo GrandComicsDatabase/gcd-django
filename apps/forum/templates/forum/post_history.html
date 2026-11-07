@@ -1,0 +1,15 @@
+{% extends "forum/base.html" %}
+{% load forum_tags %}
+{% block title %}GCD :: Forum :: Post #{{ post.pk }} history{% endblock %}
+{% block forum_content %}
+<nav aria-label="Breadcrumb" class="text-sm"><a href="{% url 'forum:index' %}">Forum</a> › <a href="{{ discussion.category.get_absolute_url }}">{{ discussion.category.name }}</a> › <a href="{{ post.get_absolute_url }}">{{ discussion.title }}</a></nav>
+<h2 class="font-bold text-xl">Versions of post #{{ post.pk }} by {{ post.author|display_name }}</h2>
+{% for version in versions %}
+<section class="mt-2 border border-gray-200" aria-label="Version of {{ version.at|date:'Y-m-d H:i' }}">
+  <h3 class="bg-blue-50 px-2 py-0.5 text-sm">{% if forloop.first %}Current version{% elif forloop.last %}Original{% else %}Earlier version{% endif %} · <time datetime="{{ version.at|date:'c' }}">{{ version.at|date:"Y-m-d H:i" }}</time>{% if not forloop.last %} · edited by {{ version.by }}{% endif %}</h3>
+  <div class="{% prose_classes %}">{{ version.content|safe_markdown }}</div>
+</section>
+{% empty %}
+<p class="mt-2">This post has no earlier versions.</p>
+{% endfor %}
+{% endblock %}

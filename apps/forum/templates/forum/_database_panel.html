@@ -1,0 +1,30 @@
+{% load forum_tags %}
+{% if linked_changes or suggested_changes %}
+<section id="database" class="mt-2" aria-labelledby="database-heading">
+  <h3 id="database-heading" class="label-gcd-blue">Database changes</h3>
+  {% if linked_changes %}
+  <ul class="text-sm">
+    {% for item in linked_changes %}
+    <li class="flex items-start justify-between gap-1 py-0.5">
+      <span><a class="underline" href="{% url 'compare' item.changeset_id %}">Change {{ item.changeset_id }}</a> by {{ item.changeset.indexer|display_name }} · <span class="rounded px-1 {% if item.state == 'Approved' %}bg-green-100{% else %}bg-stone-200{% endif %}">{{ item.state }}</span></span>
+      {% if item.linked_by_id == user.pk or group_moderator %}<form method="post" action="{% url 'forum:change-unlink' discussion.slug item.pk %}">{% csrf_token %}<button class="text-gray-700 px-1" aria-label="Unlink change {{ item.changeset_id }}" title="Unlink">×</button></form>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if suggested_changes %}
+  <p class="mt-1 text-sm font-bold">Changes to these records since the topic started</p>
+  <ul class="text-sm">
+    {% for change in suggested_changes %}
+    <li class="flex items-start justify-between gap-1 py-0.5">
+      <span><a class="underline" href="{% url 'compare' change.pk %}">Change {{ change.pk }}</a> by {{ change.indexer|display_name }} · {{ change.state_name }}</span>
+      {% if can_link_change or change.indexer_id == user.pk %}<form method="post" action="{% url 'forum:change-link' discussion.slug %}">{% csrf_token %}<input type="hidden" name="changeset" value="{{ change.pk }}"><button class="btn-blue-editing m-0 px-1" aria-label="Link change {{ change.pk }}">Link</button></form>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if can_link_change %}{% include "forum/_link_change.html" %}{% endif %}
+</section>
+{% elif can_link_change %}
+<div id="database" class="mt-2">{% include "forum/_link_change.html" %}</div>
+{% endif %}

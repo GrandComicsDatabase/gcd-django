@@ -1,0 +1,32 @@
+{% load forum_tags %}
+<article id="post-{{ post.pk }}" class="border {% if discussion.answer_id == post.pk %}border-green-600 border-2{% elif post.is_unread %}border-blue-500{% else %}border-gray-200{% endif %} mt-2 target:border-blue-500" aria-labelledby="post-author-{{ post.pk }}">
+  <header class="flex flex-wrap items-baseline justify-between gap-1 bg-blue-50 px-2 py-0.5 text-sm">
+    <span>
+      <strong id="post-author-{{ post.pk }}">{{ post.author|display_name }}</strong>
+      {% for badge in post.badges %}<span class="rounded bg-stone-200 px-1">{{ badge }}</span> {% endfor %}
+      · <a class="link-with-text-color" href="{{ post.get_absolute_url }}" title="Link to this post"><time datetime="{{ post.created_at|date:'c' }}" title="{{ post.created_at|date:'Y-m-d H:i' }}">{{ post.created_at|timesince }} ago</time></a>{% if post.updated_at|date:'U' != post.created_at|date:'U' and not post.is_deleted %} · {% if user == post.author or group_moderator %}<a class="link-with-text-color" href="{% url 'forum:post-history' post.pk %}" title="See the earlier versions">edited</a>{% else %}edited{% endif %}{% endif %}
+      {% if post.reply_to %}· <a class="link-with-text-color" href="#post-{{ post.reply_to.pk }}">replying to {{ post.reply_to.author|display_name }}</a>{% endif %}
+    </span>
+    <span>{% if discussion.answer_id == post.pk %}<span class="rounded bg-green-100 px-1">✓ Accepted answer</span> {% endif %}{% if post.is_unread %}<span class="rounded bg-blue-100 px-1 font-bold">Unread</span>{% endif %}</span>
+  </header>
+  <div id="post-body-{{ post.pk }}" class="{% prose_classes %}"{% if discussion.category.language %} lang="{{ discussion.category.language }}"{% endif %}>
+    {% if post.is_deleted %}<p class="italic text-gray-700">This post has been removed.</p>{% else %}{{ post.content|safe_markdown }}{% endif %}
+  </div>
+  {% if not post.is_deleted %}{% include "forum/_attachments.html" %}{% record_cards post %}{% endif %}
+  {% if not post.is_deleted %}
+  <footer class="flex flex-wrap items-center justify-between gap-1 px-2 pb-1 text-sm">
+    <span class="flex flex-wrap items-center gap-1">
+      {% if user.is_authenticated %}{% include "forum/_vote_button.html" %}{% else %}<span class="btn-blue-editing inline-block m-0" title="Found helpful">▲ {{ post.vote_count }}</span>{% endif %}
+      {% if can_reply %}<a class="btn-blue-editing inline-block m-0 hover:no-underline" href="?post={{ post.pk }}&amp;reply_to={{ post.pk }}#reply-form-container" onclick="if (window.setReplyTarget) { event.preventDefault(); setReplyTarget({{ post.pk }}, {{ post.root.pk|default:post.pk }}, '{{ post.author|display_name|escapejs }}'); }">Reply</a>{% endif %}
+    </span>
+    {% if user.is_authenticated %}{% include "forum/_post_menu.html" %}{% endif %}
+  </footer>
+  {% endif %}
+</article>
+{% if not post.parent_id %}
+<div id="children-{{ post.pk }}" class="ms-2 sm:ms-6">
+  {% for child in post.tree_children %}
+    {% include "forum/_post.html" with post=child %}
+  {% endfor %}
+</div>
+{% endif %}

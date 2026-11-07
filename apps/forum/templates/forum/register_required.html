@@ -1,0 +1,11 @@
+{% extends "forum/base.html" %}
+{% block forum_content %}
+<div class="max-w-md py-4">
+  <h2 class="font-bold text-xl">The forum is for GCD users</h2>
+  <p class="mt-1">Sign in with your GCD account to read and post. If you don't have one, registering is free.</p>
+  <p class="mt-3 flex gap-2">
+    <a class="btn btn-blue" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Sign in</a>
+    <a class="btn btn-blue-editing inline-block" href="{% url 'register' %}">Register</a>
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "forum/base.html" %}
+{% block title %}GCD :: Forum :: {{ discussion.title }}{% endblock %}
+{% block forum_content %}
+{# A reply sent without htmx that has errors: the form with its text and errors, in a page of the forum. #}
+<h2 class="font-bold text-xl"><a href="{{ discussion.get_absolute_url }}">{{ discussion.title }}</a></h2>
+{% include "forum/_reply_form.html" %}
+{% endblock %}

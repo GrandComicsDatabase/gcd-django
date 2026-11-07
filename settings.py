@@ -158,6 +158,7 @@ INSTALLED_APPS = (
     'apps.legacy',
     'apps.oi',
     'apps.voting',
+    'apps.forum',
     'apps.stddata',
     'apps.mycomics',
     'compressor',
