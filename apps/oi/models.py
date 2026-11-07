@@ -4183,7 +4183,7 @@ class IssueRevision(Revision):
             'valid_isbn': has_isbn,
             'volume': has_volume,
             'no_volume': has_volume,
-            'display_volume_with_issue': has_volume,
+            'display_volume_with_number': has_volume,
             'indicia_frequency': has_ind_freq,
             'no_indicia_frequency': has_ind_freq,
             'indicia_printer': has_ind_print,

@@ -1704,7 +1704,8 @@ def process_advanced(request, export_csv=False):
         table = IssuePublisherTable(items,
                                     template_name=TW_SORT_TABLE_TEMPLATE)
         context['item_name'] = 'issue'
-        if request.user.is_authenticated and not settings.MYCOMICS:
+        if request.user.has_perm('indexer.can_reserve') and \
+           not settings.MYCOMICS:
             context['bulk_edit'] = urlresolvers.reverse('edit_issues_in_bulk')
 
     if target == 'series':
