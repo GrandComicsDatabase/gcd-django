@@ -35,7 +35,8 @@ from apps.stats.models import RecentIndexedIssue, CountStats
 
 from apps.gcd.models import (
     Publisher, IndiciaPublisher, BrandGroup, Brand, BrandUse, Series,
-    SeriesBond, Cover, Image, Issue, IssueCredit, PublisherCodeNumber,
+    SeriesBond, Cover, CoverCharacterBox,
+    Image, Issue, IssueCredit, PublisherCodeNumber,
     CodeNumberType, Story, StoryCredit, StoryCharacter, CharacterRole,
     StoryGroup, StoryArc, StoryArcRelation, Universe, Multiverse,
     CharacterOrderType, CharacterOrder,
@@ -51,6 +52,7 @@ from apps.gcd.models import (
     ExternalLink, STORY_TYPES, CREDIT_TYPES, VCS_Codes)
 
 from apps.gcd.models.gcddata import GcdData, GcdLink
+from apps.gcd.models.cover import BOX_SIZE_LARGE
 
 from apps.gcd.models.issue import issue_descriptor
 from apps.gcd.models.reprint import validate_reprint_issue_ids
@@ -347,7 +349,9 @@ class Changeset(models.Model):
                     self.reprintrevisions.all(),
                     self.publishercodenumberrevisions.all(),
                     self.externallinkrevisions.all(),
-                    self.characterorderrevisions.all(),)
+                    self.characterorderrevisions.all(),
+                    self.covercharacterboxrevisions.order_by('-deleted',
+                                                             'id'),)
 
         if self.change_type in [CTYPES['issue_add'], CTYPES['issue_bulk']]:
             if self.issuerevisions.all().count() == 1 and \
@@ -427,7 +431,9 @@ class Changeset(models.Model):
                     self.storycharacterrevisions.all(),
                     self.storygrouprevisions.all(),
                     self.publishercodenumberrevisions.all(),
-                    self.externallinkrevisions.all())
+                    self.externallinkrevisions.all(),
+                    self.covercharacterboxrevisions.order_by('-deleted',
+                                                             'id'))
 
         if self.change_type == CTYPES['series_bond']:
             return (self.seriesbondrevisions.all()
@@ -962,6 +968,9 @@ class Changeset(models.Model):
                 # changeset is a deletion.  So they get one IMP_DELETE no
                 # matter what else was in the changeset.
 
+                if isinstance(revision, CoverCharacterBoxRevision):
+                    # Counted with its sequence, as the characters are.
+                    continue
                 if revision.deleted:
                     if isinstance(revision, StoryRevision) or \
                        isinstance(revision, StoryCreditRevision) or \
@@ -4511,6 +4520,20 @@ class IssueRevision(Revision):
                     order_revision.character_revisions.add(
                       character_revision,
                       through_defaults={'order_code': order_code})
+                # Only the characters of a cover sequence have boxes.
+                boxes = character.cover_boxes.all() \
+                    if story.type_id == STORY_TYPES['cover'] else ()
+                for box in boxes:
+                    box_lock = _get_revision_lock(box,
+                                                  changeset=self.changeset)
+                    if box_lock is None:
+                        raise IntegrityError("needed Box lock not possible")
+                    box_revision = CoverCharacterBoxRevision.clone(
+                      box, self.changeset,
+                      story_character_revision=character_revision)
+                    if delete:
+                        box_revision.deleted = character_revision.deleted
+                        box_revision.save()
             for group in story.active_groups:
                 group_lock = _get_revision_lock(group,
                                                 changeset=self.changeset)
@@ -5550,6 +5573,297 @@ class StoryCharacterRevision(Revision):
         return 0
 
 
+def change_moves(changeset):
+    """
+    What a change can move: its issue revisions, with their previous
+    revisions, and its revisions moving a cover to the other issue of the
+    change, as move_cover makes them, by cover id.  Read once for the boxes
+    of a page, and again while approving, as added issues get their ids.
+    """
+    covers = {}
+    if changeset.change_type in (CTYPES['variant_add'],
+                                 CTYPES['two_issues']):
+        covers = {revision.cover_id: revision
+                  for revision in changeset.coverrevisions.filter(
+                    is_replacement=False, deleted=False)}
+    return (list(changeset.issuerevisions.select_related(
+              'previous_revision')), covers)
+
+
+def _issue_after(moves, issue_revision=None, issue=None):
+    """
+    An issue as a change leaves it: a key for it, the id of the issue it is
+    a variant of and its variant cover status, from its revision in the
+    change (change_moves) if any.  The issue added in the change, with
+    issue None, has no id before approval and is known by its revision.
+    """
+    if issue_revision is None:
+        issue_id = issue.id if issue is not None else None
+        issue_revision = next((revision for revision in moves[0]
+                               if revision.issue_id == issue_id), None)
+    if issue_revision is None:
+        return issue.id, issue.variant_of_id, issue.variant_cover_status
+    return (issue_revision.issue_id or ('added', issue_revision.id),
+            issue_revision.variant_of_id, issue_revision.variant_cover_status)
+
+
+def cover_shows_sequence_after(moves, cover, story_revision):
+    """
+    Whether, once the change of story_revision is approved, the cover is of
+    the issue of its cover sequence or of a variant of it with only a scan
+    difference, as in box_covers, with the moves and variant fields of the
+    change (change_moves).  The answer is the same before approval and
+    while the boxes are committed after the covers, issues and sequences.
+    """
+    if story_revision.committed:
+        story_issue = _issue_after(moves, issue=story_revision.story.issue)
+    else:
+        story_issue = _issue_after(moves, issue=story_revision.issue)
+    move = moves[1].get(cover.id)
+    if move is None:
+        cover_issue = _issue_after(moves, issue=cover.issue)
+    else:
+        target, = [revision for revision in moves[0]
+                   if revision.issue_id != move.issue_id]
+        cover_issue = _issue_after(moves, issue_revision=target)
+    return cover_issue[0] == story_issue[0] or (
+      cover_issue[1] == story_issue[0]
+      and cover_issue[2] == VCS_Codes.ONLY_SCAN_DIFFERENCE)
+
+
+class CoverCharacterBoxRevision(Revision):
+    """
+    Revision of the rectangle showing a character appearance on a cover.
+
+    The box is edited together with the character appearance in the
+    cover sequence, so it points to the StoryCharacterRevision of the same
+    changeset, which exists even for a just added appearance.  The fields
+    are defined as in CoverCharacterBox: three corners of the rectangle
+    in affine coordinates of the front, x in 1/10000 of its width and y in
+    1/10000 of its height.
+    """
+    class Meta:
+        """The table of the revisions of the boxes."""
+        app_label = 'oi'
+        db_table = 'oi_cover_character_box_revision'
+
+    cover_character_box = models.ForeignKey(
+      CoverCharacterBox, null=True, on_delete=models.CASCADE,
+      related_name='revisions')
+    story_character_revision = models.ForeignKey(
+      StoryCharacterRevision, on_delete=models.CASCADE,
+      related_name='cover_boxes')
+    cover = models.ForeignKey(Cover, on_delete=models.CASCADE,
+                              related_name='character_box_revisions')
+    top_left_x = models.SmallIntegerField(
+      help_text='x of the top left corner, in 1/10000 of the width of the '
+                'front.')
+    top_left_y = models.SmallIntegerField(
+      help_text='y of the top left corner, in 1/10000 of the height of the '
+                'front.')
+    top_right_x = models.SmallIntegerField(
+      help_text='x of the top right corner, in 1/10000 of the width of the '
+                'front.')
+    top_right_y = models.SmallIntegerField(
+      help_text='y of the top right corner, in 1/10000 of the height of '
+                'the front.')
+    bottom_left_x = models.SmallIntegerField(
+      help_text='x of the bottom left corner, in 1/10000 of the width of '
+                'the front.')
+    bottom_left_y = models.SmallIntegerField(
+      help_text='y of the bottom left corner, in 1/10000 of the height of '
+                'the front.')
+    scan_date = models.DateTimeField(
+      null=True,
+      help_text='The last upload of the cover scan the box was drawn on.')
+    scan_aspect = models.PositiveIntegerField(
+      help_text='Height / width of the scan the box was drawn on, times '
+                '10000 (400 x 615 pixels gives 15375).')
+
+    source_name = 'cover_character_box'
+    source_class = CoverCharacterBox
+
+    @property
+    def source(self):
+        """
+        The box of which this is a revision.
+        """
+        return self.cover_character_box
+
+    @source.setter
+    def source(self, value):
+        """
+        Sets the box, used when the box is created on commit.
+        """
+        self.cover_character_box = value
+
+    def _pre_save_object(self, changes):
+        """
+        Links the box to the committed appearance of the character.
+
+        The cover is copied with the other fields.  A deleted box has
+        no source anymore, as _pre_delete clears it for links.
+        """
+        if self.deleted:
+            return
+        self.cover_character_box.story_character = \
+            self.story_character_revision.story_character
+
+    def _pre_initial_save(self, fork=False, fork_source=None,
+                          exclude=frozenset(), **kwargs):
+        """
+        Links a cloned box to the revision of its appearance.
+        """
+        self.story_character_revision = kwargs['story_character_revision']
+
+    def _drops_with_appearance(self):
+        """
+        Whether the box goes with its appearance: the appearance or its
+        sequence is deleted, or the sequence is no longer a cover sequence.
+        """
+        character_revision = self.story_character_revision
+        story_revision = character_revision.story_revision
+        return (character_revision.deleted or story_revision.deleted
+                or story_revision.type_id != STORY_TYPES['cover'])
+
+    def _moved_here(self, moves):
+        """
+        Whether this change may take the box off its cover: it draws the
+        box, moves the sequence or the cover, or changes which issue the
+        issue of the cover is a variant of, or of which kind (moves, from
+        change_moves).  The variant fields of other issues, added ones
+        included, do not change what the cover shows.
+        """
+        story_revision = self.story_character_revision.story_revision
+        previous_story = story_revision.previous()
+        if self.previous() is None or previous_story is None \
+           or previous_story.issue_id != story_revision.issue_id \
+           or self.cover_id in moves[1]:
+            return True
+        for issue_revision in moves[0]:
+            if issue_revision.issue_id != self.cover.issue_id:
+                continue
+            previous = issue_revision.previous()
+            if previous is None or (
+              previous.variant_of_id, previous.variant_cover_status) != (
+              issue_revision.variant_of_id,
+              issue_revision.variant_cover_status):
+                return True
+        return False
+
+    def _leaves_its_cover(self, moves=None):
+        """
+        Whether this change takes the box off its cover: it moves the
+        sequence or the cover, or changes the variants (_moved_here), and
+        after it the cover no longer shows the sequence
+        (cover_shows_sequence_after).  A deleted cover only hides its
+        boxes, and so does a cover taken away by another change: such a
+        box stays as it is, hidden, until the cover shows the sequence
+        again.  moves are those of change_moves, read here if not given.
+        """
+        if self.cover.deleted:
+            return False
+        if moves is None:
+            moves = change_moves(self.changeset)
+        return self._moved_here(moves) and not cover_shows_sequence_after(
+          moves, self.cover, self.story_character_revision.story_revision)
+
+    def commit_to_display(self, clear_reservation=True):
+        """
+        Writes the box back, following the changes of its appearance.
+
+        In a changeset the appearance, its sequence and the covers are
+        committed before the boxes (see Changeset._revision_sets), so
+        their new state is known here.  The box is deleted when its
+        appearance or sequence is deleted, when the sequence is no longer a
+        cover sequence and when it leaves its cover (_leaves_its_cover).
+        When the appearance changes its character or universe the box stays
+        and goes with it to its new character pages.  A box added and
+        removed in the same changeset was never written, so its revision is
+        only marked as committed.
+        """
+        if not self.deleted and (self._drops_with_appearance()
+                                 or self._leaves_its_cover()):
+            self.deleted = True
+            self.save()
+        if self.deleted and self.source is None:
+            self.committed = True
+            self.save()
+            return
+        super(CoverCharacterBoxRevision, self).commit_to_display(
+          clear_reservation=clear_reservation)
+
+    _base_field_list = ['cover', 'top_left_x', 'top_left_y', 'top_right_x',
+                        'top_right_y', 'bottom_left_x', 'bottom_left_y',
+                        'scan_date', 'scan_aspect']
+
+    def _field_list(self):
+        """
+        The fields compared between revisions.
+        """
+        return self._base_field_list
+
+    def _get_blank_values(self):
+        """
+        The values an added box is compared against.
+        """
+        return {
+            'cover': None,
+            'top_left_x': None,
+            'top_left_y': None,
+            'top_right_x': None,
+            'top_right_y': None,
+            'bottom_left_x': None,
+            'bottom_left_y': None,
+            'scan_date': None,
+            'scan_aspect': None,
+        }
+
+    def compare_changes(self, compare_revision=None):
+        """
+        Sets changed and is_changed as for other revisions, and is_removed
+        when the box goes on approval, removed itself, with its appearance
+        or leaving its cover.  A committed box was marked as deleted on
+        approval when it went, so later changes of its cover do not change
+        the history.  A box added and removed in the same changeset changes
+        nothing.  The moves of the change may be given in self.moves, read
+        once for all its boxes.
+        """
+        super(CoverCharacterBoxRevision, self).compare_changes(
+          compare_revision=compare_revision)
+        if self.committed:
+            self.is_removed = self.deleted
+        else:
+            self.is_removed = (
+              self.deleted or self._drops_with_appearance()
+              or self._leaves_its_cover(getattr(self, 'moves', None)))
+        if self.is_removed:
+            self.is_changed = self.previous() is not None
+
+    def _imps_for(self, field_name):
+        """
+        No points of its own: the sequence gets one point for its changed
+        boxes, however many, as for its characters.
+        """
+        return 0
+
+    def show_cut_out(self):
+        """
+        The box as an upright cut-out of its cover, for the compare page, at
+        the largest size of the character page.
+        """
+        from apps.gcd.views.covers import get_box_tag, box_alt_text
+        return get_box_tag(
+          self, box_alt_text(self.story_character_revision.character,
+                             self.cover.issue),
+          BOX_SIZE_LARGE)
+
+    def __str__(self):
+        """The character of the revision and the cover."""
+        return '%s on %s' % (self.story_character_revision.character,
+                             self.cover)
+
+
 class CharacterOrderRevision(Revision):
     class Meta:
         app_label = 'oi'
@@ -6237,6 +6551,33 @@ class StoryRevision(Revision):
                     self.is_changed = True
                     break
 
+        # The boxes of the appearances on the covers, for the table in
+        # the compare.  'cover_boxes' is not in the field list, so its
+        # point is added in calculate_imps.  Boxes added and removed in
+        # this changeset change nothing and are left out.
+        self.cover_box_revisions = []
+        self.changed['cover_boxes'] = False
+        moves = None
+        for box_revision in CoverCharacterBoxRevision.objects.filter(
+          story_character_revision__story_revision=self).select_related(
+          'cover__issue__series__publisher',
+          'previous_revision__cover__issue__series__publisher',
+          'previous_revision__story_character_revision__character',
+          'story_character_revision__character__character',
+          'story_character_revision__universe',
+          'story_character_revision__story_revision__issue',
+          'story_character_revision__story_revision__previous_revision')\
+          .order_by('story_character_revision__character__sort_name', 'id'):
+            if moves is None:
+                moves = change_moves(self.changeset)
+            box_revision.moves = moves
+            box_revision.compare_changes()
+            if box_revision.is_changed:
+                self.changed['cover_boxes'] = True
+                self.is_changed = True
+            if box_revision.is_changed or box_revision.previous():
+                self.cover_box_revisions.append(box_revision)
+
         if 'genre' in self.changed and self.changed['genre'] \
            and self.previous():
             if self.previous().genre.lower() == self.genre.lower():
@@ -6253,6 +6594,25 @@ class StoryRevision(Revision):
                 current = _compare_string_genre(self)
                 if previous != current:
                     self.changed['genre'] = True
+
+    def cover_box_tags(self):
+        """
+        The covers of the boxes from compare_changes, each with its
+        boxes drawn after the change and numbered as in the table of the
+        compare; removed boxes are only in the table.
+        """
+        from apps.gcd.views.covers import get_boxes_cover_tag
+        boxes_by_cover = {}
+        for number, box_revision in enumerate(
+          self.cover_box_revisions, start=1):
+            if not box_revision.is_removed:
+                boxes_by_cover.setdefault(box_revision.cover, []).append(
+                  (number, box_revision))
+        return [get_boxes_cover_tag(
+                  cover, numbered_boxes,
+                  'Cover of %s with the marked characters' % cover.issue,
+                  'w-[200px]')
+                for cover, numbered_boxes in boxes_by_cover.items()]
 
     def _do_complete_added_revision(self, issue):
         """
@@ -6935,6 +7295,10 @@ class StoryRevision(Revision):
         imps = super(StoryRevision, self).calculate_imps()
         if hasattr(self, 'biblioentryrevision'):
             imps += self.biblioentryrevision.calculate_imps()
+        # One point for the changed boxes of the characters on the covers,
+        # however many, as for the characters themselves.
+        if not self.deleted and self.changed.get('cover_boxes'):
+            imps += 1
         return imps
 
     def _start_imp_sum(self):

@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import math
+
 from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.html import conditional_escape as esc
 
-from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE
+from apps.gcd.models.cover import ZOOM_SMALL, ZOOM_MEDIUM, ZOOM_LARGE, \
+                                  BOX_SIZE_LARGE
 from apps.oi import states
 
 
@@ -81,6 +84,183 @@ def get_image_tag(cover, alt_text, zoom_level, can_have_cover=True,
 
     return mark_safe('<img src="' + img_url + '"' + add_info +
                      'class="' + img_class + '">')
+
+
+def get_box_scan_url(cover):
+    """
+    The URL of the scan the character boxes of a cover are drawn on and
+    cut out of: the w400 scan, or the w200 one of a wraparound cover, which
+    holds only the front.
+    """
+    if settings.FAKE_IMAGES:
+        return settings.STATIC_URL + 'img/placeholder_large.jpg'
+    return '%s/w%d/%d.jpg?%s' % (
+      cover.get_base_url(), 200 if cover.is_wraparound else 400, cover.id,
+      hash(cover.last_upload))
+
+
+def box_alt_text(character, issue):
+    """
+    The alternative text of a cut-out: the character, or the name it has in
+    the appearance, on the cover of the issue.
+    """
+    return '%s on the cover of %s' % (character.name, issue.full_name())
+
+
+def _box_sides(box):
+    """
+    The top left corner of a box and its top and left sides as vectors, on
+    the scan laid out 10000 units wide and scan_aspect units high, so that a
+    unit has the same length on both axes.
+    """
+    aspect = box.scan_aspect / 10000
+    corner = (box.top_left_x, box.top_left_y * aspect)
+    across = (box.top_right_x - corner[0],
+              box.top_right_y * aspect - corner[1])
+    down = (box.bottom_left_x - corner[0],
+            box.bottom_left_y * aspect - corner[1])
+    return corner, across, down
+
+
+def common_proportion(boxes):
+    """
+    The proportion, height over width, shared by cut-outs shown together:
+    halfway in ratio between the tallest and the widest box, so that each
+    of them is widened as little as possible.
+    """
+    proportions = []
+    for box in boxes:
+        _, across, down = _box_sides(box)
+        proportions.append(math.hypot(*down) / math.hypot(*across))
+    return math.sqrt(min(proportions) * max(proportions))
+
+
+def _shift_inside(box, corner, units, frame, axis, limit):
+    """
+    How far to move the frame of a widened box along its widened axis, at
+    most limit either way so that the box stays in it, for its four corners
+    to be on the cover: the shift nearest to none, or none if no shift
+    does it.  units are the unit vectors of the top and left sides, and the
+    frame is left, top, width and height in units along them.
+    """
+    left, top, width, height = frame
+    low, high = -limit, limit
+    for along in (left, left + width):
+        for down in (top, top + height):
+            for i, edge in ((0, 10000), (1, box.scan_aspect)):
+                point = corner[i] + along * units[0][i] + down * units[1][i]
+                step = units[axis][i]
+                if abs(step) < 1e-9:
+                    if not -1e-6 <= point <= edge + 1e-6:
+                        return 0
+                    continue
+                ends = sorted((-point / step, (edge - point) / step))
+                low, high = max(low, ends[0]), min(high, ends[1])
+    if low > high + 1e-9:
+        return 0
+    return min(max(0, low), high)
+
+
+def get_box_tag(box, alt_text, size=BOX_SIZE_LARGE, proportion=None):
+    """
+    Show a character box of a cover as an upright cut-out, without
+    JavaScript.
+
+    The box is drawn on the scan of get_box_scan_url, laid out as in
+    _box_sides, and one matrix, the inverse of the affine map of the cut-out
+    onto the scan, brings the scan into the box of the cut-out.
+
+    The cut-out shows the box as drawn and fits in size, its largest width
+    and height in pixels.  Cut-outs shown together pass their
+    common_proportion: each box is then widened on its shorter side to that
+    proportion around its centre, and moved inside the cover when it can
+    be, so they look alike side by side and show a little more of the
+    cover.  Only the width is set and the height follows from the viewBox,
+    so the cut-out also shrinks to the width of its parent.  A cover not
+    shown on the site, or deleted, gives the image of a missing cover.
+    """
+    cover = box.cover
+    if cover.limit_display or cover.deleted:
+        return mark_safe('<img class="border-2 max-w-full" width="%d" src="%s'
+                         'img/nocover_large.png" alt="No image yet">'
+                         % (size[0], settings.STATIC_URL))
+    img_url = get_box_scan_url(cover)
+
+    (left, top), across, down = _box_sides(box)
+    width = math.hypot(*across)
+    height = math.hypot(*down)
+    cross = across[0] * down[1] - across[1] * down[0]
+    a = width * down[1] / cross
+    b = -height * across[1] / cross
+    c = -width * down[0] / cross
+    d = height * across[0] / cross
+    e = -(a * left + c * top)
+    f = -(b * left + d * top)
+    matrix = ' '.join('%.6g' % value for value in (a, b, c, d, e, f))
+
+    frame = [0, 0, width, height]
+    if proportion is not None:
+        frame[3] = max(height, width * proportion)
+        frame[2] = frame[3] / proportion
+        frame[0] = (width - frame[2]) / 2
+        frame[1] = (height - frame[3]) / 2
+        axis = 0 if frame[2] > width else 1
+        units = ((across[0] / width, across[1] / width),
+                 (down[0] / height, down[1] / height))
+        frame[axis] += _shift_inside(box, (left, top), units, frame, axis,
+                                     -frame[axis])
+    scale = min(size[0] / frame[2], size[1] / frame[3])
+    return mark_safe(
+      '<svg class="max-w-full" width="%.4g" viewBox="%.6g %.6g %.6g %.6g" '
+      'role="img" aria-label="%s"><image href="%s" width="10000" height="%d" '
+      'preserveAspectRatio="none" transform="matrix(%s)"/></svg>'
+      % (frame[2] * scale, frame[0], frame[1], frame[2], frame[3],
+         esc(alt_text), esc(img_url), box.scan_aspect, matrix))
+
+
+def get_boxes_cover_tag(cover, numbered_boxes, alt_text, img_class=''):
+    """
+    Show a cover with character boxes drawn on it, each with its number,
+    without JavaScript; numbered_boxes are pairs of number and box.
+
+    The scan of get_box_scan_url is laid out 10000 units wide and as
+    high as the current scan, in units of the same length on both axes as
+    in get_box_tag: its proportions are those of a box drawn on it, else
+    of the first box.  The width comes from img_class.  A deleted cover or
+    one not shown on the site has no tag.
+    """
+    if cover.limit_display or cover.deleted or not numbered_boxes:
+        return ''
+    current = [box for _, box in numbered_boxes
+               if box.scan_date == cover.last_upload]
+    height = (current or [numbered_boxes[0][1]])[0].scan_aspect
+    shapes = []
+    for number, box in numbered_boxes:
+        corners = (
+          (box.top_left_x, box.top_left_y),
+          (box.top_right_x, box.top_right_y),
+          (box.top_right_x + box.bottom_left_x - box.top_left_x,
+           box.top_right_y + box.bottom_left_y - box.top_left_y),
+          (box.bottom_left_x, box.bottom_left_y))
+        points = ' '.join('%d,%.6g' % (x, y * height / 10000)
+                          for x, y in corners)
+        centre_x = (box.top_right_x + box.bottom_left_x) / 2
+        centre_y = (box.top_right_y + box.bottom_left_y) / 2 \
+            * height / 10000
+        shapes.append(
+          '<polygon points="%s" class="text-red-600" fill="none" '
+          'stroke="currentColor" stroke-width="2" '
+          'vector-effect="non-scaling-stroke"/><text x="%.6g" y="%.6g" '
+          'font-size="800" text-anchor="middle" dominant-baseline="middle" '
+          'fill="white" stroke="black" stroke-width="60" '
+          'paint-order="stroke">%d</text>'
+          % (points, centre_x, centre_y, number))
+    return mark_safe(
+      '<svg class="%s" viewBox="0 0 10000 %d" role="img" aria-label="%s">'
+      '<image href="%s" width="10000" height="%d" '
+      'preserveAspectRatio="none"/>%s</svg>'
+      % (esc(img_class), height, esc(alt_text),
+         esc(get_box_scan_url(cover)), height, ''.join(shapes)))
 
 
 def get_image_tags_per_issue(issue, alt_text, zoom_level, as_list=False,
