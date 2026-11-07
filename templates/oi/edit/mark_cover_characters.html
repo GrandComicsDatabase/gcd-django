@@ -1,0 +1,163 @@
+{% extends "oi/base_view.html" %}
+
+{% load static %}
+
+{% block title %}
+Mark characters on cover
+{% endblock %}
+
+{% block view_body %}
+<h1>Mark characters on cover</h1>
+<p>Cover sequence of {{ story_revision.issue }}</p>
+
+<p class="mt-2">
+Mark where the characters of the cover sequence are drawn on the cover.
+</p>
+<ul class="list-disc list-outside ps-4 mb-2">
+  <li>Choose the character with "Mark".</li>
+  <li>Turn the cover with the slider until the character stands upright.</li>
+  <li id="box-keys">Draw a rectangle around the character: drag over the cover,
+      or touch two opposite corners. With the keyboard, the arrow keys move the
+      rectangle and Shift with the arrow keys changes its size.</li>
+  <li>After saving, each marked character shows the image cut out of the
+      cover.</li>
+  <li class="font-semibold">Mark a character only where it is clearly seen:
+      the character page shows up to three of the marked images, picked at
+      random.</li>
+  <li>"Clear" takes the rectangle off the chosen character.</li>
+  <li>"Return To Sequence" saves the marks and goes back to the sequence, for
+      example to add a missing character; "Cancel" goes back without
+      saving.</li>
+</ul>
+
+{% if cover_choices %}
+<p>The characters can be marked on each of these covers. Save before choosing
+another one.</p>
+<ul class="flex flex-wrap gap-2 mb-2">
+  {% for choice, thumbnail in cover_choices %}
+  <li>
+    {% if choice == cover %}
+    <span class="font-bold" aria-current="true">
+      {{ thumbnail }}<br>{{ choice.issue }}
+    </span>
+    {% else %}
+    <a href="?cover={{ choice.id }}">{{ thumbnail }}<br>{{ choice.issue }}</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% url 'mark_cover_characters' story_revision_id=story_revision.id as action %}
+<form method="POST" action="{{ action }}">
+{% csrf_token %}
+<input type="hidden" name="cover" value="{{ cover.id }}">
+{{ formset.management_form }}
+{{ formset.non_form_errors }}
+<div class="sm:flex sm:flex-row gap-4">
+  <div class="sm:w-1/2 max-w-[400px] self-start md:sticky md:top-0">
+    {% if cover.limit_display %}
+    <p>This cover scan is not shown on the site, so the characters cannot be
+    marked on it.</p>
+    {% else %}
+    <div data-cover-boxes>
+      <p class="font-bold" data-box-chosen></p>
+      <label>Turn
+        <input type="range" min="-180" max="180" step="1" value="0"
+               data-box-angle>
+        <output data-box-angle-value>0</output> degrees</label>
+      <input type="button" value="Clear" data-box-clear
+             class="btn-blue-editing inline">
+      <img data-box-image src="{{ scan_url }}" alt="Cover of {{ cover.issue }}"
+           class="w-full block focus-visible:outline focus-visible:outline-2
+                  focus-visible:outline-gcd">
+      <p data-box-missing hidden>
+        Cover image not available, the box cannot be drawn.
+      </p>
+      <noscript>
+        Marking needs JavaScript: the box of a character is drawn on the
+        cover with a mouse, a finger or a pen. Without it, a box already
+        drawn can only be removed.
+      </noscript>
+    </div>
+    {% endif %}
+  </div>
+  <div class="flex-1 min-w-0">
+    <table class="w-full">
+      <thead>
+        <tr class="bg-blue-100">
+          <th class="text-left">Mark</th>
+          <th class="text-left">No.</th>
+          <th class="text-left">Character</th>
+          <th class="text-left">Remove</th>
+          <th class="text-left">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for row in rows %}
+        <tr data-box-row data-box-number="{{ row.number }}"
+            class="align-top [&>td]:pe-1 hover:bg-blue-50">
+          <td>
+            <input type="radio" name="mark" value="{{ row.number }}"
+                   id="box-mark-{{ row.number }}" data-box-select
+                   {% if row.number == selected %}checked{% endif %}>
+          </td>
+          <td>{{ row.number }}</td>
+          {% with character=row.appearance.character %}
+          <td>
+            <label for="box-mark-{{ row.number }}">
+            {% if row.appearance %}
+              {{ character.character.object_markdown_name }}
+              {% if character.name != character.character.name %}
+                - {{ character.name }}
+              {% endif %}
+              {% if row.appearance.universe %}
+                ({{ row.appearance.universe }})
+              {% endif %}
+            {% else %}
+              Unknown character
+            {% endif %}
+            </label>
+            {% if row.cut_out %}
+            <div data-box-cut-out>{{ row.cut_out }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <label for="{{ row.form.DELETE.id_for_label }}" class="sr-only">
+              Remove the box of
+              {{ character.name|default:"the unknown character" }}
+            </label>
+            {{ row.form.DELETE }}
+          </td>
+          {% endwith %}
+          <td>
+            <span data-box-status aria-live="polite">{{ row.status }}</span>
+            {{ row.form.non_field_errors }}
+            {% for field in row.form %}{{ field.errors }}{% endfor %}
+            {% for field in row.form.hidden_fields %}
+              {% if field.name != 'scan_date' %}{{ field }}{% endif %}
+            {% endfor %}
+            <input type="hidden" name="{{ row.form.scan_date.html_name }}"
+                   id="{{ row.form.scan_date.auto_id }}"
+                   value="{{ scan_date }}">
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="sticky-action-bar">
+    <input type="submit" name="save" value="Save And Continue Marking"
+           class="btn-blue-editing inline">
+    <input type="submit" name="save_return" value="Save And Return To Changeset"
+           class="btn-blue-editing inline">
+    <input type="submit" name="return_sequence" value="Return To Sequence"
+           class="btn-blue-editing inline">
+    <input type="submit" name="cancel" value="Cancel"
+           class="btn-blue-editing inline">
+    </div>
+  </div>
+</div>
+</form>
+
+<script src="{% static 'js/oi/cover_character_box.js' %}"></script>
+{% endblock %}
