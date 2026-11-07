@@ -4,7 +4,7 @@
 from django import forms
 
 from .support import (
-    _get_comments_form_field, _set_help_labels,
+    _check_year_order, _get_comments_form_field, _set_help_labels,
     SERIES_HELP_LINKS, SERIES_HELP_TEXTS, GENERIC_ERROR_MESSAGE,
     KeywordBaseForm)
 
@@ -162,6 +162,7 @@ class SeriesRevisionForm(KeywordBaseForm):
         cd['binding'] = cd['binding'].strip()
         cd['publishing_format'] = cd['publishing_format'].strip()
         cd['comments'] = cd['comments'].strip()
+        _check_year_order(cd)
         if 'reservation_requested' in cd and cd['reservation_requested'] and \
                 (not cd['is_current'] and not cd['is_singleton']):
             raise forms.ValidationError(

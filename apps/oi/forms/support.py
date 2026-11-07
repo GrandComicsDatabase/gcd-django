@@ -730,6 +730,20 @@ def _get_comments_form_field():
                   'displayed, but is stored in the change history.')
 
 
+def _check_year_order(cleaned_data):
+    """
+    Raise a ValidationError if a year ended is before its year began.
+    """
+    for began, ended in (('year_began', 'year_ended'),
+                         ('year_overall_began', 'year_overall_ended')):
+        if cleaned_data.get(began) and cleaned_data.get(ended) and \
+           cleaned_data[ended] < cleaned_data[began]:
+            raise forms.ValidationError(
+              '%s cannot be before %s.' % (
+                ended.replace('_', ' ').capitalize(),
+                began.replace('_', ' ')))
+
+
 def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
     if keywords is not None and keywords != '':
