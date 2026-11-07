@@ -631,12 +631,24 @@ class GroupMembership(GcdLink):
     year_left_uncertain = models.BooleanField(default=False)
     notes = models.TextField()
 
+    def identical_memberships(self):
+        return GroupMembership.objects.filter(
+          character=self.character, group=self.group,
+          membership_type=self.membership_type,
+          year_joined=self.year_joined,
+          year_joined_uncertain=self.year_joined_uncertain,
+          year_left=self.year_left,
+          year_left_uncertain=self.year_left_uncertain,
+          notes=self.notes).exclude(id=self.id)
+
     def has_dependents(self):
         from .story import StoryCharacter
         if StoryCharacter.objects.filter(character__character=self.character,
                                          group_name__group=self.group,
                                          deleted=False).exists():
-            return True
+            # A duplicate can be deleted, the identical membership
+            # still covers the appearances.
+            return not self.identical_memberships().exists()
         return False
 
     def display_years(self):
