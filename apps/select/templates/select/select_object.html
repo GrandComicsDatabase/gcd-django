@@ -79,8 +79,8 @@ Search for {{ target }} by entering the relevant information here:
 {# it lists issues, and stories where the selector takes them #}
 <form id="new-search-form" action="{% url 'select_object_search_htmx' select_key=select_key %}" method="get" novalidate
       hx-get="{% url 'select_object_search_htmx' select_key=select_key %}"
-      {# on pageshow, as Back fills the fields only after load #}
-      hx-trigger="{% if search_on_open %}pageshow[!event.persisted] from:window, {% endif %}change delay:500ms"
+      {# filled, it waits for Search, not to push remembered objects down #}
+      hx-trigger="submit, change delay:500ms"
       hx-target="#new-search-results"
       hx-swap="innerHTML"
       hx-sync="this:replace"
@@ -106,6 +106,7 @@ Search for {{ target }} by entering the relevant information here:
   {% include "oi/bits/jquery.html" %}
   {{ new_search_form.media }}
   </table>
+  <button class="btn-blue-editing inline" type="submit">Search</button>
 </form>
 <script>
 window.addEventListener("DOMContentLoaded", (e) => {

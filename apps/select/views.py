@@ -102,8 +102,7 @@ def get_select_forms(request, initial, data, publisher=False,
                                          search_issue=issue,
                                          search_story=story,
                                          search_cover=cover)
-    new_search_form = get_select_issue_story_form(
-      search_story=story)(initial=initial)
+    new_search_form = get_select_issue_story_form()(initial=initial)
     if data:
         search_form = search_form(data)
     else:
@@ -250,7 +249,6 @@ def process_htmx_select_search(request, select_key):
     series = _menu_id(request, 'series_auto')
     series_year = request.GET.get('series_year_auto', '').strip()
     issue_number = request.GET.get('issue_number', '').strip()
-    sequence_number = request.GET.get('sequence_number', '').strip()
     filters = {}
     if series:
         # the chosen series says it all: a publisher or a year that disagree
@@ -275,11 +273,6 @@ def process_htmx_select_search(request, select_key):
 
     stories = Story.objects.filter(issue_query('issue__'), deleted=False)
     issues = Issue.objects.filter(issue_query(), deleted=False)
-    if sequence_number.isdecimal():
-        stories = stories.filter(sequence_number=sequence_number)
-        # the issues without sequences have no such number
-        if search_object == 'all':
-            search_object = 'story'
     if search_object == 'cover':
         stories = stories.filter(type=STORY_TYPES['cover'])
     elif search_object == 'all':
@@ -309,8 +302,8 @@ def process_htmx_select_search(request, select_key):
     def found():
         """Return the tables of what the form finds, or ask for more."""
         if not filters and not issue_number:
-            # a sequence alone, or a year that is no number, narrow nothing
-            if sequence_number or series_year:
+            # a year that is no number narrows nothing
+            if series_year:
                 return HttpResponse(
                   '<p>Too many results: choose a Series.</p>')
             return HttpResponse('')
@@ -550,7 +543,6 @@ def _select_object(request, select_key, multiple_sequences=False):
                 initial[menu] = _menu_id(request, menu)
         else:
             initial = data.get('initial', {})
-        search_on_open = any(initial.values())
         initial['select_key'] = select_key
         publisher = data.get('publisher', False)
         series = data.get('series', False)
@@ -616,7 +608,6 @@ def _select_object(request, select_key, multiple_sequences=False):
                        'disabled_choice_help': disabled_choice_help,
                        'search_form': search_form,
                        'new_search_form': new_search_form,
-                       'search_on_open': search_on_open,
                        'search_object': _search_object(request),
                        'haystack_form': haystack_form,
                        'publisher': publisher,
@@ -1329,8 +1320,19 @@ def _named_by_text(text, whole_name):
     return whole_name | Q(id=text) if text.isdecimal() else whole_name
 
 
-class PublisherAutocomplete(FewResultsMixin, LoginRequiredMixin,
+class PublisherAutocomplete(LoginRequiredMixin,
                             autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Publisher.objects.filter(deleted=False)
+
+        qs = _filter_and_sort(qs, self.q, field='name')
+
+        return qs
+
+
+class PublisherFewAutocomplete(FewResultsMixin, PublisherAutocomplete):
+    """The publishers of the form of a selector: few, or it says so."""
+
     def get_queryset(self):
         """Return the publishers to list for the typed text."""
         text = (self.q or '').strip()
@@ -1408,8 +1410,24 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
         return qs
 
 
-class SeriesAutocomplete(FewResultsMixin, LoginRequiredMixin,
+class SeriesAutocomplete(LoginRequiredMixin,
                          autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Series.objects.filter(deleted=False)
+        publisher_id = self.forwarded.get('publisher', None)
+        if publisher_id:
+            qs = qs.filter(publisher__id=publisher_id)
+        series_year = self.forwarded.get('series_year', None)
+        if series_year:
+            qs = qs.filter(year_began=series_year)
+        qs = _filter_and_sort(qs, self.q, field='name')
+
+        return qs
+
+
+class SeriesFewAutocomplete(FewResultsMixin, SeriesAutocomplete):
+    """The series of the form of a selector: few, or it says so."""
+
     too_many_named = ('Too many results: write more, or choose a Publisher '
                       'or a Series Year.')
 

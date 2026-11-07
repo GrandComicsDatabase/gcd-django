@@ -101,9 +101,19 @@ urlpatterns = [
         name='publisher_autocomplete',
     ),
     path(
+        'autocomplete/publisher/few/',
+        select_views.PublisherFewAutocomplete.as_view(),
+        name='publisher_few_autocomplete',
+    ),
+    path(
         'autocomplete/series/',
         select_views.SeriesAutocomplete.as_view(),
         name='series_autocomplete',
+    ),
+    path(
+        'autocomplete/series/few/',
+        select_views.SeriesFewAutocomplete.as_view(),
+        name='series_few_autocomplete',
     ),
     path('autocomplete/brand_group/',
         select_views.BrandGroupAutocomplete.as_view(),

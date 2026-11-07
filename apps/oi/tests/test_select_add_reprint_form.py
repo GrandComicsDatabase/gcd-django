@@ -16,6 +16,7 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.test.utils import CaptureQueriesContext
 from django.urls import resolve, reverse
+from django.utils.html import escape
 
 from apps.gcd.models import Award, Brand, Issue, Publisher, Series, Story, \
                             StoryType
@@ -35,7 +36,9 @@ NO_SERIES_NAMED = [{'id': 'note', 'disabled': True,
                     'text': 'No series with this name and this Issue Number.'}]
 ASK_SERIES = b'<p>Too many results: choose a Series.</p>'
 ASK_NUMBER = b'<p>Too many results: write the Issue Number.</p>'
-SEARCH_ON_OPEN = 'pageshow[!event.persisted] from:window, change delay:500ms'
+TRIGGER = 'submit, change delay:500ms'
+SEARCH_BUTTON = ('<button class="btn-blue-editing inline" type="submit">'
+                 'Search</button>')
 
 
 @pytest.fixture
@@ -186,8 +189,9 @@ def menu(client, select_key, field, text='', **forward):
 
 
 def labels(values):
-    """Return the texts of the values of a menu."""
-    return [value['text'] for value in values]
+    """Return the texts of the values of a menu, without flags."""
+    return [' '.join(re.sub(r'<img [^>]*>', '', value['text']).split())
+            for value in values]
 
 
 # the form
@@ -298,10 +302,9 @@ def test_free_search_stays_where_the_form_is(client, select_key, catalog):
         assert 'name="q"' in selector_page(client, key)
 
 
-def test_sequence_number_is_where_stories_can_be_chosen(client, select_key,
-                                                        catalog):
-    assert 'name="sequence_number"' in selector_page(client, select_key)
-    for key in (bond_selector(client, catalog),
+def test_form_has_no_sequence_number(client, select_key, catalog):
+    """A sequence is chosen on the page of its issue, with Remember Story."""
+    for key in (select_key, bond_selector(client, catalog),
                 two_issues_selector(client, catalog)):
         assert 'name="sequence_number"' not in selector_page(client, key)
 
@@ -432,7 +435,7 @@ def test_editing_a_bond_fills_series_and_number(
                                    'series_auto': [str(the_series.id)],
                                    'series_year_auto': '',
                                    'issue_number': '7'}
-    assert trigger(html) == SEARCH_ON_OPEN
+    assert trigger(html) == TRIGGER
 
 
 def test_series_only_bond_fills_no_number(db, client,
@@ -444,12 +447,14 @@ def test_series_only_bond_fills_no_number(db, client,
     assert filled_values(html)['issue_number'] == ''
 
 
-def test_only_a_filled_form_lists_at_load(client, select_key, catalog):
-    """An empty form has nothing to ask, on every page of a selector."""
+def test_form_lists_on_search_or_on_a_change(client, select_key, catalog):
+    """Listed at load, the results would push the remembered objects down."""
     for key in (select_key, bond_selector(client, catalog)):
         html = selector_page(client, key)
-        assert filled_values(html)['series_auto'] == []
-        assert trigger(html) == 'change delay:500ms'
+        assert trigger(html) == TRIGGER
+        form = re.search(r'<form id="new-search-form".*?</form>', html,
+                         re.DOTALL).group()
+        assert SEARCH_BUTTON in form
 
 
 @pytest.mark.parametrize('side', ['edit_origin', 'edit_target'])
@@ -471,9 +476,7 @@ def test_change_of_a_side_fills_the_form(client, select_key, catalog,
                                    'series_auto': [str(catalog['xmen91'].id)],
                                    'series_year_auto': '',
                                    'issue_number': '2'}
-    assert trigger(html) == SEARCH_ON_OPEN
-    number = re.search(r'<input[^>]*name="sequence_number"[^>]*>', html)
-    assert 'value=' not in number.group()
+    assert trigger(html) == TRIGGER
 
 
 def note_selector(client, revision, note):
@@ -493,7 +496,7 @@ def test_note_of_one_series_fills_the_form(client, select_key, catalog,
                          note_selector(client, any_edit_story_rev, note))
     assert filled_values(html)['series_auto'] == [str(catalog['xmen91'].id)]
     assert filled_values(html)['issue_number'] == '2'
-    assert trigger(html) == SEARCH_ON_OPEN
+    assert trigger(html) == TRIGGER
     assert f'<p>Reprint note: {note}</p>' in html
 
 
@@ -506,7 +509,7 @@ def test_other_note_is_only_shown(client, select_key, catalog,
     html = selector_page(client,
                          note_selector(client, any_edit_story_rev, note))
     assert filled_values(html)['series_auto'] == []
-    assert trigger(html) == 'change delay:500ms'
+    assert trigger(html) == TRIGGER
     assert f'<p>Reprint note: {note}</p>' in html
 
 
@@ -516,7 +519,7 @@ def test_button_of_a_sequence_without_notes_shows_no_note(
     html = selector_page(client,
                          note_selector(client, any_edit_story_rev, ' '))
     assert 'Reprint note' not in html
-    assert trigger(html) == 'change delay:500ms'
+    assert trigger(html) == TRIGGER
 
 
 def test_note_is_shown_whole_and_fills_from_its_first_part(
@@ -624,7 +627,11 @@ def test_filled_series_shows_its_name_as_text(db, client,
     Series.objects.filter(id=bond.origin_id).update(name='<b>Origin</b>')
     html = selector_page(client, bond_side_selector(client, bond,
                                                     'edit_origin'))
-    assert f'<option value="{bond.origin_id}" selected>&lt;b&gt;Origin' in html
+    option = re.search(f'<option value="{bond.origin_id}" selected>(.*?)'
+                       '</option>', html).group(1)
+    # the menu shows the text of the option as html
+    assert '&lt;b&gt;Origin' in unescape(option)
+    assert '<b>' not in unescape(option)
 
 
 def test_filled_series_reads_as_in_its_menu(client, select_key, catalog,
@@ -633,8 +640,9 @@ def test_filled_series_reads_as_in_its_menu(client, select_key, catalog,
       client, any_edit_story_rev, 'from X-Men (Marvel, 1991 series) #2'))
     label = menu(client, select_key, 'series_auto', str(catalog['xmen91'].id)
                  )[0]['text']
-    assert label.startswith('X-Men (Marvel, 1991 series) - XA, 118 issues')
-    assert f'selected>{label}</option>' in html
+    assert labels([{'text': label}]) == [
+      'X-Men (Marvel) 118 issues in 1991 - ?']
+    assert f'selected>{escape(label)}</option>' in html
 
 
 def test_empty_form_lists_nothing(client, select_key):
@@ -644,8 +652,7 @@ def test_empty_form_lists_nothing(client, select_key):
     assert response.content == b''
 
 
-@pytest.mark.parametrize('form', [{'sequence_number': '7'},
-                                  {'series_year_auto': '-1'},
+@pytest.mark.parametrize('form', [{'series_year_auto': '-1'},
                                   {'series_year_auto': '19.4'}])
 def test_field_that_narrows_nothing_alone_asks_for_a_series(client, select_key,
                                                             form):
@@ -733,16 +740,14 @@ def test_address_fills_the_form_and_lists(client, select_key, catalog):
     html = client.get(selector_address(
       select_key,
       f'series_auto={series}&series_year_auto=&issue_number=2'
-      '&sequence_number=1&search_object=cover')).content.decode()
+      '&search_object=cover')).content.decode()
     assert filled_values(html) == {'publisher_auto': [],
                                    'series_auto': [str(series)],
                                    'series_year_auto': '',
                                    'issue_number': '2'}
-    number = re.search(r'<input[^>]*name="sequence_number"[^>]*>', html)
-    assert 'value="1"' in number.group()
     assert ('cover', ' checked') in radio_buttons(html)
     assert ('all', ' checked') not in radio_buttons(html)
-    assert trigger(html) == SEARCH_ON_OPEN
+    assert trigger(html) == TRIGGER
 
 
 def test_address_wins_over_what_the_note_filled(client, select_key, catalog,
@@ -878,21 +883,47 @@ def test_publisher_is_found_by_its_id_among_too_many(client, select_key,
 
 def test_series_menu_compares_names_without_separators(client, select_key):
     assert labels(menu(client, select_key, 'series_auto', 'xmen')) == [
-      'X-Men (Marvel, 1991 series) - XA, 118 issues',
-      'X-Men (Marvel UK, 1992 series) - XA, 1 issue',
-      'X-Men Forever (Marvel, 2009 series) - XA, 24 issues']
+      'X-Men (Marvel) 118 issues in 1991 - ?',
+      'X-Men (Marvel UK) 1 issue in 1992',
+      'X-Men Forever (Marvel) 24 issues in 2009 - ?']
 
 
-def test_series_menu_tells_twin_series_apart_by_binding(client, select_key,
-                                                        catalog):
-    """Two series of the catalog differ only in this."""
-    for binding in ('Softcover', 'Hardcover'):
-        twin = another_series(catalog, 'Klassiker', year_began=2016)
-        twin.binding = binding
-        twin.save()
-    assert labels(menu(client, select_key, 'series_auto', 'klassiker')) == [
-      'Klassiker (Marvel, 2016 series) - XA, 0 issues, Softcover',
-      'Klassiker (Marvel, 2016 series) - XA, 0 issues, Hardcover']
+def test_series_menu_names_a_series_as_the_search_results(client,
+                                                          select_key, catalog):
+    """With the flag of its country, shown as html by the menu."""
+    page = selector_page(client, select_key)
+    assert 'data-html' in re.search(r'<select[^>]*name="series_auto"[^>]*>',
+                                    page).group()
+    assert menu(client, select_key, 'series_auto', 'xmen')[0]['text'] == (
+      '<img src="%simg/gcd/flags/xa.png" alt="XA" title="Search country" '
+      'class="inline"> %s' % (settings.STATIC_URL,
+                              catalog['xmen91'].search_result_name()))
+
+
+def test_series_menu_writes_the_name_as_text(client, select_key, catalog):
+    """The names come from the indexers."""
+    another_series(catalog, '<b>X-Men</b>')
+    texts = [value['text']
+             for value in menu(client, select_key, 'series_auto', 'xmen')]
+    assert any('&lt;b&gt;X-Men&lt;/b&gt;' in text for text in texts)
+    assert not any('<b>' in text for text in texts)
+
+
+@pytest.mark.parametrize('name, few', [('series', 'series_few'),
+                                       ('publisher', 'publisher_few')])
+def test_form_has_its_own_menus_with_the_limit(client, select_key, catalog,
+                                               name, few):
+    """The menus of the same name keep listing without limit, page by page."""
+    assert menu_url(client, select_key, f'{name}_auto') == reverse(
+      f'{few}_autocomplete')
+    for number in range(FEW_RESULTS + 1):
+        another_series(catalog, 'Nathan Never %02d' % number)
+        Publisher.objects.create(name='Nathan %02d' % number,
+                                 country=catalog['country'], year_began=2000)
+    answer = client.get(reverse(f'{name}_autocomplete'), {'q': 'nathan'}
+                        ).json()
+    assert answer['pagination']['more']
+    assert all(value['id'] != 'note' for value in answer['results'])
 
 
 def test_series_menu_lists_the_equal_name_first(client, select_key, catalog):
@@ -935,9 +966,9 @@ def test_series_menu_leaves_out_the_other_separators(client, select_key,
 def test_series_menu_lists_what_contains_a_short_text(client, select_key,
                                                       catalog):
     assert labels(menu(client, select_key, 'series_auto', 'xm')) == [
-      'X-Men (Marvel, 1991 series) - XA, 118 issues',
-      'X-Men (Marvel UK, 1992 series) - XA, 1 issue',
-      'X-Men Forever (Marvel, 2009 series) - XA, 24 issues']
+      'X-Men (Marvel) 118 issues in 1991 - ?',
+      'X-Men (Marvel UK) 1 issue in 1992',
+      'X-Men Forever (Marvel) 24 issues in 2009 - ?']
 
 
 def test_series_menu_lists_the_whole_short_name_first(client, select_key,
@@ -972,7 +1003,7 @@ def test_part_of_a_name_lists_the_first_series_among_too_many(
     values = menu(client, select_key, 'series_auto', 'nathan ne',
                   publisher=str(catalog['marvel'].id))
     assert labels(values[:-1]) == [
-      'Nathan Never %02d (Marvel, 2000 series) - XA, 0 issues' % number
+      'Nathan Never %02d (Marvel) 0 issues in 2000' % number
       for number in range(FEW_RESULTS)]
     assert values[-1:] == TOO_MANY_VALUES
 
@@ -1241,25 +1272,11 @@ def test_issue_choice_lists_issues_with_sequences(client, select_key, catalog):
     assert 'Select This Story' not in html
 
 
-def test_sequence_number_narrows_the_stories(client, select_key, catalog):
-    """The rows do not show it, and the issues without sequences have none."""
-    Issue.objects.create(series=catalog['xmen91'], sort_code=9, number='2 [B]')
+def test_sequence_number_of_an_older_address_narrows_nothing(client,
+                                                             select_key,
+                                                             catalog):
     response = search(client, select_key, series_auto=catalog['xmen91'].id,
                       issue_number='2', sequence_number='1')
-    assert results(response) == story_rows(catalog, 'second_story')
-
-
-def test_sequence_number_zero_is_a_number(client, select_key, catalog):
-    """Covers are mostly sequence 0."""
-    response = search(client, select_key, series_auto=catalog['xmen91'].id,
-                      issue_number='2', sequence_number='0')
-    assert results(response) == story_rows(catalog, 'second_cover')
-
-
-def test_sequence_number_that_is_no_number_is_left_out(client, select_key,
-                                                       catalog):
-    response = search(client, select_key, series_auto=catalog['xmen91'].id,
-                      issue_number='2', sequence_number='abc')
     assert results(response) == story_rows(catalog, 'second_cover',
                                            'second_story')
 
