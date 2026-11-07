@@ -1,11 +1,25 @@
+import re
 from types import SimpleNamespace
 
+import pytest
+
+from django.core.management import call_command
 from django.template.base import TextNode
 from django.template.loader import get_template, render_to_string
 from django.template.loader_tags import BlockNode, IncludeNode
 from django.urls import reverse
 
+from apps.gcd.models import Issue
+
 RELATED_LINKS = 'gcd/bits/tw_issue_related_links.html'
+
+
+def _compact(html):
+    """
+    The HTML without the whitespace between tags, and with other runs of
+    whitespace as one space.
+    """
+    return re.sub(r'\s+', ' ', re.sub(r'>\s+<', '><', html)).strip()
 
 
 def _include_and_wrapper(block_name):
@@ -47,3 +61,23 @@ def test_related_links_list_the_issue_scans():
     assert 'max-md:hidden' not in rendered
     assert '<a href="%s">No Issue Scans</a>' % reverse(
       'issue_images', kwargs={'issue_id': 1}) in rendered
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('wrapper', ('max-md:hidden', 'md:hidden'))
+def test_issue_page_has_the_related_links_for_each_width(client, wrapper):
+    call_command('seed_development_data')
+    issue = Issue.objects.filter(variant_of=None, deleted=False).first()
+
+    response = client.get(reverse('show_issue',
+                                  kwargs={'issue_id': issue.id}))
+
+    assert response.status_code == 200
+    links = render_to_string(RELATED_LINKS, {
+      'issue': response.context['issue'],
+      'cover_page': response.context.get('cover_page')})
+    assert 'No Issue Scans' in links
+    page = _compact(response.content.decode())
+    assert page.count(_compact(links)) == 2
+    assert page.count(_compact('<div class="%s">%s</div>'
+                               % (wrapper, links))) == 1
