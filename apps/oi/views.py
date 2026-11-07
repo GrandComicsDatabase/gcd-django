@@ -5692,6 +5692,9 @@ def move_issue(request, issue_revision_id, series_id):
         return render_error(request, 'No series with id %s.'
                             % series_id, redirect=False)
     series = series[0]
+    if series.is_singleton:
+        return render_error(request, 'Issues cannot be moved into a '
+                            'singleton series.', redirect=False)
 
     if request.method != 'POST':
         header_text = "Do you want to move %s to %s ?" % \
