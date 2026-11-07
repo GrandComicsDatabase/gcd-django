@@ -8,7 +8,9 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
 
-from apps.oi.models import Changeset, CoverRevision
+from apps.gcd.models import Cover, VCS_Codes
+from apps.oi import states
+from apps.oi.models import Changeset, CoverRevision, CTYPES, IssueRevision
 
 
 @pytest.fixture
@@ -169,3 +171,35 @@ def test_gatefold_rejects_too_small_front_part(
     assert response.status_code == 200
     assert Changeset.objects.count() == changesets
     assert scan.exists()
+
+
+@pytest.mark.django_db
+def test_move_cover_refuses_no_difference_variant(
+        client, any_indexer, any_added_issue, any_added_variant):
+    variant = any_added_variant
+    variant.variant_cover_status = VCS_Codes.NO_DIFFERENCE
+    variant.save()
+    cover = Cover.objects.create(issue=any_added_issue)
+    # The move clones the approved upload revision of the cover.
+    upload = Changeset.objects.create(
+      indexer=any_indexer, state=states.APPROVED,
+      change_type=CTYPES['cover'])
+    CoverRevision.objects.create(changeset=upload, cover=cover,
+                                 issue=any_added_issue, committed=True)
+    changeset = Changeset.objects.create(
+      indexer=any_indexer, state=states.OPEN,
+      change_type=CTYPES['two_issues'])
+    IssueRevision.clone(data_object=variant, changeset=changeset)
+    IssueRevision.clone(data_object=any_added_issue, changeset=changeset)
+    any_indexer.is_superuser = True
+    any_indexer.save()
+    client.force_login(any_indexer)
+
+    response = client.post(reverse('move_cover',
+                                   kwargs={'id': changeset.id,
+                                           'cover_id': cover.id}),
+                           follow=True)
+
+    assert not CoverRevision.objects.filter(changeset=changeset).exists()
+    assert 'cover status &quot;No Difference&quot;' in (
+      response.content.decode())
