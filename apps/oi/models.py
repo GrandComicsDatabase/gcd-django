@@ -385,6 +385,7 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['feature']:
             return (self.featurerevisions.all(),
                     self.featurenamedetailrevisions.all(),
+                    self.featurerelationrevisions.all(),
                     self.externallinkrevisions.all(),)
 
         if self.change_type == CTYPES['feature_logo']:
@@ -7435,10 +7436,23 @@ class FeatureRevision(Revision):
                                                            self.changeset)
             feature_name.save_added_revision(changeset=self.changeset,
                                              feature_revision=self)
-
             if delete:
                 feature_name.deleted = True
                 feature_name.save()
+        if delete:
+            active_relations = self.feature.from_related_feature.all() | \
+                               self.feature.to_related_feature.all()
+            for feature_relation in active_relations:
+                relation_lock = _get_revision_lock(feature_relation,
+                                                   changeset=self.changeset)
+                if relation_lock is None:
+                    raise IntegrityError("needed FeatureRelation lock not "
+                                         "possible")
+                feature_relation_revision = \
+                    FeatureRelationRevision.clone(feature_relation,
+                                                  self.changeset)
+                feature_relation_revision.deleted = True
+                feature_relation_revision.save()
 
     def _pre_save_object(self, changes):
         name = self.changeset.featurenamedetailrevisions.get(
