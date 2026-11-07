@@ -451,6 +451,9 @@
       gap: calc(var(--spacing) * 2);
     }
   }
+  form :is(input, select, textarea) {
+    scroll-margin-bottom: 3rem;
+  }
   .label-gcd-blue {
     border-radius: 0.25rem;
     background-color: var(--color-stone-600);

@@ -37,7 +37,8 @@ from apps.gcd.models.publisher import PublisherSearchTable
 from apps.gcd.models.series import SeriesPublisherTable
 from apps.gcd.models.story import StoryTable
 from apps.indexer.views import render_error
-from apps.select.forms import get_select_cache_form, get_select_search_form
+from apps.select.forms import get_select_cache_form, get_select_search_form, \
+                              get_select_issue_story_form
 
 
 ##############################################################################
@@ -97,6 +98,7 @@ def get_select_forms(request, initial, data, publisher=False,
                                          search_issue=issue,
                                          search_story=story,
                                          search_cover=cover)
+    new_search_form = get_select_issue_story_form()
     if data:
         search_form = search_form(data)
     else:
@@ -107,7 +109,7 @@ def get_select_forms(request, initial, data, publisher=False,
                                        cached_covers=cached_covers,
                                        exclude_issue_id=exclude_issue_id)()
 
-    return search_form, cache_form
+    return search_form, new_search_form, cache_form
 
 
 @permission_required('indexer.can_reserve')
@@ -162,6 +164,61 @@ def process_select_search_haystack(request, select_key):
           urlresolvers.reverse(data.get('selection_view', 'select_object'),
                                kwargs={'select_key': select_key})
           + '?' + request.META['QUERY_STRING'])
+
+
+@permission_required('indexer.can_reserve')
+def process_htmx_select_search(request, select_key):
+    publisher = request.GET.get('publisher_auto', None)
+    series = request.GET.get('series_auto', None)
+    series_year = request.GET.get('series_year_auto', None)
+    issue_number = request.GET.get('issue_number', None)
+    search_filters = {'deleted': False}
+    search_object = request.GET.get('search_object', 'story')
+    filter_prefix = '' if search_object == 'issue' else 'issue__'
+
+    if publisher:
+        search_filters[f'{filter_prefix}series__publisher_id'] = publisher
+    if series:
+        search_filters[f'{filter_prefix}series_id'] = series
+    if series_year:
+        search_filters[f'{filter_prefix}series__year_began'] = series_year
+    if issue_number:
+        search_filters[f'{filter_prefix}number'] = issue_number
+    table_format = StoryTable
+    if len(search_filters) == 1:
+        search = Story.objects.none()
+    else:
+        if search_object == 'issue':
+            search = Issue.objects.filter(**search_filters)
+            table_format = IssuePublisherTable
+        else:
+            search = Story.objects.filter(**search_filters)
+            if search_object == 'cover':
+                search = search.filter(
+                  type=StoryType.objects.get(name='cover'))
+
+    from apps.gcd.views.details import generic_sortable_list
+    order_by = 'issue'
+    base_name = 'objects'
+    plural_suffix = ''
+    table = table_format(
+        search,
+        template_name='gcd/bits/tw_sortable_table.html',
+        order_by=order_by)
+    context = {
+      'item_name': base_name,
+      'plural_suffix': plural_suffix,
+      'select_key': select_key,
+      'select_target': search_object,
+      'select_issue': search_object != 'issue',
+      'no_bulk_edit': True,
+    }
+    template = 'gcd/bits/tw_render_table.html'
+    table.no_export = True
+    table.orderable = False
+
+    return generic_sortable_list(
+        request, search, table, template, context)
 
 
 @permission_required('indexer.can_reserve')
@@ -354,16 +411,17 @@ def _select_object(request, select_key, multiple_sequences=False):
         exclude_issue_id = data.get('exclude_issue_id')
         disabled_choice_title = data.get('disabled_choice_title', '')
         disabled_choice_help = data.get('disabled_choice_help', '')
-        search_form, cache_form = get_select_forms(request,
-                                                   initial,
-                                                   request_data,
-                                                   publisher=publisher,
-                                                   series=series,
-                                                   issue=issue,
-                                                   story=story,
-                                                   cover=cover,
-                                                   exclude_issue_id=(
-                                                     exclude_issue_id))
+        search_form, new_search_form, cache_form = get_select_forms(
+          request,
+          initial,
+          request_data,
+          publisher=publisher,
+          series=series,
+          issue=issue,
+          story=story,
+          cover=cover,
+          exclude_issue_id=(
+            exclude_issue_id))
         haystack_form = FacetedSearchForm()
         cache_choices = []
         if 'object_choice' in cache_form.fields:
@@ -405,6 +463,7 @@ def _select_object(request, select_key, multiple_sequences=False):
                        'disabled_choice_title': disabled_choice_title,
                        'disabled_choice_help': disabled_choice_help,
                        'search_form': search_form,
+                       'new_search_form': new_search_form,
                        'haystack_form': haystack_form,
                        'publisher': publisher,
                        'series': series,
@@ -696,7 +755,7 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
             if qs_match:
                 if chrono_sort:
                     qs_contains = qs_contains.exclude(Q(**{'%s' % field:
-                                                            query}))
+                                                           query}))
                     qs_match = qs_match.annotate(chrono=F(chrono_sort))\
                                        .annotate(qs_order=Value(1,
                                                  IntegerField()))
@@ -743,6 +802,10 @@ class CreatorNameAutocomplete(LoginRequiredMixin,
     def get_queryset(self):
         qs = CreatorNameDetail.objects.filter(deleted=False)\
                                       .exclude(type__id__in=[3, 4])
+        year = self.forwarded.get('year', None)
+        if year:
+            qs = qs.filter(creator__birth_date__year__lte=year) | \
+                 qs.filter(creator__birth_date__year__startswith='?')
 
         qs = _filter_and_sort(qs, self.q, creator_detail=True,
                               parent_disambiguation='creator')
@@ -1069,6 +1132,16 @@ class KeywordAutocomplete(LoginRequiredMixin,
         return super(KeywordAutocomplete, self).validate(text)
 
 
+class PublisherAutocomplete(LoginRequiredMixin,
+                            autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Publisher.objects.filter(deleted=False)
+
+        qs = _filter_and_sort(qs, self.q, field='name')
+
+        return qs
+
+
 class BrandGroupAutocomplete(LoginRequiredMixin,
                              autocomplete.Select2QuerySetView):
     def get_queryset(self):
@@ -1129,6 +1202,21 @@ class IndiciaPrinterAutocomplete(LoginRequiredMixin,
         qs = IndiciaPrinter.objects.filter(deleted=False)
 
         qs = _filter_and_sort(qs, self.q)
+
+        return qs
+
+
+class SeriesAutocomplete(LoginRequiredMixin,
+                         autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Series.objects.filter(deleted=False)
+        publisher_id = self.forwarded.get('publisher', None)
+        if publisher_id:
+            qs = qs.filter(publisher__id=publisher_id)
+        series_year = self.forwarded.get('series_year', None)
+        if series_year:
+            qs = qs.filter(year_began=series_year)
+        qs = _filter_and_sort(qs, self.q, field='name')
 
         return qs
 

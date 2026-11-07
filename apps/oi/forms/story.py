@@ -126,6 +126,9 @@ def get_story_revision_form(revision=None, user=None,
     is_comics_publication = series.is_comics_publication
     has_about_comics = series.has_about_comics
     language = series.language
+    issue_year = issue.key_date[:4] if issue else None
+    if issue_year and not issue_year.isnumeric():
+        issue_year = None
 
     # for variants we can only have cover sequences (for now)
     if (revision and (revision.issue is None or revision.issue.variant_of))\
@@ -170,6 +173,8 @@ def get_story_revision_form(revision=None, user=None,
                                additional_genres=additional_genres)
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
+        year = forms.CharField(widget=forms.HiddenInput,
+                               initial=issue_year, required=False)
 
         def __init__(self, *args, **kwargs):
             kwargs['user'] = user
@@ -343,7 +348,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
-                                       attrs={'class': 'w-full'}),
+                                       attrs={'class': 'w-full'},
+                                       forward=['year']),
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
@@ -754,9 +760,29 @@ class StoryRevisionForm(KeywordBaseForm):
           '<strong>Characters:</strong></th>'
           '<td class="align-top">'
           '<hr style="height:2px; background-color:#000;"></td></tr>'))
+        field_list.append(Field(fields[characters_start-19],
+                                template='oi/bits/uni_field.html'))
+        has_appearance_order = False
+        has_importance_order = False
+        if 'instance' in kwargs and kwargs['instance'] and \
+           kwargs['instance'].id:
+            if kwargs['instance'].character_order_revisions.filter(type__id=1):
+                has_appearance_order = True
+            if kwargs['instance'].character_order_revisions.filter(type__id=2):
+                has_importance_order = True
+        if has_appearance_order or has_importance_order:
+            field_list.append(HTML(
+              '<tr><th></th><td>Character orders exist. To edit an order, '
+              'click on the corresponding "Save And Edit Order" button below. '
+              '</td></tr>'))
+            field_list.append(HTML(
+               '<tr><th></th><td>Characters listed above the line labeled '
+               '"--- characters below will be ordered alphabetically ---" '
+               'on either the Appearance Order or the Importance Order '
+               'cannot be removed.</td></tr>'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start-19:
+                           for field in fields[characters_start-18:
                                                characters_start-1]])
         field_list.append(HTML(
           '<tr><th><input type="submit" name="save_and_set_universe"'
@@ -772,14 +798,6 @@ class StoryRevisionForm(KeywordBaseForm):
         field_list.append(Field(fields[characters_start],
                                 template='oi/bits/uni_field.html'))
         field_list.append(Formset('groups_formset'))
-        has_appearance_order = False
-        has_importance_order = False
-        if 'instance' in kwargs and kwargs['instance'] and \
-           kwargs['instance'].id:
-            if kwargs['instance'].character_order_revisions.filter(type__id=1):
-                has_appearance_order = True
-            if kwargs['instance'].character_order_revisions.filter(type__id=2):
-                has_importance_order = True
         character_order_html = '<th></th><td>'
         if has_appearance_order:
             character_order_html += '<input type="submit" ' \
@@ -809,10 +827,13 @@ class StoryRevisionForm(KeywordBaseForm):
         if not user.indexer.use_tabs:
             self.helper.layout = Layout(*(f for f in field_list))
         else:
+            # The layout is organized into tabs for better user experience.
+            # When counting the fields, we need to account for the added
+            # hidden fields and formsets that are included in the field_list.
             self.helper.layout = Layout(TabHolder(
               Tab('Sequence Details',
                   *(f for f in field_list[:credits_start-5]),
-                  *(f for f in field_list[characters_end:-2]),
+                  *(f for f in field_list[characters_end:-3]),
                   template='oi/bits/tab.html',
                   ),
               Tab('Creator Credits',
@@ -826,7 +847,7 @@ class StoryRevisionForm(KeywordBaseForm):
               template='oi/bits/tab-bar.html',
             ),
               HTML('<table class="editing w-full">'),
-              *(f for f in field_list[-2:]),
+              *(f for f in field_list[-3:]),
               HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
     # The sequence number can only be changed through the reorder form, but

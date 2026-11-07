@@ -385,6 +385,7 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['feature']:
             return (self.featurerevisions.all(),
                     self.featurenamedetailrevisions.all(),
+                    self.featurerelationrevisions.all(),
                     self.externallinkrevisions.all(),)
 
         if self.change_type == CTYPES['feature_logo']:
@@ -922,6 +923,10 @@ class Changeset(models.Model):
 
     def review_is_overdue(self):
         if timezone.now() - timedelta(weeks=1) > self.modified:
+            return True
+        elif (self.indexer.indexer.is_new and
+              timezone.now() - timedelta(days=3) > self.modified and
+              self.imps <= 20):
             return True
         else:
             return False
@@ -4179,7 +4184,7 @@ class IssueRevision(Revision):
             'valid_isbn': has_isbn,
             'volume': has_volume,
             'no_volume': has_volume,
-            'display_volume_with_issue': has_volume,
+            'display_volume_with_number': has_volume,
             'indicia_frequency': has_ind_freq,
             'no_indicia_frequency': has_ind_freq,
             'indicia_printer': has_ind_print,
@@ -4632,6 +4637,18 @@ class IssueRevision(Revision):
 
                 if creator.count() == 1:
                     creator = creator.get()
+                    # disallow crediting a creator before their birth year
+                    if self.key_date[:4].isnumeric():
+                        issue_year = self.key_date[:4]
+                    else:
+                        issue_year = None
+                    if creator.creator.birth_date.year and issue_year and \
+                       creator.creator.birth_date.year.isnumeric() and \
+                       int(creator.creator.birth_date.year) > int(issue_year):
+                        creator = None
+                else:
+                    creator = None
+                if creator:
                     if uncertain and not creator.is_official_name:
                         if creator.in_script == creator.creator\
                            .active_names().get(is_official_name=True)\
@@ -5097,9 +5114,18 @@ class IssueRevision(Revision):
 
 
 class PreviewIssue(Issue):
-    # TODO add and use PreviewIssue.init
+    # TODO use PreviewIssue.init
     class Meta:
         proxy = True
+
+    @classmethod
+    def init(cls, issue_revision):
+        preview_issue = PreviewIssue()
+        issue_revision._copy_fields_to(preview_issue)
+        preview_issue.keywords = issue_revision.keywords
+        preview_issue.revision = issue_revision
+        preview_issue.id = issue_revision.id
+        return preview_issue
 
     def get_prev_next_issue(self):
         if self.id:
@@ -6640,6 +6666,7 @@ class StoryRevision(Revision):
                         else:
                             credit = value
                             ghost_possible = True
+
                     creator = CreatorNameDetail.objects.filter(name=credit,
                                                                deleted=False)
                     if not ghost_possible:
@@ -6648,6 +6675,19 @@ class StoryRevision(Revision):
 
                     if creator.count() == 1:
                         creator = creator.get()
+                        # disallow crediting a creator before their birth year
+                        if self.issue and self.issue.key_date[:4].isnumeric():
+                            issue_year = self.issue.key_date[:4]
+                        else:
+                            issue_year = None
+                        if creator.creator.birth_date.year and issue_year and \
+                           creator.creator.birth_date.year.isnumeric() and \
+                           int(creator.creator.birth_date.year) > \
+                           int(issue_year):
+                            creator = None
+                    else:
+                        creator = None
+                    if creator:
                         if uncertain and not creator.is_official_name:
                             if creator.in_script == creator.creator\
                                .active_names().get(is_official_name=True)\
@@ -7396,10 +7436,23 @@ class FeatureRevision(Revision):
                                                            self.changeset)
             feature_name.save_added_revision(changeset=self.changeset,
                                              feature_revision=self)
-
             if delete:
                 feature_name.deleted = True
                 feature_name.save()
+        if delete:
+            active_relations = self.feature.from_related_feature.all() | \
+                               self.feature.to_related_feature.all()
+            for feature_relation in active_relations:
+                relation_lock = _get_revision_lock(feature_relation,
+                                                   changeset=self.changeset)
+                if relation_lock is None:
+                    raise IntegrityError("needed FeatureRelation lock not "
+                                         "possible")
+                feature_relation_revision = \
+                    FeatureRelationRevision.clone(feature_relation,
+                                                  self.changeset)
+                feature_relation_revision.deleted = True
+                feature_relation_revision.save()
 
     def _pre_save_object(self, changes):
         name = self.changeset.featurenamedetailrevisions.get(

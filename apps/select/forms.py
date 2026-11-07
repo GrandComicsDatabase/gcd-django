@@ -2,10 +2,12 @@ from datetime import date
 
 from django import forms
 from django.forms.widgets import HiddenInput, RadioSelect
-from django.utils.html import conditional_escape as esc
 from django.utils.safestring import mark_safe
 
-from apps.gcd.templatetags.display import show_story_short
+from dal import autocomplete, forward
+
+from apps.gcd.templatetags.display import absolute_url
+from apps.gcd.models import Publisher, Series
 
 
 def get_select_cache_form(cached_issues=None, cached_stories=None,
@@ -18,23 +20,27 @@ def get_select_cache_form(cached_issues=None, cached_stories=None,
             for cached_issue in cached_issues:
                 choice = 'issue_%d' % cached_issue.id
                 fields.append((choice,
-                              'issue: %s' % cached_issue))
+                              mark_safe(
+                                'issue: %s' % absolute_url(cached_issue))))
                 if cached_issue.id == exclude_issue_id:
                     disabled_choices.append(choice)
         if cached_stories:
             for cached_story in cached_stories:
                 choice = 'story_%d' % cached_story.id
                 fields.append((choice,
-                              mark_safe('story: %s in %s' %
-                                        (show_story_short(cached_story),
-                                         esc(cached_story.issue)))))
+                              mark_safe('story: %d. %s in %s' %
+                                        (cached_story.sequence_number,
+                                         absolute_url(cached_story),
+                                         absolute_url(cached_story.issue)))))
                 if cached_story.issue_id == exclude_issue_id:
                     disabled_choices.append(choice)
         if cached_covers:
             for cached_cover in cached_covers:
                 choice = 'cover_%d' % cached_cover.id
                 fields.append((choice,
-                              'cover of issue: %s' % cached_cover.issue))
+                              mark_safe('cover %s of issue: %s' % (
+                                absolute_url(cached_cover),
+                                absolute_url(cached_cover.issue)))))
                 if cached_cover.issue_id == exclude_issue_id:
                     disabled_choices.append(choice)
         disabled_choices = tuple(disabled_choices)
@@ -67,6 +73,33 @@ def get_select_search_form(search_publisher=False, search_series=False,
                                                  required=False, min_value=0)
         select_key = forms.CharField(widget=HiddenInput)
     return SelectSearchForm
+
+
+def get_select_issue_story_form(return_type_='reprint'):
+    class SelectSearchIssueStoryForm(forms.Form):
+        publisher_auto = forms.ModelChoiceField(
+          queryset=Publisher.objects.all(),
+          widget=autocomplete.ModelSelect2(url='publisher_autocomplete',
+                                           attrs={'class': 'w-full'}),
+          label='Publisher', required=False)
+
+        series_auto = forms.ModelChoiceField(
+          queryset=Series.objects.all(),
+          widget=autocomplete.ModelSelect2(
+            url='series_autocomplete',
+            forward=[forward.Field('publisher_auto', 'publisher'),
+                     forward.Field('series_year_auto', 'series_year')],
+            attrs={'class': 'w-full'}), label='Series', required=False)
+        series_year_auto = forms.IntegerField(label='Series Year',
+                                              required=False,
+                                              min_value=1800,
+                                              max_value=date.today().year)
+        issue_number = forms.CharField(
+          label='Issue Number',
+          help_text='(required, use [nn] for unnumbered singleton series.)',
+          required=True)
+        select_key = forms.CharField(widget=HiddenInput)
+    return SelectSearchIssueStoryForm
 
 
 def get_filter_form(countries=None, languages=None, publishers=None):
