@@ -656,4 +656,7 @@ def any_added_story(any_added_story_rev):
 def any_edit_story_rev(any_added_story, any_editing_changeset):
     rev = StoryRevision.clone(data_object=any_added_story,
                               changeset=any_editing_changeset)
+    issue_rev = IssueRevision.clone(data_object=any_added_story.issue,
+                                    changeset=any_editing_changeset)
+    issue_rev.save()
     return rev

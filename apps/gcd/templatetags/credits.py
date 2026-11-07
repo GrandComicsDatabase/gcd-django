@@ -431,8 +431,14 @@ def show_bare_creator_credits(context, story, credit_type, show_sources=False,
     if list_grid == 'grid':
         return getattr(story, credit_type)
     else:
-        credit_value = __credit_value(story, credit_type, True,
-                                      show_sources, use_div=True)
+        if credit_type == 'issue_editing':
+            credit_value = __credit_value(story, 'editing', True, show_sources)
+            credit_value = credit_value.replace('hx-get="/credit/',
+                                                'hx-get="/issue_credit/')
+            credit_value = mark_safe(credit_value)
+        else:
+            credit_value = __credit_value(story, credit_type, True,
+                                          show_sources, use_div=True)
     return credit_value
 
 
@@ -444,12 +450,19 @@ def show_bare_cover_letterer_credit(story):
     return show_creator_credit(story, 'letters')
 
 
+# I suspect this is not used anymore, but I don't want to delete it yet in
+# case it is.
 @register.filter
 def show_creator_credit_bare(story, credit_type):
     if credit_type == 'feature':
         credit_value = story.show_feature()
     elif credit_type.startswith('character'):
         credit_value = story.show_characters(css_style=False)
+    elif credit_type == 'issue_editing':
+        credit_value = __credit_value(story, 'editing', url=True)
+        credit_value = credit_value.replace('hx-get="/credit/',
+                                            'hx-get="/issue_credit/')
+        credit_value = mark_safe(credit_value)
     else:
         credit_value = __credit_value(story, credit_type, url=True)
     return credit_value

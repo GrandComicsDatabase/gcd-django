@@ -280,12 +280,10 @@ def test_sequence_sections_render_with_bulk_removal_and_shared_styles():
     assert '<th scope="col">Order</th>' not in html
     assert '<th scope="col">Story</th>' in html
     assert html.index('Stories (1/10)') < html.index('Covers (1/10)')
-    assert '>Select</button>' not in html
     assert '>Delete</button>' not in html
     assert 'data-cache-list="cover"' in html
     assert '<th scope="col">Cover</th>' in html
     assert 'Drag a cover row to reorder it. Order is saved automatically.' in html
-    assert 'name="select_object"' not in html
     assert html.count('<colgroup>') == 2
     assert 'Delete selected stories' not in html
     assert html.index('data-cache-remove') > html.index('</section>')

@@ -316,7 +316,9 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                             'mark it for delete or remove it.')
 
                 if cd['variant_cover_status'] == 1:
-                    if revision.issue and revision.issue.has_covers():
+                    if revision.issue and revision.issue.cover_set\
+                                                  .exclude(deleted=True)\
+                                                  .exists():
                         raise forms.ValidationError(
                             'A cover scan exists for this variant. Before '
                             'changing the variant cover status please first '
