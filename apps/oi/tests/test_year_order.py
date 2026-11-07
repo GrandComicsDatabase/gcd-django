@@ -38,20 +38,75 @@ def test_year_ended_before_year_began_fails(years, message):
         _check_year_order(years)
 
 
-@pytest.mark.django_db
-@pytest.mark.parametrize(('form_class', 'data'), (
-    (PublisherRevisionForm, PUBLISHER_DATA),
-    (IndiciaPublisherRevisionForm, PUBLISHER_DATA),
-    (BrandGroupRevisionForm, PUBLISHER_DATA),
-    (BrandRevisionForm, PUBLISHER_DATA),
-    (BrandUseRevisionForm, {'notes': '', 'comments': ''}),
-    (SeriesRevisionForm, SERIES_DATA),
-))
-def test_edit_forms_check_the_year_order(form_class, data):
-    form = form_class()
-    form.cleaned_data = dict(data, year_began=1991, year_ended=1990)
-    form._errors = {}
+def _form_data(values, **changes):
+    """
+    The values of a revision as the POST data of its form.
+    """
+    data = {}
+    for key, value in dict(values, **changes).items():
+        if value is None or value is False:
+            continue
+        if value is True:
+            data[key] = 'on'
+        elif hasattr(value, 'pk'):
+            data[key] = value.pk
+        else:
+            data[key] = value
+    return data
 
-    with pytest.raises(forms.ValidationError,
-                       match='Year ended cannot be before year began.'):
-        form.clean()
+
+@pytest.fixture
+def form_and_values(request, publisher_add_values,
+                    indicia_publisher_add_values, brand_group_add_values,
+                    brand_add_values, any_added_brand_group1,
+                    series_add_values):
+    return {
+      'publisher': (PublisherRevisionForm, publisher_add_values),
+      'indicia publisher': (IndiciaPublisherRevisionForm,
+                            indicia_publisher_add_values),
+      'brand group': (BrandGroupRevisionForm, brand_group_add_values),
+      'brand': (BrandRevisionForm,
+                dict(brand_add_values, group=[any_added_brand_group1.pk])),
+      'brand use': (BrandUseRevisionForm, {'notes': ''}),
+      'series': (SeriesRevisionForm, dict(series_add_values,
+                                          is_current=False)),
+    }[request.param]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('form_and_values', (
+    'publisher', 'indicia publisher', 'brand group', 'brand', 'brand use',
+    'series'), indirect=True)
+def test_edit_forms_refuse_a_year_ended_before_the_year_began(
+        form_and_values):
+    form_class, values = form_and_values
+
+    in_order = form_class(_form_data(values, year_began=1989,
+                                     year_ended=1990))
+    assert in_order.is_valid(), in_order.errors
+
+    reversed_years = form_class(_form_data(values, year_began=1990,
+                                           year_ended=1989))
+    assert not reversed_years.is_valid()
+    assert reversed_years.errors == {
+      '__all__': ['Year ended cannot be before year began.']}
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('form_and_values', ('publisher', 'brand group'),
+                         indirect=True)
+def test_edit_forms_refuse_overall_years_in_reverse(form_and_values):
+    form_class, values = form_and_values
+
+    in_order = form_class(_form_data(values, year_began=1995,
+                                     year_overall_began=1989,
+                                     year_overall_ended=1990))
+    assert in_order.is_valid(), in_order.errors
+
+    reversed_years = form_class(_form_data(values, year_began=1995,
+                                           year_overall_began=1990,
+                                           year_overall_ended=1989))
+    assert not reversed_years.is_valid()
+    assert reversed_years.errors == {
+      '__all__': ['Year overall ended cannot be before year overall '
+                  'began.']}
