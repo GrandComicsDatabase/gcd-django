@@ -269,6 +269,27 @@ def test_add_issue_two_emblems_same_group_counts_once(
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('has_volume, expected', [(True, True),
+                                                  (False, False)])
+def test_commit_display_volume_with_number(any_added_issue,
+                                           any_editing_changeset,
+                                           has_volume, expected):
+    """Without volumes in the series, the flag of the issue stays."""
+    series = any_added_issue.series
+    series.has_volume = has_volume
+    series.save()
+    rev = IssueRevision.clone(data_object=any_added_issue,
+                              changeset=any_editing_changeset)
+    rev.display_volume_with_number = True
+    rev.save()
+
+    rev.commit_to_display()
+
+    issue = Issue.objects.get(pk=any_added_issue.pk)
+    assert issue.display_volume_with_number is expected
+
+
+@pytest.mark.django_db
 def test_delete_issue(any_added_issue, any_deleting_changeset,
                       any_added_issue_rev):
     rev = IssueRevision.clone(data_object=any_added_issue,
