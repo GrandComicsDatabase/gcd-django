@@ -296,28 +296,9 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
 {% endblock content %}
 
 {% block issue_links %}
-<div class="my-1 max-md:hidden label-gcd-blue">
-Related Links
+<div class="max-md:hidden">
+{% include "gcd/bits/tw_issue_related_links.html" %}
 </div>
-<ul class="ps-1 max-md:hidden text-sm">
-  {% if not issue.series.is_singleton %}
-    {% if issue.series.has_gallery %}
-    <li> <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Series Cover Gallery</a>
-    {% endif %}
-    <li> <a href="{% url "series_details" series_id=issue.series.id %}">Series Details by Issue</a><br/>
-    <li> <a href="{% url "series_timeline" series_id=issue.series.id %}">Series Monthly Timeline</a>
-  {% endif %}
-  {% if issue.indicia_image or issue.soo_image %}
-    {% if issue.indicia_image %}
-    <li> <a href="{% url "issue_images" issue_id=issue.id %}">Indicia Scan</a></li>
-    {% endif %}
-    {% if issue.soo_image %}
-    <li> <a href="{% url "issue_images" issue_id=issue.id %}">Statement of Ownership Scan</a></li>
-    {% endif %}
-  {% else %}
-    <li> <a href="{% url "issue_images" issue_id=issue.id %}">No Issue Scans</a></li> 
-  {% endif %}
-</ul>
 {% endblock %}
 
 {% block issue_toc %}
@@ -428,6 +409,10 @@ Related Links
     Reorder Issues</a></btn>
     {% endif %}
   {% endif %}
+  {# On narrow screens the Related Links of the side column are hidden. #}
+  <div class="md:hidden">
+  {% include "gcd/bits/tw_issue_related_links.html" %}
+  </div>
 {% endblock editing %}
 
 {% block change_history %}
