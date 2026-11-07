@@ -40,12 +40,15 @@ def test_bulk_edit_of_empty_search_redirects(client, searching_indexer):
 
 
 @pytest.mark.django_db
-def test_bulk_edit_without_target_redirects(client, searching_indexer):
-    """A request without a search target goes back to the search."""
+@pytest.mark.parametrize('method, query', [('get', ''), ('post', ''),
+                                           ('post', '?target=series')])
+def test_bulk_edit_without_issue_target_redirects(client, searching_indexer,
+                                                  method, query):
+    """A request without the issue target goes back to the search."""
     _allow_reserving(searching_indexer)
     client.force_login(searching_indexer)
 
-    response = client.get(reverse('edit_issues_in_bulk'))
+    response = getattr(client, method)(reverse('edit_issues_in_bulk') + query)
 
     assert response.status_code == 302
     assert response['Location'].startswith(

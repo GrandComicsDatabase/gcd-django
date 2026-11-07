@@ -1907,7 +1907,7 @@ def edit_issues_in_bulk(request):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
-    if request.method == 'GET' and request.GET.get('target') != 'issue':
+    if request.GET.get('target') != 'issue':
         return HttpResponseRedirect(urlresolvers.reverse(
           'process_advanced_search') + '?' + request.GET.urlencode())
 
