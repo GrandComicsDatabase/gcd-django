@@ -4918,6 +4918,21 @@ def _single_copy_context(request, issue_revision, story, position,
     }
 
 
+def _about_comics_copy_error(request, stories, issue_revision):
+    """
+    Sequences of type 'about comics' can only be added to series which
+    have them, which is otherwise enforced by the sequence types offered
+    in the form.
+    """
+    if not issue_revision.series.has_about_comics and any(
+      story.type_id == STORY_TYPES['about comics'] for story in stories):
+        return render_error(
+          request, 'Sequences of type "about comics" can only be copied to '
+                   'a series which has "about comics" sequences.',
+          redirect=False)
+    return None
+
+
 @transaction.atomic
 def copy_cached_sequences(request, data, select_key):
     """Preview or atomically copy selected covers and stories."""
@@ -5035,6 +5050,9 @@ def copy_cached_sequences(request, data, select_key):
             'A selected object is no longer available. '
             'Select the objects again.')
     stories = [by_id[pk] for pk in selected_ids]
+    error = _about_comics_copy_error(request, stories, issue_revision)
+    if error:
+        return error
     actual_covers = [s.id for s in stories
                      if s.type_id == STORY_TYPES['cover']]
     if any(pk not in actual_covers for pk in cover_ids):
@@ -5194,6 +5212,9 @@ def copy_sequence(request, issue_revision_id, story_id=None,
               'edit', kwargs={'id': issue_revision.changeset_id}))
         story = get_object_or_404(Story.objects.select_for_update(),
                                   id=story_id, deleted=False)
+        error = _about_comics_copy_error(request, [story], issue_revision)
+        if error:
+            return error
         existing = list(issue_revision.active_stories())
         placement = _copy_placement(existing, sequence_number,
                                     story.type_id == STORY_TYPES['cover'])
@@ -5281,6 +5302,9 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
             copy_characters = True
         else:
             copy_characters = request.POST.get('copy_characters', False)
+        error = _about_comics_copy_error(request, [story], changeset_issue)
+        if error:
+            return error
         story_revision = StoryRevision.copied_revision(
           story, changeset, issue_revision=changeset_issue,
           copy_credit_info=copy_credit_info, copy_characters=copy_characters)
