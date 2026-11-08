@@ -4179,6 +4179,7 @@ class IssueRevision(Revision):
         has_volume = ('series', 'has_volume')
         has_ind_freq = ('series', 'has_indicia_frequency')
         has_ind_print = ('series', 'has_indicia_printer')
+        has_rating = ('series', 'has_rating')
         return {
             'title': has_title,
             'no_title': has_title,
@@ -4189,11 +4190,14 @@ class IssueRevision(Revision):
             'valid_isbn': has_isbn,
             'volume': has_volume,
             'no_volume': has_volume,
+            'volume_not_printed': has_volume,
             'display_volume_with_number': has_volume,
             'indicia_frequency': has_ind_freq,
             'no_indicia_frequency': has_ind_freq,
             'indicia_printer': has_ind_print,
             'indicia_printer_not_printed': has_ind_print,
+            'rating': has_rating,
+            'no_rating': has_rating,
         }
 
     @classmethod

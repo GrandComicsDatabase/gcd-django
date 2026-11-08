@@ -93,6 +93,7 @@ def test_conditional_field_mapping():
     assert IssueRevision._get_conditional_field_tuple_mapping() == {
         'volume': ('series', 'has_volume'),
         'no_volume': ('series', 'has_volume'),
+        'volume_not_printed': ('series', 'has_volume'),
         'display_volume_with_number': ('series', 'has_volume'),
         'title': ('series', 'has_issue_title'),
         'no_title': ('series', 'has_issue_title'),
@@ -105,6 +106,8 @@ def test_conditional_field_mapping():
         'no_indicia_frequency': ('series', 'has_indicia_frequency'),
         'indicia_printer': ('series', 'has_indicia_printer'),
         'indicia_printer_not_printed': ('series', 'has_indicia_printer'),
+        'rating': ('series', 'has_rating'),
+        'no_rating': ('series', 'has_rating'),
     }
 
 

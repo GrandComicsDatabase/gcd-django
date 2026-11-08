@@ -290,6 +290,32 @@ def test_commit_display_volume_with_number(any_added_issue,
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('flag, field, stored, edited', [
+    ('has_rating', 'rating', 'Teen', ''),
+    ('has_rating', 'no_rating', True, False),
+    ('has_volume', 'volume_not_printed', True, False),
+])
+@pytest.mark.parametrize('flag_on', [True, False])
+def test_commit_turned_off_field(any_added_issue, any_editing_changeset,
+                                 flag, field, stored, edited, flag_on):
+    """Without the field in the series, the value of the issue stays."""
+    Issue.objects.filter(pk=any_added_issue.pk).update(**{field: stored})
+    series = any_added_issue.series
+    setattr(series, flag, flag_on)
+    series.save()
+    rev = IssueRevision.clone(
+        data_object=Issue.objects.get(pk=any_added_issue.pk),
+        changeset=any_editing_changeset)
+    setattr(rev, field, edited)
+    rev.save()
+
+    rev.commit_to_display()
+
+    issue = Issue.objects.get(pk=any_added_issue.pk)
+    assert getattr(issue, field) == (edited if flag_on else stored)
+
+
+@pytest.mark.django_db
 def test_delete_issue(any_added_issue, any_deleting_changeset,
                       any_added_issue_rev):
     rev = IssueRevision.clone(data_object=any_added_issue,
