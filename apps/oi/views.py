@@ -2582,6 +2582,20 @@ def init_added_variant(form_class, initial, issue, revision=False):
     return form
 
 
+def _save_add_form_comment(request, form, revision, changeset):
+    """
+    Store the comment of an add form, for adds which do not go directly to
+    the submission with the comment.
+    """
+    comments = form.cleaned_data.get('comments')
+    if comments:
+        revision.comments.create(commenter=request.user,
+                                 changeset=changeset,
+                                 text=comments,
+                                 old_state=changeset.state,
+                                 new_state=changeset.state)
+
+
 @permission_required('indexer.can_reserve')
 def add_issue(request, series_id, sort_after=None, variant_of=None,
               variant_cover=None, edit_with_base=False):
@@ -2706,6 +2720,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     revision.process_extra_forms(extra_forms)
 
     if variant_of:
+        _save_add_form_comment(request, form, revision, changeset)
         return edit(request, changeset.id)
     if 'copy_from_predecessor' in request.POST and revision.after:
         issue = revision.after
@@ -2806,6 +2821,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
                    'code_number_formset': code_number_formset,
                    'external_link_formset': external_link_formset}
     variant_revision.process_extra_forms(extra_forms)
+    _save_add_form_comment(request, form, variant_revision, changeset)
     changeset.change_type = CTYPES['variant_add']
     changeset.save()
 
@@ -2871,6 +2887,7 @@ def add_variant_issuerevision(changeset, revision, variant_of, form,
                    'code_number_formset': code_number_formset,
                    'external_link_formset': external_link_formset}
     issuerevision.process_extra_forms(extra_forms)
+    _save_add_form_comment(request, form, issuerevision, changeset)
 
     return True
 
