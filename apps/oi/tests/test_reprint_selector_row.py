@@ -51,6 +51,25 @@ def test_reprint_note_is_shown_after_the_heading(client, any_edit_story_rev):
                      r'\(Dell, 1948 series\) #1</p>', html)
 
 
+def test_selector_shows_any_note(client, any_edit_story_rev):
+    """The reprint note is only one use of the note of the selector."""
+    revision = any_edit_story_rev
+    log_in(client, revision.changeset)
+    response = client.get(reverse(
+      'add_story_reprint',
+      kwargs={'story_id': revision.id, 'changeset_id': revision.changeset_id,
+              'reprint_note': 'from Nothing (Nobody, 1900 series) #1'}))
+    select_key = resolve(response.url).kwargs['select_key']
+    session = client.session
+    session['%s_note' % select_key] = 'Only stories by Tom & Jerry'
+    session.save()
+    html = client.get(reverse('select_object',
+                              kwargs={'select_key': select_key})
+                      ).content.decode()
+    assert re.search(r'</h2>\s*<p>Only stories by Tom &amp; Jerry</p>', html)
+    assert 'Reprint note:' not in html
+
+
 @pytest.fixture
 def catalog():
     """Return X-Men of 1991 from Marvel and the first sequence of its #2."""

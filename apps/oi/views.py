@@ -4860,7 +4860,7 @@ def add_reprint(request, changeset_id,
             'initial': initial,
             'heading': heading,
             # what the form cannot be filled with stays readable
-            'reprint_note': note,
+            'note': 'Reprint note: %s' % note if note else '',
             'target': 'a story or issue',
             'return': 'confirm_reprint',
             'cancel': urlresolvers.reverse('edit',
