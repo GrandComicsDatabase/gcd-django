@@ -4356,10 +4356,15 @@ def edit_series_bond(request, id):
           'edit', kwargs={'id': series_bond_revision.changeset.id}))
     else:
         raise NotImplementedError
-    # no publisher or year: they would narrow the Series menu and trap someone
-    # looking for another series
+    # the form gets no publisher or year: they would narrow the Series menu
+    # and trap someone looking for another series
     initial = {'series_auto': series.id,
-               'issue_number': number}
+               'issue_number': number,
+               # the row of the older search, filled as before the form
+               'series': series.name,
+               'publisher': series.publisher.name,
+               'year': series.year_began,
+               'number': number}
     data = {'series_bond_revision_id': id,
             'initial': initial,
             'series': True,
@@ -4606,8 +4611,10 @@ def edit_reprint(request, id, which_side=None):
     if which_side.startswith('origin'):
         if reprint_revision.origin:
             select_issue = reprint_revision.origin_issue
+            sequence_number = reprint_revision.origin.sequence_number
         elif reprint_revision.origin_issue:
             select_issue = reprint_revision.origin_issue
+            sequence_number = None
         elif which_side == 'origin_internal':
             select_issue = reprint_revision.origin_revision.issue
         else:  # for newly added stories problematic otherwise
@@ -4620,8 +4627,10 @@ def edit_reprint(request, id, which_side=None):
     elif which_side.startswith('target'):
         if reprint_revision.target:
             select_issue = reprint_revision.target.issue
+            sequence_number = reprint_revision.target.sequence_number
         elif reprint_revision.target_issue:
             select_issue = reprint_revision.target_issue
+            sequence_number = None
         elif which_side == 'target_internal':
             select_issue = reprint_revision.target_revision.issue
         else:  # for newly added stories problematic otherwise
@@ -4748,9 +4757,16 @@ def edit_reprint(request, id, which_side=None):
            'reprint_revision': reprint_revision,
            'which_side': which_side[:6]})
 
-    # no sequence number: changing a side needs to see the other sequences
+    # the form gets no sequence number: changing a side needs to see the
+    # other sequences
     initial = {'series_auto': select_issue.series_id,
-               'issue_number': select_issue.number}
+               'issue_number': select_issue.number,
+               # the row of the older search, filled as before the form
+               'series': select_issue.series.name,
+               'publisher': select_issue.series.publisher.name,
+               'year': select_issue.series.year_began,
+               'number': select_issue.number,
+               'sequence_number': sequence_number}
     if story or story_revision:
         if story:
             story_id = story.id
@@ -4824,6 +4840,10 @@ def add_reprint(request, changeset_id,
         publisher, series, year, number, volume = \
             parse_reprint(note.split(';')[0])
         initial = _form_values_of_note(publisher, series, year, number)
+        # the row of the older search, filled as before the form, also with
+        # a series the form cannot take
+        initial.update({'series': series, 'publisher': publisher,
+                        'year': year, 'number': number})
     else:
         initial = {}
     if story_id:
@@ -4832,9 +4852,6 @@ def add_reprint(request, changeset_id,
     else:
         heading = 'Select story/issue for the reprint link with %s' \
                                     % (esc(issue))
-    if note:
-        # what the form cannot be filled with stays readable
-        heading += '<p>Reprint note: %s</p>' % esc(note)
     data = {'story_revision_id': story_id,
             'issue_revision_id': issue_id,
             'changeset_id': changeset_id,
@@ -4842,6 +4859,8 @@ def add_reprint(request, changeset_id,
             'issue': True,
             'initial': initial,
             'heading': heading,
+            # what the form cannot be filled with stays readable
+            'note': 'Reprint note: %s' % note if note else '',
             'target': 'a story or issue',
             'return': 'confirm_reprint',
             'cancel': urlresolvers.reverse('edit',
