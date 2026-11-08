@@ -5687,7 +5687,7 @@ def _moved_issues(revision):
     """
     revisions = [revision]
     if revision.changeset.change_type == CTYPES['two_issues']:
-        revisions.append(revision.changeset.issuerevisions.all()[1])
+        revisions.append(revision.other_issue_revision)
     moved_issues = []
     for issue_revision in revisions:
         # an added issue, e.g. a variant, is not moved
