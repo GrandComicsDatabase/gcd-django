@@ -1,0 +1,2 @@
+# bin/dev runs inside the Linux containers too: keep LF on any checkout.
+bin/dev text eol=lf
