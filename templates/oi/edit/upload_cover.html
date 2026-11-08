@@ -181,7 +181,8 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
 
     <div class="sticky-action-bar">
       <p class="mr-auto hidden text-gray-600 sm:block">The upload is reviewed by an editor before it appears.</p>
-      <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Upload cover</button>
+      <a class="btn-blue-editing btn py-1 px-4 visited:text-black" href="{{ issue.get_absolute_url }}"> Cancel</a>
+      <button type="submit" class="btn-blue-editing btn py-1 px-4">Upload Cover</button>
     </div>
   </form>
 
