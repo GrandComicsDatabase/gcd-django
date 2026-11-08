@@ -3792,7 +3792,8 @@ def add_story(request, issue_revision_id, changeset_id):
           request.POST or None)
 
         if not form.is_valid() or not credits_formset.is_valid() or \
-           not characters_formset.is_valid():
+           not characters_formset.is_valid() or \
+           not groups_formset.is_valid():
             kwargs = {
                 'issue_revision_id': issue_revision_id,
                 'changeset_id': changeset_id,
