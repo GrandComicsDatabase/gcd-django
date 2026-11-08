@@ -767,6 +767,15 @@ def _clean_keywords(cleaned_data):
     return keywords
 
 
+def _strip_list(value):
+    """Strip whitespace and trailing ';' of a ';'-separated list."""
+    value = value.strip()
+    end = len(value)
+    while end and (value[end - 1] == ';' or value[end - 1].isspace()):
+        end -= 1
+    return value[:end]
+
+
 def init_data_source_fields(field_name, revision, fields):
     data_source_revision = revision.changeset.datasourcerevisions\
                                              .filter(field=field_name)
