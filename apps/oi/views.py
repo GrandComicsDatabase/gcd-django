@@ -4832,9 +4832,6 @@ def add_reprint(request, changeset_id,
     else:
         heading = 'Select story/issue for the reprint link with %s' \
                                     % (esc(issue))
-    if note:
-        # what the form cannot be filled with stays readable
-        heading += '<p>Reprint note: %s</p>' % esc(note)
     data = {'story_revision_id': story_id,
             'issue_revision_id': issue_id,
             'changeset_id': changeset_id,
@@ -4842,6 +4839,8 @@ def add_reprint(request, changeset_id,
             'issue': True,
             'initial': initial,
             'heading': heading,
+            # what the form cannot be filled with stays readable
+            'reprint_note': note,
             'target': 'a story or issue',
             'return': 'confirm_reprint',
             'cancel': urlresolvers.reverse('edit',

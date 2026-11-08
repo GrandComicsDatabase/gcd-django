@@ -10,6 +10,9 @@
 
 {% block view_body %}
   <h2>{{ heading }}</h2>
+  {% if reprint_note %}
+  <p>Reprint note: {{ reprint_note }}</p>
+  {% endif %}
   {% if not issue %}
 Search for {{ target }} by entering the relevant information here:
   {% endif %}

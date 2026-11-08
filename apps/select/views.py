@@ -593,6 +593,7 @@ def _select_object(request, select_key, multiple_sequences=False):
         # without its cache the session comes back from JSON, without the mark
         return render(request, template,
                       {'heading': mark_safe(data['heading']),
+                       'reprint_note': data.get('reprint_note'),
                        'select_key': select_key,
                        'cache_form': cache_form,
                        'cache_choices': cache_choices,
