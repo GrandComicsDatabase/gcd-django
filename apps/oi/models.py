@@ -7070,8 +7070,16 @@ class StoryRevision(Revision):
                         .exclude(deleted=True)
                 next_revisions_ids = []
             old_revisions_ids = old_revisions.values_list('id', flat=True)
+            # a sequence moved into an existing issue in this changeset is
+            # linked by target_revision only (target=None), see
+            # move_story_revision
+            moved_revisions = self.target_reprint_revisions.active_set()\
+                                  .filter(changeset__id=self.changeset_id)
+            if preview:
+                moved_revisions = moved_revisions.exclude(deleted=True)
             revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
-                set(next_revisions_ids)
+                set(next_revisions_ids) | \
+                set(moved_revisions.values_list('id', flat=True))
             return ReprintRevision.objects.filter(id__in=revisions_ids)
         else:
             return from_reprints
@@ -7138,8 +7146,16 @@ class StoryRevision(Revision):
                         .exclude(deleted=True)
                 next_revisions_ids = []
             old_revisions_ids = old_revisions.values_list('id', flat=True)
+            # a sequence moved into an existing issue in this changeset is
+            # linked by origin_revision only (origin=None), see
+            # move_story_revision
+            moved_revisions = self.origin_reprint_revisions.active_set()\
+                                  .filter(changeset__id=self.changeset_id)
+            if preview:
+                moved_revisions = moved_revisions.exclude(deleted=True)
             revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
-                set(next_revisions_ids)
+                set(next_revisions_ids) | \
+                set(moved_revisions.values_list('id', flat=True))
             return ReprintRevision.objects.filter(id__in=revisions_ids)
         else:
             return to_reprints

@@ -581,6 +581,13 @@ def compare_current_reprints(object_type, changeset):
                 .filter(changeset=changeset)
             active_target = object_type.source.target_reprint_revisions\
                 .filter(changeset=changeset)
+            if type(object_type) is StoryRevision:
+                # moved sequence: linked by origin_/target_revision only,
+                # see move_story_revision
+                active_origin |= object_type.origin_reprint_revisions\
+                    .filter(changeset=changeset)
+                active_target |= object_type.target_reprint_revisions\
+                    .filter(changeset=changeset)
     if type(object_type) is IssueRevision:
         active_origin = active_origin.filter(origin=None, origin_revision=None)
         active_target = active_target.filter(target=None, target_revision=None)
