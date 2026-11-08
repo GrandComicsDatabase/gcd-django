@@ -322,6 +322,9 @@ def field_value(revision, field):
           revision._meta.model_name == 'creatorsignaturerevision'):
         if revision.source:
             return absolute_url(revision.source, descriptor=value)
+    elif (field == 'creator' and
+          revision._meta.model_name == 'creatornamedetailrevision'):
+        return absolute_url(value, descriptor=esc(value.search_result_name()))
     elif field == 'variant_cover_status':
         return VARIANT_COVER_STATUS[value]
     elif field == 'genre' and revision.source_name == 'story':

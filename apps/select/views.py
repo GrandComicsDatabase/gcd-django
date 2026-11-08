@@ -952,6 +952,10 @@ class CreatorAutocomplete(LoginRequiredMixin,
 
         return qs
 
+    def get_result_label(self, result):
+        """Show the disambiguation, to tell apart creators of the same name."""
+        return result.search_result_name()
+
 
 class CreatorNameAutocomplete(LoginRequiredMixin,
                               autocomplete.Select2QuerySetView):

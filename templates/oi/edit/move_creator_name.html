@@ -1,0 +1,30 @@
+{% extends "oi/base_view.html" %}
+
+{% block title %}
+GCD :: Move a creator name
+{% endblock %}
+
+{% block view_body %}
+{% include "oi/bits/jquery.html" %}
+{{ form.media }}
+<h2>
+  Give the name "{{ name.name }}" of {{ name.creator }} to another creator
+</h2>
+<p>
+  {{ credit_count }} credit{{ credit_count|pluralize }} using this name will
+  follow it. The change goes to the approval queue, and nothing moves until
+  it is approved.
+</p>
+<form method="POST"
+      action="{% url 'move_creator_name' creator_name_id=name.id %}">
+  {% csrf_token %}
+  <table class="editing">
+    {{ form.as_table }}
+  </table>
+  <button class="btn-blue-editing inline" type="submit" name="move">
+    Submit Move For Approval
+  </button>
+  <button class="btn-blue-editing inline" type="submit" name="cancel"
+          formnovalidate>Cancel</button>
+</form>
+{% endblock %}

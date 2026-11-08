@@ -129,6 +129,12 @@
       <strong>Sources</strong> :{% for source in creator_name.source.all %}
 {{ source.type }},{% endfor %}
 {% endif %}
+{% if not preview and perms.indexer.can_approve %}
+{% if creator_name.can_move_to_other_creator %}
+      (<a href="{% url 'move_creator_name' creator_name_id=creator_name.id %}"
+         >Move to another creator</a>)
+{% endif %}
+{% endif %}
     </li>
 {% endfor %}
   </ol>
