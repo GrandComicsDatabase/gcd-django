@@ -730,11 +730,6 @@ def _get_comments_form_field():
                   'displayed, but is stored in the change history.')
 
 
-def _strip_list(value):
-    """Strip whitespace and trailing ';' of a ';'-separated list."""
-    return value.strip().rstrip('; ')
-
-
 def _clean_keywords(cleaned_data):
     keywords = cleaned_data['keywords']
     if keywords is not None and keywords != '':
@@ -756,6 +751,11 @@ def _clean_keywords(cleaned_data):
                 raise forms.ValidationError(
                   'An extra ";" needs to removed.')
     return keywords
+
+
+def _strip_list(value):
+    """Strip whitespace and trailing ';' of a ';'-separated list."""
+    return value.strip().rstrip('; ')
 
 
 def init_data_source_fields(field_name, revision, fields):
