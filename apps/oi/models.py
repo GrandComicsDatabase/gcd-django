@@ -2127,8 +2127,13 @@ class Revision(models.Model):
 
         # Keywords must be handled post-save for added objects, and
         # are safe to handle here for other types of revisions.
+        # Deleted objects lose their keywords, the revision keeps them
+        # as text for the change history.
         if 'keywords' in self._get_regular_fields():
-            save_keywords(self, self.source)
+            if self.deleted:
+                self.source.keywords.clear()
+            else:
+                save_keywords(self, self.source)
 
         for multi in self._get_multi_value_fields():
             old_rp = relpath.RelPath(type(self), multi)
