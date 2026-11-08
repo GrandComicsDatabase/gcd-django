@@ -7,7 +7,7 @@ import pytest
 from apps.gcd.models import (
     Publisher, Series, Issue, Story, StoryCredit, StoryCharacter, StoryGroup,
     Creator, CreatorNameDetail, CreditType, Character, CharacterNameDetail,
-    Group, GroupNameDetail, INDEXED)
+    Group, GroupNameDetail, INDEXED, CREDIT_TYPES)
 from apps.oi.models import (
     StoryCreditRevision, StoryCharacterRevision, StoryGroupRevision)
 from apps.stddata.models import Country, Language, Script
@@ -446,3 +446,34 @@ def test_question_mark_for_new_credit_does_not_score(any_added_story_rev):
 
     rev._start_imp_sum()
     assert rev._imps_for('script') == 0
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('field', ['script', 'pencils', 'inks', 'letters'])
+def test_unchanged_question_mark_does_not_score(any_edit_story_rev, field):
+    # The previous revision replaced a structured credit with "?". Its
+    # deleted credit revision makes the credit count as changed in the
+    # next edit, but the "?" there replaces nothing.
+    rev = any_edit_story_rev
+    previous = rev.previous()
+    setattr(previous, field, '?')
+    previous.save()
+    setattr(rev, field, '?')
+    rev.save()
+
+    creator = Creator.objects.create(
+      gcd_official_name='Test Creator', birth_province='', birth_city='',
+      death_province='', death_city='', bio='', notes='')
+    script = Script.objects.create(code='Tst', number=999,
+                                   name='Test Script')
+    creator_name = CreatorNameDetail.objects.create(
+      name='Test Creator', creator=creator, is_official_name=True,
+      in_script=script)
+    credit_type = CreditType.objects.get_or_create(
+      id=CREDIT_TYPES[field],
+      defaults={'name': field, 'sort_code': CREDIT_TYPES[field]})[0]
+    StoryCreditRevision.objects.create(
+      changeset=previous.changeset, story_revision=previous,
+      creator=creator_name, credit_type=credit_type, deleted=True)
+
+    assert rev.calculate_imps() == 0

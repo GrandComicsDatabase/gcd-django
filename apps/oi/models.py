@@ -6999,7 +6999,8 @@ class StoryRevision(Revision):
                 if field_name == name and getattr(self, field_name) == '?':
                     previous = self.previous()
                     if self.story_credit_revisions.exists() == 0 and \
-                       not (previous and getattr(previous, field_name)):
+                       not (previous and
+                            getattr(previous, field_name) not in ('', '?')):
                         return 0
                 return 1
         return 0
