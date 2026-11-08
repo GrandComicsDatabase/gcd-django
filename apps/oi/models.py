@@ -10001,7 +10001,9 @@ class CreatorNameDetailRevision(Revision):
 
     def _imps_for(self, field_name):
         if field_name == 'sort_name':
-            if self.sort_name == self.name:
+            # A new name with a sort name equal to the name is not worth an
+            # IMP, correcting the sort name of an existing name is.
+            if self.added and self.sort_name == self.name:
                 return 0
             else:
                 return 1
