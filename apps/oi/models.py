@@ -4196,6 +4196,7 @@ class IssueRevision(Revision):
             'no_indicia_frequency': has_ind_freq,
             'indicia_printer': has_ind_print,
             'indicia_printer_not_printed': has_ind_print,
+            'indicia_printer_sourced_by': has_ind_print,
             'rating': has_rating,
             'no_rating': has_rating,
         }

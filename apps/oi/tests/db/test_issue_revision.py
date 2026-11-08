@@ -294,6 +294,8 @@ def test_commit_display_volume_with_number(any_added_issue,
     ('has_rating', 'rating', 'Teen', ''),
     ('has_rating', 'no_rating', True, False),
     ('has_volume', 'volume_not_printed', True, False),
+    ('has_indicia_printer', 'indicia_printer_sourced_by', 'Publisher site',
+     ''),
 ])
 @pytest.mark.parametrize('flag_on', [True, False])
 def test_commit_turned_off_field(any_added_issue, any_editing_changeset,

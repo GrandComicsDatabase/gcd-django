@@ -106,6 +106,7 @@ def test_conditional_field_mapping():
         'no_indicia_frequency': ('series', 'has_indicia_frequency'),
         'indicia_printer': ('series', 'has_indicia_printer'),
         'indicia_printer_not_printed': ('series', 'has_indicia_printer'),
+        'indicia_printer_sourced_by': ('series', 'has_indicia_printer'),
         'rating': ('series', 'has_rating'),
         'no_rating': ('series', 'has_rating'),
     }
