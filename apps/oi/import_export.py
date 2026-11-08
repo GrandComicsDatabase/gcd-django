@@ -894,11 +894,9 @@ def generate_reprint_link(reprints, direction):
 def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     if revision:
         issue_revision = get_object_or_404(IssueRevision, id=issue_id)
-        issue = PreviewIssue(issue_revision)
+        issue = PreviewIssue.init(issue_revision)
         issue.series = issue_revision.series
         issue.on_sale_date = on_sale_date_as_string(issue_revision)
-        issue.revision = issue_revision
-        issue.keywords = issue_revision.keywords
     else:
         issue = get_object_or_404(Issue, id=issue_id)
     series = issue.series
