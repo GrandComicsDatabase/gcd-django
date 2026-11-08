@@ -19,6 +19,7 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
+                      _strip_list,
                       HiddenInputWithHelp, PageCountInput)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
@@ -294,11 +295,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             cd['publication_date'] = cd['publication_date'].strip()
             cd['key_date'] = cd['key_date'].strip()
             cd['indicia_frequency'] = cd['indicia_frequency'].strip()
-            cd['price'] = cd['price'].strip()
-            cd['editing'] = cd['editing'].strip()
+            cd['price'] = _strip_list(cd['price'])
+            cd['editing'] = _strip_list(cd['editing'])
             cd['notes'] = cd['notes'].strip()
             cd['comments'] = cd['comments'].strip()
-            cd['isbn'] = cd['isbn'].strip()
+            cd['isbn'] = _strip_list(cd['isbn'])
             cd['rating'] = cd['rating'].strip()
 
             cd = _common_clean(cd, self.data)
@@ -366,7 +367,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     'the same time.')
 
             if cd['barcode']:
-                cd['barcode'] = cd['barcode'].replace('-', '').replace(' ', '')
+                cd['barcode'] = _strip_list(
+                  cd['barcode'].replace('-', '').replace(' ', ''))
                 cd['barcode'] = cd['barcode'].replace(';', '; ')
 
             return cd

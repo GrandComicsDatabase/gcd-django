@@ -36,6 +36,7 @@ from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 from .custom_layout_object import Formset
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
+    _strip_list,
     combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
     KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS,
     BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
@@ -1177,16 +1178,16 @@ class StoryRevisionForm(KeywordBaseForm):
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
         cd['title'] = cd['title'].strip()
-        cd['feature'] = cd['feature'].strip()
-        cd['script'] = cd['script'].strip()
-        cd['pencils'] = cd['pencils'].strip()
-        cd['inks'] = cd['inks'].strip()
-        cd['colors'] = cd['colors'].strip()
-        cd['letters'] = cd['letters'].strip()
-        cd['editing'] = cd['editing'].strip()
-        cd['characters'] = cd['characters'].strip()
+        cd['feature'] = _strip_list(cd['feature'])
+        cd['script'] = _strip_list(cd['script'])
+        cd['pencils'] = _strip_list(cd['pencils'])
+        cd['inks'] = _strip_list(cd['inks'])
+        cd['colors'] = _strip_list(cd['colors'])
+        cd['letters'] = _strip_list(cd['letters'])
+        cd['editing'] = _strip_list(cd['editing'])
+        cd['characters'] = _strip_list(cd['characters'])
         cd['job_number'] = cd['job_number'].strip()
-        cd['reprint_notes'] = cd['reprint_notes'].strip()
+        cd['reprint_notes'] = _strip_list(cd['reprint_notes'])
         cd['synopsis'] = cd['synopsis'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()
