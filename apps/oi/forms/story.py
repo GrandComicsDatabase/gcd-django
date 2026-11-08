@@ -11,7 +11,6 @@ from crispy_forms.layout import Layout, Field, HTML
 from crispy_forms.utils import render_field
 from crispy_forms.bootstrap import (
     Tab,
-    TabHolder,
 )
 from markdownx.widgets import MarkdownxWidget
 from taggit.models import Tag
@@ -33,7 +32,7 @@ from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
 from apps.gcd.models.support import GENRES
 from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 
-from .custom_layout_object import Formset
+from .custom_layout_object import Formset, FormsetTabHolder
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
     _strip_list,
@@ -831,7 +830,7 @@ class StoryRevisionForm(KeywordBaseForm):
             # The layout is organized into tabs for better user experience.
             # When counting the fields, we need to account for the added
             # hidden fields and formsets that are included in the field_list.
-            self.helper.layout = Layout(TabHolder(
+            self.helper.layout = Layout(FormsetTabHolder(
               Tab('Sequence Details',
                   *(f for f in field_list[:credits_start-5]),
                   *(f for f in field_list[characters_end:-3]),

@@ -1,5 +1,6 @@
 from django.template.loader import render_to_string
 
+from crispy_forms.bootstrap import TabHolder
 from crispy_forms.layout import LayoutObject
 from crispy_forms.layout import Field
 from crispy_forms.utils import render_field
@@ -89,3 +90,30 @@ class Formset(LayoutObject):
 
         context.update({'formset': formset, 'helper': helper})
         return render_to_string(self.template, context.flatten())
+
+    def has_errors(self, context):
+        formset = context.get(self.formset_context_name)
+        return formset is not None and formset.total_error_count() > 0
+
+
+class FormsetTabHolder(TabHolder):
+    """
+    Opens the first tab with errors, also looking at the formsets of a tab.
+
+    The formsets are not fields of the form, so TabHolder does not know
+    about their errors when it selects the tab to open.
+    """
+
+    def render(self, form, context, *args, **kwargs):
+        self.tabs_with_formset_errors = [
+          tab for tab in self.fields
+          if any(isinstance(field, Formset) and field.has_errors(context)
+                 for field in tab.fields)]
+        return super().render(form, context, *args, **kwargs)
+
+    def first_container_with_errors(self, errors):
+        for tab in self.fields:
+            if tab in self.tabs_with_formset_errors or \
+               any(error in tab for error in errors):
+                return tab
+        return None
