@@ -80,7 +80,7 @@ Search for {{ target }} by entering the relevant information here:
 <form id="new-search-form" action="{% url 'select_object_search_htmx' select_key=select_key %}" method="get" novalidate
       hx-get="{% url 'select_object_search_htmx' select_key=select_key %}"
       {# filled, it waits for Search, not to push remembered objects down #}
-      hx-trigger="submit, change delay:500ms"
+      hx-trigger="submit, change delay:500ms, input delay:500ms"
       hx-target="#new-search-results"
       hx-swap="innerHTML"
       hx-sync="this:replace"
