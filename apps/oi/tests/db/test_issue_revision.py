@@ -4,9 +4,16 @@
 import mock
 import pytest
 
-from apps.gcd.models import Series, Issue
-from apps.oi.models import Changeset, IssueRevision, CoverRevision, CTYPES
+from django.contrib.auth.models import Permission, User
+from django.urls import reverse
+
+from apps.gcd.models import Series, Issue, Cover
+from apps.gcd.models.issue import INDEXED
+from apps.indexer.models import Indexer
+from apps.oi.models import (Changeset, IssueRevision, CoverRevision,
+                            StoryRevision, CTYPES)
 from apps.oi import states
+from apps.stats.models import CountStats
 
 
 EXCLUDED_FORK_FIELDS = {
@@ -332,6 +339,72 @@ def test_delete_issue(any_added_issue, any_deleting_changeset,
     } == {k: v - 1 for k, v in old_brand_group_counts.items()}
     assert rev.issue.indicia_publisher.issue_count == \
         old_ind_pub_issue_count - 1
+
+
+@pytest.mark.django_db
+def test_delete_issue_counts_stories_and_covers_once(
+        client, any_added_story, story_add_values, any_adding_changeset,
+        any_indexer, any_country, any_language):
+    issue = any_added_story.issue
+    second_story = StoryRevision(
+      changeset=any_adding_changeset,
+      **{**story_add_values, 'sequence_number': 2})
+    second_story.save()
+    second_story.commit_to_display()
+    Cover.objects.create(issue=issue)
+    issue.refresh_from_db()
+    assert issue.is_indexed > INDEXED['some_data']
+
+    scopes = ({'language': None, 'country': None},
+              {'language': any_language, 'country': None},
+              {'language': None, 'country': any_country})
+    for scope in scopes:
+        CountStats.objects.init_stats(**scope)
+
+    def counts():
+        return [{name: CountStats.objects.get(name=name, **scope).count
+                 for name in ('issues', 'issue indexes', 'stories', 'covers')}
+                for scope in scopes]
+
+    before = counts()
+
+    any_indexer.user_permissions.add(Permission.objects.get(
+      codename='can_reserve', content_type__app_label='indexer'))
+    client.force_login(any_indexer)
+    response = client.post(
+      reverse('delete_revision', kwargs={'model_name': 'issue',
+                                         'id': issue.id}),
+      {'comments': 'Duplicate entry'})
+    assert response.status_code == 302
+    changeset = Changeset.objects.get(issuerevisions__issue=issue,
+                                      issuerevisions__deleted=True)
+    assert changeset.storyrevisions.filter(deleted=True).count() == 2
+    assert changeset.coverrevisions.filter(deleted=True).count() == 1
+
+    editor = User.objects.create_user('editor', password='editor')
+    Indexer.objects.create(user=editor, country=any_country)
+    editor.user_permissions.add(*Permission.objects.filter(
+      codename__in=['can_reserve', 'can_approve'],
+      content_type__app_label='indexer'))
+    client.force_login(editor)
+    for action in ('assign', 'approve'):
+        response = client.post(
+          reverse('process', kwargs={'id': changeset.id}),
+          {action: action.title(), 'comments': ''})
+        assert response.status_code == 302
+
+    changeset.refresh_from_db()
+    assert changeset.state == states.APPROVED
+    issue.refresh_from_db()
+    assert issue.deleted is True
+    assert not issue.active_stories().exists()
+    assert not issue.active_covers().exists()
+
+    assert counts() == [{'issues': scope_counts['issues'] - 1,
+                         'issue indexes': scope_counts['issue indexes'] - 1,
+                         'stories': scope_counts['stories'] - 2,
+                         'covers': scope_counts['covers'] - 1}
+                        for scope_counts in before]
 
 
 @pytest.mark.django_db
