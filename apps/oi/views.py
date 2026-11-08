@@ -727,6 +727,18 @@ def _invalid_revision_response(request, invalid_revisions, instruction):
         instruction, errors)})
 
 
+def _has_changed_revision(changeset):
+    """
+    Whether a revision changes data, also if the change gives no IMPs,
+    e.g. a new order of the sequences.
+    """
+    for revision in changeset.revisions:
+        revision.compare_changes()
+        if revision.is_changed:
+            return True
+    return False
+
+
 @permission_required('indexer.can_reserve')
 def submit(request, id):
     """
@@ -757,7 +769,8 @@ def submit(request, id):
        changeset.comments.count() == 1:
         changeset.calculate_imps()
         if changeset.imps == 0 and not \
-           changeset.characterorderrevisions.exists():
+           changeset.characterorderrevisions.exists() and not \
+           _has_changed_revision(changeset):
             return oi_render(
               request, 'indexer/error.html',
               {'error_text': mark_safe('A submission needs to consists of at '
