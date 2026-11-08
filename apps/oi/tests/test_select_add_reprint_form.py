@@ -36,7 +36,9 @@ NO_SERIES_NAMED = [{'id': 'note', 'disabled': True,
                     'text': 'No series with this name and this Issue Number.'}]
 ASK_SERIES = b'<p>Too many results: choose a Series.</p>'
 ASK_NUMBER = b'<p>Too many results: write the Issue Number.</p>'
-TRIGGER = 'submit, change delay:500ms'
+# on Search, and a moment after a change or a key typed; not at load, where
+# the results would push the remembered objects down
+TRIGGER = {'submit', 'change delay:500ms', 'input delay:500ms'}
 SEARCH_BUTTON = ('<button class="btn-blue-editing inline" type="submit">'
                  'Search</button>')
 
@@ -163,9 +165,10 @@ def radio_buttons(html):
 
 
 def trigger(html):
-    """Return what makes the form send itself."""
-    return re.search(r'<form id="new-search-form"[^>]*hx-trigger="([^"]+)"',
-                     html).group(1)
+    """Return the events that make the form send itself."""
+    events = re.search(r'<form id="new-search-form"[^>]*hx-trigger="([^"]+)"',
+                       html).group(1)
+    return {event.strip() for event in events.split(',')}
 
 
 def stories_listed(response):
@@ -282,17 +285,37 @@ def two_issues_selector(client, catalog):
     return resolve(response.url).kwargs['select_key']
 
 
-def test_one_set_of_fields_where_the_form_is(client, select_key, catalog):
-    """The row asks for the same fields, and the form does what it does."""
+def new_form(html):
+    """Return the html of the form."""
+    return re.search(r'<form id="new-search-form".*?</form>', html,
+                     re.DOTALL).group()
+
+
+def row_form(html):
+    """Return the html of the row of fields of the older search."""
+    return re.search(r'<form [^>]*>\s*<table class="select_search">.*?</form>',
+                     html, re.DOTALL).group()
+
+
+def test_row_search_is_back_beside_the_form(client, select_key, catalog):
+    """
+    The row also searches with no series name, or with part of one. Each of
+    the two sends its own fields.
+    """
     for key in (select_key, bond_selector(client, catalog),
                 two_issues_selector(client, catalog)):
         html = selector_page(client, key)
         assert 'id="new-search-form"' in html
-        assert 'class="select_search"' not in html
+        assert 'class="select_search"' in html
         assert 'by entering the relevant information' not in html
-        for name in ('publisher', 'series', 'year', 'number', 'search_story',
-                     'search_series'):
-            assert f'name="{name}"' not in html
+        form, row = new_form(html), row_form(html)
+        for name in ('publisher', 'series', 'year', 'number', 'search_issue'):
+            assert f'name="{name}"' in row
+            assert f'name="{name}"' not in form
+        for name in ('publisher_auto', 'series_auto', 'series_year_auto',
+                     'issue_number'):
+            assert f'name="{name}"' in form
+            assert f'name="{name}"' not in row
         assert html.count('name="issue_number"') == 1
 
 
@@ -306,7 +329,11 @@ def test_form_has_no_sequence_number(client, select_key, catalog):
     """A sequence is chosen on the page of its issue, with Remember Story."""
     for key in (select_key, bond_selector(client, catalog),
                 two_issues_selector(client, catalog)):
-        assert 'name="sequence_number"' not in selector_page(client, key)
+        assert 'name="sequence_number"' not in new_form(
+          selector_page(client, key))
+    # the row beside it still asks for one where it searches stories
+    assert 'name="sequence_number"' in row_form(
+      selector_page(client, select_key))
 
 
 def test_form_is_where_issues_can_be_chosen(client, select_key, catalog):
