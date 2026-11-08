@@ -10,7 +10,8 @@ from haystack.backends import SQ
 from stdnum import isbn as stdisbn
 from random import randint
 
-from django.db.models import Q, Count, Min, Case, When, Value, F
+from django.db.models import Q, Count, Min, Case, When, Value, F, Exists, \
+                             OuterRef
 from django.conf import settings
 from django.http import HttpResponseRedirect
 import django.urls as urlresolvers
@@ -2086,9 +2087,12 @@ def search_issues(data, op, stories_q=None):
         q_objs.append(
           Q(**{'%spublication_date__%s' % (prefix, op): data['issue_date']}))
     if data['cover_needed']:
-        q_objs.append(Q(**{'%scover__isnull' % prefix: True}) |
-                      ~Q(**{'%scover__deleted' % prefix: False}) |
-                      Q(**{'%scover__marked' % prefix: True}))
+        # an issue needs a cover if it has no active cover, or an active
+        # cover marked for replacement; deleted covers do not count
+        active_covers = Cover.objects.filter(
+          issue_id=OuterRef('%sid' % prefix), deleted=False)
+        q_objs.append(~Exists(active_covers) |
+                      Exists(active_covers.filter(marked=True)))
     if data['is_indexed'] is not None:
         if data['is_indexed'] is True:
             q_objs.append(Q(**{'%sis_indexed' % prefix: INDEXED['full']}) &
