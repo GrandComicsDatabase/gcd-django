@@ -5467,11 +5467,12 @@ class StoryCharacterRevision(Revision):
         self.story_revision = kwargs['story_revision']
 
     @classmethod
-    def copied_translation(cls, character, story_revision):
+    def copied_translation(cls, character, story_revision, kept=frozenset()):
         """
         Given an existing character appearance, create a new revision based
         on it for a new character appearance with the copied character and data
-        but a different translation.
+        but a different translation. A translation in kept, a set of pairs
+        of character id and universe id, gets no revision.
         """
         language = story_revision.issue.series.language
         translations = character.character.character.translations(
@@ -5480,7 +5481,8 @@ class StoryCharacterRevision(Revision):
            character.character.character.translated_from():
             translations = character.character.character.translated_from()\
                                               .translations(language)
-        if translations.count() == 1:
+        if translations.count() == 1 and \
+           (translations.get().id, character.universe_id) not in kept:
             character.character = translations.get()\
                                               .official_name()
             new_character = StoryCharacterRevision.clone(

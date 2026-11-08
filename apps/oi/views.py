@@ -4088,10 +4088,14 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
           'edit', kwargs={'id': revision.changeset_id}))
 
     selected_fields = request.POST.getlist('field_to_copy')
+    keep_characters = 'keep_characters' in request.POST
     fields_to_copy = revision._get_single_value_fields().copy()
     fields_to_copy.update(revision._get_meta_fields())
     fields_to_set = revision._get_multi_value_fields()
     for field in selected_fields:
+        # the text of the characters is kept like their records
+        if field == 'characters' and keep_characters and revision.characters:
+            continue
         # single value fields
         if field in fields_to_copy:
             setattr(revision, field, getattr(compare_revision, field))
@@ -4162,8 +4166,16 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                                      .exclude(deleted=True)
         existing_characters = revision.story_character_revisions\
                                       .exclude(deleted=True)
+        kept = frozenset()
+        if keep_characters:
+            kept = frozenset(existing_characters.values_list(
+              'character__character_id', 'universe_id'))
+            existing_characters = existing_characters.none()
 
         for character in characters:
+            if kept and (character.character.character_id,
+                         character.universe_id) in kept:
+                continue
             if same_language:
                 q_vals = {}
                 for field in character._get_single_value_fields():
@@ -4186,7 +4198,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
             else:
                 new_character_revision = \
                   StoryCharacterRevision.copied_translation(character,
-                                                            revision)
+                                                            revision, kept)
                 if new_character_revision:
                     existing_characters = existing_characters.exclude(
                       id=new_character_revision.id)
@@ -4202,7 +4214,14 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                                  .exclude(deleted=True)
         existing_groups = revision.story_group_revisions\
                                   .exclude(deleted=True)
+        kept = frozenset()
+        if keep_characters:
+            kept = frozenset(existing_groups.values_list(
+              'group_name__group_id', 'universe_id'))
+            existing_groups = existing_groups.none()
         for group in groups:
+            if kept and (group.group_name.group_id, group.universe_id) in kept:
+                continue
             if same_language:
                 q_vals = {}
                 for field in group._get_single_value_fields():
@@ -4226,7 +4245,8 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                    group.group_name.group.translated_from():
                     translations = group.group_name.group.translated_from()\
                                                    .translations(language)
-                if translations.count() == 1:
+                if translations.count() == 1 and \
+                   (translations.get().id, group.universe_id) not in kept:
                     group.group_name = translations.get().official_name()
                     new_group = StoryGroupRevision.clone(
                       group, revision.changeset, fork=True,
