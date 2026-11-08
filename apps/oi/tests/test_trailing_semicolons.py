@@ -1,3 +1,5 @@
+from time import perf_counter
+
 import pytest
 
 from django.forms import CheckboxInput
@@ -6,6 +8,7 @@ from django.http import QueryDict
 from apps.oi.forms.creator import get_creator_non_comic_work_revision_form
 from apps.oi.forms.issue import get_issue_revision_form
 from apps.oi.forms.story import get_story_revision_form
+from apps.oi.forms.support import _strip_list
 from apps.oi.models import IssueRevision
 
 
@@ -79,3 +82,12 @@ def test_creator_work_years_strips_trailing_semicolon(value, expected):
 
     assert 'work_years' not in form.errors
     assert form.cleaned_data['work_years'] == expected
+
+
+def test_long_run_of_semicolons_inside_a_value_is_fast():
+    """The time to clean a value does not grow with the square of its size."""
+    value = 'a' + ';' * 64000 + 'x'
+
+    start = perf_counter()
+    assert _strip_list(value) == value
+    assert perf_counter() - start < 1
