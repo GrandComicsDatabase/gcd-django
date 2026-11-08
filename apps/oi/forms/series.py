@@ -40,8 +40,8 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
                 super(RuntimeAddSeriesRevisionForm, self).__init__(*args,
                                                                    **kwargs)
                 self.fields['is_singleton'].help_text += \
-                  ' Series notes for an added singleton series will be '\
-                  'copied to the added issue.'
+                  ' Series notes and keywords for an added singleton '\
+                  'series will be copied to the added issue.'
 
             if can_request:
                 reservation_requested = forms.BooleanField(
@@ -74,8 +74,8 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
                 self.fields['language'].empty_label = None
                 if revision.added:
                     self.fields['is_singleton'].help_text += \
-                      ' Series notes for an added singleton series will be '\
-                      'copied to the added issue.'
+                      ' Series notes and keywords for an added singleton '\
+                      'series will be copied to the added issue.'
 
             if user.has_perm('indexer.can_approve'):
                 move_to_publisher_with_id = forms.IntegerField(
@@ -93,6 +93,13 @@ def get_series_revision_form(publisher=None, revision=None, user=None):
                     if cd['is_singleton'] and cd['notes']:
                         raise forms.ValidationError(
                             'Notes for singleton series are stored on the '
+                            'issue level.')
+                    # old singleton series can still have keywords stored
+                    if cd['is_singleton'] and cd['keywords'] and (
+                       'keywords' in self.changed_data or
+                       'is_singleton' in self.changed_data):
+                        raise forms.ValidationError(
+                            'Keywords for singleton series are stored on the '
                             'issue level.')
                 return cd
 
