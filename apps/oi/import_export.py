@@ -8,8 +8,10 @@ import json
 import yaml
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
+from functools import wraps
 
 import django.urls as urlresolvers
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.html import conditional_escape as esc
 from django.contrib.auth.decorators import permission_required
@@ -83,18 +85,32 @@ SEQUENCE_FIELDS = ['title', 'type', 'feature', 'page_count', 'script',
                    'synopsis', 'notes', 'keywords', 'first_line']
 
 
+def _upload_view(view):
+    """
+    Lets _handle_import_error undo what the upload saved before it failed,
+    and removes the temporary file when the view is done.
+    """
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        request.import_savepoint = transaction.savepoint()
+        try:
+            return view(request, *args, **kwargs)
+        finally:
+            if hasattr(request, "tmpfile"):
+                request.tmpfile.close()
+                os.remove(request.tmpfile_name)
+    return wrapper
+
+
 def _handle_import_error(request, return_url, error_text):
+    # of a failed upload only the error message is kept
+    transaction.savepoint_rollback(request.import_savepoint)
     # error_text can quote the uploaded file, only the link is markup
-    response = render_error(
+    return render_error(
         request,
         '%s Back to the <a href="%s">editing page</a>.' %
         (esc(error_text), return_url),
         is_safe=True)
-    # there might be a temporary file attached
-    if hasattr(request, "tmpfile"):
-        request.tmpfile.close()
-        os.remove(request.tmpfile_name)
-    return response
 
 
 def _convert_upload_to_file(request, request_file):
@@ -103,12 +119,11 @@ def _convert_upload_to_file(request, request_file):
     for chunk in request_file.chunks():
         os.write(tmpfile_handle, chunk)
     os.close(tmpfile_handle)
-    tmpfile = open(tmpfile_name, 'rb')
-    request.tmpfile = tmpfile
+    with open(tmpfile_name, 'rb') as binary_file:
+        encoding = chardet.detect(binary_file.read())['encoding']
+    request.tmpfile = open(tmpfile_name, encoding=encoding)
     request.tmpfile_name = tmpfile_name
-    encoding = chardet.detect(tmpfile.read())['encoding']
-    tmpfile = open(tmpfile_name, encoding=encoding)
-    return tmpfile
+    return request.tmpfile
 
 
 def _process_file(request, changeset_url, is_issue, use_csv=False):
@@ -184,10 +199,6 @@ def _process_file(request, changeset_url, is_issue, use_csv=False):
 
         lines.append(split_line)
 
-    tmpfile.close()
-    os.remove(request.tmpfile_name)
-    del request.tmpfile
-    del request.tmpfile_name
     return lines, False
 
 
@@ -439,8 +450,8 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
                                           .replace('.', '-')
     if parsed_data['key_date'] and not re.search(KEY_DATE_REGEXP,
                                                  parsed_data['key_date']):
-        return render_error(
-          request,
+        return _handle_import_error(
+          request, changeset_url,
           "key_date '%s' is invalid." % parsed_data['key_date']), True
 
     parsed_data['page_count'], parsed_data['page_count_uncertain'] = \
@@ -475,9 +486,9 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
             if day:
                 parsed_data['day_on_sale'] = sale_date.day
         except ValueError:
-            return render_error(request,
-                                "on-sale_date '%s' is invalid." %
-                                on_sale_date), True
+            return _handle_import_error(request, changeset_url,
+                                        "on-sale_date '%s' is invalid." %
+                                        on_sale_date), True
     if series.has_issue_title:
         parsed_data['title'], parsed_data['no_title'] = \
           _check_for_none(issue_fields.get('title', '').strip())
@@ -505,9 +516,10 @@ def _process_issue_data(request, issue_fields, series, changeset_url):
             issue_fields.get('variant_cover_status', '').upper().replace(' ',
                                                                          '_')
         if parsed_data['variant_cover_status'] not in VCS_Codes._member_names_:
-            return render_error(request,
-                                "variant_cover_status '%s' is invalid." %
-                                parsed_data['variant_cover_status']), True
+            return _handle_import_error(
+              request, changeset_url,
+              "variant_cover_status '%s' is invalid." %
+              parsed_data['variant_cover_status']), True
         parsed_data['variant_cover_status'] = VCS_Codes[parsed_data[
                                               'variant_cover_status']]
     return parsed_data, False
@@ -629,6 +641,7 @@ def import_issues_to_series_structured(request, series_id, use_yaml=False):
 
 
 @permission_required('indexer.can_reserve')
+@_upload_view
 def import_issues_to_series(request, series_id):
     if request.method == 'POST' and 'json' in request.POST:
         return import_issues_to_series_structured(request, series_id)
@@ -695,6 +708,7 @@ def import_issues_to_series(request, series_id):
 
 
 @permission_required('indexer.can_reserve')
+@_upload_view
 def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
@@ -802,6 +816,7 @@ def import_issue_from_file(request, issue_id, changeset_id, use_csv=False):
 
 
 @permission_required('indexer.can_reserve')
+@_upload_view
 def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
     changeset = get_object_or_404(Changeset, id=changeset_id)
     if request.user != changeset.indexer:
