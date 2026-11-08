@@ -5690,6 +5690,47 @@ def move_series(request, series_revision_id, publisher_id):
             return submit(request, series_revision.changeset.id)
 
 
+def _fields_hidden_by_series(issue_revision, old_series, new_series):
+    """
+    Fields of the issue with a value, which old_series shows, but which are
+    turned off for new_series.
+    """
+    fields = (('barcode', 'has_barcode', 'barcode'),
+              ('isbn', 'has_isbn', 'ISBN'),
+              ('rating', 'has_rating', "publisher's age guidelines"))
+    return [label for field, flag, label in fields
+            if getattr(issue_revision, field) and getattr(old_series, flag)
+            and not getattr(new_series, flag)]
+
+
+def _moved_issues(revision):
+    """
+    The issue revisions on the compare page of the changeset of revision
+    which move their issue to a series that does not show some of its fields,
+    as (issue revision, old series, new series, hidden fields).
+    """
+    revisions = [revision]
+    if revision.changeset.change_type == CTYPES['two_issues']:
+        revisions.append(revision.other_issue_revision)
+    moved_issues = []
+    for issue_revision in revisions:
+        # an added issue, e.g. a variant, is not moved
+        if not issue_revision.issue or issue_revision.added:
+            continue
+        # after approval, the issue is already in the new series
+        prev_rev = issue_revision.previous()
+        if prev_rev:
+            old_series = prev_rev.series
+        else:
+            old_series = issue_revision.issue.series
+        hidden_fields = _fields_hidden_by_series(issue_revision, old_series,
+                                                 issue_revision.series)
+        if hidden_fields:
+            moved_issues.append((issue_revision, old_series,
+                                 issue_revision.series, hidden_fields))
+    return moved_issues
+
+
 @permission_required('indexer.can_reserve')
 def move_issue(request, issue_revision_id, series_id):
     """ move issue to series """
@@ -5730,10 +5771,18 @@ def move_issue(request, issue_revision_id, series_id):
         cancel_button = "Cancel"
         confirm_button = "move of issue %s to series %s" % (
           issue_revision.issue, series)
+        hidden_fields = _fields_hidden_by_series(
+          issue_revision, issue_revision.issue.series, series)
+        if hidden_fields:
+            warning = 'The series %s does not show the %s of this issue.' \
+                      % (series, ', '.join(hidden_fields))
+        else:
+            warning = ''
         return oi_render(request, 'oi/edit/confirm.html',
                                   {
                                     'type': 'Issue Move',
                                     'header_text': header_text,
+                                    'warning': warning,
                                     'url': url,
                                     'cancel_button': cancel_button,
                                     'confirm_button': confirm_button,
@@ -6927,6 +6976,7 @@ def compare(request, id):
     field_list = revision.field_list()
     sourced_fields = None
     group_sourced_fields = None
+    moved_issues = None
     revisions_before = []
     revisions_after = []
     # eliminate fields that shouldn't appear in the compare
@@ -6943,6 +6993,7 @@ def compare(request, id):
     elif model_name in ['indicia_publisher']:
         field_list.remove('parent')
     elif model_name == 'issue':
+        moved_issues = _moved_issues(revision)
         if changeset.change_type == CTYPES['issue_bulk'] or \
           changeset.change_type == CTYPES['issue_add'] and \
           changeset.issuerevisions.count() > 1:
@@ -7010,6 +7061,7 @@ def compare(request, id):
                           'field_list': field_list,
                           'sourced_fields': sourced_fields,
                           'group_sourced_fields': group_sourced_fields,
+                          'moved_issues': moved_issues,
                           'source_fields': ['source_description',
                                             'source_type'],
                           'CTYPES': CTYPES},
