@@ -4533,7 +4533,9 @@ class IssueRevision(Revision):
                 code_number_revision.save()
 
         if delete:
-            for cover in self.issue.active_covers():
+            # active_covers() gives the covers of the base issue for a
+            # variant with the same image, and those stay.
+            for cover in self.issue._active_covers():
                 # cover can be reserved, so this can fail
                 # TODO check if transaction rollback works
                 cover_lock = _get_revision_lock(cover,
