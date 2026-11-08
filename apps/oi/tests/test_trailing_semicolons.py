@@ -47,6 +47,7 @@ def test_story_form_strips_trailing_semicolon(any_edit_story_rev,
 @pytest.mark.parametrize('field, value, expected', [
     ('price', '0.10 USD; 0.15 CAD;', '0.10 USD; 0.15 CAD'),
     ('editing', 'Asdf; Qwer;', 'Asdf; Qwer'),
+    ('editing', 'Asdf; Qwer;\t;', 'Asdf; Qwer'),
     ('isbn', '9780307290632; 0307290638;', '9780307290632; 0307290638'),
     ('barcode', '012345678905; 012345678912;',
      '012345678905; 012345678912')])
@@ -68,10 +69,13 @@ def test_issue_form_strips_trailing_semicolon(
     assert form.cleaned_data[field] == expected
 
 
-def test_creator_work_years_strips_trailing_semicolon():
+@pytest.mark.parametrize('value, expected', [
+    ('1990; 1991;', '1990; 1991'),
+    ('1990;\t;', '1990')])
+def test_creator_work_years_strips_trailing_semicolon(value, expected):
     form = get_creator_non_comic_work_revision_form()(
-      data={'work_years': '1990; 1991;'})
+      data={'work_years': value})
     form.is_valid()
 
     assert 'work_years' not in form.errors
-    assert form.cleaned_data['work_years'] == '1990; 1991'
+    assert form.cleaned_data['work_years'] == expected

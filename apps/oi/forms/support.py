@@ -755,7 +755,7 @@ def _clean_keywords(cleaned_data):
 
 def _strip_list(value):
     """Strip whitespace and trailing ';' of a ';'-separated list."""
-    return value.strip().rstrip('; ')
+    return re.sub(r'[\s;]+$', '', value.strip())
 
 
 def init_data_source_fields(field_name, revision, fields):
