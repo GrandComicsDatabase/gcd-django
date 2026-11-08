@@ -46,7 +46,7 @@ from apps.gcd.models import (
     Feature, FeatureLogo, FeatureRelation,
     Printer, IndiciaPrinter,
     CreatorSignature, Character, CharacterRelation, Group,
-    GroupRelation, GroupMembership, Universe, CREDIT_TYPES)
+    GroupRelation, GroupMembership, Universe, CREDIT_TYPES, VCS_Codes)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import (  # noqa: F401
@@ -5905,6 +5905,12 @@ def move_cover(request, id, cover_id=None):
     if not issue:
         return render_error(
           request, 'Cover does not belong to an issue of this changeset.')
+
+    target = changeset.issuerevisions.exclude(issue=cover.issue).get()
+    if target.variant_cover_status == VCS_Codes.NO_DIFFERENCE:
+        return render_error(
+          request, 'Covers cannot be moved to a variant with the variant '
+                   'cover status "No Difference".')
 
     revision_lock = _get_revision_lock(cover, changeset)
     if not revision_lock:
