@@ -537,7 +537,7 @@ def _create_issue_add(parsed_data, request, series, series_url):
     else:
         add_after = series.last_issue
     brand_emblem = parsed_data.pop('brand_emblem')
-    indicia_printer = parsed_data.pop('indicia_printer')
+    indicia_printer = parsed_data.pop('indicia_printer', None)
 
     changeset = Changeset(indexer=request.user, state=states.OPEN,
                           change_type=CTYPES['issue_add'])
