@@ -599,8 +599,7 @@ def edit_two_issues(request, issue_id):
                             redirect=False)
     data = {'issue_id': issue_id,
             'issue': True,
-            'heading': mark_safe('<h2>Select issue to edit with %s</h2>'
-                                 % esc(issue.full_name())),
+            'heading': 'Select issue to edit with %s' % esc(issue.full_name()),
             'target': 'an issue',
             'return': 'confirm_two_edits',
             'cancel': urlresolvers.reverse('show_issue',
@@ -2447,8 +2446,8 @@ def add_brand_use(request, brand_id, publisher_id=None):
                                      publisher=publisher)
         return submit(request, changeset.id)
     else:
-        data = {'heading': mark_safe('<h2>Select Publisher where the Brand %s '
-                                     'was in use</h2>' % esc(brand.name)),
+        data = {'heading': 'Select Publisher where the Brand %s '
+                           'was in use' % esc(brand.name),
                 'target': 'a publisher',
                 'brand_id': brand_id,
                 'publisher': True,
@@ -4365,8 +4364,8 @@ def edit_series_bond(request, id):
             'initial': initial,
             'series': True,
             'issue': True,
-            'heading': mark_safe('<h2>Select %s of the bond %s</h2>' %
-                                 (which_side, esc(series_bond_revision))),
+            'heading': 'Select %s of the bond %s' % (
+                       which_side, esc(series_bond_revision)),
             'target': 'a series or issue',
             'return': 'save_selected_series_bond',
             'which_side': which_side,
@@ -4404,7 +4403,7 @@ def add_series_bond(request, series_id):
     data = {'series_id': series_id,
             'series': True,
             'issue': True,
-            'heading': mark_safe('<h2>Select other side of the bond</h2>'),
+            'heading': 'Select other side of the bond for %s' % esc(series),
             'target': 'a series or issue',
             'return': 'save_added_series_bond',
             'cancel': urlresolvers.reverse('show_series',
@@ -4783,7 +4782,7 @@ def edit_reprint(request, id, which_side=None):
             'story': True,
             'issue': True,
             'initial': initial,
-            'heading': mark_safe('<h2>%s</h2>' % heading),
+            'heading': heading,
             'target': 'a story or issue',
             'return': 'confirm_reprint',
             'which_side': which_side,
@@ -4833,7 +4832,6 @@ def add_reprint(request, changeset_id,
     else:
         heading = 'Select story/issue for the reprint link with %s' \
                                     % (esc(issue))
-    heading = '<h2>%s</h2>' % heading
     if note:
         # what the form cannot be filled with stays readable
         heading += '<p>Reprint note: %s</p>' % esc(note)
@@ -4843,7 +4841,7 @@ def add_reprint(request, changeset_id,
             'story': True,
             'issue': True,
             'initial': initial,
-            'heading': mark_safe(heading),
+            'heading': heading,
             'target': 'a story or issue',
             'return': 'confirm_reprint',
             'cancel': urlresolvers.reverse('edit',
@@ -7488,7 +7486,7 @@ def select_award_recipient(request, award_id):
             'story': True,
             'issue': True,
             'series': True,
-            'heading': mark_safe('<h2>%s</h2>' % heading),
+            'heading': heading,
             'target': 'a story, issue, or series',
             'return': 'process_award_recipient',
             'cancel': urlresolvers.reverse('show_award',

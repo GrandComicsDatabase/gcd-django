@@ -9,14 +9,14 @@
 {% endblock %}
 
 {% block view_body %}
-  {{ heading }}
+  <h2>{{ heading }}</h2>
   {% if not issue %}
 Search for {{ target }} by entering the relevant information here:
   {% endif %}
 
 <form class="text-center" method="get" action="{% url 'select_object_search_haystack' select_key=select_key %}">
   <p>
-    <label for="id_q">Search for:</label>
+    <label for="id_q">Regular Search For:</label>
     {{ haystack_form.q }}
     <select name="search_object" size="1">
       <option value="all"> All </option>
@@ -177,7 +177,9 @@ or select from the data cache:
       </div>
     {% endif %}
   {% else %}
+    {% if story or issue %}
     <p>There are no remembered objects in the data cache. Use Remember Issue or Remember Story on an issue page to add objects to the data cache and then you can select them here.</p>
+    {% endif %}
   {% endif %}
   {% if story or issue %}
     <hr>
