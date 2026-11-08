@@ -179,7 +179,7 @@ GCD :: Cover upload for {{ issue.series.name }} {{ issue.display_number }}
   {% endwith %}
   {% for field in form.hidden_fields %}{{ field }}{% endfor %}
 
-    <div class="sticky bottom-0 z-10 mt-4 flex items-center justify-end gap-3 border-t border-gray-200 bg-white/95 py-3 backdrop-blur">
+    <div class="sticky-action-bar">
       <p class="mr-auto hidden text-gray-600 sm:block">The upload is reviewed by an editor before it appears.</p>
       <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Upload cover</button>
     </div>
