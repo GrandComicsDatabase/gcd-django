@@ -1,0 +1,22 @@
+{% load static %}
+<script src="https://unpkg.com/hyperscript.org"></script>
+<link rel="stylesheet" type="text/css"
+      href="{% static "css/gcd/default/modal.css" %}"/>
+
+<div id="modal"
+     _="on closeModal add .closing then wait for animationend then remove me">
+  <div class="modal-underlay" _="on click trigger closeModal"></div>
+  <div class="modal-content">
+    <h2 class="bg-blue-100 px-1 text-lg">Put this change into discussion</h2>
+    <form action="{% url 'process' id=changeset.id %}" method="POST">
+      {% csrf_token %}
+      <label for="discuss_comments">A comment is required:</label><br>
+      <textarea id="discuss_comments" class="w-full" rows="5" name="comments"
+                required autofocus>{{ comment_text }}</textarea>
+      <button class="btn-blue-editing inline" type="submit"
+              name="discuss">Discuss</button>
+      <button class="btn-blue-editing inline" type="button"
+              _="on click trigger closeModal">Cancel</button>
+    </form>
+  </div>
+</div>
