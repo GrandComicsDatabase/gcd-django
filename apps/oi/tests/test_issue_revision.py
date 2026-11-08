@@ -520,6 +520,7 @@ def patch_for_optional_move():
             mock.patch('%s.active_covers' % ISSUE), \
             mock.patch('%s.series_changed' % IREV,
                        new_callable=mock.PropertyMock) as moved_mock, \
+            mock.patch('apps.oi.models.SeriesBond'), \
             mock.patch(SAVE):
         yield moved_mock
 

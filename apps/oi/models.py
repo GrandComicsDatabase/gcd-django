@@ -4396,6 +4396,11 @@ class IssueRevision(Revision):
     def _post_save_object(self, changes):
         self.series.set_first_last_issues()
         if self.series_changed:
+            # series bonds on the issue follow it to its new series
+            SeriesBond.objects.filter(origin_issue=self.issue)\
+                              .update(origin=self.series)
+            SeriesBond.objects.filter(target_issue=self.issue)\
+                              .update(target=self.series)
             old_series = self.previous_revision.series
             old_series.set_first_last_issues()
 
