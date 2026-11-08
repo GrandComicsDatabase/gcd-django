@@ -30,6 +30,13 @@ Comparing :: {{ revision }}
 {% endwith %}
       </table>
       <div style="clear: both;"></div>
+      {% if is_story %}
+      <fieldset class="my-2">
+        <legend>Credits, characters and groups already in the sequence:</legend>
+        <label class="mr-4"><input type="radio" name="existing" value="replace" checked> replace them with the copied ones</label>
+        <label><input type="radio" name="existing" value="keep"> keep them and add the missing ones</label>
+      </fieldset>
+      {% endif %}
       <button><input class="btn-blue-editing" type="submit" name="copy_select" value="Copy Selected Values"></button>
       {% if is_story %}
       <button><input class="btn-blue-editing" type="submit" name="copy_select_with_qualifiers" value="Copy Selected Values With Credit Qualifiers"></button>

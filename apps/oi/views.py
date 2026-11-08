@@ -4007,6 +4007,63 @@ def story_select_compare(request, story_revision_id):
          'cached_covers': cached_covers, 'other_revisions': other_revisions})
 
 
+def _remove_not_copied(revisions):
+    """
+    Remove the credit, character or group revisions which were not matched
+    by a copied one: mark them as deleted if they exist on the approved
+    sequence, else delete them.
+    """
+    for revision in revisions:
+        if revision.source:
+            revision.deleted = True
+            revision.save()
+        else:
+            revision.delete()
+
+
+def _in_universe(revisions, universe):
+    # an entry without universe matches any universe
+    if universe is None:
+        return revisions
+    return revisions.filter(Q(universe=universe) | Q(universe=None))
+
+
+def _present_character(story_revision, appearance):
+    """
+    Return the appearance of the same character in story_revision, if any.
+    """
+    present = story_revision.story_character_revisions.filter(
+      character__character_id=appearance.character.character_id,
+      deleted=False).exclude(id=appearance.id)
+    return _in_universe(present, appearance.universe).first()
+
+
+def _present_group(story_revision, appearance):
+    """
+    Return whether the same group already appears in story_revision.
+    """
+    present = story_revision.story_group_revisions.filter(
+      group_name__group_id=appearance.group_name.group_id,
+      deleted=False)
+    return _in_universe(present, appearance.universe).exists()
+
+
+def _add_groups(appearance, source):
+    """
+    Add the groups of the source appearance to the character appearance,
+    keeping the groups it already has.
+    """
+    group_ids = set(appearance.group_name.values_list('group_id', flat=True))
+    had_groups = bool(group_ids)
+    for group_name in source.group_name.all():
+        if group_name.group_id not in group_ids:
+            appearance.group_name.add(group_name)
+            group_ids.add(group_name.group_id)
+    if group_ids and not had_groups:
+        appearance.group_universe = source.group_universe
+        appearance.save()
+
+
 @permission_required('indexer.can_reserve')
 def compare_stories_copy(request, story_revision_id, story_id=None,
                          other_revision_id=None):
@@ -4052,7 +4109,9 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
         - When copying characters/groups between different languages, attempts
           to find appropriate translations
         - Removes existing credits/characters/groups that weren't in the
-          source when copying
+          source when copying, unless 'existing' is 'keep': then they are
+          kept, only the missing ones are added, and a character already
+          there gets the groups of the copied one added
     """
     revision = get_object_or_404(StoryRevision, id=story_revision_id)
     if request.user != revision.changeset.indexer:
@@ -4106,6 +4165,7 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
             setattr(revision, field, getattr(compare_revision, field))
     revision.save()
 
+    keep_existing = request.POST.get('existing') == 'keep'
     if 'copy_select_with_qualifiers' in request.POST:
         exclude = {'is_sourced', 'sourced_by'}
     else:
@@ -4123,6 +4183,11 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                                        .exclude(deleted=True)
             # following is similar to process_extra_forms
             for credit in credits:
+                if keep_existing and revision.story_credit_revisions.filter(
+                     credit_type_id=credit_type_id,
+                     creator__creator_id=credit.creator.creator_id,
+                     deleted=False).exists():
+                    continue
                 blank_values = credit._get_blank_values()
                 q_vals = {}
                 # match depends on copy_select_with_qualifiers
@@ -4145,12 +4210,8 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                       exclude=exclude)
                     existing_credits = existing_credits.exclude(
                       id=new_credit.id)
-            for existing_credit in existing_credits:
-                if existing_credit.story_credit:
-                    existing_credit.deleted = True
-                    existing_credit.save()
-                else:
-                    existing_credit.delete()
+            if not keep_existing:
+                _remove_not_copied(existing_credits)
     if revision.issue and (compare_revision.issue.series.language ==
                            revision.issue.series.language):
         same_language = True
@@ -4165,6 +4226,11 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
 
         for character in characters:
             if same_language:
+                if keep_existing:
+                    present = _present_character(revision, character)
+                    if present:
+                        _add_groups(present, character)
+                        continue
                 q_vals = {}
                 for field in character._get_single_value_fields():
                     q_vals[field] = getattr(character, field)
@@ -4187,16 +4253,21 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                 new_character_revision = \
                   StoryCharacterRevision.copied_translation(character,
                                                             revision)
+                if new_character_revision and keep_existing:
+                    # copied_translation always adds a new appearance,
+                    # only the translated character tells if it is present
+                    present = _present_character(revision,
+                                                 new_character_revision)
+                    if present:
+                        _add_groups(present, new_character_revision)
+                        new_character_revision.delete()
+                        continue
                 if new_character_revision:
                     existing_characters = existing_characters.exclude(
                       id=new_character_revision.id)
 
-        for existing_character in existing_characters:
-            if existing_character.story_character:
-                existing_character.deleted = True
-                existing_character.save()
-            else:
-                existing_character.delete()
+        if not keep_existing:
+            _remove_not_copied(existing_characters)
 
         groups = compare_revision.story_group_revisions\
                                  .exclude(deleted=True)
@@ -4204,6 +4275,8 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                                   .exclude(deleted=True)
         for group in groups:
             if same_language:
+                if keep_existing and _present_group(revision, group):
+                    continue
                 q_vals = {}
                 for field in group._get_single_value_fields():
                     q_vals[field] = getattr(group, field)
@@ -4228,18 +4301,16 @@ def compare_stories_copy(request, story_revision_id, story_id=None,
                                                    .translations(language)
                 if translations.count() == 1:
                     group.group_name = translations.get().official_name()
+                    if keep_existing and _present_group(revision, group):
+                        continue
                     new_group = StoryGroupRevision.clone(
                       group, revision.changeset, fork=True,
                       story_revision=revision)
                     existing_groups = existing_groups.exclude(
                       id=new_group.id)
 
-        for existing_group in existing_groups:
-            if existing_group.story_group:
-                existing_group.deleted = True
-                existing_group.save()
-            else:
-                existing_group.delete()
+        if not keep_existing:
+            _remove_not_copied(existing_groups)
 
     return HttpResponseRedirect(
         urlresolvers.reverse('edit_revision',
