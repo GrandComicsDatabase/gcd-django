@@ -425,3 +425,24 @@ def test_delete_story_resets_related_revisions(
     assert character_revision.notes == 'original character notes'
     assert list(character_revision.group_name.all()) == [group_name]
     assert group_revision.notes == 'original group notes'
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('field', ['script', 'pencils', 'inks', 'letters'])
+def test_credit_replaced_by_question_mark_scores(any_edit_story_rev, field):
+    rev = any_edit_story_rev
+    assert getattr(rev.story, field)
+    setattr(rev, field, '?')
+    rev.save()
+
+    assert rev.calculate_imps() == 1
+
+
+@pytest.mark.django_db
+def test_question_mark_for_new_credit_does_not_score(any_added_story_rev):
+    rev = any_added_story_rev
+    rev.script = '?'
+    rev.save()
+
+    rev._start_imp_sum()
+    assert rev._imps_for('script') == 0
