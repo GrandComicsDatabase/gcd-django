@@ -409,10 +409,6 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
     Reorder Issues</a></btn>
     {% endif %}
   {% endif %}
-  {# On narrow screens the Related Links of the side column are hidden. #}
-  <div class="md:hidden">
-  {% include "gcd/bits/tw_issue_related_links.html" %}
-  </div>
 {% endblock editing %}
 
 {% block change_history %}
@@ -420,6 +416,10 @@ This issue is a variant of <a href="{{ issue.variant_of.get_absolute_url }}">{{ 
   {% with model_name='issue' object=issue %}
     {{ block.super }}
   {% endwith %}
+  {# On narrow screens the Related Links of the side column are hidden. #}
+  <div class="md:hidden">
+  {% include "gcd/bits/tw_issue_related_links.html" %}
+  </div>
 {% endblock change_history %}
 
 {% block js %}

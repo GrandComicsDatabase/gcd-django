@@ -7,6 +7,7 @@ from django.core.management import call_command
 from django.template.base import TextNode
 from django.template.loader import get_template, render_to_string
 from django.template.loader_tags import BlockNode, IncludeNode
+from django.test import override_settings
 from django.urls import reverse
 
 from apps.gcd.models import Issue
@@ -46,8 +47,9 @@ def test_related_links_show_on_wide_screens_in_the_side_column():
     assert wrapper.rstrip().endswith('<div class="max-md:hidden">')
 
 
-def test_related_links_show_on_narrow_screens_in_the_editing_menu():
-    include, wrapper = _include_and_wrapper('editing')
+def test_related_links_show_on_narrow_screens_in_the_menu():
+    # change_history is shown on my.comics.org too, editing is not
+    include, wrapper = _include_and_wrapper('change_history')
 
     assert wrapper.rstrip().endswith('<div class="md:hidden">')
 
@@ -64,13 +66,16 @@ def test_related_links_list_the_issue_scans():
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('mycomics', (False, True))
 @pytest.mark.parametrize('wrapper', ('max-md:hidden', 'md:hidden'))
-def test_issue_page_has_the_related_links_for_each_width(client, wrapper):
+def test_issue_page_has_the_related_links_for_each_width(client, wrapper,
+                                                         mycomics):
     call_command('seed_development_data')
     issue = Issue.objects.filter(variant_of=None, deleted=False).first()
 
-    response = client.get(reverse('show_issue',
-                                  kwargs={'issue_id': issue.id}))
+    with override_settings(MYCOMICS=mycomics):
+        response = client.get(reverse('show_issue',
+                                      kwargs={'issue_id': issue.id}))
 
     assert response.status_code == 200
     links = render_to_string(RELATED_LINKS, {
