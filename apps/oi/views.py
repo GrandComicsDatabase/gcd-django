@@ -2435,7 +2435,7 @@ def add_brand_use(request, brand_id, publisher_id=None):
                 kwargs={'brand_id': brand_id}))
 
         form = get_brand_use_revision_form(user=request.user)(request.POST)
-        if not form.is_valid:
+        if not form.is_valid():
             return _display_add_brand_use_form(request, form, brand, publisher)
 
         changeset = Changeset(indexer=request.user, state=states.OPEN,

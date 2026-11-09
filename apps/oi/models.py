@@ -3599,7 +3599,6 @@ class SeriesRevision(Revision):
             # We assume that a non-four-digit year is a typo of some
             # sort, and do not propagate it.  The approval process
             # should catch that sort of thing.
-            # TODO: Consider a validator on year_began?
             if len(str(self.year_began)) == 4:
                 issue_revision.key_date = '%d-00-00' % self.year_began
             issue_revision.save()
