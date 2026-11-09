@@ -946,7 +946,7 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
 class CreatorAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = Creator.objects.filter(deleted=False)
+        qs = Creator.objects.filter(deleted=False).select_related('birth_date')
 
         qs = _filter_and_sort(qs, self.q, field='gcd_official_name')
 

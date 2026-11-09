@@ -17,6 +17,7 @@ from apps.indexer.models import Indexer
 from apps.oi import states
 from apps.oi.forms.creator import CreatorNameDetailRevisionForm
 from apps.oi.models import (Changeset, CreatorNameDetailRevision,
+                            CreatorRelationRevision,
                             CreatorRevision, CTYPES, StoryCreditRevision,
                             _get_revision_lock)
 from apps.oi.templatetags.editing import is_locked
@@ -466,6 +467,63 @@ def test_a_name_with_a_pending_signed_credit_cannot_move(client, creators,
 
 
 @pytest.mark.django_db
+def test_a_name_with_a_signature_still_to_create_cannot_move(
+  client, creators, editor, any_added_story_rev):
+    """A signature that approval will create blocks the move as well."""
+    wrong, right = creators
+    name = _other_name(wrong)
+    changeset = any_added_story_rev.changeset
+    changeset.state = states.PENDING
+    changeset.save()
+    StoryCreditRevision.objects.create(
+      changeset=changeset, story_revision=any_added_story_rev, creator=name,
+      credit_type=_credit_type(), signed_as='Scrawl')
+
+    response = client.post(_url(name), {'creator': right.id})
+
+    assert 'cannot be moved' in response.content.decode()
+    assert not Changeset.objects.filter(indexer=editor).exists()
+
+
+def _pending_relation(indexer, from_creator, to_creator, name, state):
+    """Create a relation revision that uses the name, in a given state."""
+    relation = CreatorRelationRevision.objects.create(
+      changeset=Changeset.objects.create(
+        indexer=indexer, state=state, change_type=CTYPES['creator_relation']),
+      from_creator=from_creator, to_creator=to_creator,
+      relation_type=RelationType.objects.create(type='alias',
+                                                reverse_type='alias of'))
+    relation.creator_name.add(name)
+    return relation
+
+
+@pytest.mark.django_db
+def test_a_name_used_by_a_pending_relation_cannot_move(client, creators,
+                                                       editor, any_indexer):
+    """A relation waiting in the queue blocks the move as well."""
+    wrong, right = creators
+    name = _other_name(wrong)
+    _pending_relation(any_indexer, wrong, right, name, states.PENDING)
+
+    response = client.post(_url(name), {'creator': right.id})
+
+    assert 'cannot be moved' in response.content.decode()
+    assert not Changeset.objects.filter(indexer=editor).exists()
+
+
+@pytest.mark.django_db
+def test_a_discarded_relation_does_not_stop_a_move(client, creators, editor,
+                                                   any_indexer):
+    """A relation change that was discarded no longer holds the name."""
+    wrong, right = creators
+    name = _other_name(wrong)
+    _pending_relation(any_indexer, wrong, right, name, states.DISCARDED)
+
+    assert client.get(_url(name)).status_code == 200
+    assert _submit_move(client, name, right).state == states.PENDING
+
+
+@pytest.mark.django_db
 def test_the_refusal_page_escapes_the_name(client, creators, editor):
     """A name is shown as text on the page of the refusal."""
     name = _other_name(creators[0], '<b>House</b>', NAME_TYPES['house'])
@@ -642,7 +700,7 @@ def test_discarding_the_move_leaves_the_name_where_it_was(client, creators,
 def test_the_creator_page_links_the_move_for_editors_only(client, creators,
                                                           any_indexer, editor):
     """The link appears for editors, only on names that can move."""
-    wrong, right = creators
+    wrong, _ = creators
     name = _other_name(wrong)
     house = _other_name(wrong, 'House Name', NAME_TYPES['house'])
 
