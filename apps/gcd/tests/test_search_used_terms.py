@@ -26,3 +26,10 @@ def test_a_yes_answer_is_listed():
 def test_a_field_left_empty_is_not_listed():
     """Neither an empty field nor an empty choice is a search term."""
     assert _terms('title=&is_variant=None') == []
+
+
+def test_the_summary_says_what_was_searched_for(client, db):
+    """The list of terms opens with the kind of object searched for."""
+    response = client.get('/search/advanced/process/', {
+        'target': 'issue', 'method': 'icontains', 'series': 'absent'})
+    assert 'Advanced search for Issues with' in response.content.decode()

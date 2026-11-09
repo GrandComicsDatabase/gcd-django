@@ -1677,6 +1677,7 @@ def process_advanced(request, export_csv=False):
     heading = mark_safe('matching your <a href="#search_terms">query</a>')
 
     context = {'object': target,
+               'target': display_target,
                'heading': heading,
                'plural_suffix': 's',
                'query_string': query_string,
