@@ -20,7 +20,9 @@ from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
                            ReprintRevision, StoryRevision, IssueRevision, \
                            IssueCreditRevision
-from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS
+from apps.gcd.models import CREDIT_TYPES, VARIANT_COVER_STATUS, STORY_TYPES
+from apps.gcd.models.story import NO_SYNOPSIS_TYPES
+from apps.oi.forms.story import format_notes
 from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
@@ -673,6 +675,55 @@ def compare_current_reprints(object_type, changeset):
                               '"list-disc list-outside ps-8">' + kept_string
 
     return mark_safe(reprint_string)
+
+
+@register.filter
+def show_type_notes(story):
+    """
+    Notes on wiki rules for the sequence type which need the indexer's
+    judgment, so they do not block saving.
+    """
+    if story.deleted:
+        return ''
+    notes = []
+    if story.synopsis and story.type_id in NO_SYNOPSIS_TYPES:
+        notes.append('Note: wiki "Synopsis": "The synopsis field should be '
+                     'used only for story or article sequences having a plot '
+                     'or storyline."')
+    if story.type_id == STORY_TYPES['cover reprint'] and \
+       not story.reprint_notes and not story.from_all_reprints.exists():
+        notes.append('Note: wiki "Type", Cover Reprint (on interior page): '
+                     '"All cover reprints of 1/4 page in size or larger will '
+                     'have a reprint link."')
+    if story.type_id in [STORY_TYPES['cover'], STORY_TYPES['illustration']] \
+       and _few_about_comics(story):
+        notes.append('Note: wiki "Comics Publication", Cover scans: "If the '
+                     'issue consists of at least 50% About Comics sequences, '
+                     'the following can also be indexed." It lists covers and '
+                     'illustrations; fewer than half of the sequences of this '
+                     'issue are About Comics.')
+    notes.extend(format_notes(story))
+    return mark_safe(''.join('<br><span class="text-sm italic">%s</span>'
+                             % esc(note) for note in notes))
+
+
+def _few_about_comics(story):
+    """
+    Whether the sequence is in a non-comics publication whose issue, as in
+    the change, has less than half About Comics sequences.
+    """
+    issue_revisions = story.changeset.issuerevisions.filter(issue=story.issue)
+    if issue_revisions:
+        series = issue_revisions[0].series
+        types = [sequence.type_id
+                 for sequence in issue_revisions[0].active_stories()]
+    else:
+        series = story.issue.series
+        types = [story.type_id if sequence.id == story.story_id
+                 else sequence.type_id
+                 for sequence in story.issue.active_stories()]
+    return not series.is_comics_publication and \
+        2 * types.count(STORY_TYPES['about comics']) < len(types)
 
 
 @register.filter

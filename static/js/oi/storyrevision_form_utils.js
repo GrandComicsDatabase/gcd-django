@@ -129,3 +129,78 @@ $(document).ready(function() {
         $(featureSelect).trigger('change');
     }, 100);
 });
+
+// Hide the rows of the fields that do not apply to the sequence type, except
+// while one of their fields holds a value, so that old values can be removed.
+// Check No Script to No Letters when a sequence becomes a blank page, and
+// uncheck them again if it changes back.
+$(function() {
+    var type = $('#id_type'),
+        hiddenRows = type.data('hidden-rows');
+    if (!hiddenRows) {
+        return;
+    }
+    var form = type.closest('form'),
+        blankType = String(type.data('blank-type')),
+        approvedType = String(type.data('approved-type')),
+        credits = ['script', 'pencils', 'inks', 'colors', 'letters'];
+
+    // a name is a form field, a formset prefix or the data-field of a row
+    function rows(name) {
+        var formsetRows = form.find('.formset_row-' + name);
+        if (formsetRows.length) {
+            return formsetRows.add(formsetRows.last().nextAll('.dynamic-form-add').first());
+        }
+        return form.find('[name="' + name + '"]').closest('tr')
+            .add(form.find('tr[data-field="' + name + '"]'));
+    }
+
+    function hasValue(name) {
+        return rows(name).filter(function() {
+            // not removed with "Remove Above"
+            return $(this).find('input[id$="-DELETE"]').val() !== 'on';
+        }).find('input[type=text], input[type=checkbox]:checked, select, textarea')
+          .filter(function() {
+            var value = $(this).val();
+            return value !== null && value.length > 0;
+        }).length > 0;
+    }
+
+    // only the rows hidden here are shown again, rows hidden by other parts
+    // of the form stay hidden
+    var hiddenForType = $();
+    function showRows() {
+        hiddenForType.show();
+        hiddenForType = $();
+        $.each(hiddenRows[type.val()] || [], function(i, group) {
+            if (!group[1].some(hasValue)) {
+                $.each(group[0], function(j, name) {
+                    hiddenForType = hiddenForType.add(rows(name).filter(function() {
+                        return this.style.display !== 'none';
+                    }).hide());
+                });
+            }
+        });
+    }
+
+    function setNoCreditBoxes() {
+        var toBlank = type.val() === blankType && approvedType !== blankType,
+            noRecords = !hasValue('story_credit_revisions');
+        $.each(credits, function(i, credit) {
+            var box = $('#id_no_' + credit);
+            if (toBlank && noRecords && !box.prop('checked') &&
+                !$.trim($('#id_' + credit).val())) {
+                box.prop('checked', true).data('set-for-blank', true);
+            } else if (!toBlank && box.data('set-for-blank')) {
+                box.prop('checked', false).data('set-for-blank', false);
+            }
+        });
+    }
+
+    type.on('change', function() {
+        showRows();
+        setNoCreditBoxes();
+    });
+    showRows();
+    setNoCreditBoxes();
+});

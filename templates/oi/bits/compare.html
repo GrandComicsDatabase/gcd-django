@@ -8,7 +8,7 @@
 <a name="{{ revision.id }}"></a> <!-- for link from comments on story to work -->
 <table class="border border-gray-400 mt-2">
 <tr class="story_edit">
-    <td class="px-2">{{ revision|show_story_short }}</td>
+    <td class="px-2">{{ revision|show_story_short }}{{ revision|show_type_notes }}</td>
     <td class="px-2">{{ revision|show_credit_status }}</td>
   {% if user == revision.changeset.indexer and changeset.state == states.OPEN %}
     <td>

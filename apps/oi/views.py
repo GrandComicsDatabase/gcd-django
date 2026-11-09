@@ -351,6 +351,38 @@ def validate_revision_for_transition(revision, request):
     return _validation_messages(form, extra_forms)
 
 
+def _sequence_types(stories):
+    """The type ids of the stories in sequence order."""
+    return list(stories.order_by('sequence_number')
+                       .values_list('type_id', flat=True))
+
+
+def _covers_out_of_order(types):
+    """Whether the covers among the sequence types break the wiki order."""
+    covers = [i for i, type_id in enumerate(types)
+              if type_id == STORY_TYPES['cover']]
+    if not covers:
+        return False
+    return len(covers) > 2 or covers[0] != 0 or \
+        (len(covers) == 2 and covers[1] not in (1, len(types) - 1))
+
+
+def _cover_order_error(issue_revision):
+    """The cover order error, unless the approved issue had it already."""
+    if not _covers_out_of_order(
+       _sequence_types(issue_revision.active_stories())):
+        return None
+    issue = issue_revision.issue
+    if issue is not None and _covers_out_of_order(
+       _sequence_types(issue.active_stories())):
+        return None
+    return ('The cover must be the first sequence. A second cover is only '
+            'allowed right after it (dust jacket) or as the last sequence '
+            '(flip book). Wiki "Type", Cover: "The front cover, always the '
+            'first sequence indexed." and "There are two cases in which '
+            'there can be a second cover sequence".')
+
+
 def validate_changeset_revisions(changeset, request):
     """Return invalid changed issue/story revisions and their errors."""
     invalid = []
@@ -369,6 +401,10 @@ def validate_changeset_revisions(changeset, request):
         messages = validate_revision_for_transition(revision, request)
         if messages:
             invalid.append((revision, messages))
+    for issue_revision in changeset.issuerevisions.filter(deleted=False):
+        message = _cover_order_error(issue_revision)
+        if message:
+            invalid.append((issue_revision, [message]))
     if changeset.change_type == CTYPES['issue'] and page_count_sum > 0:
         issue = changeset.issuerevisions.first()
         if issue.page_count is not None and\
