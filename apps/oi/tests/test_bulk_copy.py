@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from inspect import unwrap
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -13,9 +14,10 @@ from django.template import Context
 from django.template.loader_tags import BlockNode
 from django.urls import reverse
 
-from apps.gcd.models import STORY_TYPES
+from apps.gcd.models import STORY_TYPES, Story
 from apps.oi import states
-from apps.oi.views import copy_cached_sequences
+from apps.oi.views import (
+    _selected_copy_sequence, copy_cached_sequences, copy_sequence)
 
 
 @pytest.fixture
@@ -24,7 +26,7 @@ def copy_context():
     changeset = SimpleNamespace(id=10, indexer=user, state=states.OPEN)
     existing = [MagicMock(id=100, type_id=STORY_TYPES['comic story'], sequence_number=0),
                 MagicMock(id=101, type_id=STORY_TYPES['comic story'], sequence_number=1)]
-    issue = MagicMock(id=20, changeset_id=10)
+    issue = MagicMock(id=20, changeset_id=10, variant_of=None)
     issue.active_stories.return_value = existing
     sources = [SimpleNamespace(id=7, type_id=STORY_TYPES['comic story'],
                                type=SimpleNamespace(name='comic story')),
@@ -463,6 +465,173 @@ def test_multiple_selection_still_returns_to_changeset(copy_context):
         'confirm_bulk_copy': '1', 'copy_batch': confirmation(c),
     }), c.data, 'batch')
     assert response.url == reverse('edit', kwargs={'id': 10})
+
+
+@pytest.fixture
+def variant_copy(copy_context):
+    """Copy one cover into a new variant which can take it."""
+    c = copy_context
+    c.issue.issue = None
+    c.issue.variant_of = MagicMock()
+    c.issue.variant_cover_status = 3
+    c.issue.active_stories.return_value = []
+    c.sources[:] = [SimpleNamespace(id=9, type_id=STORY_TYPES['cover'])]
+
+    def lookup(model, **kwargs):
+        """Answer get_object_or_404 for both models the views ask for."""
+        return (c.sources[0] if getattr(model, 'model', model) is Story
+                else c.issue)
+
+    with patch('apps.oi.views.get_object_or_404', side_effect=lookup), \
+            patch('apps.oi.views.render_error',
+                  return_value=HttpResponse(status=403)) as error:
+        c.error = error
+        yield c
+
+
+def new_variant(c):
+    """Leave the destination a variant which is not approved yet."""
+
+
+def approved_variant(c):
+    """Make the destination a variant which is already approved."""
+    c.issue.issue = MagicMock()
+
+
+def new_issue(c):
+    """Make the destination a new issue which is not a variant."""
+    c.issue.variant_of = None
+
+
+def no_difference(c):
+    """Make the destination a variant with the cover of its base."""
+    c.issue.variant_cover_status = 1
+
+
+def only_scan_difference(c):
+    """Make the destination a variant differing only in the scan."""
+    c.issue.variant_cover_status = 2
+
+
+def holds_sequence(c):
+    """Give the destination variant its one sequence already."""
+    c.issue.active_stories.return_value = [
+        MagicMock(id=100, sequence_number=0, type_id=STORY_TYPES['cover'])]
+
+
+def not_a_cover(c):
+    """Make the source a sequence which is not a cover."""
+    c.sources[0].type_id = STORY_TYPES['comic story']
+    c.sources[0].type = SimpleNamespace(name='comic story')
+
+
+def several_covers(c):
+    """Copy two covers at once."""
+    c.sources[:] = [SimpleNamespace(id=pk, type_id=STORY_TYPES['cover'])
+                    for pk in (8, 9)]
+
+
+def bulk_copy(c):
+    """Post Copy Selected for all the sources."""
+    covers = [s.id for s in c.sources if s.type_id == STORY_TYPES['cover']]
+    stories = [s.id for s in c.sources if s.id not in covers]
+    request = request_for(c, {
+        'copy_selected_cached_objects': 'story',
+        'cached_objects': ['story_%d' % pk for pk in stories],
+        'selected_covers': ['cover_%d' % pk for pk in covers]})
+    request.session.update(cached_stories=stories, cached_covers=covers)
+    return copy_cached_sequences.__wrapped__(request, c.data, 'batch')
+
+
+def selected_copy(c):
+    """Pick the source on the selection page."""
+    return _selected_copy_sequence(request_for(c, {}), c.data, 'story',
+                                   c.sources[0].id)
+
+
+def single_copy(c, **post):
+    """Post the confirmation of a single copy."""
+    return unwrap(copy_sequence)(request_for(c, post), 20,
+                                 story_id=c.sources[0].id)
+
+
+def selection_start(c):
+    """Press the copy button which opens the selection."""
+    request = RequestFactory().get('/issue/revision/20/add_story/')
+    request.user = c.user
+    return unwrap(copy_sequence)(request, 20, sequence_number=0, cover=True)
+
+
+@pytest.mark.parametrize('state, view', [
+    (state, view)
+    for state in (new_issue, no_difference, only_scan_difference,
+                  holds_sequence, not_a_cover)
+    for view in (bulk_copy, selected_copy, single_copy)
+] + [
+    (state, selection_start)
+    for state in (new_issue, no_difference, only_scan_difference,
+                  holds_sequence)
+] + [(several_covers, bulk_copy)])
+def test_refused_copy_never_writes(variant_copy, state, view):
+    """Every entry point shows the refusal and copies nothing."""
+    c = variant_copy
+    state(c)
+    with patch('apps.oi.views.store_select_data') as store:
+        response = view(c)
+    assert response.status_code == 403
+    c.error.assert_called_once()
+    c.copier.assert_not_called()
+    c.receipts.delete.assert_not_called()
+    store.assert_not_called()
+
+
+def test_refusal_applies_again_at_the_bulk_confirmation(variant_copy):
+    """A destination changed after the preview is refused as well."""
+    c = variant_copy
+    preview = cover_preview(c)
+    c.issue.variant_cover_status = 1
+    response = copy_cached_sequences.__wrapped__(request_for(c, {
+        'confirm_bulk_copy': '1', 'copy_batch': preview['copy_batch']}),
+        c.data, 'batch')
+    assert response.status_code == 403
+    c.copier.assert_not_called()
+    c.receipts.delete.assert_not_called()
+
+
+@pytest.mark.parametrize('destination', [new_variant, approved_variant])
+@pytest.mark.parametrize('view', [bulk_copy, selected_copy])
+def test_variant_accepts_one_cover_for_confirmation(variant_copy, destination,
+                                                    view):
+    """One cover for a suitable variant reaches the confirmation."""
+    c = variant_copy
+    destination(c)
+    assert view(c).status_code == 200
+    c.error.assert_not_called()
+    c.render.assert_called_once()
+
+
+@pytest.mark.parametrize('destination', [new_variant, approved_variant])
+def test_variant_starts_the_selection(variant_copy, destination):
+    """The copy button of a suitable variant opens the selection."""
+    c = variant_copy
+    destination(c)
+    with patch('apps.oi.views.store_select_data', return_value='key') as store:
+        response = selection_start(c)
+    assert response.status_code == 302
+    c.error.assert_not_called()
+    store.assert_called_once()
+
+
+@pytest.mark.parametrize('destination', [new_variant, approved_variant])
+def test_variant_copies_one_cover_once_confirmed(variant_copy, destination):
+    """After the confirmation the single copy is made."""
+    c = variant_copy
+    destination(c)
+    assert single_copy(c).status_code == 200
+    plan = c.render.call_args.args[2]['cover_plan']
+    assert single_copy(c, cover_plan=plan).status_code == 302
+    c.error.assert_not_called()
+    c.copier.assert_called_once()
 
 
 @pytest.mark.parametrize('count', [1, 2])
