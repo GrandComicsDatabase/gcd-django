@@ -2083,6 +2083,15 @@ def search_issues(data, op, stories_q=None):
             q_objs.append(~Q(**{'%svariant_of' % prefix: None}))
         else:
             q_objs.append(Q(**{'%svariant_of' % prefix: None}))
+    if data['has_variant_name'] is not None:
+        # a negated exact through a join to several issues would reject the
+        # whole publisher as soon as one of its issues has no name
+        lookup = 'gt' if data['has_variant_name'] else 'exact'
+        q_objs.append(Q(**{'%svariant_name__%s' % (prefix, lookup): ''}))
+    if data['has_variants'] is not None:
+        variants = Exists(Issue.objects.filter(
+          variant_of=OuterRef('%sid' % prefix), deleted=False))
+        q_objs.append(variants if data['has_variants'] else ~variants)
     if data['issue_date']:
         q_objs.append(
           Q(**{'%spublication_date__%s' % (prefix, op): data['issue_date']}))
