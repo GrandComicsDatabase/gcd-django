@@ -40,7 +40,8 @@ from .support import (
     combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
     KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS,
     BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
-    BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput)
+    BIBLIOGRAPHIC_ENTRY_HELP_TEXT, HiddenInputWithHelp, PageCountInput,
+    _init_revert_migration, _clean_revert_migration)
 
 
 def get_reprint_revision_form(revision=None, user=None):
@@ -326,6 +327,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(StoryCreditRevisionForm, self).__init__(*args, **kwargs)
+        _init_revert_migration(self)
         # If we want to use the helper, need to change formset.html to
         # use crispy. Need to investigate the interplay with dynamic
         # formset if one does more than simple layout changes in the helper.
@@ -372,8 +374,12 @@ class StoryCreditRevisionForm(forms.ModelForm):
       required=False,
     )
 
+    revert_migration = forms.BooleanField(required=False,
+                                          label='Revert migration')
+
     def clean(self):
         cd = self.cleaned_data
+        _clean_revert_migration(self)
         if cd['credited_as'] and not cd['is_credited']:
             cd['credited_as'] = ""
 
