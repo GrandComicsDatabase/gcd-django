@@ -30,6 +30,17 @@
       <button class="btn-blue-editing"><input type="submit" id="edit_issue_{{ issue_revision.id }}"
            name="edit_issue_{{ issue_revision.id }}" value="Edit Issue Fields"></button>
     </form>
+  {% if changeset.change_type == CTYPES.variant_add %}
+    {% if issue_revision.variant_of and not issue_revision.issue %}
+    <form class="sm:inline-block" method="GET"
+          action="{% url 'remove_variant_revision' id=issue_revision.id %}">
+      <button class="btn-blue-editing"><input type="submit"
+           id="remove_variant_{{ issue_revision.id }}"
+           name="remove_variant_{{ issue_revision.id }}"
+           value="Remove New Variant"></button>
+    </form>
+    {% endif %}
+  {% endif %}
     </div>
   </div>
 
