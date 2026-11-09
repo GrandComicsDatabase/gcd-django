@@ -4613,7 +4613,7 @@ class IssueRevision(Revision):
                     end_note = note.find(')')
                     remainder_note = note[end_note+1:].strip()
                     note = note[:end_note].strip()
-                    save_credit = credit
+                    with_note = credit
                     credit = credit[:credit.find('(')-1]
                     if note in ['credited', 'kreditert']:
                         is_credited = True
@@ -4626,7 +4626,7 @@ class IssueRevision(Revision):
                             else:
                                 note = remainder_note
                     else:
-                        note = save_credit[save_credit.find('('):].strip()
+                        note = with_note[with_note.find('('):].strip()
                 else:
                     note = ''
                 if credit.find('[') > 1:
@@ -6621,7 +6621,7 @@ class StoryRevision(Revision):
                         end_note = note.find(')')
                         remainder_note = note[end_note+1:].strip()
                         note = note[:end_note].strip()
-                        save_credit = credit
+                        with_note = credit
                         credit = credit[:credit.find('(')-1].strip()
                         if credit[-1] == '?':
                             credit = credit[:-1].strip()
@@ -6658,7 +6658,7 @@ class StoryRevision(Revision):
                             is_signed = True
                             note = 'painting'
                         else:
-                            note = save_credit[save_credit.find('('):].strip()
+                            note = with_note[with_note.find('('):].strip()
                     else:
                         note = ''
                     if credit.find('[') > 1:
