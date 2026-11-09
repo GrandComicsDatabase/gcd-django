@@ -4599,6 +4599,8 @@ class IssueRevision(Revision):
             old_credits = ''
             for credit in credits:
                 credit = credit.strip()
+                if not credit:
+                    continue
                 save_credit = credit
                 credit = credit.replace('  ', ' ')
                 if credit.strip()[-1] == '?':
@@ -6602,6 +6604,8 @@ class StoryRevision(Revision):
                 old_credits = ''
                 for credit in credits:
                     credit = credit.strip()
+                    if not credit:
+                        continue
                     if credit in ['Typeset', 'Computer']:
                         credit = 'typeset'
                     save_credit = credit
