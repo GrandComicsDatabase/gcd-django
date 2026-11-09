@@ -315,6 +315,10 @@ def export_collection(request, collection_id):
         field_header_map["sell_price_currency__code"] = ""
     export_data.append("notes")
     export_data.append("id")
+    export_data.append("issue__isbn")
+    field_header_map["issue__isbn"] = "isbn"
+    export_data.append("issue__barcode")
+    field_header_map["issue__barcode"] = "barcode"
 
     items = collection.items.all()
 
