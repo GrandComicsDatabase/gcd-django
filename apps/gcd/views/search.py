@@ -36,7 +36,7 @@ from apps.gcd.models import Publisher, Series, Issue, Cover, Story, \
                             CreatorArtInfluence, CreatorNonComicWork, \
                             CreatorNameDetail, SeriesPublicationType, \
                             Award, ReceivedAward, Character, Group, Universe, \
-                            Printer, StoryArc
+                            Printer, StoryArc, Reprint
 from apps.gcd.models.character import CharacterSearchTable
 from apps.gcd.models.cover import CoverIssuePublisherEditTable
 from apps.gcd.models.creator import CreatorSearchTable
@@ -2310,6 +2310,14 @@ def search_stories(data, op):
         if data[field]:
             q_and_only.append(Q(**{'%s%s__%s' % (prefix, field, op):
                                 data[field]}))
+
+    if data['reprint_link_notes']:
+        # two subqueries instead of a list of ids: a common word can match
+        # a large part of the 1.5 million links, whose notes have no index
+        links = Reprint.objects.filter(
+            **{'notes__%s' % op: data['reprint_link_notes']})
+        q_and_only.append(Q(**{'%sid__in' % prefix: links.values('origin')}) |
+                          Q(**{'%sid__in' % prefix: links.values('target')}))
 
     if data['feature']:
         if data['feature_is_linked'] is None:

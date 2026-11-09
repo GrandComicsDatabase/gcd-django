@@ -288,6 +288,8 @@ class AdvancedSearch(forms.Form):
     characters = forms.CharField(required=False)
     synopsis = forms.CharField(required=False)
     reprint_notes = forms.CharField(label='Reprint Notes', required=False)
+    reprint_link_notes = forms.CharField(label='Reprint Link Notes',
+                                         required=False)
     story_reprinted = forms.ChoiceField(
       label="Reprinted", required=False,
       choices=[('', ""),
