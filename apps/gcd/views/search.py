@@ -1917,7 +1917,7 @@ def search_indicia_publishers(data, op):
     """
     target = data['target']
     if data['indicia_publisher'] or data['ind_pub_notes'] or \
-       data['is_surrogate'] or target == 'indicia_publisher':
+       data['is_surrogate'] is not None or target == 'indicia_publisher':
         prefix = compute_prefix(target, 'indicia_publisher')
     else:
         return None
