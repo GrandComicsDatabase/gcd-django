@@ -38,7 +38,7 @@ def _credited_series(name, creator_name):
 
 @pytest.fixture
 def credited_name(db):
-    """A creator name credited in the series First and Second."""
+    """A creator name, with no credits yet."""
     script = Script.objects.get_or_create(
         id=Script.LATIN_PK,
         defaults={'code': 'Latn', 'number': Script.LATIN_PK,
@@ -51,11 +51,12 @@ def credited_name(db):
 
 
 def _assert_only_first(response, heading):
-    """Check the page shows the series First with that heading only."""
+    """Check the page lists one issue, not the one of the series Second."""
     assert response.status_code == 200
     content = response.content.decode()
     assert heading in content
-    assert 'First' in content and 'Second' not in content
+    assert response.context['page'].paginator.count == 1
+    assert 'Second' not in content
 
 
 def test_the_link_of_the_names_of_a_publisher_lists_its_issues(
