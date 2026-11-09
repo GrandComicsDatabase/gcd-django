@@ -546,6 +546,40 @@ class SeriesTable(tables.Table):
         return str(value)
 
 
+class SeriesCountryLanguageTable(SeriesTable):
+    """A series list with the country and the language of each series."""
+    country = tables.Column(verbose_name='Country')
+    language = tables.Column(verbose_name='Language')
+
+    class Meta:
+        model = Series
+        fields = ('name', 'year_began', 'country', 'language', 'issue_count',
+                  'covers', 'published')
+
+    def order_country(self, query_set, is_descending):
+        """Sort by the name of the country, then by series and year."""
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'country__name',
+                                       'sort_name', 'year_began', 'id')
+        return (query_set, True)
+
+    def order_language(self, query_set, is_descending):
+        """Sort by the name of the language, then by series and year."""
+        direction = '-' if is_descending else ''
+        query_set = query_set.order_by(direction + 'language__name',
+                                       'sort_name', 'year_began', 'id')
+        return (query_set, True)
+
+    def render_country(self, value):
+        """Show the flag of the country, as the other tables do."""
+        from apps.gcd.templatetags.credits import get_country_flag
+        return get_country_flag(value)
+
+    def value_country(self, value):
+        """Give the name of the country to the downloads, not the flag."""
+        return str(value)
+
+
 class SeriesPublisherTable(SeriesTable):
     publisher = tables.Column(accessor='publisher',
                               verbose_name='Publisher')

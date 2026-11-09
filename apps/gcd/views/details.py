@@ -91,7 +91,8 @@ from apps.gcd.models.publisher import BrandEmblemPublisherTable, \
                                       DailyChangesPublisherTable
 from apps.gcd.models.series import SeriesTable, CreatorSeriesTable, \
                                    CharacterSeriesTable, GroupSeriesTable, \
-                                   DailyChangesSeriesTable
+                                   DailyChangesSeriesTable, \
+                                   SeriesCountryLanguageTable
 from apps.gcd.models.story import CREDIT_TYPES, CORE_TYPES, AD_TYPES, \
                                   StoryTable
 from apps.gcd.views import paginate_response, ORDER_CHRONO, \
@@ -1365,7 +1366,9 @@ def show_publisher(request, publisher, preview=False):
     # doing select_related above looks like a more costly query for
     # ResponsePaginator
     publisher_series = publisher.active_series().select_related('first_issue',
-                                                                'last_issue')
+                                                                'last_issue',
+                                                                'country',
+                                                                'language')
     if 'sort' in request.GET:
         extra_string = 'sort=%s' % (request.GET['sort'])
         if request.GET['sort'] != 'name' and \
@@ -1377,9 +1380,9 @@ def show_publisher(request, publisher, preview=False):
     else:
         extra_string = ''
 
-    table = SeriesTable(publisher_series,
-                        template_name=TW_SORT_TABLE_TEMPLATE,
-                        order_by=('name'))
+    table = SeriesCountryLanguageTable(publisher_series,
+                                       template_name=TW_SORT_TABLE_TEMPLATE,
+                                       order_by=('name'))
     RequestConfig(request, paginate={'per_page': 100,
                                      'page': page_number}).configure(table)
     context['table'] = table
@@ -1419,17 +1422,17 @@ def show_publisher_issues(request, publisher_id):
 
 def show_publisher_current_series(request, publisher_id):
     publisher = get_gcd_object(Publisher, publisher_id)
-    current_series = publisher.active_series().filter(deleted=False,
-                                                      is_current=True)
+    current_series = publisher.active_series().filter(
+      deleted=False, is_current=True).select_related('country', 'language')
 
     context = {'object': publisher,
                'description': 'showing current series',
                'plural_suffix': '',
                'heading': 'of current series for %s' % publisher
                }
-    table = SeriesTable(current_series,
-                        template_name=TW_SORT_TABLE_TEMPLATE,
-                        order_by=('name'))
+    table = SeriesCountryLanguageTable(current_series,
+                                       template_name=TW_SORT_TABLE_TEMPLATE,
+                                       order_by=('name'))
     return generic_sortable_list(request, current_series, table,
                                  'gcd/search/tw_list_sortable.html', context)
 
