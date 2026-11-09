@@ -1,4 +1,5 @@
 from django import template
+from django.core.paginator import Paginator
 from diff_match_patch import diff_match_patch
 from django.conf import settings
 from django.template.defaultfilters import yesno, linebreaksbr, urlize, \
@@ -26,6 +27,7 @@ from apps.oi.templatetags.editing import is_locked
 register = template.Library()
 
 MARKDOWN_FIELDS = {'notes', 'description', 'bio', 'tracking_notes'}
+COMPARE_SEQUENCES_PER_PAGE = 100
 
 
 def valid_barcode(barcode):
@@ -764,6 +766,19 @@ def show_credit_status(story):
     snippet += ' '.join(status)
     snippet += '</span>]'
     return mark_safe(snippet)
+
+
+@register.simple_tag(takes_context=True)
+def sequences_page(context, revision):
+    '''
+    The page of sequences of an issue revision asked for in the request.
+    Comparing several hundred sequences at once does not fit in one request.
+    '''
+    # a deleted sequence can keep the number of another one
+    sequences = revision.ordered_story_revisions().order_by('sequence_number',
+                                                            'id')
+    paginator = Paginator(sequences, COMPARE_SEQUENCES_PER_PAGE)
+    return paginator.get_page(context['request'].GET.get('page'))
 
 
 @register.filter
