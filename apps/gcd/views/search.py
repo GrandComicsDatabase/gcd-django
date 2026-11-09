@@ -1625,7 +1625,7 @@ def used_search(search_values):
         used_search_terms.append(('genre', genres))
         del search_values['genre']
     for i in search_values:
-        if search_values[i] and search_values[i] not in ['None', 'False']:
+        if search_values[i] and search_values[i] != 'None':
             used_search_terms.append((i, search_values[i]))
     return target, method, logic, used_search_terms
 
