@@ -4945,6 +4945,29 @@ def _copy_placement(existing, position, has_cover):
     }
 
 
+def _copy_refusal(issue_revision, stories=()):
+    """
+    Return why stories cannot be copied into issue_revision, or None.
+
+    A new issue only exists once approved, so only a new variant can take
+    a copy, and a variant holds a single cover sequence, and only if its
+    cover artwork differs from the base issue.
+    """
+    if not issue_revision.variant_of:
+        if issue_revision.issue is None:
+            return 'Sequences cannot be copied into a new issue before it ' \
+                   'is approved.'
+        return None
+    if issue_revision.variant_cover_status != VCS_Codes.ARTWORK_DIFFERENCE:
+        return 'A cover sequence can only be copied into a variant if its ' \
+               'cover artwork is different from the base issue.'
+    if any(story.type_id != STORY_TYPES['cover'] for story in stories):
+        return 'Only a cover sequence can be copied into a variant issue.'
+    if len(stories) > 1 or issue_revision.active_stories():
+        return 'You cannot add more than one story to a variant issue.'
+    return None
+
+
 def _single_copy_context(request, issue_revision, story, position,
                          placement=None, changed=False):
     if placement is None:
@@ -5081,6 +5104,9 @@ def copy_cached_sequences(request, data, select_key):
             'A selected object is no longer available. '
             'Select the objects again.')
     stories = [by_id[pk] for pk in selected_ids]
+    refusal = _copy_refusal(issue_revision, stories)
+    if refusal:
+        return render_error(request, refusal)
     actual_covers = [s.id for s in stories
                      if s.type_id == STORY_TYPES['cover']]
     if any(pk not in actual_covers for pk in cover_ids):
@@ -5193,6 +5219,9 @@ def _selected_copy_sequence(request, data, object_type, selected_id):
     issue_revision = get_object_or_404(IssueRevision,
                                        id=data['issue_revision_id'])
     story = get_object_or_404(Story, id=selected_id)
+    refusal = _copy_refusal(issue_revision, [story])
+    if refusal:
+        return render_error(request, refusal)
     return oi_render(request, 'oi/edit/confirm_copy_sequence.html',
                      _single_copy_context(request, issue_revision, story,
                                           data['sequence_number']))
@@ -5217,6 +5246,9 @@ def copy_sequence(request, issue_revision_id, story_id=None,
         story = True
 
     if request.method != 'POST':
+        refusal = _copy_refusal(issue_revision)
+        if refusal:
+            return render_error(request, refusal)
         heading = 'Select story to copy into %s' % (esc(issue_revision))
         data = {'issue_revision_id': issue_revision_id,
                 'changeset_id': issue_revision.changeset_id,
@@ -5240,6 +5272,9 @@ def copy_sequence(request, issue_revision_id, story_id=None,
               'edit', kwargs={'id': issue_revision.changeset_id}))
         story = get_object_or_404(Story.objects.select_for_update(),
                                   id=story_id, deleted=False)
+        refusal = _copy_refusal(issue_revision, [story])
+        if refusal:
+            return render_error(request, refusal)
         existing = list(issue_revision.active_stories())
         placement = _copy_placement(existing, sequence_number,
                                     story.type_id == STORY_TYPES['cover'])

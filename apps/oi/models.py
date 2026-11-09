@@ -6024,7 +6024,7 @@ class StoryRevision(Revision):
                 revision.type = StoryType.objects.get(
                   name='cover reprint (on interior page)')
         credits = story.active_credits
-        if revision.issue.series.language != story.issue.series.language:
+        if issue_revision.series.language != story.issue.series.language:
             if revision.letters:
                 revision.letters = '?'
             revision.title = ''
@@ -6038,7 +6038,7 @@ class StoryRevision(Revision):
                 # extend to StoryArcs
                 # in particular, use .translations(language)
                 translations = feature_name.feature.translations().filter(
-                  to_feature__language=revision.issue.series.language)
+                  to_feature__language=issue_revision.series.language)
                 if translations.count() == 1:
                     # revision is a translation from original
                     revision.feature_name.add(translations.get()
@@ -6047,12 +6047,12 @@ class StoryRevision(Revision):
                       feature_name.feature.translated_from() is not None):
                     translated_from = feature_name.feature.translated_from()
                     if translated_from.language == \
-                       revision.issue.series.language:
+                       issue_revision.series.language:
                         # revision is the source of a translation
                         revision.feature_name.add(translated_from
                                                   .official_name())
                     else:
-                        lang = revision.issue.series.language
+                        lang = issue_revision.series.language
                         other_translations = (
                             feature_name.feature.translated_from()
                             .translations()

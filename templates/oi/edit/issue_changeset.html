@@ -77,9 +77,7 @@
         <div class="flex items-center">
           <button class="btn-blue-editing inline mt-1"><input type="submit" id="add_story" name="add" value="Add Sequence"></button>
         {% if issue_revision.variant_of %}
-          {% if issue_revision.issue %}
           <button class="btn-blue-editing inline"><input type="submit" id="copy_cover" name="copy_cover" value="Copy Cover Sequence"></button>
-          {% endif %}
           <input type="hidden" id="added_sequence_number" name="added_sequence_number" value="{{ issue_revision.next_sequence_number }}">
         {% else %}
           <button class="btn-blue-editing inline" type="submit" id="copy_story" name="copy">Copy Sequence</button>
