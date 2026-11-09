@@ -2556,7 +2556,7 @@ def add_series(request, publisher_id):
 
     except (Publisher.DoesNotExist, Publisher.MultipleObjectsReturned):
         return render_error(
-          request, 'Could not find publisher for id ' + publisher_id)
+          request, 'Could not find publisher for id %d' % publisher_id)
 
 
 def _display_add_series_form(request, publisher, form):
@@ -3742,7 +3742,8 @@ def add_story(request, issue_revision_id, changeset_id):
           request, 'Only the reservation holder may add stories.')
     # check if this is a request to add a copy of a sequence
     if 'copy' in request.GET or 'copy_cover' in request.GET:
-        issue_revision = changeset.issuerevisions.get(id=issue_revision_id)
+        issue_revision = get_object_or_404(changeset.issuerevisions,
+                                           id=issue_revision_id)
         seq = request.GET.get('added_sequence_number')
         initial = _get_initial_add_story_data(request, issue_revision, seq)
         if 'copy_cover' in request.GET:
@@ -3884,7 +3885,7 @@ def add_story(request, issue_revision_id, changeset_id):
     except (IssueRevision.DoesNotExist, IssueRevision.MultipleObjectsReturned):
         return render_error(
           request,
-          'Could not find issue revision for id ' + issue_revision_id)
+          'Could not find issue revision for id %d' % issue_revision_id)
 
 
 def _get_initial_add_story_data(request, issue_revision, seq):
