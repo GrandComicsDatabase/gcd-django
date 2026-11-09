@@ -478,3 +478,27 @@ def test_global_copy_controls_only_render_for_multiple_sequences(count):
         html = body.nodelist.render(context)
     assert ('id="copy-all-credit-info"' in html) is (count > 1)
     assert ('id="copy-all-characters"' in html) is (count > 1)
+    assert ('id="copy-all-omit-details"' in html) is (count > 1)
+
+
+@pytest.mark.parametrize('with_cover', [False, True])
+def test_omit_details_is_chosen_for_each_sequence(copy_context, with_cover):
+    c = copy_context
+    if with_cover:
+        c.sources[1].type_id = STORY_TYPES['cover']
+        c.existing[0].type_id = STORY_TYPES['cover']
+    post = {'confirm_bulk_copy': '1', 'copy_batch': confirmation(c),
+            'per_sequence_options': '1', 'omit_story_details_ids': ['7']}
+    if with_cover:
+        # A newly detected cover requires a placement review first.
+        copy_cached_sequences.__wrapped__(request_for(c, post), c.data, 'batch')
+        preview = c.render.call_args.args[2]
+        assert [(r['story'].id, r['omit_story_details'])
+                for r in preview['preview_rows']] == [(8, False), (7, True)]
+        post['copy_batch'] = preview['copy_batch']
+        c.copier.assert_not_called()
+    response = copy_cached_sequences.__wrapped__(request_for(c, post), c.data,
+                                                 'batch')
+    assert response.status_code == 302
+    assert [(call.args[0].id, call.kwargs['omit_story_details'])
+            for call in c.copier.call_args_list] == [(8, False), (7, True)]

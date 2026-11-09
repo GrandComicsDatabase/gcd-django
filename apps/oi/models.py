@@ -5930,6 +5930,13 @@ def _order_civilian_after_alias(story_characters):
     return character_list
 
 
+# Data of a sequence that a copy can leave out, because it usually belongs
+# to the original only. Credits, feature, characters and type are not here.
+STORY_DETAIL_FIELDS = frozenset({
+    'first_line', 'job_number', 'story_arc', 'universe', 'keywords',
+    'synopsis', 'notes', 'reprint_notes'})
+
+
 class StoryRevision(Revision):
     class Meta:
         db_table = 'oi_story_revision'
@@ -6007,12 +6014,16 @@ class StoryRevision(Revision):
     @classmethod
     def copied_revision(cls, story, changeset, issue_revision,
                         copy_credit_info=False,
-                        copy_characters=False):
+                        copy_characters=False,
+                        omit_story_details=False):
         """
         Given an existing story, create a new revision based on it for a
         new story with the copied data. 'fork' is set to true in such a case.
+        With omit_story_details the STORY_DETAIL_FIELDS stay empty.
         """
-        revision = StoryRevision.clone(story, changeset, fork=True)
+        revision = StoryRevision.clone(
+          story, changeset, fork=True,
+          exclude=STORY_DETAIL_FIELDS if omit_story_details else frozenset())
         revision.issue = issue_revision.issue
         revision.sequence_number = issue_revision.next_sequence_number()
         if revision.type.id == STORY_TYPES['cover']:
@@ -6133,14 +6144,17 @@ class StoryRevision(Revision):
     @classmethod
     def clone_revision(cls, story_revision, changeset, issue_revision,
                        copy_credit_info=False,
-                       copy_characters=False):
+                       copy_characters=False,
+                       omit_story_details=False):
         """
         Given an existing story revision of the changeset, create a new
         revision based on it for a new story with the copied data.
         'fork' is set to true in such a case.
+        With omit_story_details the STORY_DETAIL_FIELDS stay empty.
         """
+        omitted = STORY_DETAIL_FIELDS if omit_story_details else {'keywords'}
         new_revision = StoryRevision.clone(story_revision, changeset,
-                                           fork=True, exclude={'keywords'})
+                                           fork=True, exclude=omitted)
         new_revision.issue = issue_revision.issue
         new_revision.sequence_number = issue_revision.next_sequence_number()
         new_revision.save()
