@@ -3982,10 +3982,12 @@ def copy_story_revision(request, issue_revision_id, changeset_id=None,
         story_revision = changeset.storyrevisions.get(id=story_revision_id)
         copy_credit_info = request.POST.get('copy_credit_info', False)
         copy_characters = request.POST.get('copy_characters', False)
+        omit_details = request.POST.get('omit_story_details', False)
         rev = StoryRevision.clone_revision(story_revision, changeset,
                                            issue_revision=issue_revision,
                                            copy_credit_info=copy_credit_info,
-                                           copy_characters=copy_characters)
+                                           copy_characters=copy_characters,
+                                           omit_story_details=omit_details)
 
         return HttpResponseRedirect(urlresolvers.reverse(
           'edit_revision', kwargs={'id': rev.id, 'model_name': 'story'}))
@@ -4958,6 +4960,7 @@ def _single_copy_context(request, issue_revision, story, position,
         'cover_plan': token, 'copy_plan_changed': changed,
         'copy_credit_info': 'copy_credit_info' in request.POST,
         'copy_characters': 'copy_characters' in request.POST,
+        'omit_story_details': 'omit_story_details' in request.POST,
     }
 
 
@@ -5118,7 +5121,8 @@ def copy_cached_sequences(request, data, select_key):
         story.id: {
             option: (str(story.id) in request.POST.getlist(option + '_ids')
                      if per_sequence else option in request.POST)
-            for option in ('copy_credit_info', 'copy_characters')
+            for option in ('copy_credit_info', 'copy_characters',
+                           'omit_story_details')
         }
         for story in stories
     }
@@ -5255,9 +5259,11 @@ def copy_sequence(request, issue_revision_id, story_id=None,
                                      sequence_number, placement, changed=True))
         copy_credit_info = request.POST.get('copy_credit_info', False)
         copy_characters = request.POST.get('copy_characters', False)
+        omit_details = request.POST.get('omit_story_details', False)
         story_revision = StoryRevision.copied_revision(
           story, issue_revision.changeset, issue_revision=issue_revision,
-          copy_credit_info=copy_credit_info, copy_characters=copy_characters)
+          copy_credit_info=copy_credit_info, copy_characters=copy_characters,
+          omit_story_details=omit_details)
         # sequence number should be determined in add_story
         # but this routine could be called differently as well
         if placement['cover_mode']:
