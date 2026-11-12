@@ -703,8 +703,16 @@ def get_bulk_issue_revision_form(series, method, user=None):
 
         def __init__(self, *args, **kwargs):
             super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
-            self.fields['indicia_publisher'].queryset = \
+            indicia_publishers = \
                 series.publisher.active_indicia_publishers_no_pending()
+            if method != 'bulk_edit':
+                if series.year_began:
+                    indicia_publishers = indicia_publishers.exclude(
+                        year_ended__lt=series.year_began)
+                if series.year_ended:
+                    indicia_publishers = indicia_publishers.exclude(
+                        year_began__gt=series.year_ended)
+            self.fields['indicia_publisher'].queryset = indicia_publishers
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
 
@@ -739,6 +747,10 @@ def get_bulk_issue_revision_form(series, method, user=None):
                     widget=forms.HiddenInput, required=False)
                 indicia_printer_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
+            if series.year_ended:
+                year_ended = forms.CharField(widget=forms.HiddenInput,
+                                             required=False,
+                                             initial=series.year_ended)
         publisher_id = forms.CharField(widget=forms.HiddenInput,
                                        initial=series.publisher.id)
         if series.year_began:
@@ -779,7 +791,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
         help_text=ISSUE_HELP_TEXTS['brand_emblem'],
         widget=autocomplete.ModelSelect2Multiple(
             url='brand_emblem_autocomplete',
-            forward=['publisher_id', 'year_began',],
+            forward=['publisher_id', 'year_began', 'year_ended'],
             attrs={'data-html': True,
                    'class': 'w-full lg:w-4/5',
                    'data-placeholder': 'select a brand emblem'}),
@@ -820,6 +832,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
         help_texts = ISSUE_HELP_TEXTS
 
     def _shared_key_order(self):
+        # A series without an end year has no year_ended field.
+        year_ended = ['year_ended'] if 'year_ended' in self.fields else []
         return ['indicia_publisher', 'indicia_pub_not_printed',
                 'brand_emblem', 'no_brand',
                 'indicia_frequency', 'no_indicia_frequency',
@@ -829,7 +843,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 'indicia_printer_sourced_by',
                 'no_isbn', 'no_barcode',
                 'rating', 'no_rating', 'comments',
-                'publisher_id', 'year_began']
+                'publisher_id', 'year_began'] + year_ended
 
     def _init_creator_editors(self):
         self.helper = FormHelper()
