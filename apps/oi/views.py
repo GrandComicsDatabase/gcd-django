@@ -770,12 +770,14 @@ def submit(request, id):
         if changeset.imps == 0 and not \
            changeset.characterorderrevisions.exists() and not \
            _has_changed_revision(changeset):
+            edit_url = urlresolvers.reverse('edit', kwargs={'id': changeset.id})
             return oi_render(
               request, 'indexer/error.html',
               {'error_text': mark_safe('A submission needs to consists of at '
                                        'least one change to the data or have '
                                        'a comment. <a href="%s">Go back.</a>'
-                                       % request.META['HTTP_REFERER'])
+                                       % request.META.get('HTTP_REFERER',
+                                                          edit_url))
                })
 
     changeset.submit(notes=comment_text)
