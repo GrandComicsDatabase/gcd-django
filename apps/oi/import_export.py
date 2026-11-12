@@ -866,6 +866,13 @@ def import_sequences_from_file(request, issue_id, changeset_id, use_csv=False):
                             % (issue_id, changeset_id))
 
 
+def _with_uncertainty(value, uncertain):
+    # a question mark after the value is what the import reads as uncertain
+    if uncertain and value not in (None, ''):
+        return '%s?' % value
+    return str(value)
+
+
 def generate_reprint_link(reprints, direction):
     reprint_note = ''
     for reprint in reprints:
@@ -909,8 +916,8 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
     export_data = []
     for field_name in ISSUE_FIELDS:
         if field_name == 'brand_emblem':
-            if not issue.brand_emblem and not issue.no_brand:
-                export_data.append('')
+            if issue.no_brand:
+                export_data.append('None')
             else:
                 brands = issue.brand_emblem.all()
                 brand_names = ''
@@ -938,6 +945,12 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
             export_data.append('None')
         elif field_name == 'indicia_printer':
             export_data.append(issue.show_printer(url=False))
+        elif field_name == 'page_count':
+            export_data.append(_with_uncertainty(issue.page_count,
+                                                 issue.page_count_uncertain))
+        elif field_name == 'on_sale_date':
+            export_data.append(_with_uncertainty(
+              issue.on_sale_date, issue.on_sale_date_uncertain))
         else:
             export_data.append(str(getattr(issue, field_name)))
 
@@ -1011,6 +1024,9 @@ def export_issue_to_file(request, issue_id, use_csv=False, revision=False):
                     export_data.append(sequence.keywords)
                 else:
                     export_data.append(get_keywords(sequence))
+            elif field_name == 'page_count':
+                export_data.append(_with_uncertainty(
+                  sequence.page_count, sequence.page_count_uncertain))
             else:
                 export_data.append(str(getattr(sequence, field_name)))
         if use_csv:
