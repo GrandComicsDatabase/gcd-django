@@ -948,6 +948,12 @@ class Changeset(models.Model):
                 # coverrevisions can have issuerevisions and storyrevisions
                 # for variant uploads, but one shouldn't get imps for them
                 revisions = self.coverrevisions.all()
+            elif self.change_type == CTYPES['series']:
+                # the issuerevisions of a series change come from moving the
+                # series, which re-sets the brands and indicia publishers of
+                # the issues automatically, one shouldn't get imps for them
+                revisions = (revision for revision in self.revisions
+                             if not isinstance(revision, IssueRevision))
             else:
                 revisions = self.revisions
 
