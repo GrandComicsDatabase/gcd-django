@@ -19,7 +19,7 @@ from apps.oi.models import (
     get_reprint_field_list, get_story_field_list, remove_leading_article,
     BiblioEntryRevision, ReprintRevision, StoryRevision, StoryArcRevision,
     StoryArcRelationRevision, StoryCreditRevision, StoryCharacterRevision,
-    StoryGroupRevision)
+    StoryGroupRevision, change_moves, cover_shows_sequence_after)
 
 
 from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
@@ -30,6 +30,7 @@ from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
                             STORY_TYPES, NON_OPTIONAL_TYPES, \
                             OLD_TYPES, CREDIT_TYPES, INDEXED
 from apps.gcd.models.support import GENRES
+from apps.gcd.models.cover import box_covers
 from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 
 from .custom_layout_object import Formset, FormsetTabHolder
@@ -765,12 +766,27 @@ class StoryRevisionForm(KeywordBaseForm):
                                 template='oi/bits/uni_field.html'))
         has_appearance_order = False
         has_importance_order = False
+        can_mark_on_cover = False
         if 'instance' in kwargs and kwargs['instance'] and \
            kwargs['instance'].id:
             if kwargs['instance'].character_order_revisions.filter(type__id=1):
                 has_appearance_order = True
             if kwargs['instance'].character_order_revisions.filter(type__id=2):
                 has_importance_order = True
+            # Characters of a cover sequence can be marked on a cover of its
+            # issue, which exists only after the issue is approved, and
+            # which still shows the sequence after the change.
+            instance = kwargs['instance']
+            can_mark_on_cover = (
+              instance.type_id == STORY_TYPES['cover']
+              and instance.issue is not None
+              and instance.story_character_revisions.filter(
+                deleted=False).exists())
+            if can_mark_on_cover:
+                moves = change_moves(instance.changeset)
+                can_mark_on_cover = any(
+                  cover_shows_sequence_after(moves, cover, instance)
+                  for cover in box_covers(instance.issue))
         if has_appearance_order or has_importance_order:
             field_list.append(HTML(
               '<tr><th></th><td>Character orders exist. To edit an order, '
@@ -819,6 +835,11 @@ class StoryRevisionForm(KeywordBaseForm):
             character_order_html += '<input type="submit" ' \
               'name="create_importance_order"' \
               ' value="Save And Create Importance Order" ' \
+              'class="m-0 btn-blue-editing inline"/>'
+        if can_mark_on_cover:
+            character_order_html += '<input type="submit" ' \
+              'name="mark_cover_characters"' \
+              ' value="Save And Mark Characters On Cover" ' \
               'class="m-0 btn-blue-editing inline"/>'
         field_list.append(HTML(character_order_html + '</td>'))
         characters_end = len(field_list)

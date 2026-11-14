@@ -57,9 +57,11 @@ from apps.gcd.views.details import (  # noqa: F401
     show_award, show_printer, show_indicia_printer, show_character,
     show_universe)
 
-from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue
+from apps.gcd.views.covers import get_image_tag, get_image_tags_per_issue, \
+                                  get_box_scan_url, get_box_tag, box_alt_text
 from apps.gcd.views.search import do_advanced_search, used_search
-from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM
+from apps.gcd.models.cover import ZOOM_LARGE, ZOOM_MEDIUM, ZOOM_SMALL, \
+                                  box_covers, BOX_SIZE_SMALL
 from apps.gcd.models.reprint import INTERNAL_REPRINT_ERROR, \
                                     validate_reprint_issue_ids
 from apps.oi.templatetags.editing import show_revision_short
@@ -71,7 +73,8 @@ from apps.oi.models import (
     CoverRevision, ImageRevision, IndiciaPublisherRevision, IssueRevision,
     PublisherRevision, ReprintRevision, SeriesBondRevision, SeriesRevision,
     StoryRevision, BiblioEntryRevision, CharacterOrderRevision,
-    OngoingReservation, RevisionLock,
+    CoverCharacterBoxRevision, OngoingReservation, RevisionLock,
+    change_moves, cover_shows_sequence_after,
     _get_revision_lock, _free_revision_lock, CTYPES,
     get_issue_field_list, set_series_first_last,
     AwardRevision, ReceivedAwardRevision, IssueCreditRevision,
@@ -130,6 +133,8 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            CreatorSignatureRevisionForm,
                            DateRevisionForm)
 from apps.oi.forms.support import CREATOR_HELP_LINKS
+from apps.oi.forms.cover_character_box import (
+    CoverCharacterBoxFormSet, BOX_DRAWN_FIELDS)
 
 from apps.oi.covers import get_preview_image_tag, \
                            get_preview_generic_image_tag, \
@@ -992,6 +997,10 @@ def _save(request, form, revision, changeset=None, model_name=None):
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit_character_order_revision',
               kwargs={'story_revision_id': revision.id, 'type_id': 2}))
+        if 'mark_cover_characters' in request.POST and model_name == 'story':
+            return HttpResponseRedirect(urlresolvers.reverse(
+              'mark_cover_characters',
+              kwargs={'story_revision_id': revision.id}))
         if 'save_and_set_universe' in request.POST:
             if revision.universe.count() == 1:
                 characters = revision.story_character_revisions.filter(
@@ -1851,7 +1860,8 @@ def process_revision(request, id, model_name):
        or 'edit_appearance_order' in request.POST \
        or 'create_appearance_order' in request.POST \
        or 'edit_importance_order' in request.POST \
-       or 'create_importance_order' in request.POST:
+       or 'create_importance_order' in request.POST \
+       or 'mark_cover_characters' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
         if request.user != revision.changeset.indexer:
             return oi_render(
@@ -4307,6 +4317,222 @@ def create_character_order_revision(request, story_revision_id, type_id):
     return HttpResponseRedirect(urlresolvers.reverse(
       'reorder_characters',
       kwargs={'character_order_id': order_revision.id}))
+
+
+def _row_sent_unsaved(form, box):
+    """
+    Whether a row of a form sent back with errors holds another box than
+    the saved one, or another choice of Remove: the page then shows it as
+    not saved, without the cut-out of the saved box.
+    """
+    if not form.is_bound:
+        return False
+    for name in BOX_DRAWN_FIELDS:
+        saved = '' if box is None else str(getattr(box, name))
+        if str(form[name].value() or '') != saved:
+            return True
+    return bool(form['DELETE'].value()) != bool(box and box.deleted)
+
+
+def _save_cover_boxes(formset, boxes, cover, changeset):
+    """
+    Writes the boxes of a valid formset of mark_cover_characters that
+    differ from their revision in boxes, a dict by appearance revision id.
+
+    A box drawn again gets the last upload of the cover as its scan date.
+    One left as it was keeps its scan date, so a box on a scan replaced since
+    keeps waiting to be drawn again: its proportions are those of the old
+    scan.  A removed box added in this changeset is deleted, a cloned one
+    is marked as deleted; a row without a box changes nothing.
+    """
+    with transaction.atomic():
+        for form in formset.forms:
+            data = form.cleaned_data
+            appearance = data.get('appearance')
+            if appearance is None:
+                continue
+            box = boxes.get(appearance.id)
+            if data.get('DELETE'):
+                if box is None:
+                    continue
+                if box.cover_character_box is None:
+                    box.delete()
+                elif not box.deleted:
+                    box.deleted = True
+                    box.save()
+                continue
+            if data['top_left_x'] is None:
+                continue
+            values = {name: data[name] for name in BOX_DRAWN_FIELDS}
+            if box is None or any(getattr(box, name) != value
+                                  for name, value in values.items()):
+                values['scan_date'] = cover.last_upload
+            values['deleted'] = False
+            if box is None:
+                CoverCharacterBoxRevision.objects.create(
+                  changeset=changeset, story_character_revision=appearance,
+                  cover=cover, **values)
+            elif any(getattr(box, name) != value
+                     for name, value in values.items()):
+                for name, value in values.items():
+                    setattr(box, name, value)
+                box.save()
+
+
+@permission_required('indexer.can_reserve')
+def mark_cover_characters(request, story_revision_id):
+    """
+    Marks the characters of a cover sequence on a cover of its issue.
+
+    The covers are those of box_covers that still show the sequence after
+    the change (cover_shows_sequence_after); with more than one, the cover
+    is chosen with the 'cover' parameter.  Each character appearance of the
+    sequence has a row with its box on that cover, drawn on the scan by
+    the script of the page, and only changed boxes are written.  A saved
+    box on the current scan shows its cut-out, as the character page will
+    show it, so the indexer can judge it.
+    """
+    story_revision = get_object_or_404(StoryRevision, id=story_revision_id)
+    changeset = story_revision.changeset
+    if request.method == 'POST':
+        # The request is atomic: a second submission waits here until the
+        # first one is saved, and then reads its boxes, so that no box
+        # is added twice.
+        changeset = Changeset.objects.select_for_update().get(
+          id=changeset.id)
+    if request.user != changeset.indexer:
+        return render_error(
+          request,
+          'Only the reservation holder may mark characters on a cover.')
+    if changeset.state != states.OPEN:
+        return render_error(
+          request,
+          'Characters can only be marked on a cover while the change is '
+          'being edited.')
+    issue = story_revision.issue
+    if story_revision.deleted or issue is None or \
+       story_revision.type_id != STORY_TYPES['cover']:
+        return render_error(
+          request,
+          'Characters can only be marked on a cover for a cover sequence of '
+          'an existing issue.')
+    sequence_url = urlresolvers.reverse(
+      'edit_revision', kwargs={'model_name': 'story', 'id': story_revision.id})
+    if request.method == 'POST' and 'cancel' in request.POST:
+        return HttpResponseRedirect(sequence_url)
+
+    moves = change_moves(changeset)
+    covers = sorted(
+      [cover for cover in box_covers(issue).select_related('issue__series')
+       if cover_shows_sequence_after(moves, cover, story_revision)],
+      key=lambda cover: (cover.issue_id != issue.id, cover.id))
+    if not covers:
+        return render_error(
+          request,
+          'There is no cover scan of this issue to mark the characters on.')
+    parameters = request.POST if request.method == 'POST' else request.GET
+    cover_id = parameters.get('cover', '')
+    if cover_id:
+        cover = next((choice for choice in covers
+                      if str(choice.id) == cover_id), None)
+        if cover is None:
+            return render_error(
+              request,
+              'The characters of this sequence cannot be marked on this '
+              'cover.')
+    else:
+        cover = covers[0]
+
+    appearances = story_revision.story_character_revisions.filter(
+      deleted=False).select_related('character__character', 'universe')
+    boxes = {
+      box.story_character_revision_id: box
+      for box in CoverCharacterBoxRevision.objects.filter(
+        changeset=changeset, cover=cover,
+        story_character_revision__in=appearances).select_related('cover')
+    }
+    initial = []
+    for appearance in appearances:
+        values = {'appearance': appearance.id}
+        box = boxes.get(appearance.id)
+        if box is not None:
+            values.update({name: getattr(box, name)
+                           for name in BOX_DRAWN_FIELDS})
+            values['DELETE'] = box.deleted
+        initial.append(values)
+    formset_kwargs = {
+      'initial': initial,
+      'prefix': 'box',
+      'form_kwargs': {'appearances': appearances, 'cover': cover},
+    }
+    mark = parameters.get('mark', '')
+
+    if request.method == 'POST':
+        formset = CoverCharacterBoxFormSet(request.POST, **formset_kwargs)
+        if formset.is_valid():
+            _save_cover_boxes(formset, boxes, cover, changeset)
+            if 'save_return' in request.POST:
+                return HttpResponseRedirect(urlresolvers.reverse(
+                  'edit', kwargs={'id': changeset.id}))
+            if 'return_sequence' in request.POST:
+                return HttpResponseRedirect(sequence_url)
+            query = QueryDict(mutable=True)
+            query['cover'] = str(cover.id)
+            if mark.isdecimal():
+                query['mark'] = mark
+            return HttpResponseRedirect('%s?%s' % (
+              urlresolvers.reverse(
+                'mark_cover_characters',
+                kwargs={'story_revision_id': story_revision.id}),
+              query.urlencode()))
+    else:
+        formset = CoverCharacterBoxFormSet(**formset_kwargs)
+
+    appearances_by_id = {str(appearance.id): appearance
+                         for appearance in appearances}
+    rows = []
+    for number, form in enumerate(formset.forms, start=1):
+        appearance = appearances_by_id.get(str(form['appearance'].value()))
+        box = boxes.get(appearance.id) if appearance else None
+        if _row_sent_unsaved(form, box):
+            drawn = form['top_left_x'].value() and \
+                not form['DELETE'].value()
+            status = 'drawn, not saved' if drawn else 'removed, not saved'
+        elif box is None:
+            status = 'not marked'
+        elif box.deleted:
+            status = 'removed in this change'
+        elif box.scan_date != cover.last_upload:
+            status = 'Drawn on an older scan: draw it again'
+        else:
+            status = 'marked'
+        # The cut-out of a box on the current scan, as drawn.
+        rows.append({'number': number, 'form': form,
+                     'appearance': appearance, 'status': status,
+                     'is_marked': box is not None and not box.deleted,
+                     'cut_out': get_box_tag(
+                       box, box_alt_text(appearance.character, cover.issue),
+                       BOX_SIZE_SMALL) if status == 'marked' else ''})
+    # The row chosen for marking: the one marked last, else the first
+    # character without a box.
+    numbers = {str(row['number']): row['number'] for row in rows}
+    selected = numbers.get(mark) or next(
+      (row['number'] for row in rows if not row['is_marked']), 1)
+
+    return oi_render(request, 'oi/edit/mark_cover_characters.html', {
+      'story_revision': story_revision,
+      'cover': cover,
+      'cover_choices': [
+        (choice, get_image_tag(choice, 'Cover of %s' % choice.issue,
+                               ZOOM_SMALL))
+        for choice in covers] if len(covers) > 1 else [],
+      'scan_url': get_box_scan_url(cover),
+      'scan_date': cover.last_upload.isoformat() if cover.last_upload
+      else '',
+      'formset': formset,
+      'rows': rows,
+      'selected': selected,
+    })
 
 ##############################################################################
 # Series Bond Editing
