@@ -6169,6 +6169,101 @@ def remove_story_revision(request, id):
                                 kwargs={'id': story.changeset.id}))
 
 
+def _detach_comments(revision):
+    """
+    Keep the comments of a revision that is about to be deleted.
+
+    They stay on the changeset with a note, while the GenericRelation would
+    delete them together with the revision. Returns how many there were.
+    """
+    comments = list(revision.comments.all())
+    for comment in comments:
+        comment.text += '\nThe %s "%s" for which this comment was entered ' \
+                        'was removed.' % (
+                          type(revision).__name__,
+                          show_revision_short(revision, markup=False))
+        comment.revision_id = None
+        comment.save()
+    return len(comments)
+
+
+@permission_required('indexer.can_reserve')
+def remove_variant_revision(request, id):
+    """
+    Remove a variant newly added to the issue edited in a changeset.
+
+    Its sequences go with it and the changeset turns back into a plain
+    edit of the base issue.
+    """
+    revision = get_object_or_404(IssueRevision, id=id)
+    changeset = Changeset.objects.select_for_update().get(
+      id=revision.changeset_id)
+    if request.user != changeset.indexer:
+        return render_error(
+          request, 'Only the reservation holder may remove variants.')
+    if changeset.state != states.OPEN:
+        return render_error(
+          request, 'This changeset is no longer open for editing.')
+    if changeset.change_type != CTYPES['variant_add'] \
+       or not revision.variant_of or revision.issue:
+        return render_error(
+          request, 'Only a new variant added to an issue can be removed.')
+    if changeset.coverrevisions.exists():
+        return render_error(
+          request, 'Please undo the cover move before removing the variant.')
+    stories = revision.ordered_story_revisions()
+    if stories.filter(story__isnull=False).exists():
+        return render_error(
+          request, 'A sequence was moved to this variant. Please use Move To'
+                   ' Other Issue to move it back before removing the variant.')
+
+    if request.method != 'POST':
+        names = [show_revision_short(story, markup=False) for story in stories]
+        warning = ''
+        if names:
+            warning = 'These new sequences will be removed with it: %s' \
+                      % '; '.join(names)
+        return oi_render(
+          request, 'oi/edit/confirm.html',
+          {
+            'type': 'Variant Removal',
+            'header_text': 'Do you want to remove the new variant %s ?'
+                           % revision.full_name(),
+            'warning': warning,
+            'url': urlresolvers.reverse('remove_variant_revision',
+                                        kwargs={'id': id}),
+            'cancel_button': 'Cancel',
+            'confirm_button': 'removal of variant %s' % revision,
+          })
+
+    edit_url = urlresolvers.reverse('edit', kwargs={'id': changeset.id})
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(edit_url)
+
+    for story in stories:
+        _detach_comments(story)
+    if not _detach_comments(revision) and changeset.approver:
+        # changeset already was submitted once since it has an approver
+        changeset.comments.create(
+          commenter=changeset.indexer,
+          text='The IssueRevision "%s" was removed.' % revision,
+          old_state=changeset.state,
+          new_state=changeset.state)
+    # A sequence has no foreign key to its new variant, only issue=None. If
+    # left behind, the approval would attach it to the base issue.
+    stories.delete()
+    revision.delete()
+    changeset.change_type = CTYPES['issue']
+    changeset.save()
+
+    # under variant_add the form of the base issue offers its variant_name
+    base_revision = changeset.issuerevisions.get()
+    if 'variant_name' not in base_revision.field_list():
+        base_revision.variant_name = base_revision.issue.variant_name
+        base_revision.save()
+    return HttpResponseRedirect(edit_url)
+
+
 @permission_required('indexer.can_reserve')
 def toggle_delete_story_revision(request, id):
     story = get_object_or_404(StoryRevision, id=id)
