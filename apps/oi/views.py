@@ -5777,6 +5777,8 @@ def move_series(request, series_revision_id, publisher_id):
                     for brand in issue_revision.brand_emblem.all():
                         new_brand = publisher.active_brand_emblems()\
                                              .filter(name=brand.name)
+                        if brand in new_brand:
+                            continue
                         if new_brand.count() == 1:
                             issue_revision.brand_emblem.add(new_brand[0])
                         issue_revision.brand_emblem.remove(brand)
@@ -5900,6 +5902,8 @@ def move_issue(request, issue_revision_id, series_id):
                 for brand in issue_revision.brand_emblem.all():
                     new_brand = series.publisher.active_brand_emblems()\
                                                 .filter(name=brand.name)
+                    if brand in new_brand:
+                        continue
                     if new_brand.count() == 1:
                         issue_revision.brand_emblem.add(new_brand[0])
                     issue_revision.brand_emblem.remove(brand)
