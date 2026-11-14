@@ -770,7 +770,8 @@ def submit(request, id):
         if changeset.imps == 0 and not \
            changeset.characterorderrevisions.exists() and not \
            _has_changed_revision(changeset):
-            edit_url = urlresolvers.reverse('edit', kwargs={'id': changeset.id})
+            edit_url = urlresolvers.reverse('edit', kwargs={'id':
+                                                            changeset.id})
             return oi_render(
               request, 'indexer/error.html',
               {'error_text': mark_safe('A submission needs to consists of at '
@@ -5342,10 +5343,12 @@ def _matching_sequence_refusal(issue_revision, story):
     if issue_revision.variant_cover_status != VCS_Codes.ARTWORK_DIFFERENCE:
         return 'A cover sequence can only be added to a variant if its ' \
                'cover artwork is different from the base issue.'
-    if story.type_id != STORY_TYPES['cover']:
+    if story.type_id not in (STORY_TYPES['cover'],
+                             STORY_TYPES['cover reprint (on interior page)']):
         return 'Only a cover sequence can be added to a variant issue.'
     if issue_revision.active_stories().exists():
-        return 'You cannot add more than one story to a variant issue.'
+        return 'You cannot add more than one cover sequence to a variant ' \
+               'issue.'
     return None
 
 
@@ -7099,8 +7102,8 @@ def compare(request, id):
     elif model_name == 'issue':
         moved_issues = _moved_issues(revision)
         if changeset.change_type == CTYPES['issue_bulk'] or \
-          changeset.change_type == CTYPES['issue_add'] and \
-          changeset.issuerevisions.count() > 1:
+           changeset.change_type == CTYPES['issue_add'] and \
+           changeset.issuerevisions.count() > 1:
             field_list.remove('number')
             field_list.remove('notes')
             field_list.remove('year_on_sale')
