@@ -2190,7 +2190,8 @@ def edit_issues_in_bulk(request):
     if credits_formset:
         cd_credits = []
         for form in credits_formset:
-            if form.is_valid():
+            # a removed credit is left out, so it gets deleted below
+            if form.is_valid() and not form.cleaned_data.get('DELETE'):
                 cd_credits.append(form.cleaned_data)
     for issue in items:
         revision_lock = _get_revision_lock(issue, changeset)
