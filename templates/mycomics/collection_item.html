@@ -10,19 +10,38 @@
   <div id="edit-item" class="modal fade" tabindex="-1" style="display: none;">
     <div class="modal-dialog">
       <div class="modal-content">
-        <form action="{% url "save_item" item.id collection.id %}" method="POST">
+        <form action="{% url "save_item" item.id collection.id %}" method="POST"
+              class="form-horizontal">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">{% trans "Close" %}</span></button>
             <h4 class="modal-title">{% trans "Editing item in collection" %}</h4>
           </div>
           <div class="modal-body">
               {% csrf_token %}
-              {% bootstrap_form item_form %}
+              {% bootstrap_form item_form layout='horizontal' %}
               {% if acquisition_date_form %}
-                {% bootstrap_form acquisition_date_form %}
+                {% bootstrap_form acquisition_date_form layout='horizontal' %}
+                <div class="form-group">
+                  <div class="col-xs-offset-4 col-xs-8
+                              col-sm-offset-3 col-sm-9">
+                    <button type="button" class="btn btn-default"
+                            onclick="set_today('id_acquisition_date-date');">
+                      {% trans "Today" %}
+                    </button>
+                  </div>
+                </div>
               {% endif %}
               {% if sell_date_form %}
-                {% bootstrap_form sell_date_form %}
+                {% bootstrap_form sell_date_form layout='horizontal' %}
+                <div class="form-group">
+                  <div class="col-xs-offset-4 col-xs-8
+                              col-sm-offset-3 col-sm-9">
+                    <button type="button" class="btn btn-default"
+                            onclick="set_today('id_sell_date-date');">
+                      {% trans "Today" %}
+                    </button>
+                  </div>
+                </div>
               {% endif %}
           </div>
           <div class="modal-footer">
@@ -56,6 +75,14 @@
             }
             });
         }
+    function set_today(field_id) {
+      // Write today's date, in the visitor's own time, into a date field.
+      var now = new Date();
+      var month = ('0' + (now.getMonth() + 1)).slice(-2);
+      var day = ('0' + now.getDate()).slice(-2);
+      document.getElementById(field_id).value =
+        now.getFullYear() + '-' + month + '-' + day;
+    }
   </script>
     {% if collection_form %}
   <div id="move-collection-item" class="modal fade" tabindex="-1" style="display: none;">
