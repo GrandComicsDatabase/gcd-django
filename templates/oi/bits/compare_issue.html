@@ -1,4 +1,5 @@
 {% load display %}
+{% load compare %}
 
 {% if revision.issue and revision.issue.has_covers %}
 <a class="new_window" href="{{ revision.issue.get_absolute_url }}cover/4/" target=_blank>View the cover{{ revision.issue.active_covers.count|pluralize }}</a>
@@ -49,7 +50,9 @@ After approval the <span class="comparison_highlight">approver needs to check th
   {% if not revision.series.is_comics_publication %}
 <div>The individual issues of this series are each less than 50% comics.</div>
   {% endif %}
-  {% for story_revision in revision.ordered_story_revisions %}
+  {% sequences_page revision as sequences %}
+  {% include 'oi/bits/compare_sequence_pages.html' %}
+  {% for story_revision in sequences %}
     {% include 'oi/bits/compare_story.html' %}
     {% if story_revision.biblioentryrevision %}
       {% with story_revision.biblioentryrevision as story_revision %}
@@ -57,5 +60,6 @@ After approval the <span class="comparison_highlight">approver needs to check th
       {% endwith %}
     {% endif %}
   {% endfor %}
+  {% include 'oi/bits/compare_sequence_pages.html' %}
 
 {% include 'oi/bits/jquery.html' with details=True %}
