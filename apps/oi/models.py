@@ -3980,6 +3980,11 @@ class IssueCreditRevision(Revision):
         # imps already come from IssueRevision, since is_changed is True there
         return 0
 
+    def old_text_credit(self):
+        """Return the text credit this row was migrated from, or None."""
+        return _old_text_credit(self, self.issue_revision,
+                                self.issue_revision.issue_credit_revisions)
+
 
 def _removed_related_objects(removed_objects, source_type):
     for removed_object in removed_objects:
@@ -3990,6 +3995,79 @@ def _removed_related_objects(removed_objects, source_type):
                 removed_object.cleaned_data['id'].save()
             else:
                 removed_object.cleaned_data['id'].delete()
+
+
+_TEXT_CREDIT_FIELDS = {type_id: field
+                       for field, type_id in CREDIT_TYPES.items()}
+
+
+def _text_credits(revision, field):
+    """Return the credits of a text field, split as migrate_credits does."""
+    text = getattr(revision, field, '')
+    return [credit.strip() for credit in text.split(';') if credit.strip()]
+
+
+def _normal_text_credit(credit):
+    """Return a text credit without what migrate_credits may rewrite in it."""
+    credit = ' '.join(credit.split()).rstrip('? ')
+    return 'typeset' if credit in ('Typeset', 'Computer') else credit
+
+
+def _text_credit_names(credit):
+    """Return the names that migrate_credits can read in a text credit."""
+    name, _, note = _normal_text_credit(credit).split('(')[0].partition('[')
+    return [name.strip(' ?'), note[note.find(' ') + 1:].strip(' ]')]
+
+
+def _old_text_credit(credit_revision, revision, credit_revisions):
+    """
+    Return the old text credit a credit row was migrated from, or None.
+
+    Migration records no link, so it is inferred: from the approved text of
+    the credit type, the credits gone from the current text which name the
+    creator of the row. It takes exactly one such credit, and exactly one
+    row without a source for that creator and type, or the result is None.
+    """
+    field = _TEXT_CREDIT_FIELDS.get(credit_revision.credit_type_id)
+    if (field is None or credit_revision.is_sourced or credit_revision.source
+            or revision.source is None):
+        return None
+    creator = credit_revision.creator.creator
+    if credit_revisions.filter(
+      credit_type_id=credit_revision.credit_type_id, creator__creator=creator,
+      **{credit_revision.source_name: None}).count() != 1:
+        return None
+    current = [_normal_text_credit(credit)
+               for credit in _text_credits(revision, field)]
+    names = creator.active_names()
+    found = [credit for credit in _text_credits(revision.previous(), field)
+             if _normal_text_credit(credit) not in current
+             and names.filter(name__in=_text_credit_names(credit)).exists()]
+    return found[0] if len(found) == 1 else None
+
+
+def _restore_text_credit(revision, credit_revision):
+    """
+    Undo the migration of a credit row, and return whether that was possible.
+
+    The old text credit goes back before those that followed it in the
+    approved text, keeping any other edit of the text. The row is deleted.
+    """
+    credit = credit_revision.old_text_credit()
+    if credit is None:
+        return False
+    field = _TEXT_CREDIT_FIELDS[credit_revision.credit_type_id]
+    old = _text_credits(revision.previous(), field)
+    later = [_normal_text_credit(other)
+             for other in old[old.index(credit) + 1:]]
+    current = _text_credits(revision, field)
+    position = next((index for index, other in enumerate(current)
+                     if _normal_text_credit(other) in later), len(current))
+    current.insert(position, credit)
+    setattr(revision, field, '; '.join(current))
+    revision.save()
+    credit_revision.delete()
+    return True
 
 
 def _process_formset(self, formset, revision_type=None, generic=False):
@@ -4584,6 +4662,10 @@ class IssueRevision(Revision):
     def process_extra_forms(self, extra_forms):
         credits_formset = extra_forms['credits_formset']
         _process_formset(self, credits_formset, revision_type='issue_revision')
+        for form in credits_formset:
+            if form.cleaned_data.get('revert_migration') \
+               and form not in credits_formset.deleted_forms:
+                _restore_text_credit(self, form.cleaned_data['id'])
         removed_credits = credits_formset.deleted_forms
         if removed_credits:
             _removed_related_objects(removed_credits, 'issue_credit')
@@ -5420,6 +5502,13 @@ class StoryCreditRevision(Revision):
     def _imps_for(self, field_name):
         # imps already come from StoryRevision, since is_changed is True there
         return 0
+
+    def old_text_credit(self):
+        """Return the text credit this row was migrated from, or None."""
+        if self.signature_id:
+            return None
+        return _old_text_credit(self, self.story_revision,
+                                self.story_revision.story_credit_revisions)
 
 
 class StoryCharacterRevision(Revision):
@@ -6436,6 +6525,9 @@ class StoryRevision(Revision):
             if credit_form.is_valid() and credit_form.cleaned_data \
                and credit_form not in credits_formset.deleted_forms:
                 cd = credit_form.cleaned_data
+                if cd.get('revert_migration') \
+                   and _restore_text_credit(self, cd['id']):
+                    continue
                 if 'id' in cd and cd['id']:
                     credit_revision = credit_form.save()
                 else:

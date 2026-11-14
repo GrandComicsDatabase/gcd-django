@@ -20,7 +20,8 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
                       _strip_list,
-                      HiddenInputWithHelp, PageCountInput)
+                      HiddenInputWithHelp, PageCountInput,
+                      _init_revert_migration, _clean_revert_migration)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
                            PublisherCodeNumberRevision, get_issue_field_list
@@ -498,6 +499,7 @@ class IssueCreditRevisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(IssueCreditRevisionForm, self).__init__(*args, **kwargs)
+        _init_revert_migration(self)
         self.helper = FormHelper()
         self.helper.form_tag = True
         self.helper.layout = Layout(*(f for f in self.fields))
@@ -520,8 +522,12 @@ class IssueCreditRevisionForm(forms.ModelForm):
                 ' database.'
     )
 
+    revert_migration = forms.BooleanField(required=False,
+                                          label='Revert migration')
+
     def clean(self):
         cd = self.cleaned_data
+        _clean_revert_migration(self)
         if 'creator' not in cd and 'credit_name' not in cd:
             cd.pop('credit_type')
             cd['DELETE'] = True
