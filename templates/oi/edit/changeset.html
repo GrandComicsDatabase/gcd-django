@@ -10,6 +10,7 @@
 
 {% block view_body %}
 {% include "oi/bits/jquery.html" %}
+<script type="text/javascript" src="{% static 'js/htmx.min.js' %}"></script>
 <h1>
 {{ changeset|header_link }}
 </h1>
@@ -94,7 +95,7 @@
   </table>
   <button class="btn-blue-editing inline" type="submit" name="submit">{{ workflow_action_labels.submit }}</button>
       {% if changeset.approver %}
-      <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
+      {% include 'oi/bits/discuss_button.html' %}
       {% endif %}
   <button class="btn-blue-editing inline" type="submit" name="discard">Discard All Changes</button>
   <button class="btn-blue-editing inline" type="submit" name="add_comment">Add Comment</button>

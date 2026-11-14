@@ -27,7 +27,7 @@
     {% endif %}
 <button class="btn-blue-editing inline" type="submit" name="submit">{{ workflow_action_labels.submit }}</button>
     {% if changeset.approver %}
-<button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
+{% include 'oi/bits/discuss_button.html' %}
   {% endif %}
 <button class="btn-blue-editing inline" type="submit" name="discard">Discard All Changes</button>
   {% endif %}

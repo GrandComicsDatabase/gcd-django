@@ -371,6 +371,8 @@ urlpatterns = [
     path('changeset/<int:id>/disapprove/', oi_views.disapprove,
         name='disapprove'),
     path('changeset/<int:id>/process/', oi_views.process, name='process'),
+    path('changeset/<int:id>/discuss_modal/', oi_views.discuss_modal,
+        name='discuss_modal'),
     re_path(r'^(?P<model_name>\w+)/revision/(?P<id>\d+)/process/$',
         oi_views.process_revision,
         name='process_revision'),

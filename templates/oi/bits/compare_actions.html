@@ -1,3 +1,5 @@
+{% load static %}
+<script type="text/javascript" src="{% static 'js/htmx.min.js' %}"></script>
 <form id="review" action="{% url 'process' id=changeset.id %}" method="POST">
   {% csrf_token %}
   <div>
@@ -11,7 +13,7 @@
   {% endif %}
   {% if changeset.state == states.REVIEWING or changeset.state == states.OPEN %}
     {% if changeset.approver %}
-  <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
+  {% include 'oi/bits/discuss_button.html' %}
     {% endif %}
   {% endif %}
   {% if changeset.state not in states.CLOSED %}
@@ -41,7 +43,7 @@
   {% if user == changeset.approver %}
   <button class="btn-blue-editing inline" type="submit" name="approve">{{ workflow_action_labels.approve }}</button>
     {% if changeset.state != states.DISCUSSED %}
-  <button class="btn-blue-editing inline" type="submit" name="discuss">Discuss</button>
+  {% include 'oi/bits/discuss_button.html' %}
     {% endif %}
     {% if changeset.editable %}
   <button class="btn-blue-editing inline" type="submit" name="disapprove">{{ workflow_action_labels.disapprove }}</button>
