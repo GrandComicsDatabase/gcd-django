@@ -98,6 +98,7 @@ from apps.oi.forms import (get_brand_group_revision_form,  # noqa: F401
                            get_award_revision_form,
                            get_received_award_revision_form,
                            get_creator_revision_form,
+                           MoveCreatorNameForm,
                            get_indicia_publisher_revision_form,
                            get_publisher_revision_form,
                            get_revision_form,
@@ -5797,6 +5798,55 @@ def move_series(request, series_revision_id, publisher_id):
             series_revision.imprint = None
             series_revision.save()
             return submit(request, series_revision.changeset.id)
+
+
+@permission_required('indexer.can_approve')
+def move_creator_name(request, creator_name_id):
+    """
+    Give a name to another creator. The credits point to the row of the name
+    and so follow it. The change goes straight to the approval queue.
+    """
+    name = get_object_or_404(CreatorNameDetail, id=creator_name_id,
+                             deleted=False)
+    creator = name.creator
+    if not name.can_move_to_other_creator():
+        return render_error(
+          request, 'The name "%s" cannot be moved to another creator: it is '
+          'the official name, stands for a relation between creators, or has '
+          'credits with a signature of this creator.' % name.name,
+          redirect=False)
+
+    if 'cancel' in request.POST:
+        return HttpResponseRedirect(creator.get_absolute_url())
+
+    credit_count = name.storycredit_set.filter(deleted=False).count() + \
+        name.issuecredit_set.filter(deleted=False).count()
+    form = MoveCreatorNameForm(request.POST or None, name=name)
+    if not form.is_valid():
+        return oi_render(request, 'oi/edit/move_creator_name.html',
+                         {'name': name, 'credit_count': credit_count,
+                          'form': form})
+
+    changeset = _do_reserve(request.user, creator, 'creator')
+    if not changeset:
+        return render_error(
+          request, '%s is reserved, or you cannot reserve another change.'
+          % creator, redirect=False)
+
+    new_creator = form.cleaned_data['creator']
+    name_revision = changeset.creatornamedetailrevisions.get(
+      creator_name_detail=name)
+    name_revision.creator = new_creator
+    name_revision.save()
+
+    notes = '"%s" moves from %s to %s, %d credit(s) follow the name.' % (
+      name.name, creator.search_result_name(),
+      new_creator.search_result_name(), credit_count)
+    comments = form.cleaned_data['comments'].strip()
+    if comments:
+        notes = '%s\n%s' % (notes, comments)
+    changeset.submit(notes=notes)
+    return HttpResponseRedirect(urlresolvers.reverse('editing'))
 
 
 def _fields_hidden_by_series(issue_revision, old_series, new_series):

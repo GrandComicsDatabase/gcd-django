@@ -10013,9 +10013,22 @@ class CreatorNameDetailRevision(Revision):
     # #####################################################################
     # Old methods. t.b.c, if deprecated.
 
+    def _moves_to_other_creator(self):
+        """Say whether this revision gives the name to another creator."""
+        previous = self.previous()
+        return bool(previous and previous.creator_id and
+                    previous.creator_id != self.creator_id)
+
+    def _post_save_object(self, changes):
+        """Mark the new creator as changed: its search entry lists its names."""
+        if self._moves_to_other_creator():
+            self.creator.save()
+
     def _field_list(self):
         field_list = ['name', 'sort_name', 'is_official_name', 'given_name',
                       'family_name', 'type', 'in_script']
+        if self._moves_to_other_creator():
+            field_list.append('creator')
         return field_list
 
     def _get_blank_values(self):
@@ -10030,6 +10043,8 @@ class CreatorNameDetailRevision(Revision):
         }
 
     def _imps_for(self, field_name):
+        if field_name == 'creator':
+            return 0
         if field_name == 'sort_name':
             # A new name with a sort name equal to the name is not worth an
             # IMP, correcting the sort name of an existing name is.

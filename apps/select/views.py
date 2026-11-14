@@ -953,11 +953,15 @@ def _filter_and_sort(qs, query, field='name', creator_detail=False,
 class CreatorAutocomplete(LoginRequiredMixin,
                           autocomplete.Select2QuerySetView):
     def get_queryset(self):
-        qs = Creator.objects.filter(deleted=False)
+        qs = Creator.objects.filter(deleted=False).select_related('birth_date')
 
         qs = _filter_and_sort(qs, self.q, field='gcd_official_name')
 
         return qs
+
+    def get_result_label(self, result):
+        """Show the disambiguation, to tell apart creators of the same name."""
+        return result.search_result_name()
 
 
 class CreatorNameAutocomplete(LoginRequiredMixin,
