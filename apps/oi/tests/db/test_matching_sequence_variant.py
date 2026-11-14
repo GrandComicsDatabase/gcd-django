@@ -17,7 +17,7 @@ from apps.oi.models import (
 NOT_DIFFERENT = ('A cover sequence can only be added to a variant if its '
                  'cover artwork is different from the base issue.')
 ONLY_COVER = 'Only a cover sequence can be added to a variant issue.'
-ONLY_ONE = 'You cannot add more than one story to a variant issue.'
+ONLY_ONE = 'You cannot add more than one cover sequence to a variant issue.'
 ROUTES = ['confirm', 'create', 'edit', 'edit_qualifier']
 BUTTONS = ['matching_sequence', 'matching_sequence_with_qualifiers']
 
