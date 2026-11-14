@@ -132,7 +132,8 @@ def get_story_revision_form(revision=None, user=None,
 
     # for variants we can only have cover sequences (for now)
     if (revision and (revision.issue is None or revision.issue.variant_of))\
-       or (revision is None and issue_revision.issue is None):
+       or (revision is None and (issue_revision.issue is None
+                                 or issue_revision.variant_of)):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:
