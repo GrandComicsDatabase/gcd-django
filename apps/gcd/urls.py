@@ -220,7 +220,7 @@ urlpatterns = [
          gcd_views.details.creator_sequences, {'creator_name': True},
          name='creator_name_sequences'),
     path('creator_name/<int:creator_name_id>/series/<int:series_id>/issues/',
-         gcd_views.details.creator_sequences, {'creator_name': True},
+         gcd_views.details.creator_name_issues,
          name='creator_name_issues'),
     path('creator/name/',
          gcd_views.search.creator_by_name,
