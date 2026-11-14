@@ -165,6 +165,38 @@ def test_remembering_same_cover_three_times_uses_one_cache_slot(initial):
     assert request.session['cached_covers'] == ([8, 7] if 8 in initial else [7])
 
 
+@pytest.mark.parametrize('kwargs, key, lookups', [
+    ({'issue_id': 5}, 'cached_issues', []),
+    ({'story_id': 9}, 'cached_stories', [{'id': 9}]),
+    ({'cover_story_id': 9}, 'cached_covers', [{'id': 9}])])
+def test_remember_without_referrer_opens_the_issue(kwargs, key, lookups):
+    """Without a referrer, Remember goes to the page of the object's issue."""
+    request = RequestFactory().get('/remember/')
+    request.user = SimpleNamespace(indexer=SimpleNamespace(cache_size=3))
+    request.session = {}
+    story = SimpleNamespace(issue_id=5)
+    with patch('apps.select.views.get_object_or_404',
+               return_value=story) as lookup:
+        response = cache_content.__wrapped__(request, **kwargs)
+    assert response.status_code == 302
+    assert response['Location'] == '/issue/5/'
+    assert [call.kwargs for call in lookup.call_args_list] == lookups
+    assert list(kwargs.values())[0] in request.session[key]
+
+
+@pytest.mark.parametrize('kwargs, location', [
+    ({'issue_id': 5}, '/some/page/'),
+    ({'story_id': 9}, '/some/page/#9'),
+    ({'cover_story_id': 9}, '/some/page/')])
+def test_remember_with_referrer_goes_back(kwargs, location):
+    """With a referrer, Remember goes back to the page it came from."""
+    request = RequestFactory().get('/remember/', HTTP_REFERER='/some/page/')
+    request.user = SimpleNamespace(indexer=SimpleNamespace(cache_size=3))
+    request.session = {}
+    response = cache_content.__wrapped__(request, **kwargs)
+    assert response['Location'] == location
+
+
 def test_existing_duplicate_covers_are_cleaned_when_read():
     request = RequestFactory().get('/select_object/test/')
     request.session = {'cached_covers': [7, 7, 7], 'unrelated': 'keep'}
@@ -248,7 +280,7 @@ def test_sequence_sections_render_with_bulk_removal_and_shared_styles():
         'return': '_selected_copy_sequence',
     })
     with patch('apps.select.views.get_select_forms',
-               return_value=(forms.Form(), cache_form)), \
+               return_value=(forms.Form(), forms.Form(), cache_form)), \
             patch('apps.select.views.render', return_value=HttpResponse()) as render:
         select_multiple_sequences.__wrapped__(request, 'test')
     template = render.call_args.args[1]
@@ -280,12 +312,10 @@ def test_sequence_sections_render_with_bulk_removal_and_shared_styles():
     assert '<th scope="col">Order</th>' not in html
     assert '<th scope="col">Story</th>' in html
     assert html.index('Stories (1/10)') < html.index('Covers (1/10)')
-    assert '>Select</button>' not in html
     assert '>Delete</button>' not in html
     assert 'data-cache-list="cover"' in html
     assert '<th scope="col">Cover</th>' in html
     assert 'Drag a cover row to reorder it. Order is saved automatically.' in html
-    assert 'name="select_object"' not in html
     assert html.count('<colgroup>') == 2
     assert 'Delete selected stories' not in html
     assert html.index('data-cache-remove') > html.index('</section>')
@@ -400,7 +430,7 @@ def test_reprint_selection_keeps_original_selector():
         'target': 'a story or issue', 'return': 'confirm_reprint',
     })
     with patch('apps.select.views.get_select_forms',
-               return_value=(forms.Form(), cache_form)), \
+               return_value=(forms.Form(), forms.Form(), cache_form)), \
             patch('apps.select.views.render', return_value=HttpResponse()) as render:
         select_object.__wrapped__(request, 'test')
     template = render.call_args.args[1]

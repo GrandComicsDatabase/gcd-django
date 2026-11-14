@@ -3,6 +3,7 @@
 import pytest
 import mock
 
+from apps.gcd.models import Publisher
 from apps.oi.models import PublisherRevision
 
 
@@ -76,3 +77,22 @@ def test_create_edit_revision(any_added_publisher, publisher_add_values,
 
     assert rev.source is any_added_publisher
     assert rev.source_name == 'publisher'
+
+
+@pytest.mark.django_db
+def test_commit_delete_revision_removes_keywords(any_added_publisher,
+                                                 any_deleting_changeset,
+                                                 keywords):
+    rev = PublisherRevision.clone(data_object=any_added_publisher,
+                                  changeset=any_deleting_changeset)
+    rev.deleted = True
+    rev.save()
+
+    rev.commit_to_display()
+
+    publisher = Publisher.objects.get(pk=any_added_publisher.pk)
+    assert publisher.deleted
+    assert list(publisher.keywords.all()) == []
+    # The revision keeps the keywords as text for the change history.
+    rev = PublisherRevision.objects.get(pk=rev.pk)
+    assert sorted(rev.keywords.split('; ')) == keywords['list']

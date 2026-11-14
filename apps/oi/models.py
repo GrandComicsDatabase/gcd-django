@@ -385,6 +385,7 @@ class Changeset(models.Model):
         if self.change_type == CTYPES['feature']:
             return (self.featurerevisions.all(),
                     self.featurenamedetailrevisions.all(),
+                    self.featurerelationrevisions.all(),
                     self.externallinkrevisions.all(),)
 
         if self.change_type == CTYPES['feature_logo']:
@@ -923,6 +924,10 @@ class Changeset(models.Model):
     def review_is_overdue(self):
         if timezone.now() - timedelta(weeks=1) > self.modified:
             return True
+        elif (self.indexer.indexer.is_new and
+              timezone.now() - timedelta(days=3) > self.modified and
+              self.imps <= 20):
+            return True
         else:
             return False
 
@@ -943,6 +948,12 @@ class Changeset(models.Model):
                 # coverrevisions can have issuerevisions and storyrevisions
                 # for variant uploads, but one shouldn't get imps for them
                 revisions = self.coverrevisions.all()
+            elif self.change_type == CTYPES['series']:
+                # the issuerevisions of a series change come from moving the
+                # series, which re-sets the brands and indicia publishers of
+                # the issues automatically, one shouldn't get imps for them
+                revisions = (revision for revision in self.revisions
+                             if not isinstance(revision, IssueRevision))
             else:
                 revisions = self.revisions
 
@@ -1897,7 +1908,7 @@ class Revision(models.Model):
                 for v in new_value:
                     v.update_cached_counts(deltas)
                     v.save()
-            else:
+            elif new_value:
                 new_value.update_cached_counts(deltas)
                 new_value.save()
 
@@ -2122,8 +2133,13 @@ class Revision(models.Model):
 
         # Keywords must be handled post-save for added objects, and
         # are safe to handle here for other types of revisions.
+        # Deleted objects lose their keywords, the revision keeps them
+        # as text for the change history.
         if 'keywords' in self._get_regular_fields():
-            save_keywords(self, self.source)
+            if self.deleted:
+                self.source.keywords.clear()
+            else:
+                save_keywords(self, self.source)
 
         for multi in self._get_multi_value_fields():
             old_rp = relpath.RelPath(type(self), multi)
@@ -3589,7 +3605,6 @@ class SeriesRevision(Revision):
             # We assume that a non-four-digit year is a typo of some
             # sort, and do not propagate it.  The approval process
             # should catch that sort of thing.
-            # TODO: Consider a validator on year_began?
             if len(str(self.year_began)) == 4:
                 issue_revision.key_date = '%d-00-00' % self.year_began
             issue_revision.save()
@@ -4179,7 +4194,7 @@ class IssueRevision(Revision):
             'valid_isbn': has_isbn,
             'volume': has_volume,
             'no_volume': has_volume,
-            'display_volume_with_issue': has_volume,
+            'display_volume_with_number': has_volume,
             'indicia_frequency': has_ind_freq,
             'no_indicia_frequency': has_ind_freq,
             'indicia_printer': has_ind_print,
@@ -4523,7 +4538,9 @@ class IssueRevision(Revision):
                 code_number_revision.save()
 
         if delete:
-            for cover in self.issue.active_covers():
+            # active_covers() gives the covers of the base issue for a
+            # variant with the same image, and those stay.
+            for cover in self.issue._active_covers():
                 # cover can be reserved, so this can fail
                 # TODO check if transaction rollback works
                 cover_lock = _get_revision_lock(cover,
@@ -4603,7 +4620,7 @@ class IssueRevision(Revision):
                     end_note = note.find(')')
                     remainder_note = note[end_note+1:].strip()
                     note = note[:end_note].strip()
-                    save_credit = credit
+                    with_note = credit
                     credit = credit[:credit.find('(')-1]
                     if note in ['credited', 'kreditert']:
                         is_credited = True
@@ -4616,7 +4633,7 @@ class IssueRevision(Revision):
                             else:
                                 note = remainder_note
                     else:
-                        note = save_credit[save_credit.find('('):].strip()
+                        note = with_note[with_note.find('('):].strip()
                 else:
                     note = ''
                 if credit.find('[') > 1:
@@ -4632,6 +4649,18 @@ class IssueRevision(Revision):
 
                 if creator.count() == 1:
                     creator = creator.get()
+                    # disallow crediting a creator before their birth year
+                    if self.key_date[:4].isnumeric():
+                        issue_year = self.key_date[:4]
+                    else:
+                        issue_year = None
+                    if creator.creator.birth_date.year and issue_year and \
+                       creator.creator.birth_date.year.isnumeric() and \
+                       int(creator.creator.birth_date.year) > int(issue_year):
+                        creator = None
+                else:
+                    creator = None
+                if creator:
                     if uncertain and not creator.is_official_name:
                         if creator.in_script == creator.creator\
                            .active_names().get(is_official_name=True)\
@@ -5097,9 +5126,18 @@ class IssueRevision(Revision):
 
 
 class PreviewIssue(Issue):
-    # TODO add and use PreviewIssue.init
+    # TODO use PreviewIssue.init
     class Meta:
         proxy = True
+
+    @classmethod
+    def init(cls, issue_revision):
+        preview_issue = PreviewIssue()
+        issue_revision._copy_fields_to(preview_issue)
+        preview_issue.keywords = issue_revision.keywords
+        preview_issue.revision = issue_revision
+        preview_issue.id = issue_revision.id
+        return preview_issue
 
     def get_prev_next_issue(self):
         if self.id:
@@ -5512,7 +5550,7 @@ class StoryCharacterRevision(Revision):
 
     def show_notes(self):
         from apps.gcd.models.story import character_notes
-        return character_notes(self)
+        return character_notes(self, html=True)
 
     def _imps_for(self, field_name):
         # imps already come from StoryRevision, since is_changed is True there
@@ -6590,7 +6628,7 @@ class StoryRevision(Revision):
                         end_note = note.find(')')
                         remainder_note = note[end_note+1:].strip()
                         note = note[:end_note].strip()
-                        save_credit = credit
+                        with_note = credit
                         credit = credit[:credit.find('(')-1].strip()
                         if credit[-1] == '?':
                             credit = credit[:-1].strip()
@@ -6627,7 +6665,7 @@ class StoryRevision(Revision):
                             is_signed = True
                             note = 'painting'
                         else:
-                            note = save_credit[save_credit.find('('):].strip()
+                            note = with_note[with_note.find('('):].strip()
                     else:
                         note = ''
                     if credit.find('[') > 1:
@@ -6640,6 +6678,7 @@ class StoryRevision(Revision):
                         else:
                             credit = value
                             ghost_possible = True
+
                     creator = CreatorNameDetail.objects.filter(name=credit,
                                                                deleted=False)
                     if not ghost_possible:
@@ -6648,6 +6687,19 @@ class StoryRevision(Revision):
 
                     if creator.count() == 1:
                         creator = creator.get()
+                        # disallow crediting a creator before their birth year
+                        if self.issue and self.issue.key_date[:4].isnumeric():
+                            issue_year = self.issue.key_date[:4]
+                        else:
+                            issue_year = None
+                        if creator.creator.birth_date.year and issue_year and \
+                           creator.creator.birth_date.year.isnumeric() and \
+                           int(creator.creator.birth_date.year) > \
+                           int(issue_year):
+                            creator = None
+                    else:
+                        creator = None
+                    if creator:
                         if uncertain and not creator.is_official_name:
                             if creator.in_script == creator.creator\
                                .active_names().get(is_official_name=True)\
@@ -6802,6 +6854,8 @@ class StoryRevision(Revision):
 
     @property
     def my_issue_revision(self):
+        # For a variant-add (inside an existing issue changeset or on its own)
+        # we get the issue revision of the variant via None for self.issue.
         if not hasattr(self, '_saved_my_issue_revision'):
             self._saved_my_issue_revision = \
                 self.changeset.issuerevisions.filter(issue=self.issue)[0]
@@ -7030,8 +7084,16 @@ class StoryRevision(Revision):
                         .exclude(deleted=True)
                 next_revisions_ids = []
             old_revisions_ids = old_revisions.values_list('id', flat=True)
+            # a sequence moved into an existing issue in this changeset is
+            # linked by target_revision only (target=None), see
+            # move_story_revision
+            moved_revisions = self.target_reprint_revisions.active_set()\
+                                  .filter(changeset__id=self.changeset_id)
+            if preview:
+                moved_revisions = moved_revisions.exclude(deleted=True)
             revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
-                set(next_revisions_ids)
+                set(next_revisions_ids) | \
+                set(moved_revisions.values_list('id', flat=True))
             return ReprintRevision.objects.filter(id__in=revisions_ids)
         else:
             return from_reprints
@@ -7098,8 +7160,16 @@ class StoryRevision(Revision):
                         .exclude(deleted=True)
                 next_revisions_ids = []
             old_revisions_ids = old_revisions.values_list('id', flat=True)
+            # a sequence moved into an existing issue in this changeset is
+            # linked by origin_revision only (origin=None), see
+            # move_story_revision
+            moved_revisions = self.origin_reprint_revisions.active_set()\
+                                  .filter(changeset__id=self.changeset_id)
+            if preview:
+                moved_revisions = moved_revisions.exclude(deleted=True)
             revisions_ids = set(new_revisions_ids) | set(old_revisions_ids) | \
-                set(next_revisions_ids)
+                set(next_revisions_ids) | \
+                set(moved_revisions.values_list('id', flat=True))
             return ReprintRevision.objects.filter(id__in=revisions_ids)
         else:
             return to_reprints
@@ -7396,10 +7466,23 @@ class FeatureRevision(Revision):
                                                            self.changeset)
             feature_name.save_added_revision(changeset=self.changeset,
                                              feature_revision=self)
-
             if delete:
                 feature_name.deleted = True
                 feature_name.save()
+        if delete:
+            active_relations = self.feature.from_related_feature.all() | \
+                               self.feature.to_related_feature.all()
+            for feature_relation in active_relations:
+                relation_lock = _get_revision_lock(feature_relation,
+                                                   changeset=self.changeset)
+                if relation_lock is None:
+                    raise IntegrityError("needed FeatureRelation lock not "
+                                         "possible")
+                feature_relation_revision = \
+                    FeatureRelationRevision.clone(feature_relation,
+                                                  self.changeset)
+                feature_relation_revision.deleted = True
+                feature_relation_revision.save()
 
     def _pre_save_object(self, changes):
         name = self.changeset.featurenamedetailrevisions.get(
@@ -9948,7 +10031,9 @@ class CreatorNameDetailRevision(Revision):
 
     def _imps_for(self, field_name):
         if field_name == 'sort_name':
-            if self.sort_name == self.name:
+            # A new name with a sort name equal to the name is not worth an
+            # IMP, correcting the sort name of an existing name is.
+            if self.added and self.sort_name == self.name:
                 return 0
             else:
                 return 1

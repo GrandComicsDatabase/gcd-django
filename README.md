@@ -1,3 +1,5 @@
+[![Live Site](https://img.shields.io/badge/site-comics.org-blue)](https://www.comics.org/)
+
 # GCD Web Application
 
 This file last updated: *Jan 2026*

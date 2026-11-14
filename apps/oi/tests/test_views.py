@@ -6,6 +6,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 from apps.indexer.models import Indexer
+from apps.oi.models import IssueRevision
 
 
 @pytest.mark.django_db
@@ -48,3 +49,28 @@ def test_submit_email_uses_approver_compare_preference(
     )
     assert f'Please go to {compare_url} to compare the changes.' in (
       mail.outbox[0].body)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('method', ('get', 'post'))
+def test_move_issue_refuses_singleton_series(
+        client, any_indexer, any_added_issue, any_added_series,
+        any_editing_changeset, method):
+    singleton = any_added_series
+    singleton.is_singleton = True
+    singleton.save()
+    issue_revision = IssueRevision.clone(data_object=any_added_issue,
+                                         changeset=any_editing_changeset)
+    any_indexer.is_superuser = True
+    any_indexer.save()
+    client.force_login(any_indexer)
+
+    url = reverse('move_issue',
+                  kwargs={'issue_revision_id': issue_revision.id,
+                          'series_id': singleton.id})
+    response = getattr(client, method)(url)
+
+    issue_revision = IssueRevision.objects.get(pk=issue_revision.pk)
+    assert issue_revision.series == any_added_issue.series
+    assert 'Issues cannot be moved into a singleton series.' in (
+      response.content.decode())

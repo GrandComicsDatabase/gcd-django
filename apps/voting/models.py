@@ -201,6 +201,9 @@ class AgendaMailingList(models.Model):
     display_token = models.BooleanField(default=False)
 
     def send_mail(self, subject, message):
+        # Votes on BETA are tests: their mails must not reach the lists.
+        if settings.BETA:
+            return
         if self.mailing_list is not None:
             send_mail(from_email=settings.EMAIL_VOTING_FROM,
                       recipient_list=(self.mailing_list.address,),

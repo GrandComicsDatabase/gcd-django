@@ -93,7 +93,7 @@ def test_conditional_field_mapping():
     assert IssueRevision._get_conditional_field_tuple_mapping() == {
         'volume': ('series', 'has_volume'),
         'no_volume': ('series', 'has_volume'),
-        'display_volume_with_issue': ('series', 'has_volume'),
+        'display_volume_with_number': ('series', 'has_volume'),
         'title': ('series', 'has_issue_title'),
         'no_title': ('series', 'has_issue_title'),
         'barcode': ('series', 'has_barcode'),

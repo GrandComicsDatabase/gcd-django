@@ -25,6 +25,13 @@ class AgendaItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'state', 'owner')
     list_filter = ('agenda', 'state')
 
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_dbfield(db_field, request, **kwargs)
+        if db_field.name == 'state':
+            # 'Pending' is stored as NULL, an empty value
+            formfield.required = False
+        return formfield
+
 class ExpectedVoterAdmin(admin.ModelAdmin):
     raw_id_fields = ('voter',)
     list_display = ('voter_name', 'agenda', 'tenure_began', 'tenure_ended')

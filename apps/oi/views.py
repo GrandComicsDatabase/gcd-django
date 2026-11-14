@@ -46,7 +46,7 @@ from apps.gcd.models import (
     Feature, FeatureLogo, FeatureRelation,
     Printer, IndiciaPrinter,
     CreatorSignature, Character, CharacterRelation, Group,
-    GroupRelation, GroupMembership, Universe, CREDIT_TYPES)
+    GroupRelation, GroupMembership, Universe, CREDIT_TYPES, VCS_Codes)
 from apps.gcd.views import paginate_response
 # need this for preview-call
 from apps.gcd.views.details import (  # noqa: F401
@@ -371,7 +371,8 @@ def validate_changeset_revisions(changeset, request):
             invalid.append((revision, messages))
     if changeset.change_type == CTYPES['issue'] and page_count_sum > 0:
         issue = changeset.issuerevisions.first()
-        if issue.page_count is not None and not issue.page_count_uncertain and \
+        if issue.page_count is not None and\
+           not issue.page_count_uncertain and \
            page_count_sum > issue.page_count:
             invalid.append((issue,
                             ['Sum of the page count of all sequences is %d, '
@@ -598,8 +599,7 @@ def edit_two_issues(request, issue_id):
                             redirect=False)
     data = {'issue_id': issue_id,
             'issue': True,
-            'heading': mark_safe('<h2>Select issue to edit with %s</h2>'
-                                 % esc(issue.full_name())),
+            'heading': 'Select issue to edit with %s' % esc(issue.full_name()),
             'target': 'an issue',
             'return': 'confirm_two_edits',
             'cancel': urlresolvers.reverse('show_issue',
@@ -730,6 +730,18 @@ def _invalid_revision_response(request, invalid_revisions, instruction):
         instruction, errors)})
 
 
+def _has_changed_revision(changeset):
+    """
+    Whether a revision changes data, also if the change gives no IMPs,
+    e.g. a new order of the sequences.
+    """
+    for revision in changeset.revisions:
+        revision.compare_changes()
+        if revision.is_changed:
+            return True
+    return False
+
+
 @permission_required('indexer.can_reserve')
 def submit(request, id):
     """
@@ -760,13 +772,17 @@ def submit(request, id):
        changeset.comments.count() == 1:
         changeset.calculate_imps()
         if changeset.imps == 0 and not \
-           changeset.characterorderrevisions.exists():
+           changeset.characterorderrevisions.exists() and not \
+           _has_changed_revision(changeset):
+            edit_url = urlresolvers.reverse('edit', kwargs={'id':
+                                                            changeset.id})
             return oi_render(
               request, 'indexer/error.html',
               {'error_text': mark_safe('A submission needs to consists of at '
                                        'least one change to the data or have '
                                        'a comment. <a href="%s">Go back.</a>'
-                                       % request.META['HTTP_REFERER'])
+                                       % request.META.get('HTTP_REFERER',
+                                                          edit_url))
                })
 
     changeset.submit(notes=comment_text)
@@ -1781,6 +1797,10 @@ def process(request, id):
 
     if 'submit' in request.POST:
         changeset = get_object_or_404(Changeset, id=id)
+        if request.user != changeset.indexer:
+            return oi_render(
+              request, 'indexer/error.html',
+              {'error_text': 'A change may only be submitted by its author.'})
         if changeset.inline():
             revision = changeset.inline_revision()
             form_class = get_revision_form(revision, user=request.user)
@@ -1837,6 +1857,10 @@ def process_revision(request, id, model_name):
        or 'edit_importance_order' in request.POST \
        or 'create_importance_order' in request.POST:
         revision = get_object_or_404(REVISION_CLASSES[model_name], id=id)
+        if request.user != revision.changeset.indexer:
+            return oi_render(
+              request, 'indexer/error.html',
+              {'error_text': 'A revision may only be saved by its author.'})
         form = get_revision_form(revision,
                                  user=request.user)(request.POST,
                                                     instance=revision)
@@ -1902,7 +1926,7 @@ def edit_issues_in_bulk(request):
     if not request.user.indexer.can_reserve_another():
         return render_error(request, REACHED_CHANGE_LIMIT)
 
-    if request.method == 'GET' and request.GET['target'] != 'issue':
+    if request.GET.get('target') != 'issue':
         return HttpResponseRedirect(urlresolvers.reverse(
           'process_advanced_search') + '?' + request.GET.urlencode())
 
@@ -1927,7 +1951,7 @@ def edit_issues_in_bulk(request):
     nr_items = items.count()
     items_reserved = RevisionLock.objects.filter(
       object_id__in=ids,
-      content_type=ContentType.objects.get_for_model(items[0]))
+      content_type=ContentType.objects.get_for_model(Issue))
     nr_items_reserved = items_reserved.count()
     nr_items_unreserved = nr_items - nr_items_reserved
     items_reserved_ids = items_reserved.values_list('object_id', flat=True)
@@ -2418,7 +2442,7 @@ def add_brand_use(request, brand_id, publisher_id=None):
                 kwargs={'brand_id': brand_id}))
 
         form = get_brand_use_revision_form(user=request.user)(request.POST)
-        if not form.is_valid:
+        if not form.is_valid():
             return _display_add_brand_use_form(request, form, brand, publisher)
 
         changeset = Changeset(indexer=request.user, state=states.OPEN,
@@ -2429,8 +2453,8 @@ def add_brand_use(request, brand_id, publisher_id=None):
                                      publisher=publisher)
         return submit(request, changeset.id)
     else:
-        data = {'heading': mark_safe('<h2>Select Publisher where the Brand %s '
-                                     'was in use</h2>' % esc(brand.name)),
+        data = {'heading': 'Select Publisher where the Brand %s '
+                           'was in use' % esc(brand.name),
                 'target': 'a publisher',
                 'brand_id': brand_id,
                 'publisher': True,
@@ -2577,6 +2601,20 @@ def init_added_variant(form_class, initial, issue, revision=False):
     return form
 
 
+def _save_add_form_comment(request, form, revision, changeset):
+    """
+    Store the comment of an add form, for adds which do not go directly to
+    the submission with the comment.
+    """
+    comments = form.cleaned_data.get('comments')
+    if comments:
+        revision.comments.create(commenter=request.user,
+                                 changeset=changeset,
+                                 text=comments,
+                                 old_state=changeset.state,
+                                 new_state=changeset.state)
+
+
 @permission_required('indexer.can_reserve')
 def add_issue(request, series_id, sort_after=None, variant_of=None,
               variant_cover=None, edit_with_base=False):
@@ -2701,6 +2739,7 @@ def add_issue(request, series_id, sort_after=None, variant_of=None,
     revision.process_extra_forms(extra_forms)
 
     if variant_of:
+        _save_add_form_comment(request, form, revision, changeset)
         return edit(request, changeset.id)
     if 'copy_from_predecessor' in request.POST and revision.after:
         issue = revision.after
@@ -2801,6 +2840,7 @@ def add_variant_to_issue_revision(request, changeset_id, issue_revision_id):
                    'code_number_formset': code_number_formset,
                    'external_link_formset': external_link_formset}
     variant_revision.process_extra_forms(extra_forms)
+    _save_add_form_comment(request, form, variant_revision, changeset)
     changeset.change_type = CTYPES['variant_add']
     changeset.save()
 
@@ -2866,6 +2906,7 @@ def add_variant_issuerevision(changeset, revision, variant_of, form,
                    'code_number_formset': code_number_formset,
                    'external_link_formset': external_link_formset}
     issuerevision.process_extra_forms(extra_forms)
+    _save_add_form_comment(request, form, issuerevision, changeset)
 
     return True
 
@@ -4312,6 +4353,7 @@ def save_selected_series_bond(request, data, object_type, selected_id):
 
 @permission_required('indexer.can_reserve')
 def edit_series_bond(request, id):
+    """Go to the selector for a side of a series bond, or flip the bond."""
     if request.method != 'POST':
         return _cant_get(request)
     series_bond_revision = get_object_or_404(SeriesBondRevision, id=id)
@@ -4338,7 +4380,12 @@ def edit_series_bond(request, id):
           'edit', kwargs={'id': series_bond_revision.changeset.id}))
     else:
         raise NotImplementedError
-    initial = {'series': series.name,
+    # the form gets no publisher or year: they would narrow the Series menu
+    # and trap someone looking for another series
+    initial = {'series_auto': series.id,
+               'issue_number': number,
+               # the row of the older search, filled as before the form
+               'series': series.name,
                'publisher': series.publisher.name,
                'year': series.year_began,
                'number': number}
@@ -4346,8 +4393,8 @@ def edit_series_bond(request, id):
             'initial': initial,
             'series': True,
             'issue': True,
-            'heading': mark_safe('<h2>Select %s of the bond %s</h2>' %
-                                 (which_side, series_bond_revision)),
+            'heading': 'Select %s of the bond %s' % (
+                       which_side, esc(series_bond_revision)),
             'target': 'a series or issue',
             'return': 'save_selected_series_bond',
             'which_side': which_side,
@@ -4385,7 +4432,7 @@ def add_series_bond(request, series_id):
     data = {'series_id': series_id,
             'series': True,
             'issue': True,
-            'heading': mark_safe('<h2>Select other side of the bond</h2>'),
+            'heading': 'Select other side of the bond for %s' % esc(series),
             'target': 'a series or issue',
             'return': 'save_added_series_bond',
             'cancel': urlresolvers.reverse('show_series',
@@ -4469,7 +4516,7 @@ def parse_reprint(reprints):
                 number = None
                 volume = None
             return publisher, series, year, number, volume
-        except ValueError:
+        except (ValueError, IndexError):
             pass
     return None, None, None, None, None
 
@@ -4525,6 +4572,10 @@ def reserve_reprint(request, changeset_id, reprint_id):
         return _cant_get(request)
     display_obj = get_object_or_404(DISPLAY_CLASSES['reprint'],
                                     id=reprint_id)
+    if which_side == 'matching_sequence':
+        refusal = _reprint_sequence_refusal(display_obj, changeset)
+        if refusal:
+            return render_error(request, refusal, redirect=False)
     revision_lock = _get_revision_lock(display_obj, changeset)
     if not revision_lock:
         return render_error(
@@ -4734,7 +4785,12 @@ def edit_reprint(request, id, which_side=None):
            'reprint_revision': reprint_revision,
            'which_side': which_side[:6]})
 
-    initial = {'series': select_issue.series.name,
+    # the form gets no sequence number: changing a side needs to see the
+    # other sequences
+    initial = {'series_auto': select_issue.series_id,
+               'issue_number': select_issue.number,
+               # the row of the older search, filled as before the form
+               'series': select_issue.series.name,
                'publisher': select_issue.series.publisher.name,
                'year': select_issue.series.year_began,
                'number': select_issue.number,
@@ -4770,7 +4826,7 @@ def edit_reprint(request, id, which_side=None):
             'story': True,
             'issue': True,
             'initial': initial,
-            'heading': mark_safe('<h2>%s</h2>' % heading),
+            'heading': heading,
             'target': 'a story or issue',
             'return': 'confirm_reprint',
             'which_side': which_side,
@@ -4782,9 +4838,22 @@ def edit_reprint(request, id, which_side=None):
       'select_object', kwargs={'select_key': select_key}))
 
 
+def _form_values_of_note(publisher, series, year, number):
+    """Return the values of the selector's form if a note names one series."""
+    found = Series.objects.filter(name=series, publisher__name=publisher,
+                                  deleted=False)
+    if str(year).isdecimal():
+        found = found.filter(year_began=year)
+    ids = list(found.values_list('id', flat=True)[:2])
+    if len(ids) != 1:
+        return {}
+    return {'series_auto': ids[0], 'issue_number': number}
+
+
 @permission_required('indexer.can_reserve')
 def add_reprint(request, changeset_id,
                 story_id=None, issue_id=None, reprint_note=''):
+    """Go to the selector for the other side of a new reprint link."""
     if story_id:
         story = get_object_or_404(StoryRevision, id=story_id,
                                   changeset__id=changeset_id)
@@ -4793,11 +4862,16 @@ def add_reprint(request, changeset_id,
         issue = get_object_or_404(IssueRevision, id=issue_id,
                                   changeset__id=changeset_id)
         exclude_issue_id = issue.issue_id
-    if reprint_note:
+    # the button of a sequence without notes sends a space
+    note = unquote(reprint_note).strip()
+    if note:
         publisher, series, year, number, volume = \
-            parse_reprint(unquote(reprint_note).split(';')[0])
-        initial = {'series': series, 'publisher': publisher,
-                   'year': year, 'number': number}
+            parse_reprint(note.split(';')[0])
+        initial = _form_values_of_note(publisher, series, year, number)
+        # the row of the older search, filled as before the form, also with
+        # a series the form cannot take
+        initial.update({'series': series, 'publisher': publisher,
+                        'year': year, 'number': number})
     else:
         initial = {}
     if story_id:
@@ -4812,7 +4886,9 @@ def add_reprint(request, changeset_id,
             'story': True,
             'issue': True,
             'initial': initial,
-            'heading': mark_safe('<h2>%s</h2>' % heading),
+            'heading': heading,
+            # what the form cannot be filled with stays readable
+            'note': 'Reprint note: %s' % note if note else '',
             'target': 'a story or issue',
             'return': 'confirm_reprint',
             'cancel': urlresolvers.reverse('edit',
@@ -4890,7 +4966,7 @@ def _copy_placement(existing, position, has_cover):
         'cover_position': 0 if mode == 'main' else insertion,
         'insertion': insertion,
         'state': [[r.id, r.type_id, r.sequence_number] for r in existing]
-                 if has_cover else None,
+        if has_cover else None,
     }
 
 
@@ -4913,11 +4989,27 @@ def _single_copy_context(request, issue_revision, story, position,
     }
 
 
+def _about_comics_copy_error(request, stories, issue_revision):
+    """
+    Sequences of type 'about comics' can only be added to series which
+    have them, which is otherwise enforced by the sequence types offered
+    in the form.
+    """
+    if not issue_revision.series.has_about_comics and any(
+      story.type_id == STORY_TYPES['about comics'] for story in stories):
+        return render_error(
+          request, 'Sequences of type "about comics" can only be copied to '
+                   'a series which has "about comics" sequences.',
+          redirect=False)
+    return None
+
+
 @transaction.atomic
 def copy_cached_sequences(request, data, select_key):
     """Preview or atomically copy selected covers and stories."""
     issue_revision = get_object_or_404(
-        IssueRevision.objects.select_for_update(), id=data['issue_revision_id'])
+        IssueRevision.objects.select_for_update(),
+        id=data['issue_revision_id'])
     changeset = Changeset.objects.select_for_update().get(
         id=issue_revision.changeset_id)
     if request.user != changeset.indexer:
@@ -4944,15 +5036,16 @@ def copy_cached_sequences(request, data, select_key):
             operation_id = UUID(payload['operation_id']).hex
         except (KeyError, ValueError, TypeError, AttributeError):
             return HttpResponseBadRequest(
-                'The copy confirmation is outdated or invalid. Select the objects again.')
+              'The copy confirmation is outdated or invalid. '
+              'Select the objects again.')
         batch_key = 'story-copy:%s:%s' % (issue_revision.id, operation_id)
         batch_state = cache.get(batch_key)
         if batch_state == 'done':
             return HttpResponseRedirect(destination)
         if batch_state != 'ready':
             return HttpResponseBadRequest(
-                'This copy confirmation has expired or has already been submitted. '
-                'Check the issue before starting another copy.')
+              'This copy confirmation has expired or has already been '
+              'submitted. Check the issue before starting another copy.')
         kind, selected_ids = payload['kind'], payload['ids']
     else:
         kind = request.POST['copy_selected_cached_objects']
@@ -4974,8 +5067,10 @@ def copy_cached_sequences(request, data, select_key):
         cached_ids = get_ordered_cached_ids(request, 'cached_%s' % (
             'stories' if kind == 'story' else 'covers'))
         if not selected.issubset(set(cached_ids)):
-            return HttpResponseBadRequest('A selected object is no longer cached.')
-        story_ids = [pk for pk in cached_ids if pk in selected] if kind == 'story' else []
+            return HttpResponseBadRequest(
+              'A selected object is no longer cached.')
+        story_ids = [pk for pk in cached_ids if pk in selected] \
+            if kind == 'story' else []
         covers = set(selected) if kind == 'cover' else set()
         for choice in cover_choices:
             if not choice:
@@ -4990,19 +5085,23 @@ def copy_cached_sequences(request, data, select_key):
             covers.add(pk)
         cached_covers = get_ordered_cached_ids(request, 'cached_covers')
         if not covers.issubset(set(cached_covers)):
-            return HttpResponseBadRequest('A selected cover is no longer cached.')
+            return HttpResponseBadRequest(
+              'A selected cover is no longer cached.')
         cover_ids = [pk for pk in cached_covers if pk in covers]
         if covers.intersection(story_ids):
-            return HttpResponseBadRequest('The same object cannot be selected twice.')
+            return HttpResponseBadRequest(
+              'The same object cannot be selected twice.')
         selected_ids = cover_ids + story_ids
         if not selected_ids:
             return HttpResponseBadRequest('Select objects to copy.')
-        kind = 'mixed' if cover_ids and story_ids else 'cover' if cover_ids else 'story'
+        kind = 'mixed' if cover_ids and story_ids else 'cover' \
+            if cover_ids else 'story'
         payload = {'select_key': select_key,
                    'operation_id': uuid4().hex,
                    'issue_revision_id': issue_revision.id,
                    'kind': kind, 'ids': selected_ids, 'cover_ids': cover_ids}
-        batch_key = 'story-copy:%s:%s' % (issue_revision.id, payload['operation_id'])
+        batch_key = 'story-copy:%s:%s' % (issue_revision.id,
+                                          payload['operation_id'])
 
     cover_ids = payload.get('cover_ids', [])
     if not cover_ids and payload.get('cover_id'):
@@ -5019,24 +5118,33 @@ def copy_cached_sequences(request, data, select_key):
     by_id = {story.id: story for story in sources}
     if len(by_id) != len(selected_ids):
         return HttpResponseBadRequest(
-            'A selected object is no longer available. Select the objects again.')
+            'A selected object is no longer available. '
+            'Select the objects again.')
     stories = [by_id[pk] for pk in selected_ids]
-    actual_covers = [s.id for s in stories if s.type_id == STORY_TYPES['cover']]
+    error = _about_comics_copy_error(request, stories, issue_revision)
+    if error:
+        return error
+    actual_covers = [s.id for s in stories
+                     if s.type_id == STORY_TYPES['cover']]
     if any(pk not in actual_covers for pk in cover_ids):
         return HttpResponseBadRequest('A selected cover is no longer a cover.')
     cover_ids = actual_covers
     payload['cover_ids'] = cover_ids
     existing = list(issue_revision.active_stories())
-    placement = _copy_placement(existing, data.get('sequence_number'), bool(cover_ids))
-    changed = bool(confirming and cover_ids and payload.get('placement') != placement)
+    placement = _copy_placement(existing, data.get('sequence_number'),
+                                bool(cover_ids))
+    changed = bool(confirming and cover_ids and
+                   payload.get('placement') != placement)
     main_id = payload.get('main_cover_id')
     if 'main_cover' in request.POST:
         try:
             main_id = int(request.POST['main_cover'])
         except ValueError:
-            return HttpResponseBadRequest('Choose a selected cover as the main cover.')
+            return HttpResponseBadRequest(
+              'Choose a selected cover as the main cover.')
         if main_id not in cover_ids:
-            return HttpResponseBadRequest('The main cover must be one of the selected covers.')
+            return HttpResponseBadRequest(
+              'The main cover must be one of the selected covers.')
     if placement['cover_mode'] == 'main' and len(cover_ids) == 1:
         main_id = cover_ids[0]
     if placement['cover_mode'] != 'main':
@@ -5073,7 +5181,8 @@ def copy_cached_sequences(request, data, select_key):
                 'story': story, 'position': position,
                 **copy_options[story.id],
                 'copy_type': ('cover' if is_main else
-                              'cover reprint (on interior page)' if story.id in cover_ids
+                              'cover reprint (on interior page)'
+                              if story.id in cover_ids
                               else story.type.name),
             })
         return oi_render(request, 'oi/edit/confirm_copy_sequence.html', {
@@ -5086,7 +5195,8 @@ def copy_cached_sequences(request, data, select_key):
             **placement, 'copy_plan_changed': changed,
             'copy_credit_info': 'copy_credit_info' in request.POST,
             'copy_characters': 'copy_characters' in request.POST,
-            'select_key': select_key, 'sequence_number': data['sequence_number'],
+            'select_key': select_key,
+            'sequence_number': data['sequence_number'],
             'copy_batch': signing.dumps(payload, salt='copy-cached-sequences'),
         })
 
@@ -5101,7 +5211,8 @@ def copy_cached_sequences(request, data, select_key):
         story, changeset, issue_revision=issue_revision,
         **copy_options[story.id]) for story in stories]
     if placement['cover_mode'] == 'main':
-        ordered = [copied[0]] + existing[:insertion] + copied[1:] + existing[insertion:]
+        ordered = [copied[0]] + existing[:insertion] + copied[1:] + \
+                  existing[insertion:]
     else:
         ordered = existing[:insertion] + copied + existing[insertion:]
     for sequence, revision in enumerate(ordered):
@@ -5111,7 +5222,8 @@ def copy_cached_sequences(request, data, select_key):
     transaction.on_commit(lambda: cache.set(batch_key, 'done', timeout=3600))
     if len(copied) == 1:
         return HttpResponseRedirect(urlresolvers.reverse(
-            'edit_revision', kwargs={'model_name': 'story', 'id': copied[0].id}))
+            'edit_revision', kwargs={'model_name': 'story',
+                                     'id': copied[0].id}))
     return HttpResponseRedirect(destination)
 
 
@@ -5170,7 +5282,10 @@ def copy_sequence(request, issue_revision_id, story_id=None,
             return HttpResponseRedirect(urlresolvers.reverse(
               'edit', kwargs={'id': issue_revision.changeset_id}))
         story = get_object_or_404(Story.objects.select_for_update(),
-                                 id=story_id, deleted=False)
+                                  id=story_id, deleted=False)
+        error = _about_comics_copy_error(request, [story], issue_revision)
+        if error:
+            return error
         existing = list(issue_revision.active_stories())
         placement = _copy_placement(existing, sequence_number,
                                     story.type_id == STORY_TYPES['cover'])
@@ -5197,7 +5312,8 @@ def copy_sequence(request, issue_revision_id, story_id=None,
         if placement['cover_mode']:
             insertion = (0 if placement['cover_mode'] == 'main'
                          else placement['insertion'])
-            ordered = existing[:insertion] + [story_revision] + existing[insertion:]
+            ordered = existing[:insertion] + [story_revision] + \
+                existing[insertion:]
             for sequence, revision in enumerate(ordered):
                 if revision.sequence_number != sequence:
                     revision.sequence_number = sequence
@@ -5219,6 +5335,37 @@ def copy_sequence(request, issue_revision_id, story_id=None,
                                             'id': story_revision.id}))
 
 
+def _matching_sequence_refusal(issue_revision, story):
+    """
+    Return why a copy of story cannot be added to issue_revision, or None.
+
+    A variant holds a single cover sequence, and only if its cover artwork
+    differs from the base issue.
+    """
+    if not issue_revision.variant_of:
+        return None
+    if issue_revision.variant_cover_status != VCS_Codes.ARTWORK_DIFFERENCE:
+        return 'A cover sequence can only be added to a variant if its ' \
+               'cover artwork is different from the base issue.'
+    if story.type_id not in (STORY_TYPES['cover'],
+                             STORY_TYPES['cover reprint (on interior page)']):
+        return 'Only a cover sequence can be added to a variant issue.'
+    if issue_revision.active_stories().exists():
+        return 'You cannot add more than one cover sequence to a variant ' \
+               'issue.'
+    return None
+
+
+def _reprint_sequence_refusal(reprint, changeset):
+    """
+    Return why the sequence for a link cannot be added to changeset, or None.
+
+    The link is either a reprint or a reprint revision.
+    """
+    return _matching_sequence_refusal(changeset.issuerevisions.get(),
+                                      reprint.origin or reprint.target)
+
+
 @permission_required('indexer.can_reserve')
 def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
                              edit=False, qualifier=False):
@@ -5227,13 +5374,16 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
     reprint_revision = get_object_or_404(ReprintRevision,
                                          id=reprint_revision_id)
     changeset = reprint_revision.changeset
-    changeset_issue = changeset.issuerevisions.get()
+    changeset_issue = changeset.issuerevisions.select_for_update().get()
     if request.user != changeset.indexer:
         return render_error(
           request,
           'Only the reservation holder may access this page.')
     if issue != changeset_issue.issue:
         return _cant_get(request)
+    refusal = _matching_sequence_refusal(changeset_issue, story)
+    if refusal:
+        return render_error(request, refusal, redirect=False)
     if request.method != 'POST' and not edit:
         if story == reprint_revision.origin:
             direction = 'from'
@@ -5257,6 +5407,9 @@ def create_matching_sequence(request, reprint_revision_id, story_id, issue_id,
             copy_characters = True
         else:
             copy_characters = request.POST.get('copy_characters', False)
+        error = _about_comics_copy_error(request, [story], changeset_issue)
+        if error:
+            return error
         story_revision = StoryRevision.copied_revision(
           story, changeset, issue_revision=changeset_issue,
           copy_credit_info=copy_credit_info, copy_characters=copy_characters)
@@ -5447,6 +5600,12 @@ def save_reprint(request, reprint_revision_id, changeset_id,
     except ValueError as error:
         return render_error(request, str(error), redirect=False)
 
+    if 'matching_sequence' in request.POST or \
+       'matching_sequence_with_qualifiers' in request.POST:
+        refusal = _reprint_sequence_refusal(revision, changeset)
+        if refusal:
+            return render_error(request, refusal, redirect=False)
+
     if story_revision:
         story_revision.save()
 
@@ -5622,6 +5781,8 @@ def move_series(request, series_revision_id, publisher_id):
                     for brand in issue_revision.brand_emblem.all():
                         new_brand = publisher.active_brand_emblems()\
                                              .filter(name=brand.name)
+                        if brand in new_brand:
+                            continue
                         if new_brand.count() == 1:
                             issue_revision.brand_emblem.add(new_brand[0])
                         issue_revision.brand_emblem.remove(brand)
@@ -5640,6 +5801,47 @@ def move_series(request, series_revision_id, publisher_id):
             series_revision.imprint = None
             series_revision.save()
             return submit(request, series_revision.changeset.id)
+
+
+def _fields_hidden_by_series(issue_revision, old_series, new_series):
+    """
+    Fields of the issue with a value, which old_series shows, but which are
+    turned off for new_series.
+    """
+    fields = (('barcode', 'has_barcode', 'barcode'),
+              ('isbn', 'has_isbn', 'ISBN'),
+              ('rating', 'has_rating', "publisher's age guidelines"))
+    return [label for field, flag, label in fields
+            if getattr(issue_revision, field) and getattr(old_series, flag)
+            and not getattr(new_series, flag)]
+
+
+def _moved_issues(revision):
+    """
+    The issue revisions on the compare page of the changeset of revision
+    which move their issue to a series that does not show some of its fields,
+    as (issue revision, old series, new series, hidden fields).
+    """
+    revisions = [revision]
+    if revision.changeset.change_type == CTYPES['two_issues']:
+        revisions.append(revision.other_issue_revision)
+    moved_issues = []
+    for issue_revision in revisions:
+        # an added issue, e.g. a variant, is not moved
+        if not issue_revision.issue or issue_revision.added:
+            continue
+        # after approval, the issue is already in the new series
+        prev_rev = issue_revision.previous()
+        if prev_rev:
+            old_series = prev_rev.series
+        else:
+            old_series = issue_revision.issue.series
+        hidden_fields = _fields_hidden_by_series(issue_revision, old_series,
+                                                 issue_revision.series)
+        if hidden_fields:
+            moved_issues.append((issue_revision, old_series,
+                                 issue_revision.series, hidden_fields))
+    return moved_issues
 
 
 @permission_required('indexer.can_reserve')
@@ -5668,6 +5870,9 @@ def move_issue(request, issue_revision_id, series_id):
         return render_error(request, 'No series with id %s.'
                             % series_id, redirect=False)
     series = series[0]
+    if series.is_singleton:
+        return render_error(request, 'Issues cannot be moved into a '
+                            'singleton series.', redirect=False)
 
     if request.method != 'POST':
         header_text = "Do you want to move %s to %s ?" % \
@@ -5679,10 +5884,18 @@ def move_issue(request, issue_revision_id, series_id):
         cancel_button = "Cancel"
         confirm_button = "move of issue %s to series %s" % (
           issue_revision.issue, series)
+        hidden_fields = _fields_hidden_by_series(
+          issue_revision, issue_revision.issue.series, series)
+        if hidden_fields:
+            warning = 'The series %s does not show the %s of this issue.' \
+                      % (series, ', '.join(hidden_fields))
+        else:
+            warning = ''
         return oi_render(request, 'oi/edit/confirm.html',
                                   {
                                     'type': 'Issue Move',
                                     'header_text': header_text,
+                                    'warning': warning,
                                     'url': url,
                                     'cancel_button': cancel_button,
                                     'confirm_button': confirm_button,
@@ -5693,6 +5906,8 @@ def move_issue(request, issue_revision_id, series_id):
                 for brand in issue_revision.brand_emblem.all():
                     new_brand = series.publisher.active_brand_emblems()\
                                                 .filter(name=brand.name)
+                    if brand in new_brand:
+                        continue
                     if new_brand.count() == 1:
                         issue_revision.brand_emblem.add(new_brand[0])
                     issue_revision.brand_emblem.remove(brand)
@@ -5865,6 +6080,12 @@ def move_cover(request, id, cover_id=None):
     if not issue:
         return render_error(
           request, 'Cover does not belong to an issue of this changeset.')
+
+    target = changeset.issuerevisions.exclude(issue=cover.issue).get()
+    if target.variant_cover_status == VCS_Codes.NO_DIFFERENCE:
+        return render_error(
+          request, 'Covers cannot be moved to a variant with the variant '
+                   'cover status "No Difference".')
 
     revision_lock = _get_revision_lock(cover, changeset)
     if not revision_lock:
@@ -6870,6 +7091,7 @@ def compare(request, id):
     field_list = revision.field_list()
     sourced_fields = None
     group_sourced_fields = None
+    moved_issues = None
     revisions_before = []
     revisions_after = []
     # eliminate fields that shouldn't appear in the compare
@@ -6886,9 +7108,10 @@ def compare(request, id):
     elif model_name in ['indicia_publisher']:
         field_list.remove('parent')
     elif model_name == 'issue':
+        moved_issues = _moved_issues(revision)
         if changeset.change_type == CTYPES['issue_bulk'] or \
-          changeset.change_type == CTYPES['issue_add'] and \
-          changeset.issuerevisions.count() > 1:
+           changeset.change_type == CTYPES['issue_add'] and \
+           changeset.issuerevisions.count() > 1:
             field_list.remove('number')
             field_list.remove('notes')
             field_list.remove('year_on_sale')
@@ -6953,6 +7176,7 @@ def compare(request, id):
                           'field_list': field_list,
                           'sourced_fields': sourced_fields,
                           'group_sourced_fields': group_sourced_fields,
+                          'moved_issues': moved_issues,
                           'source_fields': ['source_description',
                                             'source_type'],
                           'CTYPES': CTYPES},
@@ -7429,7 +7653,7 @@ def select_award_recipient(request, award_id):
             'story': True,
             'issue': True,
             'series': True,
-            'heading': mark_safe('<h2>%s</h2>' % heading),
+            'heading': heading,
             'target': 'a story, issue, or series',
             'return': 'process_award_recipient',
             'cancel': urlresolvers.reverse('show_award',

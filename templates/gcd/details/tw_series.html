@@ -152,7 +152,7 @@
   {% if series.has_tracking %}
 <h3> Tracking: </h3>
     {% if series.tracking_notes %}
-      {{ series.tracking_notes|linebreaksbr }}
+      {{ series.tracking_notes|render_markdown }}
     {% endif %}
   <ul class="object-page-link-list columns-1">
     {{ series|show_series_tracking }}

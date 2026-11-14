@@ -19,6 +19,7 @@ from .support import (GENERIC_ERROR_MESSAGE, ISSUE_HELP_LINKS,
                       ISSUE_LABELS, ISSUE_HELP_TEXTS, KeywordBaseForm,
                       _set_help_labels, _init_no_isbn, _init_no_barcode,
                       _get_comments_form_field, _clean_keywords,
+                      _strip_list,
                       HiddenInputWithHelp, PageCountInput)
 
 from apps.oi.models import CTYPES, IssueRevision, IssueCreditRevision, \
@@ -294,11 +295,11 @@ def get_issue_revision_form(publisher, series=None, revision=None,
             cd['publication_date'] = cd['publication_date'].strip()
             cd['key_date'] = cd['key_date'].strip()
             cd['indicia_frequency'] = cd['indicia_frequency'].strip()
-            cd['price'] = cd['price'].strip()
-            cd['editing'] = cd['editing'].strip()
+            cd['price'] = _strip_list(cd['price'])
+            cd['editing'] = _strip_list(cd['editing'])
             cd['notes'] = cd['notes'].strip()
             cd['comments'] = cd['comments'].strip()
-            cd['isbn'] = cd['isbn'].strip()
+            cd['isbn'] = _strip_list(cd['isbn'])
             cd['rating'] = cd['rating'].strip()
 
             cd = _common_clean(cd, self.data)
@@ -316,7 +317,9 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                             'mark it for delete or remove it.')
 
                 if cd['variant_cover_status'] == 1:
-                    if revision.issue and revision.issue.has_covers():
+                    if revision.issue and revision.issue.cover_set\
+                                                  .exclude(deleted=True)\
+                                                  .exists():
                         raise forms.ValidationError(
                             'A cover scan exists for this variant. Before '
                             'changing the variant cover status please first '
@@ -364,7 +367,8 @@ def get_issue_revision_form(publisher, series=None, revision=None,
                     'the same time.')
 
             if cd['barcode']:
-                cd['barcode'] = cd['barcode'].replace('-', '').replace(' ', '')
+                cd['barcode'] = _strip_list(
+                  cd['barcode'].replace('-', '').replace(' ', ''))
                 cd['barcode'] = cd['barcode'].replace(';', '; ')
 
             return cd
@@ -699,8 +703,16 @@ def get_bulk_issue_revision_form(series, method, user=None):
 
         def __init__(self, *args, **kwargs):
             super(RuntimeBulkIssueRevisionForm, self).__init__(*args, **kwargs)
-            self.fields['indicia_publisher'].queryset = \
+            indicia_publishers = \
                 series.publisher.active_indicia_publishers_no_pending()
+            if method != 'bulk_edit':
+                if series.year_began:
+                    indicia_publishers = indicia_publishers.exclude(
+                        year_ended__lt=series.year_began)
+                if series.year_ended:
+                    indicia_publishers = indicia_publishers.exclude(
+                        year_began__gt=series.year_ended)
+            self.fields['indicia_publisher'].queryset = indicia_publishers
             self.fields['no_isbn'].initial = _init_no_isbn(series, None)
             self.fields['no_barcode'].initial = _init_no_barcode(series, None)
 
@@ -735,6 +747,10 @@ def get_bulk_issue_revision_form(series, method, user=None):
                     widget=forms.HiddenInput, required=False)
                 indicia_printer_not_printed = forms.BooleanField(
                     widget=forms.HiddenInput, required=False)
+            if series.year_ended:
+                year_ended = forms.CharField(widget=forms.HiddenInput,
+                                             required=False,
+                                             initial=series.year_ended)
         publisher_id = forms.CharField(widget=forms.HiddenInput,
                                        initial=series.publisher.id)
         if series.year_began:
@@ -775,7 +791,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
         help_text=ISSUE_HELP_TEXTS['brand_emblem'],
         widget=autocomplete.ModelSelect2Multiple(
             url='brand_emblem_autocomplete',
-            forward=['publisher_id', 'year_began',],
+            forward=['publisher_id', 'year_began', 'year_ended'],
             attrs={'data-html': True,
                    'class': 'w-full lg:w-4/5',
                    'data-placeholder': 'select a brand emblem'}),
@@ -816,6 +832,8 @@ class BulkIssueRevisionForm(forms.ModelForm):
         help_texts = ISSUE_HELP_TEXTS
 
     def _shared_key_order(self):
+        # A series without an end year has no year_ended field.
+        year_ended = ['year_ended'] if 'year_ended' in self.fields else []
         return ['indicia_publisher', 'indicia_pub_not_printed',
                 'brand_emblem', 'no_brand',
                 'indicia_frequency', 'no_indicia_frequency',
@@ -825,7 +843,7 @@ class BulkIssueRevisionForm(forms.ModelForm):
                 'indicia_printer_sourced_by',
                 'no_isbn', 'no_barcode',
                 'rating', 'no_rating', 'comments',
-                'publisher_id', 'year_began']
+                'publisher_id', 'year_began'] + year_ended
 
     def _init_creator_editors(self):
         self.helper = FormHelper()

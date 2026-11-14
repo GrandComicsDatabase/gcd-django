@@ -1,0 +1,22 @@
+<div class="my-1 label-gcd-blue">
+Related Links
+</div>
+<ul class="ps-1 text-sm">
+  {% if not issue.series.is_singleton %}
+    {% if issue.series.has_gallery %}
+    <li> <a href="{{ issue.series.get_absolute_url }}covers/?page={{ cover_page }}">Series Cover Gallery</a>
+    {% endif %}
+    <li> <a href="{% url "series_details" series_id=issue.series.id %}">Series Details by Issue</a><br/>
+    <li> <a href="{% url "series_timeline" series_id=issue.series.id %}">Series Monthly Timeline</a>
+  {% endif %}
+  {% if issue.indicia_image or issue.soo_image %}
+    {% if issue.indicia_image %}
+    <li> <a href="{% url "issue_images" issue_id=issue.id %}">Indicia Scan</a></li>
+    {% endif %}
+    {% if issue.soo_image %}
+    <li> <a href="{% url "issue_images" issue_id=issue.id %}">Statement of Ownership Scan</a></li>
+    {% endif %}
+  {% else %}
+    <li> <a href="{% url "issue_images" issue_id=issue.id %}">No Issue Scans</a></li>
+  {% endif %}
+</ul>

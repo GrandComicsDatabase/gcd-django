@@ -478,3 +478,17 @@ def test_global_copy_controls_only_render_for_multiple_sequences(count):
         html = body.nodelist.render(context)
     assert ('id="copy-all-credit-info"' in html) is (count > 1)
     assert ('id="copy-all-characters"' in html) is (count > 1)
+
+
+def test_about_comics_cannot_be_copied_to_series_without_them(copy_context):
+    c = copy_context
+    c.issue.series.has_about_comics = False
+    c.sources[0].type_id = STORY_TYPES['about comics']
+    request = request_for(c, {'copy_selected_cached_objects': 'story',
+                             'cached_objects': ['story_7', 'story_8']})
+    with patch('apps.oi.views.render_error',
+               return_value=HttpResponse('refused')) as error:
+        copy_cached_sequences.__wrapped__(request, c.data, 'batch')
+    error.assert_called_once()
+    c.render.assert_not_called()
+    c.copier.assert_not_called()

@@ -36,7 +36,25 @@ CACHES = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 FAKE_IMAGES = True
-USE_ELASTICSEARCH = False
+USE_ELASTICSEARCH = environ.get('USE_ELASTICSEARCH', 'false').lower() in {
+    '1', 'true', 'yes', 'on'
+}
+
+HAYSTACK_CONNECTIONS['default']['URL'] = environ.get(  # noqa: F405
+    'ELASTICSEARCH_URL', 'http://127.0.0.1:9200/'
+)
+RQ_QUEUES['default'].update({  # noqa: F405
+    'HOST': environ.get('REDIS_HOST', 'localhost'),
+    'PORT': int(environ.get('REDIS_PORT', '6379')),
+    'PASSWORD': None,
+})
+
+if USE_ELASTICSEARCH:
+    if 'django_rq' not in INSTALLED_APPS:  # noqa: F405
+        INSTALLED_APPS += ('django_rq',)  # noqa: F405
+    HAYSTACK_SIGNAL_PROCESSOR = (
+        'haystack_rqueue.signals.RQueueSignalProcessor'
+    )
 
 SILENCED_SYSTEM_CHECKS = [
     'django_recaptcha.recaptcha_test_key_error',

@@ -5,8 +5,12 @@ import re
 import mock
 import pytest
 
+from dal import autocomplete
 from django.forms import ValidationError
 
+from apps.oi.forms.story import (
+    StoryCharacterRevisionForm, StoryCreditRevisionForm,
+    StoryGroupRevisionForm, StoryRevisionForm)
 from apps.oi.forms.support import KeywordsWidget, KeywordsField
 
 
@@ -111,3 +115,25 @@ def test_keywords_form_field_clean_bad_chars():
     for c in KeywordsField._NOT_ALLOWED:
         with pytest.raises(ValidationError):
             kwf.clean(c)
+
+
+@pytest.mark.parametrize('form_class', [StoryRevisionForm,
+                                        StoryCreditRevisionForm,
+                                        StoryCharacterRevisionForm,
+                                        StoryGroupRevisionForm])
+def test_story_autocomplete_selects_span_the_cell(form_class):
+    """
+    The plain select shows until Select2 replaces it on page load, so it
+    spans the cell instead of the browser's default width. Select2 copies
+    these classes to its box, which input.css already sizes, so lg:w-4/5
+    would make the box narrower than the other fields.
+    """
+    select2_widgets = (autocomplete.ModelSelect2,
+                       autocomplete.ModelSelect2Multiple)
+    wrong_width = []
+    for name, field in form_class.base_fields.items():
+        if isinstance(field.widget, select2_widgets):
+            classes = field.widget.attrs.get('class', '').split()
+            if 'w-full' not in classes or 'lg:w-4/5' in classes:
+                wrong_width.append(name)
+    assert wrong_width == []

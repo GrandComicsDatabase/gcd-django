@@ -8,6 +8,9 @@ GCD :: Confirm {{ type }}
 {% block view_body %}
 
 <h2>{{ header_text }}</h2>
+{% if warning %}
+<p class="comparison_highlight">{{ warning }}</p>
+{% endif %}
 <form method="POST" action="{{ url }}">
 {% csrf_token %}
   <input type="hidden" name="comments">

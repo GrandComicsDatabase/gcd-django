@@ -11,7 +11,6 @@ from crispy_forms.layout import Layout, Field, HTML
 from crispy_forms.utils import render_field
 from crispy_forms.bootstrap import (
     Tab,
-    TabHolder,
 )
 from markdownx.widgets import MarkdownxWidget
 from taggit.models import Tag
@@ -33,9 +32,10 @@ from apps.gcd.models import CreatorNameDetail, CreatorSignature, StoryType, \
 from apps.gcd.models.support import GENRES
 from apps.gcd.models.story import NO_FEATURE_TYPES, NO_GENRE_TYPES
 
-from .custom_layout_object import Formset
+from .custom_layout_object import Formset, FormsetTabHolder
 from .support import (
     _get_comments_form_field, _set_help_labels, _clean_keywords,
+    _strip_list,
     combine_reverse_relations, GENERIC_ERROR_MESSAGE, NO_CREATOR_CREDIT_HELP,
     KEYWORDS_HELP, BaseForm, SEQUENCE_HELP_LINKS,
     BIBLIOGRAPHIC_ENTRY_HELP_LINKS, KeywordBaseForm,
@@ -82,8 +82,8 @@ def _genre_choices(language=None, additional_genres=None):
     return forms.MultipleChoiceField(
         required=False,
         widget=GenreCheckboxSelectMultiple(attrs={
-          'class': 'overflow-y-auto max-h-60 border border-gray-500 '
-                   'px-1 inline-block'}),
+          'class': 'overflow-y-auto max-h-60 border border-gray-400 '
+                   'px-1 inline-block rounded'}),
         choices=choices)
 
 
@@ -126,10 +126,14 @@ def get_story_revision_form(revision=None, user=None,
     is_comics_publication = series.is_comics_publication
     has_about_comics = series.has_about_comics
     language = series.language
+    issue_year = issue.key_date[:4] if issue else None
+    if issue_year and not issue_year.isnumeric():
+        issue_year = None
 
     # for variants we can only have cover sequences (for now)
     if (revision and (revision.issue is None or revision.issue.variant_of))\
-       or (revision is None and issue_revision.issue is None):
+       or (revision is None and (issue_revision.issue is None
+                                 or issue_revision.variant_of)):
         queryset = StoryType.objects.filter(name='cover')
         # an added story can have a different type, do not overwrite
         if revision and revision.type not in queryset:
@@ -170,6 +174,8 @@ def get_story_revision_form(revision=None, user=None,
                                additional_genres=additional_genres)
         language_code = forms.CharField(widget=forms.HiddenInput,
                                         initial=language.code)
+        year = forms.CharField(widget=forms.HiddenInput,
+                               initial=issue_year, required=False)
 
         def __init__(self, *args, **kwargs):
             kwargs['user'] = user
@@ -343,9 +349,8 @@ class StoryCreditRevisionForm(forms.ModelForm):
     creator = forms.ModelChoiceField(
       queryset=CreatorNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_name_autocomplete',
-                                       attrs={'class': 'w-full lg:w-4/5',
-                                              'style': 'width: 80%'},
-                                       ),
+                                       attrs={'class': 'w-full'},
+                                       forward=['year']),
       required=True,
       help_text='By entering (any part of) a name select a creator from the'
                 ' database. Search for the name of the ghosted creator for '
@@ -361,8 +366,7 @@ class StoryCreditRevisionForm(forms.ModelForm):
       queryset=CreatorSignature.objects.all(),
       widget=autocomplete.ModelSelect2(url='creator_signature_autocomplete',
                                        attrs={'data-html': True,
-                                              'class': 'w-full lg:w-4/5',
-                                              'style': 'width: 80%'},
+                                              'class': 'w-full'},
                                        forward=['creator']),
       help_text='Select an existing signature for the creator.',
       required=False,
@@ -493,8 +497,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='character_name_autocomplete',
                                        forward=['language_code', 'group_name'],
-                                       attrs={'class': 'w-full lg:w-4/5',
-                                              'style': 'width: 80%'}),
+                                       attrs={'class': 'w-full'}),
       required=True,
       help_text='By entering (any part of) a name select a character from the'
                 ' database.'
@@ -504,8 +507,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='group_name_autocomplete',
-        attrs={'data-html': True, 'class': 'w-full lg:w-4/5',
-               'style': 'width: 80%'},
+        attrs={'class': 'w-full'},
         forward=[forward.Field('character', 'character_name'),
                  'language_code']),
       help_text='Select a group the character is appearing as a member of.',
@@ -521,8 +523,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
                           url='universe_autocomplete',
-                          attrs={'class': 'w-full lg:w-4/5',
-                                 'style': 'width: 80%'}),
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Select the universe, if any, from which the character '
                 'originates. Use "mainstream" for the principal universe '
@@ -533,8 +534,7 @@ class StoryCharacterRevisionForm(forms.ModelForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
                           url='universe_autocomplete',
-                          attrs={'class': 'w-full lg:w-4/5',
-                                 'style': 'width: 80%'}),
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Select the universe, if any, for the group of the character. '
                 'If left empty, the value will default to the selected '
@@ -579,7 +579,7 @@ StoryCharacterRevisionFormSet = inlineformset_factory(
 
 class StoryGroupRevisionForm(forms.ModelForm):
     class Meta:
-        model = StoryCharacterRevision
+        model = StoryGroupRevision
         fields = ['group_name', 'universe', 'notes']
         widgets = {
             'notes': forms.TextInput(attrs={'class': 'w-full lg:w-4/5'}),
@@ -604,8 +604,7 @@ class StoryGroupRevisionForm(forms.ModelForm):
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(url='group_name_autocomplete',
                                        forward=['language_code'],
-                                       attrs={'class': 'w-full lg:w-4/5',
-                                              'style': 'width: 80%'}),
+                                       attrs={'class': 'w-full'}),
       required=True,
       help_text='By entering (any part of) a name select a group from the'
                 ' database.'
@@ -615,8 +614,7 @@ class StoryGroupRevisionForm(forms.ModelForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2(
                           url='universe_autocomplete',
-                          attrs={'class': 'w-full lg:w-4/5',
-                                 'style': 'width: 80%'}),
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Select the universe, if any, from which the group '
                 'originates. Use "mainstream" for the principal universe '
@@ -843,9 +841,29 @@ class StoryRevisionForm(KeywordBaseForm):
           '<strong>Characters:</strong></th>'
           '<td class="align-top">'
           '<hr style="height:2px; background-color:#000;"></td></tr>'))
+        field_list.append(Field(fields[characters_start-19],
+                                template='oi/bits/uni_field.html'))
+        has_appearance_order = False
+        has_importance_order = False
+        if 'instance' in kwargs and kwargs['instance'] and \
+           kwargs['instance'].id:
+            if kwargs['instance'].character_order_revisions.filter(type__id=1):
+                has_appearance_order = True
+            if kwargs['instance'].character_order_revisions.filter(type__id=2):
+                has_importance_order = True
+        if has_appearance_order or has_importance_order:
+            field_list.append(HTML(
+              '<tr><th></th><td>Character orders exist. To edit an order, '
+              'click on the corresponding "Save And Edit Order" button below. '
+              '</td></tr>'))
+            field_list.append(HTML(
+               '<tr><th></th><td>Characters listed above the line labeled '
+               '"--- characters below will be ordered alphabetically ---" '
+               'on either the Appearance Order or the Importance Order '
+               'cannot be removed.</td></tr>'))
         field_list.extend([BaseField(Field(field,
                                            template='oi/bits/uni_field.html'))
-                           for field in fields[characters_start-19:
+                           for field in fields[characters_start-18:
                                                characters_start-1]])
         field_list.append(HTML(
           '<tr><th><input type="submit" name="save_and_set_universe"'
@@ -861,14 +879,6 @@ class StoryRevisionForm(KeywordBaseForm):
         field_list.append(Field(fields[characters_start],
                                 template='oi/bits/uni_field.html'))
         field_list.append(Formset('groups_formset'))
-        has_appearance_order = False
-        has_importance_order = False
-        if 'instance' in kwargs and kwargs['instance'] and \
-           kwargs['instance'].id:
-            if kwargs['instance'].character_order_revisions.filter(type__id=1):
-                has_appearance_order = True
-            if kwargs['instance'].character_order_revisions.filter(type__id=2):
-                has_importance_order = True
         character_order_html = '<th></th><td>'
         if has_appearance_order:
             character_order_html += '<input type="submit" ' \
@@ -898,10 +908,13 @@ class StoryRevisionForm(KeywordBaseForm):
         if not user.indexer.use_tabs:
             self.helper.layout = Layout(*(f for f in field_list))
         else:
-            self.helper.layout = Layout(TabHolder(
+            # The layout is organized into tabs for better user experience.
+            # When counting the fields, we need to account for the added
+            # hidden fields and formsets that are included in the field_list.
+            self.helper.layout = Layout(FormsetTabHolder(
               Tab('Sequence Details',
                   *(f for f in field_list[:credits_start-5]),
-                  *(f for f in field_list[characters_end:-2]),
+                  *(f for f in field_list[characters_end:-3]),
                   template='oi/bits/tab.html',
                   ),
               Tab('Creator Credits',
@@ -914,8 +927,8 @@ class StoryRevisionForm(KeywordBaseForm):
                   ),
               template='oi/bits/tab-bar.html',
             ),
-              HTML('<table class="editing">'),
-              *(f for f in field_list[-2:]),
+              HTML('<table class="editing w-full">'),
+              *(f for f in field_list[-3:]),
               HTML('</table>'))
         self.helper.doc_links = SEQUENCE_HELP_LINKS
     # The sequence number can only be changed through the reorder form, but
@@ -946,7 +959,7 @@ class StoryRevisionForm(KeywordBaseForm):
       widget=autocomplete.ModelSelect2Multiple(
                           url='feature_name_autocomplete',
                           forward=['language_code', 'type'],
-                          attrs={'class': 'w-full lg:w-4/5'}),
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Only features for the series language can be selected. Enter '
                 '"&lt;space&gt;[&lt;text&gt;" to search the disambiguation. '
@@ -959,8 +972,7 @@ class StoryRevisionForm(KeywordBaseForm):
       widget=autocomplete.ModelSelect2Multiple(
                           url='feature_logo_autocomplete',
                           forward=['language_code', 'type'],
-                          attrs={'data-html': True,
-                                 'class': 'w-full lg:w-4/5'}),
+                          attrs={'data-html': True, 'class': 'w-full'}),
       required=False,
       help_text='Only select a feature logo if it is present <b>directly</b> '
                 'on the sequence. The feature corresponding to the selected '
@@ -972,7 +984,7 @@ class StoryRevisionForm(KeywordBaseForm):
       widget=autocomplete.ModelSelect2Multiple(
                           url='story_arc_autocomplete',
                           forward=['language_code', 'type'],
-                          attrs={'class': 'w-full lg:w-4/5'}),
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Only story arcs for the series language can be selected. '
                 'Enter "&lt;space&gt;[&lt;text&gt;" to search the '
@@ -983,7 +995,7 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=Tag.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
                           url='keyword_autocomplete',
-                          attrs={'class': 'w-full lg:w-4/5'}),
+                          attrs={'class': 'w-full'}),
       required=False,
       label='Keywords',
       help_text='Select existing keywords that apply to this story.'
@@ -1047,8 +1059,7 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=Universe.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
                           url='universe_autocomplete',
-                          attrs={'class': 'w-full lg:w-4/5',
-                                 'style': 'width: 80%'}),
+                          attrs={'class': 'w-full'}),
       required=False,
       help_text='Select the universes, if any, in which the story takes place.'
                 ' Use "mainstream" for the principal universe of a publisher.'
@@ -1160,8 +1171,7 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=GroupNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2(
         url='group_name_autocomplete',
-        attrs={'data-html': True, 'class': 'w-full lg:w-4/5',
-               'style': 'width: 80%'},
+        attrs={'class': 'w-full'},
         forward=['language_code']),
       help_text='Select a group and enter its characters.',
       label='b) Group',
@@ -1172,8 +1182,7 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
-        attrs={'data-html': True, 'class': 'w-full lg:w-4/5',
-               'style': 'width: 80%'},
+        attrs={'class': 'w-full'},
         forward=['language_code', 'group_name']),
       help_text='Select the appearing members of the group.',
       required=False,
@@ -1183,8 +1192,7 @@ class StoryRevisionForm(KeywordBaseForm):
       queryset=CharacterNameDetail.objects.all(),
       widget=autocomplete.ModelSelect2Multiple(
         url='character_name_autocomplete',
-        attrs={'data-html': True, 'class': 'w-full lg:w-4/5',
-               'style': 'width: 80%'},
+        attrs={'class': 'w-full'},
         forward=['language_code', ]),
       help_text='Select one or more appearing characters without additional '
                 'details.',
@@ -1250,16 +1258,16 @@ class StoryRevisionForm(KeywordBaseForm):
             raise forms.ValidationError(GENERIC_ERROR_MESSAGE)
 
         cd['title'] = cd['title'].strip()
-        cd['feature'] = cd['feature'].strip()
-        cd['script'] = cd['script'].strip()
-        cd['pencils'] = cd['pencils'].strip()
-        cd['inks'] = cd['inks'].strip()
-        cd['colors'] = cd['colors'].strip()
-        cd['letters'] = cd['letters'].strip()
-        cd['editing'] = cd['editing'].strip()
-        cd['characters'] = cd['characters'].strip()
+        cd['feature'] = _strip_list(cd['feature'])
+        cd['script'] = _strip_list(cd['script'])
+        cd['pencils'] = _strip_list(cd['pencils'])
+        cd['inks'] = _strip_list(cd['inks'])
+        cd['colors'] = _strip_list(cd['colors'])
+        cd['letters'] = _strip_list(cd['letters'])
+        cd['editing'] = _strip_list(cd['editing'])
+        cd['characters'] = _strip_list(cd['characters'])
         cd['job_number'] = cd['job_number'].strip()
-        cd['reprint_notes'] = cd['reprint_notes'].strip()
+        cd['reprint_notes'] = _strip_list(cd['reprint_notes'])
         cd['synopsis'] = cd['synopsis'].strip()
         cd['notes'] = cd['notes'].strip()
         cd['comments'] = cd['comments'].strip()

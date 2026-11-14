@@ -247,8 +247,8 @@ def show_series_tracking(series):
 
         if srbond.bond.notes:
             tracking_line += (
-                '<dl class="bond_notes"><dt>Note:</dt><dd>%s</dl>' %
-                srbond.bond.notes)
+                '<dl class="bond_notes"><dt>Note:</dt><dd>%s</dd></dl>' %
+                esc(srbond.bond.notes))
         elif has_interior_notes:
             # Put in a blank dl to make the spacing uniform.
             tracking_line += '<dl></dl>'

@@ -12,8 +12,9 @@ from apps.gcd.templatetags.display import absolute_url, \
                                           sum_page_counts, show_barcode, \
                                           show_isbn
 from apps.gcd.templatetags.credits import format_page_count, \
-                                          split_reprint_string, \
-                                          render_markdown
+                                          split_reprint_string
+
+from apps.gcd.markdown_extension import render_markdown
 
 from apps.oi import states
 from apps.oi.models import remove_leading_article, validated_isbn, CTYPES, \
@@ -24,7 +25,7 @@ from apps.oi.templatetags.editing import is_locked
 
 register = template.Library()
 
-MARKDOWN_FIELDS = {'notes', 'description', 'bio'}
+MARKDOWN_FIELDS = {'notes', 'description', 'bio', 'tracking_notes'}
 
 
 def valid_barcode(barcode):
@@ -47,6 +48,27 @@ def valid_barcode(barcode):
         barcode = barcode[:-2]
 
     return stdean.is_valid(barcode)
+
+
+def key_date_years_note(revision, item, label):
+    '''
+    Note when the key date of an issue revision is outside the years of
+    its indicia publisher or brand emblem. A missing or uncertain year
+    cannot show a problem, so that side is not compared.
+    '''
+    year = getattr(revision, 'key_date', '')[:4]
+    if not item or not year.isdecimal() or int(year) < 1000:
+        return ''
+    year = int(year)
+    if item.year_began and not item.year_began_uncertain \
+       and year < item.year_began:
+        return '<br><br>Note: %s "%s" used in %d, before its first year ' \
+               '%d.' % (label, esc(item), year, item.year_began)
+    if item.year_ended and not item.year_ended_uncertain \
+       and year > item.year_ended:
+        return '<br><br>Note: %s "%s" used in %d, after its last year ' \
+               '%d.' % (label, esc(item), year, item.year_ended)
+    return ''
 
 
 # check to return True for yellow css compare highlighting
@@ -102,7 +124,7 @@ def field_value(revision, field):
                  'year_ended_uncertain', 'year_overall_ended_uncertain',
                  'on_sale_date_uncertain', 'is_comics_publication',
                  'no_indicia_printer', 'has_indicia_printer',
-                 'has_about_comics' 'has_publisher_code_number']:
+                 'has_about_comics', 'has_publisher_code_number']:
         return yesno(value, 'Yes,No')
     elif field in ['is_current']:
         res_holder_display = ''
@@ -114,7 +136,10 @@ def field_value(revision, field):
                                      (res_holder.first_name,
                                       res_holder.last_name)
         return yesno(value, 'Yes,No') + res_holder_display
-    elif field in ['publisher', 'indicia_publisher', 'series',
+    elif field == 'indicia_publisher':
+        return mark_safe(absolute_url(value) + key_date_years_note(
+          revision, value, 'Indicia publisher'))
+    elif field in ['publisher', 'series',
                    'origin_issue', 'target_issue', 'award',
                    'from_feature', 'to_feature', 'character',
                    'from_group', 'to_group', 'from_character', 'to_character']:
@@ -132,7 +157,10 @@ def field_value(revision, field):
         return absolute_url(value)
     elif field == 'brand_emblem':
         brand_emblems = ''
+        notes = ''
         for brand_emblem in value.all():
+            notes += key_date_years_note(revision, brand_emblem,
+                                         'Brand emblem')
             if settings.FAKE_IMAGES or not brand_emblem.emblem:
                 brand_emblems += absolute_url(brand_emblem) + '; '
             else:
@@ -141,7 +169,7 @@ def field_value(revision, field):
                                            + absolute_url(brand_emblem)) + '; '
         if brand_emblems:
             brand_emblems = brand_emblems[:-2]
-        return mark_safe(brand_emblems)
+        return mark_safe(brand_emblems + notes)
     elif (field in ['feature', 'feature_name'] and
           revision._meta.model_name == 'featurelogorevision'):
         features = ''
@@ -177,7 +205,7 @@ def field_value(revision, field):
                 story_arc.get_absolute_url(),
                 esc(story_arc.name))
         return mark_safe(story_arcs)
-    elif field in ['tracking_notes', 'publication_notes']:
+    elif field == 'publication_notes':
         return linebreaksbr(value)
     elif field == 'reprint_notes':
         reprint = ''
@@ -580,6 +608,13 @@ def compare_current_reprints(object_type, changeset):
                 .filter(changeset=changeset)
             active_target = object_type.source.target_reprint_revisions\
                 .filter(changeset=changeset)
+            if type(object_type) is StoryRevision:
+                # moved sequence: linked by origin_/target_revision only,
+                # see move_story_revision
+                active_origin |= object_type.origin_reprint_revisions\
+                    .filter(changeset=changeset)
+                active_target |= object_type.target_reprint_revisions\
+                    .filter(changeset=changeset)
     if type(object_type) is IssueRevision:
         active_origin = active_origin.filter(origin=None, origin_revision=None)
         active_target = active_target.filter(target=None, target_revision=None)
@@ -594,11 +629,12 @@ def compare_current_reprints(object_type, changeset):
           .filter(changeset__state=states.APPROVED)\
           .exclude(deleted=True)
 
-        kept_target = object_type.source.target_reprint_revisions\
-          .filter(changeset__modified__lte=changeset.modified)\
-          .exclude(changeset=changeset)\
-          .filter(changeset__state=states.APPROVED)\
-          .exclude(deleted=True)
+        kept_target = (
+            object_type.source.target_reprint_revisions
+            .filter(changeset__modified__lte=changeset.modified)
+            .exclude(changeset=changeset)
+            .filter(changeset__state=states.APPROVED)
+            .exclude(deleted=True))
         if type(object_type) is IssueRevision:
             kept_origin = kept_origin.filter(origin=None, origin_revision=None)
             kept_target = kept_target.filter(target=None, target_revision=None)
