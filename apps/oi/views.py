@@ -5757,21 +5757,19 @@ def move_series(request, series_revision_id, publisher_id):
               'edit', kwargs={'id': series_revision.changeset.id}))
         else:
             if series_revision.changeset.issuerevisions.count() == 0:
-                for issue in series_revision.series.active_issues():
-                    if not _do_reserve(series_revision.changeset.indexer,
-                                       issue, 'issue',
-                                       changeset=series_revision.changeset):
-                        for issue_rev in series_revision.changeset\
-                                                        .issuerevisions.all():
-                            _free_revision_lock(issue_rev.issue)
-                            issue_rev.delete()
-                        for story_rev in series_revision.changeset\
-                                                        .storyrevisions.all():
-                            _free_revision_lock(story_rev.story)
-                            story_rev.delete()
-                        return show_error_with_return(
-                          request, 'Error while reserving issues.',
-                          series_revision.changeset)
+                try:
+                    # All or nothing: a failure takes back the locks and the
+                    # revisions of the issues reserved so far.
+                    with transaction.atomic():
+                        for issue in series_revision.series.active_issues():
+                            if not _do_reserve(
+                              series_revision.changeset.indexer, issue,
+                              'issue', changeset=series_revision.changeset):
+                                raise IntegrityError('issue not reservable')
+                except IntegrityError:
+                    return show_error_with_return(
+                      request, 'Error while reserving issues.',
+                      series_revision.changeset)
                 for issue_revision in series_revision.changeset.issuerevisions\
                                                      .all():
                     for brand in issue_revision.brand_emblem.all():
