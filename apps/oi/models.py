@@ -5474,7 +5474,8 @@ class StoryCharacterRevision(Revision):
         on it for a new character appearance with the copied character and data
         but a different translation.
         """
-        language = story_revision.issue.series.language
+        issue = story_revision.issue or story_revision.my_issue_revision
+        language = issue.series.language
         translations = character.character.character.translations(
             language)
         if translations.count() == 0 and \
